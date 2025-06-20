@@ -306,7 +306,7 @@ export default function OutreachToolPage() {
       setMessageType(method as any)
       
       if (data.ai_generated) {
-        toast.success('✨ AI message generated with advanced personalization!')
+        toast.success('✨ Personalized message generated successfully!')
         
         // Show usage info if available
         if (data.usage?.messagesRemaining) {
@@ -314,11 +314,11 @@ export default function OutreachToolPage() {
           console.log(`📊 Messages remaining: ${hourly}/hour, ${daily}/day`)
         }
       } else {
-        toast.success('Message generated (AI fallback used)')
+        toast.success('Message generated (template used)')
       }
     } catch (error) {
-      console.error('Error generating AI message:', error)
-      toast.error('Failed to generate AI message. Please try again.')
+      console.error('Error generating message:', error)
+      toast.error('Failed to generate message. Please try again.')
     } finally {
       setIsGeneratingMessage(false)
     }
@@ -1322,7 +1322,7 @@ export default function OutreachToolPage() {
                                 disabled={outreachMethods.length === 0}
                               >
                                 <Sparkles className="h-3 w-3 mr-1" />
-                                AI Outreach ({outreachMethods.length})
+                                Outreach ({outreachMethods.length})
                               </Button>
                           </TableCell>
                         </TableRow>
@@ -1352,14 +1352,14 @@ export default function OutreachToolPage() {
             </Card>
           </div>
 
-          {/* AI-Powered Action Center */}
+                    {/* Action Center */}
           <div className="xl:col-span-1 h-[calc(100vh-100px)]">
             <Card className="bg-[#1A1A1A] border-[#333] h-full flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-gray-400" />
-                  AI Action Center
-                </CardTitle>
+                  Action Center
+                  </CardTitle>
                 <CardDescription className="text-gray-400">Smart outreach recommendations</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
@@ -1375,13 +1375,13 @@ export default function OutreachToolPage() {
                         <AlertCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <h4 className="font-medium text-white text-sm">Priority: Follow-up Needed</h4>
-                          <p className="text-xs text-gray-400 mt-1">
-                            AI detected {campaignLeads.filter(cl => 
-                              cl.status === 'contacted' && 
-                              cl.last_contacted_at && 
-                              new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                                                    <p className="text-xs text-gray-400 mt-1">
+                            {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
                             ).length} leads going cold. Recommended action: Send follow-up within 24hrs.
-                          </p>
+                        </p>
                         </div>
                       </div>
                       <div className="space-y-1 mb-3">
@@ -1396,7 +1396,7 @@ export default function OutreachToolPage() {
                         ))}
                       </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
-                        Generate AI Follow-up Messages
+                        Generate Follow-up Messages
                       </Button>
                     </div>
                   )}
@@ -1407,9 +1407,9 @@ export default function OutreachToolPage() {
                       <div className="flex items-start gap-2 mb-2">
                         <Target className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">AI Opportunity Score</h4>
+                          <h4 className="font-medium text-white text-sm">Opportunity Score</h4>
                           <p className="text-xs text-gray-400 mt-1">
-                            {campaignLeads.filter(cl => cl.status === 'pending').length} fresh leads ready. AI suggests starting with highest-value targets.
+                            {campaignLeads.filter(cl => cl.status === 'pending').length} fresh leads ready. Suggested priority: highest-value targets.
                           </p>
                         </div>
                       </div>
@@ -1424,7 +1424,7 @@ export default function OutreachToolPage() {
                         ))}
                       </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
-                        Start AI Outreach Sequence
+                        Start Outreach Sequence
                       </Button>
                     </div>
                   )}
@@ -1449,7 +1449,7 @@ export default function OutreachToolPage() {
                         ))}
                       </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
-                        Generate Qualification Scripts
+                        Generate Call Scripts
                       </Button>
                     </div>
                   )}
@@ -1474,7 +1474,7 @@ export default function OutreachToolPage() {
                         ))}
                       </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
-                        AI Proposal Generator
+                        Proposal Generator
                       </Button>
                     </div>
                   )}
@@ -1489,14 +1489,14 @@ export default function OutreachToolPage() {
                         <TrendingUp className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <h4 className="font-medium text-white text-sm">Momentum Building</h4>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {campaignLeads.filter(cl => 
-                              cl.status === 'signed' && 
-                              new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                                                    <p className="text-xs text-gray-400 mt-1">
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'signed' && 
+                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                             ).length} new client{campaignLeads.filter(cl => 
-                              cl.status === 'signed' && 
-                              new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                            ).length > 1 ? 's' : ''} this week! AI analysis shows {stats.conversionRate}% conversion rate.
+                            cl.status === 'signed' && 
+                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                            ).length > 1 ? 's' : ''} this week! Current conversion rate: {stats.conversionRate}%.
                           </p>
                         </div>
                       </div>
@@ -1511,7 +1511,7 @@ export default function OutreachToolPage() {
                     <div className="flex items-start gap-2 mb-2">
                       <BarChart3 className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h4 className="font-medium text-white text-sm">AI Insights</h4>
+                        <h4 className="font-medium text-white text-sm">Insights</h4>
                         <p className="text-xs text-gray-400 mt-1">
                           Based on your {campaignLeads.length} leads, optimal outreach time is 10-11 AM. 
                           {stats.responseRate}% response rate suggests refining your messaging.
@@ -1519,7 +1519,7 @@ export default function OutreachToolPage() {
                       </div>
                     </div>
                     <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
-                      Get AI Strategy Report
+                      Get Strategy Report
                     </Button>
                   </div>
 
@@ -1533,7 +1533,7 @@ export default function OutreachToolPage() {
                     <div className="p-4 text-center">
                       <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                       <h4 className="text-sm font-medium text-white mb-1">All Systems Green</h4>
-                      <p className="text-xs text-gray-400 mb-3">Pipeline optimized! AI suggests focusing on lead generation.</p>
+                      <p className="text-xs text-gray-400 mb-3">Pipeline optimized! Consider focusing on lead generation.</p>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate More Leads
                       </Button>
@@ -1545,13 +1545,13 @@ export default function OutreachToolPage() {
           </div>
         </div>
 
-        {/* AI Outreach Options Dialog */}
+        {/* Outreach Options Dialog */}
         <Dialog open={showOutreachOptions} onOpenChange={setShowOutreachOptions}>
           <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-gray-400" />
-                AI-Powered Outreach
+                Outreach Options
               </DialogTitle>
               <DialogDescription className="text-gray-400">
                 <div className="space-y-1">
@@ -1563,7 +1563,7 @@ export default function OutreachToolPage() {
                     <span className="block">Industry: {selectedCampaignLead.lead.niche_name}</span>
                   )}
                   {selectedCampaignLead?.lead?.lead_score && (
-                    <span className="block text-blue-400">AI Score: {selectedCampaignLead.lead.lead_score}/100</span>
+                    <span className="block text-blue-400">Score: {selectedCampaignLead.lead.lead_score}/100</span>
                   )}
                 </div>
               </DialogDescription>
@@ -1571,11 +1571,17 @@ export default function OutreachToolPage() {
             
             <div className="space-y-3 py-4">
               <div className="text-xs text-gray-400 mb-3 p-2 bg-[#2A2A2A] rounded">
-                🤖 AI will analyze this lead's profile, industry, and social presence to create personalized outreach content optimized for your brand and conversion goals.
+                📋 Generate personalized outreach content based on this lead's profile, industry, and social presence.
               </div>
               
               {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
-                const aiRecommendation = method.type === 'email' ? 
+                const methodLabel = method.type === 'email' ? 'Email Outreach' :
+                  method.type === 'phone' ? 'Cold Call Script' :
+                  method.type === 'linkedin' ? 'LinkedIn Message' :
+                  method.type === 'instagram' ? 'Instagram DM' :
+                  method.type === 'facebook' ? 'Facebook Message' : method.label
+                
+                const recommendation = method.type === 'email' ? 
                   '🎯 Recommended: High conversion rate for this industry' : 
                   method.type === 'phone' ? 
                   '⚡ Best for: Immediate qualification and rapport building' :
@@ -1600,8 +1606,8 @@ export default function OutreachToolPage() {
                       <div className="flex items-center gap-3">
                         <method.icon className="h-5 w-5" />
                         <div className="text-left">
-                          <div className="font-medium">AI {method.label}</div>
-                          <div className="text-xs text-gray-400 mt-1">{aiRecommendation}</div>
+                          <div className="font-medium">{methodLabel}</div>
+                          <div className="text-xs text-gray-400 mt-1">{recommendation}</div>
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4" />
@@ -1623,7 +1629,12 @@ export default function OutreachToolPage() {
                 {messageType === 'linkedin' && <Linkedin className="h-5 w-5 text-gray-400" />}
                 {messageType === 'instagram' && <Instagram className="h-5 w-5 text-gray-400" />}
                 {messageType === 'facebook' && <Facebook className="h-5 w-5 text-gray-400" />}
-                AI {messageType === 'phone' ? 'Call Script' : `${messageType.charAt(0).toUpperCase() + messageType.slice(1)} Message`}
+{messageType === 'phone' ? 'Cold Call Script' : 
+                 messageType === 'email' ? 'Email Outreach' :
+                 messageType === 'linkedin' ? 'LinkedIn Message' :
+                 messageType === 'instagram' ? 'Instagram DM' :
+                 messageType === 'facebook' ? 'Facebook Message' :
+                 'Outreach Message'}
               </DialogTitle>
               <DialogDescription className="text-gray-400">
                 {selectedCampaignLead?.lead?.business_name} - {selectedCampaignLead?.lead?.owner_name || 'No owner info'}
@@ -1653,12 +1664,12 @@ export default function OutreachToolPage() {
                   </div>
                   {generatedMessage && (
                                       <Button
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedMessage)
-                        setJustCopied(true)
-                        setTimeout(() => setJustCopied(false), 2000)
-                        toast.success('✅ Copied! Ready to make your AI-optimized call.')
-                      }}
+                                              onClick={() => {
+                          navigator.clipboard.writeText(generatedMessage)
+                          setJustCopied(true)
+                          setTimeout(() => setJustCopied(false), 2000)
+                          toast.success('✅ Call script copied! Ready to make your call.')
+                        }}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
                       <Copy className="h-4 w-4 mr-2" />
@@ -1707,7 +1718,7 @@ export default function OutreachToolPage() {
                           navigator.clipboard.writeText(fullMessage)
                           setJustCopied(true)
                           setTimeout(() => setJustCopied(false), 2000)
-                          toast.success('✅ Copied! Ready to send your AI-powered outreach.')
+                          toast.success('✅ Message copied! Ready to send your outreach.')
                         }}
                         className="flex-1 bg-[#444] hover:bg-[#555] text-white"
                   >
