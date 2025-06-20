@@ -572,7 +572,7 @@ export default function OutreachToolPage() {
           </Card>
         )}
 
-        {/* Enhanced Analytics Cards */}
+        {/* Clean Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
             <CardContent className="p-4">
@@ -593,13 +593,13 @@ export default function OutreachToolPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-blue-400">{stats.pending}</div>
+                  <div className="text-3xl font-bold text-white">{stats.pending}</div>
                   <div>
                     <div className="text-sm font-medium text-gray-300">Pending</div>
                     <div className="text-xs text-gray-500">Need outreach</div>
                   </div>
                 </div>
-                <CircleDot className="h-6 w-6 text-blue-400" />
+                <CircleDot className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -608,13 +608,13 @@ export default function OutreachToolPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-green-400">{stats.contacted}</div>
+                  <div className="text-3xl font-bold text-white">{stats.contacted}</div>
                   <div>
                     <div className="text-sm font-medium text-gray-300">Contacted</div>
-                    <div className="text-xs text-green-400">{stats.responseRate}% response</div>
+                    <div className="text-xs text-gray-500">{stats.responseRate}% response</div>
                   </div>
                 </div>
-                <MessageCircle className="h-6 w-6 text-green-400" />
+                <MessageCircle className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -623,13 +623,13 @@ export default function OutreachToolPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-purple-400">{stats.responded}</div>
+                  <div className="text-3xl font-bold text-white">{stats.responded}</div>
                   <div>
                     <div className="text-sm font-medium text-gray-300">Responded</div>
                     <div className="text-xs text-gray-500">Active conversations</div>
                   </div>
                 </div>
-                <MessageSquare className="h-6 w-6 text-purple-400" />
+                <MessageSquare className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -638,13 +638,13 @@ export default function OutreachToolPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-yellow-400">{stats.qualified}</div>
+                  <div className="text-3xl font-bold text-white">{stats.qualified}</div>
                   <div>
                     <div className="text-sm font-medium text-gray-300">Qualified</div>
                     <div className="text-xs text-gray-500">Ready to close</div>
                   </div>
                 </div>
-                <Star className="h-6 w-6 text-yellow-400" />
+                <Star className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -653,13 +653,13 @@ export default function OutreachToolPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl font-bold text-green-500">{stats.conversionRate}%</div>
+                  <div className="text-3xl font-bold text-white">{stats.conversionRate}%</div>
                   <div>
                     <div className="text-sm font-medium text-gray-300">Conversion</div>
-                    <div className="text-xs text-green-400">{stats.signed} signed</div>
+                    <div className="text-xs text-gray-500">{stats.signed} signed</div>
                   </div>
                 </div>
-                <TrendingUp className="h-6 w-6 text-green-500" />
+                <TrendingUp className="h-6 w-6 text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -669,7 +669,7 @@ export default function OutreachToolPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           
           {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-150px)]">
+          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-100px)]">
             <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1287,7 +1287,7 @@ export default function OutreachToolPage() {
           </div>
 
           {/* Dynamic To-Do List Widget */}
-          <div className="xl:col-span-1 h-[calc(100vh-150px)]">
+          <div className="xl:col-span-1 h-[calc(100vh-100px)]">
             <Card className="bg-[#1A1A1A] border-[#333] h-full overflow-hidden">
                 <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
