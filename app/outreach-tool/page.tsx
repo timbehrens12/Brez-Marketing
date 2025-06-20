@@ -228,7 +228,7 @@ export default function OutreachToolPage() {
   const generatePersonalizedMessage = async (lead: Lead, method: string) => {
     setIsGeneratingMessage(true)
     try {
-      // Enhanced AI context with more personalization data
+      // Enhanced AI context with correct API format
       const aiContext = {
         lead: {
           ...lead,
@@ -242,7 +242,7 @@ export default function OutreachToolPage() {
             twitter: !!lead.twitter_handle
           }
         },
-        outreachMethod: method,
+        messageType: method, // Fixed: API expects messageType, not outreachMethod
         brandInfo: {
           name: selectedBrandId ? `Brand ${selectedBrandId}` : 'Your Agency',
           industry: 'Digital Marketing',
@@ -1336,9 +1336,9 @@ export default function OutreachToolPage() {
                   ).length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
-                        <AlertCircle className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">🔥 Priority: Follow-up Needed</h4>
+                          <h4 className="font-medium text-white text-sm">Priority: Follow-up Needed</h4>
                           <p className="text-xs text-gray-400 mt-1">
                             AI detected {campaignLeads.filter(cl => 
                               cl.status === 'contacted' && 
@@ -1355,11 +1355,11 @@ export default function OutreachToolPage() {
                           new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
                         ).slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
-                            📞 <strong>{cl.lead?.business_name}</strong> - Last contact: {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                            <strong>{cl.lead?.business_name}</strong> - Last contact: {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
                           </div>
                         ))}
                       </div>
-                      <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs">
+                      <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate AI Follow-up Messages
                       </Button>
                     </div>
@@ -1369,9 +1369,9 @@ export default function OutreachToolPage() {
                   {campaignLeads.filter(cl => cl.status === 'pending').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
-                        <Target className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <Target className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">🎯 AI Opportunity Score</h4>
+                          <h4 className="font-medium text-white text-sm">AI Opportunity Score</h4>
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'pending').length} fresh leads ready. AI suggests starting with highest-value targets.
                           </p>
@@ -1382,12 +1382,12 @@ export default function OutreachToolPage() {
                           .sort((a, b) => (b.lead?.lead_score || 0) - (a.lead?.lead_score || 0))
                           .slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
-                            ⭐ <strong>{cl.lead?.business_name}</strong> 
-                            <span className="text-blue-400 ml-2">Score: {cl.lead?.lead_score || 'N/A'}</span>
+                            <strong>{cl.lead?.business_name}</strong> 
+                            <span className="text-gray-400 ml-2">Score: {cl.lead?.lead_score || 'N/A'}</span>
                           </div>
                         ))}
                       </div>
-                      <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs">
+                      <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Start AI Outreach Sequence
                       </Button>
                     </div>
@@ -1397,9 +1397,9 @@ export default function OutreachToolPage() {
                   {campaignLeads.filter(cl => cl.status === 'responded').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
-                        <Zap className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                        <Zap className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">⚡ Hot Lead Alert</h4>
+                          <h4 className="font-medium text-white text-sm">Hot Lead Alert</h4>
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'responded').length} active conversation{campaignLeads.filter(cl => cl.status === 'responded').length > 1 ? 's' : ''}. Strike while iron is hot!
                           </p>
@@ -1408,11 +1408,11 @@ export default function OutreachToolPage() {
                       <div className="space-y-1 mb-3">
                         {campaignLeads.filter(cl => cl.status === 'responded').slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
-                            💬 <strong>{cl.lead?.business_name}</strong> - Ready for qualification call
+                            <strong>{cl.lead?.business_name}</strong> - Ready for qualification call
                           </div>
                         ))}
                       </div>
-                      <Button size="sm" className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs">
+                      <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate Qualification Scripts
                       </Button>
                     </div>
@@ -1422,9 +1422,9 @@ export default function OutreachToolPage() {
                   {campaignLeads.filter(cl => cl.status === 'qualified').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
-                        <DollarSign className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <DollarSign className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">💰 Ready to Close</h4>
+                          <h4 className="font-medium text-white text-sm">Ready to Close</h4>
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'qualified').length} qualified lead{campaignLeads.filter(cl => cl.status === 'qualified').length > 1 ? 's' : ''} waiting for proposals. Don't let them go cold!
                           </p>
@@ -1433,11 +1433,11 @@ export default function OutreachToolPage() {
                       <div className="space-y-1 mb-3">
                         {campaignLeads.filter(cl => cl.status === 'qualified').slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
-                            💼 <strong>{cl.lead?.business_name}</strong> - Send proposal today
+                            <strong>{cl.lead?.business_name}</strong> - Send proposal today
                           </div>
                         ))}
                       </div>
-                      <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white text-xs">
+                      <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         AI Proposal Generator
                       </Button>
                     </div>
@@ -1450,9 +1450,9 @@ export default function OutreachToolPage() {
                   ).length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <TrendingUp className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">🎉 Momentum Building</h4>
+                          <h4 className="font-medium text-white text-sm">Momentum Building</h4>
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => 
                               cl.status === 'signed' && 
@@ -1473,16 +1473,16 @@ export default function OutreachToolPage() {
                   {/* Smart Insights */}
                   <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-start gap-2 mb-2">
-                      <BarChart3 className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                      <BarChart3 className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h4 className="font-medium text-white text-sm">🧠 AI Insights</h4>
+                        <h4 className="font-medium text-white text-sm">AI Insights</h4>
                         <p className="text-xs text-gray-400 mt-1">
                           Based on your {campaignLeads.length} leads, optimal outreach time is 10-11 AM. 
                           {stats.responseRate}% response rate suggests refining your messaging.
                         </p>
                       </div>
                     </div>
-                    <Button size="sm" className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs">
+                    <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                       Get AI Strategy Report
                     </Button>
                   </div>
@@ -1495,10 +1495,10 @@ export default function OutreachToolPage() {
                      new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
                     ).length === 0 && (
                     <div className="p-4 text-center">
-                      <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-400" />
-                      <h4 className="text-sm font-medium text-white mb-1">🎯 All Systems Green</h4>
+                      <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <h4 className="text-sm font-medium text-white mb-1">All Systems Green</h4>
                       <p className="text-xs text-gray-400 mb-3">Pipeline optimized! AI suggests focusing on lead generation.</p>
-                      <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs">
+                      <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate More Leads
                       </Button>
                     </div>
