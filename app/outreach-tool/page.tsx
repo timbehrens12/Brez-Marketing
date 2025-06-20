@@ -1617,10 +1617,8 @@ export default function OutreachToolPage() {
                   {generatedMessage && (
                                       <Button
                       onClick={() => {
-                        if (confirm('Copy this AI-generated call script to your clipboard?')) {
-                          navigator.clipboard.writeText(generatedMessage)
-                          toast.success('✅ Call script copied! Ready to make your AI-optimized call.')
-                        }
+                        navigator.clipboard.writeText(generatedMessage)
+                        toast.success('✅ Call script copied to clipboard! Ready to make your AI-optimized call.')
                       }}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
@@ -1663,10 +1661,8 @@ export default function OutreachToolPage() {
                             ? `Subject: ${messageSubject}\n\n${generatedMessage}`
                             : generatedMessage
                           
-                          if (confirm('Copy this AI-generated message to your clipboard?')) {
-                            navigator.clipboard.writeText(fullMessage)
-                            toast.success('✅ Message copied! Ready to send your AI-powered outreach.')
-                          }
+                          navigator.clipboard.writeText(fullMessage)
+                          toast.success('✅ Message copied to clipboard! Ready to send your AI-powered outreach.')
                         }}
                         className="flex-1 bg-[#444] hover:bg-[#555] text-white"
                   >
