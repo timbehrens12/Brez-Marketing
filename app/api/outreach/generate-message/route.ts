@@ -6,6 +6,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+// Check if OpenAI API key is configured
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('OpenAI API key not configured - will use fallback templates')
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('AI Generate message API called')
@@ -176,6 +181,11 @@ Important:
 6. Highlight superior results through AI optimization without sounding robotic
 7. Make the AI technology sound exclusive and powerful, but keep the tone human`
 
+    // Check if OpenAI is available
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured')
+    }
+
     console.log('Calling OpenAI with personalized prompt...')
 
     const completion = await openai.chat.completions.create({
@@ -192,6 +202,8 @@ Important:
       ],
       max_tokens: 800,
       temperature: 0.7,
+    }, {
+      timeout: 30000, // 30 second timeout
     })
 
     const aiResponse = completion.choices[0]?.message?.content
@@ -234,22 +246,82 @@ Important:
   } catch (error) {
     console.error('Error generating AI message:', error)
     
-    // Fallback to a simple personalized template if AI fails
-    const body = await request.json()
-    const fallbackMessage = `Hi ${body?.lead?.owner_name || 'there'},
+    // Fallback to enhanced personalized template with exclusive AI messaging
+    try {
+      const fallbackBody = await request.json()
+      const { lead, messageType, brandInfo } = fallbackBody
+      
+      const businessName = lead?.business_name || 'your business'
+      const ownerName = lead?.owner_name || 'there'
+      const industry = lead?.niche_name || 'industry'
+      const location = lead?.city || 'your area'
+      const brandName = brandInfo?.name || 'Your Marketing Team'
 
-I noticed ${body?.lead?.business_name || 'your business'} and wanted to reach out with a quick question.
+      let fallbackMessage = ''
+      let fallbackSubject = ''
 
-Would you be interested in seeing how other ${body?.lead?.niche_name || 'businesses'} in ${body?.lead?.city || 'your area'} are using AI-powered marketing to improve their results?
+      if (messageType === 'email') {
+        fallbackSubject = `Exclusive AI marketing software for ${businessName}`
+        fallbackMessage = `Hi ${ownerName},
+
+I came across ${businessName} and was impressed by your presence in the ${industry}.
+
+I wanted to reach out because I have access to something most marketers don't - exclusive AI-powered marketing software that uses advanced computer intelligence to deliver results traditional agencies simply can't match.
+
+This isn't your typical marketing approach. The AI technology I use:
+• Optimizes campaigns 24/7 using machine learning
+• Predicts performance before spending a dollar
+• Delivers results other marketers in ${location} can't achieve
+• Is available to only a limited number of professionals
+
+The advantage is significant - while other marketers rely on guesswork, I use AI that continuously learns and improves your campaigns beyond human capability.
+
+Would you be interested in a brief conversation about how this exclusive technology could specifically benefit ${businessName}?
 
 Best regards,
-${body?.brandInfo?.name || 'Your Marketing Team'}`
+${brandName}
 
-    return NextResponse.json({ 
-      message: fallbackMessage,
-      subject: body?.messageType === 'email' ? `Quick question about ${body?.lead?.business_name || 'your business'}` : undefined,
-      ai_generated: false,
-      error: 'AI generation failed, using fallback template'
-    })
+P.S. This AI software isn't available to most agencies - it's part of what gives my clients an unfair competitive advantage.`
+      } else if (messageType === 'phone') {
+        fallbackMessage = `**OPENING:**
+"Hi ${ownerName}, this is ${brandName}. I know you're busy with ${businessName}, so I'll be direct. I have access to exclusive AI marketing software that most agencies don't have access to, and it's delivering results that traditional marketers simply can't match. Do you have 30 seconds for me to explain?"
+
+**VALUE PROP:**
+"Great! So while most marketers in the ${industry} rely on guesswork and manual optimization, I use proprietary AI technology that works 24/7 to optimize campaigns using advanced computer intelligence. It's like having a world-class data scientist working around the clock, but it's actually AI that continuously learns and improves."
+
+**CREDIBILITY:**
+"The advantage is significant - this AI software predicts campaign performance before we spend money and automatically optimizes everything in real-time. It's only available to a limited number of marketers, which gives my clients an unfair competitive advantage."
+
+**CLOSE:**
+"I'd love to show you exactly how this exclusive AI technology would work for ${businessName}. Would you be open to a brief demo this week?"`
+      } else {
+        fallbackMessage = `Hi ${ownerName},
+
+I noticed ${businessName} and wanted to reach out about something exclusive.
+
+I have access to AI-powered marketing software that most marketers don't have - it uses advanced computer intelligence to deliver results traditional agencies can't match.
+
+While other marketers in the ${industry} rely on guesswork, this AI optimizes campaigns 24/7 and predicts performance before spending money.
+
+Interested in seeing how this exclusive technology could benefit ${businessName}?
+
+Best,
+${brandName}`
+      }
+
+      return NextResponse.json({ 
+        message: fallbackMessage,
+        subject: fallbackSubject || undefined,
+        ai_generated: false,
+        error: error instanceof Error ? error.message : 'AI generation failed, using enhanced fallback template'
+      })
+    } catch (fallbackError) {
+      console.error('Error creating fallback message:', fallbackError)
+      return NextResponse.json({ 
+        error: 'Failed to generate message',
+        message: 'Sorry, there was an error generating your message. Please try again.',
+        ai_generated: false
+      }, { status: 500 })
+    }
   }
 } 
