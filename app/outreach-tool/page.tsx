@@ -131,17 +131,9 @@ export default function OutreachToolPage() {
     statusFilter: 'all'
   })
 
-  // Calculate enhanced statistics
+  // Calculate simplified statistics
   const stats = {
     totalLeads: campaignLeads.length,
-    dmOutreaches: campaignLeads.reduce((acc, cl) => acc + (cl.dm_sent || 0), 0),
-    dmResponseRate: campaignLeads.length > 0 ? 
-      (campaignLeads.reduce((acc, cl) => acc + (cl.dm_responded || 0), 0) / 
-       campaignLeads.reduce((acc, cl) => acc + (cl.dm_sent || 0), 0) * 100 || 0).toFixed(1) : '0',
-    emailOutreaches: campaignLeads.reduce((acc, cl) => acc + (cl.email_sent || 0), 0),
-    emailResponseRate: campaignLeads.length > 0 ?
-      (campaignLeads.reduce((acc, cl) => acc + (cl.email_responded || 0), 0) /
-       campaignLeads.reduce((acc, cl) => acc + (cl.email_sent || 0), 0) * 100 || 0).toFixed(1) : '0',
     pending: campaignLeads.filter(cl => cl.status === 'pending').length,
     contacted: campaignLeads.filter(cl => cl.status === 'contacted').length,
     responded: campaignLeads.filter(cl => cl.status === 'responded').length,
@@ -149,7 +141,10 @@ export default function OutreachToolPage() {
     signed: campaignLeads.filter(cl => cl.status === 'signed').length,
     rejected: campaignLeads.filter(cl => cl.status === 'rejected').length,
     conversionRate: campaignLeads.length > 0 ? 
-      (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0'
+      (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0',
+    responseRate: campaignLeads.filter(cl => cl.status === 'contacted').length > 0 ?
+      (campaignLeads.filter(cl => cl.status === 'responded').length / 
+       campaignLeads.filter(cl => cl.status === 'contacted').length * 100).toFixed(1) : '0'
   }
 
   // Get unique niches from leads
@@ -301,7 +296,17 @@ export default function OutreachToolPage() {
 
         if (error) throw error
         
-        loadCampaignLeads()
+        // Update state locally instead of reloading to prevent page jump
+        setCampaignLeads(prev => prev.map(cl => 
+          cl.id === campaignLeadId 
+            ? { 
+                ...cl, 
+                status: newStatus as any, 
+                last_contacted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            : cl
+        ))
         toast.success('Status updated successfully!')
       }
     } catch (error) {
@@ -547,7 +552,7 @@ export default function OutreachToolPage() {
           </Card>
         )}
 
-        {/* Enhanced Analytics Cards */}
+        {/* Simplified Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
@@ -561,21 +566,21 @@ export default function OutreachToolPage() {
           
           <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">DM Outreach</CardTitle>
+              <CardTitle className="text-xs font-medium text-gray-400">Pending</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-white">{stats.dmOutreaches}</div>
-              <p className="text-xs text-gray-500 mt-1">{stats.dmResponseRate}% response</p>
+              <div className="text-xl font-bold text-white">{stats.pending}</div>
+              <p className="text-xs text-gray-500 mt-1">Need outreach</p>
             </CardContent>
           </Card>
           
           <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Email Outreach</CardTitle>
+              <CardTitle className="text-xs font-medium text-gray-400">Contacted</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-white">{stats.emailOutreaches}</div>
-              <p className="text-xs text-gray-500 mt-1">{stats.emailResponseRate}% response</p>
+              <div className="text-xl font-bold text-white">{stats.contacted}</div>
+              <p className="text-xs text-gray-500 mt-1">{stats.responseRate}% response</p>
             </CardContent>
           </Card>
           
