@@ -21,7 +21,8 @@ import {
   Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
   ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2,
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
-  Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2
+  Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
+  Calculator, TrendingDown, Award, Settings, Info
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
@@ -120,6 +121,10 @@ export default function OutreachToolPage() {
   const [isSelectAll, setIsSelectAll] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [justCopied, setJustCopied] = useState(false)
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false)
+  const [selectedScoreBreakdown, setSelectedScoreBreakdown] = useState<any>(null)
+  const [showScoreManager, setShowScoreManager] = useState(false)
+  const [isRecalculatingScores, setIsRecalculatingScores] = useState(false)
   
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
@@ -371,17 +376,17 @@ export default function OutreachToolPage() {
         toast.success('Lead marked as rejected and removed from outreach!')
       } else {
         // Regular status update
-        const { error } = await supabase
-          .from('outreach_campaign_leads')
-          .update({ 
-            status: newStatus,
-            last_contacted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', campaignLeadId)
+      const { error } = await supabase
+        .from('outreach_campaign_leads')
+        .update({ 
+          status: newStatus,
+          last_contacted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', campaignLeadId)
 
-        if (error) throw error
-        
+      if (error) throw error
+      
         // Update state locally instead of reloading to prevent page jump
         setCampaignLeads(prev => prev.map(cl => 
           cl.id === campaignLeadId 
@@ -393,7 +398,7 @@ export default function OutreachToolPage() {
               }
             : cl
         ))
-        toast.success('Status updated successfully!')
+      toast.success('Status updated successfully!')
       }
     } catch (error) {
       console.error('Error updating status:', error)
@@ -585,6 +590,118 @@ export default function OutreachToolPage() {
     })
   }
 
+  // Lead Scoring System
+  const calculateLeadScore = (lead: Lead) => {
+    if (!lead) return { total: 0, breakdown: {} }
+    
+    const scores = {
+      contactInfo: 0,
+      socialPresence: 0,
+      businessInfo: 0,
+      geographic: 0,
+      industryBonus: 0
+    }
+    
+    // Contact Information (40 points max)
+    if (lead.email) scores.contactInfo += 15
+    if (lead.phone) scores.contactInfo += 15
+    if (lead.website) scores.contactInfo += 10
+    
+    // Social Media Presence (25 points max)
+    if (lead.instagram_handle) scores.socialPresence += 8
+    if (lead.facebook_page) scores.socialPresence += 6
+    if (lead.linkedin_profile) scores.socialPresence += 8
+    if (lead.twitter_handle) scores.socialPresence += 3
+    
+    // Business Information (20 points max)
+    if (lead.business_name) scores.businessInfo += 5
+    if (lead.owner_name) scores.businessInfo += 8
+    if (lead.niche_name) scores.businessInfo += 7
+    
+    // Geographic (10 points max)
+    if (lead.city) scores.geographic += 3
+    if (lead.state_province) scores.geographic += 4
+    if (lead.city && lead.state_province) scores.geographic += 3 // Bonus for complete location
+    
+    // Industry Bonus (5 points max)
+    const highValueIndustries = ['technology', 'healthcare', 'finance', 'real estate', 'e-commerce', 'saas']
+    if (lead.niche_name && highValueIndustries.some(industry => 
+      lead.niche_name?.toLowerCase().includes(industry)
+    )) {
+      scores.industryBonus += 5
+    }
+    
+    const total = Object.values(scores).reduce((sum, score) => sum + score, 0)
+    
+    return {
+      total,
+      breakdown: {
+        contactInfo: { score: scores.contactInfo, max: 40, items: [
+          { name: 'Email Address', value: lead.email ? 15 : 0, max: 15, has: !!lead.email },
+          { name: 'Phone Number', value: lead.phone ? 15 : 0, max: 15, has: !!lead.phone },
+          { name: 'Website', value: lead.website ? 10 : 0, max: 10, has: !!lead.website }
+        ]},
+        socialPresence: { score: scores.socialPresence, max: 25, items: [
+          { name: 'Instagram', value: lead.instagram_handle ? 8 : 0, max: 8, has: !!lead.instagram_handle },
+          { name: 'Facebook', value: lead.facebook_page ? 6 : 0, max: 6, has: !!lead.facebook_page },
+          { name: 'LinkedIn', value: lead.linkedin_profile ? 8 : 0, max: 8, has: !!lead.linkedin_profile },
+          { name: 'Twitter/X', value: lead.twitter_handle ? 3 : 0, max: 3, has: !!lead.twitter_handle }
+        ]},
+        businessInfo: { score: scores.businessInfo, max: 20, items: [
+          { name: 'Business Name', value: lead.business_name ? 5 : 0, max: 5, has: !!lead.business_name },
+          { name: 'Owner Name', value: lead.owner_name ? 8 : 0, max: 8, has: !!lead.owner_name },
+          { name: 'Industry/Niche', value: lead.niche_name ? 7 : 0, max: 7, has: !!lead.niche_name }
+        ]},
+        geographic: { score: scores.geographic, max: 10, items: [
+          { name: 'City', value: lead.city ? 3 : 0, max: 3, has: !!lead.city },
+          { name: 'State/Province', value: lead.state_province ? 4 : 0, max: 4, has: !!lead.state_province },
+          { name: 'Complete Location', value: (lead.city && lead.state_province) ? 3 : 0, max: 3, has: !!(lead.city && lead.state_province) }
+        ]},
+        industryBonus: { score: scores.industryBonus, max: 5, items: [
+          { name: 'High-Value Industry', value: scores.industryBonus, max: 5, has: scores.industryBonus > 0 }
+        ]}
+      }
+    }
+  }
+
+  const recalculateAllScores = async () => {
+    setIsRecalculatingScores(true)
+    try {
+      const supabase = await getSupabaseClient()
+      const updates = []
+      
+      for (const campaignLead of campaignLeads) {
+        if (campaignLead.lead) {
+          const scoreData = calculateLeadScore(campaignLead.lead)
+          updates.push({
+            id: campaignLead.lead.id,
+            lead_score: scoreData.total
+          })
+        }
+      }
+      
+      // Update lead scores in batches
+      for (let i = 0; i < updates.length; i += 10) {
+        const batch = updates.slice(i, i + 10)
+        for (const update of batch) {
+          await supabase
+            .from('leads')
+            .update({ lead_score: update.lead_score })
+            .eq('id', update.id)
+        }
+      }
+      
+      // Reload data to show updated scores
+      await loadCampaignLeads()
+      toast.success(`Updated ${updates.length} lead scores!`)
+    } catch (error) {
+      console.error('Error recalculating scores:', error)
+      toast.error('Failed to update lead scores')
+    } finally {
+      setIsRecalculatingScores(false)
+    }
+  }
+
   const filteredLeads = applyFilters(campaignLeads)
 
   if (isLoading) {
@@ -747,6 +864,15 @@ export default function OutreachToolPage() {
                     <CardDescription className="text-gray-400">Click outreach to see available contact methods</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setShowScoreManager(true)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                    >
+                      <Calculator className="h-4 w-4 mr-2" />
+                      Scoring
+                    </Button>
                     <Button
                       onClick={() => setShowFilters(!showFilters)}
                       variant="outline"
@@ -1126,6 +1252,7 @@ export default function OutreachToolPage() {
                         <TableHead className="text-gray-400">Business</TableHead>
                         <TableHead className="text-gray-400">Owner</TableHead>
                         <TableHead className="text-gray-400">Status</TableHead>
+                        <TableHead className="text-gray-400">Score</TableHead>
                         <TableHead className="text-gray-400">Contact Info</TableHead>
                         <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
@@ -1197,6 +1324,37 @@ export default function OutreachToolPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {campaignLead.lead ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 p-1 hover:bg-[#333] text-gray-300 hover:text-white"
+                                    onClick={() => {
+                                      const scoreData = calculateLeadScore(campaignLead.lead!)
+                                      setSelectedScoreBreakdown({
+                                        lead: campaignLead.lead,
+                                        scoreData
+                                      })
+                                      setShowScoreBreakdown(true)
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <Calculator className="h-3 w-3" />
+                                      <span className="font-mono text-sm">
+                                        {campaignLead.lead.lead_score || calculateLeadScore(campaignLead.lead).total}
+                                      </span>
+                                    </div>
+                                  </Button>
+                                  <div className="text-xs text-gray-500">/100</div>
+                                </>
+                              ) : (
+                                <span className="text-gray-500 text-sm">N/A</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                               <div className="space-y-1 text-sm">
@@ -1361,22 +1519,22 @@ export default function OutreachToolPage() {
                   Action Center
                   </CardTitle>
                 <CardDescription className="text-gray-400">Smart outreach recommendations</CardDescription>
-              </CardHeader>
+                </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-3">
                   {/* AI Priority Actions */}
-                  {campaignLeads.filter(cl => 
-                    cl.status === 'contacted' && 
-                    cl.last_contacted_at && 
-                    new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-                  ).length > 0 && (
+                {campaignLeads.filter(cl => 
+                  cl.status === 'contacted' && 
+                  cl.last_contacted_at && 
+                  new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                ).length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
                         <AlertCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <h4 className="font-medium text-white text-sm">Priority: Follow-up Needed</h4>
                                                     <p className="text-xs text-gray-400 mt-1">
-                            {campaignLeads.filter(cl => 
+                          {campaignLeads.filter(cl => 
                             cl.status === 'contacted' && 
                             cl.last_contacted_at && 
                             new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
@@ -1385,24 +1543,24 @@ export default function OutreachToolPage() {
                         </div>
                       </div>
                       <div className="space-y-1 mb-3">
-                        {campaignLeads.filter(cl => 
-                          cl.status === 'contacted' && 
-                          cl.last_contacted_at && 
-                          new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
                         ).slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
                             <strong>{cl.lead?.business_name}</strong> - Last contact: {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
-                          </div>
-                        ))}
-                      </div>
+                            </div>
+                          ))}
+                        </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate Follow-up Messages
                       </Button>
-                    </div>
-                  )}
+                  </div>
+                )}
 
                   {/* AI Opportunity Analysis */}
-                  {campaignLeads.filter(cl => cl.status === 'pending').length > 0 && (
+                {campaignLeads.filter(cl => cl.status === 'pending').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
                         <Target className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -1411,8 +1569,8 @@ export default function OutreachToolPage() {
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'pending').length} fresh leads ready. Suggested priority: highest-value targets.
                           </p>
+                            </div>
                         </div>
-                      </div>
                       <div className="space-y-1 mb-3">
                         {campaignLeads.filter(cl => cl.status === 'pending')
                           .sort((a, b) => (b.lead?.lead_score || 0) - (a.lead?.lead_score || 0))
@@ -1420,17 +1578,17 @@ export default function OutreachToolPage() {
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
                             <strong>{cl.lead?.business_name}</strong> 
                             <span className="text-gray-400 ml-2">Score: {cl.lead?.lead_score || 'N/A'}</span>
-                          </div>
-                        ))}
                       </div>
+                        ))}
+                    </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Start Outreach Sequence
                       </Button>
-                    </div>
-                  )}
+                  </div>
+                )}
 
                   {/* Hot Leads Analysis */}
-                  {campaignLeads.filter(cl => cl.status === 'responded').length > 0 && (
+                {campaignLeads.filter(cl => cl.status === 'responded').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
                         <Zap className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -1439,23 +1597,23 @@ export default function OutreachToolPage() {
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'responded').length} active conversation{campaignLeads.filter(cl => cl.status === 'responded').length > 1 ? 's' : ''}. Strike while iron is hot!
                           </p>
+                            </div>
                         </div>
-                      </div>
                       <div className="space-y-1 mb-3">
                         {campaignLeads.filter(cl => cl.status === 'responded').slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
                             <strong>{cl.lead?.business_name}</strong> - Ready for qualification call
-                          </div>
-                        ))}
                       </div>
+                        ))}
+                    </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate Call Scripts
                       </Button>
-                    </div>
-                  )}
+                  </div>
+                )}
 
                   {/* Deal Closing Focus */}
-                  {campaignLeads.filter(cl => cl.status === 'qualified').length > 0 && (
+                {campaignLeads.filter(cl => cl.status === 'qualified').length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
                         <DollarSign className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -1464,26 +1622,26 @@ export default function OutreachToolPage() {
                           <p className="text-xs text-gray-400 mt-1">
                             {campaignLeads.filter(cl => cl.status === 'qualified').length} qualified lead{campaignLeads.filter(cl => cl.status === 'qualified').length > 1 ? 's' : ''} waiting for proposals. Don't let them go cold!
                           </p>
+                            </div>
                         </div>
-                      </div>
                       <div className="space-y-1 mb-3">
                         {campaignLeads.filter(cl => cl.status === 'qualified').slice(0, 2).map(cl => (
                           <div key={cl.id} className="text-xs text-gray-300 bg-[#333] p-2 rounded">
                             <strong>{cl.lead?.business_name}</strong> - Send proposal today
-                          </div>
-                        ))}
                       </div>
+                        ))}
+                    </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Proposal Generator
                       </Button>
-                    </div>
-                  )}
+                  </div>
+                )}
 
                   {/* Success Metrics */}
-                  {campaignLeads.filter(cl => 
-                    cl.status === 'signed' && 
-                    new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                  ).length > 0 && (
+                {campaignLeads.filter(cl => 
+                  cl.status === 'signed' && 
+                  new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                ).length > 0 && (
                     <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                       <div className="flex items-start gap-2 mb-2">
                         <TrendingUp className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -1498,12 +1656,12 @@ export default function OutreachToolPage() {
                             new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                             ).length > 1 ? 's' : ''} this week! Current conversion rate: {stats.conversionRate}%.
                           </p>
+                            </div>
                         </div>
-                      </div>
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Analyze Success Patterns
                       </Button>
-                    </div>
+                      </div>
                   )}
 
                   {/* Smart Insights */}
@@ -1516,20 +1674,20 @@ export default function OutreachToolPage() {
                           Based on your {campaignLeads.length} leads, optimal outreach time is 10-11 AM. 
                           {stats.responseRate}% response rate suggests refining your messaging.
                         </p>
-                      </div>
                     </div>
+                  </div>
                     <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                       Get Strategy Report
                     </Button>
                   </div>
 
                   {/* All Clear State */}
-                  {campaignLeads.filter(cl => cl.status === 'pending').length === 0 && 
-                    campaignLeads.filter(cl => 
-                      cl.status === 'contacted' && 
-                      cl.last_contacted_at && 
-                     new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-                    ).length === 0 && (
+                {campaignLeads.filter(cl => cl.status === 'pending').length === 0 && 
+                  campaignLeads.filter(cl => 
+                    cl.status === 'contacted' && 
+                    cl.last_contacted_at && 
+                   new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                  ).length === 0 && (
                     <div className="p-4 text-center">
                       <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                       <h4 className="text-sm font-medium text-white mb-1">All Systems Green</h4>
@@ -1537,8 +1695,8 @@ export default function OutreachToolPage() {
                       <Button size="sm" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs">
                         Generate More Leads
                       </Button>
-                    </div>
-                  )}
+                  </div>
+                )}
                 </div>
               </CardContent>
             </Card>
@@ -1556,9 +1714,9 @@ export default function OutreachToolPage() {
               <DialogDescription className="text-gray-400">
                 <div className="space-y-1">
                   <span className="font-medium text-gray-300">{selectedCampaignLead?.lead?.business_name}</span>
-                  {selectedCampaignLead?.lead?.owner_name && (
+                {selectedCampaignLead?.lead?.owner_name && (
                     <span className="block">Owner: {selectedCampaignLead.lead.owner_name}</span>
-                  )}
+                )}
                   {selectedCampaignLead?.lead?.niche_name && (
                     <span className="block">Industry: {selectedCampaignLead.lead.niche_name}</span>
                   )}
@@ -1590,18 +1748,18 @@ export default function OutreachToolPage() {
                   '📱 Social: Great for visual brands and engagement'
                   
                 return (
-                  <Button
-                    key={method.type}
-                    onClick={() => {
-                      setShowOutreachOptions(false)
-                      setShowMessageComposer(true)
-                      setMessageType(method.type as any)
-                      if (selectedCampaignLead.lead) {
-                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
-                      }
-                    }}
+                <Button
+                  key={method.type}
+                  onClick={() => {
+                    setShowOutreachOptions(false)
+                    setShowMessageComposer(true)
+                    setMessageType(method.type as any)
+                    if (selectedCampaignLead.lead) {
+                      generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                    }
+                  }}
                     className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white justify-start p-4 h-auto"
-                  >
+                >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-3">
                         <method.icon className="h-5 w-5" />
@@ -1612,7 +1770,7 @@ export default function OutreachToolPage() {
                       </div>
                       <ChevronRight className="h-4 w-4" />
                     </div>
-                  </Button>
+                </Button>
                 )
               })}
           </div>
@@ -1652,7 +1810,7 @@ export default function OutreachToolPage() {
                         <div className="text-center py-8 text-gray-500">
                           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                           Generating personalized call script...
-                        </div>
+                  </div>
                       ) : generatedMessage ? (
                         generatedMessage
                       ) : (
@@ -1663,13 +1821,13 @@ export default function OutreachToolPage() {
                   </div>
                   </div>
                   {generatedMessage && (
-                                      <Button
-                                              onClick={() => {
-                          navigator.clipboard.writeText(generatedMessage)
+                  <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedMessage)
                           setJustCopied(true)
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Call script copied! Ready to make your call.')
-                        }}
+                      }}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
                       <Copy className="h-4 w-4 mr-2" />
@@ -1740,6 +1898,331 @@ export default function OutreachToolPage() {
                   )}
                   </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Lead Score Breakdown Dialog */}
+        <Dialog open={showScoreBreakdown} onOpenChange={setShowScoreBreakdown}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-gray-400" />
+                Lead Score Breakdown
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {selectedScoreBreakdown?.lead?.business_name} - Detailed scoring analysis
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              {selectedScoreBreakdown && (
+                <div className="space-y-6">
+                  {/* Score Summary */}
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Overall Score</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl font-bold text-white">
+                          {selectedScoreBreakdown.scoreData.total}
+                        </span>
+                        <span className="text-gray-400">/100</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#333] rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${selectedScoreBreakdown.scoreData.total}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-2">
+                      <span>Poor (0-30)</span>
+                      <span>Fair (31-60)</span>
+                      <span>Good (61-80)</span>
+                      <span>Excellent (81-100)</span>
+                    </div>
+                  </div>
+
+                  {/* Score Categories */}
+                  <div className="space-y-4">
+                    {Object.entries(selectedScoreBreakdown.scoreData.breakdown).map(([category, data]: [string, any]) => (
+                      <div key={category} className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-white capitalize">
+                            {category.replace(/([A-Z])/g, ' $1').trim()}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold text-white">{data.score}</span>
+                            <span className="text-gray-400">/{data.max}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
+                          <div 
+                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${(data.score / data.max) * 100}%` }}
+                          ></div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {data.items.map((item: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  item.has ? 'bg-green-500' : 'bg-gray-500'
+                                }`}></div>
+                                <span className={item.has ? 'text-gray-300' : 'text-gray-500'}>
+                                  {item.name}
+                                </span>
+                              </div>
+                              <span className={`font-mono ${item.has ? 'text-green-400' : 'text-gray-500'}`}>
+                                {item.value}/{item.max}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Improvement Suggestions */}
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                      Improvement Suggestions
+                    </h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      {selectedScoreBreakdown.scoreData.total < 50 && (
+                        <div className="text-yellow-400">
+                          • This lead needs significant data enrichment before outreach
+                        </div>
+                      )}
+                      {!selectedScoreBreakdown.lead.email && (
+                        <div>• Find email address for direct outreach (+15 points)</div>
+                      )}
+                      {!selectedScoreBreakdown.lead.phone && (
+                        <div>• Locate phone number for call outreach (+15 points)</div>
+                      )}
+                      {!selectedScoreBreakdown.lead.website && (
+                        <div>• Find business website for context (+10 points)</div>
+                      )}
+                      {!selectedScoreBreakdown.lead.owner_name && (
+                        <div>• Identify business owner/decision maker (+8 points)</div>
+                      )}
+                      {(!selectedScoreBreakdown.lead.linkedin_profile && !selectedScoreBreakdown.lead.instagram_handle) && (
+                        <div>• Research social media presence for personalization (+8-16 points)</div>
+                      )}
+                      {selectedScoreBreakdown.scoreData.total >= 80 && (
+                        <div className="text-green-400">
+                          • This is a high-quality lead ready for immediate outreach!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Score Manager Dialog */}
+        <Dialog open={showScoreManager} onOpenChange={setShowScoreManager}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <Settings className="h-5 w-5 text-gray-400" />
+                Lead Scoring System
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Manage and test your lead scoring algorithm
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-6 space-y-6">
+              {/* Scoring Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-[#2A2A2A] border-[#444]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Award className="h-6 w-6 text-yellow-400" />
+                      <div>
+                        <div className="text-lg font-semibold text-white">
+                          {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80).length}
+                        </div>
+                        <div className="text-sm text-gray-400">High Quality (80+)</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-[#2A2A2A] border-[#444]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="h-6 w-6 text-blue-400" />
+                      <div>
+                        <div className="text-lg font-semibold text-white">
+                          {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 80).length}
+                        </div>
+                        <div className="text-sm text-gray-400">Medium Quality (60-79)</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-[#2A2A2A] border-[#444]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <TrendingDown className="h-6 w-6 text-red-400" />
+                      <div>
+                        <div className="text-lg font-semibold text-white">
+                          {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length}
+                        </div>
+                        <div className="text-sm text-gray-400">Low Quality (&lt;60)</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Scoring Rules */}
+              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Info className="h-5 w-5 text-blue-400" />
+                  Scoring Algorithm
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-white mb-2">Contact Information (40 pts)</h4>
+                      <div className="space-y-1 text-sm text-gray-300">
+                        <div>• Email Address: 15 points</div>
+                        <div>• Phone Number: 15 points</div>
+                        <div>• Website: 10 points</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-white mb-2">Social Presence (25 pts)</h4>
+                      <div className="space-y-1 text-sm text-gray-300">
+                        <div>• Instagram: 8 points</div>
+                        <div>• LinkedIn: 8 points</div>
+                        <div>• Facebook: 6 points</div>
+                        <div>• Twitter/X: 3 points</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-white mb-2">Business Info (20 pts)</h4>
+                      <div className="space-y-1 text-sm text-gray-300">
+                        <div>• Owner Name: 8 points</div>
+                        <div>• Industry/Niche: 7 points</div>
+                        <div>• Business Name: 5 points</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-white mb-2">Geographic (10 pts)</h4>
+                      <div className="space-y-1 text-sm text-gray-300">
+                        <div>• State/Province: 4 points</div>
+                        <div>• City: 3 points</div>
+                        <div>• Complete Location: +3 bonus</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-white mb-2">Industry Bonus (5 pts)</h4>
+                      <div className="space-y-1 text-sm text-gray-300">
+                        <div>• High-value industries: +5 points</div>
+                        <div className="text-xs text-gray-400">
+                          (Technology, Healthcare, Finance, Real Estate, E-commerce, SaaS)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={recalculateAllScores}
+                  disabled={isRecalculatingScores}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isRecalculatingScores ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Recalculating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Recalculate All Scores
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    // Show sample scoring for testing
+                    const sampleLead: Lead = {
+                      id: 'sample',
+                      business_name: 'Test Business Inc.',
+                      owner_name: 'John Smith',
+                      email: 'john@testbusiness.com',
+                      phone: '+1-555-123-4567',
+                      website: 'https://testbusiness.com',
+                      city: 'New York',
+                      state_province: 'NY',
+                      niche_name: 'Technology',
+                      instagram_handle: '@testbusiness',
+                      linkedin_profile: 'https://linkedin.com/company/testbusiness',
+                      facebook_page: 'https://facebook.com/testbusiness',
+                      twitter_handle: '@testbiz'
+                    }
+                    
+                    const scoreData = calculateLeadScore(sampleLead)
+                    setSelectedScoreBreakdown({ lead: sampleLead, scoreData })
+                    setShowScoreBreakdown(true)
+                    setShowScoreManager(false)
+                  }}
+                  variant="outline"
+                  className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                >
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Test Perfect Score
+                </Button>
+              </div>
+
+              {/* Score Distribution Chart */}
+              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Score Distribution</h3>
+                <div className="space-y-3">
+                  {[
+                    { range: '90-100', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 90).length, color: 'bg-green-500' },
+                    { range: '80-89', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80 && calculateLeadScore(cl.lead).total < 90).length, color: 'bg-blue-500' },
+                    { range: '70-79', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 70 && calculateLeadScore(cl.lead).total < 80).length, color: 'bg-yellow-500' },
+                    { range: '60-69', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 70).length, color: 'bg-orange-500' },
+                    { range: '0-59', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length, color: 'bg-red-500' }
+                  ].map((bucket) => (
+                    <div key={bucket.range} className="flex items-center gap-3">
+                      <div className="w-16 text-sm text-gray-300">{bucket.range}</div>
+                      <div className="flex-1 bg-[#333] rounded-full h-6 relative">
+                        <div 
+                          className={`${bucket.color} h-6 rounded-full transition-all duration-500`}
+                          style={{ width: `${campaignLeads.length > 0 ? (bucket.count / campaignLeads.length) * 100 : 0}%` }}
+                        ></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                          {bucket.count} leads
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
