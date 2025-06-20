@@ -2,35 +2,56 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
+// Initialize OpenAI with proper error handling
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-})
+}) : null
 
 // Check if OpenAI API key is configured
 if (!process.env.OPENAI_API_KEY) {
-  console.warn('OpenAI API key not configured - will use fallback templates')
+  console.warn('⚠️ OpenAI API key not configured - will use fallback templates')
 }
 
 export async function POST(request: NextRequest) {
+  let requestBody: any = null
+  
   try {
-    console.log('AI Generate message API called')
+    console.log('🤖 AI Generate message API called')
     
     const { userId } = auth()
-    console.log('User ID:', userId)
+    console.log('👤 User ID:', userId)
     
     if (!userId) {
-      console.log('No user ID found, returning unauthorized')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.log('❌ No user ID found, returning unauthorized')
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        message: 'Please log in to generate messages',
+        ai_generated: false
+      }, { status: 401 })
     }
 
-    const body = await request.json()
-    console.log('Request body:', JSON.stringify(body, null, 2))
+    // Parse request body with error handling
+    try {
+      requestBody = await request.json()
+      console.log('📥 Request parsed successfully')
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError)
+      return NextResponse.json({ 
+        error: 'Invalid request format',
+        message: 'Failed to parse request data',
+        ai_generated: false
+      }, { status: 400 })
+    }
     
-    const { lead, messageType, brandInfo, campaign_context, ai_instructions } = body
+    const { lead, messageType, brandInfo, campaign_context, ai_instructions } = requestBody
 
     if (!lead || !messageType) {
-      console.log('Missing required fields:', { lead: !!lead, messageType })
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      console.log('❌ Missing required fields:', { lead: !!lead, messageType })
+      return NextResponse.json({ 
+        error: 'Missing required fields',
+        message: 'Lead data and message type are required',
+        ai_generated: false
+      }, { status: 400 })
     }
 
     // Build comprehensive AI context
@@ -143,6 +164,12 @@ Format as a structured call script with clear sections.`,
 
     const methodPrompt = methodPrompts[messageType as keyof typeof methodPrompts] || methodPrompts.email
 
+    // Check if OpenAI is available
+    if (!openai || !process.env.OPENAI_API_KEY) {
+      console.log('⚠️ OpenAI not available, using enhanced fallback')
+      throw new Error('OpenAI API key not configured')
+    }
+
     const systemPrompt = `You are an expert sales copywriter and digital marketing strategist. Your job is to create highly personalized, effective outreach messages that convert cold leads into interested prospects.
 
 CRITICAL: You represent someone with access to exclusive, limited-access AI-powered marketing software that delivers superior results compared to any other marketer or agency. This software uses advanced computer intelligence to optimize campaigns in ways that traditional marketers simply cannot match.
@@ -181,14 +208,15 @@ Important:
 6. Highlight superior results through AI optimization without sounding robotic
 7. Make the AI technology sound exclusive and powerful, but keep the tone human`
 
-    // Check if OpenAI is available
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured')
-    }
+    console.log('🤖 Calling OpenAI with personalized prompt...')
 
-    console.log('Calling OpenAI with personalized prompt...')
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('OpenAI request timed out')), 25000) // 25 seconds
+    })
 
-    const completion = await openai.chat.completions.create({
+    // Race the OpenAI call against the timeout
+    const openaiPromise = openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
@@ -202,9 +230,9 @@ Important:
       ],
       max_tokens: 800,
       temperature: 0.7,
-    }, {
-      timeout: 30000, // 30 second timeout
     })
+
+    const completion = await Promise.race([openaiPromise, timeoutPromise]) as any
 
     const aiResponse = completion.choices[0]?.message?.content
 
@@ -212,7 +240,7 @@ Important:
       throw new Error('No response from OpenAI')
     }
 
-    console.log('AI Response length:', aiResponse.length)
+    console.log('✅ AI Response received, length:', aiResponse.length)
 
     // Parse response to extract subject and message for emails
     let subject = ''
@@ -220,13 +248,13 @@ Important:
 
     if (messageType === 'email' && aiResponse.includes('Subject:')) {
       const lines = aiResponse.split('\n')
-      const subjectLine = lines.find(line => line.toLowerCase().includes('subject:'))
+      const subjectLine = lines.find((line: string) => line.toLowerCase().includes('subject:'))
       if (subjectLine) {
         subject = subjectLine.replace(/subject:\s*/i, '').trim()
         message = aiResponse.replace(/subject:.*?\n\n?/i, '').trim()
       }
     }
-
+    
     const response = {
       message: message,
       subject: subject || undefined,
@@ -240,16 +268,16 @@ Important:
       ]
     }
 
-    console.log('Sending AI-generated response')
+    console.log('✅ Sending AI-generated response')
     return NextResponse.json(response)
 
   } catch (error) {
-    console.error('Error generating AI message:', error)
+    console.error('❌ Error generating AI message:', error)
     
-    // Fallback to enhanced personalized template with exclusive AI messaging
+    // Enhanced fallback with the original request data
     try {
-      const fallbackBody = await request.json()
-      const { lead, messageType, brandInfo } = fallbackBody
+      const fallbackData = requestBody || {}
+      const { lead, messageType, brandInfo } = fallbackData
       
       const businessName = lead?.business_name || 'your business'
       const ownerName = lead?.owner_name || 'there'
@@ -309,18 +337,21 @@ Best,
 ${brandName}`
       }
 
+      console.log('🔄 Using enhanced fallback template')
       return NextResponse.json({ 
         message: fallbackMessage,
         subject: fallbackSubject || undefined,
         ai_generated: false,
-        error: error instanceof Error ? error.message : 'AI generation failed, using enhanced fallback template'
+        error: error instanceof Error ? error.message : 'AI generation failed, using enhanced fallback template',
+        fallback_reason: 'OpenAI unavailable or timed out'
       })
     } catch (fallbackError) {
-      console.error('Error creating fallback message:', fallbackError)
+      console.error('❌ Error creating fallback message:', fallbackError)
       return NextResponse.json({ 
         error: 'Failed to generate message',
-        message: 'Sorry, there was an error generating your message. Please try again.',
-        ai_generated: false
+        message: 'An error occurred while generating your outreach message. Please check your internet connection and try again.',
+        ai_generated: false,
+        fallback_reason: 'Complete system failure'
       }, { status: 500 })
     }
   }
