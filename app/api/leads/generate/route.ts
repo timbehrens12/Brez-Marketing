@@ -162,7 +162,6 @@ async function generateRealisticBusinesses(
   for (let i = 0; i < count; i++) {
     const businessName = generateBusinessName(industry, businessSuffixes, industryKeywords)
     const ownerName = ownerNames[Math.floor(Math.random() * ownerNames.length)]
-    const leadScore = calculateIntelligentLeadScore(businessType, industry, niche)
     
     const domain = businessName.toLowerCase()
       .replace(/[^\w\s]/g, '')
@@ -174,7 +173,8 @@ async function generateRealisticBusinesses(
       .join('.')
       .replace(/[^\w.]/g, '')
     
-    businesses.push({
+    // Create lead object first
+    const leadData = {
       business_name: businessName,
       owner_name: ownerName,
       email: `${ownerEmail}@${domain}.com`,
@@ -187,12 +187,20 @@ async function generateRealisticBusinesses(
       linkedin_profile: `linkedin.com/company/${domain}`,
       twitter_handle: `@${domain}`,
       niche_name: niche.name,
-      lead_score: leadScore,
-      ai_insights: generateIntelligentInsights(businessName, industry, businessType, leadScore, niche),
-      pain_points: generateRealisticPainPoints(businessType, industry),
-      estimated_revenue: calculateRevenueEstimate(businessType, industry, leadScore),
-      last_activity: generateRecentActivity(),
       verification_status: Math.random() > 0.3 ? 'verified' : 'pending'
+    }
+    
+    // Calculate real score based on actual lead data
+    const scoreResult = calculateRealLeadScore(leadData, businessType, industry, niche)
+    
+    businesses.push({
+      ...leadData,
+      lead_score: scoreResult.score,
+      score_breakdown: scoreResult.breakdown,
+      ai_insights: generateIntelligentInsights(businessName, industry, businessType, scoreResult.score, niche),
+      pain_points: generateRealisticPainPoints(businessType, industry),
+      estimated_revenue: calculateRevenueEstimate(businessType, industry, scoreResult.score),
+      last_activity: generateRecentActivity()
     })
   }
   
@@ -241,6 +249,180 @@ function calculateIntelligentLeadScore(businessType: string, industry: string, n
   const finalScore = Math.max(45, Math.min(95, Math.round(baseScore + variance)))
   
   return finalScore
+}
+
+function calculateRealLeadScore(lead: any, businessType: string, industry: string, niche: any): { score: number, breakdown: any } {
+  let totalScore = 0
+  const breakdown = {
+    contact_info: { score: 0, max: 25, details: [] as string[] },
+    digital_presence: { score: 0, max: 30, details: [] as string[] },
+    business_profile: { score: 0, max: 25, details: [] as string[] },
+    market_opportunity: { score: 0, max: 20, details: [] as string[] }
+  }
+
+  // 1. CONTACT INFORMATION QUALITY (25 points max)
+  if (lead.email && lead.email.includes('@')) {
+    breakdown.contact_info.score += 8
+    breakdown.contact_info.details.push('✓ Valid email address (+8)')
+  } else {
+    breakdown.contact_info.details.push('✗ Missing/invalid email (-8)')
+  }
+
+  if (lead.phone && lead.phone.length >= 10) {
+    breakdown.contact_info.score += 8
+    breakdown.contact_info.details.push('✓ Phone number provided (+8)')
+  } else {
+    breakdown.contact_info.details.push('✗ Missing phone number (-8)')
+  }
+
+  if (lead.owner_name && lead.owner_name.trim().length > 0) {
+    breakdown.contact_info.score += 5
+    breakdown.contact_info.details.push('✓ Owner name available (+5)')
+  } else {
+    breakdown.contact_info.details.push('✗ No owner contact (-5)')
+  }
+
+  if (lead.city && lead.state_province) {
+    breakdown.contact_info.score += 4
+    breakdown.contact_info.details.push('✓ Location data available (+4)')
+  } else {
+    breakdown.contact_info.details.push('✗ Missing location data (-4)')
+  }
+
+  // 2. DIGITAL PRESENCE (30 points max)
+  if (lead.website && lead.website.startsWith('http')) {
+    breakdown.digital_presence.score += 12
+    breakdown.digital_presence.details.push('✓ Professional website (+12)')
+  } else {
+    breakdown.digital_presence.details.push('✗ No website found (-12)')
+  }
+
+  let socialCount = 0
+  if (lead.instagram_handle) {
+    socialCount++
+    breakdown.digital_presence.score += 4
+  }
+  if (lead.facebook_page) {
+    socialCount++
+    breakdown.digital_presence.score += 4
+  }
+  if (lead.linkedin_profile) {
+    socialCount++
+    breakdown.digital_presence.score += 5
+  }
+  if (lead.twitter_handle) {
+    socialCount++
+    breakdown.digital_presence.score += 3
+  }
+
+  if (socialCount >= 3) {
+    breakdown.digital_presence.score += 2
+    breakdown.digital_presence.details.push(`✓ Strong social presence (${socialCount} platforms) (+${socialCount * 4 + 2})`)
+  } else if (socialCount >= 1) {
+    breakdown.digital_presence.details.push(`✓ Basic social presence (${socialCount} platforms) (+${socialCount * 4})`)
+  } else {
+    breakdown.digital_presence.details.push('✗ No social media presence (-16)')
+  }
+
+  // 3. BUSINESS PROFILE STRENGTH (25 points max)
+  // Industry demand scoring
+  const industryDemand = {
+    'dental': 22,        // High demand, recurring revenue
+    'hvac': 20,          // Essential service, seasonal spikes
+    'plumbing': 19,      // Emergency service, high value
+    'fitness': 16,       // Competitive but growing
+    'automotive': 18,    // Steady demand
+    'beauty': 15,        // Competitive market
+    'apparel': 12,       // Very competitive
+    'food': 14,          // High competition, low margins
+    'electronics': 13    // Saturated market
+  } as Record<string, number>
+
+  const industryScore = industryDemand[industry] || 10
+  breakdown.business_profile.score += industryScore
+  breakdown.business_profile.details.push(`✓ ${industry} industry demand (+${industryScore})`)
+
+  // Business type scoring
+  if (businessType === 'local_service') {
+    breakdown.business_profile.score += 3
+    breakdown.business_profile.details.push('✓ Local service advantage (+3)')
+  } else if (businessType === 'ecommerce') {
+    breakdown.business_profile.score += 0
+    breakdown.business_profile.details.push('→ Ecommerce competition (0)')
+  }
+
+  // 4. MARKET OPPORTUNITY (20 points max)
+  // Simulate market analysis based on niche and location
+  if (niche?.keywords && niche.keywords.length > 0) {
+    const keywordScore = Math.min(8, niche.keywords.length * 2)
+    breakdown.market_opportunity.score += keywordScore
+    breakdown.market_opportunity.details.push(`✓ Keyword opportunities (+${keywordScore})`)
+  } else {
+    breakdown.market_opportunity.details.push('✗ Limited keyword data (-8)')
+  }
+
+  // Location market potential (simulated)
+  if (lead.city) {
+    const marketPotential = calculateMarketPotential(lead.city, industry)
+    breakdown.market_opportunity.score += marketPotential
+    breakdown.market_opportunity.details.push(`✓ ${lead.city} market potential (+${marketPotential})`)
+  } else {
+    breakdown.market_opportunity.details.push('✗ No location for market analysis (-12)')
+  }
+
+  // Calculate final score
+  totalScore = breakdown.contact_info.score + 
+               breakdown.digital_presence.score + 
+               breakdown.business_profile.score + 
+               breakdown.market_opportunity.score
+
+  // Cap at 100
+  const finalScore = Math.min(100, totalScore)
+
+  return {
+    score: finalScore,
+    breakdown: {
+      ...breakdown,
+      total_possible: 100,
+      analysis: generateScoreAnalysis(finalScore, breakdown)
+    }
+  }
+}
+
+function calculateMarketPotential(city: string, industry: string): number {
+  // Simulate market potential based on city size and industry fit
+  const largeCities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia']
+  const mediumCities = ['San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville']
+  
+  let baseScore = 6 // Default for smaller cities
+  
+  if (largeCities.includes(city)) {
+    baseScore = 12 // High market potential
+  } else if (mediumCities.includes(city)) {
+    baseScore = 9  // Medium market potential
+  }
+  
+  // Industry-specific city bonuses
+  const industryBonuses = {
+    'dental': city.includes('York') || city.includes('Angeles') ? 2 : 0,
+    'fitness': city.includes('Angeles') || city.includes('Austin') ? 2 : 0,
+    'hvac': city.includes('Phoenix') || city.includes('Houston') ? 2 : 0,
+    'plumbing': 1 // Always in demand
+  } as Record<string, number>
+  
+  return Math.min(12, baseScore + (industryBonuses[industry] || 0))
+}
+
+function generateScoreAnalysis(score: number, breakdown: any): string {
+  if (score >= 80) {
+    return `Excellent prospect: Strong across all categories with ${Math.round((score/100)*100)}% overall rating.`
+  } else if (score >= 65) {
+    return `Good prospect: Solid foundation with ${Math.round((score/100)*100)}% rating. Focus on improving weak areas.`
+  } else if (score >= 50) {
+    return `Moderate prospect: ${Math.round((score/100)*100)}% rating. Requires more qualification before outreach.`
+  } else {
+    return `Low priority: ${Math.round((score/100)*100)}% rating. Consider focusing on higher-scoring leads first.`
+  }
 }
 
 function generateIntelligentInsights(
