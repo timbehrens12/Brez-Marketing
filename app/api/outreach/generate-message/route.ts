@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
+import OpenAI from 'openai'
 
-interface MessageTemplate {
-  subject?: string;
-  content: string;
-}
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Generate message API called')
+    console.log('AI Generate message API called')
     
     const { userId } = auth()
     console.log('User ID:', userId)
@@ -21,168 +21,207 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Request body:', JSON.stringify(body, null, 2))
     
-    const { lead, messageType, brandInfo } = body
+    const { lead, messageType, brandInfo, campaign_context, ai_instructions } = body
 
     if (!lead || !messageType) {
       console.log('Missing required fields:', { lead: !!lead, messageType })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Helper function to safely get lead properties
-    const getLeadValue = (value: any, fallback: string = '') => value || fallback
-    const businessName = getLeadValue(lead.business_name, 'your business')
-    const ownerName = getLeadValue(lead.owner_name, 'there')
-    const city = getLeadValue(lead.city)
-    const niche = getLeadValue(lead.niche_name, 'industry')
-    const brandName = getLeadValue(brandInfo?.name, '[Your Name]')
+    // Build comprehensive AI context
+    const leadContext = `
+Business: ${lead.business_name || 'Unknown Business'}
+Owner: ${lead.owner_name || 'Unknown Owner'}
+Industry: ${lead.niche_name || lead.industry || 'Unknown Industry'}
+Location: ${lead.city && lead.state_province ? `${lead.city}, ${lead.state_province}` : 'Unknown Location'}
+Website: ${lead.website || 'No website found'}
+Phone: ${lead.phone ? 'Has phone' : 'No phone'}
+Email: ${lead.email ? 'Has email' : 'No email'}
+Lead Score: ${lead.lead_score || 'N/A'}/100
+Social Media:
+- Instagram: ${lead.instagram_handle ? `Yes (${lead.instagram_handle})` : 'No'}
+- Facebook: ${lead.facebook_page ? `Yes (${lead.facebook_page})` : 'No'}
+- LinkedIn: ${lead.linkedin_profile ? `Yes (${lead.linkedin_profile})` : 'No'}
+- Twitter: ${lead.twitter_handle ? `Yes (${lead.twitter_handle})` : 'No'}
+Business Type: ${lead.business_type || 'Unknown'}
+Revenue Estimate: ${lead.estimated_revenue ? `$${lead.estimated_revenue}` : 'Unknown'}
+`
 
-    console.log('Lead values:', { businessName, ownerName, city, niche, brandName })
+    const brandContext = `
+Agency Name: ${brandInfo?.name || 'Digital Marketing Agency'}
+Industry: ${brandInfo?.industry || 'Digital Marketing'}
+Value Proposition: ${brandInfo?.value_prop || 'We help businesses grow through digital marketing'}
+`
 
-    // Generate personalized message based on lead information and message type
-    const generateTemplate = (type: string): MessageTemplate => {
-      console.log('Generating template for type:', type)
-      
-      switch (type) {
-        case 'email':
-          return {
-            subject: `Transform ${businessName}'s Marketing with AI-Powered Analytics`,
-            content: `Hi ${ownerName},
+    const campaignContext = campaign_context ? `
+Campaign Performance Context:
+- Total leads in pipeline: ${campaign_context.total_leads}
+- Current response rate: ${campaign_context.response_rate}%
+- Conversion rate: ${campaign_context.conversion_rate}%
+- Recent successes: ${campaign_context.recent_success} signed clients
+` : ''
 
-I noticed ${businessName}${city ? ` in ${city}` : ''} and was impressed by your presence in the ${niche}.
+    const instructionsContext = ai_instructions ? `
+AI Instructions:
+- Tone: ${ai_instructions.tone}
+- Personalization Level: ${ai_instructions.personalization_level}
+- Call to Action: ${ai_instructions.call_to_action}
+- Urgency Level: ${ai_instructions.urgency}
+` : ''
 
-I wanted to reach out because I've developed something unique that's helping businesses like yours achieve remarkable results:
+    // Create method-specific prompts
+    const methodPrompts = {
+      email: `Create a professional email outreach message. Include a compelling subject line. The email should be:
+- Professional but personable
+- 150-250 words
+- Include specific references to their business and industry
+- Have a clear call-to-action
+- Mention specific benefits relevant to their business type
+- Include credibility indicators
+Format as: Subject: [subject line]\n\n[email body]`,
 
-🚀 **Our AI-Powered Marketing Dashboard** - A custom analytics platform that no other agency offers
+      phone: `Create a complete phone call script for a cold outreach call. Include:
+- Opening hook (15-20 seconds)
+- Value proposition specific to their industry
+- Credibility/social proof
+- Clear call-to-action
+- Objection handling for common responses
+- Closing and next steps
+Format as a structured call script with clear sections.`,
 
-Here's what makes it game-changing for ${businessName}:
+      linkedin: `Create a LinkedIn connection request message or InMail. Should be:
+- 100-150 words maximum
+- Professional but friendly
+- Reference something specific about their business
+- Include a soft call-to-action
+- Mention mutual interests or industry insights`,
 
-✅ **Real-Time AI Optimization**: Our proprietary AI analyzes your campaigns 24/7 and automatically adjusts targeting, budgets, and creatives for maximum ROI
+      instagram: `Create an Instagram DM that's:
+- Casual but professional
+- 50-100 words
+- Reference their Instagram content if possible
+- Offer value upfront
+- Include a collaborative angle`,
 
-✅ **Predictive Analytics**: Know which campaigns will perform before spending a dollar - our AI predicts performance with 92% accuracy
+      facebook: `Create a Facebook message that's:
+- Friendly and approachable
+- 75-125 words
+- Reference their business page or recent posts
+- Offer specific value
+- Include a soft ask for connection`,
 
-✅ **Competitor Intelligence**: See exactly what's working for your competitors and adapt strategies in real-time
+      sms: `Create a text message that's:
+- 160 characters or less
+- Direct and valuable
+- Include a clear benefit
+- Professional but conversational
+- Include a simple next step`
+    }
 
-✅ **Custom Reporting**: Beautiful, automated reports that show exactly how every dollar impacts your bottom line
+    const methodPrompt = methodPrompts[messageType as keyof typeof methodPrompts] || methodPrompts.email
 
-The results speak for themselves:
-• Average client sees 47% reduction in ad spend
-• 3.2x increase in conversion rates within 90 days
-• ROI improvements of 150-400%
+    const systemPrompt = `You are an expert sales copywriter and digital marketing strategist. Your job is to create highly personalized, effective outreach messages that convert cold leads into interested prospects.
 
-What sets us apart from traditional agencies:
-- You get your own custom dashboard (not just monthly PDFs)
-- AI works 24/7 optimizing your campaigns (not just during business hours)
-- Transparent, real-time data (no black box reporting)
-- Proven results in the ${niche}
+Key principles:
+1. Always reference specific details about their business
+2. Lead with value, not features
+3. Show understanding of their industry challenges
+4. Include social proof when relevant
+5. Make the call-to-action clear and low-pressure
+6. Write in a conversational, professional tone
+7. Avoid generic language and obvious templates
+8. Focus on outcomes they care about
 
-Would you be open to a brief 15-minute demo where I can show you exactly how this would work for ${businessName}? I can even run a free competitive analysis beforehand to show you immediate opportunities.
+You have access to detailed information about the lead and should use it to create a truly personalized message.`
 
-Best regards,
-${brandName}
+    const userPrompt = `Create a ${messageType} outreach message for this prospect:
 
-P.S. I'm only taking on 3 new clients this quarter to ensure quality. If you're interested, let's connect soon.`
-          }
+${leadContext}
 
-        case 'linkedin':
-          return {
-            content: `Hi ${ownerName},
+${brandContext}
 
-I came across ${businessName} and was impressed by what you've built in the ${niche}.
+${campaignContext}
 
-I've developed an AI-powered marketing dashboard that's helping businesses like yours cut ad spend by 47% while increasing conversions by 3.2x.
+${instructionsContext}
 
-What makes it unique:
-• Real-time AI optimization (not just monthly reports)
-• Custom dashboard just for your business
-• Predictive analytics with 92% accuracy
+${methodPrompt}
 
-I'd love to show you a quick demo and run a free competitive analysis for ${businessName}.
+Important: Make this message feel personally crafted for this specific business. Reference their industry, location, or other relevant details. Do NOT use generic templates.`
 
-Interested in a brief chat?
+    console.log('Calling OpenAI with personalized prompt...')
 
-Best,
-${brandName}`
-          }
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user", 
+          content: userPrompt
+        }
+      ],
+      max_tokens: 800,
+      temperature: 0.7,
+    })
 
-        case 'sms':
-          return {
-            content: `Hi ${ownerName}! I help businesses like ${businessName} cut ad costs by 47% using our AI marketing platform. 
+    const aiResponse = completion.choices[0]?.message?.content
 
-Unlike agencies, you get 24/7 AI optimization + custom dashboard. 
+    if (!aiResponse) {
+      throw new Error('No response from OpenAI')
+    }
 
-Free competitive analysis available. Interested? 
+    console.log('AI Response length:', aiResponse.length)
 
-${brandName}`
-          }
+    // Parse response to extract subject and message for emails
+    let subject = ''
+    let message = aiResponse
 
-        case 'call':
-          return {
-            content: `**OPENING (Friendly & Direct):**
-"Hi ${ownerName}, this is ${brandName}. I know you're busy running ${businessName}, so I'll be brief. I've developed an AI-powered marketing platform that's helping businesses cut their ad spend nearly in half while tripling conversions. Do you have 30 seconds for me to explain why I'm calling?"
-
-**VALUE PROP (If Yes):**
-"Great! So unlike traditional marketing agencies that give you monthly reports and hope for the best, we've built a custom AI dashboard that optimizes your campaigns 24/7. 
-
-The AI literally watches your ads every minute and makes adjustments - kind of like having a world-class media buyer working around the clock, but at a fraction of the cost."
-
-**CREDIBILITY:**
-"We're seeing clients in the ${niche} reduce their cost per acquisition by an average of 47% within the first 90 days. And the best part? You can see everything happening in real-time through your custom dashboard."
-
-**SOFT CLOSE:**
-"I'd love to show you exactly how this would work for ${businessName}. I can even run a free competitive analysis beforehand to show you what opportunities you're missing. Would you be open to a quick 15-minute screen share later this week?"
-
-**HANDLING OBJECTIONS:**
-
-*"We already have an agency"*
-→ "That's great! Most of our clients do too. This actually complements what they're doing by giving you transparency and AI optimization they can't provide. Plus, you'll know exactly what's working and what isn't."
-
-*"We don't have the budget"*
-→ "I understand. That's actually why I'm calling - our clients typically save more in wasted ad spend than our service costs. Would it help if I showed you the potential savings in a free analysis?"
-
-*"Not interested"*
-→ "No problem at all. Just out of curiosity, what's your biggest marketing challenge right now? [Listen, then tie back if relevant]"
-
-**BOOKING THE MEETING:**
-"I have some time [suggest 2-3 specific times]. What works best for you?"
-
-**FOLLOW-UP:**
-"Perfect! I'll send you a calendar invite with a Zoom link. Also, if you can share your website and any competitor sites you track, I'll prepare that competitive analysis to make our time super valuable. Sound good?"`
-          }
-
-        default:
-          return {
-            content: `Hi ${ownerName},
-
-I wanted to reach out about ${businessName} and share something that could significantly impact your marketing results.
-
-Our AI-powered marketing platform is helping businesses reduce ad spend by 47% while increasing conversions by 3.2x.
-
-Would you be interested in a quick demo?
-
-Best regards,
-${brandName}`
-          }
+    if (messageType === 'email' && aiResponse.includes('Subject:')) {
+      const lines = aiResponse.split('\n')
+      const subjectLine = lines.find(line => line.toLowerCase().includes('subject:'))
+      if (subjectLine) {
+        subject = subjectLine.replace(/subject:\s*/i, '').trim()
+        message = aiResponse.replace(/subject:.*?\n\n?/i, '').trim()
       }
     }
 
-    const template = generateTemplate(messageType)
-    console.log('Generated template:', { hasSubject: !!template.subject, contentLength: template.content.length })
-    
     const response = {
-      message: template.content,
-      subject: template.subject,
-      personalization_tips: [
-        "Review and customize the message before sending",
-        "Add specific details about their business if you've researched them",
-        "Mention any mutual connections or recent achievements",
-        "Adjust the tone based on their industry and company culture"
+      message: message,
+      subject: subject || undefined,
+      ai_generated: true,
+      personalization_score: 'high',
+      tips: [
+        "This message was AI-generated using your lead's specific data",
+        "Review for accuracy and add any additional personal touches",
+        "Consider timing and follow-up strategy",
+        "Track response rates to optimize future messages"
       ]
     }
 
-    console.log('Sending response:', { hasMessage: !!response.message, hasSubject: !!response.subject })
+    console.log('Sending AI-generated response')
     return NextResponse.json(response)
+
   } catch (error) {
-    console.error('Error generating message:', error)
-    return NextResponse.json({ error: 'Failed to generate message' }, { status: 500 })
+    console.error('Error generating AI message:', error)
+    
+    // Fallback to a simple personalized template if AI fails
+    const body = await request.json()
+    const fallbackMessage = `Hi ${body?.lead?.owner_name || 'there'},
+
+I noticed ${body?.lead?.business_name || 'your business'} and wanted to reach out with a quick question.
+
+Would you be interested in seeing how other ${body?.lead?.niche_name || 'businesses'} in ${body?.lead?.city || 'your area'} are using AI-powered marketing to improve their results?
+
+Best regards,
+${body?.brandInfo?.name || 'Your Marketing Team'}`
+
+    return NextResponse.json({ 
+      message: fallbackMessage,
+      subject: body?.messageType === 'email' ? `Quick question about ${body?.lead?.business_name || 'your business'}` : undefined,
+      ai_generated: false,
+      error: 'AI generation failed, using fallback template'
+    })
   }
 } 

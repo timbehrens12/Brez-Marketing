@@ -279,7 +279,12 @@ export default function OutreachToolPage() {
       setGeneratedMessage(data.message)
       setMessageSubject(data.subject || '')
       setMessageType(method as any)
-      toast.success('AI message generated with advanced personalization!')
+      
+      if (data.ai_generated) {
+        toast.success('✨ AI message generated with advanced personalization!')
+      } else {
+        toast.success('Message generated (AI fallback used)')
+      }
     } catch (error) {
       console.error('Error generating AI message:', error)
       toast.error('Failed to generate AI message. Please try again.')
