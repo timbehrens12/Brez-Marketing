@@ -1615,10 +1615,10 @@ export default function OutreachToolPage() {
                   </div>
                   </div>
                   {generatedMessage && (
-                  <Button
+                                      <Button
                       onClick={() => {
                         navigator.clipboard.writeText(generatedMessage)
-                        toast.success('Call script copied to clipboard!')
+                        toast.success('✅ Call script copied! Ready to make your AI-optimized call.')
                       }}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
@@ -1661,7 +1661,7 @@ export default function OutreachToolPage() {
                             ? `Subject: ${messageSubject}\n\n${generatedMessage}`
                             : generatedMessage
                           navigator.clipboard.writeText(fullMessage)
-                          toast.success('Message copied to clipboard!')
+                          toast.success('✅ Message copied! Ready to send your AI-powered outreach.')
                         }}
                         className="flex-1 bg-[#444] hover:bg-[#555] text-white"
                   >
