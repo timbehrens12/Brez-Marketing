@@ -264,22 +264,46 @@ export default function OutreachToolPage() {
   }
 
   const updateCampaignLeadStatus = async (campaignLeadId: string, newStatus: string) => {
+    // Show confirmation dialog for rejected status
+    if (newStatus === 'rejected') {
+      const confirmed = window.confirm(
+        'Marking this lead as "Rejected" will remove it from your outreach pipeline permanently. Are you sure you want to continue?'
+      )
+      if (!confirmed) {
+        return // Cancel the status update
+      }
+    }
+
     try {
       const supabase = await getSupabaseClient()
       
-      const { error } = await supabase
-        .from('outreach_campaign_leads')
-        .update({ 
-          status: newStatus,
-          last_contacted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', campaignLeadId)
+      if (newStatus === 'rejected') {
+        // Delete the lead from outreach when marked as rejected
+        const { error } = await supabase
+          .from('outreach_campaign_leads')
+          .delete()
+          .eq('id', campaignLeadId)
 
-      if (error) throw error
-      
-      loadCampaignLeads()
-      toast.success('Status updated successfully!')
+        if (error) throw error
+        
+        setCampaignLeads(prev => prev.filter(cl => cl.id !== campaignLeadId))
+        toast.success('Lead marked as rejected and removed from outreach!')
+      } else {
+        // Regular status update
+        const { error } = await supabase
+          .from('outreach_campaign_leads')
+          .update({ 
+            status: newStatus,
+            last_contacted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', campaignLeadId)
+
+        if (error) throw error
+        
+        loadCampaignLeads()
+        toast.success('Status updated successfully!')
+      }
     } catch (error) {
       console.error('Error updating status:', error)
       toast.error('Failed to update status')
@@ -1119,7 +1143,7 @@ export default function OutreachToolPage() {
                                 <Zap className="h-3 w-3 mr-1" />
                                 Outreach ({outreachMethods.length})
                               </Button>
-                            </TableCell>
+                          </TableCell>
                         </TableRow>
                         )
                       })}
