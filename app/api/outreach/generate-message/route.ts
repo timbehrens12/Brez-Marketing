@@ -1,10 +1,150 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+// Security Configuration
+const SECURITY_LIMITS = {
+  MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
+  MAX_MESSAGES_PER_DAY: 50,       // Max 50 messages per day per user
+  MAX_MESSAGES_PER_LEAD: 3,       // Max 3 messages per lead (prevent spam to same person)
+  COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
+  MAX_DAILY_COST_USD: 5.00        // Max $5 of OpenAI costs per user per day
+}
+
+// Track message generation usage
+async function trackUsage(userId: string, leadId: string, messageType: string, cost: number = 0.02) {
+  try {
+    const { error } = await supabase
+      .from('outreach_message_usage')
+      .insert({
+        user_id: userId,
+        lead_id: leadId,
+        message_type: messageType,
+        generated_at: new Date().toISOString(),
+        estimated_cost: cost
+      })
+    
+    if (error) {
+      console.error('❌ Failed to track usage:', error)
+    }
+  } catch (error) {
+    console.error('❌ Error tracking usage:', error)
+  }
+}
+
+// Check if user is within rate limits
+async function checkRateLimits(userId: string, leadId?: string) {
+  try {
+    const now = new Date()
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const cooldownTime = new Date(now.getTime() - SECURITY_LIMITS.COOLDOWN_BETWEEN_MESSAGES * 1000)
+
+    // Check hourly limit
+    const { data: hourlyUsage, error: hourlyError } = await supabase
+      .from('outreach_message_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('generated_at', oneHourAgo.toISOString())
+
+    if (hourlyError) throw hourlyError
+
+    if (hourlyUsage && hourlyUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_HOUR) {
+      return {
+        allowed: false,
+        reason: 'HOURLY_LIMIT',
+        message: `Rate limit exceeded. You can generate up to ${SECURITY_LIMITS.MAX_MESSAGES_PER_HOUR} messages per hour. Please wait before trying again.`,
+        resetTime: new Date(oneHourAgo.getTime() + 60 * 60 * 1000)
+      }
+    }
+
+    // Check daily limit
+    const { data: dailyUsage, error: dailyError } = await supabase
+      .from('outreach_message_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('generated_at', oneDayAgo.toISOString())
+
+    if (dailyError) throw dailyError
+
+    if (dailyUsage && dailyUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_DAY) {
+      return {
+        allowed: false,
+        reason: 'DAILY_LIMIT',
+        message: `Daily limit reached. You can generate up to ${SECURITY_LIMITS.MAX_MESSAGES_PER_DAY} messages per day. Limit resets at midnight.`,
+        resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
+      }
+    }
+
+    // Check daily cost limit
+    const totalDailyCost = dailyUsage?.reduce((sum, usage) => sum + (usage.estimated_cost || 0.02), 0) || 0
+    if (totalDailyCost >= SECURITY_LIMITS.MAX_DAILY_COST_USD) {
+      return {
+        allowed: false,
+        reason: 'COST_LIMIT',
+        message: `Daily cost limit reached ($${SECURITY_LIMITS.MAX_DAILY_COST_USD}). Limit resets at midnight to prevent excessive API costs.`,
+        resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
+      }
+    }
+
+    // Check cooldown period
+    const { data: recentUsage, error: recentError } = await supabase
+      .from('outreach_message_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('generated_at', cooldownTime.toISOString())
+      .order('generated_at', { ascending: false })
+      .limit(1)
+
+    if (recentError) throw recentError
+
+    if (recentUsage && recentUsage.length > 0) {
+      return {
+        allowed: false,
+        reason: 'COOLDOWN',
+        message: `Please wait ${SECURITY_LIMITS.COOLDOWN_BETWEEN_MESSAGES} seconds between message generations to prevent spam.`,
+        resetTime: new Date(new Date(recentUsage[0].generated_at).getTime() + SECURITY_LIMITS.COOLDOWN_BETWEEN_MESSAGES * 1000)
+      }
+    }
+
+    // Check per-lead limit (prevent spam to same person)
+    if (leadId) {
+      const { data: leadUsage, error: leadError } = await supabase
+        .from('outreach_message_usage')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('lead_id', leadId)
+        .gte('generated_at', oneDayAgo.toISOString())
+
+      if (leadError) throw leadError
+
+      if (leadUsage && leadUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_LEAD) {
+        return {
+          allowed: false,
+          reason: 'LEAD_LIMIT',
+          message: `You've already generated ${SECURITY_LIMITS.MAX_MESSAGES_PER_LEAD} messages for this lead today. This prevents spam and maintains professional outreach standards.`,
+          resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
+    }
+
+    return { allowed: true, reason: null, message: null }
+  } catch (error) {
+    console.error('❌ Error checking rate limits:', error)
+    // Allow the request if we can't check limits (graceful degradation)
+    return { allowed: true, reason: null, message: null }
+  }
+}
 
 export async function POST(request: NextRequest) {
   let requestBody: any = null
@@ -46,6 +186,21 @@ export async function POST(request: NextRequest) {
         message: 'Lead data and message type are required',
         ai_generated: false
       }, { status: 400 })
+    }
+
+    // 🔒 SECURITY: Check rate limits before proceeding
+    const leadId = lead.id || `${lead.business_name}_${lead.email || lead.phone || 'unknown'}`
+    const rateLimitCheck = await checkRateLimits(userId, leadId)
+    
+    if (!rateLimitCheck.allowed) {
+      console.log(`🚨 Rate limit exceeded for user ${userId}:`, rateLimitCheck.reason)
+      return NextResponse.json({
+        error: 'Rate limit exceeded',
+        message: rateLimitCheck.message,
+        reason: rateLimitCheck.reason,
+        resetTime: rateLimitCheck.resetTime,
+        ai_generated: false
+      }, { status: 429 })
     }
 
     // Build comprehensive AI context
@@ -199,205 +354,205 @@ UNIQUE VALUE PROPOSITION: You have access to proprietary AI marketing software t
 
 CRITICAL FORMATTING: Always use clear placeholders like {YOUR_AGENCY_NAME}, {YOUR_BRAND}, {YOUR_COMPANY} when referring to the sender's business. Never use vague phrases like "your brand" or "our team" - use clear bracketed placeholders so users know exactly what to customize.`
 
-    const userPrompt = messageType === 'phone'
-      ? `Create a ${messageType} outreach message for:
+    const userPrompt = `${methodPrompt}
 
-Business: ${lead.business_name}
-Owner: ${lead.owner_name || 'Unknown'}
-Industry: ${lead.niche_name || 'Unknown'}
-Location: ${lead.city}, ${lead.state_province}
-Website: ${lead.website || 'None'}
-
-${methodPrompt}
-
-Requirements:
-- Personalize for their business and industry
-- Emphasize exclusive AI marketing software advantage
-- Professional but conversational tone
-- Clear call-to-action
-- Use {YOUR_AGENCY_NAME} placeholder for sender's business name`
-      : `Create a ${messageType} outreach message for this prospect:
-
+LEAD CONTEXT:
 ${leadContext}
 
+BRAND CONTEXT:
 ${brandContext}
 
 ${campaignContext}
 
 ${instructionsContext}
 
-${methodPrompt}
+Generate a ${messageType} message for this lead. Make it highly personalized and compelling while emphasizing the exclusive AI technology advantage.`
 
-Important: 
-1. Make this message feel personally crafted for this specific business
-2. Reference their industry, location, or other relevant details
-3. Do NOT use generic templates
-4. ALWAYS emphasize the exclusive, limited-access AI software advantage
-5. Position this as an opportunity they won't get from other marketers
-6. Highlight superior results through AI optimization without sounding robotic
-7. Make the AI technology sound exclusive and powerful, but keep the tone human
-8. CRITICAL: Use {YOUR_AGENCY_NAME}, {YOUR_BRAND}, or {YOUR_COMPANY} placeholders for the sender's business name - never use vague terms like "your brand" or "our team"`
-
-    console.log('🤖 Calling OpenAI with personalized prompt...')
-    console.log('📝 Prompt length:', userPrompt.length)
-
-    // Use GPT-4 for email/DM (better quality) and GPT-3.5-turbo for phone (faster)
-    const model = messageType === 'phone' ? "gpt-3.5-turbo" : "gpt-4"
-    const maxTokens = messageType === 'phone' ? 500 : 800
-    const timeout = messageType === 'phone' ? 20000 : 30000 // Phone: 20s, Others: 30s
+    console.log('🔮 Sending request to OpenAI...')
     
-    console.log(`📱 Using ${model} for ${messageType} outreach`)
-
-    // Create timeout controller
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-    let aiResponse: string | null | undefined
-    try {
-      const completion = await openai.chat.completions.create({
-        model: model,
+    // Use GPT-4 for better quality, with timeout
+    const completion = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4",
         messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user", 
-            content: userPrompt
-          }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
         ],
-        max_tokens: maxTokens,
+        max_tokens: 800,
         temperature: 0.7,
-      }, {
-        signal: controller.signal
-      })
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('OpenAI request timeout')), 30000)
+      )
+    ]) as any
 
-      clearTimeout(timeoutId)
-      console.log(`✅ ${model} call successful for ${messageType} outreach`)
-
-      aiResponse = completion.choices[0]?.message?.content
-    } catch (openaiError) {
-      clearTimeout(timeoutId)
-      console.error('❌ OpenAI API error:', openaiError)
-      throw openaiError
-    }
+    const aiResponse = completion.choices[0]?.message?.content
+    console.log('✅ OpenAI response received')
 
     if (!aiResponse) {
       throw new Error('No response from OpenAI')
     }
 
-    console.log('✅ AI Response received, length:', aiResponse.length)
+    // Track successful usage
+    await trackUsage(userId, leadId, messageType, 0.02) // Estimate $0.02 per message
 
-    // Parse response to extract subject and message for emails
+    // Extract subject line for email
     let subject = ''
     let message = aiResponse
 
     if (messageType === 'email' && aiResponse.includes('Subject:')) {
       const lines = aiResponse.split('\n')
-      const subjectLine = lines.find((line: string) => line.toLowerCase().includes('subject:'))
+      const subjectLine = lines.find(line => line.toLowerCase().startsWith('subject:'))
       if (subjectLine) {
-        subject = subjectLine.replace(/subject:\s*/i, '').trim()
-        message = aiResponse.replace(/subject:.*?\n\n?/i, '').trim()
+        subject = subjectLine.replace(/^subject:\s*/i, '').trim()
+        message = lines.filter(line => !line.toLowerCase().startsWith('subject:')).join('\n').trim()
       }
     }
-    
-    const response = {
-      message: message,
-      subject: subject || undefined,
-      ai_generated: true,
-      personalization_score: 'high',
-      tips: [
-        "This message was AI-generated using your lead's specific data",
-        "Review for accuracy and add any additional personal touches",
-        "Consider timing and follow-up strategy",
-        "Track response rates to optimize future messages"
-      ]
-    }
 
-    console.log('✅ Sending AI-generated response')
-    return NextResponse.json(response)
+    console.log('✅ AI message generated successfully')
+    return NextResponse.json({
+      message: message,
+      subject: subject,
+      ai_generated: true,
+      usage: {
+        messagesRemaining: {
+          hourly: SECURITY_LIMITS.MAX_MESSAGES_PER_HOUR - (await getUsageCount(userId, 'hourly')),
+          daily: SECURITY_LIMITS.MAX_MESSAGES_PER_DAY - (await getUsageCount(userId, 'daily'))
+        }
+      }
+    })
 
   } catch (error) {
-    console.error('❌ Error generating AI message:', error)
+    console.error('❌ Error in AI generation:', error)
     
-    // Enhanced fallback with the original request data
-    try {
-      const fallbackData = requestBody || {}
-      const { lead, messageType, brandInfo } = fallbackData
-      
-      const businessName = lead?.business_name || 'your business'
-      const ownerName = lead?.owner_name || 'there'
-      const industry = lead?.niche_name || 'industry'
-      const location = lead?.city || 'your area'
+    // Enhanced fallback templates with exclusive AI messaging
+    const enhancedFallbacks = {
+      email: {
+        subject: `Exclusive AI Marketing Technology for ${requestBody?.lead?.business_name || 'Your Business'}`,
+        message: `Hi ${requestBody?.lead?.owner_name || 'there'},
 
-      let fallbackMessage = ''
-      let fallbackSubject = ''
+I noticed ${requestBody?.lead?.business_name || 'your business'} and wanted to reach out about something that could give you a significant competitive advantage.
 
-      if (messageType === 'email') {
-        fallbackSubject = `Exclusive AI marketing software for ${businessName}`
-        fallbackMessage = `Hi ${ownerName},
+I have access to exclusive AI-powered marketing software that's only available to a select few marketers. This isn't your typical marketing automation - it's advanced AI that:
 
-I came across ${businessName} and was impressed by your presence in the ${industry}.
-
-I wanted to reach out because I have access to something most marketers don't - exclusive AI-powered marketing software that uses advanced computer intelligence to deliver results traditional agencies simply can't match.
-
-This isn't your typical marketing approach. The AI technology I use:
 • Optimizes campaigns 24/7 using machine learning
-• Predicts performance before spending a dollar
-• Delivers results other marketers in ${location} can't achieve
-• Is available to only a limited number of professionals
+• Delivers results that traditional marketers simply can't match  
+• Predicts performance before you spend a dollar
+• Continuously improves beyond human capability
 
-The advantage is significant - while other marketers rely on guesswork, I use AI that continuously learns and improves your campaigns beyond human capability.
+${requestBody?.lead?.niche_name ? `For businesses in ${requestBody.lead.niche_name}, we've seen average ROI improvements of 150-300% compared to traditional methods.` : ''}
 
-Would you be interested in a brief conversation about how this exclusive technology could specifically benefit ${businessName}?
+Would you be interested in a brief call to see how this AI technology could specifically help ${requestBody?.lead?.business_name || 'your business'}? 
+
+I only work with a limited number of clients due to the exclusive nature of this software.
 
 Best regards,
-{YOUR_AGENCY_NAME}
+{YOUR_AGENCY_NAME}`
+      },
+      
+      phone: `OPENING (15-20 seconds):
+"Hi ${requestBody?.lead?.owner_name || '[Owner Name]'}, this is [Your Name] from {YOUR_AGENCY_NAME}. I'm calling because I have access to some exclusive AI-powered marketing technology that's delivering incredible results for businesses like ${requestBody?.lead?.business_name || '[Business Name]'}, and I think it could really help you too. Do you have 2 minutes?"
 
-P.S. This AI software isn't available to most agencies - it's part of what gives my clients an unfair competitive advantage.`
-      } else if (messageType === 'phone') {
-        fallbackMessage = `**OPENING:**
-"Hi ${ownerName}, this is {YOUR_AGENCY_NAME}. I know you're busy with ${businessName}, so I'll be direct. I have access to exclusive AI marketing software that most agencies don't have access to, and it's delivering results that traditional marketers simply can't match. Do you have 30 seconds for me to explain?"
+VALUE PROPOSITION:
+"What makes this different is that I have access to proprietary AI marketing software that most agencies don't have. This AI technology optimizes campaigns 24/7, predicts performance before spending money, and delivers results that traditional marketers simply cannot match."
 
-**VALUE PROP:**
-"Great! So while most marketers in the ${industry} rely on guesswork and manual optimization, I use proprietary AI technology that works 24/7 to optimize campaigns using advanced computer intelligence. It's like having a world-class data scientist working around the clock, but it's actually AI that continuously learns and improves."
+${requestBody?.lead?.niche_name ? `INDUSTRY SPECIFIC: "For ${requestBody.lead.niche_name} businesses specifically, we're seeing 150-300% better ROI compared to traditional marketing approaches."` : ''}
 
-**CREDIBILITY:**
-"The advantage is significant - this AI software predicts campaign performance before we spend money and automatically optimizes everything in real-time. It's only available to a limited number of marketers, which gives my clients an unfair competitive advantage."
+SOCIAL PROOF:
+"The AI continuously learns and improves campaigns beyond human capability. It's like having a team of data scientists working on your marketing around the clock."
 
-**CLOSE:**
-"I'd love to show you exactly how this exclusive AI technology would work for ${businessName}. Would you be open to a brief demo this week?"`
-      } else {
-        fallbackMessage = `Hi ${ownerName},
+SCARCITY:
+"The thing is, this technology is only available to a limited number of businesses. I can only take on a few more clients this quarter."
 
-I noticed ${businessName} and wanted to reach out about something exclusive.
+CALL TO ACTION:
+"Would you be open to a brief 15-minute call where I can show you exactly how this AI technology could specifically help ${requestBody?.lead?.business_name || '[Business Name]'}?"
 
-I have access to AI-powered marketing software that most marketers don't have - it uses advanced computer intelligence to deliver results traditional agencies can't match.
+OBJECTION HANDLING:
+- "Not interested": "I understand, but this isn't typical marketing. This is AI technology that gives you an unfair advantage over competitors."
+- "Too busy": "That's exactly why you need AI doing the heavy lifting. It works while you focus on running your business."
+- "Already have marketing": "That's great, but can your current marketing predict results before spending money and optimize 24/7? This AI can."
 
-While other marketers in the ${industry} rely on guesswork, this AI optimizes campaigns 24/7 and predicts performance before spending money.
+CLOSING:
+"How about I send you a quick case study of a ${requestBody?.lead?.niche_name || 'similar business'} that saw [specific result] in their first month? What's the best email for that?"`,
 
-Interested in seeing how this exclusive technology could benefit ${businessName}?
+      linkedin: `Hi ${requestBody?.lead?.owner_name || '[Name]'},
+
+I came across ${requestBody?.lead?.business_name || 'your company'} and was impressed by ${requestBody?.lead?.niche_name ? `your work in the ${requestBody.lead.niche_name} space` : 'what you're building'}.
+
+I wanted to connect because I have access to exclusive AI-powered marketing technology that's only available to a select group of marketers. This isn't typical automation - it's advanced AI that optimizes campaigns 24/7 and delivers results that traditional agencies simply can't match.
+
+${requestBody?.lead?.niche_name ? `For ${requestBody.lead.niche_name} businesses, we're seeing 150-300% better ROI compared to conventional marketing.` : ''}
+
+The AI technology predicts performance before spending money and continuously improves beyond human capability. It's like having a team of data scientists working on your marketing around the clock.
+
+Would you be open to a brief conversation about how this could specifically help ${requestBody?.lead?.business_name || 'your business'}?
 
 Best,
-{YOUR_AGENCY_NAME}`
-      }
+{YOUR_AGENCY_NAME}`,
 
-      console.log('🔄 Using enhanced fallback template')
-      return NextResponse.json({ 
-        message: fallbackMessage,
-        subject: fallbackSubject || undefined,
-        ai_generated: false,
-        error: error instanceof Error ? error.message : 'AI generation failed, using enhanced fallback template',
-        fallback_reason: 'OpenAI unavailable or timed out'
-      })
-    } catch (fallbackError) {
-      console.error('❌ Error creating fallback message:', fallbackError)
-      return NextResponse.json({ 
-        error: 'Failed to generate message',
-        message: 'An error occurred while generating your outreach message. Please check your internet connection and try again.',
-        ai_generated: false,
-        fallback_reason: 'Complete system failure'
-      }, { status: 500 })
+      instagram: `Hey ${requestBody?.lead?.owner_name || 'there'}! 👋
+
+Love what you're doing with ${requestBody?.lead?.business_name || 'your brand'}! ${requestBody?.lead?.instagram_handle ? `Your Instagram content is great` : 'Your business looks awesome'}.
+
+I have access to some exclusive AI marketing tech that's only available to select marketers. It uses advanced AI to optimize campaigns 24/7 and delivers results other agencies can't match.
+
+${requestBody?.lead?.niche_name ? `Perfect for ${requestBody.lead.niche_name} businesses like yours!` : ''}
+
+Interested in chatting about how this AI could help scale your business? DM me! 🚀
+
+{YOUR_AGENCY_NAME}`,
+
+      facebook: `Hi ${requestBody?.lead?.owner_name || 'there'},
+
+I came across ${requestBody?.lead?.business_name || 'your business page'} and wanted to reach out about something exciting.
+
+I have access to exclusive AI-powered marketing software that's only available to a limited number of marketers. This AI technology delivers results that traditional marketing simply can't match - it optimizes campaigns 24/7 and predicts performance before you spend money.
+
+${requestBody?.lead?.niche_name ? `For ${requestBody.lead.niche_name} businesses, we're seeing incredible results.` : ''}
+
+Would love to chat about how this could help ${requestBody?.lead?.business_name || 'your business'} grow!
+
+{YOUR_AGENCY_NAME}`,
+
+      sms: `Hi ${requestBody?.lead?.owner_name || '[Name]'}, I have exclusive AI marketing tech that delivers results other agencies can't match. Only available to select businesses. Interested? - {YOUR_AGENCY_NAME}`
     }
+
+    const fallback = enhancedFallbacks[requestBody?.messageType as keyof typeof enhancedFallbacks] || enhancedFallbacks.email
+    
+    // Still track usage even for fallbacks to prevent abuse
+    if (requestBody?.lead && requestBody?.messageType) {
+      const leadId = requestBody.lead.id || `${requestBody.lead.business_name}_${requestBody.lead.email || requestBody.lead.phone || 'unknown'}`
+      await trackUsage(requestBody.userId || 'unknown', leadId, requestBody.messageType, 0.001) // Lower cost for fallback
+    }
+
+    console.log('⚠️ Using enhanced fallback template')
+    return NextResponse.json({
+      message: fallback.message || fallback,
+      subject: fallback.subject || '',
+      ai_generated: false,
+      error: 'AI service temporarily unavailable, using enhanced template'
+    })
+  }
+}
+
+// Helper function to get usage count
+async function getUsageCount(userId: string, period: 'hourly' | 'daily'): Promise<number> {
+  try {
+    const now = new Date()
+    const timeAgo = period === 'hourly' 
+      ? new Date(now.getTime() - 60 * 60 * 1000)
+      : new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+    const { data, error } = await supabase
+      .from('outreach_message_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('generated_at', timeAgo.toISOString())
+
+    if (error) throw error
+    return data?.length || 0
+  } catch (error) {
+    console.error('❌ Error getting usage count:', error)
+    return 0
   }
 } 

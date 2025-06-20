@@ -277,6 +277,27 @@ export default function OutreachToolPage() {
       const data = await response.json()
       
       if (!response.ok) {
+        // Handle rate limiting errors with specific messages
+        if (response.status === 429) {
+          const { reason, message, resetTime } = data
+          let errorMessage = message
+          
+          if (reason === 'HOURLY_LIMIT') {
+            errorMessage = `⏰ Rate limit: You can generate up to 15 messages per hour. Try again in ${Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60))} minutes.`
+          } else if (reason === 'DAILY_LIMIT') {
+            errorMessage = `📅 Daily limit reached: You can generate up to 50 messages per day. Limit resets at midnight.`
+          } else if (reason === 'LEAD_LIMIT') {
+            errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards.`
+          } else if (reason === 'COOLDOWN') {
+            errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
+          } else if (reason === 'COST_LIMIT') {
+            errorMessage = `💰 Daily cost limit reached ($5.00). This prevents excessive API charges. Limit resets at midnight.`
+          }
+          
+          toast.error(errorMessage)
+          return
+        }
+        
         throw new Error(data.error || 'Failed to generate AI message')
       }
 
@@ -286,6 +307,12 @@ export default function OutreachToolPage() {
       
       if (data.ai_generated) {
         toast.success('✨ AI message generated with advanced personalization!')
+        
+        // Show usage info if available
+        if (data.usage?.messagesRemaining) {
+          const { hourly, daily } = data.usage.messagesRemaining
+          console.log(`📊 Messages remaining: ${hourly}/hour, ${daily}/day`)
+        }
       } else {
         toast.success('Message generated (AI fallback used)')
       }
