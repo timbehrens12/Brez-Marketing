@@ -1492,7 +1492,7 @@ export default function LeadGeneratorPage() {
                   (usageData?.remaining ?? 0) <= 0
                 }
                 className={`w-full ${
-                  (usageData?.remaining ?? 0) <= 0 
+                  (usageData?.remaining ?? 0) <= 0 || leads.length >= MAX_GENERATED_LEADS
                     ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
                     : 'bg-gray-600 hover:bg-gray-700 text-white'
                 }`}
