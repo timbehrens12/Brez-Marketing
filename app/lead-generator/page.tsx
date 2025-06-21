@@ -21,6 +21,9 @@ import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { Country, State, City } from 'country-state-city';
 
+// Lead generation constants
+const MAX_GENERATED_LEADS = 500 // Maximum total leads a user can have in the system
+
 // Location data interface
 interface LocationData {
   country: string;
