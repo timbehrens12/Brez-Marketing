@@ -1658,11 +1658,11 @@ export default function LeadGeneratorPage() {
               {/* Lead Storage Status */}
               {leads.length >= MAX_LEADS_TOTAL * WARNING_THRESHOLD && (
                 <div className="text-xs text-center">
-                  <div className={`${leads.length >= MAX_LEADS_TOTAL ? 'text-red-400' : 'text-yellow-400'}`}>
+                  <div className="text-gray-400">
                     Lead Storage: {leads.length} / {MAX_LEADS_TOTAL}
                   </div>
                   {leads.length >= MAX_LEADS_TOTAL && (
-                    <div className="text-red-300">
+                    <div className="text-gray-300">
                       Manage existing leads to generate more
                     </div>
                   )}
@@ -1737,14 +1737,14 @@ export default function LeadGeneratorPage() {
               <CardContent className="flex flex-col flex-1 overflow-hidden">
                 {/* Lead Limit Warning */}
                 {leads.length >= MAX_LEADS_TOTAL * WARNING_THRESHOLD && (
-                  <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-500/50 rounded-lg">
+                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <div className="text-yellow-300 font-medium text-sm">
+                        <div className="text-white font-medium text-sm">
                           {leads.length >= MAX_LEADS_TOTAL ? 'Lead Limit Reached' : 'Approaching Lead Limit'}
                         </div>
-                        <div className="text-yellow-400/80 text-xs mt-1">
+                        <div className="text-gray-400 text-xs mt-1">
                           You have {leads.length} of {MAX_LEADS_TOTAL} maximum leads. 
                           {leads.length >= MAX_LEADS_TOTAL ? 
                             ' Clear space before generating more leads.' : 
@@ -1754,7 +1754,7 @@ export default function LeadGeneratorPage() {
                           <Button
                             onClick={() => setShowLeadManagement(true)}
                             size="sm"
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs h-7"
+                            className="bg-gray-600 hover:bg-gray-700 text-white text-xs h-7"
                           >
                             <TrendingUp className="h-3 w-3 mr-1" />
                             Smart Actions
@@ -1764,7 +1764,7 @@ export default function LeadGeneratorPage() {
                               onClick={() => sendTopLeadsToOutreach(20)}
                               disabled={isProcessingBatch}
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-7"
+                              className="bg-gray-600 hover:bg-gray-700 text-white text-xs h-7"
                             >
                               {isProcessingBatch ? (
                                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -1782,8 +1782,8 @@ export default function LeadGeneratorPage() {
 
                 {/* Smart Suggestions */}
                 {leads.length >= BATCH_ACTION_THRESHOLD && leads.length < MAX_LEADS_TOTAL * WARNING_THRESHOLD && (
-                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-300 text-sm">
+                  <div className="mb-4 p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
+                    <div className="flex items-center gap-2 text-gray-300 text-sm">
                       <Sparkles className="h-4 w-4" />
                       <span className="font-medium">Smart Suggestion:</span>
                       <span>You have {leads.length} leads. Consider sending your top-scoring leads to outreach.</span>
@@ -1793,7 +1793,7 @@ export default function LeadGeneratorPage() {
                         onClick={() => sendTopLeadsToOutreach(15)}
                         disabled={isProcessingBatch}
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-7"
+                        className="bg-gray-600 hover:bg-gray-700 text-white text-xs h-7"
                       >
                         {isProcessingBatch ? (
                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -1806,7 +1806,7 @@ export default function LeadGeneratorPage() {
                         onClick={() => setShowLeadManagement(true)}
                         size="sm"
                         variant="outline"
-                        className="bg-[#1A1A1A] border-blue-500/50 text-blue-300 hover:bg-blue-900/30 text-xs h-7"
+                        className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#2A2A2A] hover:text-white text-xs h-7"
                       >
                         <TrendingUp className="h-3 w-3 mr-1" />
                         More Options
@@ -2751,27 +2751,27 @@ export default function LeadGeneratorPage() {
                 <div className="text-2xl font-bold text-white">{leads.length}</div>
                 <div className="text-xs text-gray-400">Total Leads</div>
               </div>
-              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-green-400">
-                  {leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length}
-                </div>
-                <div className="text-xs text-gray-400">High Quality (70+)</div>
-              </div>
-              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-400">
-                  {leads.filter(lead => {
-                    const score = lead.lead_score || calculateLeadScore(lead).total
-                    return score >= 40 && score < 70
-                  }).length}
-                </div>
-                <div className="text-xs text-gray-400">Medium Quality</div>
-              </div>
-              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-red-400">
-                  {leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 40).length}
-                </div>
-                <div className="text-xs text-gray-400">Low Quality (&lt;40)</div>
-              </div>
+                             <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
+                 <div className="text-2xl font-bold text-white">
+                   {leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length}
+                 </div>
+                 <div className="text-xs text-gray-400">High Quality (70+)</div>
+               </div>
+               <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
+                 <div className="text-2xl font-bold text-white">
+                   {leads.filter(lead => {
+                     const score = lead.lead_score || calculateLeadScore(lead).total
+                     return score >= 40 && score < 70
+                   }).length}
+                 </div>
+                 <div className="text-xs text-gray-400">Medium Quality</div>
+               </div>
+               <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3 text-center">
+                 <div className="text-2xl font-bold text-white">
+                   {leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 40).length}
+                 </div>
+                 <div className="text-xs text-gray-400">Low Quality (&lt;40)</div>
+               </div>
             </div>
 
             {/* Progress Bar */}
@@ -2781,14 +2781,10 @@ export default function LeadGeneratorPage() {
                 <span className="text-gray-300">{leads.length} / {MAX_LEADS_TOTAL}</span>
               </div>
               <div className="w-full bg-[#333] rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    leads.length >= MAX_LEADS_TOTAL ? 'bg-red-500' :
-                    leads.length >= MAX_LEADS_TOTAL * WARNING_THRESHOLD ? 'bg-yellow-500' :
-                    'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min((leads.length / MAX_LEADS_TOTAL) * 100, 100)}%` }}
-                ></div>
+                                 <div 
+                   className="h-2 rounded-full transition-all duration-500 bg-gray-600"
+                   style={{ width: `${Math.min((leads.length / MAX_LEADS_TOTAL) * 100, 100)}%` }}
+                 ></div>
               </div>
             </div>
 
@@ -2797,124 +2793,124 @@ export default function LeadGeneratorPage() {
               <h3 className="text-lg font-semibold text-white">Recommended Actions</h3>
               
               {/* Send Top Leads */}
-              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Send className="h-5 w-5 text-blue-400 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-white">Send High-Quality Leads to Outreach</h4>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Send your top-scoring leads to the outreach tool for immediate action.
-                    </p>
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        onClick={() => sendTopLeadsToOutreach(10)}
-                        disabled={isProcessingBatch}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                        Top 10 Leads
-                      </Button>
-                      <Button
-                        onClick={() => sendTopLeadsToOutreach(20)}
-                        disabled={isProcessingBatch}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                        Top 20 Leads
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const highQualityLeads = leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70)
-                          if (highQualityLeads.length > 0) {
-                            setSelectedLeads(highQualityLeads.map(lead => lead.id))
-                            sendToOutreach()
-                          }
-                        }}
-                        disabled={isProcessingBatch || leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length === 0}
-                        size="sm"
-                        variant="outline"
-                        className="bg-[#1A1A1A] border-blue-500/50 text-blue-300 hover:bg-blue-900/30"
-                      >
-                        All High Quality ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length})
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                               <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                   <div className="flex items-start gap-3">
+                     <Send className="h-5 w-5 text-gray-400 mt-0.5" />
+                     <div className="flex-1">
+                       <h4 className="font-medium text-white">Send High-Quality Leads to Outreach</h4>
+                       <p className="text-sm text-gray-400 mt-1">
+                         Send your top-scoring leads to the outreach tool for immediate action.
+                       </p>
+                       <div className="flex gap-2 mt-3">
+                         <Button
+                           onClick={() => sendTopLeadsToOutreach(10)}
+                           disabled={isProcessingBatch}
+                           size="sm"
+                           className="bg-gray-600 hover:bg-gray-700 text-white"
+                         >
+                           {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                           Top 10 Leads
+                         </Button>
+                         <Button
+                           onClick={() => sendTopLeadsToOutreach(20)}
+                           disabled={isProcessingBatch}
+                           size="sm"
+                           className="bg-gray-600 hover:bg-gray-700 text-white"
+                         >
+                           {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                           Top 20 Leads
+                         </Button>
+                         <Button
+                           onClick={() => {
+                             const highQualityLeads = leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70)
+                             if (highQualityLeads.length > 0) {
+                               setSelectedLeads(highQualityLeads.map(lead => lead.id))
+                               sendToOutreach()
+                             }
+                           }}
+                           disabled={isProcessingBatch || leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length === 0}
+                           size="sm"
+                           variant="outline"
+                           className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#2A2A2A] hover:text-white"
+                         >
+                           All High Quality ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) >= 70).length})
+                         </Button>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
 
               {/* Archive Low-Quality Leads */}
               {leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 40).length > 0 && (
-                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-white">Archive Low-Quality Leads</h4>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Remove leads with poor data quality to make room for better prospects.
-                      </p>
-                      <div className="flex gap-2 mt-3">
-                        <Button
-                          onClick={() => archiveLowScoreLeads(30)}
-                          disabled={isProcessingBatch}
-                          size="sm"
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                        >
-                          {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-                          Archive Score &lt;30 ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 30).length})
-                        </Button>
-                        <Button
-                          onClick={() => archiveLowScoreLeads(40)}
-                          disabled={isProcessingBatch}
-                          size="sm"
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                        >
-                          {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-                          Archive Score &lt;40 ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 40).length})
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                                 <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                   <div className="flex items-start gap-3">
+                     <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5" />
+                     <div className="flex-1">
+                       <h4 className="font-medium text-white">Archive Low-Quality Leads</h4>
+                       <p className="text-sm text-gray-400 mt-1">
+                         Remove leads with poor data quality to make room for better prospects.
+                       </p>
+                       <div className="flex gap-2 mt-3">
+                         <Button
+                           onClick={() => archiveLowScoreLeads(30)}
+                           disabled={isProcessingBatch}
+                           size="sm"
+                           className="bg-gray-600 hover:bg-gray-700 text-white"
+                         >
+                           {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
+                           Archive Score &lt;30 ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 30).length})
+                         </Button>
+                         <Button
+                           onClick={() => archiveLowScoreLeads(40)}
+                           disabled={isProcessingBatch}
+                           size="sm"
+                           className="bg-gray-600 hover:bg-gray-700 text-white"
+                         >
+                           {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
+                           Archive Score &lt;40 ({leads.filter(lead => (lead.lead_score || calculateLeadScore(lead).total) < 40).length})
+                         </Button>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
               )}
 
-              {/* Clear All Leads */}
-              <div className="bg-[#2A2A2A] border border-red-500/50 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <RefreshCw className="h-5 w-5 text-red-400 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-white">Clear All Leads</h4>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Permanently delete all leads to start fresh. This action cannot be undone.
-                    </p>
-                    <Button
-                      onClick={clearAllLeads}
-                      disabled={isProcessingBatch}
-                      size="sm"
-                      className="bg-red-600 hover:bg-red-700 text-white mt-3"
-                    >
-                      {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                      Clear All {leads.length} Leads
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                             {/* Clear All Leads */}
+               <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                 <div className="flex items-start gap-3">
+                   <RefreshCw className="h-5 w-5 text-gray-400 mt-0.5" />
+                   <div className="flex-1">
+                     <h4 className="font-medium text-white">Clear All Leads</h4>
+                     <p className="text-sm text-gray-400 mt-1">
+                       Permanently delete all leads to start fresh. This action cannot be undone.
+                     </p>
+                     <Button
+                       onClick={clearAllLeads}
+                       disabled={isProcessingBatch}
+                       size="sm"
+                       className="bg-gray-600 hover:bg-gray-700 text-white mt-3"
+                     >
+                       {isProcessingBatch ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                       Clear All {leads.length} Leads
+                     </Button>
+                   </div>
+                 </div>
+               </div>
             </div>
 
-            {/* Pro Tips */}
-            <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-4">
-              <h4 className="font-medium text-blue-300 mb-2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Pro Tips
-              </h4>
-              <ul className="space-y-1 text-sm text-blue-200">
-                <li>• Keep your lead count under {MAX_LEADS_TOTAL * WARNING_THRESHOLD} for optimal performance</li>
-                <li>• Focus on leads with scores 70+ for best conversion rates</li>
-                <li>• Regularly send qualified leads to outreach to maintain momentum</li>
-                <li>• Archive low-scoring leads rather than deleting to keep your database clean</li>
-              </ul>
-            </div>
+                         {/* Pro Tips */}
+             <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+               <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                 <Sparkles className="h-4 w-4" />
+                 Pro Tips
+               </h4>
+               <ul className="space-y-1 text-sm text-gray-300">
+                 <li>• Keep your lead count under {MAX_LEADS_TOTAL * WARNING_THRESHOLD} for optimal performance</li>
+                 <li>• Focus on leads with scores 70+ for best conversion rates</li>
+                 <li>• Regularly send qualified leads to outreach to maintain momentum</li>
+                 <li>• Archive low-scoring leads rather than deleting to keep your database clean</li>
+               </ul>
+             </div>
           </div>
         </DialogContent>
       </Dialog>
