@@ -1875,21 +1875,21 @@ export default function LeadGeneratorPage() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="max-w-[200px]">
                             <div className="text-sm text-gray-400">
                               {lead.owner_name && (
-                                <div className="font-medium text-gray-300 mb-1">{lead.owner_name}</div>
+                                <div className="font-medium text-gray-300 mb-1 truncate">{lead.owner_name}</div>
                               )}
                               {lead.email && (
-                                <div className="flex items-center gap-1 mb-1">
-                                  <Mail className="h-3 w-3" />
-                                  {lead.email}
+                                <div className="flex items-center gap-1 mb-1 min-w-0">
+                                  <Mail className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate" title={lead.email}>{lead.email}</span>
                                 </div>
                               )}
                               {lead.phone && (
-                                <div className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {lead.phone}
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <Phone className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{lead.phone}</span>
                                 </div>
                               )}
                               {!lead.owner_name && !lead.email && !lead.phone && <span className="text-gray-500">-</span>}
