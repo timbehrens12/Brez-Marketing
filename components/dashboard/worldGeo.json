@@ -1,0 +1,311 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "United States"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-125.0, 24.0],
+            [-125.0, 49.0],
+            [-66.0, 49.0],
+            [-66.0, 24.0],
+            [-125.0, 24.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Canada"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-141.0, 49.0],
+            [-141.0, 83.0],
+            [-52.0, 83.0],
+            [-52.0, 49.0],
+            [-141.0, 49.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mexico"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-118.0, 14.0],
+            [-118.0, 32.0],
+            [-86.0, 32.0],
+            [-86.0, 14.0],
+            [-118.0, 14.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Brazil"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-74.0, -33.0],
+            [-74.0, 5.0],
+            [-34.0, 5.0],
+            [-34.0, -33.0],
+            [-74.0, -33.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "United Kingdom"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-10.0, 49.0],
+            [-10.0, 61.0],
+            [2.0, 61.0],
+            [2.0, 49.0],
+            [-10.0, 49.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "France"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-5.0, 42.0],
+            [-5.0, 51.0],
+            [8.0, 51.0],
+            [8.0, 42.0],
+            [-5.0, 42.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Germany"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [5.0, 47.0],
+            [5.0, 55.0],
+            [15.0, 55.0],
+            [15.0, 47.0],
+            [5.0, 47.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Italy"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [6.0, 36.0],
+            [6.0, 47.0],
+            [18.0, 47.0],
+            [18.0, 36.0],
+            [6.0, 36.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Spain"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-9.0, 36.0],
+            [-9.0, 44.0],
+            [3.0, 44.0],
+            [3.0, 36.0],
+            [-9.0, 36.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Russia"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [20.0, 41.0],
+            [20.0, 82.0],
+            [180.0, 82.0],
+            [180.0, 41.0],
+            [20.0, 41.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "China"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [73.0, 18.0],
+            [73.0, 54.0],
+            [135.0, 54.0],
+            [135.0, 18.0],
+            [73.0, 18.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "India"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [68.0, 6.0],
+            [68.0, 36.0],
+            [97.0, 36.0],
+            [97.0, 6.0],
+            [68.0, 6.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Japan"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [129.0, 30.0],
+            [129.0, 46.0],
+            [146.0, 46.0],
+            [146.0, 30.0],
+            [129.0, 30.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Australia"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [113.0, -44.0],
+            [113.0, -10.0],
+            [154.0, -10.0],
+            [154.0, -44.0],
+            [113.0, -44.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "South Africa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [16.0, -35.0],
+            [16.0, -22.0],
+            [33.0, -22.0],
+            [33.0, -35.0],
+            [16.0, -35.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Egypt"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.0, 22.0],
+            [24.0, 32.0],
+            [37.0, 32.0],
+            [37.0, 22.0],
+            [24.0, 22.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Argentina"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-74.0, -55.0],
+            [-74.0, -21.0],
+            [-53.0, -21.0],
+            [-53.0, -55.0],
+            [-74.0, -55.0]
+          ]
+        ]
+      }
+    }
+  ]
+} 

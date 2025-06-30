@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "app/api/ai/**/*.ts": {
+      "maxDuration": 60
+    },
+    "app/api/leads/generate-real/route.ts": {
+      "maxDuration": 90
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/reports/refresh",
+      "schedule": "0 */3 * * *"
+    }
+  ]
+} 

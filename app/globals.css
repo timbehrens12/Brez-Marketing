@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 11.2%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 46.9%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 91.4%;
+    --input: 0 0% 91.4%;
+    --ring: 0 0% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 4.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 40%;
+    --primary-foreground: 0 0% 11.2%;
+    --secondary: 0 0% 17.5%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 17.5%;
+    --muted-foreground: 0 0% 65.1%;
+    --accent: 0 0% 17.5%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 17.5%;
+    --input: 0 0% 17.5%;
+    --ring: 0 0% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Brand Report Improvements */
+.report-container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.report-header-wrapper {
+  position: relative;
+  overflow: visible;
+}
+
+.report-logo-container {
+  z-index: 20 !important;
+}
+
+.report-info-section {
+  max-width: 65% !important;
+}
+
+.report-footer {
+  flex-wrap: wrap;
+  min-height: 60px;
+}
+
+.footer-brand {
+  white-space: nowrap;
+}
+
+.footer-legal {
+  max-width: 40%;
+}
+
+/* PDF Export specific styles */
+@media print {
+  .report-container {
+    background: #0a0a0a !important;
+  }
+  
+  .report-header-wrapper {
+    padding: 2rem !important;
+  }
+  
+  .report-footer {
+    padding: 1rem !important;
+    min-height: 50px !important;
+  }
+  
+  .report-logo-container {
+    top: 1rem !important;
+    right: 1.5rem !important;
+  }
+}
+
+/* Loading states */
+.report-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.report-loading .report-content {
+  filter: blur(2px);
+}
+
+
+
