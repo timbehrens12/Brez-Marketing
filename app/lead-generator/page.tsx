@@ -478,7 +478,7 @@ export default function LeadGeneratorPage() {
   }
 
   // Filter niches by business type
-  const filteredNiches = niches.filter(niche => niche.category === businessType)
+  const filteredNiches = (niches || []).filter(niche => niche.category === businessType)
   
   // Group niches by categories for better UX
   const nicheGroups = {
@@ -827,7 +827,7 @@ export default function LeadGeneratorPage() {
 
   // Get all available niches (no cooldown filtering needed since daily limit)
   const getAvailableNiches = () => {
-    return filteredNiches
+    return filteredNiches || []
   }
 
     const sendToOutreach = async () => {
