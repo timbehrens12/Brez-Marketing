@@ -29,7 +29,7 @@ export function useAuthenticatedSupabase() {
   // Function to check if token is expired or will expire soon (within 1 minute)
   const isTokenExpiredOrExpiringSoon = (expiry: number | null): boolean => {
     if (!expiry) return true
-    const oneMinuteFromNow = Date.now() + (1 * 60 * 1000)
+    const oneMinuteFromNow = Date.now() + (10 * 60 * 1000) // 10 minutes to reduce frequent refreshes
     return expiry < oneMinuteFromNow
     }
     
@@ -68,8 +68,8 @@ export function useAuthenticatedSupabase() {
         if (isMounted) {
           setIsReady(true) // Set ready even on error so app doesn't hang
         }
-      }
-    }
+            }
+          }
     
     initialize()
     
@@ -77,35 +77,21 @@ export function useAuthenticatedSupabase() {
       isMounted = false
     }
   }, [])
-  
-  // Main function to get the client
+        
+  // Main function to get the client - simplified to always refresh auth
   const getSupabaseClient = useCallback(async (): Promise<SupabaseClient | null> => {
     try {
-      // Get current token to check if refresh is needed
-      const token = await getToken({ template: 'supabase' })
-      
-      if (token) {
-        // Check if token is expiring soon
-        const expiry = getTokenExpiry(token)
-        if (isTokenExpiredOrExpiringSoon(expiry)) {
-          console.log('🔄 Token expiring soon, upgrading client...')
-          return upgradeGlobalClient(token)
-        }
-      }
-      
-      // Return existing global client
-      const existingClient = getGlobalClient()
-      if (existingClient) {
-        return existingClient
-      }
-      
-      // Fallback: create authenticated client
-      return await upgradeToAuthenticatedClient()
+      // This is the most robust way to ensure we have a valid token for every operation.
+      // It will attempt to get a fresh token from Clerk and apply it to our global client.
+      console.log('🚀 Ensuring Supabase client has fresh authentication...')
+      const authedClient = await upgradeToAuthenticatedClient()
+      console.log('✅ Authentication refreshed.')
+      return authedClient
     } catch (error) {
       console.error('❌ Error getting Supabase client:', error)
-      return getGlobalClient()
+      return getGlobalClient() // Fallback to non-authed client
     }
-  }, [])
+  }, [getToken]) // Include getToken in the dependency array
   
   return { getSupabaseClient, isReady }
 } 
