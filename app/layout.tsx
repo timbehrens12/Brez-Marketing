@@ -98,18 +98,26 @@ export default function RootLayout({
           
           /* Make "Use another method" more visible */
           .cl-alternativeMethodsBlockButton {
-            color: #60a5fa !important;
+            color: #9ca3af !important;
             font-weight: 500 !important;
             opacity: 1 !important;
             text-decoration: underline !important;
           }
           
+          .cl-alternativeMethodsBlockButton:hover {
+            color: white !important;
+          }
+          
           /* Make "Didn't receive a code" more visible */
           .cl-resendCodeLink {
-            color: #60a5fa !important;
+            color: #9ca3af !important;
             font-weight: 500 !important;
             opacity: 1 !important;
             text-decoration: underline !important;
+          }
+          
+          .cl-resendCodeLink:hover {
+            color: white !important;
           }
           
           /* Make "No account? Sign up" more visible */
@@ -123,9 +131,16 @@ export default function RootLayout({
           .cl-formButtonPrimary,
           .cl-formResendCodeLink,
           .cl-formFieldAction {
-            color: #60a5fa !important;
+            color: #9ca3af !important;
             font-weight: 500 !important;
             opacity: 1 !important;
+          }
+          
+          .cl-formButtonReset:hover, 
+          .cl-formButtonPrimary:hover,
+          .cl-formResendCodeLink:hover,
+          .cl-formFieldAction:hover {
+            color: white !important;
           }
         `}</style>
       </head>
