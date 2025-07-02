@@ -8,7 +8,7 @@ export default function SignInPage() {
       <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
         <div className="mb-8 text-center">
           <img 
-            src="https://i.imgur.com/ImwATmD.png" 
+            src="https://i.imgur.com/PZCtbwG.png" 
             alt="Brez Logo" 
             className="h-20 w-auto object-contain mx-auto mb-6" 
           />

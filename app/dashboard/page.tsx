@@ -1370,7 +1370,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
         <div className="text-center">
           <img 
-            src="https://i.imgur.com/ImwATmD.png" 
+            src="https://i.imgur.com/PZCtbwG.png" 
             alt="Brez Logo" 
             className="h-16 w-auto object-contain mx-auto mb-6" 
           />
@@ -1390,7 +1390,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
         <div className="text-center">
               <img 
-            src="https://i.imgur.com/ImwATmD.png" 
+            src="https://i.imgur.com/PZCtbwG.png" 
                 alt="Brez Logo" 
             className="h-16 w-auto object-contain mx-auto mb-6" 
               />
