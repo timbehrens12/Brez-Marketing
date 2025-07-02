@@ -234,6 +234,7 @@ export default function LeadGeneratorPage() {
   const [showLeadManagement, setShowLeadManagement] = useState(false)
   const [isProcessingBatch, setIsProcessingBatch] = useState(false)
   const [isSendingToOutreach, setIsSendingToOutreach] = useState(false)
+  const [isResettingLimits, setIsResettingLimits] = useState(false)
   
   // Sorting state
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({
@@ -1478,6 +1479,42 @@ export default function LeadGeneratorPage() {
     }
   }
 
+  // Debug function to reset daily limits for testing
+  const resetDailyLimits = async () => {
+    if (!userId) {
+      toast.error('Please sign in first')
+      return
+    }
+    
+    setIsResettingLimits(true)
+    try {
+      const response = await fetch('/api/debug/reset-cooldowns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset limits')
+      }
+
+      toast.success('🎉 Daily limits and cooldowns reset successfully!')
+      
+      // Refresh usage data to show updated limits
+      await loadUsageData()
+      
+    } catch (error) {
+      console.error('Error resetting daily limits:', error)
+      toast.error('Failed to reset daily limits')
+    } finally {
+      setIsResettingLimits(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white p-6">
       <div className="w-full space-y-6">
@@ -1547,6 +1584,23 @@ export default function LeadGeneratorPage() {
                       <span className="text-sm text-white">
                         {getTimeUntilMidnight()}
                       </span>
+                    </div>
+
+                    {/* Debug Reset Button */}
+                    <div className="pt-2 border-t border-[#333]">
+                      <Button
+                        onClick={resetDailyLimits}
+                        disabled={isResettingLimits}
+                        size="sm"
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
+                      >
+                        {isResettingLimits ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        {isResettingLimits ? 'Resetting...' : 'Reset Daily Limits (Debug)'}
+                      </Button>
                     </div>
 
 
