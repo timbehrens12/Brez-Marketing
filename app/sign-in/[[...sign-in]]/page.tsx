@@ -40,7 +40,18 @@ export default function SignInPage() {
               formHeaderTitle: "text-white text-xl",
               formHeaderSubtitle: "text-gray-300",
               phoneNumberInput: "bg-[#333] border-[#444] text-white",
-              alternativeMethodsBlockButton: "text-gray-300 hover:text-white"
+              alternativeMethodsBlockButton: "text-gray-300 hover:text-white transition-colors",
+              footerActionButton: "text-gray-300 hover:text-white transition-colors",
+              formFieldSuccessText: "text-gray-300",
+              formFieldErrorText: "text-red-400",
+              formFieldHintText: "text-gray-400",
+              formFieldInputShowPasswordButton: "text-gray-300 hover:text-white",
+              formResendCodeLink: "text-gray-300 hover:text-white transition-colors",
+              otpCodeFieldErrorText: "text-red-400",
+              formFieldLabelRow: "text-gray-300",
+              alternativeMethodsBlockButtonText: "text-gray-300 hover:text-white",
+              footerPages: "text-gray-400",
+              footerPageLink: "text-gray-300 hover:text-white transition-colors"
             }
           }}
           redirectUrl="/dashboard"
