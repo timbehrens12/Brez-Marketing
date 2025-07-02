@@ -7,6 +7,14 @@ let globalClient: SupabaseClient | null = null
 let globalToken: string | null = null
 let isInitializing = false
 
+// Expose global client for other systems to access
+function exposeGlobalClient() {
+  if (typeof window !== 'undefined') {
+    (window as any).__supabase_global_client = globalClient
+    console.log('🌐 Global Supabase client exposed for cross-system access')
+  }
+}
+
 /**
  * Hook to create a Supabase client with authentication from Clerk
  * This should be used in client components
@@ -64,10 +72,16 @@ export function useAuthenticatedSupabase() {
           })
           globalToken = token
           console.log('✅ Singleton Supabase client created successfully')
+          
+          // Expose globally for other systems
+          exposeGlobalClient()
         } else {
           console.log('⚠️ No token available, creating unauthenticated singleton client')
           globalClient = createClient(supabaseUrl, supabaseKey)
           globalToken = null
+          
+          // Expose globally for other systems
+          exposeGlobalClient()
         }
       } else {
         console.log('♻️ Reusing existing singleton Supabase client')
@@ -79,6 +93,7 @@ export function useAuthenticatedSupabase() {
       if (!globalClient) {
         globalClient = createClient(supabaseUrl, supabaseKey)
         globalToken = null
+        exposeGlobalClient()
       }
       return globalClient
     } finally {
