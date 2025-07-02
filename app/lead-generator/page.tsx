@@ -854,19 +854,29 @@ export default function LeadGeneratorPage() {
       const supabase = await getSupabaseClient()
       
       // Verify the leads exist and belong to the current user before sending
+      console.log('🔍 Verifying leads exist in database...')
       const { data: verifyLeads, error: verifyError } = await supabase
         .from('leads')
         .select('id, business_name')
         .in('id', selectedLeads)
         .eq('user_id', userId)
 
+      console.log('📊 Verification result:', {
+        verifyError: verifyError?.message,
+        verifyLeads: verifyLeads?.length,
+        expectedCount: selectedLeads.length,
+        selectedLeads: selectedLeads,
+        foundLeadIds: verifyLeads?.map(l => l.id)
+      })
+
       if (verifyError) {
-        console.error('Error verifying leads:', verifyError)
+        console.error('❌ Error verifying leads:', verifyError)
         toast.error('Failed to verify leads. Please try refreshing the page.')
         return
       }
 
       if (!verifyLeads || verifyLeads.length === 0) {
+        console.error('❌ No leads found in verification')
         toast.error('Selected leads not found. Please refresh the page and try again.')
         return
       }
@@ -874,9 +884,12 @@ export default function LeadGeneratorPage() {
       if (verifyLeads.length !== selectedLeads.length) {
         const foundIds = verifyLeads.map(lead => lead.id)
         const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
+        console.error('❌ Lead count mismatch:', { foundIds, missingIds, selectedLeads })
         toast.error(`Some leads not found: ${missingIds.slice(0, 2).join(', ')}${missingIds.length > 2 ? '...' : ''}. Please refresh the page.`)
         return
       }
+
+      console.log('✅ Lead verification passed - proceeding to API call')
       
       // Add timeout to prevent hanging after tab visibility changes
       const controller = new AbortController()
