@@ -529,9 +529,10 @@ export default function LeadGeneratorPage() {
     }
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'hidden' && leads.length > 0) {
+      // Don't auto-clear leads if an outreach operation is in progress
+      if (document.visibilityState === 'hidden' && leads.length > 0 && !isSendingToOutreach) {
         // Auto-clear leads when tab becomes hidden (user navigating away)
-        // But protect leads that are in outreach
+        // But protect leads that are in outreach campaigns
         try {
           const supabase = await getSupabaseClient()
           
@@ -556,9 +557,13 @@ export default function LeadGeneratorPage() {
               .delete()
               .eq('user_id', userId)
           }
+          
+          console.log('🧹 Auto-cleared leads on tab hide (outreach operation not in progress)')
         } catch (error) {
           console.error('Error auto-clearing leads:', error)
         }
+      } else if (isSendingToOutreach) {
+        console.log('⏳ Skipping auto-clear: outreach operation in progress')
       }
     }
 
@@ -569,7 +574,7 @@ export default function LeadGeneratorPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [leads.length, userId, getSupabaseClient])
+  }, [leads.length, userId, isSendingToOutreach, getSupabaseClient])
 
   const handleClearAndGenerate = async () => {
     try {
