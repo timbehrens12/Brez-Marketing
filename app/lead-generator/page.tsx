@@ -558,6 +558,17 @@ export default function LeadGeneratorPage() {
         } catch (error) {
           console.error('Error auto-clearing leads:', error)
         }
+      } else if (document.visibilityState === 'visible') {
+        // Tab became visible - refresh authentication and data
+        console.log('Tab became visible, refreshing authentication...')
+        try {
+          // Refresh the Supabase client to ensure we have a valid authentication token
+          await getSupabaseClient()
+          console.log('Authentication refreshed successfully')
+        } catch (error) {
+          console.error('Error refreshing authentication:', error)
+          toast.error('Authentication may have expired. Please refresh the page if you encounter issues.')
+        }
       }
     }
 
@@ -829,16 +840,49 @@ export default function LeadGeneratorPage() {
     return filteredNiches
   }
 
-  const sendToOutreach = async () => {
+    const sendToOutreach = async () => {
     if (selectedLeads.length === 0) {
       toast.error('Please select leads to send to outreach')
       return
     }
-
+    
+    if (!userId) {
+      toast.error('Please sign in to send leads to outreach')
+      return
+    }
+    
     setIsSendingToOutreach(true)
 
     try {
       console.log('Sending leads to outreach:', { selectedLeads, userId })
+      
+      // Refresh the Supabase client to ensure we have a valid token
+      const supabase = await getSupabaseClient()
+      
+      // Verify the leads exist and belong to the current user before sending
+      const { data: verifyLeads, error: verifyError } = await supabase
+        .from('leads')
+        .select('id, business_name')
+        .in('id', selectedLeads)
+        .eq('user_id', userId)
+
+      if (verifyError) {
+        console.error('Error verifying leads:', verifyError)
+        toast.error('Failed to verify leads. Please try refreshing the page.')
+        return
+      }
+
+      if (!verifyLeads || verifyLeads.length === 0) {
+        toast.error('Selected leads not found. Please refresh the page and try again.')
+        return
+      }
+
+      if (verifyLeads.length !== selectedLeads.length) {
+        const foundIds = verifyLeads.map(lead => lead.id)
+        const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
+        toast.error(`Some leads not found: ${missingIds.slice(0, 2).join(', ')}${missingIds.length > 2 ? '...' : ''}. Please refresh the page.`)
+        return
+      }
       
       const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',

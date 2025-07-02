@@ -18,16 +18,18 @@ export function useAuthenticatedSupabase() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     
     try {
-      // Get the JWT token from Clerk for Supabase
+      // Always try to get a fresh token to handle tab switching scenarios
       const token = await getToken({ template: 'supabase' })
       
-      // If we have the same token and already have a client, reuse it
-      if (token && token === lastTokenRef.current && clientRef.current) {
-        return clientRef.current
-      }
+      // Check if the token has changed or if we need a new client
+      const needsNewClient = !clientRef.current || 
+                            token !== lastTokenRef.current ||
+                            (token && !lastTokenRef.current) ||
+                            (!token && lastTokenRef.current)
       
-      // If we have a token, create a new Supabase client with it
-      if (token) {
+      // If we have a token and need a new client
+      if (token && needsNewClient) {
+        console.log('Creating new Supabase client with fresh token')
         const client = createClient(supabaseUrl, supabaseKey, {
           global: {
             headers: {
@@ -41,12 +43,21 @@ export function useAuthenticatedSupabase() {
         lastTokenRef.current = token
         return client
       }
+      
+      // If we have a token and existing client with same token, reuse it
+      if (token && !needsNewClient && clientRef.current) {
+        return clientRef.current
+      }
     } catch (error) {
       console.error('Error getting Supabase token:', error)
+      // Reset client to force recreation on next call
+      clientRef.current = null
+      lastTokenRef.current = null
     }
     
-    // If we don't have a token, create a regular Supabase client (only if we don't have one)
+    // If we don't have a token, create a regular Supabase client
     if (!clientRef.current || lastTokenRef.current !== null) {
+      console.log('Creating unauthenticated Supabase client')
       clientRef.current = createClient(supabaseUrl, supabaseKey)
       lastTokenRef.current = null
     }
