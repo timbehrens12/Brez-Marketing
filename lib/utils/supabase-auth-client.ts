@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { useAuth } from '@clerk/nextjs'
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback } from 'react'
 
 /**
  * Hook to create a Supabase client with authentication from Clerk
@@ -10,17 +10,25 @@ export function useAuthenticatedSupabase() {
   const { getToken } = useAuth()
   const clientRef = useRef<SupabaseClient | null>(null)
   const lastTokenRef = useRef<string | null>(null)
-  const tokenTimestampRef = useRef<number>(0)
+  const tokenExpiryRef = useRef<number | null>(null)
   const isCreatingRef = useRef<boolean>(false)
   
-  // Function to force token refresh
-  const forceTokenRefresh = useCallback(async () => {
-    console.log('🔄 Forcing token refresh...')
-    lastTokenRef.current = null
-    clientRef.current = null
-    tokenTimestampRef.current = 0
-    return await getSupabaseClient()
-  }, [])
+  // Function to decode JWT and get expiry time
+  const getTokenExpiry = (token: string): number | null => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.exp ? payload.exp * 1000 : null // Convert to milliseconds
+    } catch {
+      return null
+    }
+  }
+  
+  // Function to check if token is expired or will expire soon (within 5 minutes)
+  const isTokenExpiredOrExpiringSoon = (expiry: number | null): boolean => {
+    if (!expiry) return true
+    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000)
+    return expiry < fiveMinutesFromNow
+  }
   
   // Function to create a Supabase client with the Clerk token
   const getSupabaseClient = useCallback(async () => {
@@ -40,87 +48,80 @@ export function useAuthenticatedSupabase() {
     try {
       isCreatingRef.current = true
       
-      // Check if token is stale (older than 5 minutes)
-      const now = Date.now()
-      const tokenAge = now - tokenTimestampRef.current
-      const isTokenStale = tokenAge > 5 * 60 * 1000 // 5 minutes
+      // Check if current token is expired or expiring soon
+      const needsRefresh = !tokenExpiryRef.current || 
+                          isTokenExpiredOrExpiringSoon(tokenExpiryRef.current) ||
+                          !clientRef.current
       
-      if (isTokenStale && lastTokenRef.current) {
-        console.log('🕒 Token is stale, forcing refresh...')
-        lastTokenRef.current = null
-        clientRef.current = null
-      }
-      
-      // Get fresh token
-      const token = await getToken({ template: 'supabase' })
-      
-      // If we have the same token and a working client, reuse it
-      if (token && token === lastTokenRef.current && clientRef.current && !isTokenStale) {
-        return clientRef.current
-      }
-      
-      // Create new client only when absolutely necessary
-      if (token && (!clientRef.current || token !== lastTokenRef.current)) {
-        console.log('🔄 Creating new Supabase client instance...')
-        const client = createClient(supabaseUrl, supabaseKey, {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        })
+      if (needsRefresh) {
+        console.log('🔄 Token expired or expiring soon, refreshing...')
         
-        // Store the client and token for reuse
-        clientRef.current = client
-        lastTokenRef.current = token
-        tokenTimestampRef.current = now
-        console.log('✅ Supabase client instance created successfully')
-        return client
+        // Get fresh token
+        const token = await getToken({ template: 'supabase' })
+        
+        if (token) {
+          const expiry = getTokenExpiry(token)
+          
+          // Only create new client if token actually changed or client doesn't exist
+          if (token !== lastTokenRef.current || !clientRef.current) {
+            console.log('🔄 Creating new Supabase client with fresh token...')
+            
+            const client = createClient(supabaseUrl, supabaseKey, {
+              global: {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            })
+            
+            // Store the client, token, and expiry for reuse
+            clientRef.current = client
+            lastTokenRef.current = token
+            tokenExpiryRef.current = expiry
+            
+            console.log('✅ New Supabase client created with fresh token')
+            return client
+          } else {
+            // Token is the same but we updated expiry
+            tokenExpiryRef.current = expiry
+            console.log('✅ Token refreshed but unchanged, reusing client')
+            return clientRef.current
+          }
+        }
+      } else {
+        // Token is still valid, reuse existing client
+        console.log('♻️ Reusing existing Supabase client (token still valid)')
+        return clientRef.current!
       }
       
       // Fallback to existing client if available
       if (clientRef.current) {
+        console.log('⚠️ No fresh token available, using existing client')
         return clientRef.current
       }
       
       // Last resort: create unauthenticated client
+      console.log('⚠️ Creating unauthenticated Supabase client as fallback')
       clientRef.current = createClient(supabaseUrl, supabaseKey)
       lastTokenRef.current = null
-      tokenTimestampRef.current = 0
+      tokenExpiryRef.current = null
       return clientRef.current
       
     } catch (error) {
-      console.error('Error getting Supabase token:', error)
+      console.error('❌ Error getting Supabase token:', error)
     
       // Fallback to existing client or create unauthenticated one
       if (!clientRef.current) {
+        console.log('⚠️ Creating fallback unauthenticated client due to error')
         clientRef.current = createClient(supabaseUrl, supabaseKey)
         lastTokenRef.current = null
-        tokenTimestampRef.current = 0
+        tokenExpiryRef.current = null
       }
       return clientRef.current
     } finally {
       isCreatingRef.current = false
     }
   }, [getToken])
-
-  // Listen for page visibility changes to refresh token
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Check if we've been away for more than 2 minutes
-        const now = Date.now()
-        const timeSinceLastToken = now - tokenTimestampRef.current
-        if (timeSinceLastToken > 2 * 60 * 1000 && lastTokenRef.current) {
-          console.log('👀 Page became visible after extended absence, refreshing token...')
-          forceTokenRefresh()
-        }
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [forceTokenRefresh])
   
-  return { getSupabaseClient, forceTokenRefresh }
+  return { getSupabaseClient }
 } 
