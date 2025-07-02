@@ -559,18 +559,6 @@ export default function LeadGeneratorPage() {
         } catch (error) {
           console.error('Error auto-clearing leads:', error)
         }
-      } else if (document.visibilityState === 'visible') {
-        // Tab became visible - refresh authentication quietly without interfering with ongoing operations
-        console.log('Tab became visible, refreshing authentication...')
-        try {
-          // Add a small delay to avoid interfering with any ongoing operations
-          setTimeout(async () => {
-            await getSupabaseClient()
-            console.log('Authentication refreshed successfully')
-          }, 100)
-        } catch (error) {
-          console.error('Error refreshing authentication:', error)
-        }
       }
     }
 
