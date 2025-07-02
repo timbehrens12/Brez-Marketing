@@ -400,11 +400,6 @@ export default function LeadGeneratorPage() {
   const loadNiches = async () => {
     try {
       const supabase = await getSupabaseClient()
-      if (!supabase) {
-        console.error('Supabase client not ready')
-        return
-      }
-      
       const { data, error } = await supabase
         .from('lead_niches')
         .select('*')
@@ -460,11 +455,6 @@ export default function LeadGeneratorPage() {
     
     try {
       const supabase = await getSupabaseClient()
-      if (!supabase) {
-        console.error('Supabase client not ready for stats')
-        return
-      }
-      
       const { data: allLeads, error } = await supabase
         .from('leads')
         .select('created_at')
@@ -488,7 +478,7 @@ export default function LeadGeneratorPage() {
   }
 
   // Filter niches by business type
-  const filteredNiches = (niches || []).filter(niche => niche.category === businessType)
+  const filteredNiches = niches.filter(niche => niche.category === businessType)
   
   // Group niches by categories for better UX
   const nicheGroups = {
@@ -837,7 +827,7 @@ export default function LeadGeneratorPage() {
 
   // Get all available niches (no cooldown filtering needed since daily limit)
   const getAvailableNiches = () => {
-    return filteredNiches || []
+    return filteredNiches
   }
 
     const sendToOutreach = async () => {
@@ -860,51 +850,49 @@ export default function LeadGeneratorPage() {
         userId: userId 
       })
       
-      // Get the authenticated Supabase client from our hook
+      console.log('🔄 Step 1: Getting Supabase client...')
+      // Refresh the Supabase client to ensure we have a valid token
       const supabase = await getSupabaseClient()
-      if (!supabase) {
-        console.error('❌ Supabase client not ready')
-        toast.error('Database connection not ready. Please try again.')
-        return
-      }
+      console.log('✅ Step 1: Supabase client obtained')
+      
+      console.log('🔄 Step 2: Verifying leads exist in database...')
+      console.log('Verifying leads:', selectedLeads, 'for user:', userId)
       
       // Verify the leads exist and belong to the current user before sending
-      console.log('🔍 Verifying leads exist in database...')
       const { data: verifyLeads, error: verifyError } = await supabase
         .from('leads')
         .select('id, business_name')
         .in('id', selectedLeads)
         .eq('user_id', userId)
 
-      console.log('📊 Verification result:', {
-        verifyError: verifyError?.message,
-        verifyLeads: verifyLeads?.length,
-        expectedCount: selectedLeads.length,
-        selectedLeads: selectedLeads,
-        foundLeadIds: verifyLeads?.map(l => l.id)
-      })
+      console.log('✅ Step 2: Database query completed')
+      console.log('Verification result:', { verifyLeads, verifyError, count: verifyLeads?.length })
 
       if (verifyError) {
-        console.error('❌ Error verifying leads:', verifyError)
+        console.error('❌ EARLY RETURN: Error verifying leads:', verifyError)
         toast.error('Failed to verify leads. Please try refreshing the page.')
         return
       }
 
       if (!verifyLeads || verifyLeads.length === 0) {
-        console.error('❌ No leads found in verification')
+        console.error('❌ EARLY RETURN: No leads found in verification')
+        console.log('Expected leads:', selectedLeads)
+        console.log('Database returned:', verifyLeads)
         toast.error('Selected leads not found. Please refresh the page and try again.')
         return
       }
 
       if (verifyLeads.length !== selectedLeads.length) {
+        console.error('❌ EARLY RETURN: Lead count mismatch')
+        console.log('Expected count:', selectedLeads.length, 'Found count:', verifyLeads.length)
         const foundIds = verifyLeads.map(lead => lead.id)
         const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
-        console.error('❌ Lead count mismatch:', { foundIds, missingIds, selectedLeads })
+        console.log('Missing lead IDs:', missingIds)
         toast.error(`Some leads not found: ${missingIds.slice(0, 2).join(', ')}${missingIds.length > 2 ? '...' : ''}. Please refresh the page.`)
         return
       }
-
-      console.log('✅ Lead verification passed - proceeding to API call')
+      
+      console.log('✅ Step 3: Lead verification passed - proceeding to fetch')
       
       // Add timeout to prevent hanging after tab visibility changes
       const controller = new AbortController()
