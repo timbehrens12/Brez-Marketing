@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // Always use the global authenticated client to eliminate multiple instances
 console.log('🚫 Legacy client access - redirecting to authenticated client')
 
-function getSupabaseClient() {
+export function getSupabaseClient() {
   if (typeof window === 'undefined') {
     // Server-side: return basic client
     return createClient(supabaseUrl, supabaseAnonKey, {
@@ -31,6 +32,16 @@ function getSupabaseClient() {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+    }
+  })
+}
+
+export function getSupabaseServiceClient() {
+  // Always create a new service client with admin privileges
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { 
+      persistSession: false,
+      autoRefreshToken: false 
     }
   })
 }
