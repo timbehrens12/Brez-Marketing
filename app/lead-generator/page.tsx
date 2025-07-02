@@ -96,7 +96,7 @@ interface LeadFilters {
 
 export default function LeadGeneratorPage() {
   const { userId } = useAuth()
-  const { getSupabaseClient } = useAuthenticatedSupabase()
+  const { getSupabaseClient, forceTokenRefresh } = useAuthenticatedSupabase()
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -830,151 +830,110 @@ export default function LeadGeneratorPage() {
     return filteredNiches
   }
 
-    const sendToOutreach = async () => {
-    if (selectedLeads.length === 0) {
-      toast.error('Please select leads to send to outreach')
-      return
-    }
-    
-    if (!userId) {
-      toast.error('Please sign in to send leads to outreach')
-      return
-    }
-    
+  const sendToOutreach = async (selectedLeads: any[]) => {
+    if (selectedLeads.length === 0) return
+
+    console.log('Sending leads to outreach:', { leadCount: selectedLeads.length, leadIds: selectedLeads.map(l => l.id) })
     setIsSendingToOutreach(true)
 
     try {
-      console.log('Sending leads to outreach:', { 
-        selectedLeads: selectedLeads, 
-        selectedCount: selectedLeads.length,
-        userId: userId 
-      })
-      
-      // Refresh the Supabase client to ensure we have a valid token
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.log('⏰ Request timed out after 15 seconds')
+      }, 15000)
+
+      // Get authenticated Supabase client
       const supabase = await getSupabaseClient()
       
-      // Verify the leads exist and belong to the current user before sending
+      // Verify leads exist and belong to current user
       console.log('🔍 Verifying leads exist in database...')
-      const { data: verifyLeads, error: verifyError } = await supabase
-        .from('leads')
-        .select('id, business_name')
-        .in('id', selectedLeads)
-        .eq('user_id', userId)
+      const leadIds = selectedLeads.map(lead => lead.id)
+      const { data: verificationData, error: verificationError } = await supabase
+        .from('lead_generator_leads')
+        .select('id')
+        .in('id', leadIds)
 
-      console.log('📊 Verification result:', {
-        verifyError: verifyError?.message,
-        verifyLeads: verifyLeads?.length,
-        expectedCount: selectedLeads.length,
-        selectedLeads: selectedLeads,
-        foundLeadIds: verifyLeads?.map(l => l.id)
+      console.log('📊 Verification result:', { 
+        leadIds, 
+        foundLeads: verificationData?.length || 0, 
+        error: verificationError 
       })
 
-      if (verifyError) {
-        console.error('❌ Error verifying leads:', verifyError)
-        toast.error('Failed to verify leads. Please try refreshing the page.')
-        return
-      }
-
-      if (!verifyLeads || verifyLeads.length === 0) {
+      // If no leads found, it might be an auth issue - try refreshing token once
+      if (!verificationData || verificationData.length === 0) {
         console.error('❌ No leads found in verification')
-        toast.error('Selected leads not found. Please refresh the page and try again.')
-        return
-      }
+        
+        // Try refreshing the token and retrying once
+        console.log('🔄 Attempting token refresh and retry...')
+        const freshSupabase = await forceTokenRefresh()
+        
+        const { data: retryVerificationData, error: retryVerificationError } = await freshSupabase
+          .from('lead_generator_leads')
+          .select('id')
+          .in('id', leadIds)
 
-      if (verifyLeads.length !== selectedLeads.length) {
-        const foundIds = verifyLeads.map(lead => lead.id)
-        const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
-        console.error('❌ Lead count mismatch:', { foundIds, missingIds, selectedLeads })
-        toast.error(`Some leads not found: ${missingIds.slice(0, 2).join(', ')}${missingIds.length > 2 ? '...' : ''}. Please refresh the page.`)
-        return
+        console.log('📊 Retry verification result:', { 
+          foundLeads: retryVerificationData?.length || 0, 
+          error: retryVerificationError 
+        })
+
+        if (!retryVerificationData || retryVerificationData.length === 0) {
+          toast.error('Selected leads not found. They may have been deleted or you may not have permission to access them.')
+          return
+        }
       }
 
       console.log('✅ Lead verification passed - proceeding to API call')
-      
-      // Add timeout to prevent hanging after tab visibility changes
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        console.error('🚨 FETCH REQUEST TIMEOUT - ABORTING AFTER 15 SECONDS')
-        controller.abort()
-      }, 15000) // 15 second timeout for faster feedback
-      
+
       console.log('🚀 Starting fetch request to /api/leads/send-to-outreach')
-      console.log('📤 Request payload:', { leadIds: selectedLeads, userId })
+      console.log('📤 Request payload:', { leads: selectedLeads })
       
       const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ leadIds: selectedLeads, userId }),
+        body: JSON.stringify({ leads: selectedLeads }),
         signal: controller.signal
       })
-      
+
       clearTimeout(timeoutId)
       console.log('✅ Fetch completed - Response received')
-      console.log('Response status:', response.status, response.statusText)
+      console.log('Response status:', response.status)
       console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('Send to outreach error:', errorData)
-        
-        if (response.status === 404) {
-          toast.error('Outreach service not found. Please try again or contact support.')
-          return
-        }
-        
-        if (response.status === 503 && errorData.setupRequired) {
-          toast.error('🔧 Outreach system needs to be set up. Check the setup instructions at /api/setup/outreach-tables', { duration: 10000 })
-          console.log('Setup instructions available at: /api/setup/outreach-tables')
-          return
-        }
-        
-        if (errorData.currentTotal !== undefined || errorData.currentPending !== undefined) {
-          // Lead limit error - show detailed message
-          toast.error(errorData.error, { duration: 6000 })
-          
-          if (errorData.remainingSlots > 0) {
-            setTimeout(() => toast(`You can add up to ${errorData.remainingSlots} more leads total.`, { duration: 4000 }), 500)
-          }
-          if (errorData.remainingPendingSlots > 0) {
-            setTimeout(() => toast(`You can add up to ${errorData.remainingPendingSlots} more pending leads.`, { duration: 4000 }), 1000)
-          }
-        } else {
-          toast.error(errorData.error || `Failed to send leads to outreach (${response.status})`)
-        }
-        return
+        const errorText = await response.text()
+        throw new Error(`Failed to send leads to outreach: ${response.status} ${errorText}`)
       }
 
-      const data = await response.json()
-      console.log('Send to outreach success:', data)
-      console.log('Selected leads to remove:', selectedLeads)
+      const result = await response.json()
+      console.log('Send to outreach success:', result)
+      
+      // Remove the sent leads from the current list
+      const selectedLeadIds = selectedLeads.map(lead => lead.id)
+      console.log('Selected leads to remove:', selectedLeadIds)
       console.log('Current leads count before removal:', leads.length)
       
-      if (data.success) {
-        toast.success(`${data.message}! Created ${data.tasksCreated || data.leadsAdded || selectedLeads.length} follow-up tasks.`)
-        
-        // Remove sent leads from the current page
-        const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
-        setLeads(prev => {
-          const filtered = prev.filter(lead => !leadsToRemove.includes(lead.id))
-          console.log('Leads after removal:', filtered.length)
-          return filtered
-        })
-        setSelectedLeads([])
-        
-        // Update stats
-        await loadStats()
-      } else {
-        toast.error(data.error || 'Failed to send leads to outreach')
-      }
-    } catch (error) {
-      console.error('Error sending to outreach:', error)
+      setLeads(prevLeads => {
+        const filtered = prevLeads.filter(lead => !selectedLeadIds.includes(lead.id))
+        console.log('Leads after removal:', filtered.length)
+        return filtered
+      })
       
-      if (error instanceof Error && error.name === 'AbortError') {
+      // Clear selection
+      setSelectedLeads([])
+      
+      // Show success message
+      toast.success(`Successfully sent ${selectedLeads.length} leads to outreach!`)
+      
+    } catch (error: any) {
+      console.error('Error sending leads to outreach:', error)
+      if (error.name === 'AbortError') {
         toast.error('Request timed out. Please try again.')
       } else {
-        toast.error('Network error: Failed to send leads to outreach')
+        toast.error(`Failed to send leads to outreach: ${error.message}`)
       }
     } finally {
       setIsSendingToOutreach(false)
@@ -1030,7 +989,7 @@ export default function LeadGeneratorPage() {
       }
 
       setSelectedLeads(topLeads.map(lead => lead.id))
-      await sendToOutreach()
+      await sendToOutreach(topLeads)
       
       toast.success(`Sent top ${topLeads.length} leads to outreach!`)
     } catch (error) {
