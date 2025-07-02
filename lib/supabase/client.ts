@@ -34,17 +34,29 @@ async function getGlobalAuthenticatedClient() {
 }
 
 export function getSupabaseClient() {
-  // ALWAYS try to use the global singleton first
+  // ALWAYS try to use the global singleton first (even if just created)
   if (typeof window !== 'undefined') {
     const globalClient = (window as any).__supabase_global_client
     if (globalClient) {
       console.log('♻️ Using global authenticated Supabase client (from old system)')
       return globalClient
     }
+    
+    // Also check if our singleton module has initialized the client
+    try {
+      const { getGlobalClient } = require('../utils/supabase-auth-client')
+      const moduleClient = getGlobalClient()
+      if (moduleClient) {
+        console.log('♻️ Using module-level global client')
+        return moduleClient
+      }
+    } catch (e) {
+      // Module not available, continue to fallback
+    }
   }
   
-  // Only create fallback if no singleton exists
-  console.log('🔄 Creating fallback Supabase client instance (no singleton available)')
+  // Final fallback - should rarely happen now
+  console.log('🔄 Creating final fallback Supabase client (no singleton found)')
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
