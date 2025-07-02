@@ -66,13 +66,13 @@ export function useAuthenticatedSupabase() {
       
     } catch (error) {
       console.error('Error getting Supabase token:', error)
-      
+    
       // Fallback to existing client or create unauthenticated one
       if (!clientRef.current) {
-        clientRef.current = createClient(supabaseUrl, supabaseKey)
-        lastTokenRef.current = null
-      }
-      return clientRef.current
+      clientRef.current = createClient(supabaseUrl, supabaseKey)
+      lastTokenRef.current = null
+    }
+    return clientRef.current
     } finally {
       isCreatingRef.current = false
     }

@@ -25,7 +25,7 @@ export default function SignInPage() {
               formButtonPrimary: "bg-white hover:bg-gray-100 text-black font-medium transition-colors",
               footerActionLink: "text-gray-300 hover:text-white transition-colors",
               formFieldLabel: "text-gray-300",
-              formFieldInput: "bg-[#333] border-[#444] text-white focus:border-gray-400 transition-colors",
+              formFieldInput: "bg-[#333] border-[#444] text-white focus:ring-gray-500 focus:border-gray-500 transition-colors",
               dividerLine: "bg-[#444]",
               dividerText: "text-gray-400",
               identityPreviewText: "text-gray-300",
@@ -40,18 +40,7 @@ export default function SignInPage() {
               formHeaderTitle: "text-white text-xl",
               formHeaderSubtitle: "text-gray-300",
               phoneNumberInput: "bg-[#333] border-[#444] text-white",
-              alternativeMethodsBlockButton: "text-gray-300 hover:text-white transition-colors",
-              footerActionButton: "text-gray-300 hover:text-white transition-colors",
-              formFieldSuccessText: "text-gray-300",
-              formFieldErrorText: "text-red-400",
-              formFieldHintText: "text-gray-400",
-              formFieldInputShowPasswordButton: "text-gray-300 hover:text-white",
-              formResendCodeLink: "text-gray-300 hover:text-white transition-colors",
-              otpCodeFieldErrorText: "text-red-400",
-              formFieldLabelRow: "text-gray-300",
-              alternativeMethodsBlockButtonText: "text-gray-300 hover:text-white",
-              footerPages: "text-gray-400",
-              footerPageLink: "text-gray-300 hover:text-white transition-colors"
+              alternativeMethodsBlockButton: "text-gray-300 hover:text-white transition-colors"
             }
           }}
           redirectUrl="/dashboard"
