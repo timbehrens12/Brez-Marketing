@@ -875,20 +875,28 @@ export default function LeadGeneratorPage() {
       }
 
       if (!verifyLeads || verifyLeads.length === 0) {
-        console.error('❌ EARLY RETURN: No leads found in verification')
+        console.error('❌ EARLY RETURN: No leads found in verification - Auto-refreshing leads list')
         console.log('Expected leads:', selectedLeads)
         console.log('Database returned:', verifyLeads)
-        toast.error('Selected leads not found. Please refresh the page and try again.')
+        toast.error('Selected leads no longer exist. Refreshing leads list...')
+        
+        // Auto-refresh the leads list and clear selection
+        await loadExistingLeads()
+        setSelectedLeads([])
         return
       }
 
       if (verifyLeads.length !== selectedLeads.length) {
-        console.error('❌ EARLY RETURN: Lead count mismatch')
+        console.error('❌ EARLY RETURN: Lead count mismatch - Auto-refreshing leads list')
         console.log('Expected count:', selectedLeads.length, 'Found count:', verifyLeads.length)
         const foundIds = verifyLeads.map(lead => lead.id)
         const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
         console.log('Missing lead IDs:', missingIds)
-        toast.error(`Some leads not found: ${missingIds.slice(0, 2).join(', ')}${missingIds.length > 2 ? '...' : ''}. Please refresh the page.`)
+        
+        // Auto-refresh the leads list and clear selection
+        toast.error(`Some leads no longer exist. Refreshing leads list...`)
+        await loadExistingLeads()
+        setSelectedLeads([])
         return
       }
       
