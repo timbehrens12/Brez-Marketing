@@ -22,15 +22,15 @@ export default function SignInPage() {
               headerTitle: "hidden",
               headerSubtitle: "hidden",
               socialButtonsBlockButton: "bg-[#333] border-[#444] text-white hover:bg-[#444] transition-colors",
-              formButtonPrimary: "bg-white hover:bg-gray-100 text-black font-medium transition-colors",
-              footerActionLink: "text-gray-300 hover:text-white transition-colors",
+              formButtonPrimary: "bg-white hover:bg-gray-200 text-black font-semibold transition-colors duration-200",
+              footerActionLink: "text-gray-400 hover:text-white transition-colors",
               formFieldLabel: "text-gray-300",
-              formFieldInput: "bg-[#333] border-[#444] text-white focus:ring-gray-500 focus:border-gray-500 transition-colors",
+              formFieldInput: "bg-[#333] border-[#444] text-white focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors",
               dividerLine: "bg-[#444]",
               dividerText: "text-gray-400",
               identityPreviewText: "text-gray-300",
-              identityPreviewEditButton: "text-gray-300 hover:text-white transition-colors",
-              formFieldAction: "text-gray-300 hover:text-white transition-colors",
+              identityPreviewEditButton: "text-gray-400 hover:text-white transition-colors",
+              formFieldAction: "text-gray-400 hover:text-white transition-colors",
               alert: "bg-[#333] border-[#444] text-white",
               logoBox: "hidden",
               footer: "opacity-30 hover:opacity-100 transition-opacity",
@@ -40,7 +40,7 @@ export default function SignInPage() {
               formHeaderTitle: "text-white text-xl",
               formHeaderSubtitle: "text-gray-300",
               phoneNumberInput: "bg-[#333] border-[#444] text-white",
-              alternativeMethodsBlockButton: "text-gray-300 hover:text-white transition-colors"
+              alternativeMethodsBlockButton: "text-gray-400 hover:text-white transition-colors"
             }
           }}
           redirectUrl="/dashboard"
