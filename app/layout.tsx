@@ -128,7 +128,6 @@ export default function RootLayout({
           
           /* Make all action links more visible */
           .cl-formButtonReset, 
-          .cl-formButtonPrimary,
           .cl-formResendCodeLink,
           .cl-formFieldAction {
             color: #9ca3af !important;
@@ -137,10 +136,41 @@ export default function RootLayout({
           }
           
           .cl-formButtonReset:hover, 
-          .cl-formButtonPrimary:hover,
           .cl-formResendCodeLink:hover,
           .cl-formFieldAction:hover {
             color: white !important;
+          }
+          
+          /* Fix continue button specifically */
+          .cl-formButtonPrimary {
+            background-color: white !important;
+            color: black !important;
+            font-weight: 600 !important;
+            border: none !important;
+            outline: none !important;
+          }
+          
+          .cl-formButtonPrimary:focus {
+            outline: 2px solid #9ca3af !important;
+            outline-offset: 2px !important;
+            box-shadow: none !important;
+          }
+          
+          /* Remove blue from all input fields */
+          .cl-formFieldInput, 
+          .cl-otpCodeFieldInput,
+          .cl-phoneNumberInput {
+            background-color: #2a2a2a !important;
+            border-color: #444 !important;
+            color: white !important;
+          }
+          
+          .cl-formFieldInput:focus, 
+          .cl-otpCodeFieldInput:focus,
+          .cl-phoneNumberInput:focus {
+            border-color: #9ca3af !important;
+            box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.3) !important;
+            outline: none !important;
           }
         `}</style>
       </head>
