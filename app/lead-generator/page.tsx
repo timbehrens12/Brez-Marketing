@@ -855,7 +855,11 @@ export default function LeadGeneratorPage() {
     setIsSendingToOutreach(true)
 
     try {
-      console.log('Sending leads to outreach:', { selectedLeads, userId })
+      console.log('Sending leads to outreach:', { 
+        selectedLeads: selectedLeads, 
+        selectedCount: selectedLeads.length,
+        userId: userId 
+      })
       
       // Refresh the Supabase client to ensure we have a valid token
       const supabase = await getSupabaseClient()
@@ -928,14 +932,26 @@ export default function LeadGeneratorPage() {
 
       const data = await response.json()
       console.log('Send to outreach success:', data)
-      toast.success(`${data.message}! Created ${data.tasksCreated} follow-up tasks.`)
+      console.log('Selected leads to remove:', selectedLeads)
+      console.log('Current leads count before removal:', leads.length)
       
-      // Remove sent leads from the current page
-      setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
-      setSelectedLeads([])
-      
-      // Update stats
-      await loadStats()
+      if (data.success) {
+        toast.success(`${data.message}! Created ${data.tasksCreated || data.leadsAdded || selectedLeads.length} follow-up tasks.`)
+        
+        // Remove sent leads from the current page
+        const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
+        setLeads(prev => {
+          const filtered = prev.filter(lead => !leadsToRemove.includes(lead.id))
+          console.log('Leads after removal:', filtered.length)
+          return filtered
+        })
+        setSelectedLeads([])
+        
+        // Update stats
+        await loadStats()
+      } else {
+        toast.error(data.error || 'Failed to send leads to outreach')
+      }
     } catch (error) {
       console.error('Error sending to outreach:', error)
       toast.error('Network error: Failed to send leads to outreach')

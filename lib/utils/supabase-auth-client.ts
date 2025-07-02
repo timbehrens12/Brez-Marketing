@@ -18,17 +18,16 @@ export function useAuthenticatedSupabase() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     
     try {
-      // Always try to get a fresh token to handle tab switching scenarios
+      // Get fresh token but avoid creating clients too frequently
       const token = await getToken({ template: 'supabase' })
       
-      // Check if the token has changed or if we need a new client
-      const needsNewClient = !clientRef.current || 
-                            token !== lastTokenRef.current ||
-                            (token && !lastTokenRef.current) ||
-                            (!token && lastTokenRef.current)
+      // If we have the same token and a working client, reuse it
+      if (token && token === lastTokenRef.current && clientRef.current) {
+        return clientRef.current
+      }
       
-      // If we have a token and need a new client
-      if (token && needsNewClient) {
+      // Only create a new client if the token has actually changed
+      if (token && token !== lastTokenRef.current) {
         console.log('Creating new Supabase client with fresh token')
         const client = createClient(supabaseUrl, supabaseKey, {
           global: {
@@ -44,19 +43,17 @@ export function useAuthenticatedSupabase() {
         return client
       }
       
-      // If we have a token and existing client with same token, reuse it
-      if (token && !needsNewClient && clientRef.current) {
+      // If we have an existing client with the same token, reuse it
+      if (token && clientRef.current) {
         return clientRef.current
       }
     } catch (error) {
       console.error('Error getting Supabase token:', error)
-      // Reset client to force recreation on next call
-      clientRef.current = null
-      lastTokenRef.current = null
+      // Don't reset client immediately - may be a temporary error
     }
     
-    // If we don't have a token, create a regular Supabase client
-    if (!clientRef.current || lastTokenRef.current !== null) {
+    // Only create unauthenticated client if we don't have any client
+    if (!clientRef.current) {
       console.log('Creating unauthenticated Supabase client')
       clientRef.current = createClient(supabaseUrl, supabaseKey)
       lastTokenRef.current = null
