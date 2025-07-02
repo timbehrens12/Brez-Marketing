@@ -58,13 +58,13 @@ export function getSupabaseClient() {
   // Final fallback - should rarely happen now
   console.log('🔄 Creating final fallback Supabase client (no singleton found)')
   return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      storageKey: 'sb-auth-token',
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-  })
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        storageKey: 'sb-auth-token',
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      },
+    })
 }
 
 // For server-side operations

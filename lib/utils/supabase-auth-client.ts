@@ -5,7 +5,6 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 // Global singleton client instance
 let globalClient: SupabaseClient | null = null
 let globalToken: string | null = null
-let tokenExpiry: number | null = null
 let isInitializing = false
 
 // Export getter for direct access by other modules
@@ -40,8 +39,13 @@ function initializeBasicClient() {
   }
 }
 
-// Call initialization
-initializeBasicClient()
+// Only initialize on client-side after DOM is ready to avoid hydration mismatches
+if (typeof window !== 'undefined') {
+  // Use setTimeout to ensure this runs after initial hydration
+  setTimeout(() => {
+    initializeBasicClient()
+  }, 0)
+}
 
 /**
  * Hook to create a Supabase client with authentication from Clerk
@@ -50,7 +54,6 @@ initializeBasicClient()
 export function useAuthenticatedSupabase() {
   const { getToken } = useAuth()
   const [isReady, setIsReady] = useState(false)
-  const initializeRef = useRef(false)
   
   // Function to decode JWT and get expiry time
   const getTokenExpiry = (token: string): number | null => {
@@ -62,14 +65,14 @@ export function useAuthenticatedSupabase() {
     }
   }
   
-  // Function to check if token is expired or will expire soon (within 30 seconds)
+  // Function to check if token is expired or will expire soon (within 1 minute)
   const isTokenExpiredOrExpiringSoon = (expiry: number | null): boolean => {
     if (!expiry) return true
-    const thirtySecondsFromNow = Date.now() + (30 * 1000) // Changed from 1 minute to 30 seconds
-    return expiry < thirtySecondsFromNow
-  }
-  
-  // Upgrade to authenticated client - only when token actually changes
+    const oneMinuteFromNow = Date.now() + (1 * 60 * 1000)
+    return expiry < oneMinuteFromNow
+    }
+    
+  // Upgrade to authenticated client
   const upgradeToAuthenticatedClient = async (): Promise<SupabaseClient> => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -87,11 +90,9 @@ export function useAuthenticatedSupabase() {
       
       const token = await getToken({ template: 'supabase' })
       
-      // Only upgrade if we got a new token
+      // Only upgrade if we got a token and it's different
       if (token && token !== globalToken) {
-        console.log('🔄 Upgrading to authenticated Supabase client (new token detected)')
-        
-        // Create new authenticated client
+        console.log('🔄 Upgrading to authenticated Supabase client (singleton)')
         globalClient = createClient(supabaseUrl, supabaseKey, {
           global: {
             headers: {
@@ -99,15 +100,13 @@ export function useAuthenticatedSupabase() {
             }
           }
         })
-        
-        // Update global state
         globalToken = token
-        tokenExpiry = getTokenExpiry(token)
-        
         console.log('✅ Singleton upgraded to authenticated client')
+        
+        // Expose globally for other systems
         exposeGlobalClient()
       } else if (!token) {
-        console.log('⚠️ No token available, keeping existing client')
+        console.log('⚠️ No token available, keeping basic client')
       } else {
         console.log('♻️ Token unchanged, keeping existing client')
       }
@@ -121,21 +120,28 @@ export function useAuthenticatedSupabase() {
     }
   }
   
-  // Check if we need to refresh the token (more conservative)
-  const needsTokenRefresh = (): boolean => {
-    if (!globalToken || !tokenExpiry) return true
-    return isTokenExpiredOrExpiringSoon(tokenExpiry)
-  }
-  
-  // Initialize only once per component mount
-  useEffect(() => {
-    if (initializeRef.current) return
-    initializeRef.current = true
+  // Refresh token if needed
+  const refreshTokenIfNeeded = async (): Promise<void> => {
+    if (!globalToken) return
     
+    const expiry = getTokenExpiry(globalToken)
+    if (isTokenExpiredOrExpiringSoon(expiry)) {
+      console.log('🔄 Token expiring soon, upgrading client...')
+      await upgradeToAuthenticatedClient()
+    }
+      }
+      
+  // Initialize on mount
+  useEffect(() => {
     let isMounted = true
     
     const initialize = async () => {
       try {
+        // Ensure basic client exists first
+        if (!globalClient) {
+          initializeBasicClient()
+        }
+        
         await upgradeToAuthenticatedClient()
         if (isMounted) {
           setIsReady(true)
@@ -158,15 +164,11 @@ export function useAuthenticatedSupabase() {
   // Main function to get the client
   const getSupabaseClient = useCallback(async (): Promise<SupabaseClient | null> => {
     try {
-      // Only refresh if token is actually expiring soon
-      if (needsTokenRefresh()) {
-        console.log('🔄 Token refresh needed, upgrading client...')
-        await upgradeToAuthenticatedClient()
-      }
+      // Refresh token if needed
+      await refreshTokenIfNeeded()
       
       // Ensure we have a client (should always be true now)
       if (!globalClient) {
-        console.log('⚠️ No global client found, creating one...')
         await upgradeToAuthenticatedClient()
       }
       
