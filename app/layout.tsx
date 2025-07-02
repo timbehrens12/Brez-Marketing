@@ -160,8 +160,8 @@ export default function RootLayout({
           .cl-formFieldInput, 
           .cl-otpCodeFieldInput,
           .cl-phoneNumberInput {
-            background-color: #2a2a2a !important;
-            border-color: #444 !important;
+            background-color: #1a1a1a !important;
+            border-color: #333 !important;
             color: white !important;
           }
           
