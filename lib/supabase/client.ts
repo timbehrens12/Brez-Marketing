@@ -34,37 +34,45 @@ async function getGlobalAuthenticatedClient() {
 }
 
 export function getSupabaseClient() {
-  // ALWAYS try to use the global singleton first (even if just created)
-  if (typeof window !== 'undefined') {
-    const globalClient = (window as any).__supabase_global_client
-    if (globalClient) {
-      console.log('♻️ Using global authenticated Supabase client (from old system)')
-      return globalClient
-    }
-    
-    // Also check if our singleton module has initialized the client
-    try {
-      const { getGlobalClient } = require('../utils/supabase-auth-client')
-      const moduleClient = getGlobalClient()
-      if (moduleClient) {
-        console.log('♻️ Using module-level global client')
-        return moduleClient
+  // Server-side: return simple client
+  if (typeof window === 'undefined') {
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    } catch (e) {
-      // Module not available, continue to fallback
-    }
+    })
   }
   
-  // Final fallback - should rarely happen now
-  console.log('🔄 Creating final fallback Supabase client (no singleton found)')
+  // Client-side: ALWAYS use the global singleton when available
+  const globalClient = (window as any).__supabase_global_client
+  if (globalClient) {
+    console.log('♻️ Using global authenticated Supabase client (from old system)')
+    return globalClient
+  }
+  
+  // Also check if our singleton module has initialized the client
+  try {
+    const { getGlobalClient } = require('../utils/supabase-auth-client')
+    const moduleClient = getGlobalClient()
+    if (moduleClient) {
+      console.log('♻️ Using module-level global client')
+      return moduleClient
+    }
+  } catch (e) {
+    console.warn('⚠️ Could not load singleton client module:', e)
+  }
+  
+  // If no singleton exists, return a basic client but warn about it
+  console.warn('⚠️ No authenticated singleton found - returning basic client (may cause auth issues)')
+  
+  // Create a basic client as absolute last resort
   return createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        storageKey: 'sb-auth-token',
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      },
-    })
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    }
+  })
 }
 
 // For server-side operations
@@ -81,4 +89,14 @@ export function getSupabaseServiceClient() {
 
 // Legacy exports for backward compatibility - all point to the same singleton
 export default getSupabaseClient 
-export const supabase = getSupabaseClient() 
+
+// Lazy getter to avoid creating client at module load time
+let _supabaseInstance: any = null
+export const supabase = new Proxy({} as any, {
+  get(target, prop) {
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient()
+    }
+    return _supabaseInstance[prop]
+  }
+}) 

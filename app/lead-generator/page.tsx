@@ -400,6 +400,11 @@ export default function LeadGeneratorPage() {
   const loadNiches = async () => {
     try {
       const supabase = await getSupabaseClient()
+      if (!supabase) {
+        console.error('Supabase client not ready')
+        return
+      }
+      
       const { data, error } = await supabase
         .from('lead_niches')
         .select('*')
@@ -455,6 +460,11 @@ export default function LeadGeneratorPage() {
     
     try {
       const supabase = await getSupabaseClient()
+      if (!supabase) {
+        console.error('Supabase client not ready for stats')
+        return
+      }
+      
       const { data: allLeads, error } = await supabase
         .from('leads')
         .select('created_at')
@@ -850,8 +860,13 @@ export default function LeadGeneratorPage() {
         userId: userId 
       })
       
-      // Refresh the Supabase client to ensure we have a valid token
+      // Get the authenticated Supabase client from our hook
       const supabase = await getSupabaseClient()
+      if (!supabase) {
+        console.error('❌ Supabase client not ready')
+        toast.error('Database connection not ready. Please try again.')
+        return
+      }
       
       // Verify the leads exist and belong to the current user before sending
       console.log('🔍 Verifying leads exist in database...')
