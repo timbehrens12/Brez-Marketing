@@ -33,11 +33,11 @@ export function useAuthenticatedSupabase() {
     }
   }
   
-  // Function to check if token is expired or will expire soon (within 5 minutes)
+  // Function to check if token is expired or will expire soon (within 1 minute)
   const isTokenExpiredOrExpiringSoon = (expiry: number | null): boolean => {
     if (!expiry) return true
-    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000)
-    return expiry < fiveMinutesFromNow
+    const oneMinuteFromNow = Date.now() + (1 * 60 * 1000)
+    return expiry < oneMinuteFromNow
   }
   
   // Create or get the singleton client

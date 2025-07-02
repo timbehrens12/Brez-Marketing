@@ -34,18 +34,18 @@ async function getGlobalAuthenticatedClient() {
 }
 
 export function getSupabaseClient() {
-  // On client-side, try to use the global singleton
+  // ALWAYS try to use the global singleton first
   if (typeof window !== 'undefined') {
-    // Access the global client if available
-    const globalClientFromWindow = (window as any).__supabase_global_client
-    if (globalClientFromWindow) {
-      console.log('♻️ Using global authenticated Supabase client')
-      return globalClientFromWindow
+    const globalClient = (window as any).__supabase_global_client
+    if (globalClient) {
+      console.log('♻️ Using global authenticated Supabase client (from old system)')
+      return globalClient
     }
   }
   
-  console.log('🔄 Creating new Supabase client instance...')
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
+  // Only create fallback if no singleton exists
+  console.log('🔄 Creating fallback Supabase client instance (no singleton available)')
+  return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -53,8 +53,6 @@ export function getSupabaseClient() {
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
   })
-  console.log('✅ Supabase client instance created successfully')
-  return client
 }
 
 // For server-side operations
