@@ -13,8 +13,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 [API] Send to outreach endpoint called')
+  
   try {
+    console.log('📥 [API] Parsing request body...')
     const { leadIds, userId } = await request.json();
+    console.log('✅ [API] Request parsed successfully:', { leadIds: leadIds?.length, userId })
 
     if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
       return NextResponse.json({ error: 'No leads selected' }, { status: 400 });
@@ -24,14 +28,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 });
     }
 
-    console.log('Processing leads for outreach:', { leadIds: leadIds.length, userId });
+    console.log('🔄 [API] Processing leads for outreach:', { leadIds: leadIds.length, userId });
 
     // Get the leads data
+    console.log('🗃️ [API] Fetching leads from database...')
     const { data: leads, error: leadsError } = await supabase
       .from('leads')
       .select('*')
       .in('id', leadIds)
       .eq('user_id', userId);
+    
+    console.log('📊 [API] Database query completed:', { 
+      foundLeads: leads?.length, 
+      error: leadsError?.message,
+      queryTime: new Date().toISOString() 
+    })
 
     if (leadsError) {
       console.error('Error fetching leads:', leadsError);
@@ -43,10 +54,17 @@ export async function POST(request: NextRequest) {
     }
 
     // ANTI-DUPLICATION CHECK: Check if any of these leads are already in outreach
+    console.log('🔍 [API] Checking for duplicate leads in outreach...')
     const { data: existingOutreachLeads, error: duplicateCheckError } = await supabase
       .from('outreach_campaign_leads')
       .select('lead_id, campaign:outreach_campaigns(name, status)')
       .in('lead_id', leadIds);
+    
+    console.log('🔄 [API] Duplicate check completed:', { 
+      existingCount: existingOutreachLeads?.length || 0,
+      error: duplicateCheckError?.message,
+      checkTime: new Date().toISOString()
+    })
 
     if (duplicateCheckError) {
       console.error('Error checking for duplicates:', duplicateCheckError);
@@ -145,6 +163,7 @@ export async function POST(request: NextRequest) {
     // Create a single outreach campaign for these leads
     const campaignName = `Outreach Campaign - ${new Date().toLocaleDateString()}`;
     
+    console.log('🏗️ [API] Creating outreach campaign...', { campaignName, brandId, leadsCount: leads.length })
     const { data: campaign, error: campaignError } = await supabase
       .from('outreach_campaigns')
       .insert({
@@ -161,6 +180,12 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single();
+    
+    console.log('📋 [API] Campaign creation completed:', { 
+      campaignId: campaign?.id,
+      error: campaignError?.message,
+      createTime: new Date().toISOString()
+    })
 
     if (campaignError) {
       console.error('Error creating campaign:', campaignError);
@@ -176,7 +201,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create outreach campaign' }, { status: 500 });
     }
 
-    console.log('Created campaign:', campaign.id);
+    console.log('✅ [API] Created campaign:', campaign.id);
 
     // Add leads to the campaign
     const campaignLeads = leads.map(lead => ({
@@ -186,10 +211,17 @@ export async function POST(request: NextRequest) {
       added_at: new Date().toISOString()
     }));
 
+    console.log('➕ [API] Adding leads to campaign...', { campaignId: campaign.id, leadsToAdd: campaignLeads.length })
     const { data: insertedCampaignLeads, error: campaignLeadsError } = await supabase
       .from('outreach_campaign_leads')
       .insert(campaignLeads)
       .select();
+    
+    console.log('🎯 [API] Leads insertion completed:', { 
+      insertedCount: insertedCampaignLeads?.length,
+      error: campaignLeadsError?.message,
+      insertTime: new Date().toISOString()
+    })
 
     if (campaignLeadsError) {
       console.error('Error adding leads to campaign:', campaignLeadsError);
@@ -205,9 +237,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to add leads to campaign' }, { status: 500 });
     }
 
-    console.log(`Added ${insertedCampaignLeads.length} leads to campaign`);
+    console.log(`🎉 [API] Added ${insertedCampaignLeads.length} leads to campaign`);
 
-    return NextResponse.json({
+    const successResponse = {
       success: true,
       message: `Successfully added ${leads.length} leads to outreach campaign`,
       campaign: {
@@ -217,12 +249,19 @@ export async function POST(request: NextRequest) {
       },
       tasksCreated: leads.length,
       leadsAdded: insertedCampaignLeads.length
-    });
+    };
+    
+    console.log('🚀 [API] Sending success response:', successResponse);
+    return NextResponse.json(successResponse);
 
   } catch (error) {
-    console.error('Error in send-to-outreach:', error);
+    console.error('💥 [API] CRITICAL ERROR in send-to-outreach:', error);
+    console.error('💥 [API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('💥 [API] Error time:', new Date().toISOString());
+    
     return NextResponse.json({ 
-      error: 'Failed to send leads to outreach. Please try again.' 
+      error: 'Failed to send leads to outreach. Please try again.',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

@@ -880,7 +880,13 @@ export default function LeadGeneratorPage() {
       
       // Add timeout to prevent hanging after tab visibility changes
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => {
+        console.error('🚨 FETCH REQUEST TIMEOUT - ABORTING AFTER 15 SECONDS')
+        controller.abort()
+      }, 15000) // 15 second timeout for faster feedback
+      
+      console.log('🚀 Starting fetch request to /api/leads/send-to-outreach')
+      console.log('📤 Request payload:', { leadIds: selectedLeads, userId })
       
       const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
@@ -892,8 +898,9 @@ export default function LeadGeneratorPage() {
       })
       
       clearTimeout(timeoutId)
-
+      console.log('✅ Fetch completed - Response received')
       console.log('Response status:', response.status, response.statusText)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
