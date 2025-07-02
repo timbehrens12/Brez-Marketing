@@ -51,17 +51,17 @@ export function getSupabaseClient() {
     return globalClient
   }
   
-  // Also check if our singleton module has initialized the client
-  try {
-    const { getGlobalClient } = require('../utils/supabase-auth-client')
-    const moduleClient = getGlobalClient()
-    if (moduleClient) {
-      console.log('♻️ Using module-level global client')
-      return moduleClient
+      // Also check if our singleton module has initialized the client
+    try {
+      const { getGlobalClient } = require('../utils/supabase-global-client')
+      const moduleClient = getGlobalClient()
+      if (moduleClient) {
+        console.log('♻️ Using module-level global client')
+        return moduleClient
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not load singleton client module:', e)
     }
-  } catch (e) {
-    console.warn('⚠️ Could not load singleton client module:', e)
-  }
   
   // If no singleton exists, return a basic client but warn about it
   console.warn('⚠️ No authenticated singleton found - returning basic client (may cause auth issues)')

@@ -1,51 +1,12 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+"use client"
+
+import { SupabaseClient } from '@supabase/supabase-js'
 import { useAuth } from '@clerk/nextjs'
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState } from 'react'
+import { getGlobalClient, upgradeGlobalClient } from './supabase-global-client'
 
-// Global singleton client instance
-let globalClient: SupabaseClient | null = null
-let globalToken: string | null = null
-let isInitializing = false
-
-// Export getter for direct access by other modules
-export const getGlobalClient = () => globalClient
-
-// Expose global client for other systems to access
-function exposeGlobalClient() {
-  if (typeof window !== 'undefined') {
-    (window as any).__supabase_global_client = globalClient
-    console.log('🌐 Global Supabase client exposed for cross-system access')
-  }
-}
-
-// Initialize basic client immediately if on client-side (after function definitions)
-function initializeBasicClient() {
-  if (typeof window !== 'undefined' && !globalClient) {
-    try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      
-      console.log('🚀 Pre-initializing global Supabase client (basic)')
-      globalClient = createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        }
-      })
-      exposeGlobalClient()
-    } catch (error) {
-      console.error('❌ Failed to pre-initialize Supabase client:', error)
-    }
-  }
-}
-
-// Only initialize on client-side after DOM is ready to avoid hydration mismatches
-if (typeof window !== 'undefined') {
-  // Use setTimeout to ensure this runs after initial hydration
-  setTimeout(() => {
-    initializeBasicClient()
-  }, 0)
-}
+// Re-export for compatibility
+export { getGlobalClient }
 
 /**
  * Hook to create a Supabase client with authentication from Clerk
@@ -74,74 +35,30 @@ export function useAuthenticatedSupabase() {
     
   // Upgrade to authenticated client
   const upgradeToAuthenticatedClient = async (): Promise<SupabaseClient> => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    
-    // Prevent concurrent upgrades
-    if (isInitializing) {
-      while (isInitializing) {
-        await new Promise(resolve => setTimeout(resolve, 50))
-      }
-      if (globalClient) return globalClient
-    }
-    
     try {
-      isInitializing = true
-      
       const token = await getToken({ template: 'supabase' })
       
-      // Only upgrade if we got a token and it's different
-      if (token && token !== globalToken) {
+      // Only upgrade if we got a token
+      if (token) {
         console.log('🔄 Upgrading to authenticated Supabase client (singleton)')
-        globalClient = createClient(supabaseUrl, supabaseKey, {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        })
-        globalToken = token
-        console.log('✅ Singleton upgraded to authenticated client')
-        
-        // Expose globally for other systems
-        exposeGlobalClient()
-      } else if (!token) {
-        console.log('⚠️ No token available, keeping basic client')
+        const client = upgradeGlobalClient(token)
+        return client
       } else {
-        console.log('♻️ Token unchanged, keeping existing client')
+        console.log('⚠️ No token available, keeping basic client')
+        return getGlobalClient()!
       }
-      
-      return globalClient!
     } catch (error) {
       console.error('❌ Error upgrading Supabase client:', error)
-      return globalClient!
-    } finally {
-      isInitializing = false
+      return getGlobalClient()!
     }
   }
   
-  // Refresh token if needed
-  const refreshTokenIfNeeded = async (): Promise<void> => {
-    if (!globalToken) return
-    
-    const expiry = getTokenExpiry(globalToken)
-    if (isTokenExpiredOrExpiringSoon(expiry)) {
-      console.log('🔄 Token expiring soon, upgrading client...')
-      await upgradeToAuthenticatedClient()
-    }
-      }
-      
   // Initialize on mount
   useEffect(() => {
     let isMounted = true
     
     const initialize = async () => {
       try {
-        // Ensure basic client exists first
-        if (!globalClient) {
-          initializeBasicClient()
-        }
-        
         await upgradeToAuthenticatedClient()
         if (isMounted) {
           setIsReady(true)
@@ -164,18 +81,29 @@ export function useAuthenticatedSupabase() {
   // Main function to get the client
   const getSupabaseClient = useCallback(async (): Promise<SupabaseClient | null> => {
     try {
-      // Refresh token if needed
-      await refreshTokenIfNeeded()
+      // Get current token to check if refresh is needed
+      const token = await getToken({ template: 'supabase' })
       
-      // Ensure we have a client (should always be true now)
-      if (!globalClient) {
-        await upgradeToAuthenticatedClient()
+      if (token) {
+        // Check if token is expiring soon
+        const expiry = getTokenExpiry(token)
+        if (isTokenExpiredOrExpiringSoon(expiry)) {
+          console.log('🔄 Token expiring soon, upgrading client...')
+          return upgradeGlobalClient(token)
+        }
       }
       
-      return globalClient
+      // Return existing global client
+      const existingClient = getGlobalClient()
+      if (existingClient) {
+        return existingClient
+      }
+      
+      // Fallback: create authenticated client
+      return await upgradeToAuthenticatedClient()
     } catch (error) {
       console.error('❌ Error getting Supabase client:', error)
-      return globalClient
+      return getGlobalClient()
     }
   }, [])
   
