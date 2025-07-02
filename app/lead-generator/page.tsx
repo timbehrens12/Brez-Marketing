@@ -560,15 +560,16 @@ export default function LeadGeneratorPage() {
           console.error('Error auto-clearing leads:', error)
         }
       } else if (document.visibilityState === 'visible') {
-        // Tab became visible - refresh authentication and data
+        // Tab became visible - refresh authentication quietly without interfering with ongoing operations
         console.log('Tab became visible, refreshing authentication...')
         try {
-          // Refresh the Supabase client to ensure we have a valid authentication token
-          await getSupabaseClient()
-          console.log('Authentication refreshed successfully')
+          // Add a small delay to avoid interfering with any ongoing operations
+          setTimeout(async () => {
+            await getSupabaseClient()
+            console.log('Authentication refreshed successfully')
+          }, 100)
         } catch (error) {
           console.error('Error refreshing authentication:', error)
-          toast.error('Authentication may have expired. Please refresh the page if you encounter issues.')
         }
       }
     }
@@ -889,13 +890,20 @@ export default function LeadGeneratorPage() {
         return
       }
       
+      // Add timeout to prevent hanging after tab visibility changes
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
       const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ leadIds: selectedLeads, userId })
+        body: JSON.stringify({ leadIds: selectedLeads, userId }),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       console.log('Response status:', response.status, response.statusText)
 
@@ -954,7 +962,12 @@ export default function LeadGeneratorPage() {
       }
     } catch (error) {
       console.error('Error sending to outreach:', error)
-      toast.error('Network error: Failed to send leads to outreach')
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error('Request timed out. Please try again.')
+      } else {
+        toast.error('Network error: Failed to send leads to outreach')
+      }
     } finally {
       setIsSendingToOutreach(false)
     }
