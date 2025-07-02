@@ -529,36 +529,10 @@ export default function LeadGeneratorPage() {
     }
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'hidden' && leads.length > 0) {
-        // Auto-clear leads when tab becomes hidden (user navigating away)
-        // But protect leads that are in outreach
-        try {
-          const supabase = await getSupabaseClient()
-          
-          // Get leads that are currently in outreach campaigns
-          const { data: outreachLeadIds } = await supabase
-            .from('outreach_campaign_leads')
-            .select('lead_id')
-          
-          const protectedLeadIds = outreachLeadIds?.map(ol => ol.lead_id) || []
-          
-          if (protectedLeadIds.length > 0) {
-            // Delete only leads that are NOT in outreach
-            await supabase
-              .from('leads')
-              .delete()
-              .eq('user_id', userId)
-              .not('id', 'in', `(${protectedLeadIds.join(',')})`)
-          } else {
-            // No leads in outreach, safe to delete all
-            await supabase
-              .from('leads')
-              .delete()
-              .eq('user_id', userId)
-          }
-        } catch (error) {
-          console.error('Error auto-clearing leads:', error)
-        }
+      // No longer auto-clear leads on tab switch - let users manage their own leads
+      // The previous behavior was too aggressive and cleared leads unexpectedly
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Tab became visible - keeping existing leads')
       }
     }
 
