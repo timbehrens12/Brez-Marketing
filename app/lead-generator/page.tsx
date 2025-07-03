@@ -1931,17 +1931,19 @@ export default function LeadGeneratorPage() {
                         } />
                       </SelectTrigger>
                                               <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                          <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
-                            <Input
-                              placeholder="Search states..."
-                              value={stateSearch}
-                              onChange={(e) => setStateSearch(e.target.value)}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                              className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
-                            />
-                          </div>
+                                            <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                    <Input
+                      placeholder="Search states..."
+                      value={stateSearch}
+                      onChange={(e) => setStateSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                    />
+                  </div>
                         {getFilteredStates().map((state) => (
                           <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                             {state.name}
@@ -1970,17 +1972,19 @@ export default function LeadGeneratorPage() {
                         } />
                       </SelectTrigger>
                                               <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                          <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
-                            <Input
-                              placeholder="Search cities..."
-                              value={citySearch}
-                              onChange={(e) => setCitySearch(e.target.value)}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                              className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
-                            />
-                          </div>
+                                            <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                    <Input
+                      placeholder="Search cities..."
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                    />
+                  </div>
                         {getFilteredCities().map((city) => (
                           <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                             {city.name}
@@ -2790,8 +2794,10 @@ export default function LeadGeneratorPage() {
                       value={manualCountrySearch}
                       onChange={(e) => setManualCountrySearch(e.target.value)}
                       onKeyDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onFocus={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
+                      autoFocus
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                     />
                   </div>
@@ -2829,8 +2835,10 @@ export default function LeadGeneratorPage() {
                       value={manualStateSearch}
                       onChange={(e) => setManualStateSearch(e.target.value)}
                       onKeyDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onFocus={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
+                      autoFocus
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                     />
                   </div>
@@ -2865,8 +2873,10 @@ export default function LeadGeneratorPage() {
                       value={manualCitySearch}
                       onChange={(e) => setManualCitySearch(e.target.value)}
                       onKeyDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onFocus={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
+                      autoFocus
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                     />
                   </div>
