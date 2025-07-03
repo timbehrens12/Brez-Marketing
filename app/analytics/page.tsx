@@ -5,10 +5,41 @@ import { useSupabase } from "@/lib/hooks/useSupabase"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import MetaSpendTrends from "./components/meta-spend-trends"
 import MetaAdPerformance from "./components/meta-ad-performance"
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 
 export default function AnalyticsPage() {
   const { selectedBrandId } = useBrandContext()
   const supabase = useSupabase()
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    // Page loading simulation
+    const timer = setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message="Loading Analytics"
+        subMessage="Preparing your performance insights"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
+  }
   
   return (
     <div className="container mx-auto p-6">

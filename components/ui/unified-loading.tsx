@@ -50,6 +50,26 @@ export const pageLoadingConfig = {
     message: "Loading Outreach Tool",
     subMessage: "Preparing outreach campaigns"
   },
+  analytics: {
+    message: "Loading Analytics",
+    subMessage: "Preparing your performance insights"
+  },
+  "ad-creative-studio": {
+    message: "Loading Ad Creative Studio",
+    subMessage: "Setting up your creative workspace"
+  },
+  "site-optimizer": {
+    message: "Loading Site Optimizer",
+    subMessage: "Setting up optimization tools"
+  },
+  orders: {
+    message: "Loading Orders",
+    subMessage: "Preparing your order data"
+  },
+  review: {
+    message: "Loading Review Demo",
+    subMessage: "Setting up Meta integration demo"
+  },
   settings: {
     message: "Loading Settings",
     subMessage: "Configuring your preferences"
@@ -73,7 +93,7 @@ export function UnifiedLoading({
     
     if (agencyLogo) {
       return (
-        <div className="h-16 w-16 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-2 overflow-hidden mb-6">
+        <div className="h-24 w-24 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-3 overflow-hidden mb-6 mx-auto">
           <img 
             src={agencyLogo} 
             alt={`${agencyName || 'Agency'} Logo`} 
@@ -83,8 +103,8 @@ export function UnifiedLoading({
       )
     } else if (agencyName && agencyName.trim() !== 'Brez Marketing Assistant') {
       return (
-        <div className="h-16 w-16 bg-[#2A2A2A] border border-[#333] rounded-lg flex items-center justify-center mb-6">
-          <span className="text-white font-bold text-xl">
+        <div className="h-24 w-24 bg-[#2A2A2A] border border-[#333] rounded-lg flex items-center justify-center mb-6 mx-auto">
+          <span className="text-white font-bold text-2xl">
             {agencyName.slice(0, 2).toUpperCase()}
           </span>
         </div>

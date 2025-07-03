@@ -4,11 +4,42 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 
 export default function ReviewPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [showMockData, setShowMockData] = useState(false)
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    // Page loading simulation
+    const timer = setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message="Loading Review Demo"
+        subMessage="Setting up Meta integration demo"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
+  }
 
   const handleConnect = async () => {
     setIsConnecting(true)

@@ -1,10 +1,42 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Globe, Zap, Sparkles } from 'lucide-react'
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 
 export default function SiteOptimizerPage() {
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    // Page loading simulation
+    const timer = setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message="Loading Site Optimizer"
+        subMessage="Setting up optimization tools"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center space-x-3">

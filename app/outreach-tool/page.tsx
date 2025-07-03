@@ -220,7 +220,7 @@ export default function OutreachToolPage() {
       loadCampaignLeads()
     }
     
-    // Page loading simulation
+    // Page loading simulation - always complete after timeout regardless of userId
     const timer = setTimeout(() => {
       setIsLoadingPage(false)
     }, 1300)
