@@ -105,7 +105,7 @@ export function Sidebar({ className }: SidebarProps) {
                 </span>
               </div>
             ) : (
-              <div className="h-10 w-10 bg-gray-500 rounded-lg flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
                 {/* Gray placeholder square */}
               </div>
             )}
@@ -118,8 +118,8 @@ export function Sidebar({ className }: SidebarProps) {
                 agencySettings.agency_name
               ) : (
                 <div className="space-y-1">
-                  <div className="h-3 bg-gray-500 rounded w-20"></div>
-                  <div className="h-2 bg-gray-500 rounded w-16"></div>
+                  <div className="h-3 rounded w-20" style={{backgroundColor: '#3a3a3a'}}></div>
+                  <div className="h-2 rounded w-16" style={{backgroundColor: '#3a3a3a'}}></div>
                 </div>
               )}
             </h3>
@@ -197,7 +197,7 @@ export function Sidebar({ className }: SidebarProps) {
                 </span>
               </div>
             ) : (
-              <div className="h-10 w-10 bg-gray-500 rounded-lg flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
                 {/* Gray placeholder square */}
               </div>
             )}
@@ -210,8 +210,8 @@ export function Sidebar({ className }: SidebarProps) {
                 agencySettings.agency_name
               ) : (
                 <div className="space-y-1">
-                  <div className="h-3 bg-gray-500 rounded w-20"></div>
-                  <div className="h-2 bg-gray-500 rounded w-16"></div>
+                  <div className="h-3 rounded w-20" style={{backgroundColor: '#3a3a3a'}}></div>
+                  <div className="h-2 rounded w-16" style={{backgroundColor: '#3a3a3a'}}></div>
                 </div>
               )}
             </h3>
