@@ -1688,46 +1688,36 @@ export default function LeadGeneratorPage() {
                   </div>
                 ) : usageData ? (
                   <>
-                    {/* Daily Generation Status */}
+                    {/* Weekly Generation Status */}
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Daily Generation</span>
-                        <span className="text-sm text-gray-500">Resets {getTimeUntilMidnight()}</span>
+                        <span className="text-sm text-gray-400">Weekly Generation Status</span>
+                        <span className="text-sm text-gray-500">Resets {getTimeUntilReset()}</span>
                       </div>
                       
-                      {/* Status display that spans full width */}
-                      <div className={`w-full p-4 rounded-lg border transition-all duration-300 ${
-                        usageData.remaining <= 0 
-                          ? 'bg-red-900/20 border-red-700' 
-                          : 'bg-green-900/20 border-green-700'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {usageData.remaining <= 0 ? (
-                              <AlertTriangle className="h-5 w-5 text-red-400" />
-                            ) : (
-                              <TrendingUp className="h-5 w-5 text-green-400" />
-                            )}
-                            <div>
-                              <div className={`font-medium ${
-                                usageData.remaining <= 0 ? 'text-red-400' : 'text-green-400'
-                              }`}>
-                                {usageData.remaining <= 0 ? 'Weekly Generation Used' : 'Weekly Generation Available'}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {usageData.remaining <= 0 ? 'You have used your weekly generation' : 'Ready to generate leads'}
-                              </div>
+                      {/* Subtle status indicator */}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-[#2A2A2A] border border-[#333]">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            usageData.remaining <= 0 ? 'bg-orange-400' : 'bg-blue-400'
+                          }`}></div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-300">
+                              {usageData.remaining <= 0 ? 'Weekly limit reached' : 'Generation available'}
                             </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className={`text-xl font-bold ${
-                              usageData.remaining <= 0 ? 'text-red-400' : 'text-green-400'
-                            }`}>
-                              {usageData.remaining <= 0 ? '✓' : '●'}
+                            <div className="text-xs text-gray-500">
+                              {usageData.remaining <= 0 ? `Resets ${getTimeUntilReset()}` : 'Ready to find leads'}
                             </div>
                           </div>
                         </div>
+                        
+                        {usageData.remaining > 0 && (
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-blue-400">
+                              Ready
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1742,21 +1732,6 @@ export default function LeadGeneratorPage() {
                         <div className="text-xs text-gray-500">Max Niches</div>
                       </div>
                     </div>
-
-                    {/* Debug Reset Button */}
-                    <div className="pt-2 border-t border-[#333]">
-                      <Button
-                                        onClick={() => {}}
-                disabled={true}
-                        size="sm"
-                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Reset Daily Limits (Debug)
-                      </Button>
-                    </div>
-
-
 
                   </>
                 ) : (
