@@ -16,6 +16,7 @@ import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -110,11 +111,13 @@ export function WidgetManager({
   // Show a loading spinner during the initial data load for a selected brand
   if (initialDataLoad) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-400 text-lg">Loading dashboard data...</p>
-        <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-      </div>
+      <UnifiedLoading
+        size="xl"
+        variant="default"
+        message="Loading dashboard data..."
+        subMessage="This may take a moment"
+        className="py-16"
+      />
     );
   }
 

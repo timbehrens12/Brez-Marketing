@@ -769,7 +769,7 @@ export function CampaignOptimizer() {
         <CardContent>
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <Loader2 className="h-10 w-10 animate-spin mx-auto text-blue-500 mb-4" />
+              <Loader2 className="h-10 w-10 animate-spin mx-auto text-gray-400 mb-4" />
               <p className="text-gray-400">Loading campaign data...</p>
             </div>
           </div>

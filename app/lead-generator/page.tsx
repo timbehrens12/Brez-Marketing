@@ -1762,7 +1762,7 @@ export default function LeadGeneratorPage() {
 
               {/* Niche Selection */}
             <div className="space-y-3 relative">
-              <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
+              
               
               {businessType === 'ecommerce' ? (
                 // Coming Soon Message for eCommerce

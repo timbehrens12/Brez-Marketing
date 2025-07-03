@@ -418,7 +418,7 @@ export function AIInsightsWidget({ brandId, dateRange, focusArea = 'overall' }: 
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-400 mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-gray-400 mb-4" />
             <p className="text-white font-medium mb-2">Analyzing Your Campaigns</p>
             <p className="text-gray-400 text-sm text-center">
               AI is processing your campaign data and identifying optimization opportunities...

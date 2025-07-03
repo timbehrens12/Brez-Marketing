@@ -44,6 +44,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
@@ -1374,8 +1375,12 @@ export default function DashboardPage() {
             alt="Brez Logo" 
             className="h-16 w-auto object-contain mx-auto mb-6" 
           />
-          <p className="text-gray-400 mb-6">Loading dashboard...</p>
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                  <UnifiedLoading
+          size="lg"
+          variant="fullscreen"
+          message="Loading dashboard..."
+          subMessage="Setting up your workspace"
+        />
         </div>
       </div>
     )
