@@ -18,7 +18,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { CustomerSyncButton } from "@/components/dashboard/CustomerSyncButton"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Upload, X } from "lucide-react"
-import { UnifiedLoading } from "@/components/ui/unified-loading"
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { usePathname } from "next/navigation"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -34,6 +35,8 @@ export default function SettingsPage() {
   const { user } = useUser()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const { agencySettings, updateAgencySettings, isLoading: agencyLoading } = useAgency()
+  const pathname = usePathname()
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
@@ -42,18 +45,17 @@ export default function SettingsPage() {
   const supabase = useSupabase()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({})
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({});
   
   // Agency settings form state
-  const [tempAgencyName, setTempAgencyName] = useState('')
+  const [tempAgencyName, setTempAgencyName] = useState(agencySettings.agency_name)
   const [tempAgencyLogo, setTempAgencyLogo] = useState<File | null>(null)
   const [isSavingAgency, setIsSavingAgency] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
   // Sync temp agency name with context when agency settings change
   useEffect(() => {
-    setTempAgencyName(agencySettings.agency_name || '')
+    setTempAgencyName(agencySettings.agency_name)
     setLogoPreview(null) // Clear preview when agency settings change
   }, [agencySettings.agency_name])
 
@@ -141,6 +143,15 @@ export default function SettingsPage() {
     }
   }
 
+  // Page loading effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   // Define loadConnections with useCallback to prevent unnecessary re-renders
   const loadConnections = useCallback(async () => {
     if (!user) return
@@ -164,19 +175,6 @@ export default function SettingsPage() {
   useEffect(() => {
     loadConnections()
   }, [user, supabase])
-
-  // Initial loading completion
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Show loading state during initial setup
-  if (isInitialLoading) {
-    return <UnifiedLoading variant="page" page="settings" />
-  }
 
   // Handle loading state from Shopify callback
   useEffect(() => {
@@ -772,6 +770,22 @@ export default function SettingsPage() {
 
   const handleBrandSelect = (brandId: string) => {
     setSelectedBrandId(selectedBrandId === brandId ? null : brandId)
+  }
+
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message={loadingConfig.message}
+        subMessage={loadingConfig.subMessage}
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
   }
 
   return (

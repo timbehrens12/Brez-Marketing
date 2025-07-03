@@ -29,7 +29,9 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import { UnifiedLoading } from '@/components/ui/unified-loading'
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 
 interface Lead {
   id: string
@@ -118,13 +120,14 @@ const WARNING_THRESHOLD = 0.8 // Show warning at 80% of limit
 export default function OutreachToolPage() {
   const { getSupabaseClient } = useAuthenticatedSupabase()
   const { userId } = useAuth()
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
 
-  // All state declarations first
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
   const [selectedCampaignLead, setSelectedCampaignLead] = useState<CampaignLead | null>(null)
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
   const [messageType, setMessageType] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
@@ -176,6 +179,22 @@ export default function OutreachToolPage() {
     minScore: 0
   })
 
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message={loadingConfig.message}
+        subMessage={loadingConfig.subMessage}
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
+  }
+
   // Calculate simplified statistics
   const stats = {
     totalLeads: campaignLeads.length,
@@ -200,20 +219,14 @@ export default function OutreachToolPage() {
       loadCampaigns()
       loadCampaignLeads()
     }
-  }, [userId])
-
-  // Initial loading completion
-  useEffect(() => {
+    
+    // Page loading simulation
     const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
+      setIsLoadingPage(false)
+    }, 1300)
 
-  // Show loading state during initial setup
-  if (isInitialLoading) {
-    return <UnifiedLoading variant="page" page="outreach" />
-  }
+    return () => clearTimeout(timer)
+  }, [userId])
 
   useEffect(() => {
     if (campaignLeads.length > 0 && campaigns.length > 0) {

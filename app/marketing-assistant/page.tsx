@@ -1,22 +1,37 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { UnifiedLoading } from "@/components/ui/unified-loading"
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 
 export default function MarketingAssistantPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
 
   useEffect(() => {
-    // Simulate loading time for initial setup
+    // Simulate loading time for setup
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 2000)
+    }, 1500)
 
     return () => clearTimeout(timer)
   }, [])
 
   if (isLoading) {
-    return <UnifiedLoading variant="page" page="marketing-assistant" />
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message={loadingConfig.message}
+        subMessage={loadingConfig.subMessage}
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
   }
 
   return (

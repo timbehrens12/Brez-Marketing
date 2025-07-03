@@ -37,6 +37,8 @@ interface WidgetManagerProps {
   brands?: Array<{ id: string, name: string }>;
   isEditMode?: boolean;
   handleTabChange?: (tab: string) => void;
+  agencyLogo?: string | null;
+  agencyName?: string;
 }
 
 export function WidgetManager({ 
@@ -51,7 +53,9 @@ export function WidgetManager({
   children,
   brands = [],
   isEditMode = false,
-  handleTabChange
+  handleTabChange,
+  agencyLogo,
+  agencyName
 }: WidgetManagerProps) {
   // All hooks must be called before any conditional returns
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
@@ -110,7 +114,17 @@ export function WidgetManager({
 
   // Show a loading spinner during the initial data load for a selected brand
   if (initialDataLoad) {
-    return <UnifiedLoading variant="page" page="dashboard" />
+    return (
+      <UnifiedLoading
+        size="lg"
+        variant="page"
+        message="Loading Dashboard"
+        subMessage="Setting up your workspace"
+        agencyLogo={agencyLogo}
+        agencyName={agencyName}
+        className="py-16"
+      />
+    );
   }
 
   const handleTabChangeInternal = (value: string) => {

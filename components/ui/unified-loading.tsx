@@ -2,7 +2,6 @@
 
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAgency } from "@/contexts/AgencyContext"
 
 interface UnifiedLoadingProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -10,7 +9,9 @@ interface UnifiedLoadingProps {
   message?: string
   subMessage?: string
   className?: string
-  page?: "dashboard" | "marketing-assistant" | "brand-report" | "lead-generator" | "outreach" | "settings"
+  agencyLogo?: string | null
+  agencyName?: string
+  showLogo?: boolean
 }
 
 const sizeClasses = {
@@ -27,30 +28,31 @@ const messageTextClasses = {
   xl: "text-lg"
 }
 
-const pageMessages = {
+// Page-specific loading configurations
+export const pageLoadingConfig = {
   dashboard: {
-    title: "Loading Dashboard",
-    subtitle: "Setting up your workspace"
+    message: "Loading Dashboard",
+    subMessage: "Setting up your workspace"
   },
   "marketing-assistant": {
-    title: "Loading Marketing Assistant",
-    subtitle: "Preparing AI-powered marketing tools"
+    message: "Loading Marketing Assistant", 
+    subMessage: "Preparing AI insights"
   },
   "brand-report": {
-    title: "Loading Brand Report",
-    subtitle: "Compiling your performance insights"
+    message: "Loading Brand Report",
+    subMessage: "Analyzing your brand performance"
   },
   "lead-generator": {
-    title: "Loading Lead Generator",
-    subtitle: "Initializing prospecting tools"
+    message: "Loading Lead Generator",
+    subMessage: "Setting up lead discovery tools"
   },
-  outreach: {
-    title: "Loading Outreach Tool",
-    subtitle: "Setting up your campaign management"
+  "outreach-tool": {
+    message: "Loading Outreach Tool",
+    subMessage: "Preparing outreach campaigns"
   },
   settings: {
-    title: "Loading Settings",
-    subtitle: "Configuring your account preferences"
+    message: "Loading Settings",
+    subMessage: "Configuring your preferences"
   }
 }
 
@@ -60,9 +62,37 @@ export function UnifiedLoading({
   message, 
   subMessage,
   className,
-  page 
+  agencyLogo,
+  agencyName,
+  showLogo = true
 }: UnifiedLoadingProps) {
-  const { agencySettings } = useAgency()
+  
+  // Render agency logo or initials
+  const renderLogo = () => {
+    if (!showLogo) return null
+    
+    if (agencyLogo) {
+      return (
+        <div className="h-16 w-16 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-2 overflow-hidden mb-6">
+          <img 
+            src={agencyLogo} 
+            alt={`${agencyName || 'Agency'} Logo`} 
+            className="max-w-full max-h-full object-contain rounded" 
+          />
+        </div>
+      )
+    } else if (agencyName && agencyName.trim() !== 'Brez Marketing Assistant') {
+      return (
+        <div className="h-16 w-16 bg-[#2A2A2A] border border-[#333] rounded-lg flex items-center justify-center mb-6">
+          <span className="text-white font-bold text-xl">
+            {agencyName.slice(0, 2).toUpperCase()}
+          </span>
+        </div>
+      )
+    }
+    
+    return null
+  }
   
   if (variant === "minimal") {
     return (
@@ -72,61 +102,17 @@ export function UnifiedLoading({
     )
   }
 
-  if (variant === "page") {
-    const pageData = page ? pageMessages[page] : null
-    const displayTitle = message || pageData?.title || "Loading"
-    const displaySubtitle = subMessage || pageData?.subtitle || "Please wait..."
-
+  if (variant === "fullscreen" || variant === "page") {
     return (
       <div className={cn(
         "min-h-screen flex items-center justify-center bg-[#0A0A0A]",
         className
       )}>
         <div className="text-center">
-          {agencySettings.agency_logo_url ? (
-            <img 
-              src={agencySettings.agency_logo_url}
-              alt="Agency Logo" 
-              className="h-16 w-auto object-contain mx-auto mb-8" 
-            />
-          ) : (
-            <div className="h-16 w-16 bg-[#333] rounded-lg mx-auto mb-8 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">L</span>
-            </div>
-          )}
-          <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-6" />
-          <h2 className="text-xl font-semibold text-white mb-3">
-            {displayTitle}
-          </h2>
-          <p className="text-gray-400 text-sm">
-            {displaySubtitle}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (variant === "fullscreen") {
-    return (
-      <div className={cn(
-        "min-h-screen flex items-center justify-center bg-[#0A0A0A]",
-        className
-      )}>
-        <div className="text-center">
-          {agencySettings.agency_logo_url ? (
-          <img 
-              src={agencySettings.agency_logo_url}
-              alt="Agency Logo" 
-            className="h-16 w-auto object-contain mx-auto mb-6" 
-          />
-          ) : (
-            <div className="h-16 w-16 bg-[#333] rounded-lg mx-auto mb-6 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">L</span>
-            </div>
-          )}
+          {renderLogo()}
           <Loader2 className={cn("animate-spin text-white mx-auto mb-4", sizeClasses[size])} />
           {message && (
-            <p className={cn("text-white mb-2", messageTextClasses[size])}>
+            <p className={cn("text-white mb-2 font-medium", messageTextClasses[size])}>
               {message}
             </p>
           )}
@@ -146,14 +132,15 @@ export function UnifiedLoading({
         "flex flex-col items-center justify-center py-12 px-6 bg-[#1A1A1A] rounded-lg border border-[#333]",
         className
       )}>
+        {showLogo && renderLogo()}
         <Loader2 className={cn("animate-spin text-white mb-4", sizeClasses[size])} />
         {message && (
-          <p className={cn("text-gray-300 text-center mb-2", messageTextClasses[size])}>
+          <p className={cn("text-white text-center mb-2 font-medium", messageTextClasses[size])}>
             {message}
           </p>
         )}
         {subMessage && (
-          <p className={cn("text-gray-500 text-center", messageTextClasses[size === "xl" ? "md" : "sm"])}>
+          <p className={cn("text-gray-400 text-center", messageTextClasses[size === "xl" ? "md" : "sm"])}>
             {subMessage}
           </p>
         )}
@@ -164,17 +151,24 @@ export function UnifiedLoading({
   // Default variant
   return (
     <div className={cn("flex flex-col items-center justify-center py-8", className)}>
+      {showLogo && renderLogo()}
       <Loader2 className={cn("animate-spin text-white mb-4", sizeClasses[size])} />
       {message && (
-        <p className={cn("text-gray-300 text-center mb-2", messageTextClasses[size])}>
+        <p className={cn("text-white text-center mb-2 font-medium", messageTextClasses[size])}>
           {message}
         </p>
       )}
       {subMessage && (
-        <p className={cn("text-gray-500 text-center", messageTextClasses[size === "xl" ? "md" : "sm"])}>
+        <p className={cn("text-gray-400 text-center", messageTextClasses[size === "xl" ? "md" : "sm"])}>
           {subMessage}
         </p>
       )}
     </div>
   )
+}
+
+// Helper function to get page loading config from pathname
+export function getPageLoadingConfig(pathname: string) {
+  const pageName = pathname.split('/')[1] || 'dashboard'
+  return pageLoadingConfig[pageName as keyof typeof pageLoadingConfig] || pageLoadingConfig.dashboard
 } 

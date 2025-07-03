@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
-import { UnifiedLoading } from "@/components/ui/unified-loading"
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { usePathname } from "next/navigation"
 
 interface DailyReport {
   content: string
@@ -33,28 +34,20 @@ export default function BrandReportPage() {
   const { user } = useUser()
   const { selectedBrandId, brands } = useBrandContext()
   const { agencySettings } = useAgency()
+  const pathname = usePathname()
   
-  // Initialize all state variables with proper defaults
-  const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const now = new Date()
-    return {
-      from: startOfDay(now),
-      to: endOfDay(now),
-    }
+  // Use undefined for initial state to avoid hydration issues
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
   })
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [isLoadingReport, setIsLoadingReport] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<string>("today")
   const [mounted, setMounted] = useState(false)
-  const [greeting, setGreeting] = useState(() => {
-    if (typeof window === 'undefined') return ""
-    const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 18) return "Good afternoon"
-    return "Good evening"
-  })
+  const [greeting, setGreeting] = useState("")
   const [userFirstName, setUserFirstName] = useState("")
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
   
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([])
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null)
@@ -191,10 +184,10 @@ export default function BrandReportPage() {
       setUserFirstName(user.firstName || user.fullName?.split(' ')[0] || "")
     }
     
-    // Simulate initial loading completion
+    // Simulate initial page loading
     const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 2000)
+      setIsLoadingPage(false)
+    }, 1200)
 
     return () => clearTimeout(timer)
   }, [user])
@@ -1905,11 +1898,6 @@ export default function BrandReportPage() {
       console.log('⏳ Waiting for brand selection or user authentication')
     }
   }, [selectedBrandId, selectedPeriod, dateRange.from, dateRange.to, user?.id, mounted])
-
-  // Show loading state during initial setup
-  if (isInitialLoading) {
-    return <UnifiedLoading variant="page" page="brand-report" />
-  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] p-6">

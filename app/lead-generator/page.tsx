@@ -17,11 +17,13 @@ import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit, Calculator, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
+import { useAgency } from "@/contexts/AgencyContext"
+import { usePathname } from "next/navigation"
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import { Country, State, City } from 'country-state-city'
-import { UnifiedLoading } from '@/components/ui/unified-loading'
+import { Country, State, City } from 'country-state-city';
 
 // Lead management constants
 const REVIEW_THRESHOLD = 50 // Suggest clearing reviewed leads when this many leads
@@ -100,8 +102,21 @@ export default function LeadGeneratorPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
   
-  // All state declarations first
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  // Unified Supabase client function
+  const getSupabaseClient = async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
+  
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState<LocationData>({ 
@@ -110,9 +125,56 @@ export default function LeadGeneratorPage() {
     city: '', 
     radius: '5' 
   })
+  
+  // Search states for dropdowns
   const [countrySearch, setCountrySearch] = useState('')
   const [stateSearch, setStateSearch] = useState('')
   const [citySearch, setCitySearch] = useState('')
+  
+  // Get available data based on selections
+  const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
+  const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
+  
+  // Get filtered countries with US at top
+  const getAllCountriesWithUSFirst = () => {
+    const countries = Country.getAllCountries()
+    const usCountry = countries.find(country => country.isoCode === 'US')
+    
+    // Only return United States for now
+    return usCountry ? [usCountry] : []
+  }
+  
+  // Get filtered states (only 50 US states, no territories)
+  const getFilteredStates = () => {
+    const US_STATES = [
+      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
+      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
+      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
+      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
+      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ]
+    
+    let states = availableStates.filter(state => US_STATES.includes(state.name))
+    if (stateSearch) {
+      states = states.filter(state => 
+        state.name.toLowerCase().includes(stateSearch.toLowerCase())
+      )
+    }
+    return states
+  }
+  
+  // Get filtered cities
+  const getFilteredCities = () => {
+    let cities = availableCities
+    if (citySearch) {
+      cities = cities.filter(city => 
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      )
+    }
+    return cities
+  }
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -180,6 +242,9 @@ export default function LeadGeneratorPage() {
   const [todayLeads, setTodayLeads] = useState(0)
   const [activeTab, setActiveTab] = useState('search')
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const { agencySettings } = useAgency()
+  const pathname = usePathname()
   const [showFilters, setShowFilters] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -220,79 +285,6 @@ export default function LeadGeneratorPage() {
     key: 'score',
     direction: 'desc'
   })
-
-  // Unified Supabase client function
-  const getSupabaseClient = async () => {
-    try {
-      const token = await getToken({ template: 'supabase' })
-      if (token) {
-        return getAuthenticatedSupabaseClient(token)
-      } else {
-        return getStandardSupabaseClient()
-      }
-    } catch (error) {
-      console.error('Error getting Supabase client:', error)
-      return getStandardSupabaseClient()
-    }
-  }
-
-  // Get available data based on selections
-  const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
-  const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
-  
-  // Get filtered countries with US at top
-  const getAllCountriesWithUSFirst = () => {
-    const countries = Country.getAllCountries()
-    const usCountry = countries.find(country => country.isoCode === 'US')
-    
-    // Only return United States for now
-    return usCountry ? [usCountry] : []
-  }
-  
-  // Get filtered states (only 50 US states, no territories)
-  const getFilteredStates = () => {
-    const US_STATES = [
-      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
-      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
-      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
-      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
-      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
-      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
-      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-    ]
-    
-    let states = availableStates.filter(state => US_STATES.includes(state.name))
-    if (stateSearch) {
-      states = states.filter(state => 
-        state.name.toLowerCase().includes(stateSearch.toLowerCase())
-      )
-    }
-    return states
-  }
-  
-  // Get filtered cities
-  const getFilteredCities = () => {
-    let cities = availableCities
-    if (citySearch) {
-      cities = cities.filter(city => 
-        city.name.toLowerCase().includes(citySearch.toLowerCase())
-      )
-    }
-    return cities
-  }
-
-  // Initial loading completion
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Show loading state during initial setup
-  if (isInitialLoading) {
-    return <UnifiedLoading variant="page" page="lead-generator" />
-  }
 
   // Load data on component mount
   useEffect(() => {
@@ -345,6 +337,11 @@ export default function LeadGeneratorPage() {
       console.error('Error loading usage data:', error)
     } finally {
       setIsLoadingUsage(false)
+    
+    // Page loading simulation
+    setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 1400)
     }
   }
 
@@ -1697,7 +1694,7 @@ export default function LeadGeneratorPage() {
               <CardContent className="space-y-4">
                 {isLoadingUsage ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                     <span className="ml-2 text-gray-400">Loading usage data...</span>
                   </div>
                 ) : usageData ? (
