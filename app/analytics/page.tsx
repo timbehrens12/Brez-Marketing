@@ -1,12 +1,33 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import MetaSpendTrends from "./components/meta-spend-trends"
 import MetaAdPerformance from "./components/meta-ad-performance"
 
 export default function AnalyticsPage() {
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    // Simulate initial loading
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [])
+  
+  if (isLoading) {
+    return (
+      <UnifiedLoading
+        size="lg"
+        variant="page"
+        page="analytics"
+      />
+    )
+  }
   const { selectedBrandId } = useBrandContext()
   const supabase = useSupabase()
   

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2, BarChart4, RefreshCw, Zap, Download } from "lucide-react"
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { useUser } from "@clerk/nextjs"
@@ -2007,17 +2008,12 @@ export default function BrandReportPage() {
           
           <CardContent className={cn("p-0", isLoadingReport && "report-loading")}>
             {isLoadingReport ? (
-              <div className="flex flex-col items-center justify-center p-24 space-y-4">
-                <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
-                <div className="text-white text-center space-y-2">
-                  <p className="text-lg font-semibold">
-                    {selectedReport ? "Refreshing your snapshot" : "Generating your marketing snapshot"}
-                  </p>
-                  <p className="text-gray-400">
-                    {selectedReport ? "Loading latest performance data..." : "Analyzing your marketing data across all platforms..."}
-                  </p>
-                </div>
-              </div>
+              <UnifiedLoading
+                size="xl"
+                variant="page"
+                page="brand-report"
+                className="p-24"
+              />
             ) : selectedReport ? (
               <div 
                 className="p-6"

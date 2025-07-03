@@ -113,9 +113,8 @@ export function WidgetManager({
     return (
       <UnifiedLoading
         size="xl"
-        variant="default"
-        message="Loading dashboard data..."
-        subMessage="This may take a moment"
+        variant="page"
+        page="dashboard"
         className="py-16"
       />
     );

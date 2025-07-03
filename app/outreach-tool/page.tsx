@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -1050,13 +1051,12 @@ export default function OutreachToolPage() {
   const filteredLeads = applyFilters(campaignLeads)
 
   if (isLoading) {
-  return (
-      <div className="h-screen bg-[#0A0A0A] text-white flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading outreach data...</span>
-          </div>
-          </div>
+    return (
+      <UnifiedLoading
+        size="lg"
+        variant="page"
+        page="outreach"
+      />
     )
   }
 
