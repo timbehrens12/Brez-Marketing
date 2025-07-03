@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAgency } from "@/contexts/AgencyContext"
 
 interface UnifiedLoadingProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -61,6 +62,7 @@ export function UnifiedLoading({
   className,
   page 
 }: UnifiedLoadingProps) {
+  const { agencySettings } = useAgency()
   
   if (variant === "minimal") {
     return (
@@ -81,11 +83,17 @@ export function UnifiedLoading({
         className
       )}>
         <div className="text-center">
-          <img 
-            src="https://i.imgur.com/PZCtbwG.png" 
-            alt="Brez Logo" 
-            className="h-16 w-auto object-contain mx-auto mb-8" 
-          />
+          {agencySettings.agency_logo_url ? (
+            <img 
+              src={agencySettings.agency_logo_url}
+              alt="Agency Logo" 
+              className="h-16 w-auto object-contain mx-auto mb-8" 
+            />
+          ) : (
+            <div className="h-16 w-16 bg-[#333] rounded-lg mx-auto mb-8 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">L</span>
+            </div>
+          )}
           <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-6" />
           <h2 className="text-xl font-semibold text-white mb-3">
             {displayTitle}
@@ -105,11 +113,17 @@ export function UnifiedLoading({
         className
       )}>
         <div className="text-center">
-          <img 
-            src="https://i.imgur.com/PZCtbwG.png" 
-            alt="Brez Logo" 
-            className="h-16 w-auto object-contain mx-auto mb-6" 
-          />
+          {agencySettings.agency_logo_url ? (
+            <img 
+              src={agencySettings.agency_logo_url}
+              alt="Agency Logo" 
+              className="h-16 w-auto object-contain mx-auto mb-6" 
+            />
+          ) : (
+            <div className="h-16 w-16 bg-[#333] rounded-lg mx-auto mb-6 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">L</span>
+            </div>
+          )}
           <Loader2 className={cn("animate-spin text-white mx-auto mb-4", sizeClasses[size])} />
           {message && (
             <p className={cn("text-white mb-2", messageTextClasses[size])}>
