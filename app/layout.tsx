@@ -52,6 +52,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <style>{`
+          /* FORCE input field styling to match Google button */
+          * input[type="email"],
+          * input[type="password"],
+          * input[type="text"],
+          div input,
+          .cl-formFieldInput,
+          .cl-card input {
+            background-color: #3a3a3a !important;
+            background: #3a3a3a !important;
+            border-color: #555 !important;
+            border: 1px solid #555 !important;
+            color: white !important;
+          }
+          
           /* Minimize Clerk branding */
           .cl-internal-b3fm6y {
             opacity: 0.3;
@@ -156,15 +170,20 @@ export default function RootLayout({
             box-shadow: none !important;
           }
           
-          /* Remove blue from all input fields */
+          /* Remove blue from all input fields - Force override */
           .cl-formFieldInput, 
           .cl-otpCodeFieldInput,
           .cl-phoneNumberInput,
           input[type="email"],
           input[type="password"],
-          input[type="text"] {
+          input[type="text"],
+          .cl-rootBox .cl-formFieldInput,
+          .cl-card .cl-formFieldInput,
+          [data-clerk-element="formFieldInput"] {
             background-color: #3a3a3a !important;
+            background: #3a3a3a !important;
             border-color: #555 !important;
+            border: 1px solid #555 !important;
             color: white !important;
           }
           
