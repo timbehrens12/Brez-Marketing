@@ -3,9 +3,16 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // Global singleton client instance
 let globalClient: SupabaseClient | null = null
 let globalToken: string | null = null
+let isInitializing = false
 
 // Export getter for direct access by other modules
-export const getGlobalClient = () => globalClient
+export const getGlobalClient = () => {
+  if (!globalClient && typeof window !== 'undefined') {
+    console.log('⚠️ No global singleton found - creating fallback client')
+    initializeBasicClient()
+  }
+  return globalClient
+}
 
 // Expose global client for other systems to access
 function exposeGlobalClient() {
@@ -17,7 +24,8 @@ function exposeGlobalClient() {
 
 // Initialize basic client immediately if on client-side
 function initializeBasicClient() {
-  if (typeof window !== 'undefined' && !globalClient) {
+  if (typeof window !== 'undefined' && !globalClient && !isInitializing) {
+    isInitializing = true
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -27,11 +35,14 @@ function initializeBasicClient() {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
+          detectSessionInUrl: false // Prevent URL-based session detection conflicts
         }
       })
       exposeGlobalClient()
     } catch (error) {
       console.error('❌ Failed to pre-initialize Supabase client:', error)
+    } finally {
+      isInitializing = false
     }
   }
 }
@@ -48,6 +59,11 @@ export function upgradeGlobalClient(token: string): SupabaseClient {
         headers: {
           Authorization: `Bearer ${token}`
         }
+      },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false // Prevent URL-based session detection conflicts
       }
     })
     globalToken = token
@@ -58,10 +74,8 @@ export function upgradeGlobalClient(token: string): SupabaseClient {
   return globalClient!
 }
 
-// Only initialize on client-side after DOM is ready to avoid hydration mismatches
+// Force initialization on client-side
 if (typeof window !== 'undefined') {
-  // Use setTimeout to ensure this runs after initial hydration
-  setTimeout(() => {
-    initializeBasicClient()
-  }, 0)
+  // Initialize immediately but safely
+  initializeBasicClient()
 } 

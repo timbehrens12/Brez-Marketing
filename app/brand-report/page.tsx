@@ -34,16 +34,25 @@ export default function BrandReportPage() {
   const { selectedBrandId, brands } = useBrandContext()
   const { agencySettings } = useAgency()
   
-  // Use undefined for initial state to avoid hydration issues
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
+  // Initialize all state variables with proper defaults
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const now = new Date()
+    return {
+      from: startOfDay(now),
+      to: endOfDay(now),
+    }
   })
   const [isLoadingReport, setIsLoadingReport] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<string>("today")
   const [mounted, setMounted] = useState(false)
-  const [greeting, setGreeting] = useState("")
+  const [greeting, setGreeting] = useState(() => {
+    if (typeof window === 'undefined') return ""
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 18) return "Good afternoon"
+    return "Good evening"
+  })
   const [userFirstName, setUserFirstName] = useState("")
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   
@@ -1474,7 +1483,7 @@ export default function BrandReportPage() {
                     }
                   </div>
                   <div class="footer-agency-tagline">
-                    ${agencySettings.agency_tagline || "Professional Marketing Analytics"}
+                    Professional Marketing Analytics
                   </div>
                 </div>
               </div>
