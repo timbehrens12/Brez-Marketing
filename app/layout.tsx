@@ -159,15 +159,21 @@ export default function RootLayout({
           /* Remove blue from all input fields */
           .cl-formFieldInput, 
           .cl-otpCodeFieldInput,
-          .cl-phoneNumberInput {
-            background-color: #2a2a2a !important;
-            border-color: #444 !important;
+          .cl-phoneNumberInput,
+          input[type="email"],
+          input[type="password"],
+          input[type="text"] {
+            background-color: #3a3a3a !important;
+            border-color: #555 !important;
             color: white !important;
           }
           
           .cl-formFieldInput:focus, 
           .cl-otpCodeFieldInput:focus,
-          .cl-phoneNumberInput:focus {
+          .cl-phoneNumberInput:focus,
+          input[type="email"]:focus,
+          input[type="password"]:focus,
+          input[type="text"]:focus {
             border-color: #9ca3af !important;
             box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.3) !important;
             outline: none !important;
