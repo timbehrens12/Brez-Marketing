@@ -235,6 +235,8 @@ export default function LeadGeneratorPage() {
   const [isProcessingBatch, setIsProcessingBatch] = useState(false)
   const [isSendingToOutreach, setIsSendingToOutreach] = useState(false)
   const [isResettingLimits, setIsResettingLimits] = useState(false)
+  const [sendingLeads, setSendingLeads] = useState<string[]>([]) // New state for individual lead sending
+  const [sentLeads, setSentLeads] = useState<string[]>([]) // New state for sent leads confirmation
   
   // Sorting state
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({
@@ -816,6 +818,8 @@ export default function LeadGeneratorPage() {
     }
     
     setIsSendingToOutreach(true)
+    // Mark leads as sending for visual feedback
+    setSendingLeads([...selectedLeads])
 
     try {
       console.log('Sending leads to outreach:', { 
@@ -939,14 +943,21 @@ export default function LeadGeneratorPage() {
       if (data.success) {
         toast.success(`${data.message}! Created ${data.tasksCreated || data.leadsAdded || selectedLeads.length} follow-up tasks.`)
         
-        // Remove sent leads from the current page
-        const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
-        setLeads(prev => {
-          const filtered = prev.filter(lead => !leadsToRemove.includes(lead.id))
-          console.log('Leads after removal:', filtered.length)
-          return filtered
-        })
-        setSelectedLeads([])
+        // Mark leads as sent for visual confirmation
+        setSentLeads([...selectedLeads])
+        setSendingLeads([])
+        
+        // Remove sent leads after a delay for confirmation
+        setTimeout(() => {
+          const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
+          setLeads(prev => {
+            const filtered = prev.filter(lead => !leadsToRemove.includes(lead.id))
+            console.log('Leads after removal:', filtered.length)
+            return filtered
+          })
+          setSelectedLeads([])
+          setSentLeads([])
+        }, 2000) // Show "sent" confirmation for 2 seconds
         
         // Update stats
         await loadStats()
@@ -963,6 +974,7 @@ export default function LeadGeneratorPage() {
       }
     } finally {
       setIsSendingToOutreach(false)
+      setSendingLeads([])
     }
   }
 
@@ -1562,23 +1574,48 @@ export default function LeadGeneratorPage() {
                 ) : usageData ? (
                   <>
                     {/* Generation Limit Progress */}
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-400">Generations Today</span>
                         <span className="text-sm font-medium text-white">
                           {usageData.used} / {usageData.limit}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-800 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            usageData.remaining <= 0 ? 'bg-red-500' : 
-                            usageData.remaining <= 1 ? 'bg-white' : 'bg-gray-400'
-                          }`}
-                          style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
+                      
+                      {/* Modern circular progress indicator */}
+                      <div className="relative">
+                        <div className="w-full bg-gray-800 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              usageData.remaining <= 0 ? 'bg-gradient-to-r from-orange-500 to-red-500' : 
+                              usageData.remaining <= 1 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 
+                              'bg-gradient-to-r from-green-500 to-blue-500'
+                            }`}
+                            style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
+                          />
+                        </div>
+                        
+                        {/* Status indicator */}
+                        <div className="flex items-center justify-center mt-2">
+                          {usageData.remaining <= 0 ? (
+                            <div className="flex items-center gap-2 text-red-400 text-xs">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span>Daily limit reached</span>
+                            </div>
+                          ) : usageData.remaining <= 1 ? (
+                            <div className="flex items-center gap-2 text-yellow-400 text-xs">
+                              <Clock className="h-4 w-4" />
+                              <span>{usageData.remaining} generation{usageData.remaining === 1 ? '' : 's'} remaining</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-green-400 text-xs">
+                              <TrendingUp className="h-4 w-4" />
+                              <span>{usageData.remaining} generations available</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Leads Generated Today */}
                     <div className="flex justify-between items-center py-2 border-t border-[#333]">
@@ -2346,11 +2383,22 @@ export default function LeadGeneratorPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredLeads.map((lead) => (
+                      {filteredLeads.map((lead) => {
+                        const isLeadSending = sendingLeads.includes(lead.id)
+                        const isLeadSent = sentLeads.includes(lead.id)
+                        
+                        return (
                         <TableRow
                           key={lead.id}
-                          className="border-[#333] hover:bg-[#222]/50 cursor-pointer"
+                          className={`border-[#333] cursor-pointer transition-all duration-300 ${
+                            isLeadSent 
+                              ? 'bg-green-900/20 text-green-400' 
+                              : isLeadSending 
+                                ? 'bg-blue-900/20 text-blue-400 animate-pulse' 
+                                : 'hover:bg-[#222]/50'
+                          }`}
                           onClick={() => {
+                            if (isLeadSending || isLeadSent) return // Prevent selection when processing
                             if (selectedLeads.includes(lead.id)) {
                               setSelectedLeads(prev => prev.filter(id => id !== lead.id))
                             } else {
@@ -2366,7 +2414,19 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium text-gray-400">{lead.business_name}</div>
+                              <div className="font-medium text-gray-400 flex items-center gap-2">
+                                {lead.business_name}
+                                {isLeadSending && (
+                                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full animate-pulse">
+                                    Sending...
+                                  </span>
+                                )}
+                                {isLeadSent && (
+                                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                                    ✓ Sent
+                                  </span>
+                                )}
+                              </div>
                               {lead.website && (
                                 <a
                                   href={formatWebsiteUrl(lead.website)}
@@ -2542,7 +2602,8 @@ export default function LeadGeneratorPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        )
+                      })}
                     </TableBody>
                   </Table>
                   
