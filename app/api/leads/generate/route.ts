@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'At least one niche must be selected' }, { status: 400 })
     }
 
-    if (niches.length > 10) {
-      return NextResponse.json({ error: 'Maximum 10 niches allowed per search' }, { status: 400 })
+    if (niches.length > 5) {
+      return NextResponse.json({ error: 'Maximum 5 niches allowed per search' }, { status: 400 })
     }
 
     // Get niche details from database
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid niche selection' }, { status: 400 })
     }
 
-    // Always generate 50 leads total, distributed across selected niches
-    const totalLeads = 50
+    // Always generate 25 leads total, distributed across selected niches
+    const totalLeads = 25
     const leadsPerNiche = Math.floor(totalLeads / niches.length)
     const extraLeads = totalLeads % niches.length
 

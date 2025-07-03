@@ -9,12 +9,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Optimized usage limits for flexible niche system
-const DAILY_GENERATION_LIMIT = 1 // 1 generation per day for cost control
-const TOTAL_LEADS_PER_GENERATION = 50 // Always 50 leads per generation, distributed across niches
+// Optimized usage limits for weekly system with cost optimization
+const WEEKLY_GENERATION_LIMIT = 1 // 1 generation per week for cost control
+const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation (reduced from 50)
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
-const MAX_NICHES_PER_SEARCH = 10 // Maximum 10 niches per search
-const NICHE_COOLDOWN_HOURS = 24 // 24 hour cooldown per niche
+const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search (reduced from 10)
+const NICHE_COOLDOWN_HOURS = 168 // 168 hours (7 days) cooldown per niche
 
 // API Cost tracking
 const GOOGLE_TEXT_SEARCH_COST = 0.032 // $0.032 per text search
@@ -46,54 +46,56 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get current date for midnight-based resets - use client's local date
+    // Get current date for weekly-based resets - use client's local date
     const now = new Date()
+    
+    // Calculate start of current week (Monday)
+    const currentDate = new Date(localStartOfDayUTC)
+    const dayOfWeek = currentDate.getDay()
+    const startOfWeek = new Date(currentDate)
+    startOfWeek.setDate(currentDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)) // Monday as start of week
+    startOfWeek.setHours(0, 0, 0, 0)
+    
+    const startOfNextWeek = new Date(startOfWeek)
+    startOfNextWeek.setDate(startOfWeek.getDate() + 7)
 
-    // Check user's daily usage using client's local date
+    // Check user's weekly usage using client's timezone
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
       .select('*')
       .eq('user_id', userId)
-      .eq('date', localDate) // Use client's local date
-      .single()
+      .gte('date', startOfWeek.toISOString().split('T')[0]) // Start of week
+      .lt('date', startOfNextWeek.toISOString().split('T')[0]) // End of week
 
-    if (usageError && usageError.code !== 'PGRST116') { // PGRST116 = not found
+    if (usageError) {
       console.error('Error checking usage:', usageError)
       return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 })
     }
 
-    // Check if user has exceeded daily limit
-    const currentUsage = usageData?.generation_count || 0
-    if (currentUsage >= DAILY_GENERATION_LIMIT) {
-      // Calculate next midnight reset using client's timezone
-      const startOfUserDay = new Date(localStartOfDayUTC);
-      const tomorrow = new Date(startOfUserDay);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
+    // Sum up generation count for the week
+    const currentWeeklyUsage = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
+    const leadsGeneratedThisWeek = usageData?.reduce((sum, record) => sum + (record.leads_generated || 0), 0) || 0
+    
+    // Check if user has exceeded weekly limit
+    if (currentWeeklyUsage >= WEEKLY_GENERATION_LIMIT) {
       return NextResponse.json({ 
-        error: `Daily limit reached. You've used ${currentUsage} of ${DAILY_GENERATION_LIMIT} generations today. Resets at midnight.`,
+        error: `Weekly limit reached. You've used ${currentWeeklyUsage} of ${WEEKLY_GENERATION_LIMIT} generations this week. Resets next Monday.`,
         usage: {
-          used: currentUsage,
-          limit: DAILY_GENERATION_LIMIT,
-          resetsAt: tomorrow.toISOString(),
-          resetsIn: tomorrow.getTime() - now.getTime()
+          used: currentWeeklyUsage,
+          limit: WEEKLY_GENERATION_LIMIT,
+          resetsAt: startOfNextWeek.toISOString(),
+          resetsIn: startOfNextWeek.getTime() - now.getTime()
         }
       }, { status: 429 })
     }
 
-    // Check niche-specific cooldowns (cooldown until midnight) using client's timezone
-    const startOfToday = new Date(localStartOfDayUTC);
-    
-    const startOfUserDay = new Date(localStartOfDayUTC);
-    const tomorrow = new Date(startOfUserDay);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
+    // Check niche-specific cooldowns (7-day cooldown) using client's timezone
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
       .select('*')
       .eq('user_id', userId)
       .in('niche_id', niches)
-      .gte('last_used_at', startOfToday.toISOString())
+      .gte('last_used_at', new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString())
 
     if (nicheUsageError) {
       console.error('Error checking niche usage:', nicheUsageError)
@@ -113,11 +115,11 @@ export async function POST(request: NextRequest) {
       const cooldownNicheNames = cooldownNiches.map(n => nicheNameMap[n.niche_id] || 'Unknown')
 
       return NextResponse.json({ 
-        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again after midnight or select different niches.`,
+        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again in 7 days or select different niches.`,
         cooldownNiches: cooldownNiches.map(n => ({
           niche_id: n.niche_id,
           niche_name: nicheNameMap[n.niche_id],
-          cooldownUntil: tomorrow.toISOString()
+          cooldownUntil: new Date(new Date(n.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()
         }))
       }, { status: 429 })
     }
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Found niches:', nicheData?.length || 0)
 
-    // Calculate total leads that will be generated (50 per generation)
+    // Calculate total leads that will be generated (25 per generation)
     const totalLeadsToGenerate = TOTAL_LEADS_PER_GENERATION
     
     // Initialize cost tracking
@@ -188,7 +190,7 @@ export async function POST(request: NextRequest) {
       // If the entire search fails, still return a helpful response instead of crashing
       if (error.message?.includes('Lead generation timeout')) {
         return NextResponse.json({ 
-          error: 'Lead generation is taking longer than expected. This can happen with 10 niches. Please try again or reduce the number of niches.' 
+          error: 'Lead generation is taking longer than expected. This can happen with 5 niches. Please try again or reduce the number of niches.' 
         }, { status: 504 })
       } else if (error.message?.includes('504')) {
         return NextResponse.json({ 
@@ -375,16 +377,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Update usage tracking
-    const newGenerationCount = (usageData?.generation_count || 0) + 1
-    const newLeadsGenerated = (usageData?.leads_generated || 0) + savedCount
+    const newGenerationCount = currentWeeklyUsage + 1
+    const newLeadsGenerated = leadsGeneratedThisWeek + savedCount
 
-    if (usageData) {
-      // Update existing record
+    const todaysUsage = usageData?.find(record => record.date === localDate)
+    
+    if (todaysUsage) {
+      // Update existing record for today
       const { error: updateError } = await supabase
         .from('user_usage')
         .update({
-          generation_count: newGenerationCount,
-          leads_generated: newLeadsGenerated,
+          generation_count: (todaysUsage.generation_count || 0) + 1,
+          leads_generated: (todaysUsage.leads_generated || 0) + savedCount,
           last_generation_at: new Date().toISOString()
         })
         .eq('user_id', userId)
@@ -394,7 +398,7 @@ export async function POST(request: NextRequest) {
         console.error('Error updating usage:', updateError)
       }
     } else {
-      // Create new record
+      // Create new record for today
       const { error: insertUsageError } = await supabase
         .from('user_usage')
         .insert({
@@ -460,9 +464,9 @@ export async function POST(request: NextRequest) {
       },
       usage: {
         used: newGenerationCount,
-        limit: DAILY_GENERATION_LIMIT,
+        limit: WEEKLY_GENERATION_LIMIT,
         leadsGenerated: savedCount,
-        totalLeadsToday: newLeadsGenerated
+        totalLeadsThisWeek: newLeadsGenerated
       }
     })
 
@@ -481,7 +485,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
   let detailsCount = 0
   let openaiCount = 0
   
-  // Calculate leads per niche - distribute 50 leads across all niches
+  // Calculate leads per niche - distribute 25 leads across all niches
   const baseLeadsPerNiche = Math.floor(maxResults / nicheCount)
   const extraLeads = maxResults % nicheCount
   

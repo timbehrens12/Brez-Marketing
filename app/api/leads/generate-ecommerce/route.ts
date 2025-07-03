@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const nicheNames = niches?.map((n: any) => n.name) || [];
 
     // Shorter, more focused prompt to reduce processing time
-    const prompt = `Generate 3 realistic small business leads for: ${nicheNames.join(', ')}
+    const prompt = `Generate 5 realistic small business leads for: ${nicheNames.join(', ')}
 
 Requirements:
 - Small businesses (500-10K social followers)

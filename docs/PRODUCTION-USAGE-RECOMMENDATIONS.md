@@ -1,34 +1,34 @@
 # 🚀 Production Usage Recommendations
 
-## 📊 **Optimal Daily Usage Limits for Maximum Client Acquisition**
+## 📊 **Optimal Weekly Usage Limits for Maximum Client Acquisition**
 
 ### **Current Production-Ready Settings**
 
 | Metric | Current Limit | Recommended Production | Reasoning |
 |--------|---------------|----------------------|-----------|
-| **Daily Lead Runs** | 5 generations | **8-12 generations** | Balances API costs with user productivity |
-| **Leads per Niche** | 10 leads | **10-15 leads** | Focused quality with efficient coverage |
-| **Niches per Search** | 5 niches (required) | **5 niches (fixed)** | Optimized for broader targeting and market coverage |
+| **Weekly Lead Runs** | 1 generation | **2-3 generations** | Balances API costs with user productivity |
+| **Leads per Generation** | 25 leads | **25-30 leads** | Focused quality with efficient coverage |
+| **Niches per Search** | 5 niches (max) | **5 niches (max)** | Optimized for broader targeting and market coverage |
 | **Max Pending Leads** | 75 leads | **100-150 leads** | Scales with user growth and outreach capacity |
 | **Max Total Leads** | 200 leads | **300-500 leads** | Accommodates power users and agencies |
 
 ### **Recommended Production Scaling Strategy**
 
 #### **Tier 1: Starter (Current - OPTIMIZED)**
-- **1 daily run** × **5 niches** × **10 leads** = **50 leads/day**
+- **1 weekly run** × **5 niches** × **25 leads** = **25 leads/week**
 - Perfect for individual users and small businesses
-- **API cost: ~$1.12/day per active user** (extremely affordable!)
+- **API cost: ~$0.56/week per active user** (extremely affordable!)
 - **Focus**: Broader market coverage with quality leads
 
 #### **Tier 2: Professional (Future)**
-- **2 daily runs** × **5 niches** × **15 leads** = **150 leads/day max**
+- **2 weekly runs** × **5 niches** × **25 leads** = **50 leads/week max**
 - Ideal for agencies and power users
-- **API cost: ~$2.24/day per active user** (very reasonable)
+- **API cost: ~$1.12/week per active user** (very reasonable)
 
 #### **Tier 3: Enterprise (Future)**
-- **3 daily runs** × **5 niches** × **20 leads** = **300 leads/day max**
+- **3 weekly runs** × **5 niches** × **25 leads** = **75 leads/week max**
 - For large agencies and enterprise clients
-- **API cost: ~$3.36/day per active user** (excellent ROI)
+- **API cost: ~$1.68/week per active user** (excellent ROI)
 
 ---
 
@@ -36,14 +36,13 @@
 
 ### **✅ Lead Generation Protections**
 
-#### **1. Daily Generation Limits**
+#### **1. Weekly Generation Limits**
 ```typescript
-const DAILY_GENERATION_LIMIT = 5 // Prevents API abuse
-const NICHE_COOLDOWN_HOURS = 24 // Prevents duplicate niche searches
+const WEEKLY_GENERATION_LIMIT = 1 // Prevents API abuse
+const NICHE_COOLDOWN_HOURS = 168 // 7-day cooldown prevents duplicate niche searches
 ```
-- **Protection**: Users can't exceed 5 searches per day
-- **Reset**: Automatic midnight reset based on user's timezone
-- **Error Handling**: Clear messaging with countdown timer
+- **Protection**: Users can't exceed 1 search per week
+- **Reset**: Automatic weekly reset every Monday based on user's timezone
 
 #### **2. Niche Cooldown System**
 ```sql

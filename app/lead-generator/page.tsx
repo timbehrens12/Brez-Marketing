@@ -62,7 +62,7 @@ interface UsageData {
   used: number
   limit: number
   remaining: number
-  leadsGeneratedToday: number
+  leadsGeneratedThisWeek: number
   leadsPerNiche: number
   maxNichesPerSearch: number
   lastGenerationAt: string | null
@@ -702,13 +702,13 @@ export default function LeadGeneratorPage() {
       return
     }
 
-    if (selectedNiches.length > 10) {
-      toast.error('Please select no more than 10 niches to generate leads')
+    if (selectedNiches.length > 5) {
+      toast.error('Please select no more than 5 niches to generate leads')
       return
     }
 
     if (!usageData || usageData.remaining <= 0) {
-      toast.error(`Daily limit reached. Resets ${getTimeUntilReset()}`)
+      toast.error(`Weekly limit reached. Resets ${getTimeUntilReset()}`)
       return
     }
 
@@ -821,7 +821,7 @@ export default function LeadGeneratorPage() {
             ...prev!,
             used: result.usage.used,
             remaining: Math.max(0, result.usage.limit - result.usage.used),
-            leadsGeneratedToday: result.usage.totalLeadsToday
+            leadsGeneratedThisWeek: result.usage.totalLeadsToday
           }))
         }
         
@@ -868,13 +868,16 @@ export default function LeadGeneratorPage() {
   }
 
   const getTimeUntilReset = () => {
-    if (!usageData) return 'tomorrow'
+    if (!usageData) return 'next Monday'
     
     const msUntilReset = usageData.resetsIn
-    const hours = Math.floor(msUntilReset / (1000 * 60 * 60))
+    const days = Math.floor(msUntilReset / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((msUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
     
-    if (hours > 0) {
+    if (days > 0) {
+      return `in ${days}d ${hours}h`
+    } else if (hours > 0) {
       return `in ${hours}h ${minutes}m`
     }
     return `in ${minutes}m`
@@ -1692,10 +1695,10 @@ export default function LeadGeneratorPage() {
                               <div className={`font-medium ${
                                 usageData.remaining <= 0 ? 'text-red-400' : 'text-green-400'
                               }`}>
-                                {usageData.remaining <= 0 ? 'Generation Used' : 'Generation Available'}
+                                {usageData.remaining <= 0 ? 'Weekly Generation Used' : 'Weekly Generation Available'}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {usageData.remaining <= 0 ? 'You have used your daily generation' : 'Ready to generate leads'}
+                                {usageData.remaining <= 0 ? 'You have used your weekly generation' : 'Ready to generate leads'}
                               </div>
                             </div>
                           </div>
@@ -1839,7 +1842,7 @@ export default function LeadGeneratorPage() {
             {selectedNiches.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-400">
-                  Selected Niches ({selectedNiches.length}/10 max) - 50 leads total
+                  Selected Niches ({selectedNiches.length}/5 max) - 25 leads total
                 </Label>
                 <div className="flex flex-wrap gap-2">
                   {selectedNiches.map(nicheId => {
@@ -1853,8 +1856,8 @@ export default function LeadGeneratorPage() {
                 </div>
                 <div className="text-xs text-gray-500">
                   {selectedNiches.length === 1 
-                    ? "50 leads from 1 niche" 
-                    : `${Math.floor(50 / selectedNiches.length)} leads per niche (${50} total)`
+                    ? "25 leads from 1 niche" 
+                    : `${Math.floor(25 / selectedNiches.length)} leads per niche (${25} total)`
                   }
                 </div>
               </div>
@@ -2020,11 +2023,11 @@ export default function LeadGeneratorPage() {
             )}
 
             {/* Show warning if too many niches selected */}
-            {selectedNiches.length > 10 && (
+            {selectedNiches.length > 5 && (
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3">
                 <div className="flex items-center gap-2 text-yellow-400 text-sm">
                   <AlertTriangle className="h-4 w-4" />
-                  Too many niches selected. Please select no more than 10 niches (you have {selectedNiches.length}).
+                  Too many niches selected. Please select no more than 5 niches (you have {selectedNiches.length}).
                 </div>
               </div>
             )}
@@ -2036,7 +2039,7 @@ export default function LeadGeneratorPage() {
                 disabled={
                   isGenerating || 
                   selectedNiches.length === 0 || 
-                  selectedNiches.length > 10 ||
+                  selectedNiches.length > 5 ||
                   businessType === 'ecommerce' || 
                   (usageData?.remaining ?? 0) <= 0
                 }
@@ -2059,7 +2062,7 @@ export default function LeadGeneratorPage() {
                 ) : (usageData?.remaining ?? 0) <= 0 ? (
                   <>
                     <Clock className="h-4 w-4 mr-2" />
-                    Daily Limit Reached
+                    Weekly Limit Reached
                   </>
                 ) : (
                   <>
@@ -2069,21 +2072,21 @@ export default function LeadGeneratorPage() {
                 )}
               </Button>
               
-              {selectedNiches.length > 0 && selectedNiches.length <= 10 && usageData && (
+              {selectedNiches.length > 0 && selectedNiches.length <= 5 && usageData && (
                 <div className="text-xs text-center text-gray-500">
-                  Will generate 50 leads total
-                  {selectedNiches.length > 1 ? ` (${Math.floor(50 / selectedNiches.length)} per niche)` : ''} 
+                  Will generate 25 leads total
+                  {selectedNiches.length > 1 ? ` (${Math.floor(25 / selectedNiches.length)} per niche)` : ''} 
                   from {selectedNiches.length} niche{selectedNiches.length > 1 ? 's' : ''}
                 </div>
               )}
               {selectedNiches.length === 0 && (
                 <div className="text-xs text-center text-gray-400">
-                  Select 1-10 niches to generate leads
+                  Select 1-5 niches to generate leads
                 </div>
               )}
-              {selectedNiches.length > 10 && (
+              {selectedNiches.length > 5 && (
                 <div className="text-xs text-center text-red-400">
-                  Too many niches selected (max 10)
+                  Too many niches selected (max 5)
                 </div>
               )}
               
