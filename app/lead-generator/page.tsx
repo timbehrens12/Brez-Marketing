@@ -18,7 +18,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit, Calculator, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
-import { UnifiedLoading } from "@/components/ui/unified-loading"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { Country, State, City } from 'country-state-city';
@@ -1684,7 +1683,7 @@ export default function LeadGeneratorPage() {
               <CardContent className="space-y-4">
                 {isLoadingUsage ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                     <span className="ml-2 text-gray-400">Loading usage data...</span>
                   </div>
                 ) : usageData ? (
@@ -1698,20 +1697,20 @@ export default function LeadGeneratorPage() {
                       
                       {/* Subtle status indicator */}
                       <div className="flex items-center justify-between p-3 rounded-lg bg-[#2A2A2A] border border-[#333]">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${
                             usageData.remaining <= 0 ? 'bg-orange-400' : 'bg-blue-400'
                           }`}></div>
-                            <div>
+                          <div>
                             <div className="text-sm font-medium text-gray-300">
                               {usageData.remaining <= 0 ? 'Weekly limit reached' : 'Generation available'}
-                              </div>
-                              <div className="text-xs text-gray-500">
+                            </div>
+                            <div className="text-xs text-gray-500">
                               {usageData.remaining <= 0 ? `Resets ${getTimeUntilReset()}` : 'Ready to find leads'}
-                              </div>
                             </div>
                           </div>
-                          
+                        </div>
+                        
                         {usageData.remaining > 0 && (
                           <div className="text-right">
                             <div className="text-sm font-medium text-blue-400">
@@ -1763,8 +1762,6 @@ export default function LeadGeneratorPage() {
 
               {/* Niche Selection */}
             <div className="space-y-3 relative">
-              
-              
               {businessType === 'ecommerce' ? (
                 // Coming Soon Message for eCommerce
                 <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-8">

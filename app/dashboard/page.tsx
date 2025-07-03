@@ -1378,7 +1378,8 @@ export default function DashboardPage() {
                   <UnifiedLoading
           size="lg"
           variant="fullscreen"
-          page="dashboard"
+          message="Loading dashboard..."
+          subMessage="Setting up your workspace"
         />
         </div>
       </div>
