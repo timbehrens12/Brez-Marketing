@@ -127,9 +127,19 @@ export default function LeadGeneratorPage() {
     return usCountry ? [usCountry] : []
   }
   
-  // Get filtered states
+  // Get filtered states (only 50 US states, no territories)
   const getFilteredStates = () => {
-    let states = availableStates
+    const US_STATES = [
+      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
+      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
+      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
+      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
+      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ]
+    
+    let states = availableStates.filter(state => US_STATES.includes(state.name))
     if (stateSearch) {
       states = states.filter(state => 
         state.name.toLowerCase().includes(stateSearch.toLowerCase())
@@ -180,9 +190,19 @@ export default function LeadGeneratorPage() {
   const manualAvailableStates = manualLeadData.country ? State.getStatesOfCountry(manualLeadData.country) : []
   const manualAvailableCities = manualLeadData.country && manualLeadData.state_province ? City.getCitiesOfState(manualLeadData.country, manualLeadData.state_province) : []
   
-  // Get filtered data for manual lead dropdowns
+  // Get filtered data for manual lead dropdowns (only 50 US states, no territories)
   const getManualFilteredStates = () => {
-    let states = manualAvailableStates
+    const US_STATES = [
+      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
+      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
+      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
+      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
+      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ]
+    
+    let states = manualAvailableStates.filter(state => US_STATES.includes(state.name))
     if (manualStateSearch) {
       states = states.filter(state => 
         state.name.toLowerCase().includes(manualStateSearch.toLowerCase())
@@ -527,7 +547,7 @@ export default function LeadGeneratorPage() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (leads.length > 0) {
         e.preventDefault()
-        e.returnValue = 'You have unsent leads. Make sure to send any you want to outreach first!'
+        e.returnValue = 'You have unsent leads that will be lost if you navigate away. Make sure to send any you want to outreach first!'
         return e.returnValue
       }
     }
@@ -1648,83 +1668,59 @@ export default function LeadGeneratorPage() {
                   </div>
                 ) : usageData ? (
                   <>
-                    {/* Generation Status */}
-                    <div className="space-y-4">
-                      {/* Main status display */}
-                      <div className="text-center space-y-2">
-                        <div className="flex items-center justify-center gap-3">
-                          {usageData.remaining <= 0 ? (
-                            <AlertTriangle className="h-6 w-6 text-red-400" />
-                          ) : usageData.remaining <= 1 ? (
-                            <Clock className="h-6 w-6 text-yellow-400" />
-                          ) : (
-                            <TrendingUp className="h-6 w-6 text-green-400" />
-                          )}
-                          
-                          <div className="text-center">
-                            <div className={`text-2xl font-bold ${
-                              usageData.remaining <= 0 ? 'text-red-400' : 
-                              usageData.remaining <= 1 ? 'text-yellow-400' : 
-                              'text-green-400'
-                            }`}>
-                              {usageData.remaining}
+                    {/* Daily Generation Status */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Daily Generation</span>
+                        <span className="text-sm text-gray-500">Resets {getTimeUntilMidnight()}</span>
+                      </div>
+                      
+                      {/* Status display that spans full width */}
+                      <div className={`w-full p-4 rounded-lg border transition-all duration-300 ${
+                        usageData.remaining <= 0 
+                          ? 'bg-red-900/20 border-red-700' 
+                          : 'bg-green-900/20 border-green-700'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {usageData.remaining <= 0 ? (
+                              <AlertTriangle className="h-5 w-5 text-red-400" />
+                            ) : (
+                              <TrendingUp className="h-5 w-5 text-green-400" />
+                            )}
+                            <div>
+                              <div className={`font-medium ${
+                                usageData.remaining <= 0 ? 'text-red-400' : 'text-green-400'
+                              }`}>
+                                {usageData.remaining <= 0 ? 'Generation Used' : 'Generation Available'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {usageData.remaining <= 0 ? 'You have used your daily generation' : 'Ready to generate leads'}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 uppercase tracking-wide">
-                              Left Today
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className={`text-xl font-bold ${
+                              usageData.remaining <= 0 ? 'text-red-400' : 'text-green-400'
+                            }`}>
+                              {usageData.remaining <= 0 ? '✓' : '●'}
                             </div>
                           </div>
                         </div>
-                        
-                        {/* Status text */}
-                        <div className={`text-sm ${
-                          usageData.remaining <= 0 ? 'text-red-400' : 
-                          usageData.remaining <= 1 ? 'text-yellow-400' : 
-                          'text-green-400'
-                        }`}>
-                          {usageData.remaining <= 0 ? (
-                            'Daily limit reached'
-                          ) : usageData.remaining <= 1 ? (
-                            `Only ${usageData.remaining} generation${usageData.remaining === 1 ? '' : 's'} remaining`
-                          ) : (
-                            `${usageData.remaining} generations available`
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Usage summary */}
-                      <div className="flex justify-center">
-                        <div className="text-xs text-gray-500 bg-gray-800/30 px-3 py-1 rounded-full">
-                          {usageData.used} of {usageData.limit} used today
-                        </div>
                       </div>
                     </div>
 
-                    {/* Leads Generated Today */}
-                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
-                      <span className="text-sm text-gray-400">Leads Generated Today</span>
-                      <span className="text-sm font-medium text-white">
-                        {usageData.leadsGeneratedToday}
-                      </span>
-                </div>
-
                     {/* System Limits */}
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#333]">
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#333]">
                       <div className="text-center">
                         <div className="text-lg font-semibold text-white">{usageData.leadsPerNiche}</div>
                         <div className="text-xs text-gray-500">Leads per Niche</div>
-                </div>
+                      </div>
                       <div className="text-center">
                         <div className="text-lg font-semibold text-gray-300">{usageData.maxNichesPerSearch}</div>
                         <div className="text-xs text-gray-500">Max Niches</div>
-              </div>
-                    </div>
-
-                                        {/* Reset Information */}
-                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
-                      <span className="text-sm text-gray-400">Resets at Midnight</span>
-                      <span className="text-sm text-white">
-                        {getTimeUntilMidnight()}
-                      </span>
+                      </div>
                     </div>
 
                     {/* Debug Reset Button */}
