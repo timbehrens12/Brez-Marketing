@@ -99,36 +99,9 @@ interface LeadFilters {
 export default function LeadGeneratorPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
+  
+  // All state declarations first
   const [isInitialLoading, setIsInitialLoading] = useState(true)
-  
-  // Initial loading completion
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Show loading state during initial setup
-  if (isInitialLoading) {
-    return <UnifiedLoading variant="page" page="lead-generator" />
-  }
-  
-  // Unified Supabase client function
-  const getSupabaseClient = async () => {
-    try {
-      const token = await getToken({ template: 'supabase' })
-      if (token) {
-        return getAuthenticatedSupabaseClient(token)
-      } else {
-        return getStandardSupabaseClient()
-      }
-    } catch (error) {
-      console.error('Error getting Supabase client:', error)
-      return getStandardSupabaseClient()
-    }
-  }
-  
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState<LocationData>({ 
@@ -137,56 +110,9 @@ export default function LeadGeneratorPage() {
     city: '', 
     radius: '5' 
   })
-  
-  // Search states for dropdowns
   const [countrySearch, setCountrySearch] = useState('')
   const [stateSearch, setStateSearch] = useState('')
   const [citySearch, setCitySearch] = useState('')
-  
-  // Get available data based on selections
-  const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
-  const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
-  
-  // Get filtered countries with US at top
-  const getAllCountriesWithUSFirst = () => {
-    const countries = Country.getAllCountries()
-    const usCountry = countries.find(country => country.isoCode === 'US')
-    
-    // Only return United States for now
-    return usCountry ? [usCountry] : []
-  }
-  
-  // Get filtered states (only 50 US states, no territories)
-  const getFilteredStates = () => {
-    const US_STATES = [
-      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
-      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
-      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
-      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
-      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
-      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
-      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-    ]
-    
-    let states = availableStates.filter(state => US_STATES.includes(state.name))
-    if (stateSearch) {
-      states = states.filter(state => 
-        state.name.toLowerCase().includes(stateSearch.toLowerCase())
-      )
-    }
-    return states
-  }
-  
-  // Get filtered cities
-  const getFilteredCities = () => {
-    let cities = availableCities
-    if (citySearch) {
-      cities = cities.filter(city => 
-        city.name.toLowerCase().includes(citySearch.toLowerCase())
-      )
-    }
-    return cities
-  }
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -294,6 +220,79 @@ export default function LeadGeneratorPage() {
     key: 'score',
     direction: 'desc'
   })
+
+  // Unified Supabase client function
+  const getSupabaseClient = async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
+
+  // Get available data based on selections
+  const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
+  const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
+  
+  // Get filtered countries with US at top
+  const getAllCountriesWithUSFirst = () => {
+    const countries = Country.getAllCountries()
+    const usCountry = countries.find(country => country.isoCode === 'US')
+    
+    // Only return United States for now
+    return usCountry ? [usCountry] : []
+  }
+  
+  // Get filtered states (only 50 US states, no territories)
+  const getFilteredStates = () => {
+    const US_STATES = [
+      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
+      'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
+      'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 
+      'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 
+      'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
+      'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ]
+    
+    let states = availableStates.filter(state => US_STATES.includes(state.name))
+    if (stateSearch) {
+      states = states.filter(state => 
+        state.name.toLowerCase().includes(stateSearch.toLowerCase())
+      )
+    }
+    return states
+  }
+  
+  // Get filtered cities
+  const getFilteredCities = () => {
+    let cities = availableCities
+    if (citySearch) {
+      cities = cities.filter(city => 
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      )
+    }
+    return cities
+  }
+
+  // Initial loading completion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state during initial setup
+  if (isInitialLoading) {
+    return <UnifiedLoading variant="page" page="lead-generator" />
+  }
 
   // Load data on component mount
   useEffect(() => {

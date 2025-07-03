@@ -46,14 +46,14 @@ export default function SettingsPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   
   // Agency settings form state
-  const [tempAgencyName, setTempAgencyName] = useState(agencySettings.agency_name)
+  const [tempAgencyName, setTempAgencyName] = useState('')
   const [tempAgencyLogo, setTempAgencyLogo] = useState<File | null>(null)
   const [isSavingAgency, setIsSavingAgency] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
   // Sync temp agency name with context when agency settings change
   useEffect(() => {
-    setTempAgencyName(agencySettings.agency_name)
+    setTempAgencyName(agencySettings.agency_name || '')
     setLogoPreview(null) // Clear preview when agency settings change
   }, [agencySettings.agency_name])
 

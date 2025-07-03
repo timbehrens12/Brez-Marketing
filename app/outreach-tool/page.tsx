@@ -119,6 +119,7 @@ export default function OutreachToolPage() {
   const { getSupabaseClient } = useAuthenticatedSupabase()
   const { userId } = useAuth()
 
+  // All state declarations first
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
   const [selectedCampaignLead, setSelectedCampaignLead] = useState<CampaignLead | null>(null)

@@ -114,11 +114,11 @@ export function UnifiedLoading({
       )}>
         <div className="text-center">
           {agencySettings.agency_logo_url ? (
-            <img 
+          <img 
               src={agencySettings.agency_logo_url}
               alt="Agency Logo" 
-              className="h-16 w-auto object-contain mx-auto mb-6" 
-            />
+            className="h-16 w-auto object-contain mx-auto mb-6" 
+          />
           ) : (
             <div className="h-16 w-16 bg-[#333] rounded-lg mx-auto mb-6 flex items-center justify-center">
               <span className="text-white font-bold text-lg">L</span>
