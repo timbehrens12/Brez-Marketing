@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { useUser } from "@clerk/nextjs"
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip } from "recharts"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
@@ -74,9 +75,9 @@ export default function BrandReportPage() {
         const cooldownEndTime = currentHour < 6 ? "6:30 AM" : "6:30 AM"
         return {
           available: false,
-          reason: "Daily cooldown active - insufficient data",
-          nextAvailable: `Available after ${cooldownEndTime}`,
-          buttonText: "Too Early"
+                      reason: "Reports can only be generated after 6 AM to ensure sufficient data is available for analysis.",
+            nextAvailable: `Available after ${cooldownEndTime}`,
+            buttonText: "Too Early"
         }
       }
       
@@ -1957,7 +1958,20 @@ export default function BrandReportPage() {
                       disabled={isLoadingReport || !selectedBrandId || !availability.available}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      {availability.buttonText}
+                                              {availability.buttonText === "Too Early" ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help">{availability.buttonText}</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{availability.reason}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          availability.buttonText
+                        )}
                     </Button>
                   )
                 })()}

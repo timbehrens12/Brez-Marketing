@@ -256,7 +256,7 @@ export default function LeadGeneratorPage() {
   const [showLeadManagement, setShowLeadManagement] = useState(false)
   const [isProcessingBatch, setIsProcessingBatch] = useState(false)
   const [isSendingToOutreach, setIsSendingToOutreach] = useState(false)
-  const [isResettingLimits, setIsResettingLimits] = useState(false)
+
   const [sendingLeads, setSendingLeads] = useState<string[]>([]) // New state for individual lead sending
   const [sentLeads, setSentLeads] = useState<string[]>([]) // New state for sent leads confirmation
   
@@ -1615,13 +1615,13 @@ export default function LeadGeneratorPage() {
   }
 
   // Debug function to reset daily limits for testing
-  const resetDailyLimits = async () => {
+  const resetDailyLimits_REMOVED = async () => {
     if (!userId) {
       toast.error('Please sign in first')
       return
     }
     
-    setIsResettingLimits(true)
+          // setIsResettingLimits(true)
     try {
       const response = await fetch('/api/debug/reset-cooldowns', {
         method: 'POST',
@@ -1646,7 +1646,7 @@ export default function LeadGeneratorPage() {
       console.error('Error resetting daily limits:', error)
       toast.error('Failed to reset daily limits')
     } finally {
-      setIsResettingLimits(false)
+      // setIsResettingLimits(false)
     }
   }
 
@@ -1732,8 +1732,8 @@ export default function LeadGeneratorPage() {
                     {/* Debug Reset Button */}
                     <div className="pt-2 border-t border-[#333]">
                       <Button
-                        onClick={resetDailyLimits}
-                        disabled={isResettingLimits}
+                                        onClick={() => {}}
+                disabled={true}
                         size="sm"
                         className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
                       >
