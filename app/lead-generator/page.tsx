@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -97,6 +98,7 @@ interface LeadFilters {
 export default function LeadGeneratorPage() {
   const { userId } = useAuth()
   const { getSupabaseClient } = useAuthenticatedSupabase()
+  const router = useRouter()
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -546,6 +548,79 @@ export default function LeadGeneratorPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [leads.length, userId, getSupabaseClient])
+
+  // Handle internal navigation warning
+  useEffect(() => {
+    const handleNavigation = (url: string) => {
+      if (leads.length > 0 && !url.startsWith(window.location.pathname)) {
+        const confirmed = window.confirm(
+          'You have unsent leads that will be lost if you navigate away. Make sure to send any you want to outreach first!\n\nAre you sure you want to leave?'
+        )
+        if (!confirmed) {
+          throw new Error('Navigation cancelled by user')
+        }
+      }
+    }
+
+    const originalPush = router.push
+    const originalReplace = router.replace
+    
+    // Override router methods to show warning
+    router.push = (url: any, options?: any) => {
+      try {
+        if (typeof url === 'string') {
+          handleNavigation(url)
+        } else if (url?.pathname) {
+          handleNavigation(url.pathname)
+        }
+        return originalPush.call(router, url, options)
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    }
+    
+    router.replace = (url: any, options?: any) => {
+      try {
+        if (typeof url === 'string') {
+          handleNavigation(url)
+        } else if (url?.pathname) {
+          handleNavigation(url.pathname)
+        }
+        return originalReplace.call(router, url, options)
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    }
+
+    // Also intercept anchor link clicks
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLAnchorElement
+      if (target.tagName === 'A' && target.href && leads.length > 0) {
+        const url = new URL(target.href)
+        const currentUrl = new URL(window.location.href)
+        
+        // Only warn for same-origin navigation to different pages
+        if (url.origin === currentUrl.origin && url.pathname !== currentUrl.pathname) {
+          const confirmed = window.confirm(
+            'You have unsent leads that will be lost if you navigate away. Make sure to send any you want to outreach first!\n\nAre you sure you want to leave?'
+          )
+          if (!confirmed) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('click', handleLinkClick, true)
+
+    return () => {
+      // Restore original methods
+      router.push = originalPush
+      router.replace = originalReplace
+      document.removeEventListener('click', handleLinkClick, true)
+    }
+  }, [leads.length, router])
 
   const handleClearAndGenerate = async () => {
     try {
@@ -1573,46 +1648,53 @@ export default function LeadGeneratorPage() {
                   </div>
                 ) : usageData ? (
                   <>
-                    {/* Generation Limit Progress */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Generations Today</span>
-                        <span className="text-sm font-medium text-white">
-                          {usageData.used} / {usageData.limit}
-                        </span>
-                      </div>
-                      
-                      {/* Modern circular progress indicator */}
-                      <div className="relative">
-                        <div className="w-full bg-gray-800 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-500 ${
-                              usageData.remaining <= 0 ? 'bg-gradient-to-r from-orange-500 to-red-500' : 
-                              usageData.remaining <= 1 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 
-                              'bg-gradient-to-r from-green-500 to-blue-500'
-                            }`}
-                            style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
-                          />
+                    {/* Generation Status */}
+                    <div className="space-y-4">
+                      {/* Main status display */}
+                      <div className="text-center space-y-2">
+                        <div className="flex items-center justify-center gap-3">
+                          {usageData.remaining <= 0 ? (
+                            <AlertTriangle className="h-6 w-6 text-red-400" />
+                          ) : usageData.remaining <= 1 ? (
+                            <Clock className="h-6 w-6 text-yellow-400" />
+                          ) : (
+                            <TrendingUp className="h-6 w-6 text-green-400" />
+                          )}
+                          
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${
+                              usageData.remaining <= 0 ? 'text-red-400' : 
+                              usageData.remaining <= 1 ? 'text-yellow-400' : 
+                              'text-green-400'
+                            }`}>
+                              {usageData.remaining}
+                            </div>
+                            <div className="text-xs text-gray-500 uppercase tracking-wide">
+                              Left Today
+                            </div>
+                          </div>
                         </div>
                         
-                        {/* Status indicator */}
-                        <div className="flex items-center justify-center mt-2">
+                        {/* Status text */}
+                        <div className={`text-sm ${
+                          usageData.remaining <= 0 ? 'text-red-400' : 
+                          usageData.remaining <= 1 ? 'text-yellow-400' : 
+                          'text-green-400'
+                        }`}>
                           {usageData.remaining <= 0 ? (
-                            <div className="flex items-center gap-2 text-red-400 text-xs">
-                              <AlertTriangle className="h-4 w-4" />
-                              <span>Daily limit reached</span>
-                            </div>
+                            'Daily limit reached'
                           ) : usageData.remaining <= 1 ? (
-                            <div className="flex items-center gap-2 text-yellow-400 text-xs">
-                              <Clock className="h-4 w-4" />
-                              <span>{usageData.remaining} generation{usageData.remaining === 1 ? '' : 's'} remaining</span>
-                            </div>
+                            `Only ${usageData.remaining} generation${usageData.remaining === 1 ? '' : 's'} remaining`
                           ) : (
-                            <div className="flex items-center gap-2 text-green-400 text-xs">
-                              <TrendingUp className="h-4 w-4" />
-                              <span>{usageData.remaining} generations available</span>
-                            </div>
+                            `${usageData.remaining} generations available`
                           )}
+                        </div>
+                      </div>
+                      
+                      {/* Usage summary */}
+                      <div className="flex justify-center">
+                        <div className="text-xs text-gray-500 bg-gray-800/30 px-3 py-1 rounded-full">
+                          {usageData.used} of {usageData.limit} used today
                         </div>
                       </div>
                     </div>
@@ -2394,7 +2476,7 @@ export default function LeadGeneratorPage() {
                             isLeadSent 
                               ? 'bg-green-900/20 text-green-400' 
                               : isLeadSending 
-                                ? 'bg-blue-900/20 text-blue-400 animate-pulse' 
+                                ? 'bg-gray-800/40 animate-pulse' 
                                 : 'hover:bg-[#222]/50'
                           }`}
                           onClick={() => {
@@ -2417,7 +2499,7 @@ export default function LeadGeneratorPage() {
                               <div className="font-medium text-gray-400 flex items-center gap-2">
                                 {lead.business_name}
                                 {isLeadSending && (
-                                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full animate-pulse">
+                                  <span className="text-xs bg-gray-600/30 text-gray-300 px-2 py-1 rounded-full animate-pulse">
                                     Sending...
                                   </span>
                                 )}
