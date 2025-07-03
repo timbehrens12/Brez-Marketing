@@ -66,6 +66,26 @@ export default function RootLayout({
             color: white !important;
           }
           
+          /* Ensure filled inputs keep the same color */
+          * input[type="email"]:not(:placeholder-shown),
+          * input[type="password"]:not(:placeholder-shown),
+          * input[type="text"]:not(:placeholder-shown),
+          div input:not(:placeholder-shown),
+          .cl-formFieldInput:not(:placeholder-shown),
+          .cl-card input:not(:placeholder-shown),
+          /* Handle active and focused states with text */
+          * input[type="email"]:focus:not(:placeholder-shown),
+          * input[type="password"]:focus:not(:placeholder-shown),
+          * input[type="text"]:focus:not(:placeholder-shown),
+          * input[type="email"]:active,
+          * input[type="password"]:active,
+          * input[type="text"]:active {
+            background-color: #3a3a3a !important;
+            background: #3a3a3a !important;
+            border-color: #555 !important;
+            color: white !important;
+          }
+          
           /* Minimize Clerk branding */
           .cl-internal-b3fm6y {
             opacity: 0.3;
@@ -193,6 +213,8 @@ export default function RootLayout({
           input[type="email"]:focus,
           input[type="password"]:focus,
           input[type="text"]:focus {
+            background-color: #3a3a3a !important;
+            background: #3a3a3a !important;
             border-color: #9ca3af !important;
             box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.3) !important;
             outline: none !important;
