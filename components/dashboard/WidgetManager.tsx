@@ -110,15 +110,7 @@ export function WidgetManager({
 
   // Show a loading spinner during the initial data load for a selected brand
   if (initialDataLoad) {
-    return (
-      <UnifiedLoading
-        size="xl"
-        variant="default"
-        message="Loading dashboard data..."
-        subMessage="This may take a moment"
-        className="py-16"
-      />
-    );
+    return <UnifiedLoading variant="page" page="dashboard" />
   }
 
   const handleTabChangeInternal = (value: string) => {

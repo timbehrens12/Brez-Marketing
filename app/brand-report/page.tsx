@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 
 interface DailyReport {
   content: string
@@ -44,6 +45,7 @@ export default function BrandReportPage() {
   const [mounted, setMounted] = useState(false)
   const [greeting, setGreeting] = useState("")
   const [userFirstName, setUserFirstName] = useState("")
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([])
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null)
@@ -180,7 +182,12 @@ export default function BrandReportPage() {
       setUserFirstName(user.firstName || user.fullName?.split(' ')[0] || "")
     }
     
+    // Simulate initial loading completion
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 2000)
 
+    return () => clearTimeout(timer)
   }, [user])
 
   // Check brand-specific last generation date on brand change
@@ -1889,6 +1896,11 @@ export default function BrandReportPage() {
       console.log('⏳ Waiting for brand selection or user authentication')
     }
   }, [selectedBrandId, selectedPeriod, dateRange.from, dateRange.to, user?.id, mounted])
+
+  // Show loading state during initial setup
+  if (isInitialLoading) {
+    return <UnifiedLoading variant="page" page="brand-report" />
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] p-6">

@@ -29,6 +29,7 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
+import { UnifiedLoading } from '@/components/ui/unified-loading'
 
 interface Lead {
   id: string
@@ -122,6 +123,7 @@ export default function OutreachToolPage() {
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
   const [selectedCampaignLead, setSelectedCampaignLead] = useState<CampaignLead | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
   const [messageType, setMessageType] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
@@ -198,6 +200,19 @@ export default function OutreachToolPage() {
       loadCampaignLeads()
     }
   }, [userId])
+
+  // Initial loading completion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state during initial setup
+  if (isInitialLoading) {
+    return <UnifiedLoading variant="page" page="outreach" />
+  }
 
   useEffect(() => {
     if (campaignLeads.length > 0 && campaigns.length > 0) {

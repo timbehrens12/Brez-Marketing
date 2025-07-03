@@ -20,7 +20,8 @@ import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import { Country, State, City } from 'country-state-city';
+import { Country, State, City } from 'country-state-city'
+import { UnifiedLoading } from '@/components/ui/unified-loading'
 
 // Lead management constants
 const REVIEW_THRESHOLD = 50 // Suggest clearing reviewed leads when this many leads
@@ -98,6 +99,20 @@ interface LeadFilters {
 export default function LeadGeneratorPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  
+  // Initial loading completion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state during initial setup
+  if (isInitialLoading) {
+    return <UnifiedLoading variant="page" page="lead-generator" />
+  }
   
   // Unified Supabase client function
   const getSupabaseClient = async () => {
@@ -1683,7 +1698,7 @@ export default function LeadGeneratorPage() {
               <CardContent className="space-y-4">
                 {isLoadingUsage ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
                     <span className="ml-2 text-gray-400">Loading usage data...</span>
                   </div>
                 ) : usageData ? (

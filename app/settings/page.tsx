@@ -18,6 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { CustomerSyncButton } from "@/components/dashboard/CustomerSyncButton"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Upload, X } from "lucide-react"
+import { UnifiedLoading } from "@/components/ui/unified-loading"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -41,7 +42,8 @@ export default function SettingsPage() {
   const supabase = useSupabase()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({});
+  const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({})
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   
   // Agency settings form state
   const [tempAgencyName, setTempAgencyName] = useState(agencySettings.agency_name)
@@ -162,6 +164,19 @@ export default function SettingsPage() {
   useEffect(() => {
     loadConnections()
   }, [user, supabase])
+
+  // Initial loading completion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state during initial setup
+  if (isInitialLoading) {
+    return <UnifiedLoading variant="page" page="settings" />
+  }
 
   // Handle loading state from Shopify callback
   useEffect(() => {
