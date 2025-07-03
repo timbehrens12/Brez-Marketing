@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit, Calculator, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
+import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { Country, State, City } from 'country-state-city';
@@ -96,9 +96,23 @@ interface LeadFilters {
 }
 
 export default function LeadGeneratorPage() {
-  const { userId } = useAuth()
-  const { getSupabaseClient } = useAuthenticatedSupabase()
+  const { userId, getToken } = useAuth()
   const router = useRouter()
+  
+  // Unified Supabase client function
+  const getSupabaseClient = async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -449,7 +463,7 @@ export default function LeadGeneratorPage() {
         .from('outreach_campaign_leads')
         .select('lead_id')
       
-      const excludeLeadIds = outreachLeadIds?.map(ol => ol.lead_id) || []
+      const excludeLeadIds = outreachLeadIds?.map((ol: { lead_id: string }) => ol.lead_id) || []
       
       let query = supabase
         .from('leads')
@@ -490,8 +504,8 @@ export default function LeadGeneratorPage() {
       }
       
       const today = new Date().toDateString()
-      const todayCount = allLeads?.filter((lead: any) => 
-        new Date(lead.created_at as string).toDateString() === today
+      const todayCount = allLeads?.filter((lead: { created_at: string }) => 
+        new Date(lead.created_at).toDateString() === today
       ).length || 0
       
       setTotalLeads(allLeads?.length || 0)
@@ -567,7 +581,7 @@ export default function LeadGeneratorPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [leads.length, userId, getSupabaseClient])
+  }, [leads.length, userId, getToken])
 
   // Handle internal navigation warning
   useEffect(() => {
@@ -655,7 +669,7 @@ export default function LeadGeneratorPage() {
           .from('outreach_campaign_leads')
           .select('lead_id')
         
-        const protectedLeadIds = outreachLeadIds?.map(ol => ol.lead_id) || []
+        const protectedLeadIds = outreachLeadIds?.map((ol: { lead_id: string }) => ol.lead_id) || []
         
         if (protectedLeadIds.length > 0) {
           // Delete only leads that are NOT in outreach
@@ -968,7 +982,7 @@ export default function LeadGeneratorPage() {
       if (verifyLeads.length !== selectedLeads.length) {
         console.error('❌ EARLY RETURN: Lead count mismatch - Auto-refreshing leads list')
         console.log('Expected count:', selectedLeads.length, 'Found count:', verifyLeads.length)
-        const foundIds = verifyLeads.map(lead => lead.id)
+        const foundIds = verifyLeads.map((lead: { id: string }) => lead.id)
         const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
         console.log('Missing lead IDs:', missingIds)
         
@@ -1737,12 +1751,8 @@ export default function LeadGeneratorPage() {
                         size="sm"
                         className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
                       >
-                        {isResettingLimits ? (
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3 mr-1" />
-                        )}
-                        {isResettingLimits ? 'Resetting...' : 'Reset Daily Limits (Debug)'}
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Reset Daily Limits (Debug)
                       </Button>
                     </div>
 

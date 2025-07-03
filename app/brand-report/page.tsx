@@ -1466,7 +1466,9 @@ export default function BrandReportPage() {
                       : "Marketing Intelligence"
                     }
                   </div>
-                  <div class="footer-agency-tagline">Professional Marketing Analytics</div>
+                  <div class="footer-agency-tagline">
+                    ${agencySettings.agency_tagline || "Professional Marketing Analytics"}
+                  </div>
                 </div>
               </div>
               
