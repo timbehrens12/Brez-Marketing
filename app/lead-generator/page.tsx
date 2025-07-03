@@ -875,12 +875,15 @@ export default function LeadGeneratorPage() {
     const hours = Math.floor((msUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
     
-    if (days > 0) {
-      return `in ${days}d ${hours}h`
+    // For weekly system, always show in context of days/week
+    if (days > 1) {
+      return `in ${days} days (next Monday)`
+    } else if (days === 1) {
+      return `tomorrow (Monday)`
     } else if (hours > 0) {
-      return `in ${hours}h ${minutes}m`
+      return `in ${hours}h ${minutes}m (Monday)`
     }
-    return `in ${minutes}m`
+    return `in ${minutes}m (Monday)`
   }
 
   const getTimeUntilMidnight = () => {
