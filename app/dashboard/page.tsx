@@ -56,6 +56,8 @@ import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 import { DashboardErrorBoundary } from "@/components/ErrorBoundary"
 import { useAgency } from "@/contexts/AgencyContext"
+import { useDataBackfill, shouldSuggestBackfill } from "@/lib/hooks/useDataBackfill"
+import { BackfillNotification } from "@/components/dashboard/BackfillNotification"
 
 interface WidgetData {
   shopify?: any;
@@ -142,6 +144,9 @@ export default function DashboardPage() {
   // console.log('[Dashboard] Calling useAgency')
   const { agencySettings } = useAgency()
   
+  // console.log('[Dashboard] Calling useDataBackfill')
+  const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
+  
   // console.log('[Dashboard] useState calls starting')
   const [dateRange, setDateRange] = useState({
     from: startOfDay(new Date()),
@@ -200,6 +205,28 @@ export default function DashboardPage() {
 
   // Add a flag to prevent multiple initial loads
   const initialLoadStarted = useRef(false);
+
+  // Reset backfill status when brand changes
+  useEffect(() => {
+    if (selectedBrandId) {
+      resetStatus();
+    }
+  }, [selectedBrandId, resetStatus]);
+
+  // Handle backfill trigger
+  const handleBackfillTrigger = useCallback(async () => {
+    if (!selectedBrandId) return;
+    
+    console.log('[Dashboard] User triggered backfill');
+    const success = await performBackfill(selectedBrandId);
+    
+    if (success) {
+      // Refresh the dashboard data after successful backfill
+      console.log('[Dashboard] Backfill successful, refreshing dashboard...');
+      // Trigger a data refresh by updating the date range (forces re-fetch)
+      setDateRange(prev => ({ ...prev }));
+    }
+  }, [selectedBrandId, performBackfill]);
 
   // Set the global flag on component mount
   useEffect(() => {
@@ -748,8 +775,9 @@ export default function DashboardPage() {
           
           // Run gap detection after initial data load is complete (non-blocking)
           setTimeout(() => {
-            if (!cancelled && activePlatforms.meta) {
-              detectMetaDataGaps();
+            if (!cancelled && selectedBrandId && (activePlatforms.meta || activePlatforms.shopify)) {
+              console.log('[Dashboard] Starting automatic gap detection...');
+              checkForGaps(selectedBrandId);
             }
           }, 2000); // Small delay to ensure all data is loaded
         }
@@ -1445,6 +1473,15 @@ export default function DashboardPage() {
             />
           </div>
         </div>
+        
+        {/* Backfill Notification - shows data gap detection and backfill status */}
+        <div className="px-8 mb-4">
+          <BackfillNotification
+            status={backfillStatus}
+            onBackfillTrigger={handleBackfillTrigger}
+          />
+        </div>
+        
         {/* WidgetManager and other content will take up remaining space */}
         <div className="flex-grow px-8 pb-8">
                       <WidgetManager
