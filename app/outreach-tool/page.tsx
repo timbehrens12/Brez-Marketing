@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -131,7 +131,7 @@ export default function OutreachToolPage() {
   })
   
   // Unified Supabase client function
-  const getSupabaseClient = async () => {
+  const getSupabaseClient = useCallback(async () => {
     try {
       console.log('🔗 Getting Supabase client...')
       const token = await getToken({ template: 'supabase' })
@@ -146,7 +146,7 @@ export default function OutreachToolPage() {
       console.error('❌ Error getting Supabase client:', error)
       return getStandardSupabaseClient()
     }
-  }
+  }, [getToken])
 
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
@@ -308,19 +308,7 @@ export default function OutreachToolPage() {
     }
   }, [])
 
-  useEffect(() => {
-    console.log('🔄 Main useEffect triggered, userId:', userId)
-    if (userId) {
-      console.log('✅ Starting data load for user:', userId)
-      loadInitialData()
-    } else {
-      console.log('❌ No userId found, stopping loading state')
-      // If no userId, set loading to false immediately
-      setIsLoadingPage(false)
-    }
-  }, [userId])
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     console.log('🔄 loadInitialData called, userId:', userId)
     
     if (!userId) {
@@ -359,88 +347,9 @@ export default function OutreachToolPage() {
       setIsLoadingPage(false)
       setIsLoading(false)
     }
-  }
-
-  useEffect(() => {
-    if (campaignLeads.length > 0 && campaigns.length > 0) {
-      loadActionRecommendations(false)
-    }
-  }, [campaignLeads, campaigns])
-
-  // Load cached data on mount
-  useEffect(() => {
-    if (userId) {
-      const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
-      const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
-      
-      if (lastRefreshTime && cachedRecommendations) {
-        const timestamp = parseInt(lastRefreshTime)
-        const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
-        
-        setCanRefreshRecommendations(timestamp < twelveHoursAgo)
-        setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
-        setActionRecommendations(JSON.parse(cachedRecommendations))
-      }
-    }
   }, [userId])
 
-  // Check for daily refresh on component mount
-  useEffect(() => {
-    if (userId) {
-      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format to match API
-      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-      setLastRecommendationRefresh(lastRefresh)
-      
-      // If it's a new day, clear completed actions
-      if (lastRefresh && lastRefresh !== today) {
-        setCompletedActions(new Set())
-        localStorage.removeItem(`completed-actions-${userId}`)
-      }
-    }
-  }, [userId])
-
-  // Set up automatic daily refresh check
-  useEffect(() => {
-    if (!userId) return
-
-    const checkForNewDay = () => {
-      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format to match API
-      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-      
-      // If it's a new day and we have campaigns/leads, refresh recommendations
-      if (lastRefresh !== today && campaigns.length > 0 && campaignLeads.length > 0) {
-        setCompletedActions(new Set()) // Clear completed actions for new day
-        localStorage.removeItem(`completed-actions-${userId}`)
-        loadActionRecommendations(true) // Force refresh for new day
-        console.log('🌅 New day detected - refreshing AI recommendations')
-      }
-    }
-
-    // Calculate milliseconds until next midnight
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0) // Set to midnight
-    const msUntilMidnight = tomorrow.getTime() - now.getTime()
-
-    // Set initial timeout for midnight, then check every hour after that
-    const midnightTimeout = setTimeout(() => {
-      checkForNewDay()
-      
-      // After midnight, check every hour in case user keeps app open
-      const hourlyInterval = setInterval(checkForNewDay, 60 * 60 * 1000)
-      
-      // Cleanup function will clear this interval
-      return () => clearInterval(hourlyInterval)
-    }, msUntilMidnight)
-
-    // Also check immediately on mount in case it's already a new day
-    checkForNewDay()
-    
-    return () => clearTimeout(midnightTimeout)
-  }, [userId, campaigns, campaignLeads])
-
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     if (!userId) return
 
     try {
@@ -463,9 +372,9 @@ export default function OutreachToolPage() {
       toast.error('Failed to load campaigns')
       setCampaigns([]) // Set empty array on error
     }
-  }
+  }, [userId, getSupabaseClient])
 
-  const loadActionRecommendations = async (forceRefresh = false) => {
+  const loadActionRecommendations = useCallback(async (forceRefresh = false) => {
     if (!userId || campaigns.length === 0) return
 
     // Check if we can refresh (every 12 hours)
@@ -531,9 +440,9 @@ export default function OutreachToolPage() {
     } finally {
       setIsLoadingActions(false)
     }
-  }
+  }, [userId, campaigns])
 
-  const loadCampaignLeads = async () => {
+  const loadCampaignLeads = useCallback(async () => {
     if (!userId) return
 
     try {
@@ -574,7 +483,7 @@ export default function OutreachToolPage() {
       toast.error('Failed to load campaign leads')
       setCampaignLeads([]) // Set empty array on error
     }
-  }
+  }, [userId, getSupabaseClient])
 
   const completeAction = async (actionId: string) => {
     try {
@@ -1212,6 +1121,98 @@ export default function OutreachToolPage() {
       setIsRecalculatingScores(false)
     }
   }
+
+  // useEffect hooks
+  useEffect(() => {
+    console.log('🔄 Main useEffect triggered, userId:', userId)
+    if (userId) {
+      console.log('✅ Starting data load for user:', userId)
+      loadInitialData()
+    } else {
+      console.log('❌ No userId found, stopping loading state')
+      // If no userId, set loading to false immediately
+      setIsLoadingPage(false)
+    }
+  }, [userId, loadInitialData])
+
+  useEffect(() => {
+    if (campaignLeads.length > 0 && campaigns.length > 0) {
+      loadActionRecommendations(false)
+    }
+  }, [campaignLeads, campaigns, loadActionRecommendations])
+
+  // Load cached data on mount
+  useEffect(() => {
+    if (userId) {
+      const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
+      const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
+      
+      if (lastRefreshTime && cachedRecommendations) {
+        const timestamp = parseInt(lastRefreshTime)
+        const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
+        
+        setCanRefreshRecommendations(timestamp < twelveHoursAgo)
+        setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
+        setActionRecommendations(JSON.parse(cachedRecommendations))
+      }
+    }
+  }, [userId])
+
+  // Check for daily refresh on component mount
+  useEffect(() => {
+    if (userId) {
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format to match API
+      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
+      setLastRecommendationRefresh(lastRefresh)
+      
+      // If it's a new day, clear completed actions
+      if (lastRefresh && lastRefresh !== today) {
+        setCompletedActions(new Set())
+        localStorage.removeItem(`completed-actions-${userId}`)
+      }
+    }
+  }, [userId])
+
+  // Set up automatic daily refresh check
+  useEffect(() => {
+    if (!userId) return
+
+    const checkForNewDay = () => {
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format to match API
+      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
+      
+      // If it's a new day and we have campaigns/leads, refresh recommendations
+      if (lastRefresh !== today && campaigns.length > 0 && campaignLeads.length > 0) {
+        setCompletedActions(new Set()) // Clear completed actions for new day
+        localStorage.removeItem(`completed-actions-${userId}`)
+        loadActionRecommendations(true) // Force refresh for new day
+        console.log('🌅 New day detected - refreshing AI recommendations')
+      }
+    }
+
+    // Calculate milliseconds until next midnight
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0) // Set to midnight
+    const msUntilMidnight = tomorrow.getTime() - now.getTime()
+
+    // Set initial timeout for midnight, then check every hour after that
+    const midnightTimeout = setTimeout(() => {
+      checkForNewDay()
+      
+      // After midnight, check every hour in case user keeps app open
+      const hourlyInterval = setInterval(checkForNewDay, 60 * 60 * 1000)
+      
+      // Cleanup function will clear this interval
+      return () => clearInterval(hourlyInterval)
+    }, msUntilMidnight)
+
+    // Also check immediately on mount in case it's already a new day
+    checkForNewDay()
+    
+    return () => clearTimeout(midnightTimeout)
+  }, [userId, campaigns, campaignLeads, loadActionRecommendations])
 
   const filteredLeads = applyFilters(campaignLeads)
 
