@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -299,130 +299,71 @@ export default function OutreachToolPage() {
     }
   }, [userId])
 
-  // Load cached data and check for daily refresh - only runs once when userId changes
-  useEffect(() => {
-    if (!userId) return
+  // Load cached data and check for daily refresh - DISABLED to prevent React error #310
+  // useEffect(() => {
+  //   if (!userId) return
 
-    // Load cached recommendations
-    const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
-    const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
+  //   // Load cached recommendations
+  //   const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
+  //   const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
     
-    if (lastRefreshTime && cachedRecommendations) {
-      const timestamp = parseInt(lastRefreshTime)
-      const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
+  //   if (lastRefreshTime && cachedRecommendations) {
+  //     const timestamp = parseInt(lastRefreshTime)
+  //     const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
       
-      setCanRefreshRecommendations(timestamp < twelveHoursAgo)
-      setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
-      setActionRecommendations(JSON.parse(cachedRecommendations))
-    }
+  //     setCanRefreshRecommendations(timestamp < twelveHoursAgo)
+  //     setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
+  //     setActionRecommendations(JSON.parse(cachedRecommendations))
+  //   }
 
-    // Check for daily refresh
-    const today = new Date().toISOString().split('T')[0]
-    const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-    setLastRecommendationRefresh(lastRefresh)
+  //   // Check for daily refresh
+  //   const today = new Date().toISOString().split('T')[0]
+  //   const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
+  //   setLastRecommendationRefresh(lastRefresh)
     
-    // If it's a new day, clear completed actions
-    if (lastRefresh && lastRefresh !== today) {
-      setCompletedActions(new Set())
-      localStorage.removeItem(`completed-actions-${userId}`)
-    }
+  //   // If it's a new day, clear completed actions
+  //   if (lastRefresh && lastRefresh !== today) {
+  //     setCompletedActions(new Set())
+  //     localStorage.removeItem(`completed-actions-${userId}`)
+  //   }
 
-    // Load completed actions
-    const stored = localStorage.getItem(`completed-actions-${userId}`)
-    if (stored) {
-      try {
-        const completed = JSON.parse(stored)
-        setCompletedActions(new Set(completed))
-      } catch (error) {
-        console.error('Error loading completed actions:', error)
-      }
-    }
-  }, [userId])
+  //   // Load completed actions
+  //   const stored = localStorage.getItem(`completed-actions-${userId}`)
+  //   if (stored) {
+  //     try {
+  //       const completed = JSON.parse(stored)
+  //       setCompletedActions(new Set(completed))
+  //     } catch (error) {
+  //       console.error('Error loading completed actions:', error)
+  //     }
+  //   }
+  // }, [userId])
 
-  // Load action recommendations when data is ready - runs once after initial load
-  useEffect(() => {
-    if (userId && campaignLeads.length > 0 && campaigns.length > 0) {
-      // Only load recommendations if we don't have cached ones
-      if (actionRecommendations.length === 0) {
-        loadActionRecommendations(false)
-      }
-    }
-  }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length])
+  // Load action recommendations when data is ready - DISABLED to prevent React error #310
+  // useEffect(() => {
+  //   if (userId && campaignLeads.length > 0 && campaigns.length > 0) {
+  //     // Only load recommendations if we don't have cached ones
+  //     if (actionRecommendations.length === 0) {
+  //       loadActionRecommendations(false)
+  //     }
+  //   }
+  // }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length])
 
-  // Refs to track current state values without causing re-renders
-  const campaignCountRef = useRef(0)
-  const campaignLeadCountRef = useRef(0)
-  const mountedRef = useRef(true)
+  // Simple daily refresh check - DISABLED to prevent React error #310
+  // useEffect(() => {
+  //   if (!userId) return
 
-  // Update refs when state changes
-  useEffect(() => {
-    campaignCountRef.current = campaigns.length
-    campaignLeadCountRef.current = campaignLeads.length
-  }, [campaigns.length, campaignLeads.length])
-
-  // Set up daily refresh check - runs once on component mount
-  useEffect(() => {
-    if (!userId) return
-
-    const checkForNewDay = () => {
-      // Don't run if component is unmounted
-      if (!mountedRef.current) return
-
-      const today = new Date().toISOString().split('T')[0]
-      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-      
-      // If it's a new day and we have data loaded, refresh recommendations
-      if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
-        // Check again if still mounted before setting state
-        if (mountedRef.current) {
-          setCompletedActions(new Set()) // Clear completed actions for new day
-          localStorage.removeItem(`completed-actions-${userId}`)
-          loadActionRecommendations(true) // Force refresh for new day
-          console.log('🌅 New day detected - refreshing AI recommendations')
-        }
-      }
-    }
-
-    // Calculate milliseconds until next midnight
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0) // Set to midnight
-    const msUntilMidnight = tomorrow.getTime() - now.getTime()
-
-    let hourlyInterval: NodeJS.Timeout | null = null
-
-    // Set initial timeout for midnight, then check every hour after that
-    const midnightTimeout = setTimeout(() => {
-      if (!mountedRef.current) return
-      checkForNewDay()
-      
-      // After midnight, check every hour in case user keeps app open
-      hourlyInterval = setInterval(() => {
-        if (!mountedRef.current) {
-          if (hourlyInterval) clearInterval(hourlyInterval)
-          return
-        }
-        checkForNewDay()
-      }, 60 * 60 * 1000)
-    }, msUntilMidnight)
-
-    // Also check immediately on mount in case it's already a new day
-    checkForNewDay()
+  //   // Check for daily refresh on component mount only
+  //   const today = new Date().toISOString().split('T')[0]
+  //   const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
     
-    return () => {
-      clearTimeout(midnightTimeout)
-      if (hourlyInterval) clearInterval(hourlyInterval)
-    }
-  }, [userId]) // loadActionRecommendations is accessed directly in the closure
-
-  // Track component mount/unmount status
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+  //   // If it's a new day, clear completed actions (no automatic refresh)
+  //   if (lastRefresh && lastRefresh !== today) {
+  //     setCompletedActions(new Set())
+  //     localStorage.removeItem(`completed-actions-${userId}`)
+  //     console.log('🌅 New day detected - cleared completed actions')
+  //   }
+  // }, [userId])
 
   const loadCampaigns = useCallback(async () => {
     if (!userId) return
