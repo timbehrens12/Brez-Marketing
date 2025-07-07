@@ -124,6 +124,17 @@ interface ActionItem {
   completedAt?: string
 }
 
+interface TodoItem {
+  id: string
+  type: 'new_leads' | 'follow_up' | 'hot_leads' | 'going_cold' | 'responded'
+  priority: 'high' | 'medium' | 'low'
+  title: string
+  description: string
+  count: number
+  action: string
+  filterAction: () => void
+}
+
 // Lead management constants
 const MAX_PENDING_LEADS = 75 // Maximum pending leads allowed
 const MAX_TOTAL_LEADS = 200 // Maximum total leads in outreach
@@ -180,12 +191,9 @@ export default function OutreachToolPage() {
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
   const [showLoadingOverride, setShowLoadingOverride] = useState(false)
   
-  // AI Action Center state
-  const [actionRecommendations, setActionRecommendations] = useState<ActionItem[]>([])
-  const [isLoadingActions, setIsLoadingActions] = useState(false)
-  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set())
-  const [lastRecommendationRefresh, setLastRecommendationRefresh] = useState<string | null>(null)
-  const [canRefreshRecommendations, setCanRefreshRecommendations] = useState(true)
+  // Simple Todo state
+  const [todos, setTodos] = useState<TodoItem[]>([])
+  const [completedTodos, setCompletedTodos] = useState<Set<string>>(new Set())
   
   // Smart Response state
   const [showSmartResponse, setShowSmartResponse] = useState(false)
@@ -369,73 +377,104 @@ export default function OutreachToolPage() {
     }
   }, [userId, loadCampaigns, loadCampaignLeads, loadMessageUsage])
 
-  const loadActionRecommendations = useCallback(async (forceRefresh = false) => {
-    if (!userId || campaigns.length === 0) return
-
-    // Check if we can refresh (every 12 hours)
-    const now = new Date()
-    const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
-    const lastRefreshTimestamp = lastRefreshTime ? parseInt(lastRefreshTime) : 0
-    const twelveHoursAgo = now.getTime() - (12 * 60 * 60 * 1000)
-    
-    const canRefresh = !lastRefreshTime || lastRefreshTimestamp < twelveHoursAgo
-    setCanRefreshRecommendations(canRefresh)
-    
-    if (!forceRefresh && !canRefresh) {
-      // Load from cache if available and can't refresh yet
-      const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
-      if (cachedRecommendations) {
-        setActionRecommendations(JSON.parse(cachedRecommendations))
-        setLastRecommendationRefresh(new Date(lastRefreshTimestamp).toLocaleString())
-        return
-      }
-    }
-    
-    if (forceRefresh && !canRefresh) {
-      const hoursUntilRefresh = Math.ceil((lastRefreshTimestamp + (12 * 60 * 60 * 1000) - now.getTime()) / (1000 * 60 * 60))
-      toast.error(`Can only refresh every 12 hours. Try again in ${hoursUntilRefresh} hour${hoursUntilRefresh > 1 ? 's' : ''}.`)
+  const generateTodos = useCallback(() => {
+    if (!campaignLeads.length) {
+      setTodos([])
       return
     }
 
-    try {
-      setIsLoadingActions(true)
-      const activeCampaign = campaigns.find(c => c.status === 'active') || campaigns[0]
-      
-      if (!activeCampaign) return
+    const newTodos: TodoItem[] = []
+    
+    // Count leads by status
+    const pendingLeads = campaignLeads.filter(cl => cl.status === 'pending')
+    const contactedLeads = campaignLeads.filter(cl => cl.status === 'contacted')
+    const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
+    const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
+    
+    // Get leads contacted more than 3 days ago (need follow-up)
+    const threeDaysAgo = new Date()
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+    const needsFollowUp = contactedLeads.filter(cl => {
+      if (!cl.last_contacted_at) return false
+      return new Date(cl.last_contacted_at) < threeDaysAgo
+    })
+    
+    // Get leads contacted more than 7 days ago (going cold)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const goingCold = contactedLeads.filter(cl => {
+      if (!cl.last_contacted_at) return false
+      return new Date(cl.last_contacted_at) < sevenDaysAgo
+    })
 
-      const response = await fetch('/api/ai/action-recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          campaignId: activeCampaign.id, 
-          userId 
-        })
+    // Generate todos based on lead status
+    if (pendingLeads.length > 0) {
+      newTodos.push({
+        id: 'new_leads',
+        type: 'new_leads',
+        priority: 'high',
+        title: `Start outreach for ${pendingLeads.length} new leads`,
+        description: 'These leads are ready for initial outreach',
+        count: pendingLeads.length,
+        action: 'Start Outreach',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'pending' }))
       })
-
-      if (response.status === 429) {
-        // Rate limited - already generated recently
-        console.log('Recommendations already generated recently')
-        return
-      }
-
-      if (!response.ok) throw new Error('Failed to load recommendations')
-
-      const data = await response.json()
-      setActionRecommendations(data.recommendations || [])
-      
-      // Store the refresh timestamp and cache the recommendations
-      const refreshTime = now.getTime()
-      localStorage.setItem(`last-recommendation-refresh-time-${userId}`, refreshTime.toString())
-      localStorage.setItem(`cached-recommendations-${userId}`, JSON.stringify(data.recommendations || []))
-      setLastRecommendationRefresh(now.toLocaleString())
-      setCanRefreshRecommendations(false) // Can't refresh again for 12 hours
-      
-    } catch (error) {
-      console.error('Error loading action recommendations:', error)
-    } finally {
-      setIsLoadingActions(false)
     }
-  }, [userId, campaigns])
+
+    if (respondedLeads.length > 0) {
+      newTodos.push({
+        id: 'responded',
+        type: 'responded',
+        priority: 'high',
+        title: `${respondedLeads.length} leads responded - follow up now!`,
+        description: 'These leads showed interest and need immediate attention',
+        count: respondedLeads.length,
+        action: 'View Responses',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
+      })
+    }
+
+    if (qualifiedLeads.length > 0) {
+      newTodos.push({
+        id: 'qualified',
+        type: 'hot_leads',
+        priority: 'high',
+        title: `${qualifiedLeads.length} qualified leads ready for proposals`,
+        description: 'These leads are qualified and ready for the next step',
+        count: qualifiedLeads.length,
+        action: 'Send Proposals',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
+      })
+    }
+
+    if (needsFollowUp.length > 0) {
+      newTodos.push({
+        id: 'follow_up',
+        type: 'follow_up',
+        priority: 'medium',
+        title: `Follow up with ${needsFollowUp.length} leads (3+ days)`,
+        description: 'These leads were contacted but haven\'t responded yet',
+        count: needsFollowUp.length,
+        action: 'Send Follow-up',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+      })
+    }
+
+    if (goingCold.length > 0) {
+      newTodos.push({
+        id: 'going_cold',
+        type: 'going_cold',
+        priority: 'low',
+        title: `${goingCold.length} leads going cold (7+ days)`,
+        description: 'These leads need urgent follow-up or should be marked as rejected',
+        count: goingCold.length,
+        action: 'Urgent Follow-up',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+      })
+    }
+
+    setTodos(newTodos)
+  }, [campaignLeads, setFilters])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -508,58 +547,40 @@ export default function OutreachToolPage() {
     }
   }, [userId, loadInitialData])
 
-  // Load cached data and check for daily refresh - only runs once when userId changes
+  // Load cached completed todos - only runs once when userId changes
   useEffect(() => {
     if (!userId) {
-      // Return empty cleanup function to avoid React error #310
       return () => {}
-    }
-
-    // Load cached recommendations
-    const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
-    const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
-    
-    if (lastRefreshTime && cachedRecommendations) {
-      const timestamp = parseInt(lastRefreshTime)
-      const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
-      
-      setCanRefreshRecommendations(timestamp < twelveHoursAgo)
-      setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
-      setActionRecommendations(JSON.parse(cachedRecommendations))
     }
 
     // Check for daily refresh
     const today = new Date().toISOString().split('T')[0]
-    const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-    setLastRecommendationRefresh(lastRefresh)
+    const lastRefresh = localStorage.getItem(`last-todo-refresh-${userId}`)
     
-    // If it's a new day, clear completed actions
+    // If it's a new day, clear completed todos
     if (lastRefresh && lastRefresh !== today) {
-      setCompletedActions(new Set())
-      localStorage.removeItem(`completed-actions-${userId}`)
+      setCompletedTodos(new Set())
+      localStorage.removeItem(`completed-todos-${userId}`)
     }
 
-    // Load completed actions
-    const stored = localStorage.getItem(`completed-actions-${userId}`)
+    // Load completed todos
+    const stored = localStorage.getItem(`completed-todos-${userId}`)
     if (stored) {
       try {
         const completed = JSON.parse(stored)
-        setCompletedActions(new Set(completed))
+        setCompletedTodos(new Set(completed))
       } catch (error) {
-        console.error('Error loading completed actions:', error)
+        console.error('Error loading completed todos:', error)
       }
     }
   }, [userId])
 
-  // Load action recommendations when data is ready - runs once after initial load
+  // Generate todos when data is ready - runs when campaign leads change
   useEffect(() => {
-    if (userId && campaignLeads.length > 0 && campaigns.length > 0) {
-      // Only load recommendations if we don't have cached ones
-      if (actionRecommendations.length === 0) {
-        loadActionRecommendations(false)
-      }
+    if (userId && campaignLeads.length > 0) {
+      generateTodos()
     }
-  }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length, loadActionRecommendations])
+  }, [userId, campaignLeads, generateTodos])
 
   // Update refs when state changes
   useEffect(() => {
@@ -585,10 +606,10 @@ export default function OutreachToolPage() {
       if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
         // Check again if still mounted before setting state
         if (mountedRef.current) {
-          setCompletedActions(new Set()) // Clear completed actions for new day
-          localStorage.removeItem(`completed-actions-${userId}`)
-          loadActionRecommendations(true) // Force refresh for new day
-          console.log('🌅 New day detected - refreshing AI recommendations')
+          setCompletedTodos(new Set()) // Clear completed todos for new day
+          localStorage.removeItem(`completed-todos-${userId}`)
+          generateTodos() // Generate fresh todos for new day
+          console.log('🌅 New day detected - refreshing todos')
         }
       }
     }
@@ -688,32 +709,20 @@ export default function OutreachToolPage() {
   // Get unique niches from leads
   const availableNichesInLeads = [...new Set(campaignLeads.map(cl => cl.lead?.niche_name).filter(Boolean))]
 
-  const completeAction = async (actionId: string) => {
+  const completeTodo = async (todoId: string) => {
     try {
-      const response = await fetch('/api/ai/action-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          actionId, 
-          userId,
-          campaignId: campaigns.find(c => c.status === 'active')?.id || campaigns[0]?.id
-        })
-      })
-
-      if (!response.ok) throw new Error('Failed to complete action')
-
-      // Add to completed actions set
-      setCompletedActions(prev => new Set([...prev, actionId]))
+      // Add to completed todos set
+      setCompletedTodos(prev => new Set([...prev, todoId]))
       
       // Store in localStorage for persistence
-      const completed = Array.from(completedActions)
-      completed.push(actionId)
-      localStorage.setItem(`completed-actions-${userId}`, JSON.stringify(completed))
+      const completed = Array.from(completedTodos)
+      completed.push(todoId)
+      localStorage.setItem(`completed-todos-${userId}`, JSON.stringify(completed))
       
-      toast.success('Action marked as completed!')
+      toast.success('Task marked as completed!')
     } catch (error) {
-      console.error('Error completing action:', error)
-      toast.error('Failed to complete action')
+      console.error('Error completing todo:', error)
+      toast.error('Failed to complete task')
     }
   }
 
