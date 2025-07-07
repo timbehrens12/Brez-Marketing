@@ -216,17 +216,36 @@ export default function OutreachToolPage() {
 
   useEffect(() => {
     if (userId) {
-      loadCampaigns()
-      loadCampaignLeads()
+      loadInitialData()
+    } else {
+      // If no userId, set loading to false after short delay
+      const timer = setTimeout(() => {
+        setIsLoadingPage(false)
+      }, 500)
+      return () => clearTimeout(timer)
     }
-    
-    // Page loading simulation - always complete after timeout regardless of userId
-    const timer = setTimeout(() => {
-      setIsLoadingPage(false)
-    }, 1300)
-
-    return () => clearTimeout(timer)
   }, [userId])
+
+  const loadInitialData = async () => {
+    if (!userId) return
+    
+    try {
+      setIsLoadingPage(true)
+      setIsLoading(true)
+      
+      // Load campaigns and leads in parallel
+      await Promise.all([
+        loadCampaigns(),
+        loadCampaignLeads()
+      ])
+      
+    } catch (error) {
+      console.error('Error loading initial data:', error)
+    } finally {
+      setIsLoadingPage(false)
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (campaignLeads.length > 0 && campaigns.length > 0) {
@@ -311,7 +330,6 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
-      setIsLoading(true)
       const supabase = await getSupabaseClient()
       
       let query = supabase
@@ -327,8 +345,6 @@ export default function OutreachToolPage() {
     } catch (error) {
       console.error('Error loading campaigns:', error)
       toast.error('Failed to load campaigns')
-    } finally {
-      setIsLoading(false)
     }
   }
 

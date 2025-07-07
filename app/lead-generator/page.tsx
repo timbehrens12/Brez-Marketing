@@ -286,16 +286,20 @@ export default function LeadGeneratorPage() {
     direction: 'desc'
   })
 
-  // Load data on component mount
+  // Load data on component mount and when userId changes
   useEffect(() => {
     loadNiches()
-      loadUsageData()
-  }, [])
-
-  // Load stats when user ID changes (but not existing leads - start fresh)
-  useEffect(() => {
+    
+    // Only load usage data if userId is available
     if (userId) {
+      loadUsageData()
       loadStats()
+    } else {
+      // If no userId, set loading to false after a short delay to avoid blank page
+      const timer = setTimeout(() => {
+        setIsLoadingPage(false)
+      }, 500)
+      return () => clearTimeout(timer)
     }
   }, [userId])
 
@@ -312,7 +316,10 @@ export default function LeadGeneratorPage() {
   }, [leads.length, showFilters])
 
   const loadUsageData = async () => {
-    if (!userId) return
+    if (!userId) {
+      setIsLoadingPage(false)
+      return
+    }
     
     const localNow = new Date();
     const localDate = [
@@ -337,11 +344,7 @@ export default function LeadGeneratorPage() {
       console.error('Error loading usage data:', error)
     } finally {
       setIsLoadingUsage(false)
-    
-    // Page loading simulation
-    setTimeout(() => {
       setIsLoadingPage(false)
-    }, 1400)
     }
   }
 

@@ -1372,21 +1372,14 @@ export default function DashboardPage() {
   // Show loading state while auth is loading or brands are loading
   if (!isLoaded || (isLoaded && userId && brandsLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
-        <div className="text-center">
-          <img 
-            src="https://i.imgur.com/PZCtbwG.png" 
-            alt="Brez Logo" 
-            className="h-16 w-auto object-contain mx-auto mb-6" 
-          />
-                  <UnifiedLoading
-          size="lg"
-          variant="fullscreen"
-          message="Loading dashboard..."
-          subMessage="Setting up your workspace"
-        />
-        </div>
-      </div>
+      <UnifiedLoading
+        size="lg"
+        variant="fullscreen"
+        message="Loading dashboard..."
+        subMessage="Setting up your workspace"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
     )
   }
 
@@ -1396,17 +1389,14 @@ export default function DashboardPage() {
       window.location.href = '/sign-in'
     }
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
-        <div className="text-center">
-              <img 
-            src="https://i.imgur.com/PZCtbwG.png" 
-                alt="Brez Logo" 
-            className="h-16 w-auto object-contain mx-auto mb-6" 
-              />
-          <p className="text-gray-400 mb-6">Redirecting to sign in...</p>
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-        </div>
-      </div>
+      <UnifiedLoading
+        size="lg"
+        variant="fullscreen"
+        message="Redirecting to sign in..."
+        subMessage="Please wait while we redirect you"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
     )
   }
 

@@ -184,13 +184,30 @@ export default function BrandReportPage() {
       setUserFirstName(user.firstName || user.fullName?.split(' ')[0] || "")
     }
     
-    // Simulate initial page loading
+    // Only set loading to false after we have the required dependencies
     const timer = setTimeout(() => {
-      setIsLoadingPage(false)
+      // Check if we have the required data before stopping loading
+      if (user && selectedBrandId && mounted) {
+        setIsLoadingPage(false)
+      } else if (!user) {
+        // If no user, still show the page (auth will handle redirect)
+        setIsLoadingPage(false)
+      }
     }, 1200)
 
     return () => clearTimeout(timer)
-  }, [user])
+  }, [user, selectedBrandId, mounted])
+
+  // Handle case where user exists but no brand is selected (prevent infinite loading)
+  useEffect(() => {
+    if (user && mounted && !selectedBrandId) {
+      // If user exists but no brand is selected, still show the page
+      const timer = setTimeout(() => {
+        setIsLoadingPage(false)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [user, mounted, selectedBrandId])
 
   // Check brand-specific last generation date on brand change
   useEffect(() => {
