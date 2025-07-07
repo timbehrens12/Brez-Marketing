@@ -380,8 +380,8 @@ export default function OutreachToolPage() {
   const generateTodos = useCallback(() => {
     if (!campaignLeads.length) {
       setTodos([])
-      return
-    }
+        return
+      }
 
     const newTodos: TodoItem[] = []
     
@@ -602,7 +602,7 @@ export default function OutreachToolPage() {
       const today = new Date().toISOString().split('T')[0]
       const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
       
-      // If it's a new day and we have data loaded, refresh recommendations
+      // If it's a new day and we have data loaded, refresh todos
       if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
         // Check again if still mounted before setting state
         if (mountedRef.current) {
@@ -645,7 +645,7 @@ export default function OutreachToolPage() {
       clearTimeout(midnightTimeout)
       if (hourlyInterval) clearInterval(hourlyInterval)
     }
-  }, [userId, loadActionRecommendations])
+  }, [userId, generateTodos])
 
   // Track component mount/unmount status
   useEffect(() => {
@@ -1358,9 +1358,7 @@ export default function OutreachToolPage() {
     }
   }
 
-  const getFilteredActions = () => {
-    return actionRecommendations.filter(action => !completedActions.has(action.id))
-  }
+  // Action recommendations would be implemented here
 
   const recalculateAllScores = async () => {
     setIsRecalculatingScores(true)
@@ -2393,297 +2391,143 @@ export default function OutreachToolPage() {
                     <Target className="h-5 w-5 text-gray-400" />
                     <CardTitle className="text-white">Outreach Tasks</CardTitle>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {isLoadingActions ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Analyzing...</span>
-                      </>
-                    ) : lastRecommendationRefresh ? (
-                      <>
-                        <CheckCircle className="h-3 w-3 text-green-400" />
-                        <span>Last updated: {lastRecommendationRefresh}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-3 w-3" />
-                        <span>Click refresh to load</span>
-                      </>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => loadActionRecommendations(true)}
-                      className={`p-1 h-5 w-5 ml-1 ${canRefreshRecommendations ? 'text-gray-400 hover:text-white' : 'text-gray-600 cursor-not-allowed'}`}
-                      title={canRefreshRecommendations ? "Refresh recommendations now" : "Can only refresh every 12 hours"}
-                      disabled={isLoadingActions || !canRefreshRecommendations}
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </Button>
-                  </div>
                 </div>
                 <CardDescription className="text-gray-400">
-                  Smart outreach recommendations based on your pipeline
+                  Quick actions to manage your outreach pipeline
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
-                {isLoadingActions ? (
-                  <div className="flex items-center justify-center h-32">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">Analyzing pipeline...</span>
-                    </div>
+                <div className="space-y-3">
+                  <div className="p-4 text-center">
+                    <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <h4 className="text-sm font-medium text-white mb-1">Pipeline Overview</h4>
+                    <p className="text-xs text-gray-400 mb-3">
+                      {stats.totalLeads === 0 
+                        ? "Add leads to start your outreach campaigns"
+                        : "Use the quick actions below to manage your pipeline effectively."
+                      }
+                    </p>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {getFilteredActions().length === 0 ? (
-                      <div className="p-4 text-center">
-                        <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                        <h4 className="text-sm font-medium text-white mb-1">Pipeline Analysis</h4>
-                        <p className="text-xs text-gray-400 mb-3">
-                          {stats.totalLeads === 0 
-                            ? "Add leads to get AI-powered outreach recommendations"
-                            : "Your pipeline is up to date. Keep monitoring for new opportunities."
+
+                  {/* Quick Actions */}
+                  <div className="pt-3 border-t border-[#333]">
+                    <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => {
+                          // Reset all filters first, then apply specific ones
+                          setFilters({
+                            hasPhone: false,
+                            hasEmail: false,
+                            hasWebsite: false,
+                            hasSocials: false,
+                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                            selectedNicheFilter: [],
+                            statusFilter: 'all',
+                            minScore: 80,
+                            hasOwnerName: false,
+                            businessTypeFilter: [],
+                            locationFilter: { city: '', state: '' },
+                            outreachMethodFilter: [],
+                            lastContactedFilter: 'all',
+                            scoreRange: { min: 0, max: 100 }
+                          });
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                      >
+                        <Star className="h-3 w-3 mr-2" />
+                        View High-Score Leads
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Reset all filters first, then apply specific ones
+                          setFilters({
+                            hasPhone: false,
+                            hasEmail: false,
+                            hasWebsite: false,
+                            hasSocials: false,
+                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                            selectedNicheFilter: [],
+                            statusFilter: 'responded',
+                            minScore: 0,
+                            hasOwnerName: false,
+                            businessTypeFilter: [],
+                            locationFilter: { city: '', state: '' },
+                            outreachMethodFilter: [],
+                            lastContactedFilter: 'all',
+                            scoreRange: { min: 0, max: 100 }
+                          });
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                      >
+                        <MessageSquare className="h-3 w-3 mr-2" />
+                        Hot Conversations
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Reset all filters first, then apply specific ones
+                          setFilters({
+                            hasPhone: false,
+                            hasEmail: false,
+                            hasWebsite: false,
+                            hasSocials: false,
+                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                            selectedNicheFilter: [],
+                            statusFilter: 'contacted',
+                            minScore: 0,
+                            hasOwnerName: false,
+                            businessTypeFilter: [],
+                            locationFilter: { city: '', state: '' },
+                            outreachMethodFilter: [],
+                            lastContactedFilter: 'all',
+                            scoreRange: { min: 0, max: 100 }
+                          });
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                      >
+                        <Clock className="h-3 w-3 mr-2" />
+                        Follow-up Needed
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
+                          if (pendingLeads.length > 0) {
+                            setPendingOutreachQueue(pendingLeads);
+                            setCurrentQueueIndex(0);
+                            setShowBulkOutreach(true);
+                          } else {
+                            toast.error('No pending leads found');
                           }
-                        </p>
-                        <div className="text-xs text-gray-500 bg-[#2A2A2A] p-2 rounded">
-                          💡 AI recommendations refresh automatically at midnight based on your latest pipeline data
-                        </div>
-                      </div>
-                    ) : (
-                      getFilteredActions()
-                        .sort((a, b) => {
-                          const priorityOrder = { high: 3, medium: 2, low: 1 }
-                          return priorityOrder[b.priority as keyof typeof priorityOrder] - 
-                                 priorityOrder[a.priority as keyof typeof priorityOrder]
-                        })
-                        .map((action) => (
-                          <div 
-                            key={action.id} 
-                            className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg hover:bg-[#333] transition-all"
-                          >
-                            <div className="flex items-start gap-2 mb-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-white text-sm">
-                                    {action.title}
-                                  </h4>
-                                  {action.priority === 'high' && (
-                                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-400 leading-relaxed mb-2">
-                                  {action.description}
-                                </p>
-                                {action.leads && action.leads.length > 0 && (
-                                  <div className="mb-2">
-                                    <div className="text-xs text-gray-500 mb-1">
-                                      {action.leads.length} lead{action.leads.length > 1 ? 's' : ''}:
-                                    </div>
-                                    <div className="space-y-1">
-                                      {action.leads.slice(0, 3).map((leadName, idx) => (
-                                        <div key={idx} className="text-xs text-gray-300 bg-[#1A1A1A] px-2 py-1 rounded">
-                                          {leadName}
-                                        </div>
-                                      ))}
-                                      {action.leads.length > 3 && (
-                                        <div className="text-xs text-gray-500">
-                                          +{action.leads.length - 3} more
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  completeAction(action.id);
-                                  // Show a brief success indication
-                                  const button = document.activeElement as HTMLButtonElement;
-                                  if (button) {
-                                    button.style.color = '#10b981';
-                                    setTimeout(() => {
-                                      button.style.color = '';
-                                    }, 1000);
-                                  }
-                                }}
-                                className="p-1 h-6 w-6 text-gray-400 hover:text-green-400 hover:bg-green-500/10 flex-shrink-0 transition-colors"
-                                title="Mark as completed"
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <Button 
-                              size="sm" 
-                              className="w-full text-xs bg-[#444] hover:bg-[#555] text-gray-300 hover:text-white"
-                              onClick={() => {
-                                // Perform real outreach actions based on the action type
-                                const actionText = action.action.toLowerCase();
-                                if (actionText.includes('start outreach') || actionText.includes('send message')) {
-                                  // Find pending leads and start outreach for the first one
-                                  const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
-                                  if (pendingLeads.length > 0) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'pending' }));
-                                    setSelectedCampaignLead(pendingLeads[0]);
-                                    setShowOutreachOptions(true);
-                                  } else {
-                                    toast.error('No pending leads found to start outreach');
-                                  }
-                                } else if (actionText.includes('follow-up') || actionText.includes('follow up')) {
-                                  // Find contacted leads and start follow-up for the first one
-                                  const contactedLeads = campaignLeads.filter(lead => lead.status === 'contacted');
-                                  if (contactedLeads.length > 0) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'contacted' }));
-                                    setSelectedCampaignLead(contactedLeads[0]);
-                                    setShowOutreachOptions(true);
-                                  } else {
-                                    toast.error('No contacted leads found for follow-up');
-                                  }
-                                } else if (actionText.includes('send proposal') || actionText.includes('proposal')) {
-                                  // Find qualified leads and start proposal for the first one
-                                  const qualifiedLeads = campaignLeads.filter(lead => lead.status === 'qualified');
-                                  if (qualifiedLeads.length > 0) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'qualified' }));
-                                    setSelectedCampaignLead(qualifiedLeads[0]);
-                                    setShowOutreachOptions(true);
-                                  } else {
-                                    toast.error('No qualified leads found for proposals');
-                                  }
-                                } else if (actionText.includes('review') || actionText.includes('check') || actionText.includes('schedule')) {
-                                  // Filter to the relevant status for review
-                                  const titleText = action.title.toLowerCase();
-                                  if (titleText.includes('responded')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'responded' }));
-                                  } else if (titleText.includes('qualified')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'qualified' }));
-                                  } else if (titleText.includes('high-score') || titleText.includes('high-value')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'pending', minScore: 80 }));
-                                  }
-                                } else {
-                                  // Default filter behavior
-                                  if (action.type === 'urgent' && action.title.includes('Follow-up')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'contacted' }));
-                                  } else if (action.title.includes('responded')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'responded' }));
-                                  } else if (action.title.includes('qualified')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'qualified' }));
-                                  } else if (action.title.includes('High-score')) {
-                                    setFilters(prev => ({ ...prev, statusFilter: 'pending', minScore: 80 }));
-                                  }
-                                }
-                              }}
-                            >
-                              {action.action}
-                            </Button>
-                          </div>
-                        ))
-                    )}
-
-                    {/* Quick Actions */}
-                    <div className="pt-3 border-t border-[#333]">
-                      <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
-                      <div className="space-y-2">
-                        <Button
-                          onClick={() => {
-                            // Reset all filters first, then apply specific ones
-                            setFilters({
-                              hasPhone: false,
-                              hasEmail: false,
-                              hasWebsite: false,
-                              hasSocials: false,
-                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                              selectedNicheFilter: [],
-                              statusFilter: 'all',
-                              minScore: 80
-                            });
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                          <Star className="h-3 w-3 mr-2" />
-                          View High-Score Leads
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            // Reset all filters first, then apply specific ones
-                            setFilters({
-                              hasPhone: false,
-                              hasEmail: false,
-                              hasWebsite: false,
-                              hasSocials: false,
-                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                              selectedNicheFilter: [],
-                              statusFilter: 'responded',
-                              minScore: 0
-                            });
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                          <MessageSquare className="h-3 w-3 mr-2" />
-                          Hot Conversations
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            // Reset all filters first, then apply specific ones
-                            setFilters({
-                              hasPhone: false,
-                              hasEmail: false,
-                              hasWebsite: false,
-                              hasSocials: false,
-                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                              selectedNicheFilter: [],
-                              statusFilter: 'contacted',
-                              minScore: 0
-                            });
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                          <Clock className="h-3 w-3 mr-2" />
-                          Follow-up Needed
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
-                            if (pendingLeads.length > 0) {
-                              setPendingOutreachQueue(pendingLeads);
-                              setCurrentQueueIndex(0);
-                              setShowBulkOutreach(true);
-                            } else {
-                              toast.error('No pending leads found');
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                          <Zap className="h-3 w-3 mr-2" />
-                          Outreach All Pending ({stats.pending})
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Update Info & Stats */}
-                    <div className="pt-3 border-t border-[#333] space-y-2">
-                      {completedActions.size > 0 && (
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <CheckSquare className="h-3 w-3" />
-                          <span>{completedActions.size} tasks completed today</span>
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-500 bg-[#2A2A2A] p-2 rounded">
-                        🔄 AI recommendations refresh every 12 hours • Click {' '}
-                        <RefreshCw className="h-3 w-3 inline" /> {canRefreshRecommendations ? 'to refresh now' : 'when available'}
-                      </div>
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                      >
+                        <Zap className="h-3 w-3 mr-2" />
+                        Outreach All Pending ({stats.pending})
+                      </Button>
                     </div>
                   </div>
-                )}
+
+                  {/* Update Info & Stats */}
+                  <div className="pt-3 border-t border-[#333] space-y-2">
+                    {completedTodos.size > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <CheckSquare className="h-3 w-3" />
+                        <span>{completedTodos.size} tasks completed today</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500 bg-[#2A2A2A] p-2 rounded">
+                      💡 Use quick actions to filter and manage your outreach pipeline efficiently
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
