@@ -814,7 +814,7 @@ export default function OutreachToolPage() {
           } else if (reason === 'METHOD_LIMIT') {
             errorMessage = `🚫 You've already generated a ${method.charAt(0).toUpperCase() + method.slice(1)} message for "${lead.business_name}" today. Try a different outreach method (Email, LinkedIn, Instagram, etc.) or wait until tomorrow.`
           } else if (reason === 'COOLDOWN') {
-            errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
+            errorMessage = `⏱️ Please wait a few seconds between message generations to prevent spam.`
           } else {
             // Generic 429 - try retry with exponential backoff
             if (retryCount < 2) {

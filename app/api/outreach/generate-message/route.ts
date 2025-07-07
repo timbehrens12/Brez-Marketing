@@ -17,7 +17,7 @@ const SECURITY_LIMITS = {
   MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
   MAX_MESSAGES_PER_DAY: 25,       // Max 25 messages per day per user
   MAX_MESSAGES_PER_METHOD_PER_LEAD: 1,  // Max 1 message per method per lead (email, linkedin, etc.)
-  COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
+  COOLDOWN_BETWEEN_MESSAGES: 3,   // 3 seconds between message generations (reduced for multi-method outreach)
 }
 
 // Track message generation usage
