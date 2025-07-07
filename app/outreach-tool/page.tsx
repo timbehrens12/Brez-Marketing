@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -349,20 +349,37 @@ export default function OutreachToolPage() {
     }
   }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length])
 
+  // Refs to track current state values without causing re-renders
+  const campaignCountRef = useRef(0)
+  const campaignLeadCountRef = useRef(0)
+  const mountedRef = useRef(true)
+
+  // Update refs when state changes
+  useEffect(() => {
+    campaignCountRef.current = campaigns.length
+    campaignLeadCountRef.current = campaignLeads.length
+  }, [campaigns.length, campaignLeads.length])
+
   // Set up daily refresh check - runs once on component mount
   useEffect(() => {
     if (!userId) return
 
     const checkForNewDay = () => {
+      // Don't run if component is unmounted
+      if (!mountedRef.current) return
+
       const today = new Date().toISOString().split('T')[0]
       const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
       
       // If it's a new day and we have data loaded, refresh recommendations
-      if (lastRefresh !== today && campaigns.length > 0 && campaignLeads.length > 0) {
-        setCompletedActions(new Set()) // Clear completed actions for new day
-        localStorage.removeItem(`completed-actions-${userId}`)
-        loadActionRecommendations(true) // Force refresh for new day
-        console.log('🌅 New day detected - refreshing AI recommendations')
+      if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
+        // Check again if still mounted before setting state
+        if (mountedRef.current) {
+          setCompletedActions(new Set()) // Clear completed actions for new day
+          localStorage.removeItem(`completed-actions-${userId}`)
+          loadActionRecommendations(true) // Force refresh for new day
+          console.log('🌅 New day detected - refreshing AI recommendations')
+        }
       }
     }
 
@@ -373,22 +390,39 @@ export default function OutreachToolPage() {
     tomorrow.setHours(0, 0, 0, 0) // Set to midnight
     const msUntilMidnight = tomorrow.getTime() - now.getTime()
 
+    let hourlyInterval: NodeJS.Timeout | null = null
+
     // Set initial timeout for midnight, then check every hour after that
     const midnightTimeout = setTimeout(() => {
+      if (!mountedRef.current) return
       checkForNewDay()
       
       // After midnight, check every hour in case user keeps app open
-      const hourlyInterval = setInterval(checkForNewDay, 60 * 60 * 1000)
-      
-      // Cleanup function will clear this interval
-      return () => clearInterval(hourlyInterval)
+      hourlyInterval = setInterval(() => {
+        if (!mountedRef.current) {
+          if (hourlyInterval) clearInterval(hourlyInterval)
+          return
+        }
+        checkForNewDay()
+      }, 60 * 60 * 1000)
     }, msUntilMidnight)
 
     // Also check immediately on mount in case it's already a new day
     checkForNewDay()
     
-    return () => clearTimeout(midnightTimeout)
-  }, [userId]) // Only depend on userId, not on campaigns/campaignLeads
+    return () => {
+      clearTimeout(midnightTimeout)
+      if (hourlyInterval) clearInterval(hourlyInterval)
+    }
+  }, [userId]) // loadActionRecommendations is accessed directly in the closure
+
+  // Track component mount/unmount status
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const loadCampaigns = useCallback(async () => {
     if (!userId) return
