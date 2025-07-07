@@ -43,7 +43,7 @@ export async function detectDataGaps(
     // Determine which table and date column to check based on platform
     if (platform === 'meta') {
       tableName = 'meta_ad_insights'
-      dateColumn = 'date_start'
+      dateColumn = 'date'  // Fixed: the column is 'date', not 'date_start'
     } else {
       tableName = 'shopify_orders'
       dateColumn = 'created_at'

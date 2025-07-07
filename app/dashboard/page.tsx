@@ -764,9 +764,10 @@ export default function DashboardPage() {
               console.log('[Dashboard] Starting automatic gap detection...');
               await checkForGaps(selectedBrandId);
               
-              // If gaps are detected and this is the initial load, automatically trigger backfill
-              if (shouldSuggestBackfill(backfillStatus) && initialDataLoad) {
-                console.log('[Dashboard] Automatically triggering backfill for detected gaps...');
+              // After gap detection, check if we should automatically trigger backfill
+              // Only do this on initial load to avoid repeated backfills
+              if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 3 && initialDataLoad) {
+                console.log(`[Dashboard] Automatically triggering backfill for ${backfillStatus.totalMissingDays} missing days...`);
                 await performBackfill(selectedBrandId);
                 
                 // The data will be refreshed automatically after backfill completes
@@ -1137,12 +1138,19 @@ export default function DashboardPage() {
   const handleBackfillTrigger = useCallback(async () => {
     if (!selectedBrandId) return;
     
-    console.log('[Dashboard] User triggered backfill');
-    const success = await performBackfill(selectedBrandId);
+    console.log('[Dashboard] User triggered backfill for brand:', selectedBrandId);
+    const success = await performBackfill(selectedBrandId, true); // Force backfill
     
     if (success) {
       // Refresh the dashboard data after successful backfill
-      console.log('[Dashboard] Backfill successful, refreshing dashboard...');
+      console.log('[Dashboard] Backfill successful, refreshing dashboard data...');
+      
+      // Show toast notification
+      toast({
+        title: "Backfill Complete",
+        description: "Historical data has been synced. Refreshing dashboard...",
+        variant: "default"
+      });
       
       // Force a complete data refresh
       setIsRefreshingData(true);
@@ -1150,41 +1158,91 @@ export default function DashboardPage() {
       // Wait a moment for the backfilled data to be properly stored
       setTimeout(async () => {
         try {
-          // Fetch all data again to ensure we have the backfilled data
+          console.log('[Dashboard] Fetching fresh data after backfill...');
+          
+          // Force refresh all data with cache busting
           await fetchAllData(true);
           
-          // Also trigger a specific metrics refresh to update comparisons
+          // Double-check by specifically refreshing metrics
           const params = new URLSearchParams({
             brandId: selectedBrandId,
             from: format(dateRange.from, 'yyyy-MM-dd'),
             to: format(dateRange.to, 'yyyy-MM-dd'),
             force: 'true',
             bypass_cache: 'true',
+            refresh: 'true',
             t: Date.now().toString()
           });
+          
+          console.log('[Dashboard] Fetching metrics with params:', Object.fromEntries(params));
           
           const response = await fetch(`/api/metrics?${params.toString()}`);
           if (response.ok) {
             const data = await response.json();
+            console.log('[Dashboard] Received refreshed metrics after backfill:', data);
+            
             setMetrics(prevMetrics => ({
               ...prevMetrics,
               ...data
             }));
+            
+            // Also fetch Meta metrics specifically
+            const metaResponse = await fetch(`/api/metrics/meta?${params.toString()}`);
+            if (metaResponse.ok) {
+              const metaData = await metaResponse.json();
+              console.log('[Dashboard] Received refreshed Meta metrics after backfill:', metaData);
+              
+              setMetrics(prevMetrics => ({
+                ...prevMetrics,
+                adSpend: metaData.adSpend ?? prevMetrics.adSpend,
+                adSpendGrowth: metaData.adSpendGrowth ?? prevMetrics.adSpendGrowth,
+                impressions: metaData.impressions ?? prevMetrics.impressions,
+                impressionGrowth: metaData.impressionGrowth ?? prevMetrics.impressionGrowth,
+                clicks: metaData.clicks ?? prevMetrics.clicks,
+                clickGrowth: metaData.clickGrowth ?? prevMetrics.clickGrowth,
+                ctr: metaData.ctr ?? prevMetrics.ctr,
+                ctrGrowth: metaData.ctrGrowth ?? prevMetrics.ctrGrowth,
+                roas: metaData.roas ?? prevMetrics.roas,
+                roasGrowth: metaData.roasGrowth ?? prevMetrics.roasGrowth,
+              }));
+            }
           }
+          
+          // Force date range update to trigger re-render
+          setDateRange(prev => ({ ...prev }));
           
           // Dispatch event to refresh all components
           window.dispatchEvent(new CustomEvent('dataBackfilled', {
             detail: { brandId: selectedBrandId, timestamp: Date.now() }
           }));
           
+          // Show success notification
+          toast({
+            title: "Dashboard Refreshed",
+            description: "Your data has been updated with the backfilled information.",
+            variant: "default"
+          });
+          
         } catch (error) {
           console.error('[Dashboard] Error refreshing after backfill:', error);
+          toast({
+            title: "Refresh Error", 
+            description: "Data was backfilled but there was an error refreshing the dashboard. Please reload the page.",
+            variant: "destructive"
+          });
         } finally {
           setIsRefreshingData(false);
         }
-      }, 2000); // Wait 2 seconds for data to be committed
+      }, 3000); // Wait 3 seconds for data to be committed
+    } else {
+      console.error('[Dashboard] Backfill failed');
+      toast({
+        title: "Backfill Failed",
+        description: "There was an error backfilling the data. Please try again.",
+        variant: "destructive"
+      });
     }
-  }, [selectedBrandId, performBackfill, fetchAllData, dateRange, setMetrics]);
+  }, [selectedBrandId, performBackfill, fetchAllData, dateRange, setMetrics, toast]);
 
   // Add a function to detect data gaps
   const detectMetaDataGaps = useCallback(async () => {
@@ -1537,6 +1595,7 @@ export default function DashboardPage() {
               isLoading={isLoading}
               isRefreshingData={isRefreshingData || backfillStatus.isBackfilling}
               initialDataLoad={initialDataLoad}
+              backfillStatus={backfillStatus}
               platformStatus={activePlatforms}
               existingConnections={connections}
               brands={brands}

@@ -28,6 +28,10 @@ interface WidgetManagerProps {
   isLoading: boolean;
   isRefreshingData?: boolean;
   initialDataLoad?: boolean;
+  backfillStatus?: {
+    isBackfilling: boolean;
+    isChecking: boolean;
+  };
   platformStatus: {
     shopify: boolean;
     meta: boolean;
@@ -48,6 +52,7 @@ export function WidgetManager({
   isLoading,
   isRefreshingData = false,
   initialDataLoad = false,
+  backfillStatus,
   platformStatus,
   existingConnections,
   children,
@@ -114,12 +119,24 @@ export function WidgetManager({
 
   // Show a loading spinner during the initial data load for a selected brand
   if (initialDataLoad) {
+    // Determine the message based on backfill status
+    let message = "Loading Dashboard";
+    let subMessage = "Setting up your workspace";
+    
+    if (backfillStatus?.isChecking) {
+      message = "Checking Data Coverage";
+      subMessage = "Scanning for missing historical data...";
+    } else if (backfillStatus?.isBackfilling) {
+      message = "Backfilling Historical Data";
+      subMessage = "Syncing missing data from Meta and Shopify...";
+    }
+    
     return (
       <UnifiedLoading
         size="lg"
         variant="page"
-        message="Loading Dashboard"
-        subMessage="Setting up your workspace"
+        message={message}
+        subMessage={subMessage}
         agencyLogo={agencyLogo}
         agencyName={agencyName}
         className="py-16"
