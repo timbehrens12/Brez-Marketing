@@ -1,52 +1,22 @@
-// lib/supabase/client.ts - LEGACY FILE - REDIRECTS TO AUTHENTICATED CLIENT  
-import { createClient } from '@supabase/supabase-js'
+// lib/supabase/client.ts - LEGACY FILE - NOW REDIRECTS TO UNIFIED CLIENT  
+import { getStandardSupabaseClient, getServerSupabaseClient } from '@/lib/utils/unified-supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// Always use the global authenticated client to eliminate multiple instances
-console.log('🚫 Legacy client access - redirecting to authenticated client')
+console.log('📦 Using unified Supabase client system')
 
 export function getSupabaseClient() {
   if (typeof window === 'undefined') {
-    // Server-side: return basic client
-    return createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    // Server-side: return server client
+    return getServerSupabaseClient()
   }
   
-  // Client-side: ALWAYS use the global singleton
-  const globalClient = (window as any).__supabase_global_client
-  if (globalClient) {
-    console.log('♻️ Using global authenticated client from singleton')
-    return globalClient
-  }
-  
-  // Fallback: create basic client but warn
-  console.warn('⚠️ No global singleton found - creating fallback client')
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    }
-  })
+  // Client-side: use unified standard client
+  return getStandardSupabaseClient()
 }
 
 export function getSupabaseServiceClient() {
-  // Always create a new service client with admin privileges
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { 
-      persistSession: false,
-      autoRefreshToken: false 
-    }
-  })
+  // Always use server client for service operations
+  return getServerSupabaseClient()
 }
 
-const supabase = getSupabaseClient()
-
-export { supabase }
-export default supabase 
+// Export singleton for backwards compatibility
+export const supabase = getSupabaseClient() 

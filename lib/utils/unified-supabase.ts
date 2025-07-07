@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
 
 // Singleton pattern for Supabase clients
 let standardClient: SupabaseClient | null = null
@@ -13,10 +14,15 @@ export function getStandardSupabaseClient(): SupabaseClient {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables')
+    }
+    
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: false, // Prevent conflicts
       },
     })
   }
@@ -33,10 +39,14 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
     return authenticatedClients.get(token)!
   }
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  const client = createClient(supabaseUrl, supabaseKey, {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  const client = createClient(supabaseUrl as string, supabaseKey as string, {
     global: {
       headers: {
         Authorization: `Bearer ${token}`
@@ -45,13 +55,16 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
     auth: {
       persistSession: false, // Don't persist for authenticated clients
       autoRefreshToken: false,
+      detectSessionInUrl: false, // Prevent conflicts
     }
   })
   
   // Store client (but limit cache size to prevent memory leaks)
   if (authenticatedClients.size > 10) {
-    const firstKey = authenticatedClients.keys().next().value
+      const firstKey = authenticatedClients.keys().next().value
+  if (firstKey) {
     authenticatedClients.delete(firstKey)
+  }
   }
   authenticatedClients.set(token, client)
   
@@ -75,6 +88,49 @@ export async function useUnifiedSupabase(getToken: (options?: any) => Promise<st
     console.error('Error getting Supabase client:', error)
     return getStandardSupabaseClient()
   }
+}
+
+/**
+ * Unified hook that returns both the client and a loading state
+ */
+export function useSupabaseWithLoading(getToken: (options?: any) => Promise<string | null>) {
+  const [client, setClient] = useState<SupabaseClient | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  useEffect(() => {
+    let isMounted = true
+    
+    const initializeClient = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const supabaseClient = await useUnifiedSupabase(getToken)
+        
+        if (isMounted) {
+          setClient(supabaseClient)
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to initialize Supabase client')
+          setClient(getStandardSupabaseClient()) // Fallback
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    initializeClient()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [getToken])
+  
+  return { client, loading, error }
 }
 
 /**

@@ -1916,6 +1916,22 @@ export default function BrandReportPage() {
     }
   }, [selectedBrandId, selectedPeriod, dateRange.from, dateRange.to, user?.id, mounted])
 
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message={loadingConfig.message}
+        subMessage={loadingConfig.subMessage}
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] p-6">
       <div className="max-w-6xl mx-auto">

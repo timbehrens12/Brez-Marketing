@@ -26,7 +26,7 @@ import {
   CheckSquare, Square, Lightbulb, Brain, ArrowRight, X
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
+import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
@@ -118,10 +118,24 @@ const MAX_TOTAL_LEADS = 200 // Maximum total leads in outreach
 const WARNING_THRESHOLD = 0.8 // Show warning at 80% of limit
 
 export default function OutreachToolPage() {
-  const { getSupabaseClient } = useAuthenticatedSupabase()
-  const { userId } = useAuth()
+  const { userId, getToken } = useAuth()
   const { agencySettings } = useAgency()
   const pathname = usePathname()
+  
+  // Unified Supabase client function
+  const getSupabaseClient = async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
 
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
