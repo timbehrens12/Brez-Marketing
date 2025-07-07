@@ -23,7 +23,7 @@ import {
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
   Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-  CheckSquare, Square, Lightbulb, Brain, ArrowRight, X
+    CheckSquare, Square, Lightbulb, Brain, ArrowRight, X, FileText, Building
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
@@ -413,10 +413,32 @@ export default function OutreachToolPage() {
     }
   }, [userId, campaigns])
 
-  // Component mount tracking
+  // Component mount tracking and cleanup
   useEffect(() => {
     console.log('🔄 Component mounting...')
     setMounted(true)
+    
+    // Clean up old message count tracking from localStorage (older than 2 days)
+    const cleanupOldMessageCounts = () => {
+      const keys = Object.keys(localStorage)
+      const msgCountKeys = keys.filter(key => key.startsWith('msg_count_'))
+      const twoDaysAgo = new Date()
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+      
+      msgCountKeys.forEach(key => {
+        const parts = key.split('_')
+        if (parts.length >= 3) {
+          const dateStr = parts.slice(2).join('_')
+          const keyDate = new Date(dateStr)
+          if (keyDate < twoDaysAgo) {
+            localStorage.removeItem(key)
+          }
+        }
+      })
+    }
+    
+    cleanupOldMessageCounts()
+    
     return () => {
       console.log('🧹 Component unmounting...')
     }
@@ -723,9 +745,23 @@ export default function OutreachToolPage() {
       // Enhanced AI context with correct API format
       const aiContext = {
         lead: {
-          ...lead,
+          id: lead.id,
+          business_name: lead.business_name,
+          owner_name: lead.owner_name,
+          email: lead.email,
+          phone: lead.phone,
+          website: lead.website,
+          city: lead.city,
+          state_province: lead.state_province,
+          niche_name: lead.niche_name,
+          business_type: lead.business_type,
+          instagram_handle: lead.instagram_handle,
+          facebook_page: lead.facebook_page,
+          linkedin_profile: lead.linkedin_profile,
+          twitter_handle: lead.twitter_handle,
+          lead_score: lead.lead_score,
           industry: lead.niche_name,
-          location: `${lead.city}, ${lead.state_province}`.replace('undefined', '').replace(', ', ''),
+          location: `${lead.city || ''}, ${lead.state_province || ''}`.replace('undefined', '').replace(/^, |, $/, ''),
           hasWebsite: !!lead.website,
           socialPresence: {
             instagram: !!lead.instagram_handle,
@@ -775,7 +811,7 @@ export default function OutreachToolPage() {
           } else if (reason === 'DAILY_LIMIT') {
             errorMessage = `📅 Daily limit reached: You can generate up to 25 messages per day. Limit resets at midnight.`
           } else if (reason === 'LEAD_LIMIT') {
-            errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards.`
+            errorMessage = `🚫 You've already generated 3 messages for "${lead.business_name}" today. This prevents spam and maintains professional standards. Try a different lead or wait until tomorrow.`
           } else if (reason === 'COOLDOWN') {
             errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
           } else {
@@ -792,6 +828,7 @@ export default function OutreachToolPage() {
             }
           }
           
+          console.log(`🚨 Rate limit error for lead ${lead.business_name}:`, reason, 'Lead ID:', lead.id)
           toast.error(errorMessage)
           return
         }
@@ -802,6 +839,13 @@ export default function OutreachToolPage() {
       setGeneratedMessage(data.message)
       setMessageSubject(data.subject || '')
       setMessageType(method as any)
+      
+      // Track message generation locally to help with rate limiting UI
+      if (lead.business_name) {
+        const today = new Date().toDateString()
+        const currentCount = parseInt(localStorage.getItem(`msg_count_${lead.business_name}_${today}`) || '0')
+        localStorage.setItem(`msg_count_${lead.business_name}_${today}`, (currentCount + 1).toString())
+      }
       
       if (data.ai_generated) {
         toast.success('✨ Personalized message generated successfully!')
@@ -1310,8 +1354,8 @@ export default function OutreachToolPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white p-4">
-      <div className="flex flex-col space-y-4">
+    <div className="h-screen bg-[#0A0A0A] text-white overflow-hidden">
+      <div className="h-full flex flex-col p-4 gap-4 overflow-y-auto">
 
 
         {/* Lead Limit Warning */}
@@ -1350,7 +1394,7 @@ export default function OutreachToolPage() {
         )}
 
         {/* Clean Analytics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 min-w-0">
           <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -1441,14 +1485,32 @@ export default function OutreachToolPage() {
             </CardContent>
           </Card>
           
-
+          {/* Message Usage Card */}
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">
+                    {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">AI Messages</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                    </div>
+                  </div>
+                </div>
+                <MessageSquare className="h-6 w-6 text-gray-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 flex-1 min-h-0">
           
           {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-100px)]">
+          <div className="xl:col-span-4 flex flex-col min-h-0">
             <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1479,7 +1541,7 @@ export default function OutreachToolPage() {
                       Filters
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials ||
                         filters.statusFilter !== 'all' || filters.selectedNicheFilter.length > 0 || filters.minScore > 0) && (
-                        <Badge className="ml-2 bg-white/20 text-white" variant="secondary">
+                        <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
                           Active
                         </Badge>
                       )}
@@ -1531,7 +1593,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'pending'
-                          ? 'bg-white text-black border-white hover:bg-gray-200'
+                          ? 'bg-gray-500 text-white border-gray-500 hover:bg-gray-600'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1570,7 +1632,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'qualified'
-                          ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-900'
+                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1583,7 +1645,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'signed'
-                          ? 'bg-black text-white border-black hover:bg-gray-900'
+                          ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-900'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1621,7 +1683,7 @@ export default function OutreachToolPage() {
                             size="sm"
                             className={`h-8 text-xs ${
                               tempFilters.minScore === score
-                                ? 'bg-white text-black border-white hover:bg-gray-200'
+                                ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
                           >
@@ -1811,7 +1873,7 @@ export default function OutreachToolPage() {
                       <Button
                         onClick={applyTempFilters}
                         size="sm"
-                        className="bg-white hover:bg-gray-200 text-black"
+                        className="bg-gray-600 hover:bg-gray-700 text-white"
                       >
                         Apply Filters
                       </Button>
@@ -1896,6 +1958,9 @@ export default function OutreachToolPage() {
                     <TableBody>
                       {filteredLeads.map((campaignLead) => {
                         const outreachMethods = campaignLead.lead ? getOutreachMethods(campaignLead.lead) : []
+                        // Check if this lead might hit rate limit (simplified check)
+                        const leadMightHitLimit = campaignLead.lead?.business_name && 
+                          localStorage.getItem(`msg_count_${campaignLead.lead.business_name}_${new Date().toDateString()}`)
                         
                             return (
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
@@ -2123,15 +2188,21 @@ export default function OutreachToolPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                                  className={`h-8 text-xs ${
+                                    leadMightHitLimit 
+                                      ? 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300 hover:bg-yellow-900/30' 
+                                      : 'bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white'
+                                  }`}
                                   onClick={() => {
                                     setSelectedCampaignLead(campaignLead)
                                     setShowOutreachOptions(true)
                                   }}
                                   disabled={outreachMethods.length === 0}
+                                  title={leadMightHitLimit ? 'Messages may be limited for this lead today' : undefined}
                                 >
                                   <Sparkles className="h-3 w-3 mr-1" />
                                   Outreach ({outreachMethods.length})
+                                  {leadMightHitLimit && <AlertTriangle className="h-3 w-3 ml-1" />}
                                 </Button>
                               )}
                           </TableCell>
@@ -2163,7 +2234,7 @@ export default function OutreachToolPage() {
           </div>
 
                     {/* AI Outreach Assistant */}
-          <div className="xl:col-span-1 h-[calc(100vh-100px)]">
+          <div className="xl:col-span-1 flex flex-col min-h-0">
             <Card className="bg-[#1A1A1A] border-[#333] h-full flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
@@ -2467,201 +2538,280 @@ export default function OutreachToolPage() {
           </div>
         </div>
 
-        {/* Enhanced Outreach Options Dialog */}
+        {/* Advanced Outreach Options Dialog */}
         <Dialog open={showOutreachOptions} onOpenChange={setShowOutreachOptions}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border-[#333] max-w-2xl">
-            <DialogHeader className="space-y-4">
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-lg">
-                    <Sparkles className="h-6 w-6 text-white" />
-                  </div>
-                  AI-Powered Outreach
-                </DialogTitle>
-                
-                {/* AI Usage Display */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#2A2A2A] border border-[#444] rounded-lg">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium text-gray-300">
-                    {messageUsage ? `${messageUsage.daily.remaining}/${messageUsage.daily.limit}` : '...'}
-                  </span>
-                  <span className="text-xs text-gray-500">AI messages left</span>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
                 </div>
-              </div>
-              
+                AI Outreach Studio
+              </DialogTitle>
               <DialogDescription className="text-gray-300">
-                <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-xl space-y-2">
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-white/10 rounded-lg mt-0.5">
-                      <Building2 className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</h3>
-                      <div className="grid grid-cols-2 gap-4 mt-2 text-sm">
-                        {selectedCampaignLead?.lead?.owner_name && (
-                          <div className="flex items-center gap-2">
-                            <User className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-300">{selectedCampaignLead.lead.owner_name}</span>
-                          </div>
-                        )}
-                        {selectedCampaignLead?.lead?.niche_name && (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-300">{selectedCampaignLead.lead.niche_name}</span>
-                          </div>
-                        )}
-                        {selectedCampaignLead?.lead?.city && selectedCampaignLead?.lead?.state_province && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-300">{selectedCampaignLead.lead.city}, {selectedCampaignLead.lead.state_province}</span>
-                          </div>
-                        )}
-                        {selectedCampaignLead?.lead?.lead_score && (
-                          <div className="flex items-center gap-2">
-                            <Star className="h-3 w-3 text-gray-400" />
-                            <span className="text-gray-300">Score: {selectedCampaignLead.lead.lead_score}/100</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
                   </div>
+                {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                )}
+                  {selectedCampaignLead?.lead?.niche_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Building className="h-4 w-4" />
+                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
+                    </div>
+                  )}
                 </div>
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4 py-4">
-              {/* AI Features Banner */}
-              <div className="p-4 bg-gradient-to-r from-[#2A2A2A] to-[#333] border border-[#444] rounded-xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <Brain className="h-5 w-5 text-white" />
-                  <span className="font-semibold text-white">AI-Generated Personalization</span>
-                </div>
-                <p className="text-sm text-gray-300">
-                  Advanced AI analyzes this lead's profile, industry, and online presence to craft highly personalized outreach messages with superior conversion rates.
-                </p>
-              </div>
-              
-              {/* Contact Methods Grid */}
-              <div className="grid grid-cols-1 gap-3">
-                {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
-                  const methodConfig = {
-                    email: { label: 'Email Outreach', icon: '✉️', gradient: 'from-gray-600 to-gray-700', description: 'Professional email with subject line' },
-                    phone: { label: 'Cold Call Script', icon: '📞', gradient: 'from-gray-700 to-gray-800', description: 'Structured conversation guide' },
-                    linkedin: { label: 'LinkedIn Message', icon: '💼', gradient: 'from-gray-500 to-gray-600', description: 'Professional networking approach' },
-                    instagram: { label: 'Instagram DM', icon: '📸', gradient: 'from-gray-600 to-gray-700', description: 'Visual platform messaging' },
-                    facebook: { label: 'Facebook Message', icon: '👥', gradient: 'from-gray-700 to-gray-800', description: 'Social media outreach' },
-                    twitter: { label: 'X/Twitter DM', icon: '🐦', gradient: 'from-gray-500 to-gray-600', description: 'Short-form social message' },
-                    x: { label: 'X/Twitter DM', icon: '🐦', gradient: 'from-gray-500 to-gray-600', description: 'Short-form social message' }
-                  }
-
-                  const config = methodConfig[method.type as keyof typeof methodConfig]
-                  
-                  return (
-                    <Button
-                      key={method.type}
-                      onClick={() => {
-                        setShowOutreachOptions(false)
-                        setShowMessageComposer(true)
-                        setMessageType(method.type as any)
-                        if (selectedCampaignLead.lead) {
-                          generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
-                        }
-                      }}
-                      variant="outline"
-                      className="w-full justify-start text-left border-[#444] hover:border-white/50 p-0 h-auto transition-all duration-200 hover:scale-[1.02]"
-                    >
-                      <div className={`flex items-center gap-4 w-full p-4 bg-gradient-to-r ${config.gradient} rounded-lg border border-[#555]`}>
-                        <div className="text-2xl">{config.icon}</div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-white text-base">{config.label}</div>
-                          <div className="text-sm text-gray-300 mt-1">{config.description}</div>
-                          <div className="text-xs text-gray-400 mt-1 font-mono bg-black/20 px-2 py-1 rounded">
-                            {method.type === 'email' ? selectedCampaignLead.lead?.email :
-                             method.type === 'phone' ? selectedCampaignLead.lead?.phone :
-                             method.type === 'linkedin' ? selectedCampaignLead.lead?.linkedin_profile :
-                             method.type === 'instagram' ? selectedCampaignLead.lead?.instagram_handle :
-                             method.type === 'facebook' ? selectedCampaignLead.lead?.facebook_page :
-                             (method.type === 'twitter' || method.type === 'x') ? selectedCampaignLead.lead?.twitter_handle :
-                             'Contact available'}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-white" />
-                          <div className="text-xs text-gray-300">AI Generated</div>
-                        </div>
-                      </div>
-                    </Button>
-                  )
-                })}
-              </div>
-              
-              {/* Usage Warning */}
-              {messageUsage && messageUsage.daily.remaining <= 5 && (
-                <div className="p-3 bg-gray-800/50 border border-gray-600 rounded-lg">
+            <div className="space-y-6 py-4">
+              {/* AI Usage Status Bar */}
+              <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-gray-300" />
-                    <span className="text-sm font-medium text-gray-300">
-                      {messageUsage.daily.remaining <= 0 
-                        ? 'Daily AI limit reached. Resets at midnight.' 
-                        : `Only ${messageUsage.daily.remaining} AI messages remaining today.`}
-                    </span>
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-gray-200">AI Generation Status</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Clock className="h-4 w-4" />
+                    <span>Resets daily at midnight</span>
                   </div>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">
+                        {messageUsage ? `${messageUsage.daily.used}` : '...'}
+                      </div>
+                      <div className="text-xs text-gray-400">Used Today</div>
+                    </div>
+                    <div className="text-gray-500">/</div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-300">
+                        {messageUsage ? `${messageUsage.daily.limit}` : '...'}
+                      </div>
+                      <div className="text-xs text-gray-400">Daily Limit</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-gray-200">
+                      {messageUsage ? `${messageUsage.daily.remaining}` : '...'}
+                    </div>
+                    <div className="text-xs text-gray-400">Remaining</div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${messageUsage ? (messageUsage.daily.used / messageUsage.daily.limit) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* AI Information Banner */}
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-gray-600/30 rounded-lg">
+                    <Zap className="h-5 w-5 text-gray-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-200 mb-1">AI-Powered Personalization</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Outreach Method Selection */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-white mb-4">Choose Your Outreach Method</h3>
+              {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
+                const methodLabel = method.type === 'email' ? 'Email Outreach' :
+                  method.type === 'phone' ? 'Cold Call Script' :
+                  method.type === 'linkedin' ? 'LinkedIn Message' :
+                  method.type === 'instagram' ? 'Instagram DM' :
+                  method.type === 'facebook' ? 'Facebook Message' : method.label
+                
+                const recommendation = method.type === 'email' ? 
+                  'Direct & professional - highest response rates' : 
+                  method.type === 'phone' ? 
+                  'Immediate connection - qualify leads instantly' :
+                  method.type === 'linkedin' ?
+                    'Professional networking - builds trust' :
+                  method.type === 'instagram' ?
+                    'Visual engagement - casual approach' :
+                  method.type === 'facebook' ?
+                    'Social connection - personal touch' :
+                  method.type === 'twitter' || method.type === 'x' ?
+                    'Quick engagement - viral potential' :
+                    'AI-powered personalization'
+                  
+                return (
+                <Button
+                  key={method.type}
+                  onClick={() => {
+                    setShowOutreachOptions(false)
+                    setShowMessageComposer(true)
+                    setMessageType(method.type as any)
+                    if (selectedCampaignLead.lead) {
+                      generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                    }
+                  }}
+                    disabled={messageUsage?.daily.remaining === 0}
+                    className="w-full bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white justify-start p-6 h-auto border border-[#444] hover:border-[#555] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-gradient-to-r from-gray-600/30 to-gray-700/30 rounded-lg group-hover:from-gray-600/40 group-hover:to-gray-700/40 transition-all duration-200">
+                            <method.icon className="h-6 w-6" />
+                          </div>
+                        <div className="text-left">
+                            <div className="font-semibold text-lg">{methodLabel}</div>
+                            <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
+                        </div>
+                      </div>
+                        <div className="flex items-center gap-2">
+                          {messageUsage?.daily.remaining === 0 && (
+                            <div className="text-xs bg-gray-600/30 text-gray-300 px-2 py-1 rounded">
+                              Limit Reached
+                            </div>
+                          )}
+                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
+                        </div>
+                    </div>
+                </Button>
+                )
+              })}
+              </div>
+          </div>
           </DialogContent>
         </Dialog>
 
-        {/* Enhanced Message Composer Dialog */}
+        {/* Premium Message Composer Dialog */}
         <Dialog open={showMessageComposer} onOpenChange={setShowMessageComposer}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                {messageType === 'email' && <Mail className="h-5 w-5 text-gray-400" />}
-                {messageType === 'phone' && <Phone className="h-5 w-5 text-gray-400" />}
-                {messageType === 'linkedin' && <Linkedin className="h-5 w-5 text-gray-400" />}
-                {messageType === 'instagram' && <Instagram className="h-5 w-5 text-gray-400" />}
-                {messageType === 'facebook' && <Facebook className="h-5 w-5 text-gray-400" />}
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
+                  {messageType === 'email' && <Mail className="h-6 w-6 text-white" />}
+                  {messageType === 'phone' && <Phone className="h-6 w-6 text-white" />}
+                  {messageType === 'linkedin' && <Linkedin className="h-6 w-6 text-white" />}
+                  {messageType === 'instagram' && <Instagram className="h-6 w-6 text-white" />}
+                  {messageType === 'facebook' && <Facebook className="h-6 w-6 text-white" />}
                 {(messageType === 'twitter' || messageType === 'x') && (
-                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                 )}
-                {messageType === 'phone' ? 'Cold Call Script' : 
-                 messageType === 'email' ? 'Email Outreach' :
-                 messageType === 'linkedin' ? 'LinkedIn Message' :
-                 messageType === 'instagram' ? 'Instagram DM' :
-                 messageType === 'facebook' ? 'Facebook Message' :
-                 (messageType === 'twitter' || messageType === 'x') ? 'X/Twitter DM' :
-                 'Outreach Message'}
+                </div>
+                {messageType === 'phone' ? 'AI Cold Call Script' : 
+                 messageType === 'email' ? 'AI Email Outreach' :
+                 messageType === 'linkedin' ? 'AI LinkedIn Message' :
+                 messageType === 'instagram' ? 'AI Instagram DM' :
+                 messageType === 'facebook' ? 'AI Facebook Message' :
+                 (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
+                 'AI Outreach Message'}
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
-                {selectedCampaignLead?.lead?.business_name} - {selectedCampaignLead?.lead?.owner_name || 'No owner info'}
+              <DialogDescription className="text-gray-300">
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="font-semibold text-white">{selectedCampaignLead?.lead?.business_name}</span>
+                  </div>
+                  {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>{selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                  )}
+                </div>
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-6">
+            <div className="py-6 space-y-6">
+              {/* AI Generation Status */}
+              <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-gray-200">AI Generation Status</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-gray-400">
+                      {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                    </span>
+                    <span className="text-gray-200 font-medium">
+                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {messageType === 'phone' ? (
-                // Call Script Display
-              <div className="space-y-4">
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-300 mb-4">Call Script</h3>
-                    <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm">
+                // Enhanced Call Script Display
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-8 shadow-xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg">
+                        <Phone className="h-6 w-6 text-green-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white">AI Cold Call Script</h3>
+                    </div>
+                    <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm bg-[#1A1A1A] rounded-lg p-6 border border-[#333]">
                       {isGeneratingMessage ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                          Generating personalized call script...
+                        <div className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 border-4 border-gray-600/30 rounded-full animate-spin border-t-gray-400"></div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Sparkles className="h-6 w-6 text-gray-300" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-white mb-1">AI is crafting your call script...</div>
+                              <div className="text-sm text-gray-400">Analyzing lead profile and industry insights</div>
+                            </div>
+                          </div>
                   </div>
                       ) : generatedMessage ? (
-                        generatedMessage
+                        <div className="space-y-4">
+                          <div className="bg-gradient-to-r from-gray-600/10 to-gray-700/10 border border-gray-500/30 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-5 w-5 text-gray-300" />
+                              <span className="text-gray-300 font-medium">Script Generated Successfully</span>
+                            </div>
+                            <p className="text-sm text-gray-400">AI-personalized for maximum impact and conversion</p>
+                          </div>
+                          <div className="text-gray-300 leading-relaxed">
+                            {generatedMessage}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <div className="text-gray-400">Call script will appear here...</div>
+                        <div className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 bg-gradient-to-r from-gray-600/20 to-gray-700/20 rounded-full">
+                              <FileText className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-medium text-gray-300 mb-1">Your AI call script will appear here</div>
+                              <div className="text-sm text-gray-500">Personalized for this specific lead</div>
+                            </div>
+                          </div>
                   </div>
                       )}
                   </div>
                   </div>
                   {generatedMessage && (
+                    <div className="flex gap-4">
                   <Button
                       onClick={() => {
                         navigator.clipboard.writeText(generatedMessage)
@@ -2669,45 +2819,91 @@ export default function OutreachToolPage() {
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Call script copied! Ready to make your call.')
                       }}
-                  className="w-full bg-[#444] hover:bg-[#555] text-white"
+                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
-                      <Copy className="h-4 w-4 mr-2" />
+                        <Copy className="h-5 w-5 mr-2" />
                       {justCopied ? 'Copied!' : 'Copy Script'}
                   </Button>
+                      <Button
+                        onClick={() => {
+                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
+                          setShowMessageComposer(false)
+                          toast.success('Lead marked as contacted!')
+                        }}
+                        className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      >
+                        <CheckCircle className="h-5 w-5 mr-2" />
+                        Mark as Contacted
+                      </Button>
+                    </div>
                 )}
               </div>
               ) : (
-                // Message Display
-              <div className="space-y-4">
+                // Enhanced Message Display
+                <div className="space-y-6">
                   {messageType === 'email' && messageSubject && (
-                  <div>
-                      <Label className="text-gray-400 mb-2">Subject Line</Label>
-                      <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3">
-                        <p className="text-gray-300">{messageSubject}</p>
+                    <div className="space-y-3">
+                      <Label className="text-gray-300 font-medium text-lg">Subject Line</Label>
+                      <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg">
+                            <Mail className="h-5 w-5 text-blue-400" />
+                          </div>
+                          <p className="text-gray-300 font-medium">{messageSubject}</p>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                <div>
-                    <Label className="text-gray-400 mb-2">Message</Label>
-                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 min-h-[200px]">
+                  <div className="space-y-3">
+                    <Label className="text-gray-300 font-medium text-lg">AI Generated Message</Label>
+                    <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 min-h-[300px] shadow-xl">
                       {isGeneratingMessage ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                          Generating personalized message...
+                        <div className="text-center py-16">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 border-4 border-gray-600/30 rounded-full animate-spin border-t-gray-400"></div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Sparkles className="h-6 w-6 text-gray-300" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-white mb-1">AI is crafting your message...</div>
+                              <div className="text-sm text-gray-400">Analyzing lead profile and personalizing content</div>
+                            </div>
+                          </div>
                         </div>
                       ) : generatedMessage ? (
-                        <p className="text-gray-300 whitespace-pre-wrap">{generatedMessage}</p>
+                        <div className="space-y-4">
+                          <div className="bg-gradient-to-r from-gray-600/10 to-gray-700/10 border border-gray-500/30 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-5 w-5 text-gray-300" />
+                              <span className="text-gray-300 font-medium">Message Generated Successfully</span>
+                            </div>
+                            <p className="text-sm text-gray-400">AI-personalized for maximum engagement and response rate</p>
+                          </div>
+                          <div className="text-gray-300 whitespace-pre-wrap leading-relaxed bg-[#1A1A1A] rounded-lg p-4 border border-[#333]">
+                            {generatedMessage}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <div className="text-gray-400">Message will appear here...</div>
+                        <div className="text-center py-16">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 bg-gradient-to-r from-gray-600/20 to-gray-700/20 rounded-full">
+                              <MessageSquare className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-medium text-gray-300 mb-1">Your AI message will appear here</div>
+                              <div className="text-sm text-gray-500">Personalized for this specific lead and platform</div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {generatedMessage && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                     <Button
                         onClick={() => {
                           const fullMessage = messageType === 'email' && messageSubject 
@@ -2719,9 +2915,9 @@ export default function OutreachToolPage() {
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Message copied! Ready to send your outreach.')
                         }}
-                        className="flex-1 bg-[#444] hover:bg-[#555] text-white"
+                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                        <Copy className="h-5 w-5 mr-2" />
                     {justCopied ? 'Copied!' : 'Copy Message'}
                   </Button>
                   <Button
@@ -2730,9 +2926,9 @@ export default function OutreachToolPage() {
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
-                        className="flex-1 bg-white hover:bg-gray-200 text-black"
+                        className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
-                      <Send className="h-4 w-4 mr-2" />
+                        <Send className="h-5 w-5 mr-2" />
                         Mark as Sent
                     </Button>
                     </div>
@@ -2772,7 +2968,7 @@ export default function OutreachToolPage() {
                     </div>
                     <div className="w-full bg-[#333] rounded-full h-2">
                       <div 
-                        className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
                         style={{ width: `${selectedScoreBreakdown.scoreData.total}%` }}
                       ></div>
                     </div>
@@ -2800,7 +2996,7 @@ export default function OutreachToolPage() {
                         
                         <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
                           <div 
-                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            className="bg-gray-500 h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${(data.score / data.max) * 100}%` }}
                           ></div>
                         </div>
@@ -2810,13 +3006,13 @@ export default function OutreachToolPage() {
                             <div key={index} className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${
-                                  item.has ? 'bg-green-500' : 'bg-gray-500'
+                                  item.has ? 'bg-gray-300' : 'bg-gray-600'
                                 }`}></div>
                                 <span className={item.has ? 'text-gray-300' : 'text-gray-500'}>
                                   {item.name}
                                 </span>
                               </div>
-                              <span className={`font-mono ${item.has ? 'text-green-400' : 'text-gray-500'}`}>
+                              <span className={`font-mono ${item.has ? 'text-gray-200' : 'text-gray-500'}`}>
                                 {item.value}/{item.max}
                               </span>
                             </div>
@@ -2829,12 +3025,12 @@ export default function OutreachToolPage() {
                   {/* Improvement Suggestions */}
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
                     <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                      <TrendingUp className="h-4 w-4 text-gray-400" />
                       Improvement Suggestions
                     </h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       {selectedScoreBreakdown.scoreData.total < 50 && (
-                        <div className="text-yellow-400">
+                        <div className="text-gray-300">
                           • This lead needs significant data enrichment before outreach
                         </div>
                       )}
@@ -2854,7 +3050,7 @@ export default function OutreachToolPage() {
                         <div>• Research social media presence for personalization (+9-19 points)</div>
                       )}
                       {selectedScoreBreakdown.scoreData.total >= 80 && (
-                        <div className="text-green-400">
+                        <div className="text-gray-200">
                           • This is a high-quality lead ready for immediate outreach!
                         </div>
                       )}
@@ -2885,7 +3081,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <Award className="h-6 w-6 text-yellow-400" />
+                      <Award className="h-6 w-6 text-gray-300" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80).length}
@@ -2899,7 +3095,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="h-6 w-6 text-blue-400" />
+                      <TrendingUp className="h-6 w-6 text-gray-400" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 80).length}
@@ -2913,7 +3109,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <TrendingDown className="h-6 w-6 text-red-400" />
+                      <TrendingDown className="h-6 w-6 text-gray-500" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length}
@@ -2981,7 +3177,7 @@ export default function OutreachToolPage() {
                 <Button
                   onClick={recalculateAllScores}
                   disabled={isRecalculatingScores}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-gray-600 hover:bg-gray-700 text-white"
                 >
                   {isRecalculatingScores ? (
                     <>
@@ -3033,11 +3229,11 @@ export default function OutreachToolPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">Score Distribution</h3>
                 <div className="space-y-3">
                   {[
-                    { range: '90-100', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 90).length, color: 'bg-green-500' },
-                    { range: '80-89', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80 && calculateLeadScore(cl.lead).total < 90).length, color: 'bg-blue-500' },
-                    { range: '70-79', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 70 && calculateLeadScore(cl.lead).total < 80).length, color: 'bg-yellow-500' },
-                    { range: '60-69', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 70).length, color: 'bg-orange-500' },
-                    { range: '0-59', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length, color: 'bg-red-500' }
+                    { range: '90-100', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 90).length, color: 'bg-gray-300' },
+                    { range: '80-89', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80 && calculateLeadScore(cl.lead).total < 90).length, color: 'bg-gray-400' },
+                    { range: '70-79', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 70 && calculateLeadScore(cl.lead).total < 80).length, color: 'bg-gray-500' },
+                    { range: '60-69', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 70).length, color: 'bg-gray-600' },
+                    { range: '0-59', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length, color: 'bg-gray-700' }
                   ].map((bucket) => (
                     <div key={bucket.range} className="flex items-center gap-3">
                       <div className="w-16 text-sm text-gray-300">{bucket.range}</div>
