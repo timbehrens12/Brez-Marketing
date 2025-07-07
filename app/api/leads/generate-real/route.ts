@@ -9,17 +9,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Optimized usage limits for weekly system with cost optimization
+// Usage limits for weekly system
 const WEEKLY_GENERATION_LIMIT = 1 // 1 generation per week for cost control
-const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation (reduced from 50)
+const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation 
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
-const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search (reduced from 10)
-const NICHE_COOLDOWN_HOURS = 168 // 168 hours (7 days) cooldown per niche
+const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search
+const NICHE_COOLDOWN_HOURS = 72 // 72 hours (3 days) cooldown per niche
 
-// API Cost tracking
-const GOOGLE_TEXT_SEARCH_COST = 0.032 // $0.032 per text search
-const GOOGLE_PLACE_DETAILS_COST = 0.017 // $0.017 per place details request
-const OPENAI_COST_PER_REQUEST = 0.002 // Estimated $0.002 per OpenAI request
+
 
 // Set maximum duration for this API route (90 seconds)
 export const maxDuration = 90
@@ -126,7 +123,9 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.GOOGLE_PLACES_API_KEY) {
       console.error('Google Places API key missing')
-      return NextResponse.json({ error: 'Google Places API not configured' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Google Places API not configured. Please contact the developer for assistance with API setup.' 
+      }, { status: 500 })
     }
 
     // Get niche details from database
@@ -146,17 +145,7 @@ export async function POST(request: NextRequest) {
     // Calculate total leads that will be generated (25 per generation)
     const totalLeadsToGenerate = TOTAL_LEADS_PER_GENERATION
     
-    // Initialize cost tracking
-    let totalGoogleCost = 0
-    let totalOpenAICost = 0
-    let googleSearchCount = 0
-    let googleDetailsCount = 0
-    let openaiRequestCount = 0
-
-    console.log(`💰 COST TRACKING: Starting lead generation for ${niches.length} niches × ${TOTAL_LEADS_PER_GENERATION} leads`)
-    console.log(`💰 ESTIMATED COSTS: Google Text Searches: ${niches.length} × $${GOOGLE_TEXT_SEARCH_COST} = $${(niches.length * GOOGLE_TEXT_SEARCH_COST).toFixed(3)}`)
-    console.log(`💰 ESTIMATED COSTS: Google Place Details: ${totalLeadsToGenerate} × $${GOOGLE_PLACE_DETAILS_COST} = $${(totalLeadsToGenerate * GOOGLE_PLACE_DETAILS_COST).toFixed(3)}`)
-    console.log(`💰 ESTIMATED COSTS: OpenAI Requests: ${totalLeadsToGenerate} × $${OPENAI_COST_PER_REQUEST} = $${(totalLeadsToGenerate * OPENAI_COST_PER_REQUEST).toFixed(3)}`)
+    console.log(`Starting lead generation for ${niches.length} niches × ${TOTAL_LEADS_PER_GENERATION} leads`)
 
     // Find real businesses using Google Places API with comprehensive error handling
     let realLeads: any[] = []
@@ -170,18 +159,16 @@ export async function POST(request: NextRequest) {
         )
       ]) as any
       
+      // If no leads were found, provide helpful error message
+      if (!result || !result.leads || result.leads.length === 0) {
+        return NextResponse.json({ 
+          error: 'Google Places API could not find businesses matching your criteria. This may be due to API rate limits, service issues, or no businesses in the specified location. Please try again later or contact the developer for assistance.',
+          foundCount: 0 
+        }, { status: 503 })
+      }
+      
       realLeads = result.leads
-      totalGoogleCost = result.costs.googleCost
-      totalOpenAICost = result.costs.openaiCost
-      googleSearchCount = result.costs.searchCount
-      googleDetailsCount = result.costs.detailsCount
-      openaiRequestCount = result.costs.openaiCount
-
-      console.log(`💰 ACTUAL COSTS: Google Searches: ${googleSearchCount} × $${GOOGLE_TEXT_SEARCH_COST} = $${totalGoogleCost.toFixed(3)}`)
-      console.log(`💰 ACTUAL COSTS: Google Details: ${googleDetailsCount} × $${GOOGLE_PLACE_DETAILS_COST} = $${(googleDetailsCount * GOOGLE_PLACE_DETAILS_COST).toFixed(3)}`)
-      console.log(`💰 ACTUAL COSTS: OpenAI Requests: ${openaiRequestCount} × $${OPENAI_COST_PER_REQUEST} = $${totalOpenAICost.toFixed(3)}`)
-      console.log(`💰 TOTAL COST: $${(totalGoogleCost + totalOpenAICost).toFixed(3)} for ${realLeads.length} leads`)
-      console.log(`💰 COST PER LEAD: $${((totalGoogleCost + totalOpenAICost) / Math.max(1, realLeads.length)).toFixed(4)}`)
+      console.log(`Found ${realLeads.length} business leads`)
     
     console.log(`Lead generation completed: found ${realLeads.length} valid businesses out of ${totalLeadsToGenerate} attempted`)
     } catch (error: any) {
@@ -445,23 +432,7 @@ export async function POST(request: NextRequest) {
       attempted: totalLeadsToGenerate,
       successful: realLeads.length,
       saved: savedCount,
-      costs: {
-        google: {
-          searchCalls: googleSearchCount,
-          detailsCalls: googleDetailsCount,
-          searchCost: (googleSearchCount * GOOGLE_TEXT_SEARCH_COST).toFixed(3),
-          detailsCost: (googleDetailsCount * GOOGLE_PLACE_DETAILS_COST).toFixed(3),
-          totalCost: totalGoogleCost.toFixed(3)
-        },
-        openai: {
-          calls: openaiRequestCount,
-          estimatedCost: totalOpenAICost.toFixed(3)
-        },
-        total: {
-          estimatedCost: (totalGoogleCost + totalOpenAICost).toFixed(3),
-          costPerLead: ((totalGoogleCost + totalOpenAICost) / Math.max(1, savedCount)).toFixed(4)
-        }
-      },
+
       usage: {
         used: newGenerationCount,
         limit: WEEKLY_GENERATION_LIMIT,
@@ -481,9 +452,6 @@ export async function POST(request: NextRequest) {
 
 async function findRealBusinesses(niches: any[], location: any, maxResults: number, nicheCount: number) {
   const foundBusinesses: any[] = []
-  let searchCount = 0
-  let detailsCount = 0
-  let openaiCount = 0
   
   // Calculate leads per niche - distribute 25 leads across all niches
   const baseLeadsPerNiche = Math.floor(maxResults / nicheCount)
@@ -562,8 +530,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       // Google Places Text Search API with timeout
       const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&location=${locationBias}&radius=${searchRadius * 1609}&key=${process.env.GOOGLE_PLACES_API_KEY}`
       
-      searchCount++ // Track search API call
-      console.log(`💰 Google Places Text Search #${searchCount}: ${searchQuery} (radius: ${searchRadius}mi)`)
+      console.log(`Google Places search: ${searchQuery} (radius: ${searchRadius}mi)`)
       
       // Add timeout for the search request
       const abortController = new AbortController()
@@ -682,12 +649,11 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           // Get detailed place information with timeout
           const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,business_status,rating,user_ratings_total,opening_hours,geometry&key=${process.env.GOOGLE_PLACES_API_KEY}`
           
-          detailsCount++ // Track details API call
-          console.log(`💰 Google Places Details #${detailsCount}: ${place.name || 'unknown business'}`)
+          console.log(`Getting place details: ${place.name || 'unknown business'}`)
           
-          // Add timeout for Google Places API call (reduced to 3 seconds)
+          // Add timeout for Google Places API call (increased to 8 seconds)
           const abortController = new AbortController()
-          const timeoutId = setTimeout(() => abortController.abort(), 3000) // 3 second timeout
+          const timeoutId = setTimeout(() => abortController.abort(), 8000) // 8 second timeout
           
           const detailsResponse = await fetch(detailsUrl, {
             signal: abortController.signal
@@ -708,13 +674,10 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
             // Only include businesses that are currently operational
             if (business.business_status === 'OPERATIONAL') {
               const lead = await enrichBusinessData(business, niche, location)
-              if (lead) {
-                if (business.website && process.env.OPENAI_API_KEY) {
-                  openaiCount++ // Track OpenAI call for website enrichment
-                }
-                console.log(`Added real business: ${business.name}`)
-                return lead
-              }
+                          if (lead) {
+              console.log(`Added real business: ${business.name}`)
+              return lead
+            }
             }
           } else {
             console.log(`Google Places API returned status ${detailsData.status} for ${place.name || 'unknown business'}`)
@@ -778,21 +741,10 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
     [foundBusinesses[i], foundBusinesses[j]] = [foundBusinesses[j], foundBusinesses[i]]
   }
   
-  const googleCost = searchCount * GOOGLE_TEXT_SEARCH_COST + detailsCount * GOOGLE_PLACE_DETAILS_COST
-  const openaiCost = openaiCount * OPENAI_COST_PER_REQUEST
-  
-  console.log(`🔄 DIVERSIFICATION: Final results - ${foundBusinesses.length} unique businesses across all niches`)
-  console.log(`💰 Final API Usage: ${searchCount} searches, ${detailsCount} details, ${openaiCount} OpenAI calls`)
+  console.log(`Final results - ${foundBusinesses.length} unique businesses across all niches`)
   
   return {
-    leads: foundBusinesses,
-    costs: {
-      googleCost,
-      openaiCost,
-      searchCount,
-      detailsCount,
-      openaiCount
-    }
+    leads: foundBusinesses
   }
 }
 
@@ -820,13 +772,13 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     }
     
     if (website && process.env.OPENAI_API_KEY) {
-      console.log(`💰 OpenAI: Enriching data for ${name} using website: ${website}`)
+      console.log(`Enriching data for ${name} using website: ${website}`)
       try {
-        // Add timeout wrapper for AI enrichment (3 seconds max for faster processing)
+        // Add timeout wrapper for AI enrichment (8 seconds max for better results)
         enrichedData = await Promise.race([
           enrichWithAI(name, website, location.city, location.state),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI enrichment timeout')), 3000)
+            setTimeout(() => reject(new Error('AI enrichment timeout')), 8000)
           )
         ]) as any
         
@@ -957,14 +909,13 @@ IMPORTANT:
 - Look for variations like "Follow us on", "Connect with us", social media icons, etc.
 `
 
-    console.log(`💰 OpenAI API Call: Analyzing website content for ${businessName}`)
+    console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0,
       max_tokens: 500
     })
-    console.log(`💰 OpenAI Response: Tokens used - Prompt: ${response.usage?.prompt_tokens || 'unknown'}, Completion: ${response.usage?.completion_tokens || 'unknown'}`)
 
     const result = response.choices[0]?.message?.content?.trim()
     
@@ -1028,9 +979,9 @@ async function scrapeWebsite(url: string): Promise<string | null> {
       url = 'https://' + url
     }
 
-    // Create abort controller for timeout - reduced to 3 seconds for faster processing
+    // Create abort controller for timeout - increased to 8 seconds for better scraping
     const abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController.abort(), 3000) // 3 second timeout
+    const timeoutId = setTimeout(() => abortController.abort(), 8000) // 8 second timeout
 
     const response = await fetch(url, {
       headers: {

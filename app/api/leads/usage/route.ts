@@ -3,12 +3,12 @@ import { getSupabaseServiceClient } from '@/lib/supabase/client'
 
 const supabase = getSupabaseServiceClient()
 
-// Usage limits (updated for weekly system with cost optimization)
+// Usage limits for weekly system
 const WEEKLY_GENERATION_LIMIT = 1 // 1 generation per week for cost control
-const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation (reduced from 50)
+const TOTAL_LEADS_PER_GENERATION = 25 // 25 leads per generation
 const MIN_NICHES_PER_SEARCH = 1 // Minimum 1 niche per search
-const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search (reduced from 10)
-const NICHE_COOLDOWN_HOURS = 168 // 168 hours (7 days) cooldown per niche
+const MAX_NICHES_PER_SEARCH = 5 // Maximum 5 niches per search
+const NICHE_COOLDOWN_HOURS = 72 // 72 hours (3 days) cooldown per niche
 
 export async function GET(request: NextRequest) {
   try {

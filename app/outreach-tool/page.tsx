@@ -146,6 +146,10 @@ export default function OutreachToolPage() {
   const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
+  const [messageUsage, setMessageUsage] = useState<{
+    hourly: { used: number; limit: number; remaining: number }
+    daily: { used: number; limit: number; remaining: number }
+  } | null>(null)
   const [messageType, setMessageType] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'x'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
   const [messageSubject, setMessageSubject] = useState('')
@@ -273,6 +277,20 @@ export default function OutreachToolPage() {
     }
   }, [userId])
 
+  const loadMessageUsage = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      const response = await fetch('/api/outreach/usage')
+      if (response.ok) {
+        const data = await response.json()
+        setMessageUsage(data.usage)
+      }
+    } catch (error) {
+      console.error('Error loading message usage:', error)
+    }
+  }, [userId])
+
   const loadInitialData = useCallback(async () => {
     console.log('🔄 loadInitialData called, userId:', userId)
     
@@ -287,10 +305,11 @@ export default function OutreachToolPage() {
       setIsLoadingPage(true)
       setIsLoading(true)
       
-      // Load campaigns and leads in parallel with timeout
+      // Load campaigns, leads, and message usage in parallel with timeout
       const loadPromises = Promise.all([
         loadCampaigns(),
-        loadCampaignLeads()
+        loadCampaignLeads(),
+        loadMessageUsage()
       ])
       
       // Add a timeout to the loading process
@@ -312,7 +331,7 @@ export default function OutreachToolPage() {
       setIsLoadingPage(false)
       setIsLoading(false)
     }
-  }, [userId, loadCampaigns, loadCampaignLeads])
+  }, [userId, loadCampaigns, loadCampaignLeads, loadMessageUsage])
 
   const loadActionRecommendations = useCallback(async (forceRefresh = false) => {
     if (!userId || campaigns.length === 0) return
@@ -747,8 +766,6 @@ export default function OutreachToolPage() {
             errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards.`
           } else if (reason === 'COOLDOWN') {
             errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
-          } else if (reason === 'COST_LIMIT') {
-            errorMessage = `💰 Daily cost limit reached ($5.00). This prevents excessive API charges. Limit resets at midnight.`
           } else {
             // Generic 429 - try retry with exponential backoff
             if (retryCount < 2) {
@@ -776,6 +793,9 @@ export default function OutreachToolPage() {
       
       if (data.ai_generated) {
         toast.success('✨ Personalized message generated successfully!')
+        
+        // Refresh usage after generating a message
+        loadMessageUsage()
         
         // Show usage info if available
         if (data.usage?.messagesRemaining) {
@@ -1288,7 +1308,7 @@ export default function OutreachToolPage() {
         )}
 
         {/* Clean Analytics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 min-w-0">
           <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -1378,6 +1398,26 @@ export default function OutreachToolPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Message Usage Card */}
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors min-w-0">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-3xl font-bold text-white flex-shrink-0">
+                    {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-300 truncate">AI Messages</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                    </div>
+                  </div>
+                </div>
+                <MessageSquare className="h-6 w-6 text-gray-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Area */}
@@ -1421,7 +1461,7 @@ export default function OutreachToolPage() {
                       )}
                     </Button>
                     <Button 
-                      onClick={() => { loadCampaignLeads(); loadCampaigns(); }}
+                      onClick={() => { loadCampaignLeads(); loadCampaigns(); loadMessageUsage(); }}
                       variant="outline" 
                       size="sm"
                       className="bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"

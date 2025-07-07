@@ -18,7 +18,6 @@ const SECURITY_LIMITS = {
   MAX_MESSAGES_PER_DAY: 50,       // Max 50 messages per day per user
   MAX_MESSAGES_PER_LEAD: 3,       // Max 3 messages per lead (prevent spam to same person)
   COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
-  MAX_DAILY_COST_USD: 5.00        // Max $5 of OpenAI costs per user per day
 }
 
 // Track message generation usage
@@ -94,16 +93,7 @@ async function checkRateLimits(userId: string, leadId?: string) {
       }
     }
 
-    // Check daily cost limit
-    const totalDailyCost = dailyUsage?.reduce((sum, usage) => sum + (usage.estimated_cost || 0.02), 0) || 0
-    if (totalDailyCost >= SECURITY_LIMITS.MAX_DAILY_COST_USD) {
-      return {
-        allowed: false,
-        reason: 'COST_LIMIT',
-        message: `Daily cost limit reached ($${SECURITY_LIMITS.MAX_DAILY_COST_USD}). Limit resets at midnight to prevent excessive API costs.`,
-        resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
-      }
-    }
+
 
     // Check cooldown period
     const { data: recentUsage, error: recentError } = await supabase
