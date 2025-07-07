@@ -216,6 +216,8 @@ export default function OutreachToolPage() {
       }, 8000)
       return () => clearTimeout(timer)
     }
+    // Return empty cleanup function to avoid React error #310
+    return () => {}
   }, [isLoadingPage])
 
   const forceLoadPage = () => {
@@ -344,13 +346,45 @@ export default function OutreachToolPage() {
 
   // Load action recommendations when data is ready - runs once after initial load
   useEffect(() => {
-    if (userId && campaignLeads.length > 0 && campaigns.length > 0) {
-      // Only load recommendations if we don't have cached ones
-      if (actionRecommendations.length === 0) {
-        loadActionRecommendations(false)
+    if (userId && campaignLeads.length > 0 && campaigns.length > 0 && actionRecommendations.length === 0) {
+      // Use a stable way to call loadActionRecommendations without dependency
+      const loadRecommendations = async () => {
+        if (!userId || campaigns.length === 0) return
+        
+        try {
+          setIsLoadingActions(true)
+          const activeCampaign = campaigns.find(c => c.status === 'active') || campaigns[0]
+          
+          if (!activeCampaign) return
+          
+          const response = await fetch('/api/ai/action-recommendations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              campaignId: activeCampaign.id, 
+              userId 
+            })
+          })
+          
+          if (response.status === 429) {
+            console.log('Recommendations already generated recently')
+            return
+          }
+          
+          if (!response.ok) throw new Error('Failed to load recommendations')
+          
+          const data = await response.json()
+          setActionRecommendations(data.recommendations || [])
+        } catch (error) {
+          console.error('Error loading action recommendations:', error)
+        } finally {
+          setIsLoadingActions(false)
+        }
       }
+      
+      loadRecommendations()
     }
-  }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length])
+  }, [userId, campaignLeads.length, actionRecommendations.length, campaigns])
 
   // Refs to track current state values without causing re-renders
   const campaignCountRef = useRef(0)
@@ -537,7 +571,7 @@ export default function OutreachToolPage() {
       setIsLoadingPage(false)
       setIsLoading(false)
     }
-  }, [userId])
+  }, [userId, loadCampaigns, loadCampaignLeads])
 
   const loadActionRecommendations = useCallback(async (forceRefresh = false) => {
     if (!userId || campaigns.length === 0) return
