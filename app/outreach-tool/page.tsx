@@ -98,6 +98,18 @@ interface LeadFilters {
   selectedNicheFilter: string[]
   statusFilter: string
   minScore: number
+  hasOwnerName: boolean
+  businessTypeFilter: string[]
+  locationFilter: {
+    city: string
+    state: string
+  }
+  outreachMethodFilter: string[]
+  lastContactedFilter: string // 'today', 'yesterday', 'week', 'month', 'never'
+  scoreRange: {
+    min: number
+    max: number
+  }
 }
 
 interface ActionItem {
@@ -198,7 +210,13 @@ export default function OutreachToolPage() {
     socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
     selectedNicheFilter: [],
     statusFilter: 'all',
-    minScore: 0
+    minScore: 0,
+    hasOwnerName: false,
+    businessTypeFilter: [],
+    locationFilter: { city: '', state: '' },
+    outreachMethodFilter: [],
+    lastContactedFilter: 'all',
+    scoreRange: { min: 0, max: 100 }
   })
   
   // Temporary filters state for pending changes
@@ -210,7 +228,13 @@ export default function OutreachToolPage() {
     socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
     selectedNicheFilter: [],
     statusFilter: 'all',
-    minScore: 0
+    minScore: 0,
+    hasOwnerName: false,
+    businessTypeFilter: [],
+    locationFilter: { city: '', state: '' },
+    outreachMethodFilter: [],
+    lastContactedFilter: 'all',
+    scoreRange: { min: 0, max: 100 }
   })
 
   const [mounted, setMounted] = useState(false)
@@ -1374,12 +1398,12 @@ export default function OutreachToolPage() {
   }
 
   const applyTempFilters = () => {
-    setFilters(tempFilters) // Apply temporary filters to actual filters
+    setFilters({...tempFilters}) // Apply temporary filters to actual filters
     setShowFilters(false) // Close filter panel
   }
 
   const cancelFilters = () => {
-    setTempFilters(filters) // Reset temp filters to current filters
+    setTempFilters({...filters}) // Reset temp filters to current filters
     setShowFilters(false) // Close filter panel
   }
 
@@ -1392,7 +1416,13 @@ export default function OutreachToolPage() {
       socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
       selectedNicheFilter: [],
       statusFilter: 'all',
-      minScore: 0
+      minScore: 0,
+      hasOwnerName: false,
+      businessTypeFilter: [],
+      locationFilter: { city: '', state: '' },
+      outreachMethodFilter: [],
+      lastContactedFilter: 'all',
+      scoreRange: { min: 0, max: 100 }
     }
     setTempFilters(clearedFilters)
   }
@@ -2008,7 +2038,7 @@ export default function OutreachToolPage() {
                           </div>
                         </TableHead>
                         <TableHead className="text-gray-400">Contact Info</TableHead>
-                        <TableHead className="text-gray-400">Methods Used</TableHead>
+                        <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2221,43 +2251,55 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {(() => {
-                                // Check which outreach methods have been used for this lead (last 7 days)
-                                const usedMethods: string[] = []
-                                
-                                if (campaignLead.lead?.business_name) {
-                                  const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
+                            <div className="space-y-1">
+                              {/* Last Contact Time */}
+                              <div className="text-sm text-gray-300">
+                                {campaignLead.last_contacted_at 
+                                  ? formatTimeAgo(campaignLead.last_contacted_at)
+                                  : <span className="text-gray-500">Never</span>
+                                }
+                              </div>
+                              
+                              {/* Platform Icons - Overlapped Style */}
+                              <div className="flex items-center relative max-w-[80px]">
+                                {(() => {
+                                  // Check which outreach methods have been used for this lead (last 7 days)
+                                  const usedMethods: string[] = []
                                   
-                                  // Check last 7 days for any outreach
-                                  for (let i = 0; i < 7; i++) {
-                                    const checkDate = new Date()
-                                    checkDate.setDate(checkDate.getDate() - i)
-                                    const dateString = checkDate.toDateString()
+                                  if (campaignLead.lead?.business_name) {
+                                    const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
                                     
-                                    for (const method of methods) {
-                                      if (localStorage.getItem(`method_used_${campaignLead.lead.business_name}_${method}_${dateString}`) && 
-                                          !usedMethods.includes(method)) {
-                                        usedMethods.push(method)
+                                    // Check last 7 days for any outreach
+                                    for (let i = 0; i < 7; i++) {
+                                      const checkDate = new Date()
+                                      checkDate.setDate(checkDate.getDate() - i)
+                                      const dateString = checkDate.toDateString()
+                                      
+                                      for (const method of methods) {
+                                        if (localStorage.getItem(`method_used_${campaignLead.lead.business_name}_${method}_${dateString}`) && 
+                                            !usedMethods.includes(method)) {
+                                          usedMethods.push(method)
+                                        }
                                       }
                                     }
                                   }
-                                }
-                                
-                                if (usedMethods.length === 0) {
-                                  return <span className="text-gray-500 text-xs">None</span>
-                                }
-                                
-                                return usedMethods.map((method) => (
-                                  <div
-                                    key={method}
-                                    className="p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] transition-colors"
-                                    title={`${method.charAt(0).toUpperCase() + method.slice(1)} outreach completed`}
-                                  >
-                                    {getOutreachMethodIcon(method, "h-3 w-3")}
-                                  </div>
-                                ))
-                              })()}
+                                  
+                                  if (usedMethods.length === 0) {
+                                    return <span className="text-gray-500 text-xs">No methods used</span>
+                                  }
+                                  
+                                  return usedMethods.map((method, index) => (
+                                    <div
+                                      key={method}
+                                      className="relative z-10 p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] hover:z-20 transition-all duration-200"
+                                      title={`${method.charAt(0).toUpperCase() + method.slice(1)} outreach completed`}
+                                      style={{ marginLeft: index > 0 ? '-6px' : '0px' }}
+                                    >
+                                      {getOutreachMethodIcon(method, "h-3 w-3")}
+                                    </div>
+                                  ))
+                                })()}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>

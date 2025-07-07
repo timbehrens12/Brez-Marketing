@@ -96,6 +96,19 @@ interface LeadFilters {
   }
   selectedNicheFilter: string[]
   minScore: number
+  hasOwnerName: boolean
+  businessTypeFilter: string[]
+  locationFilter: {
+    city: string
+    state: string
+  }
+  revenueFilter: string[]
+  shopifyFilter: string // 'all', 'detected', 'not_detected'
+  scoreRange: {
+    min: number
+    max: number
+  }
+  createdDateFilter: string // 'today', 'yesterday', 'week', 'month', 'all'
 }
 
 export default function LeadGeneratorPage() {
