@@ -1,73 +1,56 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 
+export interface DataGap {
+  start_date: string
+  end_date: string
+  days_missing: number
+  gap_type: 'meta' | 'shopify' | 'both'
+}
+
+export interface BackfillResult {
+  success: boolean
+  gaps_found: DataGap[]
+  gaps_filled: DataGap[]
+  errors: string[]
+  total_records_created: number
+  message?: string
+}
+
 export interface BackfillStatus {
-  isChecking: boolean
-  isBackfilling: boolean
+  checking: boolean
+  backfilling: boolean
   hasGaps: boolean
-  gapsDetected: number
-  totalMissingDays: number
-  lastBackfillCheck: Date | null
-  backfillResults: any | null
+  gaps: DataGap[]
+  totalDaysMissing: number
+  lastChecked: Date | null
+  backfillResult: BackfillResult | null
+  error: string | null
 }
 
-export interface BackfillHookResult {
-  status: BackfillStatus
-  checkForGaps: (brandId: string, force?: boolean) => Promise<void>
-  performBackfill: (brandId: string, force?: boolean) => Promise<boolean>
-  resetStatus: () => void
-}
-
-/**
- * Hook for handling automatic data gap detection and backfill
- */
-export function useDataBackfill(): BackfillHookResult {
+export function useDataBackfill() {
   const [status, setStatus] = useState<BackfillStatus>({
-    isChecking: false,
-    isBackfilling: false,
+    checking: false,
+    backfilling: false,
     hasGaps: false,
-    gapsDetected: 0,
-    totalMissingDays: 0,
-    lastBackfillCheck: null,
-    backfillResults: null
+    gaps: [],
+    totalDaysMissing: 0,
+    lastChecked: null,
+    backfillResult: null,
+    error: null
   })
 
-  const lastCheckRef = useRef<string | null>(null)
-  const backfillInProgressRef = useRef<boolean>(false)
-
-  const resetStatus = useCallback(() => {
-    setStatus({
-      isChecking: false,
-      isBackfilling: false,
-      hasGaps: false,
-      gapsDetected: 0,
-      totalMissingDays: 0,
-      lastBackfillCheck: null,
-      backfillResults: null
-    })
-    lastCheckRef.current = null
-    backfillInProgressRef.current = false
-  }, [])
-
-  const checkForGaps = useCallback(async (brandId: string, force: boolean = false) => {
-    // Prevent duplicate checks for the same brand
-    if (lastCheckRef.current === brandId && !force) {
-      console.log('[Backfill Hook] Skipping duplicate gap check for brand', brandId)
-      return
-    }
-
-    if (status.isChecking || status.isBackfilling) {
-      console.log('[Backfill Hook] Already checking/backfilling, skipping')
-      return
-    }
+  const checkForGaps = useCallback(async () => {
+    console.log('🔍 Checking for data gaps...')
+    
+    setStatus(prev => ({ 
+      ...prev, 
+      checking: true, 
+      error: null 
+    }))
 
     try {
-      setStatus(prev => ({ ...prev, isChecking: true }))
-      lastCheckRef.current = brandId
-
-      console.log('[Backfill Hook] Checking for data gaps for brand', brandId)
-
-      const response = await fetch(`/api/data/backfill?brandId=${brandId}&lookbackDays=60`, {
+      const response = await fetch('/api/data/backfill', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -75,169 +58,135 @@ export function useDataBackfill(): BackfillHookResult {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-
-      if (data.success) {
-        const recommendation = data.recommendation
-        const hasSignificantGaps = recommendation.shouldBackfill && recommendation.totalMissingDays >= 3
-
-        setStatus(prev => ({
-          ...prev,
-          isChecking: false,
-          hasGaps: hasSignificantGaps,
-          gapsDetected: recommendation.criticalGaps,
-          totalMissingDays: recommendation.totalMissingDays,
-          lastBackfillCheck: new Date()
-        }))
-
-        if (hasSignificantGaps) {
-          console.log(`[Backfill Hook] Found significant gaps: ${recommendation.criticalGaps} critical gaps, ${recommendation.totalMissingDays} total missing days`)
-        } else {
-          console.log('[Backfill Hook] No significant data gaps detected')
-        }
-      } else {
-        throw new Error(data.error || 'Failed to check for gaps')
-      }
-
-    } catch (error) {
-      console.error('[Backfill Hook] Error checking for gaps:', error)
-      setStatus(prev => ({ 
-        ...prev, 
-        isChecking: false,
-        lastBackfillCheck: new Date()
-      }))
       
-      // Only show error toast if it's a significant error (not just no gaps)
-      if (error instanceof Error && !error.message.includes('No significant')) {
-        toast.error('Failed to check for data gaps')
+      console.log('📊 Gap check result:', data)
+
+      setStatus(prev => ({
+        ...prev,
+        checking: false,
+        hasGaps: data.has_gaps || false,
+        gaps: data.gaps_found || [],
+        totalDaysMissing: data.total_days_missing || 0,
+        lastChecked: new Date(),
+        error: null
+      }))
+
+      return {
+        hasGaps: data.has_gaps || false,
+        gaps: data.gaps_found || [],
+        totalDaysMissing: data.total_days_missing || 0
       }
-    }
-  }, [status.isChecking, status.isBackfilling])
+    } catch (error) {
+      console.error('❌ Error checking for gaps:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check for data gaps'
+      
+      setStatus(prev => ({
+        ...prev,
+        checking: false,
+        error: errorMessage
+      }))
 
-  const performBackfill = useCallback(async (brandId: string, force: boolean = false): Promise<boolean> => {
-    if (backfillInProgressRef.current) {
-      console.log('[Backfill Hook] Backfill already in progress')
-      return false
+      toast.error('Failed to check for data gaps')
+      throw error
     }
+  }, [])
 
-    if (status.isBackfilling) {
-      console.log('[Backfill Hook] Backfill already in progress (status)')
-      return false
-    }
+  const performBackfill = useCallback(async () => {
+    console.log('🚀 Starting backfill process...')
+    
+    setStatus(prev => ({ 
+      ...prev, 
+      backfilling: true, 
+      error: null 
+    }))
 
     try {
-      backfillInProgressRef.current = true
-      setStatus(prev => ({ ...prev, isBackfilling: true }))
-
-      console.log('[Backfill Hook] Starting backfill process for brand', brandId)
-
-      // Show loading toast for user feedback
-      const loadingToast = toast.loading('Backfilling missing data...')
-
       const response = await fetch('/api/data/backfill', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Brez-Dashboard-Backfill'
         },
-        body: JSON.stringify({
-          brandId,
-          autoDetect: true,
-          force
-        })
+        body: JSON.stringify({})
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`)
-      }
-
-      const data = await response.json()
-
-      // Dismiss loading toast
-      toast.dismiss(loadingToast)
-
-      if (data.success) {
-        setStatus(prev => ({
-          ...prev,
-          isBackfilling: false,
-          hasGaps: false, // Reset gaps since we just backfilled
-          backfillResults: data,
-          lastBackfillCheck: new Date()
-        }))
-
-        const recordsBackfilled = data.totalRecordsBackfilled || 0
-        const successfulOps = data.successfulOperations || 0
-
-        if (recordsBackfilled > 0) {
-          toast.success(`✅ Backfill completed! Added ${recordsBackfilled} records across ${successfulOps} operations.`)
-          console.log(`[Backfill Hook] Backfill successful: ${recordsBackfilled} records, ${successfulOps} operations`)
-        } else {
-          toast.success('✅ Data is up to date - no backfill needed')
-          console.log('[Backfill Hook] No backfill needed')
+        if (response.status === 429) {
+          throw new Error('Backfill was already performed recently. Please wait before trying again.')
         }
-
-        return true
-      } else {
-        throw new Error(data.error || 'Backfill failed')
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-    } catch (error) {
-      console.error('[Backfill Hook] Error performing backfill:', error)
+      const result: BackfillResult = await response.json()
       
-      setStatus(prev => ({ 
-        ...prev, 
-        isBackfilling: false,
-        lastBackfillCheck: new Date()
+      console.log('📝 Backfill result:', result)
+
+      setStatus(prev => ({
+        ...prev,
+        backfilling: false,
+        hasGaps: false, // Reset gaps after successful backfill
+        gaps: [],
+        totalDaysMissing: 0,
+        backfillResult: result,
+        error: null
       }))
 
-      toast.error(`❌ Backfill failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      return false
+      if (result.success) {
+        if (result.gaps_filled.length > 0) {
+          toast.success(
+            `✅ Backfill completed! ${result.total_records_created} records added across ${result.gaps_filled.length} gaps.`
+          )
+        } else {
+          toast.success('✅ No data gaps found - your data is up to date!')
+        }
+      } else {
+        toast.error('⚠️ Backfill completed with some errors. Check logs for details.')
+      }
 
-    } finally {
-      backfillInProgressRef.current = false
+      return result
+    } catch (error) {
+      console.error('❌ Error during backfill:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to perform backfill'
+      
+      setStatus(prev => ({
+        ...prev,
+        backfilling: false,
+        error: errorMessage
+      }))
+
+      toast.error(errorMessage)
+      throw error
     }
-  }, [status.isBackfilling])
+  }, [])
+
+  const resetStatus = useCallback(() => {
+    setStatus({
+      checking: false,
+      backfilling: false,
+      hasGaps: false,
+      gaps: [],
+      totalDaysMissing: 0,
+      lastChecked: null,
+      backfillResult: null,
+      error: null
+    })
+  }, [])
 
   return {
     status,
     checkForGaps,
     performBackfill,
-    resetStatus
+    resetStatus,
+    // Convenience flags
+    isLoading: status.checking || status.backfilling,
+    isChecking: status.checking,
+    isBackfilling: status.backfilling,
+    hasGaps: status.hasGaps,
+    gaps: status.gaps,
+    totalDaysMissing: status.totalDaysMissing,
+    error: status.error
   }
-}
-
-/**
- * Utility function to check if backfill should be suggested to the user
- */
-export function shouldSuggestBackfill(status: BackfillStatus): boolean {
-  return status.hasGaps && 
-         status.totalMissingDays >= 3 && 
-         !status.isBackfilling && 
-         !status.isChecking
-}
-
-/**
- * Utility function to format backfill status for display
- */
-export function formatBackfillStatus(status: BackfillStatus): string {
-  if (status.isBackfilling) {
-    return 'Backfilling missing data...'
-  }
-  
-  if (status.isChecking) {
-    return 'Checking for data gaps...'
-  }
-  
-  if (status.hasGaps) {
-    return `Found ${status.gapsDetected} data gaps (${status.totalMissingDays} missing days)`
-  }
-  
-  if (status.lastBackfillCheck) {
-    return 'Data coverage is complete'
-  }
-  
-  return 'Not checked'
 } 
