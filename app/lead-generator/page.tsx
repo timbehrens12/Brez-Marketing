@@ -267,6 +267,22 @@ export default function LeadGeneratorPage() {
     minScore: 0
   })
   
+  // Temporary filters state for pending changes
+  const [tempFilters, setTempFilters] = useState<LeadFilters>({
+    hasPhone: false,
+    hasEmail: false,
+    hasWebsite: false,
+    hasSocials: false,
+    socialPlatforms: {
+      instagram: false,
+      facebook: false,
+      linkedin: false,
+      twitter: false
+    },
+    selectedNicheFilter: [],
+    minScore: 0
+  })
+  
   // Score breakdown state
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false)
   const [selectedScoreBreakdown, setSelectedScoreBreakdown] = useState<any>(null)
@@ -1642,6 +1658,35 @@ export default function LeadGeneratorPage() {
     }
   }
 
+  // Functions to handle temporary filters
+  const openFiltersPanel = () => {
+    setTempFilters(filters) // Initialize temp filters with current filters
+    setShowFilters(true)
+  }
+
+  const applyTempFilters = () => {
+    setFilters(tempFilters) // Apply temporary filters to actual filters
+    setShowFilters(false) // Close filter panel
+  }
+
+  const cancelFilters = () => {
+    setTempFilters(filters) // Reset temp filters to current filters
+    setShowFilters(false) // Close filter panel
+  }
+
+  const clearAllTempFilters = () => {
+    const clearedFilters = {
+      hasPhone: false,
+      hasEmail: false,
+      hasWebsite: false,
+      hasSocials: false,
+      socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+      selectedNicheFilter: [],
+      minScore: 0
+    }
+    setTempFilters(clearedFilters)
+  }
+
   // Debug function to reset daily limits for testing
   const resetDailyLimits_REMOVED = async () => {
     if (!userId) {
@@ -2123,7 +2168,7 @@ export default function LeadGeneratorPage() {
                 </div>
                 <div className="flex gap-2">
                     <Button
-                      onClick={() => setShowFilters(!showFilters)}
+                      onClick={openFiltersPanel}
                       variant="outline"
                       size="sm"
                       className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
@@ -2213,7 +2258,7 @@ export default function LeadGeneratorPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Advanced Filters</Label>
                       <Button
-                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasSocials: false, socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false }, selectedNicheFilter: [], minScore: 0 })}
+                        onClick={clearAllTempFilters}
                         variant="ghost"
                         size="sm"
                         className="text-gray-400 hover:text-white"
@@ -2230,11 +2275,11 @@ export default function LeadGeneratorPage() {
                         {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map((score) => (
                           <Button
                             key={score}
-                            onClick={() => setFilters(prev => ({ ...prev, minScore: score }))}
-                            variant={filters.minScore === score ? 'default' : 'outline'}
+                            onClick={() => setTempFilters(prev => ({ ...prev, minScore: score }))}
+                            variant={tempFilters.minScore === score ? 'default' : 'outline'}
                             size="sm"
                             className={`h-8 text-xs ${
-                              filters.minScore === score
+                              tempFilters.minScore === score
                                 ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
@@ -2244,7 +2289,7 @@ export default function LeadGeneratorPage() {
                         ))}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Showing leads with score {filters.minScore === 0 ? 'of any value' : `${filters.minScore} or higher`}
+                        Showing leads with score {tempFilters.minScore === 0 ? 'of any value' : `${tempFilters.minScore} or higher`}
                       </div>
                     </div>
                     
@@ -2256,9 +2301,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="hasPhone"
-                          checked={filters.hasPhone}
+                          checked={tempFilters.hasPhone}
                           onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
+                            setTempFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
                           }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
                         />
@@ -2271,9 +2316,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="hasEmail"
-                          checked={filters.hasEmail}
+                          checked={tempFilters.hasEmail}
                           onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
+                            setTempFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
                           }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
                         />
@@ -2286,9 +2331,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="hasWebsite"
-                          checked={filters.hasWebsite}
+                          checked={tempFilters.hasWebsite}
                           onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
+                            setTempFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
                           }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
                         />
@@ -2301,9 +2346,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                             id="hasSocials"
-                            checked={filters.hasSocials}
+                            checked={tempFilters.hasSocials}
                           onCheckedChange={(checked) => 
-                              setFilters(prev => ({ ...prev, hasSocials: checked as boolean }))
+                              setTempFilters(prev => ({ ...prev, hasSocials: checked as boolean }))
                             }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
@@ -2316,16 +2361,16 @@ export default function LeadGeneratorPage() {
                       </div>
 
                       {/* Social Media Sub-filters */}
-                      {filters.hasSocials && (
+                      {tempFilters.hasSocials && (
                         <div className="ml-6 p-3 bg-[#333]/30 rounded-lg border border-[#555]">
                           <Label className="text-xs font-medium text-gray-500 mb-2 block">Social Platform Filters</Label>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="socialInstagram"
-                                checked={filters.socialPlatforms.instagram}
+                                checked={tempFilters.socialPlatforms.instagram}
                                 onCheckedChange={(checked) => 
-                                  setFilters(prev => ({ 
+                                  setTempFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, instagram: checked as boolean }
                                   }))
@@ -2341,9 +2386,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                                 id="socialFacebook"
-                                checked={filters.socialPlatforms.facebook}
+                                checked={tempFilters.socialPlatforms.facebook}
                           onCheckedChange={(checked) => 
-                                  setFilters(prev => ({ 
+                                  setTempFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, facebook: checked as boolean }
                                   }))
@@ -2359,9 +2404,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                                 id="socialLinkedin"
-                                checked={filters.socialPlatforms.linkedin}
+                                checked={tempFilters.socialPlatforms.linkedin}
                           onCheckedChange={(checked) => 
-                                  setFilters(prev => ({ 
+                                  setTempFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, linkedin: checked as boolean }
                                   }))
@@ -2377,9 +2422,9 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                                 id="socialTwitter"
-                                checked={filters.socialPlatforms.twitter}
+                                checked={tempFilters.socialPlatforms.twitter}
                           onCheckedChange={(checked) => 
-                                  setFilters(prev => ({ 
+                                  setTempFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, twitter: checked as boolean }
                                   }))
@@ -2405,15 +2450,15 @@ export default function LeadGeneratorPage() {
                             <div key={nicheName || 'unknown'} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`niche-${nicheName || 'unknown'}`}
-                                checked={nicheName ? filters.selectedNicheFilter.includes(nicheName) : false}
+                                checked={nicheName ? tempFilters.selectedNicheFilter.includes(nicheName) : false}
                                 onCheckedChange={(checked) => {
                                   if (checked && nicheName) {
-                                    setFilters(prev => ({ 
+                                    setTempFilters(prev => ({ 
                                       ...prev, 
                                       selectedNicheFilter: [...prev.selectedNicheFilter, nicheName] 
                                     }))
                                   } else if (nicheName) {
-                                    setFilters(prev => ({ 
+                                    setTempFilters(prev => ({ 
                                       ...prev, 
                                       selectedNicheFilter: prev.selectedNicheFilter.filter(n => n !== nicheName) 
                                     }))
@@ -2429,6 +2474,25 @@ export default function LeadGeneratorPage() {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Apply and Cancel buttons */}
+                    <div className="flex justify-end space-x-2 pt-4 border-t border-[#555]">
+                      <Button
+                        onClick={cancelFilters}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={applyTempFilters}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Apply Filters
+                      </Button>
+                    </div>
                   </div>
                 )}
                 
