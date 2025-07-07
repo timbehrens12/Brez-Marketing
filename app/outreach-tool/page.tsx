@@ -118,21 +118,32 @@ const MAX_TOTAL_LEADS = 200 // Maximum total leads in outreach
 const WARNING_THRESHOLD = 0.8 // Show warning at 80% of limit
 
 export default function OutreachToolPage() {
+  console.log('🚀 OutreachToolPage component starting')
+  
   const { userId, getToken } = useAuth()
   const { agencySettings } = useAgency()
   const pathname = usePathname()
   
+  console.log('📊 OutreachToolPage initial state:', { 
+    userId, 
+    pathname, 
+    agencySettings: agencySettings ? 'loaded' : 'not loaded' 
+  })
+  
   // Unified Supabase client function
   const getSupabaseClient = async () => {
     try {
+      console.log('🔗 Getting Supabase client...')
       const token = await getToken({ template: 'supabase' })
       if (token) {
+        console.log('✅ Using authenticated client')
         return getAuthenticatedSupabaseClient(token)
       } else {
+        console.log('⚠️ Using standard client (no token)')
         return getStandardSupabaseClient()
       }
     } catch (error) {
-      console.error('Error getting Supabase client:', error)
+      console.error('❌ Error getting Supabase client:', error)
       return getStandardSupabaseClient()
     }
   }
@@ -159,6 +170,7 @@ export default function OutreachToolPage() {
   const [showScoreManager, setShowScoreManager] = useState(false)
   const [isRecalculatingScores, setIsRecalculatingScores] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
+  const [showLoadingOverride, setShowLoadingOverride] = useState(false)
   
   // AI Action Center state
   const [actionRecommendations, setActionRecommendations] = useState<ActionItem[]>([])
@@ -193,21 +205,74 @@ export default function OutreachToolPage() {
     minScore: 0
   })
 
+  const [mounted, setMounted] = useState(false)
+  
+  // Component mount tracking
+  useEffect(() => {
+    console.log('🔄 Component mounting...')
+    setMounted(true)
+    return () => {
+      console.log('🧹 Component unmounting...')
+    }
+  }, [])
+
+  // Show loading override button after 8 seconds
+  useEffect(() => {
+    if (isLoadingPage) {
+      const timer = setTimeout(() => {
+        setShowLoadingOverride(true)
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoadingPage])
+
+  const forceLoadPage = () => {
+    console.log('🔧 Force loading page override triggered')
+    setIsLoadingPage(false)
+    setIsLoading(false)
+    setShowLoadingOverride(false)
+  }
+
   // Show loading state
+  console.log('🎯 Checking loading state, isLoadingPage:', isLoadingPage)
+  console.log('🔧 Component status:', { 
+    mounted, 
+    isLoadingPage, 
+    showLoadingOverride, 
+    isLoading, 
+    userId: userId ? 'present' : 'not present',
+    agencySettings: agencySettings ? 'loaded' : 'not loaded'
+  })
+  
   if (isLoadingPage) {
+    console.log('🔄 Showing loading screen')
     const loadingConfig = getPageLoadingConfig(pathname)
     
     return (
-      <UnifiedLoading
-        variant="page"
-        size="lg"
-        message={loadingConfig.message}
-        subMessage={loadingConfig.subMessage}
-        agencyLogo={agencySettings.agency_logo_url}
-        agencyName={agencySettings.agency_name}
-      />
+      <div className="relative">
+        <UnifiedLoading
+          variant="page"
+          size="lg"
+          message={loadingConfig.message}
+          subMessage={loadingConfig.subMessage}
+          agencyLogo={agencySettings.agency_logo_url}
+          agencyName={agencySettings.agency_name}
+        />
+        {showLoadingOverride && (
+          <div className="absolute top-4 right-4 z-50">
+            <button
+              onClick={forceLoadPage}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Force Load Page
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
+
+  console.log('✅ Loading complete, showing main content')
 
   // Calculate simplified statistics
   const stats = {
@@ -228,37 +293,69 @@ export default function OutreachToolPage() {
   // Get unique niches from leads
   const availableNichesInLeads = [...new Set(campaignLeads.map(cl => cl.lead?.niche_name).filter(Boolean))]
 
+  // Safety timeout to prevent infinite loading
   useEffect(() => {
+    console.log('⏱️ Setting up safety timeout for loading')
+    const safetyTimeout = setTimeout(() => {
+      console.log('🚨 Safety timeout triggered - forcing loading to stop')
+      setIsLoadingPage(false)
+      setIsLoading(false)
+    }, 10000) // 10 second safety timeout
+
+    return () => {
+      console.log('🧹 Cleaning up safety timeout')
+      clearTimeout(safetyTimeout)
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log('🔄 Main useEffect triggered, userId:', userId)
     if (userId) {
-      console.log('Starting data load for user:', userId)
+      console.log('✅ Starting data load for user:', userId)
       loadInitialData()
     } else {
-      console.log('No userId found, stopping loading state')
+      console.log('❌ No userId found, stopping loading state')
       // If no userId, set loading to false immediately
       setIsLoadingPage(false)
     }
   }, [userId])
 
   const loadInitialData = async () => {
+    console.log('🔄 loadInitialData called, userId:', userId)
+    
     if (!userId) {
+      console.log('❌ No userId in loadInitialData, stopping loading')
       setIsLoadingPage(false)
       return
     }
     
     try {
+      console.log('📡 Starting to load campaigns and leads...')
       setIsLoadingPage(true)
       setIsLoading(true)
       
-      // Load campaigns and leads in parallel
-      await Promise.all([
+      // Load campaigns and leads in parallel with timeout
+      const loadPromises = Promise.all([
         loadCampaigns(),
         loadCampaignLeads()
       ])
       
+      // Add a timeout to the loading process
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Loading timeout')), 15000)
+      )
+      
+      await Promise.race([loadPromises, timeoutPromise])
+      console.log('✅ Initial data loading completed')
+      
     } catch (error) {
-      console.error('Error loading initial data:', error)
-      toast.error('Failed to load outreach data')
+      console.error('❌ Error loading initial data:', error)
+      toast.error('Failed to load outreach data: ' + (error as Error).message)
+      // Set empty arrays to ensure we have some state
+      setCampaigns([])
+      setCampaignLeads([])
     } finally {
+      console.log('🏁 loadInitialData finally block - stopping loading')
       setIsLoadingPage(false)
       setIsLoading(false)
     }
