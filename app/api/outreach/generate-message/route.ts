@@ -16,7 +16,7 @@ const supabase = createClient(
 const SECURITY_LIMITS = {
   MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
   MAX_MESSAGES_PER_DAY: 25,       // Max 25 messages per day per user
-  MAX_MESSAGES_PER_LEAD: 3,       // Max 3 messages per lead (prevent spam to same person)
+  MAX_MESSAGES_PER_PLATFORM_PER_LEAD: 1, // Max 1 message per platform per lead (email, linkedin, etc.)
   COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
 }
 
@@ -42,7 +42,7 @@ async function trackUsage(userId: string, leadId: string, messageType: string, c
 }
 
 // Check if user is within rate limits
-async function checkRateLimits(userId: string, leadId?: string) {
+async function checkRateLimits(userId: string, leadId?: string, messageType?: string) {
   try {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
@@ -119,26 +119,27 @@ async function checkRateLimits(userId: string, leadId?: string) {
       }
     }
 
-    // Check per-lead limit (prevent spam to same person)
-    if (leadId) {
-      const { data: leadUsage, error: leadError } = await supabase
+    // Check per-platform-per-lead limit (prevent multiple messages on same platform to same person)
+    if (leadId && messageType) {
+      const { data: platformUsage, error: platformError } = await supabase
         .from('outreach_message_usage')
         .select('*')
         .eq('user_id', userId)
         .eq('lead_id', leadId)
+        .eq('message_type', messageType)
         .gte('generated_at', oneDayAgo.toISOString())
 
-      if (leadError) {
-        console.error('❌ Error checking lead usage:', leadError)
+      if (platformError) {
+        console.error('❌ Error checking platform usage:', platformError)
         // If table doesn't exist or other DB error, allow operation (fail open)
         return { allowed: true, reason: null, message: null }
       }
 
-      if (leadUsage && leadUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_LEAD) {
+      if (platformUsage && platformUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_PLATFORM_PER_LEAD) {
         return {
           allowed: false,
-          reason: 'LEAD_LIMIT',
-          message: `You've already generated ${SECURITY_LIMITS.MAX_MESSAGES_PER_LEAD} messages for this lead today. This prevents spam and maintains professional outreach standards.`,
+          reason: 'PLATFORM_LIMIT',
+          message: `You've already generated a ${messageType} message for this lead today. Try a different platform (email, LinkedIn, Instagram, etc.) or wait until tomorrow.`,
           resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
         }
       }
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     // 🔒 SECURITY: Check rate limits before proceeding
     const leadId = lead.id || `${lead.business_name}_${lead.email || lead.phone || 'unknown'}`
-    const rateLimitCheck = await checkRateLimits(userId, leadId)
+    const rateLimitCheck = await checkRateLimits(userId, leadId, messageType)
     
     if (!rateLimitCheck.allowed) {
       console.log(`🚨 Rate limit exceeded for user ${userId}:`, rateLimitCheck.reason)

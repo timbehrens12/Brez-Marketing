@@ -418,17 +418,20 @@ export default function OutreachToolPage() {
     console.log('🔄 Component mounting...')
     setMounted(true)
     
-    // Clean up old message count tracking from localStorage (older than 2 days)
-    const cleanupOldMessageCounts = () => {
+    // Clean up old platform tracking from localStorage (older than 2 days)
+    const cleanupOldPlatformTracking = () => {
       const keys = Object.keys(localStorage)
-      const msgCountKeys = keys.filter(key => key.startsWith('msg_count_'))
+      const platforms = ['email', 'linkedin', 'instagram', 'facebook', 'phone', 'twitter', 'x']
+      const platformKeys = keys.filter(key => 
+        platforms.some(platform => key.startsWith(`${platform}_`))
+      )
       const twoDaysAgo = new Date()
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
       
-      msgCountKeys.forEach(key => {
+      platformKeys.forEach(key => {
         const parts = key.split('_')
         if (parts.length >= 3) {
-          const dateStr = parts.slice(2).join('_')
+          const dateStr = parts[parts.length - 1] // Last part should be the date
           const keyDate = new Date(dateStr)
           if (keyDate < twoDaysAgo) {
             localStorage.removeItem(key)
@@ -437,7 +440,7 @@ export default function OutreachToolPage() {
       })
     }
     
-    cleanupOldMessageCounts()
+    cleanupOldPlatformTracking()
     
     return () => {
       console.log('🧹 Component unmounting...')
@@ -810,8 +813,8 @@ export default function OutreachToolPage() {
             errorMessage = `⏰ Rate limit: You can generate up to 15 messages per hour. Try again in ${Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60))} minutes.`
           } else if (reason === 'DAILY_LIMIT') {
             errorMessage = `📅 Daily limit reached: You can generate up to 25 messages per day. Limit resets at midnight.`
-          } else if (reason === 'LEAD_LIMIT') {
-            errorMessage = `🚫 You've already generated 3 messages for "${lead.business_name}" today. This prevents spam and maintains professional standards. Try a different lead or wait until tomorrow.`
+          } else if (reason === 'PLATFORM_LIMIT') {
+            errorMessage = `🚫 You've already generated a ${method} message for "${lead.business_name}" today. Try a different platform (email, LinkedIn, Instagram, etc.) or wait until tomorrow.`
           } else if (reason === 'COOLDOWN') {
             errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
           } else {
@@ -840,11 +843,11 @@ export default function OutreachToolPage() {
       setMessageSubject(data.subject || '')
       setMessageType(method as any)
       
-      // Track message generation locally to help with rate limiting UI
+      // Track message generation locally to help with rate limiting UI (per platform)
       if (lead.business_name) {
         const today = new Date().toDateString()
-        const currentCount = parseInt(localStorage.getItem(`msg_count_${lead.business_name}_${today}`) || '0')
-        localStorage.setItem(`msg_count_${lead.business_name}_${today}`, (currentCount + 1).toString())
+        const platformKey = `${method}_${lead.business_name}_${today}`
+        localStorage.setItem(platformKey, '1') // Mark this platform as used for this lead today
       }
       
       if (data.ai_generated) {
@@ -1958,9 +1961,17 @@ export default function OutreachToolPage() {
                     <TableBody>
                       {filteredLeads.map((campaignLead) => {
                         const outreachMethods = campaignLead.lead ? getOutreachMethods(campaignLead.lead) : []
-                        // Check if this lead might hit rate limit (simplified check)
-                        const leadMightHitLimit = campaignLead.lead?.business_name && 
-                          localStorage.getItem(`msg_count_${campaignLead.lead.business_name}_${new Date().toDateString()}`)
+                        // Check if this lead has used all major platforms today
+                        const today = new Date().toDateString()
+                        const leadName = campaignLead.lead?.business_name
+                        const platformsUsed = leadName ? [
+                          localStorage.getItem(`email_${leadName}_${today}`),
+                          localStorage.getItem(`linkedin_${leadName}_${today}`),
+                          localStorage.getItem(`instagram_${leadName}_${today}`),
+                          localStorage.getItem(`facebook_${leadName}_${today}`),
+                          localStorage.getItem(`phone_${leadName}_${today}`)
+                        ].filter(Boolean).length : 0
+                        const leadMightHitLimit = platformsUsed >= 3 // Show warning if 3+ platforms used
                         
                             return (
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
@@ -2623,9 +2634,9 @@ export default function OutreachToolPage() {
                     <Zap className="h-5 w-5 text-gray-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-200 mb-1">AI-Powered Personalization</h3>
+                    <h3 className="font-semibold text-gray-200 mb-1">Multi-Channel AI Outreach</h3>
                     <p className="text-sm text-gray-400 leading-relaxed">
-                      Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
+                      Generate one personalized message per platform per lead. You can create an email, LinkedIn message, Instagram DM, Facebook message, and call script for each lead - giving you multiple touchpoints for maximum reach.
                     </p>
                   </div>
                 </div>
@@ -2654,6 +2665,11 @@ export default function OutreachToolPage() {
                   method.type === 'twitter' || method.type === 'x' ?
                     'Quick engagement - viral potential' :
                     'AI-powered personalization'
+                    
+                // Check if this platform was already used today
+                const today = new Date().toDateString()
+                const leadName = selectedCampaignLead.lead?.business_name
+                const platformUsedToday = Boolean(leadName && localStorage.getItem(`${method.type}_${leadName}_${today}`))
                   
                 return (
                 <Button
@@ -2666,8 +2682,12 @@ export default function OutreachToolPage() {
                       generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
                     }
                   }}
-                    disabled={messageUsage?.daily.remaining === 0}
-                    className="w-full bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white justify-start p-6 h-auto border border-[#444] hover:border-[#555] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    disabled={messageUsage?.daily.remaining === 0 || !!platformUsedToday}
+                    className={`w-full justify-start p-6 h-auto border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group ${
+                      platformUsedToday 
+                        ? 'bg-gradient-to-r from-gray-700/50 to-gray-800/50 border-gray-600/50 text-gray-400'
+                        : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
+                    }`}
                 >
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-4">
@@ -2676,13 +2696,24 @@ export default function OutreachToolPage() {
                           </div>
                         <div className="text-left">
                             <div className="font-semibold text-lg">{methodLabel}</div>
-                            <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
+                            <div className="text-sm mt-1">
+                              {platformUsedToday ? (
+                                <span className="text-gray-500">✓ Already used today</span>
+                              ) : (
+                                <span className="text-gray-400">{recommendation}</span>
+                              )}
+                            </div>
                         </div>
                       </div>
                         <div className="flex items-center gap-2">
                           {messageUsage?.daily.remaining === 0 && (
                             <div className="text-xs bg-gray-600/30 text-gray-300 px-2 py-1 rounded">
-                              Limit Reached
+                              Daily Limit Reached
+                            </div>
+                          )}
+                          {platformUsedToday && (
+                            <div className="text-xs bg-gray-600/30 text-gray-400 px-2 py-1 rounded">
+                              Used Today
                             </div>
                           )}
                           <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
