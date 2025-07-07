@@ -21,9 +21,9 @@ import {
   Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
   ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2,
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
-  Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
-  Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-  CheckSquare, Square, Lightbulb, Brain, ArrowRight, X
+      Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
+    Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
+    CheckSquare, Square, Lightbulb, Brain, ArrowRight, X, FileText, Building
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
@@ -773,7 +773,7 @@ export default function OutreachToolPage() {
           if (reason === 'HOURLY_LIMIT') {
             errorMessage = `⏰ Rate limit: You can generate up to 15 messages per hour. Try again in ${Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60))} minutes.`
           } else if (reason === 'DAILY_LIMIT') {
-            errorMessage = `📅 Daily limit reached: You can generate up to 50 messages per day. Limit resets at midnight.`
+            errorMessage = `📅 Daily limit reached: You can generate up to 25 messages per day. Limit resets at midnight.`
           } else if (reason === 'LEAD_LIMIT') {
             errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards.`
           } else if (reason === 'COOLDOWN') {
@@ -2485,180 +2485,373 @@ export default function OutreachToolPage() {
           </div>
         </div>
 
-        {/* Outreach Options Dialog */}
+        {/* Advanced Outreach Options Dialog */}
         <Dialog open={showOutreachOptions} onOpenChange={setShowOutreachOptions}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-lg">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-gray-400" />
-                Outreach Options
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                AI Outreach Studio
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
-                <div className="space-y-1">
-                  <span className="font-medium text-gray-300">{selectedCampaignLead?.lead?.business_name}</span>
-                {selectedCampaignLead?.lead?.owner_name && (
-                    <span className="block">Owner: {selectedCampaignLead.lead.owner_name}</span>
-                )}
+              <DialogDescription className="text-gray-300">
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
+                  </div>
+                  {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                  )}
                   {selectedCampaignLead?.lead?.niche_name && (
-                    <span className="block">Industry: {selectedCampaignLead.lead.niche_name}</span>
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Building className="h-4 w-4" />
+                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
+                    </div>
                   )}
                 </div>
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-3 py-4">
-              <div className="text-xs text-gray-400 mb-3 p-2 bg-[#2A2A2A] rounded">
-                📋 Generate personalized outreach content based on this lead's profile, industry, and social presence.
+            <div className="space-y-6 py-4">
+              {/* AI Usage Status Bar */}
+              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-blue-300">AI Generation Status</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Clock className="h-4 w-4" />
+                    <span>Resets daily at midnight</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">
+                        {messageUsage ? `${messageUsage.daily.used}` : '...'}
+                      </div>
+                      <div className="text-xs text-gray-400">Used Today</div>
+                    </div>
+                    <div className="text-gray-500">/</div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-400">
+                        {messageUsage ? `${messageUsage.daily.limit}` : '...'}
+                      </div>
+                      <div className="text-xs text-gray-400">Daily Limit</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-green-400">
+                      {messageUsage ? `${messageUsage.daily.remaining}` : '...'}
+                    </div>
+                    <div className="text-xs text-gray-400">Remaining</div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${messageUsage ? (messageUsage.daily.used / messageUsage.daily.limit) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Information Banner */}
+              <div className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-500/20 rounded-lg">
+                    <Zap className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-300 mb-1">AI-Powered Personalization</h3>
+                    <p className="text-sm text-amber-200/80 leading-relaxed">
+                      Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
+                    </p>
+                  </div>
+                </div>
               </div>
               
-              {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
-                const methodLabel = method.type === 'email' ? 'Email Outreach' :
-                  method.type === 'phone' ? 'Cold Call Script' :
-                  method.type === 'linkedin' ? 'LinkedIn Message' :
-                  method.type === 'instagram' ? 'Instagram DM' :
-                  method.type === 'facebook' ? 'Facebook Message' : method.label
-                
-                const recommendation = method.type === 'email' ? 
-                  'Direct & professional - highest response rates' : 
-                  method.type === 'phone' ? 
-                  'Immediate connection - qualify leads instantly' :
-                  method.type === 'linkedin' ?
-                  'Generate LinkedIn AI message' :
-                  method.type === 'instagram' ?
-                  'Generate Instagram AI message' :
-                  method.type === 'facebook' ?
-                  'Generate Facebook AI message' :
-                  method.type === 'twitter' || method.type === 'x' ?
-                  'Generate Twitter AI message' :
-                  'Generate AI message'
+              {/* Outreach Method Selection */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-white mb-4">Choose Your Outreach Method</h3>
+                {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
+                  const methodLabel = method.type === 'email' ? 'Email Outreach' :
+                    method.type === 'phone' ? 'Cold Call Script' :
+                    method.type === 'linkedin' ? 'LinkedIn Message' :
+                    method.type === 'instagram' ? 'Instagram DM' :
+                    method.type === 'facebook' ? 'Facebook Message' : method.label
                   
-                return (
-                <Button
-                  key={method.type}
-                  onClick={() => {
-                    setShowOutreachOptions(false)
-                    setShowMessageComposer(true)
-                    setMessageType(method.type as any)
-                    if (selectedCampaignLead.lead) {
-                      generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
-                    }
-                  }}
-                    className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white justify-start p-4 h-auto"
-                >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
-                        <method.icon className="h-5 w-5" />
-                        <div className="text-left">
-                          <div className="font-medium">{methodLabel}</div>
-                          <div className="text-xs text-gray-400 mt-1">{recommendation}</div>
+                  const recommendation = method.type === 'email' ? 
+                    'Direct & professional - highest response rates' : 
+                    method.type === 'phone' ? 
+                    'Immediate connection - qualify leads instantly' :
+                    method.type === 'linkedin' ?
+                    'Professional networking - builds trust' :
+                    method.type === 'instagram' ?
+                    'Visual engagement - casual approach' :
+                    method.type === 'facebook' ?
+                    'Social connection - personal touch' :
+                    method.type === 'twitter' || method.type === 'x' ?
+                    'Quick engagement - viral potential' :
+                    'AI-powered personalization'
+                    
+                  return (
+                  <Button
+                    key={method.type}
+                    onClick={() => {
+                      setShowOutreachOptions(false)
+                      setShowMessageComposer(true)
+                      setMessageType(method.type as any)
+                      if (selectedCampaignLead.lead) {
+                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                      }
+                    }}
+                    disabled={messageUsage?.daily.remaining === 0}
+                    className="w-full bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white justify-start p-6 h-auto border border-[#444] hover:border-[#555] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all duration-200">
+                            <method.icon className="h-6 w-6" />
+                          </div>
+                          <div className="text-left">
+                            <div className="font-semibold text-lg">{methodLabel}</div>
+                            <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {messageUsage?.daily.remaining === 0 && (
+                            <div className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
+                              Limit Reached
+                            </div>
+                          )}
+                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4" />
-                    </div>
-                </Button>
-                )
-              })}
+                  </Button>
+                  )
+                })}
+              </div>
           </div>
           </DialogContent>
         </Dialog>
 
-        {/* Enhanced Message Composer Dialog */}
+        {/* Premium Message Composer Dialog */}
         <Dialog open={showMessageComposer} onOpenChange={setShowMessageComposer}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                {messageType === 'email' && <Mail className="h-5 w-5 text-gray-400" />}
-                {messageType === 'phone' && <Phone className="h-5 w-5 text-gray-400" />}
-                {messageType === 'linkedin' && <Linkedin className="h-5 w-5 text-gray-400" />}
-                {messageType === 'instagram' && <Instagram className="h-5 w-5 text-gray-400" />}
-                {messageType === 'facebook' && <Facebook className="h-5 w-5 text-gray-400" />}
-                {(messageType === 'twitter' || messageType === 'x') && (
-                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                )}
-                {messageType === 'phone' ? 'Cold Call Script' : 
-                 messageType === 'email' ? 'Email Outreach' :
-                 messageType === 'linkedin' ? 'LinkedIn Message' :
-                 messageType === 'instagram' ? 'Instagram DM' :
-                 messageType === 'facebook' ? 'Facebook Message' :
-                 (messageType === 'twitter' || messageType === 'x') ? 'X/Twitter DM' :
-                 'Outreach Message'}
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                  {messageType === 'email' && <Mail className="h-6 w-6 text-white" />}
+                  {messageType === 'phone' && <Phone className="h-6 w-6 text-white" />}
+                  {messageType === 'linkedin' && <Linkedin className="h-6 w-6 text-white" />}
+                  {messageType === 'instagram' && <Instagram className="h-6 w-6 text-white" />}
+                  {messageType === 'facebook' && <Facebook className="h-6 w-6 text-white" />}
+                  {(messageType === 'twitter' || messageType === 'x') && (
+                    <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  )}
+                </div>
+                {messageType === 'phone' ? 'AI Cold Call Script' : 
+                 messageType === 'email' ? 'AI Email Outreach' :
+                 messageType === 'linkedin' ? 'AI LinkedIn Message' :
+                 messageType === 'instagram' ? 'AI Instagram DM' :
+                 messageType === 'facebook' ? 'AI Facebook Message' :
+                 (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
+                 'AI Outreach Message'}
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
-                {selectedCampaignLead?.lead?.business_name} - {selectedCampaignLead?.lead?.owner_name || 'No owner info'}
+              <DialogDescription className="text-gray-300">
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="font-semibold text-white">{selectedCampaignLead?.lead?.business_name}</span>
+                  </div>
+                  {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>{selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                  )}
+                </div>
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-6">
+            <div className="py-6 space-y-6">
+              {/* AI Generation Status */}
+              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-blue-300">AI Generation Status</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-gray-400">
+                      {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
+                    </span>
+                    <span className="text-green-400 font-medium">
+                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {messageType === 'phone' ? (
-                // Call Script Display
-              <div className="space-y-4">
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-300 mb-4">Call Script</h3>
-                    <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm">
+                // Enhanced Call Script Display
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-8 shadow-xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg">
+                        <Phone className="h-6 w-6 text-green-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white">AI Cold Call Script</h3>
+                    </div>
+                    <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm bg-[#1A1A1A] rounded-lg p-6 border border-[#333]">
                       {isGeneratingMessage ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                          Generating personalized call script...
-                  </div>
+                        <div className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-spin border-t-blue-500"></div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Sparkles className="h-6 w-6 text-blue-400" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-white mb-1">AI is crafting your call script...</div>
+                              <div className="text-sm text-gray-400">Analyzing lead profile and industry insights</div>
+                            </div>
+                          </div>
+                        </div>
                       ) : generatedMessage ? (
-                        generatedMessage
+                        <div className="space-y-4">
+                          <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-5 w-5 text-green-400" />
+                              <span className="text-green-400 font-medium">Script Generated Successfully</span>
+                            </div>
+                            <p className="text-sm text-gray-400">AI-personalized for maximum impact and conversion</p>
+                          </div>
+                          <div className="text-gray-300 leading-relaxed">
+                            {generatedMessage}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <div className="text-gray-400">Call script will appear here...</div>
-                  </div>
+                        <div className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 bg-gradient-to-r from-gray-600/20 to-gray-700/20 rounded-full">
+                              <FileText className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-medium text-gray-300 mb-1">Your AI call script will appear here</div>
+                              <div className="text-sm text-gray-500">Personalized for this specific lead</div>
+                            </div>
+                          </div>
+                        </div>
                       )}
-                  </div>
+                    </div>
                   </div>
                   {generatedMessage && (
-                  <Button
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedMessage)
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedMessage)
                           setJustCopied(true)
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Call script copied! Ready to make your call.')
-                      }}
-                  className="w-full bg-[#444] hover:bg-[#555] text-white"
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      {justCopied ? 'Copied!' : 'Copy Script'}
-                  </Button>
-                )}
-              </div>
+                        }}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      >
+                        <Copy className="h-5 w-5 mr-2" />
+                        {justCopied ? 'Copied!' : 'Copy Script'}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
+                          setShowMessageComposer(false)
+                          toast.success('Lead marked as contacted!')
+                        }}
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      >
+                        <CheckCircle className="h-5 w-5 mr-2" />
+                        Mark as Contacted
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ) : (
-                // Message Display
-              <div className="space-y-4">
+                // Enhanced Message Display
+                <div className="space-y-6">
                   {messageType === 'email' && messageSubject && (
-                  <div>
-                      <Label className="text-gray-400 mb-2">Subject Line</Label>
-                      <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3">
-                        <p className="text-gray-300">{messageSubject}</p>
+                    <div className="space-y-3">
+                      <Label className="text-gray-300 font-medium text-lg">Subject Line</Label>
+                      <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg">
+                            <Mail className="h-5 w-5 text-blue-400" />
+                          </div>
+                          <p className="text-gray-300 font-medium">{messageSubject}</p>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                <div>
-                    <Label className="text-gray-400 mb-2">Message</Label>
-                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 min-h-[200px]">
+                  <div className="space-y-3">
+                    <Label className="text-gray-300 font-medium text-lg">AI Generated Message</Label>
+                    <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 min-h-[300px] shadow-xl">
                       {isGeneratingMessage ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                          Generating personalized message...
+                        <div className="text-center py-16">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-spin border-t-blue-500"></div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Sparkles className="h-6 w-6 text-blue-400" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold text-white mb-1">AI is crafting your message...</div>
+                              <div className="text-sm text-gray-400">Analyzing lead profile and personalizing content</div>
+                            </div>
+                          </div>
                         </div>
                       ) : generatedMessage ? (
-                        <p className="text-gray-300 whitespace-pre-wrap">{generatedMessage}</p>
+                        <div className="space-y-4">
+                          <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-5 w-5 text-green-400" />
+                              <span className="text-green-400 font-medium">Message Generated Successfully</span>
+                            </div>
+                            <p className="text-sm text-gray-400">AI-personalized for maximum engagement and response rate</p>
+                          </div>
+                          <div className="text-gray-300 whitespace-pre-wrap leading-relaxed bg-[#1A1A1A] rounded-lg p-4 border border-[#333]">
+                            {generatedMessage}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <div className="text-gray-400">Message will appear here...</div>
+                        <div className="text-center py-16">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="p-4 bg-gradient-to-r from-gray-600/20 to-gray-700/20 rounded-full">
+                              <MessageSquare className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-medium text-gray-300 mb-1">Your AI message will appear here</div>
+                              <div className="text-sm text-gray-500">Personalized for this specific lead and platform</div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {generatedMessage && (
-                    <div className="flex gap-3">
-                    <Button
+                    <div className="flex gap-4">
+                      <Button
                         onClick={() => {
                           const fullMessage = messageType === 'email' && messageSubject 
                             ? `Subject: ${messageSubject}\n\n${generatedMessage}`
@@ -2669,25 +2862,25 @@ export default function OutreachToolPage() {
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Message copied! Ready to send your outreach.')
                         }}
-                        className="flex-1 bg-[#444] hover:bg-[#555] text-white"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    {justCopied ? 'Copied!' : 'Copy Message'}
-                  </Button>
-                  <Button
+                        className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      >
+                        <Copy className="h-5 w-5 mr-2" />
+                        {justCopied ? 'Copied!' : 'Copy Message'}
+                      </Button>
+                      <Button
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      >
+                        <Send className="h-5 w-5 mr-2" />
                         Mark as Sent
-                    </Button>
+                      </Button>
                     </div>
                   )}
-                  </div>
+                </div>
               )}
             </div>
           </DialogContent>

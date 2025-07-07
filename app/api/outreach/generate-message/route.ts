@@ -15,7 +15,7 @@ const supabase = createClient(
 // Security Configuration
 const SECURITY_LIMITS = {
   MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
-  MAX_MESSAGES_PER_DAY: 50,       // Max 50 messages per day per user
+  MAX_MESSAGES_PER_DAY: 25,       // Max 25 messages per day per user
   MAX_MESSAGES_PER_LEAD: 3,       // Max 3 messages per lead (prevent spam to same person)
   COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
 }
