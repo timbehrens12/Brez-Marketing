@@ -905,7 +905,7 @@ export default function OutreachToolPage() {
     }
   }
 
-  const updateCampaignLeadStatus = async (campaignLeadId: string, newStatus: string) => {
+  const updateCampaignLeadStatus = async (campaignLeadId: string, newStatus: string, outreachMethod?: string) => {
     // Show confirmation dialog for rejected status
     if (newStatus === 'rejected') {
       const confirmed = window.confirm(
@@ -932,29 +932,39 @@ export default function OutreachToolPage() {
         toast.success('Lead marked as rejected and removed from outreach!')
       } else {
         // Regular status update
-      const { error } = await supabase
-        .from('outreach_campaign_leads')
-        .update({ 
+        const updateData: any = { 
           status: newStatus,
-          last_contacted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
-        .eq('id', campaignLeadId)
+        }
+        
+        // Only update last_contacted_at and outreach_method when marking as contacted
+        if (newStatus === 'contacted') {
+          updateData.last_contacted_at = new Date().toISOString()
+          if (outreachMethod) {
+            updateData.outreach_method = outreachMethod
+          }
+        }
+        
+        const { error } = await supabase
+          .from('outreach_campaign_leads')
+          .update(updateData)
+          .eq('id', campaignLeadId)
 
-      if (error) throw error
-      
+        if (error) throw error
+        
         // Update state locally instead of reloading to prevent page jump
         setCampaignLeads(prev => prev.map(cl => 
           cl.id === campaignLeadId 
             ? { 
                 ...cl, 
                 status: newStatus as any, 
-                last_contacted_at: new Date().toISOString(),
+                last_contacted_at: newStatus === 'contacted' ? new Date().toISOString() : cl.last_contacted_at,
+                outreach_method: (newStatus === 'contacted' && outreachMethod) ? outreachMethod as any : cl.outreach_method,
                 updated_at: new Date().toISOString()
               }
             : cl
         ))
-      toast.success('Status updated successfully!')
+        toast.success('Status updated successfully!')
       }
     } catch (error) {
       console.error('Error updating status:', error)
@@ -1275,6 +1285,54 @@ export default function OutreachToolPage() {
 
   const getFilteredActions = () => {
     return actionRecommendations.filter(action => !completedActions.has(action.id))
+  }
+
+  // Format relative time with hours/minutes for recent contacts
+  const formatRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const contactDate = new Date(dateString)
+    const diffMs = now.getTime() - contactDate.getTime()
+    
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffDays >= 1) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    } else if (diffHours >= 1) {
+      return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`
+    } else if (diffMinutes >= 1) {
+      return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`
+    } else {
+      return 'Just now'
+    }
+  }
+
+  // Get platform icon for outreach method
+  const getOutreachMethodIcon = (method?: string) => {
+    if (!method) return null
+    
+    switch (method) {
+      case 'email':
+        return <Mail className="h-3 w-3 text-blue-400" />
+      case 'phone':
+        return <Phone className="h-3 w-3 text-green-400" />
+      case 'linkedin':
+        return <Linkedin className="h-3 w-3 text-blue-600" />
+      case 'instagram':
+        return <Instagram className="h-3 w-3 text-pink-500" />
+      case 'facebook':
+        return <Facebook className="h-3 w-3 text-blue-500" />
+      case 'twitter':
+      case 'x':
+        return (
+          <svg className="h-3 w-3 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        )
+      default:
+        return <MessageCircle className="h-3 w-3 text-gray-400" />
+    }
   }
 
   const recalculateAllScores = async () => {
@@ -2171,11 +2229,21 @@ export default function OutreachToolPage() {
                           <TableCell>
                               <div className="text-sm text-gray-400">
                                 {campaignLead.last_contacted_at ? (
-                                  <div>
-                                    <div>{new Date(campaignLead.last_contacted_at).toLocaleDateString()}</div>
-                                    <div className="text-xs text-gray-500">
-                                      {Math.floor((Date.now() - new Date(campaignLead.last_contacted_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                  <div className="space-y-1">
+                                    <div className="text-xs text-gray-300">
+                                      {new Date(campaignLead.last_contacted_at).toLocaleDateString()}
                                     </div>
+                                    <div className="text-xs text-gray-500">
+                                      {formatRelativeTime(campaignLead.last_contacted_at)}
+                                    </div>
+                                    {campaignLead.outreach_method && (
+                                      <div className="flex items-center gap-1">
+                                        {getOutreachMethodIcon(campaignLead.outreach_method)}
+                                        <span className="text-xs text-gray-500 capitalize">
+                                          {campaignLead.outreach_method === 'x' ? 'Twitter' : campaignLead.outreach_method}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <span className="text-gray-500">Never</span>
@@ -2866,7 +2934,7 @@ export default function OutreachToolPage() {
                   </Button>
                       <Button
                         onClick={() => {
-                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
+                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
@@ -2962,7 +3030,7 @@ export default function OutreachToolPage() {
                   </Button>
                   <Button
                         onClick={() => {
-                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
+                          updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
@@ -3737,7 +3805,7 @@ export default function OutreachToolPage() {
                       onClick={() => {
                         const currentLead = pendingOutreachQueue[currentQueueIndex]
                         if (currentLead) {
-                          updateCampaignLeadStatus(currentLead.id, 'contacted')
+                          updateCampaignLeadStatus(currentLead.id, 'contacted', messageType)
                           if (currentQueueIndex < pendingOutreachQueue.length - 1) {
                             setCurrentQueueIndex(currentQueueIndex + 1)
                             setGeneratedMessage('')
