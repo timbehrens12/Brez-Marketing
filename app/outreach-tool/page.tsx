@@ -21,8 +21,8 @@ import {
   Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
   ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2,
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
-      Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
-    Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
+  Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
+  Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
     CheckSquare, Square, Lightbulb, Brain, ArrowRight, X, FileText, Building
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -1549,7 +1549,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'pending'
-                          ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                          ? 'bg-gray-500 text-white border-gray-500 hover:bg-gray-600'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1562,7 +1562,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'contacted'
-                          ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
+                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1575,7 +1575,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'responded'
-                          ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                          ? 'bg-gray-700 text-white border-gray-700 hover:bg-gray-800'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1588,7 +1588,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'qualified'
-                          ? 'bg-yellow-600 text-white border-yellow-600 hover:bg-yellow-700'
+                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1601,7 +1601,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'signed'
-                          ? 'bg-green-700 text-white border-green-700 hover:bg-green-800'
+                          ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-900'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -1639,7 +1639,7 @@ export default function OutreachToolPage() {
                             size="sm"
                             className={`h-8 text-xs ${
                               tempFilters.minScore === score
-                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
                           >
@@ -1829,7 +1829,7 @@ export default function OutreachToolPage() {
                       <Button
                         onClick={applyTempFilters}
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-gray-600 hover:bg-gray-700 text-white"
                       >
                         Apply Filters
                       </Button>
@@ -2490,7 +2490,7 @@ export default function OutreachToolPage() {
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 AI Outreach Studio
@@ -2498,15 +2498,15 @@ export default function OutreachToolPage() {
               <DialogDescription className="text-gray-300">
                 <div className="space-y-2 mt-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                     <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
                   </div>
-                  {selectedCampaignLead?.lead?.owner_name && (
+                {selectedCampaignLead?.lead?.owner_name && (
                     <div className="flex items-center gap-2 text-gray-400">
                       <User className="h-4 w-4" />
                       <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
                     </div>
-                  )}
+                )}
                   {selectedCampaignLead?.lead?.niche_name && (
                     <div className="flex items-center gap-2 text-gray-400">
                       <Building className="h-4 w-4" />
@@ -2519,11 +2519,11 @@ export default function OutreachToolPage() {
             
             <div className="space-y-6 py-4">
               {/* AI Usage Status Bar */}
-              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium text-blue-300">AI Generation Status</span>
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-gray-200">AI Generation Status</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock className="h-4 w-4" />
@@ -2540,14 +2540,14 @@ export default function OutreachToolPage() {
                     </div>
                     <div className="text-gray-500">/</div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-400">
+                      <div className="text-2xl font-bold text-gray-300">
                         {messageUsage ? `${messageUsage.daily.limit}` : '...'}
                       </div>
                       <div className="text-xs text-gray-400">Daily Limit</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-semibold text-green-400">
+                    <div className="text-lg font-semibold text-gray-200">
                       {messageUsage ? `${messageUsage.daily.remaining}` : '...'}
                     </div>
                     <div className="text-xs text-gray-400">Remaining</div>
@@ -2556,22 +2556,22 @@ export default function OutreachToolPage() {
                 <div className="mt-3">
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${messageUsage ? (messageUsage.daily.used / messageUsage.daily.limit) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
               </div>
-
+              
               {/* AI Information Banner */}
-              <div className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/30 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-500/20 rounded-lg">
-                    <Zap className="h-5 w-5 text-amber-400" />
+                  <div className="p-2 bg-gray-600/30 rounded-lg">
+                    <Zap className="h-5 w-5 text-gray-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-300 mb-1">AI-Powered Personalization</h3>
-                    <p className="text-sm text-amber-200/80 leading-relaxed">
+                    <h3 className="font-semibold text-gray-200 mb-1">AI-Powered Personalization</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
                       Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
                     </p>
                   </div>
@@ -2581,63 +2581,63 @@ export default function OutreachToolPage() {
               {/* Outreach Method Selection */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-white mb-4">Choose Your Outreach Method</h3>
-                {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
-                  const methodLabel = method.type === 'email' ? 'Email Outreach' :
-                    method.type === 'phone' ? 'Cold Call Script' :
-                    method.type === 'linkedin' ? 'LinkedIn Message' :
-                    method.type === 'instagram' ? 'Instagram DM' :
-                    method.type === 'facebook' ? 'Facebook Message' : method.label
-                  
-                  const recommendation = method.type === 'email' ? 
-                    'Direct & professional - highest response rates' : 
-                    method.type === 'phone' ? 
-                    'Immediate connection - qualify leads instantly' :
-                    method.type === 'linkedin' ?
+              {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
+                const methodLabel = method.type === 'email' ? 'Email Outreach' :
+                  method.type === 'phone' ? 'Cold Call Script' :
+                  method.type === 'linkedin' ? 'LinkedIn Message' :
+                  method.type === 'instagram' ? 'Instagram DM' :
+                  method.type === 'facebook' ? 'Facebook Message' : method.label
+                
+                const recommendation = method.type === 'email' ? 
+                  'Direct & professional - highest response rates' : 
+                  method.type === 'phone' ? 
+                  'Immediate connection - qualify leads instantly' :
+                  method.type === 'linkedin' ?
                     'Professional networking - builds trust' :
-                    method.type === 'instagram' ?
+                  method.type === 'instagram' ?
                     'Visual engagement - casual approach' :
-                    method.type === 'facebook' ?
+                  method.type === 'facebook' ?
                     'Social connection - personal touch' :
-                    method.type === 'twitter' || method.type === 'x' ?
+                  method.type === 'twitter' || method.type === 'x' ?
                     'Quick engagement - viral potential' :
                     'AI-powered personalization'
-                    
-                  return (
-                  <Button
-                    key={method.type}
-                    onClick={() => {
-                      setShowOutreachOptions(false)
-                      setShowMessageComposer(true)
-                      setMessageType(method.type as any)
-                      if (selectedCampaignLead.lead) {
-                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
-                      }
-                    }}
+                  
+                return (
+                <Button
+                  key={method.type}
+                  onClick={() => {
+                    setShowOutreachOptions(false)
+                    setShowMessageComposer(true)
+                    setMessageType(method.type as any)
+                    if (selectedCampaignLead.lead) {
+                      generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                    }
+                  }}
                     disabled={messageUsage?.daily.remaining === 0}
                     className="w-full bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white justify-start p-6 h-auto border border-[#444] hover:border-[#555] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                      <div className="flex items-center justify-between w-full">
+                >
+                    <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all duration-200">
+                          <div className="p-2 bg-gradient-to-r from-gray-600/30 to-gray-700/30 rounded-lg group-hover:from-gray-600/40 group-hover:to-gray-700/40 transition-all duration-200">
                             <method.icon className="h-6 w-6" />
                           </div>
-                          <div className="text-left">
+                        <div className="text-left">
                             <div className="font-semibold text-lg">{methodLabel}</div>
                             <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
-                          </div>
                         </div>
+                      </div>
                         <div className="flex items-center gap-2">
                           {messageUsage?.daily.remaining === 0 && (
-                            <div className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
+                            <div className="text-xs bg-gray-600/30 text-gray-300 px-2 py-1 rounded">
                               Limit Reached
                             </div>
                           )}
                           <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
                         </div>
-                      </div>
-                  </Button>
-                  )
-                })}
+                    </div>
+                </Button>
+                )
+              })}
               </div>
           </div>
           </DialogContent>
@@ -2648,17 +2648,17 @@ export default function OutreachToolPage() {
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
                   {messageType === 'email' && <Mail className="h-6 w-6 text-white" />}
                   {messageType === 'phone' && <Phone className="h-6 w-6 text-white" />}
                   {messageType === 'linkedin' && <Linkedin className="h-6 w-6 text-white" />}
                   {messageType === 'instagram' && <Instagram className="h-6 w-6 text-white" />}
                   {messageType === 'facebook' && <Facebook className="h-6 w-6 text-white" />}
-                  {(messageType === 'twitter' || messageType === 'x') && (
+                {(messageType === 'twitter' || messageType === 'x') && (
                     <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                  )}
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                )}
                 </div>
                 {messageType === 'phone' ? 'AI Cold Call Script' : 
                  messageType === 'email' ? 'AI Email Outreach' :
@@ -2671,7 +2671,7 @@ export default function OutreachToolPage() {
               <DialogDescription className="text-gray-300">
                 <div className="flex items-center gap-4 mt-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                     <span className="font-semibold text-white">{selectedCampaignLead?.lead?.business_name}</span>
                   </div>
                   {selectedCampaignLead?.lead?.owner_name && (
@@ -2686,17 +2686,17 @@ export default function OutreachToolPage() {
             
             <div className="py-6 space-y-6">
               {/* AI Generation Status */}
-              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium text-blue-300">AI Generation Status</span>
+                    <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                    <span className="font-medium text-gray-200">AI Generation Status</span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-400">
                       {messageUsage ? `${messageUsage.daily.used}/${messageUsage.daily.limit}` : '...'}
                     </span>
-                    <span className="text-green-400 font-medium">
+                    <span className="text-gray-200 font-medium">
                       {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
                     </span>
                   </div>
@@ -2718,9 +2718,9 @@ export default function OutreachToolPage() {
                         <div className="text-center py-12">
                           <div className="flex flex-col items-center gap-4">
                             <div className="relative">
-                              <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-spin border-t-blue-500"></div>
+                              <div className="w-16 h-16 border-4 border-gray-600/30 rounded-full animate-spin border-t-gray-400"></div>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Sparkles className="h-6 w-6 text-blue-400" />
+                                <Sparkles className="h-6 w-6 text-gray-300" />
                               </div>
                             </div>
                             <div className="text-center">
@@ -2728,13 +2728,13 @@ export default function OutreachToolPage() {
                               <div className="text-sm text-gray-400">Analyzing lead profile and industry insights</div>
                             </div>
                           </div>
-                        </div>
+                  </div>
                       ) : generatedMessage ? (
                         <div className="space-y-4">
-                          <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
+                          <div className="bg-gradient-to-r from-gray-600/10 to-gray-700/10 border border-gray-500/30 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="h-5 w-5 text-green-400" />
-                              <span className="text-green-400 font-medium">Script Generated Successfully</span>
+                              <CheckCircle className="h-5 w-5 text-gray-300" />
+                              <span className="text-gray-300 font-medium">Script Generated Successfully</span>
                             </div>
                             <p className="text-sm text-gray-400">AI-personalized for maximum impact and conversion</p>
                           </div>
@@ -2753,38 +2753,38 @@ export default function OutreachToolPage() {
                               <div className="text-sm text-gray-500">Personalized for this specific lead</div>
                             </div>
                           </div>
-                        </div>
+                  </div>
                       )}
-                    </div>
+                  </div>
                   </div>
                   {generatedMessage && (
                     <div className="flex gap-4">
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(generatedMessage)
+                  <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedMessage)
                           setJustCopied(true)
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Call script copied! Ready to make your call.')
-                        }}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                      >
+                      }}
+                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                    >
                         <Copy className="h-5 w-5 mr-2" />
-                        {justCopied ? 'Copied!' : 'Copy Script'}
-                      </Button>
+                      {justCopied ? 'Copied!' : 'Copy Script'}
+                  </Button>
                       <Button
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                        className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                       >
                         <CheckCircle className="h-5 w-5 mr-2" />
                         Mark as Contacted
                       </Button>
                     </div>
-                  )}
-                </div>
+                )}
+              </div>
               ) : (
                 // Enhanced Message Display
                 <div className="space-y-6">
@@ -2809,9 +2809,9 @@ export default function OutreachToolPage() {
                         <div className="text-center py-16">
                           <div className="flex flex-col items-center gap-4">
                             <div className="relative">
-                              <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-spin border-t-blue-500"></div>
+                              <div className="w-16 h-16 border-4 border-gray-600/30 rounded-full animate-spin border-t-gray-400"></div>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Sparkles className="h-6 w-6 text-blue-400" />
+                                <Sparkles className="h-6 w-6 text-gray-300" />
                               </div>
                             </div>
                             <div className="text-center">
@@ -2822,10 +2822,10 @@ export default function OutreachToolPage() {
                         </div>
                       ) : generatedMessage ? (
                         <div className="space-y-4">
-                          <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-4">
+                          <div className="bg-gradient-to-r from-gray-600/10 to-gray-700/10 border border-gray-500/30 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="h-5 w-5 text-green-400" />
-                              <span className="text-green-400 font-medium">Message Generated Successfully</span>
+                              <CheckCircle className="h-5 w-5 text-gray-300" />
+                              <span className="text-gray-300 font-medium">Message Generated Successfully</span>
                             </div>
                             <p className="text-sm text-gray-400">AI-personalized for maximum engagement and response rate</p>
                           </div>
@@ -2851,7 +2851,7 @@ export default function OutreachToolPage() {
 
                   {generatedMessage && (
                     <div className="flex gap-4">
-                      <Button
+                    <Button
                         onClick={() => {
                           const fullMessage = messageType === 'email' && messageSubject 
                             ? `Subject: ${messageSubject}\n\n${generatedMessage}`
@@ -2862,25 +2862,25 @@ export default function OutreachToolPage() {
                           setTimeout(() => setJustCopied(false), 2000)
                           toast.success('✅ Message copied! Ready to send your outreach.')
                         }}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                      >
+                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                  >
                         <Copy className="h-5 w-5 mr-2" />
-                        {justCopied ? 'Copied!' : 'Copy Message'}
-                      </Button>
-                      <Button
+                    {justCopied ? 'Copied!' : 'Copy Message'}
+                  </Button>
+                  <Button
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                      >
+                        className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                    >
                         <Send className="h-5 w-5 mr-2" />
                         Mark as Sent
-                      </Button>
+                    </Button>
                     </div>
                   )}
-                </div>
+                  </div>
               )}
             </div>
           </DialogContent>
@@ -2915,7 +2915,7 @@ export default function OutreachToolPage() {
                     </div>
                     <div className="w-full bg-[#333] rounded-full h-2">
                       <div 
-                        className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
                         style={{ width: `${selectedScoreBreakdown.scoreData.total}%` }}
                       ></div>
                     </div>
@@ -2943,7 +2943,7 @@ export default function OutreachToolPage() {
                         
                         <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
                           <div 
-                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            className="bg-gray-500 h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${(data.score / data.max) * 100}%` }}
                           ></div>
                         </div>
@@ -2953,13 +2953,13 @@ export default function OutreachToolPage() {
                             <div key={index} className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${
-                                  item.has ? 'bg-green-500' : 'bg-gray-500'
+                                  item.has ? 'bg-gray-300' : 'bg-gray-600'
                                 }`}></div>
                                 <span className={item.has ? 'text-gray-300' : 'text-gray-500'}>
                                   {item.name}
                                 </span>
                               </div>
-                              <span className={`font-mono ${item.has ? 'text-green-400' : 'text-gray-500'}`}>
+                              <span className={`font-mono ${item.has ? 'text-gray-200' : 'text-gray-500'}`}>
                                 {item.value}/{item.max}
                               </span>
                             </div>
@@ -2972,12 +2972,12 @@ export default function OutreachToolPage() {
                   {/* Improvement Suggestions */}
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
                     <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                      <TrendingUp className="h-4 w-4 text-gray-400" />
                       Improvement Suggestions
                     </h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       {selectedScoreBreakdown.scoreData.total < 50 && (
-                        <div className="text-yellow-400">
+                        <div className="text-gray-300">
                           • This lead needs significant data enrichment before outreach
                         </div>
                       )}
@@ -2997,7 +2997,7 @@ export default function OutreachToolPage() {
                         <div>• Research social media presence for personalization (+9-19 points)</div>
                       )}
                       {selectedScoreBreakdown.scoreData.total >= 80 && (
-                        <div className="text-green-400">
+                        <div className="text-gray-200">
                           • This is a high-quality lead ready for immediate outreach!
                         </div>
                       )}
@@ -3028,7 +3028,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <Award className="h-6 w-6 text-yellow-400" />
+                      <Award className="h-6 w-6 text-gray-300" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80).length}
@@ -3042,7 +3042,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="h-6 w-6 text-blue-400" />
+                      <TrendingUp className="h-6 w-6 text-gray-400" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 80).length}
@@ -3056,7 +3056,7 @@ export default function OutreachToolPage() {
                 <Card className="bg-[#2A2A2A] border-[#444]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <TrendingDown className="h-6 w-6 text-red-400" />
+                      <TrendingDown className="h-6 w-6 text-gray-500" />
                       <div>
                         <div className="text-lg font-semibold text-white">
                           {campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length}
@@ -3124,7 +3124,7 @@ export default function OutreachToolPage() {
                 <Button
                   onClick={recalculateAllScores}
                   disabled={isRecalculatingScores}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-gray-600 hover:bg-gray-700 text-white"
                 >
                   {isRecalculatingScores ? (
                     <>
@@ -3176,11 +3176,11 @@ export default function OutreachToolPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">Score Distribution</h3>
                 <div className="space-y-3">
                   {[
-                    { range: '90-100', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 90).length, color: 'bg-green-500' },
-                    { range: '80-89', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80 && calculateLeadScore(cl.lead).total < 90).length, color: 'bg-blue-500' },
-                    { range: '70-79', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 70 && calculateLeadScore(cl.lead).total < 80).length, color: 'bg-yellow-500' },
-                    { range: '60-69', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 70).length, color: 'bg-orange-500' },
-                    { range: '0-59', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length, color: 'bg-red-500' }
+                    { range: '90-100', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 90).length, color: 'bg-gray-300' },
+                    { range: '80-89', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 80 && calculateLeadScore(cl.lead).total < 90).length, color: 'bg-gray-400' },
+                    { range: '70-79', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 70 && calculateLeadScore(cl.lead).total < 80).length, color: 'bg-gray-500' },
+                    { range: '60-69', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total >= 60 && calculateLeadScore(cl.lead).total < 70).length, color: 'bg-gray-600' },
+                    { range: '0-59', count: campaignLeads.filter(cl => cl.lead && calculateLeadScore(cl.lead).total < 60).length, color: 'bg-gray-700' }
                   ].map((bucket) => (
                     <div key={bucket.range} className="flex items-center gap-3">
                       <div className="w-16 text-sm text-gray-300">{bucket.range}</div>
