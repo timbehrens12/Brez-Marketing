@@ -230,18 +230,20 @@ export default function OutreachToolPage() {
 
   useEffect(() => {
     if (userId) {
+      console.log('Starting data load for user:', userId)
       loadInitialData()
     } else {
-      // If no userId, set loading to false after short delay
-      const timer = setTimeout(() => {
-        setIsLoadingPage(false)
-      }, 500)
-      return () => clearTimeout(timer)
+      console.log('No userId found, stopping loading state')
+      // If no userId, set loading to false immediately
+      setIsLoadingPage(false)
     }
   }, [userId])
 
   const loadInitialData = async () => {
-    if (!userId) return
+    if (!userId) {
+      setIsLoadingPage(false)
+      return
+    }
     
     try {
       setIsLoadingPage(true)
@@ -255,6 +257,7 @@ export default function OutreachToolPage() {
       
     } catch (error) {
       console.error('Error loading initial data:', error)
+      toast.error('Failed to load outreach data')
     } finally {
       setIsLoadingPage(false)
       setIsLoading(false)
@@ -344,6 +347,7 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
+      console.log('Loading campaigns for user:', userId)
       const supabase = await getSupabaseClient()
       
       let query = supabase
@@ -355,10 +359,12 @@ export default function OutreachToolPage() {
       const { data, error } = await query
 
       if (error) throw error
+      console.log('Loaded campaigns:', data?.length || 0)
       setCampaigns(data || [])
     } catch (error) {
       console.error('Error loading campaigns:', error)
       toast.error('Failed to load campaigns')
+      setCampaigns([]) // Set empty array on error
     }
   }
 
@@ -434,6 +440,7 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
+      console.log('Loading campaign leads for user:', userId)
       const supabase = await getSupabaseClient()
       
       const { data: userCampaigns, error: campaignsError } = await supabase
@@ -444,6 +451,7 @@ export default function OutreachToolPage() {
       if (campaignsError) throw campaignsError
 
       if (!userCampaigns || userCampaigns.length === 0) {
+        console.log('No campaigns found, setting empty campaign leads')
         setCampaignLeads([])
         return
       }
@@ -462,10 +470,12 @@ export default function OutreachToolPage() {
 
       if (error) throw error
       
+      console.log('Loaded campaign leads:', data?.length || 0)
       setCampaignLeads(data || [])
     } catch (error) {
       console.error('Error loading campaign leads:', error)
       toast.error('Failed to load campaign leads')
+      setCampaignLeads([]) // Set empty array on error
     }
   }
 
