@@ -775,20 +775,20 @@ export default function OutreachToolPage() {
           } else if (reason === 'DAILY_LIMIT') {
             errorMessage = `📅 Daily limit reached: You can generate up to 25 messages per day. Limit resets at midnight.`
           } else if (reason === 'LEAD_LIMIT') {
-            errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards.`
+            errorMessage = `🚫 You've already generated 3 messages for this lead today. This prevents spam and maintains professional standards. Try a different lead or wait until tomorrow.`
           } else if (reason === 'COOLDOWN') {
             errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
           } else {
-            // Generic 429 - try retry with exponential backoff
-            if (retryCount < 2) {
+            // Generic 429 - try retry with exponential backoff only for server errors
+            if (retryCount < 2 && !reason) {
               const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000 // 1-2s, 2-3s, 4-5s
-              toast.loading(`Rate limited. Retrying in ${Math.ceil(delay/1000)} seconds...`)
+              toast.loading(`Server busy. Retrying in ${Math.ceil(delay/1000)} seconds...`)
               setTimeout(() => {
                 generatePersonalizedMessage(lead, method, retryCount + 1)
               }, delay)
               return
             } else {
-              errorMessage = `⚠️ Server is busy. Please wait a moment and try again.`
+              errorMessage = `⚠️ ${message || 'Server is busy. Please wait a moment and try again.'}`
             }
           }
           
@@ -1309,9 +1309,9 @@ export default function OutreachToolPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white p-4">
-      <div className="flex flex-col space-y-4">
+      return (
+    <div className="min-h-screen bg-[#0A0A0A] text-white p-4 overflow-auto">
+      <div className="flex flex-col space-y-4 min-h-0 w-full">
 
 
         {/* Lead Limit Warning */}
@@ -1342,6 +1342,26 @@ export default function OutreachToolPage() {
                       </span>
                     )}
                     <br />Complete outreach to existing leads before adding more.
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Message Limit Warning */}
+        {messageUsage && messageUsage.daily.remaining === 0 && (
+          <Card className="bg-red-900/20 border-red-500/50">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-red-300 font-medium text-sm">
+                    AI Message Limit Reached
+                  </div>
+                  <div className="text-red-400/80 text-xs mt-1">
+                    You've used all {messageUsage.daily.limit} AI messages for today. 
+                    <br />You can still copy contact information and send manual messages. Limit resets at midnight.
                   </div>
                 </div>
               </div>
@@ -1463,12 +1483,12 @@ export default function OutreachToolPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-0">
           
           {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-100px)]">
-            <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
-              <CardHeader>
+          <div className="xl:col-span-4 flex flex-col min-h-0">
+            <Card className="bg-[#1A1A1A] border-[#333] flex flex-col min-h-0">
+              <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1513,7 +1533,7 @@ export default function OutreachToolPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col flex-1 h-0">
+              <CardContent className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
@@ -1873,8 +1893,9 @@ export default function OutreachToolPage() {
                 )}
 
                 {/* Enhanced Lead Table */}
-                <div className="overflow-x-auto flex-1 overflow-y-auto border border-[#333] rounded-md">
-                  <Table>
+                <div className="flex-1 min-h-0 border border-[#333] rounded-md overflow-hidden">
+                  <div className="h-full overflow-auto">
+                    <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333] hover:bg-transparent">
                         <TableHead className="w-12 text-gray-400">
@@ -2122,36 +2143,43 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                              {campaignLead.status === 'responded' ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                                  onClick={() => {
-                                    setSelectedCampaignLead(campaignLead)
-                                    setShowSmartResponse(true)
-                                    setLeadResponse('')
-                                    setGeneratedSmartResponse('')
-                                  }}
-                                >
-                                  <Brain className="h-3 w-3 mr-1" />
-                                  Smart Response
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                                  onClick={() => {
-                                    setSelectedCampaignLead(campaignLead)
-                                    setShowOutreachOptions(true)
-                                  }}
-                                  disabled={outreachMethods.length === 0}
-                                >
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  Outreach ({outreachMethods.length})
-                                </Button>
-                              )}
+                                            {campaignLead.status === 'responded' ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                  onClick={() => {
+                    setSelectedCampaignLead(campaignLead)
+                    setShowSmartResponse(true)
+                    setLeadResponse('')
+                    setGeneratedSmartResponse('')
+                  }}
+                >
+                  <Brain className="h-3 w-3 mr-1" />
+                  Smart Response
+                </Button>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                    onClick={() => {
+                      setSelectedCampaignLead(campaignLead)
+                      setShowOutreachOptions(true)
+                    }}
+                    disabled={outreachMethods.length === 0}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Outreach ({outreachMethods.length})
+                  </Button>
+                  {messageUsage && messageUsage.daily.remaining === 0 && (
+                    <div className="text-xs text-amber-400 text-center">
+                      Daily limit reached
+                    </div>
+                  )}
+                </div>
+              )}
                           </TableCell>
                         </TableRow>
                         )
@@ -2175,14 +2203,15 @@ export default function OutreachToolPage() {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
                     {/* AI Outreach Assistant */}
-          <div className="xl:col-span-1 h-[calc(100vh-100px)]">
-            <Card className="bg-[#1A1A1A] border-[#333] h-full flex flex-col">
+          <div className="xl:col-span-1 min-h-0">
+            <Card className="bg-[#1A1A1A] border-[#333] flex flex-col min-h-0">
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -2222,7 +2251,7 @@ export default function OutreachToolPage() {
                   Smart outreach recommendations based on your pipeline
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
+              <CardContent className="flex-1 min-h-0 overflow-y-auto">
                 {isLoadingActions ? (
                   <div className="flex items-center justify-center h-32">
                     <div className="flex items-center gap-2 text-gray-400">
@@ -2613,8 +2642,9 @@ export default function OutreachToolPage() {
                       generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
                     }
                   }}
-                    disabled={messageUsage?.daily.remaining === 0}
+                                          disabled={messageUsage?.daily.remaining === 0}
                     className="w-full bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white justify-start p-6 h-auto border border-[#444] hover:border-[#555] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    title={messageUsage?.daily.remaining === 0 ? "Daily AI message limit reached. Resets at midnight." : ""}
                 >
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-4">
