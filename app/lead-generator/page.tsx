@@ -1758,7 +1758,7 @@ export default function LeadGeneratorPage() {
               <CardContent className="space-y-4">
                 {isLoadingUsage ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
                     <span className="ml-2 text-gray-400">Loading usage data...</span>
                   </div>
                 ) : usageData ? (
@@ -1774,7 +1774,7 @@ export default function LeadGeneratorPage() {
                       <div className="flex items-center justify-between p-3 rounded-lg bg-[#2A2A2A] border border-[#333]">
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${
-                            usageData.remaining <= 0 ? 'bg-orange-400' : 'bg-blue-400'
+                            usageData.remaining <= 0 ? 'bg-gray-400' : 'bg-white'
                           }`}></div>
                           <div>
                             <div className="text-sm font-medium text-gray-300">
@@ -2179,7 +2179,7 @@ export default function LeadGeneratorPage() {
                         filters.socialPlatforms.instagram || filters.socialPlatforms.facebook || 
                         filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter || 
                         filters.minScore > 0 || filters.selectedNicheFilter.length > 0) && (
-                        <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
+                        <Badge className="ml-2 bg-white/20 text-white" variant="secondary">
                           Active
                         </Badge>
                       )}
@@ -2280,7 +2280,7 @@ export default function LeadGeneratorPage() {
                             size="sm"
                             className={`h-8 text-xs ${
                               tempFilters.minScore === score
-                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                ? 'bg-white text-black border-white hover:bg-gray-200'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
                           >
@@ -2488,7 +2488,7 @@ export default function LeadGeneratorPage() {
                       <Button
                         onClick={applyTempFilters}
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-white hover:bg-gray-200 text-black"
                       >
                         Apply Filters
                       </Button>
@@ -2557,7 +2557,7 @@ export default function LeadGeneratorPage() {
                           key={lead.id}
                           className={`border-[#333] cursor-pointer transition-all duration-300 ${
                             isLeadSent 
-                              ? 'bg-green-900/20 text-green-400' 
+                              ? 'bg-gray-700/50 text-white' 
                               : isLeadSending 
                                 ? 'bg-gray-800/40 animate-pulse' 
                                 : 'hover:bg-[#222]/50'
@@ -2587,7 +2587,7 @@ export default function LeadGeneratorPage() {
                                   </span>
                                 )}
                                 {isLeadSent && (
-                                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                                  <span className="text-xs bg-gray-600/20 text-white px-2 py-1 rounded-full">
                                     ✓ Sent
                                   </span>
                                 )}
@@ -2597,7 +2597,7 @@ export default function LeadGeneratorPage() {
                                   href={formatWebsiteUrl(lead.website)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                                  className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <ExternalLink className="h-3 w-3" />
@@ -2669,7 +2669,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('facebook', lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
+                                  className="relative z-10 text-gray-400 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`Facebook: ${lead.facebook_page}`}
                                   style={{ marginLeft: lead.instagram_handle ? '-8px' : '0px' }}
@@ -2682,7 +2682,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
+                                  className="relative z-10 text-gray-400 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`LinkedIn: ${lead.linkedin_profile}`}
                                   style={{ marginLeft: (lead.instagram_handle || lead.facebook_page) ? '-8px' : '0px' }}
@@ -2997,7 +2997,7 @@ export default function LeadGeneratorPage() {
                               name="manual-niche"
                               checked={manualLeadData.niche_id === niche.id}
                               onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
-                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                              className="w-4 h-4 text-white bg-gray-700 border-gray-600 focus:ring-gray-500 focus:ring-2"
                             />
                             <label 
                               htmlFor={`manual-${niche.id}`} 
@@ -3181,7 +3181,7 @@ export default function LeadGeneratorPage() {
                       
                       <div className="w-full bg-[#333] rounded-full h-1.5 mb-3">
                         <div 
-                          className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                                                      className="bg-white h-1.5 rounded-full transition-all duration-300"
                           style={{ width: `${(data.score / data.max) * 100}%` }}
                         ></div>
                       </div>
@@ -3210,7 +3210,7 @@ export default function LeadGeneratorPage() {
                 {/* Improvement Suggestions */}
                 <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
                   <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-blue-400" />
+                                          <TrendingUp className="h-4 w-4 text-gray-400" />
                     Improvement Suggestions
                   </h4>
                   <div className="space-y-2 text-sm text-gray-300">
@@ -3383,7 +3383,7 @@ export default function LeadGeneratorPage() {
           <div className="py-4 space-y-4">
             <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <RefreshCw className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                                        <RefreshCw className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-white mb-2">Starting a new search will clear your current leads</h4>
                   <p className="text-sm text-gray-400 mb-3">
