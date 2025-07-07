@@ -1104,28 +1104,26 @@ export default function OutreachToolPage() {
   }
 
   const getOutreachMethodIcon = (method: string, size: string = "h-3 w-3") => {
-    const iconProps = { className: `${size} text-gray-400` }
-    
     switch (method) {
       case 'email':
-        return <Mail {...iconProps} />
+        return <Mail className={`${size} text-blue-400`} />
       case 'phone':
-        return <Phone {...iconProps} />
+        return <Phone className={`${size} text-green-400`} />
       case 'linkedin':
-        return <Linkedin {...iconProps} />
+        return <Linkedin className={`${size} text-blue-600`} />
       case 'instagram':
-        return <Instagram {...iconProps} />
+        return <Instagram className={`${size} text-pink-500`} />
       case 'facebook':
-        return <Facebook {...iconProps} />
+        return <Facebook className={`${size} text-blue-500`} />
       case 'twitter':
       case 'x':
         return (
-          <svg className={`${size} text-gray-400`} viewBox="0 0 24 24" fill="currentColor">
+          <svg className={`${size} text-gray-300`} viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
         )
       default:
-        return <MessageCircle {...iconProps} />
+        return <MessageCircle className={`${size} text-gray-400`} />
     }
   }
 
@@ -2010,7 +2008,7 @@ export default function OutreachToolPage() {
                           </div>
                         </TableHead>
                         <TableHead className="text-gray-400">Contact Info</TableHead>
-                        <TableHead className="text-gray-400">Last Contact</TableHead>
+                        <TableHead className="text-gray-400">Methods Used</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2020,7 +2018,7 @@ export default function OutreachToolPage() {
                         
                         // Check which methods have been used for this lead today
                         const today = new Date().toDateString()
-                        const getMethodsUsed = () => {
+                        const getMethodsUsed = (): string[] => {
                           if (!campaignLead.lead?.business_name) return []
                           const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
                           return methods.filter(method => 
@@ -2223,25 +2221,43 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                              <div className="text-sm text-gray-400">
-                                {campaignLead.last_contacted_at ? (
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <span>{new Date(campaignLead.last_contacted_at).toLocaleDateString()}</span>
-                                      {campaignLead.outreach_method && (
-                                        <div className="flex items-center gap-1 bg-[#2A2A2A] border border-[#444] rounded px-2 py-1">
-                                          {getOutreachMethodIcon(campaignLead.outreach_method)}
-                                          <span className="text-xs text-gray-400 capitalize">{campaignLead.outreach_method}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {formatTimeAgo(campaignLead.last_contacted_at)}
-                                    </div>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {(() => {
+                                // Check which outreach methods have been used for this lead (last 7 days)
+                                const usedMethods: string[] = []
+                                
+                                if (campaignLead.lead?.business_name) {
+                                  const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
+                                  
+                                  // Check last 7 days for any outreach
+                                  for (let i = 0; i < 7; i++) {
+                                    const checkDate = new Date()
+                                    checkDate.setDate(checkDate.getDate() - i)
+                                    const dateString = checkDate.toDateString()
+                                    
+                                    for (const method of methods) {
+                                      if (localStorage.getItem(`method_used_${campaignLead.lead.business_name}_${method}_${dateString}`) && 
+                                          !usedMethods.includes(method)) {
+                                        usedMethods.push(method)
+                                      }
+                                    }
+                                  }
+                                }
+                                
+                                if (usedMethods.length === 0) {
+                                  return <span className="text-gray-500 text-xs">None</span>
+                                }
+                                
+                                return usedMethods.map((method) => (
+                                  <div
+                                    key={method}
+                                    className="p-1 bg-[#2A2A2A] border border-[#444] rounded hover:bg-[#333] transition-colors"
+                                    title={`${method.charAt(0).toUpperCase() + method.slice(1)} outreach completed`}
+                                  >
+                                    {getOutreachMethodIcon(method, "h-3 w-3")}
                                   </div>
-                                ) : (
-                                  <span className="text-gray-500">Never</span>
-                              )}
+                                ))
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell>
