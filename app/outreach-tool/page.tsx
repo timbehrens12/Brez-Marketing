@@ -934,15 +934,13 @@ export default function OutreachToolPage() {
         // Regular status update
         const updateData: any = { 
           status: newStatus,
+          last_contacted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
         
-        // Only update last_contacted_at and outreach_method when marking as contacted
-        if (newStatus === 'contacted') {
-          updateData.last_contacted_at = new Date().toISOString()
-          if (outreachMethod) {
-            updateData.outreach_method = outreachMethod
-          }
+        // Store outreach method if provided and status is contacted
+        if (outreachMethod && newStatus === 'contacted') {
+          updateData.outreach_method = outreachMethod
         }
         
         const { error } = await supabase
@@ -950,21 +948,21 @@ export default function OutreachToolPage() {
           .update(updateData)
           .eq('id', campaignLeadId)
 
-        if (error) throw error
-        
+      if (error) throw error
+      
         // Update state locally instead of reloading to prevent page jump
         setCampaignLeads(prev => prev.map(cl => 
           cl.id === campaignLeadId 
             ? { 
                 ...cl, 
                 status: newStatus as any, 
-                last_contacted_at: newStatus === 'contacted' ? new Date().toISOString() : cl.last_contacted_at,
-                outreach_method: (newStatus === 'contacted' && outreachMethod) ? outreachMethod as any : cl.outreach_method,
-                updated_at: new Date().toISOString()
+                last_contacted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                ...(outreachMethod && newStatus === 'contacted' ? { outreach_method: outreachMethod as any } : {})
               }
             : cl
         ))
-        toast.success('Status updated successfully!')
+      toast.success('Status updated successfully!')
       }
     } catch (error) {
       console.error('Error updating status:', error)
@@ -1102,6 +1100,52 @@ export default function OutreachToolPage() {
         )
       default:
         return <Globe className="h-4 w-4" />
+    }
+  }
+
+  const getOutreachMethodIcon = (method: string, size: string = "h-3 w-3") => {
+    const iconProps = { className: `${size} text-gray-400` }
+    
+    switch (method) {
+      case 'email':
+        return <Mail {...iconProps} />
+      case 'phone':
+        return <Phone {...iconProps} />
+      case 'linkedin':
+        return <Linkedin {...iconProps} />
+      case 'instagram':
+        return <Instagram {...iconProps} />
+      case 'facebook':
+        return <Facebook {...iconProps} />
+      case 'twitter':
+      case 'x':
+        return (
+          <svg className={`${size} text-gray-400`} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        )
+      default:
+        return <MessageCircle {...iconProps} />
+    }
+  }
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const contactTime = new Date(timestamp)
+    const diffMs = now.getTime() - contactTime.getTime()
+    
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffDays >= 1) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    } else if (diffHours >= 1) {
+      return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`
+    } else if (diffMinutes >= 1) {
+      return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`
+    } else {
+      return 'Just now'
     }
   }
 
@@ -1285,54 +1329,6 @@ export default function OutreachToolPage() {
 
   const getFilteredActions = () => {
     return actionRecommendations.filter(action => !completedActions.has(action.id))
-  }
-
-  // Format relative time with hours/minutes for recent contacts
-  const formatRelativeTime = (dateString: string) => {
-    const now = new Date()
-    const contactDate = new Date(dateString)
-    const diffMs = now.getTime() - contactDate.getTime()
-    
-    const diffMinutes = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    
-    if (diffDays >= 1) {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    } else if (diffHours >= 1) {
-      return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`
-    } else if (diffMinutes >= 1) {
-      return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`
-    } else {
-      return 'Just now'
-    }
-  }
-
-  // Get platform icon for outreach method
-  const getOutreachMethodIcon = (method?: string) => {
-    if (!method) return null
-    
-    switch (method) {
-      case 'email':
-        return <Mail className="h-3 w-3 text-blue-400" />
-      case 'phone':
-        return <Phone className="h-3 w-3 text-green-400" />
-      case 'linkedin':
-        return <Linkedin className="h-3 w-3 text-blue-600" />
-      case 'instagram':
-        return <Instagram className="h-3 w-3 text-pink-500" />
-      case 'facebook':
-        return <Facebook className="h-3 w-3 text-blue-500" />
-      case 'twitter':
-      case 'x':
-        return (
-          <svg className="h-3 w-3 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        )
-      default:
-        return <MessageCircle className="h-3 w-3 text-gray-400" />
-    }
   }
 
   const recalculateAllScores = async () => {
@@ -2230,20 +2226,18 @@ export default function OutreachToolPage() {
                               <div className="text-sm text-gray-400">
                                 {campaignLead.last_contacted_at ? (
                                   <div className="space-y-1">
-                                    <div className="text-xs text-gray-300">
-                                      {new Date(campaignLead.last_contacted_at).toLocaleDateString()}
+                                    <div className="flex items-center gap-2">
+                                      <span>{new Date(campaignLead.last_contacted_at).toLocaleDateString()}</span>
+                                      {campaignLead.outreach_method && (
+                                        <div className="flex items-center gap-1 bg-[#2A2A2A] border border-[#444] rounded px-2 py-1">
+                                          {getOutreachMethodIcon(campaignLead.outreach_method)}
+                                          <span className="text-xs text-gray-400 capitalize">{campaignLead.outreach_method}</span>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                      {formatRelativeTime(campaignLead.last_contacted_at)}
+                                      {formatTimeAgo(campaignLead.last_contacted_at)}
                                     </div>
-                                    {campaignLead.outreach_method && (
-                                      <div className="flex items-center gap-1">
-                                        {getOutreachMethodIcon(campaignLead.outreach_method)}
-                                        <span className="text-xs text-gray-500 capitalize">
-                                          {campaignLead.outreach_method === 'x' ? 'Twitter' : campaignLead.outreach_method}
-                                        </span>
-                                      </div>
-                                    )}
                                   </div>
                                 ) : (
                                   <span className="text-gray-500">Never</span>
