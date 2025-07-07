@@ -38,10 +38,15 @@ export function BackfillNotification({
   if (status.isBackfilling) {
     return (
       <Alert className={className}>
-        <Download className="h-4 w-4" />
+        <Download className="h-4 w-4 animate-pulse" />
         <AlertTitle>Backfilling Data</AlertTitle>
         <AlertDescription>
-          Fetching missing historical data. This may take a few minutes...
+          <div className="flex flex-col gap-1">
+            <span>Fetching missing historical data. This may take a few minutes...</span>
+            <span className="text-sm text-muted-foreground">
+              Please wait while we sync your data from Meta and Shopify to fill the gaps.
+            </span>
+          </div>
         </AlertDescription>
       </Alert>
     )

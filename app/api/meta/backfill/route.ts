@@ -1,91 +1,153 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedSupabaseClient } from '@/lib/utils/unified-supabase'
+import { createClient } from '@supabase/supabase-js'
+import { fetchMetaAdInsights } from '@/lib/services/meta-service'
+import { subDays, format } from 'date-fns'
 
+/**
+ * API endpoint to specifically backfill Meta data for a given date range
+ * This is useful for fixing missing data gaps and ensuring historical data completeness
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, startDate, endDate, accessToken, adAccountId } = await request.json()
+    // Get params from request body
+    const { 
+      brandId, 
+      dateFrom,  // Optional: specific start date (yyyy-MM-dd)
+      dateTo,    // Optional: specific end date (yyyy-MM-dd)
+      days = 1   // Default to 1 day (yesterday)
+    } = await request.json()
     
-    if (!userId || !startDate || !endDate || !accessToken || !adAccountId) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    console.log('🔄 Starting Meta backfill for', startDate, 'to', endDate)
+    // Initialize Supabase client
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     
-    const supabase = await getAuthenticatedSupabaseClient()
+    // Calculate date range
+    const today = new Date()
     
-    // Fetch historical data from Meta API
-    const metaUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights`
-    const params = new URLSearchParams({
-      access_token: accessToken,
-      fields: 'date_start,date_stop,impressions,clicks,spend,actions,conversions,reach,frequency,ctr,cpc,cost_per_result',
-      time_range: JSON.stringify({
-        since: startDate,
-        until: endDate
-      }),
-      time_increment: '1', // Daily data
-      level: 'account',
-      limit: '1000'
-    })
+    // If specific dates provided, use those
+    let startDate: Date
+    let endDate: Date
     
-    const response = await fetch(`${metaUrl}?${params}`)
-    
-    if (!response.ok) {
-      console.error('Meta API error:', await response.text())
-      return NextResponse.json({ error: 'Failed to fetch from Meta API' }, { status: 500 })
+    if (dateFrom && dateTo) {
+      // Parse provided dates
+      startDate = new Date(dateFrom)
+      endDate = new Date(dateTo)
+    } else {
+      // Default: backfill yesterday
+      endDate = subDays(today, 1)
+      startDate = subDays(endDate, days - 1)
     }
     
-    const data = await response.json()
+    // Format dates for display
+    const startDateStr = format(startDate, 'yyyy-MM-dd')
+    const endDateStr = format(endDate, 'yyyy-MM-dd')
     
-    if (!data.data || data.data.length === 0) {
-      console.log('No Meta data found for the specified date range')
-      return NextResponse.json({ success: true, records_created: 0 })
-    }
-    
-    // Process and insert data into Supabase
-    const recordsToInsert = data.data.map((insight: any) => ({
-      user_id: userId,
-      date_start: insight.date_start,
-      date_stop: insight.date_stop,
-      impressions: parseInt(insight.impressions) || 0,
-      clicks: parseInt(insight.clicks) || 0,
-      spend: parseFloat(insight.spend) || 0,
-      reach: parseInt(insight.reach) || 0,
-      frequency: parseFloat(insight.frequency) || 0,
-      ctr: parseFloat(insight.ctr) || 0,
-      cpc: parseFloat(insight.cpc) || 0,
-      cost_per_result: parseFloat(insight.cost_per_result) || 0,
-      actions: insight.actions || [],
-      conversions: insight.conversions || 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }))
-    
-    // Insert records using upsert to avoid duplicates
-    const { data: insertedData, error: insertError } = await supabase
+    console.log(`[Meta Backfill] Starting backfill for brand ${brandId} from ${startDateStr} to ${endDateStr}`)
+
+    // 1. Clear existing data for this brand and date range
+    console.log(`[Meta Backfill] Clearing existing data for the specified date range`)
+    const { error: deleteError } = await supabase
       .from('meta_ad_insights')
-      .upsert(recordsToInsert, {
-        onConflict: 'user_id,date_start',
-        ignoreDuplicates: false
-      })
+      .delete()
+      .eq('brand_id', brandId)
+      .gte('date', startDateStr)
+      .lte('date', endDateStr)
     
-    if (insertError) {
-      console.error('Error inserting Meta data:', insertError)
-      return NextResponse.json({ error: 'Failed to insert data' }, { status: 500 })
+    if (deleteError) {
+      console.error(`[Meta Backfill] Error clearing existing data:`, deleteError)
+      return NextResponse.json({ 
+        error: 'Failed to clear existing data', 
+        details: deleteError 
+      }, { status: 500 })
+    }
+
+    // 2. Now fetch and store new data
+    console.log(`[Meta Backfill] Fetching new data for the specified date range`)
+    const result = await fetchMetaAdInsights(
+      brandId,
+      startDate,
+      endDate,
+      false  // Not dry run
+    )
+    
+    if (!result.success) {
+      console.error(`[Meta Backfill] Error fetching data:`, result.error)
+      return NextResponse.json({ 
+        error: 'Failed to fetch Meta data', 
+        details: result.error 
+      }, { status: 500 })
     }
     
-    console.log('✅ Meta backfill completed:', recordsToInsert.length, 'records')
+    // 3. After backfill, regenerate the campaign data
+    console.log(`[Meta Backfill] Regenerating campaign data...`)
     
+    // Get all affected campaign IDs
+    const { data: campaigns } = await supabase
+      .from('meta_campaigns')
+      .select('campaign_id')
+      .eq('brand_id', brandId)
+    
+    if (campaigns && campaigns.length > 0) {
+      const campaignIds = campaigns.map(c => c.campaign_id)
+      
+      try {
+        // Call the SQL function to refresh campaign insights for the date range
+        const { data: refreshResult, error: refreshError } = await supabase.rpc(
+          'refresh_campaign_insights',
+          {
+            brand_uuid: brandId,
+            p_from_date: startDateStr,
+            p_to_date: endDateStr
+          }
+        )
+        
+        if (refreshError) {
+          console.error(`[Meta Backfill] Error refreshing campaign insights:`, refreshError)
+        } else {
+          console.log(`[Meta Backfill] Campaign insights refresh complete. Result:`, refreshResult)
+        }
+      } catch (refreshError) {
+        console.error(`[Meta Backfill] Exception during campaign refresh:`, refreshError)
+      }
+    }
+    
+    // 4. Log this backfill in the history table
+    try {
+      await supabase
+        .from('meta_sync_history')
+        .insert({
+          brand_id: brandId,
+          synced_at: new Date().toISOString(),
+          date_from: startDateStr,
+          date_to: endDateStr,
+          record_count: result.count || 0,
+          operation_type: 'backfill'
+        });
+      console.log(`[Meta Backfill] Recorded backfill in history`);
+    } catch (err: unknown) {
+      console.error(`[Meta Backfill] Error recording sync history:`, err);
+    }
+
     return NextResponse.json({
       success: true,
-      records_created: recordsToInsert.length,
-      date_range: { start: startDate, end: endDate }
+      message: `Meta data backfilled successfully for brand ${brandId} from ${startDateStr} to ${endDateStr}`,
+      count: result.count || 0,
+      dateRange: {
+        from: startDateStr,
+        to: endDateStr
+      }
     })
-    
   } catch (error) {
-    console.error('Error in Meta backfill:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[Meta Backfill] Server error:', error)
+    return NextResponse.json({ 
+      error: 'Server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
