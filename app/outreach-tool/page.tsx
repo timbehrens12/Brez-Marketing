@@ -418,20 +418,18 @@ export default function OutreachToolPage() {
     console.log('🔄 Component mounting...')
     setMounted(true)
     
-    // Clean up old platform tracking from localStorage (older than 2 days)
-    const cleanupOldPlatformTracking = () => {
+    // Clean up old message count tracking from localStorage (older than 2 days)
+    const cleanupOldMessageCounts = () => {
       const keys = Object.keys(localStorage)
-      const platforms = ['email', 'linkedin', 'instagram', 'facebook', 'phone', 'twitter', 'x']
-      const platformKeys = keys.filter(key => 
-        platforms.some(platform => key.startsWith(`${platform}_`))
-      )
+      const trackingKeys = keys.filter(key => key.startsWith('msg_count_') || key.startsWith('method_used_'))
       const twoDaysAgo = new Date()
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
       
-      platformKeys.forEach(key => {
+      trackingKeys.forEach(key => {
         const parts = key.split('_')
         if (parts.length >= 3) {
-          const dateStr = parts[parts.length - 1] // Last part should be the date
+          // Get the date part - last element for both key types
+          const dateStr = parts[parts.length - 1]
           const keyDate = new Date(dateStr)
           if (keyDate < twoDaysAgo) {
             localStorage.removeItem(key)
@@ -440,7 +438,7 @@ export default function OutreachToolPage() {
       })
     }
     
-    cleanupOldPlatformTracking()
+    cleanupOldMessageCounts()
     
     return () => {
       console.log('🧹 Component unmounting...')
@@ -813,8 +811,8 @@ export default function OutreachToolPage() {
             errorMessage = `⏰ Rate limit: You can generate up to 15 messages per hour. Try again in ${Math.ceil((new Date(resetTime).getTime() - Date.now()) / (1000 * 60))} minutes.`
           } else if (reason === 'DAILY_LIMIT') {
             errorMessage = `📅 Daily limit reached: You can generate up to 25 messages per day. Limit resets at midnight.`
-          } else if (reason === 'PLATFORM_LIMIT') {
-            errorMessage = `🚫 You've already generated a ${method} message for "${lead.business_name}" today. Try a different platform (email, LinkedIn, Instagram, etc.) or wait until tomorrow.`
+          } else if (reason === 'METHOD_LIMIT') {
+            errorMessage = `🚫 You've already generated a ${method.charAt(0).toUpperCase() + method.slice(1)} message for "${lead.business_name}" today. Try a different outreach method (Email, LinkedIn, Instagram, etc.) or wait until tomorrow.`
           } else if (reason === 'COOLDOWN') {
             errorMessage = `⏱️ Please wait 30 seconds between message generations to prevent spam.`
           } else {
@@ -843,11 +841,15 @@ export default function OutreachToolPage() {
       setMessageSubject(data.subject || '')
       setMessageType(method as any)
       
-      // Track message generation locally to help with rate limiting UI (per platform)
+      // Track message generation locally to help with rate limiting UI
       if (lead.business_name) {
         const today = new Date().toDateString()
-        const platformKey = `${method}_${lead.business_name}_${today}`
-        localStorage.setItem(platformKey, '1') // Mark this platform as used for this lead today
+        const methodKey = `method_used_${lead.business_name}_${method}_${today}`
+        localStorage.setItem(methodKey, 'true')
+        
+        // Also track total count for backwards compatibility
+        const currentCount = parseInt(localStorage.getItem(`msg_count_${lead.business_name}_${today}`) || '0')
+        localStorage.setItem(`msg_count_${lead.business_name}_${today}`, (currentCount + 1).toString())
       }
       
       if (data.ai_generated) {
@@ -1961,17 +1963,18 @@ export default function OutreachToolPage() {
                     <TableBody>
                       {filteredLeads.map((campaignLead) => {
                         const outreachMethods = campaignLead.lead ? getOutreachMethods(campaignLead.lead) : []
-                        // Check if this lead has used all major platforms today
+                        
+                        // Check which methods have been used for this lead today
                         const today = new Date().toDateString()
-                        const leadName = campaignLead.lead?.business_name
-                        const platformsUsed = leadName ? [
-                          localStorage.getItem(`email_${leadName}_${today}`),
-                          localStorage.getItem(`linkedin_${leadName}_${today}`),
-                          localStorage.getItem(`instagram_${leadName}_${today}`),
-                          localStorage.getItem(`facebook_${leadName}_${today}`),
-                          localStorage.getItem(`phone_${leadName}_${today}`)
-                        ].filter(Boolean).length : 0
-                        const leadMightHitLimit = platformsUsed >= 3 // Show warning if 3+ platforms used
+                        const getMethodsUsed = () => {
+                          if (!campaignLead.lead?.business_name) return []
+                          const methods = ['email', 'phone', 'linkedin', 'instagram', 'facebook', 'twitter']
+                          return methods.filter(method => 
+                            localStorage.getItem(`method_used_${campaignLead.lead!.business_name}_${method}_${today}`)
+                          )
+                        }
+                        const methodsUsed = getMethodsUsed()
+                        const availableMethods = outreachMethods.length - methodsUsed.length
                         
                             return (
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
@@ -2200,8 +2203,10 @@ export default function OutreachToolPage() {
                                   variant="outline"
                                   size="sm"
                                   className={`h-8 text-xs ${
-                                    leadMightHitLimit 
-                                      ? 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300 hover:bg-yellow-900/30' 
+                                    availableMethods === 0 
+                                      ? 'bg-orange-900/20 border-orange-500/50 text-orange-300 hover:bg-orange-900/30' 
+                                      : availableMethods < outreachMethods.length
+                                      ? 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300 hover:bg-yellow-900/30'
                                       : 'bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white'
                                   }`}
                                   onClick={() => {
@@ -2209,11 +2214,17 @@ export default function OutreachToolPage() {
                                     setShowOutreachOptions(true)
                                   }}
                                   disabled={outreachMethods.length === 0}
-                                  title={leadMightHitLimit ? 'Messages may be limited for this lead today' : undefined}
+                                  title={
+                                    availableMethods === 0 
+                                      ? 'All outreach methods used for this lead today' 
+                                      : availableMethods < outreachMethods.length
+                                      ? `${methodsUsed.length} of ${outreachMethods.length} methods used today`
+                                      : `${outreachMethods.length} outreach methods available`
+                                  }
                                 >
                                   <Sparkles className="h-3 w-3 mr-1" />
-                                  Outreach ({outreachMethods.length})
-                                  {leadMightHitLimit && <AlertTriangle className="h-3 w-3 ml-1" />}
+                                  Outreach ({availableMethods}/{outreachMethods.length})
+                                  {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
                                 </Button>
                               )}
                           </TableCell>
@@ -2551,7 +2562,7 @@ export default function OutreachToolPage() {
 
         {/* Advanced Outreach Options Dialog */}
         <Dialog open={showOutreachOptions} onOpenChange={setShowOutreachOptions}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl shadow-2xl">
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
@@ -2634,9 +2645,9 @@ export default function OutreachToolPage() {
                     <Zap className="h-5 w-5 text-gray-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-200 mb-1">Multi-Channel AI Outreach</h3>
+                    <h3 className="font-semibold text-gray-200 mb-1">AI-Powered Personalization</h3>
                     <p className="text-sm text-gray-400 leading-relaxed">
-                      Generate one personalized message per platform per lead. You can create an email, LinkedIn message, Instagram DM, Facebook message, and call script for each lead - giving you multiple touchpoints for maximum reach.
+                      Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
                     </p>
                   </div>
                 </div>
@@ -2646,6 +2657,10 @@ export default function OutreachToolPage() {
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-white mb-4">Choose Your Outreach Method</h3>
               {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
+                // Check if this method has been used today
+                const today = new Date().toDateString()
+                const methodUsedToday = !!(selectedCampaignLead.lead?.business_name && 
+                  localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_${method.type}_${today}`))
                 const methodLabel = method.type === 'email' ? 'Email Outreach' :
                   method.type === 'phone' ? 'Cold Call Script' :
                   method.type === 'linkedin' ? 'LinkedIn Message' :
@@ -2665,27 +2680,24 @@ export default function OutreachToolPage() {
                   method.type === 'twitter' || method.type === 'x' ?
                     'Quick engagement - viral potential' :
                     'AI-powered personalization'
-                    
-                // Check if this platform was already used today
-                const today = new Date().toDateString()
-                const leadName = selectedCampaignLead.lead?.business_name
-                const platformUsedToday = Boolean(leadName && localStorage.getItem(`${method.type}_${leadName}_${today}`))
                   
                 return (
                 <Button
                   key={method.type}
                   onClick={() => {
-                    setShowOutreachOptions(false)
-                    setShowMessageComposer(true)
-                    setMessageType(method.type as any)
-                    if (selectedCampaignLead.lead) {
-                      generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                    if (!methodUsedToday) {
+                      setShowOutreachOptions(false)
+                      setShowMessageComposer(true)
+                      setMessageType(method.type as any)
+                      if (selectedCampaignLead.lead) {
+                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                      }
                     }
                   }}
-                    disabled={messageUsage?.daily.remaining === 0 || !!platformUsedToday}
+                                         disabled={messageUsage?.daily.remaining === 0 || !!methodUsedToday}
                     className={`w-full justify-start p-6 h-auto border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group ${
-                      platformUsedToday 
-                        ? 'bg-gradient-to-r from-gray-700/50 to-gray-800/50 border-gray-600/50 text-gray-400'
+                      methodUsedToday 
+                        ? 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 border-gray-500/30 text-gray-400'
                         : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
                     }`}
                 >
@@ -2696,27 +2708,24 @@ export default function OutreachToolPage() {
                           </div>
                         <div className="text-left">
                             <div className="font-semibold text-lg">{methodLabel}</div>
-                            <div className="text-sm mt-1">
-                              {platformUsedToday ? (
-                                <span className="text-gray-500">✓ Already used today</span>
-                              ) : (
-                                <span className="text-gray-400">{recommendation}</span>
-                              )}
-                            </div>
+                            <div className="text-sm text-gray-400 mt-1">{recommendation}</div>
                         </div>
                       </div>
                         <div className="flex items-center gap-2">
-                          {messageUsage?.daily.remaining === 0 && (
+                          {methodUsedToday && (
+                            <div className="text-xs bg-gray-600/30 text-gray-400 px-2 py-1 rounded flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Used Today
+                            </div>
+                          )}
+                          {!methodUsedToday && messageUsage?.daily.remaining === 0 && (
                             <div className="text-xs bg-gray-600/30 text-gray-300 px-2 py-1 rounded">
                               Daily Limit Reached
                             </div>
                           )}
-                          {platformUsedToday && (
-                            <div className="text-xs bg-gray-600/30 text-gray-400 px-2 py-1 rounded">
-                              Used Today
-                            </div>
-                          )}
-                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
+                          <ChevronRight className={`h-5 w-5 transition-colors ${
+                            methodUsedToday ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'
+                          }`} />
                         </div>
                     </div>
                 </Button>

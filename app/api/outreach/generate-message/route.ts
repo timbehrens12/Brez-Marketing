@@ -16,7 +16,7 @@ const supabase = createClient(
 const SECURITY_LIMITS = {
   MAX_MESSAGES_PER_HOUR: 15,      // Max 15 messages per hour per user
   MAX_MESSAGES_PER_DAY: 25,       // Max 25 messages per day per user
-  MAX_MESSAGES_PER_PLATFORM_PER_LEAD: 1, // Max 1 message per platform per lead (email, linkedin, etc.)
+  MAX_MESSAGES_PER_METHOD_PER_LEAD: 1,  // Max 1 message per method per lead (email, linkedin, etc.)
   COOLDOWN_BETWEEN_MESSAGES: 30,  // 30 seconds between message generations
 }
 
@@ -119,9 +119,9 @@ async function checkRateLimits(userId: string, leadId?: string, messageType?: st
       }
     }
 
-    // Check per-platform-per-lead limit (prevent multiple messages on same platform to same person)
+    // Check per-method-per-lead limit (prevent spam to same person on same platform)
     if (leadId && messageType) {
-      const { data: platformUsage, error: platformError } = await supabase
+      const { data: methodLeadUsage, error: methodLeadError } = await supabase
         .from('outreach_message_usage')
         .select('*')
         .eq('user_id', userId)
@@ -129,18 +129,20 @@ async function checkRateLimits(userId: string, leadId?: string, messageType?: st
         .eq('message_type', messageType)
         .gte('generated_at', oneDayAgo.toISOString())
 
-      if (platformError) {
-        console.error('❌ Error checking platform usage:', platformError)
+      if (methodLeadError) {
+        console.error('❌ Error checking method+lead usage:', methodLeadError)
         // If table doesn't exist or other DB error, allow operation (fail open)
         return { allowed: true, reason: null, message: null }
       }
 
-      if (platformUsage && platformUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_PLATFORM_PER_LEAD) {
+      if (methodLeadUsage && methodLeadUsage.length >= SECURITY_LIMITS.MAX_MESSAGES_PER_METHOD_PER_LEAD) {
+        const methodName = messageType.charAt(0).toUpperCase() + messageType.slice(1)
         return {
           allowed: false,
-          reason: 'PLATFORM_LIMIT',
-          message: `You've already generated a ${messageType} message for this lead today. Try a different platform (email, LinkedIn, Instagram, etc.) or wait until tomorrow.`,
-          resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000)
+          reason: 'METHOD_LIMIT',
+          message: `You've already generated a ${methodName} message for this lead today. Try a different outreach method (Email, LinkedIn, Instagram, etc.) or wait until tomorrow.`,
+          resetTime: new Date(oneDayAgo.getTime() + 24 * 60 * 60 * 1000),
+          methodUsed: messageType
         }
       }
     }
