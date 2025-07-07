@@ -266,31 +266,33 @@ AI Instructions:
 
     // Create method-specific prompts
     const methodPrompts = {
-      email: `Create a highly persuasive email that reads like it's from a successful entrepreneur reaching out to another business owner. Include a compelling subject line. The email should be:
-- Conversational and personable (not corporate/salesy)
+      email: `Create a conversational email that reads like one successful business owner reaching out to another. Include a compelling subject line. The email should be:
+- Warm and genuine (like talking to a friend in business)
 - 150-250 words
-- Include specific references to their business and industry challenges
-- Focus on RESULTS and profitable growth, not technology
-- Mention specific outcomes you've achieved for similar businesses
-- Address a pain point they likely have (customer acquisition costs, inconsistent sales, etc.)
-- Position yourself as someone who gets results, not just runs ads
-- Have a natural, low-pressure call-to-action
-- Sound like genuine business advice, not a sales pitch
+- Reference their specific business and industry challenges 
+- Focus on approach and methodology, not specific numbers or results
+- Never mention fake statistics, revenue numbers, or specific outcomes
+- Address a pain point they likely face (customer acquisition, scaling challenges, etc.)
+- Position yourself as someone who understands their struggles
+- Have a natural, consultative call-to-action
+- Sound like authentic business advice from a peer, not a sales pitch
+- Use casual, human language - avoid corporate buzzwords
 Format as: Subject: [subject line]\n\n[email body]`,
 
-      phone: `Create a complete phone call script that sounds natural and consultative, not salesy. Include:
-- Warm opening (15-20 seconds) that establishes credibility and reason for calling
-- Pattern interrupt that gets them curious
-- Value-focused conversation starters specific to their industry
-- Focus on methodology and approach, not specific results or claims
-- Multiple pathways to handle different response types
-- Advanced objection handling with reframes
-- Assumptive closes and next steps
-- Emergency objection breakers for "not interested"
-- Script should sound like a business consultant, not a salesperson
-Format as: OPENING → VALUE PROP → METHODOLOGY → OBJECTION HANDLING → CLOSE`,
+      phone: `Create a natural phone conversation framework that sounds like one business owner calling another. Include:
+- Friendly opening (15-20 seconds) that feels genuine and establishes connection
+- Conversational hooks that spark curiosity naturally
+- Industry-specific talking points that show understanding
+- Focus on shared challenges and approaches, never specific numbers or claims
+- Multiple response pathways that feel organic
+- Gentle objection responses that build rapport
+- Natural next steps that feel collaborative
+- Authentic conversation pivots for different reactions
+- Script should sound like a helpful peer, not a salesperson
+- Use everyday language, avoid jargon and corporate speak
+Format as: OPENING → CONNECTION → SHARED CHALLENGES → NATURAL CLOSE`,
 
-      linkedin: `Create a LinkedIn message that sounds like genuine networking from a successful business person. Should be:
+      linkedin: `Create a LinkedIn message that sounds like authentic professional networking between peers. Should be:
 - 100-150 words maximum
 - Written like you're connecting two successful people
 - Reference something specific about their business or recent activity
@@ -300,7 +302,7 @@ Format as: OPENING → VALUE PROP → METHODOLOGY → OBJECTION HANDLING → CLO
 - Natural, collaborative call-to-action
 - Sound like business development, not sales`,
 
-      instagram: `Create an Instagram DM that feels authentic and valuable:
+      instagram: `Create an Instagram DM that feels genuine and friendly:
 - Casual but respectful
 - 50-100 words
 - Reference their content or business genuinely
@@ -310,7 +312,7 @@ Format as: OPENING → VALUE PROP → METHODOLOGY → OBJECTION HANDLING → CLO
 - Include natural next step
 - Avoid any "marketing speak"`,
 
-      facebook: `Create a Facebook message that's warm and genuine:
+      facebook: `Create a Facebook message that feels like connecting with a fellow business owner:
 - Friendly and authentic
 - 75-125 words
 - Reference their business or recent posts specifically
@@ -327,7 +329,7 @@ Format as: OPENING → VALUE PROP → METHODOLOGY → OBJECTION HANDLING → CLO
 - Include clear, simple next step
 - Professional but approachable tone`,
 
-      twitter: `Create a Twitter/X message that's engaging and direct:
+      twitter: `Create a Twitter/X DM that's brief and authentic:
 - 250 characters or less (allowing for DM format)
 - Sound like a successful entrepreneur reaching out
 - Reference their content or business activity if relevant
