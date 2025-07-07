@@ -199,271 +199,12 @@ export default function OutreachToolPage() {
 
   const [mounted, setMounted] = useState(false)
   
-  // Component mount tracking
-  useEffect(() => {
-    console.log('🔄 Component mounting...')
-    setMounted(true)
-    return () => {
-      console.log('🧹 Component unmounting...')
-    }
-  }, [])
-
-  // Show loading override button after 8 seconds
-  useEffect(() => {
-    if (isLoadingPage) {
-      const timer = setTimeout(() => {
-        setShowLoadingOverride(true)
-      }, 8000)
-      return () => clearTimeout(timer)
-    }
-    // Return empty cleanup function to avoid React error #310
-    return () => {}
-  }, [isLoadingPage])
-
-  const forceLoadPage = () => {
-    console.log('🔧 Force loading page override triggered')
-    setIsLoadingPage(false)
-    setIsLoading(false)
-    setShowLoadingOverride(false)
-  }
-
-  // Show loading state
-  if (isLoadingPage) {
-    const loadingConfig = getPageLoadingConfig(pathname)
-    
-    return (
-      <div className="relative">
-        <UnifiedLoading
-          variant="page"
-          size="lg"
-          message={loadingConfig.message}
-          subMessage={loadingConfig.subMessage}
-          agencyLogo={agencySettings.agency_logo_url}
-          agencyName={agencySettings.agency_name}
-        />
-        {showLoadingOverride && (
-          <div className="absolute top-4 right-4 z-50">
-            <button
-              onClick={forceLoadPage}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Force Load Page
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Calculate simplified statistics
-  const stats = {
-    totalLeads: campaignLeads.length,
-    pending: campaignLeads.filter(cl => cl.status === 'pending').length,
-    contacted: campaignLeads.filter(cl => cl.status === 'contacted').length,
-    responded: campaignLeads.filter(cl => cl.status === 'responded').length,
-    qualified: campaignLeads.filter(cl => cl.status === 'qualified').length,
-    signed: campaignLeads.filter(cl => cl.status === 'signed').length,
-    rejected: campaignLeads.filter(cl => cl.status === 'rejected').length,
-    conversionRate: campaignLeads.length > 0 ? 
-      (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0',
-    responseRate: campaignLeads.filter(cl => cl.status === 'contacted').length > 0 ?
-      (campaignLeads.filter(cl => cl.status === 'responded').length / 
-       campaignLeads.filter(cl => cl.status === 'contacted').length * 100).toFixed(1) : '0'
-  }
-
-  // Get unique niches from leads
-  const availableNichesInLeads = [...new Set(campaignLeads.map(cl => cl.lead?.niche_name).filter(Boolean))]
-
-  // Safety timeout to prevent infinite loading
-  useEffect(() => {
-    console.log('⏱️ Setting up safety timeout for loading')
-    const safetyTimeout = setTimeout(() => {
-      console.log('🚨 Safety timeout triggered - forcing loading to stop')
-      setIsLoadingPage(false)
-      setIsLoading(false)
-    }, 10000) // 10 second safety timeout
-
-    return () => {
-      console.log('🧹 Cleaning up safety timeout')
-      clearTimeout(safetyTimeout)
-    }
-  }, [])
-
-  // Main initialization effect - only runs once when userId changes
-  useEffect(() => {
-    console.log('🔄 Main useEffect triggered, userId:', userId)
-    if (userId) {
-      console.log('✅ Starting data load for user:', userId)
-      loadInitialData()
-    } else {
-      console.log('❌ No userId found, stopping loading state')
-      setIsLoadingPage(false)
-    }
-  }, [userId])
-
-  // Load cached data and check for daily refresh - only runs once when userId changes
-  useEffect(() => {
-    if (!userId) {
-      // Return empty cleanup function to avoid React error #310
-      return () => {}
-    }
-
-    // Load cached recommendations
-    const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
-    const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
-    
-    if (lastRefreshTime && cachedRecommendations) {
-      const timestamp = parseInt(lastRefreshTime)
-      const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
-      
-      setCanRefreshRecommendations(timestamp < twelveHoursAgo)
-      setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
-      setActionRecommendations(JSON.parse(cachedRecommendations))
-    }
-
-    // Check for daily refresh
-    const today = new Date().toISOString().split('T')[0]
-    const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-    setLastRecommendationRefresh(lastRefresh)
-    
-    // If it's a new day, clear completed actions
-    if (lastRefresh && lastRefresh !== today) {
-      setCompletedActions(new Set())
-      localStorage.removeItem(`completed-actions-${userId}`)
-    }
-
-    // Load completed actions
-    const stored = localStorage.getItem(`completed-actions-${userId}`)
-    if (stored) {
-      try {
-        const completed = JSON.parse(stored)
-        setCompletedActions(new Set(completed))
-      } catch (error) {
-        console.error('Error loading completed actions:', error)
-      }
-    }
-  }, [userId])
-
-  // Load action recommendations when data is ready - runs once after initial load
-  useEffect(() => {
-    if (userId && campaignLeads.length > 0 && campaigns.length > 0 && actionRecommendations.length === 0) {
-      // Use a stable way to call loadActionRecommendations without dependency
-      const loadRecommendations = async () => {
-        if (!userId || campaigns.length === 0) return
-        
-        try {
-          setIsLoadingActions(true)
-          const activeCampaign = campaigns.find(c => c.status === 'active') || campaigns[0]
-          
-          if (!activeCampaign) return
-          
-          const response = await fetch('/api/ai/action-recommendations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              campaignId: activeCampaign.id, 
-              userId 
-            })
-          })
-          
-          if (response.status === 429) {
-            console.log('Recommendations already generated recently')
-            return
-          }
-          
-          if (!response.ok) throw new Error('Failed to load recommendations')
-          
-          const data = await response.json()
-          setActionRecommendations(data.recommendations || [])
-        } catch (error) {
-          console.error('Error loading action recommendations:', error)
-        } finally {
-          setIsLoadingActions(false)
-        }
-      }
-      
-      loadRecommendations()
-    }
-  }, [userId, campaignLeads.length, actionRecommendations.length, campaigns])
-
-  // Refs to track current state values without causing re-renders
+  // Define refs first to be available for all hooks and callbacks
   const campaignCountRef = useRef(0)
   const campaignLeadCountRef = useRef(0)
   const mountedRef = useRef(true)
 
-  // Update refs when state changes
-  useEffect(() => {
-    campaignCountRef.current = campaigns.length
-    campaignLeadCountRef.current = campaignLeads.length
-  }, [campaigns.length, campaignLeads.length])
-
-  // Set up daily refresh check - runs once on component mount
-  useEffect(() => {
-    if (!userId) {
-      // Return empty cleanup function to avoid React error #310
-      return () => {}
-    }
-
-    const checkForNewDay = () => {
-      // Don't run if component is unmounted
-      if (!mountedRef.current) return
-
-      const today = new Date().toISOString().split('T')[0]
-      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
-      
-      // If it's a new day and we have data loaded, refresh recommendations
-      if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
-        // Check again if still mounted before setting state
-        if (mountedRef.current) {
-          setCompletedActions(new Set()) // Clear completed actions for new day
-          localStorage.removeItem(`completed-actions-${userId}`)
-          loadActionRecommendations(true) // Force refresh for new day
-          console.log('🌅 New day detected - refreshing AI recommendations')
-        }
-      }
-    }
-
-    // Calculate milliseconds until next midnight
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0) // Set to midnight
-    const msUntilMidnight = tomorrow.getTime() - now.getTime()
-
-    let hourlyInterval: NodeJS.Timeout | null = null
-
-    // Set initial timeout for midnight, then check every hour after that
-    const midnightTimeout = setTimeout(() => {
-      if (!mountedRef.current) return
-      checkForNewDay()
-      
-      // After midnight, check every hour in case user keeps app open
-      hourlyInterval = setInterval(() => {
-        if (!mountedRef.current) {
-          if (hourlyInterval) clearInterval(hourlyInterval)
-          return
-        }
-        checkForNewDay()
-      }, 60 * 60 * 1000)
-    }, msUntilMidnight)
-
-    // Also check immediately on mount in case it's already a new day
-    checkForNewDay()
-    
-    return () => {
-      clearTimeout(midnightTimeout)
-      if (hourlyInterval) clearInterval(hourlyInterval)
-    }
-  }, [userId]) // loadActionRecommendations is accessed directly in the closure
-
-  // Track component mount/unmount status
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
-
+  // Define all callbacks before useEffect hooks to avoid linter errors
   const loadCampaigns = useCallback(async () => {
     if (!userId) return
 
@@ -640,6 +381,234 @@ export default function OutreachToolPage() {
       setIsLoadingActions(false)
     }
   }, [userId, campaigns])
+
+  // Component mount tracking
+  useEffect(() => {
+    console.log('🔄 Component mounting...')
+    setMounted(true)
+    return () => {
+      console.log('🧹 Component unmounting...')
+    }
+  }, [])
+
+  // Show loading override button after 8 seconds
+  useEffect(() => {
+    if (isLoadingPage) {
+      const timer = setTimeout(() => {
+        setShowLoadingOverride(true)
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+    // Return empty cleanup function when not loading to avoid React error #310
+    return () => {}
+  }, [isLoadingPage])
+
+  // Safety timeout to prevent infinite loading
+  useEffect(() => {
+    console.log('⏱️ Setting up safety timeout for loading')
+    const safetyTimeout = setTimeout(() => {
+      console.log('🚨 Safety timeout triggered - forcing loading to stop')
+      setIsLoadingPage(false)
+      setIsLoading(false)
+    }, 10000) // 10 second safety timeout
+
+    return () => {
+      console.log('🧹 Cleaning up safety timeout')
+      clearTimeout(safetyTimeout)
+    }
+  }, [])
+
+  // Main initialization effect - only runs once when userId changes
+  useEffect(() => {
+    console.log('🔄 Main useEffect triggered, userId:', userId)
+    if (userId) {
+      console.log('✅ Starting data load for user:', userId)
+      loadInitialData()
+    } else {
+      console.log('❌ No userId found, stopping loading state')
+      setIsLoadingPage(false)
+    }
+  }, [userId, loadInitialData])
+
+  // Load cached data and check for daily refresh - only runs once when userId changes
+  useEffect(() => {
+    if (!userId) {
+      // Return empty cleanup function to avoid React error #310
+      return () => {}
+    }
+
+    // Load cached recommendations
+    const lastRefreshTime = localStorage.getItem(`last-recommendation-refresh-time-${userId}`)
+    const cachedRecommendations = localStorage.getItem(`cached-recommendations-${userId}`)
+    
+    if (lastRefreshTime && cachedRecommendations) {
+      const timestamp = parseInt(lastRefreshTime)
+      const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000)
+      
+      setCanRefreshRecommendations(timestamp < twelveHoursAgo)
+      setLastRecommendationRefresh(new Date(timestamp).toLocaleString())
+      setActionRecommendations(JSON.parse(cachedRecommendations))
+    }
+
+    // Check for daily refresh
+    const today = new Date().toISOString().split('T')[0]
+    const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
+    setLastRecommendationRefresh(lastRefresh)
+    
+    // If it's a new day, clear completed actions
+    if (lastRefresh && lastRefresh !== today) {
+      setCompletedActions(new Set())
+      localStorage.removeItem(`completed-actions-${userId}`)
+    }
+
+    // Load completed actions
+    const stored = localStorage.getItem(`completed-actions-${userId}`)
+    if (stored) {
+      try {
+        const completed = JSON.parse(stored)
+        setCompletedActions(new Set(completed))
+      } catch (error) {
+        console.error('Error loading completed actions:', error)
+      }
+    }
+  }, [userId])
+
+  // Load action recommendations when data is ready - runs once after initial load
+  useEffect(() => {
+    if (userId && campaignLeads.length > 0 && campaigns.length > 0) {
+      // Only load recommendations if we don't have cached ones
+      if (actionRecommendations.length === 0) {
+        loadActionRecommendations(false)
+      }
+    }
+  }, [userId, campaignLeads.length, campaigns.length, actionRecommendations.length, loadActionRecommendations])
+
+  // Update refs when state changes
+  useEffect(() => {
+    campaignCountRef.current = campaigns.length
+    campaignLeadCountRef.current = campaignLeads.length
+  }, [campaigns.length, campaignLeads.length])
+
+  // Set up daily refresh check - runs once on component mount
+  useEffect(() => {
+    if (!userId) {
+      // Return empty cleanup function to avoid React error #310
+      return () => {}
+    }
+
+    const checkForNewDay = () => {
+      // Don't run if component is unmounted
+      if (!mountedRef.current) return
+
+      const today = new Date().toISOString().split('T')[0]
+      const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
+      
+      // If it's a new day and we have data loaded, refresh recommendations
+      if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
+        // Check again if still mounted before setting state
+        if (mountedRef.current) {
+          setCompletedActions(new Set()) // Clear completed actions for new day
+          localStorage.removeItem(`completed-actions-${userId}`)
+          loadActionRecommendations(true) // Force refresh for new day
+          console.log('🌅 New day detected - refreshing AI recommendations')
+        }
+      }
+    }
+
+    // Calculate milliseconds until next midnight
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0) // Set to midnight
+    const msUntilMidnight = tomorrow.getTime() - now.getTime()
+
+    let hourlyInterval: NodeJS.Timeout | null = null
+
+    // Set initial timeout for midnight, then check every hour after that
+    const midnightTimeout = setTimeout(() => {
+      if (!mountedRef.current) return
+      checkForNewDay()
+      
+      // After midnight, check every hour in case user keeps app open
+      hourlyInterval = setInterval(() => {
+        if (!mountedRef.current) {
+          if (hourlyInterval) clearInterval(hourlyInterval)
+          return
+        }
+        checkForNewDay()
+      }, 60 * 60 * 1000)
+    }, msUntilMidnight)
+
+    // Also check immediately on mount in case it's already a new day
+    checkForNewDay()
+    
+    return () => {
+      clearTimeout(midnightTimeout)
+      if (hourlyInterval) clearInterval(hourlyInterval)
+    }
+  }, [userId, loadActionRecommendations])
+
+  // Track component mount/unmount status
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  const forceLoadPage = () => {
+    console.log('🔧 Force loading page override triggered')
+    setIsLoadingPage(false)
+    setIsLoading(false)
+    setShowLoadingOverride(false)
+  }
+
+  // Show loading state
+  if (isLoadingPage) {
+    const loadingConfig = getPageLoadingConfig(pathname)
+    
+    return (
+      <div className="relative">
+        <UnifiedLoading
+          variant="page"
+          size="lg"
+          message={loadingConfig.message}
+          subMessage={loadingConfig.subMessage}
+          agencyLogo={agencySettings.agency_logo_url}
+          agencyName={agencySettings.agency_name}
+        />
+        {showLoadingOverride && (
+          <div className="absolute top-4 right-4 z-50">
+            <button
+              onClick={forceLoadPage}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Force Load Page
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Calculate simplified statistics
+  const stats = {
+    totalLeads: campaignLeads.length,
+    pending: campaignLeads.filter(cl => cl.status === 'pending').length,
+    contacted: campaignLeads.filter(cl => cl.status === 'contacted').length,
+    responded: campaignLeads.filter(cl => cl.status === 'responded').length,
+    qualified: campaignLeads.filter(cl => cl.status === 'qualified').length,
+    signed: campaignLeads.filter(cl => cl.status === 'signed').length,
+    rejected: campaignLeads.filter(cl => cl.status === 'rejected').length,
+    conversionRate: campaignLeads.length > 0 ? 
+      (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0',
+    responseRate: campaignLeads.filter(cl => cl.status === 'contacted').length > 0 ?
+      (campaignLeads.filter(cl => cl.status === 'responded').length / 
+       campaignLeads.filter(cl => cl.status === 'contacted').length * 100).toFixed(1) : '0'
+  }
+
+  // Get unique niches from leads
+  const availableNichesInLeads = [...new Set(campaignLeads.map(cl => cl.lead?.niche_name).filter(Boolean))]
 
   const completeAction = async (actionId: string) => {
     try {
