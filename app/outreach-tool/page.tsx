@@ -380,8 +380,8 @@ export default function OutreachToolPage() {
   const generateTodos = useCallback(() => {
     if (!campaignLeads.length) {
       setTodos([])
-        return
-      }
+      return
+    }
 
     const newTodos: TodoItem[] = []
     
@@ -391,90 +391,182 @@ export default function OutreachToolPage() {
     const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
     const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
     
-    // Get leads contacted more than 3 days ago (need follow-up)
+    // Get current date for comparisons
+    const now = new Date()
     const threeDaysAgo = new Date()
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+    threeDaysAgo.setDate(now.getDate() - 3)
+    const fiveDaysAgo = new Date()
+    fiveDaysAgo.setDate(now.getDate() - 5)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(now.getDate() - 7)
+    
+    // Get leads that need follow-up (5+ days old and still contacted)
     const needsFollowUp = contactedLeads.filter(cl => {
       if (!cl.last_contacted_at) return false
-      return new Date(cl.last_contacted_at) < threeDaysAgo
+      return new Date(cl.last_contacted_at) < fiveDaysAgo
     })
     
-    // Get leads contacted more than 7 days ago (going cold)
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    // Get leads going cold (7+ days old)
     const goingCold = contactedLeads.filter(cl => {
       if (!cl.last_contacted_at) return false
       return new Date(cl.last_contacted_at) < sevenDaysAgo
     })
 
-    // Generate todos based on lead status
-    if (pendingLeads.length > 0) {
+    // Generate specific todo items for individual leads
+    
+    // High priority - Responded leads (need immediate attention)
+    respondedLeads.forEach(cl => {
+      if (cl.lead) {
+        newTodos.push({
+          id: `respond_${cl.id}`,
+          type: 'responded',
+          priority: 'high',
+          title: `Respond to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
+          count: 1,
+          action: 'Smart Response',
+          filterAction: () => {
+            setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
+            // Also select this specific lead
+            setSelectedCampaignLead(cl)
+            setShowSmartResponse(true)
+          }
+        })
+      }
+    })
+
+    // High priority - Qualified leads (ready to close)
+    qualifiedLeads.forEach(cl => {
+      if (cl.lead) {
+        newTodos.push({
+          id: `close_${cl.id}`,
+          type: 'hot_leads',
+          priority: 'high',
+          title: `Send proposal to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} is qualified and ready for your proposal`,
+          count: 1,
+          action: 'Send Proposal',
+          filterAction: () => {
+            setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
+          }
+        })
+      }
+    })
+
+    // Medium priority - Pending leads (need initial outreach)
+    pendingLeads.slice(0, 5).forEach(cl => {
+      if (cl.lead) {
+        newTodos.push({
+          id: `outreach_${cl.id}`,
+          type: 'new_leads',
+          priority: 'medium',
+          title: `Start outreach to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} is ready for personalized outreach`,
+          count: 1,
+          action: 'Start Outreach',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
+    })
+
+    // Medium priority - Follow-up needed (5+ days old)
+    needsFollowUp.slice(0, 5).forEach(cl => {
+      if (cl.lead) {
+        const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
+        newTodos.push({
+          id: `followup_${cl.id}`,
+          type: 'follow_up',
+          priority: 'medium',
+          title: `Follow up with ${cl.lead.business_name}`,
+          description: `No response from ${cl.lead.business_name} in ${daysSince} days - send follow-up`,
+          count: 1,
+          action: 'Follow Up',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
+    })
+
+    // Low priority - Going cold (7+ days old)
+    goingCold.slice(0, 3).forEach(cl => {
+      if (cl.lead) {
+        const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
+        newTodos.push({
+          id: `cold_${cl.id}`,
+          type: 'going_cold',
+          priority: 'low',
+          title: `${cl.lead.business_name} going cold`,
+          description: `${daysSince} days since last contact - urgent follow-up or mark as rejected`,
+          count: 1,
+          action: 'Last Chance',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
+    })
+
+    // Add bulk action todos if there are many leads
+    if (pendingLeads.length > 5) {
       newTodos.push({
-        id: 'new_leads',
+        id: 'bulk_pending',
         type: 'new_leads',
-        priority: 'high',
-        title: `Start outreach for ${pendingLeads.length} new leads`,
-        description: 'These leads are ready for initial outreach',
-        count: pendingLeads.length,
-        action: 'Start Outreach',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'pending' }))
+        priority: 'medium',
+        title: `Bulk outreach to ${pendingLeads.length - 5} more pending leads`,
+        description: `You have ${pendingLeads.length - 5} additional pending leads ready for outreach`,
+        count: pendingLeads.length - 5,
+        action: 'Bulk Outreach',
+        filterAction: () => {
+          const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending')
+          if (pendingLeads.length > 0) {
+            setPendingOutreachQueue(pendingLeads)
+            setCurrentQueueIndex(0)
+            setShowBulkOutreach(true)
+          }
+        }
       })
     }
 
-    if (respondedLeads.length > 0) {
+    if (needsFollowUp.length > 5) {
       newTodos.push({
-        id: 'responded',
-        type: 'responded',
-        priority: 'high',
-        title: `${respondedLeads.length} leads responded - follow up now!`,
-        description: 'These leads showed interest and need immediate attention',
-        count: respondedLeads.length,
-        action: 'View Responses',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
-      })
-    }
-
-    if (qualifiedLeads.length > 0) {
-      newTodos.push({
-        id: 'qualified',
-        type: 'hot_leads',
-        priority: 'high',
-        title: `${qualifiedLeads.length} qualified leads ready for proposals`,
-        description: 'These leads are qualified and ready for the next step',
-        count: qualifiedLeads.length,
-        action: 'Send Proposals',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
-      })
-    }
-
-    if (needsFollowUp.length > 0) {
-      newTodos.push({
-        id: 'follow_up',
+        id: 'bulk_followup',
         type: 'follow_up',
         priority: 'medium',
-        title: `Follow up with ${needsFollowUp.length} leads (3+ days)`,
-        description: 'These leads were contacted but haven\'t responded yet',
-        count: needsFollowUp.length,
-        action: 'Send Follow-up',
+        title: `${needsFollowUp.length - 5} more leads need follow-up`,
+        description: `Additional leads haven't responded in 5+ days`,
+        count: needsFollowUp.length - 5,
+        action: 'View All',
         filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
       })
     }
 
-    if (goingCold.length > 0) {
+    // Add status update reminders
+    const oldContactedLeads = contactedLeads.filter(cl => {
+      if (!cl.last_contacted_at) return false
+      return new Date(cl.last_contacted_at) < threeDaysAgo
+    })
+
+    if (oldContactedLeads.length > 0) {
       newTodos.push({
-        id: 'going_cold',
-        type: 'going_cold',
+        id: 'update_status',
+        type: 'follow_up',
         priority: 'low',
-        title: `${goingCold.length} leads going cold (7+ days)`,
-        description: 'These leads need urgent follow-up or should be marked as rejected',
-        count: goingCold.length,
-        action: 'Urgent Follow-up',
+        title: `Update status for ${oldContactedLeads.length} leads`,
+        description: `Some leads may have responded but status hasn't been updated`,
+        count: oldContactedLeads.length,
+        action: 'Review Status',
         filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
       })
     }
 
     setTodos(newTodos)
-  }, [campaignLeads, setFilters])
+  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setShowBulkOutreach])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -2329,28 +2421,16 @@ export default function OutreachToolPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className={`h-8 text-xs ${
-                                    availableMethods === 0 
-                                      ? 'bg-orange-900/20 border-orange-500/50 text-orange-300 hover:bg-orange-900/30' 
-                                      : availableMethods < outreachMethods.length
-                                      ? 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300 hover:bg-yellow-900/30'
-                                      : 'bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white'
-                                  }`}
+                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                                   onClick={() => {
                                     setSelectedCampaignLead(campaignLead)
                                     setShowOutreachOptions(true)
                                   }}
                                   disabled={outreachMethods.length === 0}
-                                  title={
-                                    availableMethods === 0 
-                                      ? 'All outreach methods used for this lead today' 
-                                      : availableMethods < outreachMethods.length
-                                      ? `${methodsUsed.length} of ${outreachMethods.length} methods used today`
-                                      : `${outreachMethods.length} outreach methods available`
-                                  }
+                                  title={`${methodsUsed.length} of ${outreachMethods.length} methods used today`}
                                 >
                                   <Sparkles className="h-3 w-3 mr-1" />
-                                  Outreach ({availableMethods}/{outreachMethods.length})
+                                  Outreach ({methodsUsed.length}/{outreachMethods.length})
                                   {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
                                 </Button>
                               )}
@@ -2382,35 +2462,29 @@ export default function OutreachToolPage() {
             </Card>
           </div>
 
-                    {/* AI Outreach Assistant */}
+                    {/* Todo List */}
           <div className="xl:col-span-1 flex flex-col min-h-0">
             <Card className="bg-[#1A1A1A] border-[#333] h-full flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-gray-400" />
+                    <CheckSquare className="h-5 w-5 text-gray-400" />
                     <CardTitle className="text-white">Outreach Tasks</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-[#2A2A2A] text-gray-300">
+                      {todos.length - completedTodos.size}/{todos.length}
+                    </Badge>
                   </div>
                 </div>
                 <CardDescription className="text-gray-400">
-                  Quick actions to manage your outreach pipeline
+                  Your personalized outreach task list
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
-                <div className="space-y-3">
-                  <div className="p-4 text-center">
-                    <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <h4 className="text-sm font-medium text-white mb-1">Pipeline Overview</h4>
-                    <p className="text-xs text-gray-400 mb-3">
-                      {stats.totalLeads === 0 
-                        ? "Add leads to start your outreach campaigns"
-                        : "Use the quick actions below to manage your pipeline effectively."
-                      }
-                    </p>
-                  </div>
-
+                <div className="space-y-4">
                   {/* Quick Actions */}
-                  <div className="pt-3 border-t border-[#333]">
+                  <div className="space-y-2">
                     <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
                     <div className="space-y-2">
                       <Button
@@ -2442,60 +2516,6 @@ export default function OutreachToolPage() {
                       </Button>
                       <Button
                         onClick={() => {
-                          // Reset all filters first, then apply specific ones
-                          setFilters({
-                            hasPhone: false,
-                            hasEmail: false,
-                            hasWebsite: false,
-                            hasSocials: false,
-                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                            selectedNicheFilter: [],
-                            statusFilter: 'responded',
-                            minScore: 0,
-                            hasOwnerName: false,
-                            businessTypeFilter: [],
-                            locationFilter: { city: '', state: '' },
-                            outreachMethodFilter: [],
-                            lastContactedFilter: 'all',
-                            scoreRange: { min: 0, max: 100 }
-                          });
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                      >
-                        <MessageSquare className="h-3 w-3 mr-2" />
-                        Hot Conversations
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          // Reset all filters first, then apply specific ones
-                          setFilters({
-                            hasPhone: false,
-                            hasEmail: false,
-                            hasWebsite: false,
-                            hasSocials: false,
-                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                            selectedNicheFilter: [],
-                            statusFilter: 'contacted',
-                            minScore: 0,
-                            hasOwnerName: false,
-                            businessTypeFilter: [],
-                            locationFilter: { city: '', state: '' },
-                            outreachMethodFilter: [],
-                            lastContactedFilter: 'all',
-                            scoreRange: { min: 0, max: 100 }
-                          });
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                      >
-                        <Clock className="h-3 w-3 mr-2" />
-                        Follow-up Needed
-                      </Button>
-                      <Button
-                        onClick={() => {
                           const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
                           if (pendingLeads.length > 0) {
                             setPendingOutreachQueue(pendingLeads);
@@ -2515,17 +2535,139 @@ export default function OutreachToolPage() {
                     </div>
                   </div>
 
-                  {/* Update Info & Stats */}
-                  <div className="pt-3 border-t border-[#333] space-y-2">
-                    {completedTodos.size > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <CheckSquare className="h-3 w-3" />
-                        <span>{completedTodos.size} tasks completed today</span>
+                  {/* Todo List */}
+                  <div className="pt-3 border-t border-[#333]">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-medium text-gray-400">Todo List</h4>
+                      {completedTodos.size > 0 && (
+                        <Button
+                          onClick={() => {
+                            setCompletedTodos(new Set())
+                            localStorage.removeItem(`completed-todos-${userId}`)
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-gray-500 hover:text-gray-300 h-6"
+                        >
+                          Clear Done
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {todos.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="p-3 bg-[#2A2A2A] rounded-full w-fit mx-auto mb-3">
+                          <CheckCircle className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-400 mb-1">All caught up!</p>
+                        <p className="text-xs text-gray-500">No pending tasks right now</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {todos
+                          .sort((a, b) => {
+                            // Sort by priority (high -> medium -> low) then by completion status
+                            const priorityOrder = { high: 3, medium: 2, low: 1 }
+                            const aCompleted = completedTodos.has(a.id)
+                            const bCompleted = completedTodos.has(b.id)
+                            
+                            if (aCompleted && !bCompleted) return 1
+                            if (!aCompleted && bCompleted) return -1
+                            
+                            return priorityOrder[b.priority] - priorityOrder[a.priority]
+                          })
+                          .map((todo) => {
+                            const isCompleted = completedTodos.has(todo.id)
+                            const priorityColors = {
+                              high: 'border-red-500/30 bg-red-500/5',
+                              medium: 'border-yellow-500/30 bg-yellow-500/5',
+                              low: 'border-gray-500/30 bg-gray-500/5'
+                            }
+                            
+                            return (
+                              <div
+                                key={todo.id}
+                                className={`p-3 rounded-lg border transition-all ${
+                                  isCompleted 
+                                    ? 'border-green-500/30 bg-green-500/5 opacity-60' 
+                                    : priorityColors[todo.priority]
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-shrink-0 mt-0.5">
+                                    <Checkbox
+                                      checked={isCompleted}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          completeTodo(todo.id)
+                                        } else {
+                                          // Remove from completed
+                                          setCompletedTodos(prev => {
+                                            const newSet = new Set(prev)
+                                            newSet.delete(todo.id)
+                                            return newSet
+                                          })
+                                          const completed = Array.from(completedTodos).filter(id => id !== todo.id)
+                                          localStorage.setItem(`completed-todos-${userId}`, JSON.stringify(completed))
+                                        }
+                                      }}
+                                      className="border-[#444] data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <div className={`w-2 h-2 rounded-full ${
+                                        todo.priority === 'high' ? 'bg-red-400' :
+                                        todo.priority === 'medium' ? 'bg-yellow-400' : 'bg-gray-400'
+                                      }`} />
+                                      <span className={`text-sm font-medium ${
+                                        isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
+                                      }`}>
+                                        {todo.title}
+                                      </span>
+                                    </div>
+                                    <p className={`text-xs ${
+                                      isCompleted ? 'text-gray-600' : 'text-gray-400'
+                                    } mb-2`}>
+                                      {todo.description}
+                                    </p>
+                                    {!isCompleted && (
+                                      <Button
+                                        onClick={() => {
+                                          todo.filterAction()
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                                      >
+                                        {todo.action}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 bg-[#2A2A2A] p-2 rounded">
-                      💡 Use quick actions to filter and manage your outreach pipeline efficiently
+                  </div>
+
+                  {/* Summary */}
+                  <div className="pt-3 border-t border-[#333] space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Progress Today</span>
+                      <span className="text-gray-200">
+                        {completedTodos.size} / {todos.length} completed
+                      </span>
                     </div>
+                    {todos.length > 0 && (
+                      <div className="w-full bg-[#2A2A2A] rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${(completedTodos.size / todos.length) * 100}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
