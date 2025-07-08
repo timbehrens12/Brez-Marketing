@@ -3827,38 +3827,51 @@ export default function OutreachToolPage() {
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
                   <Brain className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span>AI Smart Response Generator</span>
-                  {selectedCampaignLead?.lead?.business_name && (
-                    <span className="text-sm text-gray-400 font-normal">
-                      Responding to {selectedCampaignLead.lead.business_name}
-                    </span>
-                  )}
+                  <span>AI Smart Response Studio</span>
+                  <span className="text-sm text-gray-400 font-normal">
+                    Generate intelligent follow-up responses
+                  </span>
                 </div>
               </DialogTitle>
-              <DialogDescription className="text-gray-300 mt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                  <span>Generate intelligent responses that maintain engagement and move conversations forward</span>
+              <DialogDescription className="text-gray-300">
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
+                  </div>
+                  {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                  )}
+                  {selectedCampaignLead?.lead?.niche_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Building className="h-4 w-4" />
+                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
+                    </div>
+                  )}
                 </div>
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-6 space-y-6">
+            <div className="space-y-6 py-4">
               {/* AI Information Banner */}
-              <div className="bg-gradient-to-r from-purple-800/30 to-blue-800/30 border border-purple-500/30 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-600/30 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-purple-300" />
+                  <div className="p-2 bg-gray-600/30 rounded-lg">
+                    <Zap className="h-5 w-5 text-gray-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-purple-200 mb-1">AI-Powered Response Intelligence</h3>
-                    <p className="text-sm text-purple-300/80 leading-relaxed">
-                      Advanced AI analyzes their message context, tone, and intent to craft responses that build rapport, 
-                      address their specific needs, and guide the conversation toward your business objectives.
+                    <h3 className="font-semibold text-gray-200 mb-1">
+                      AI-Powered Response Generation
+                    </h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      Advanced AI analyzes their response context and generates strategic follow-up messages that maintain engagement while moving the conversation toward your business goals.
                     </p>
                   </div>
                 </div>
@@ -3866,25 +3879,27 @@ export default function OutreachToolPage() {
 
               {/* Platform Selection */}
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white mb-4">Which platform did they respond on?</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Which platform did they respond on?
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email communication' },
+                    { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up' },
                     { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response' },
-                    { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social media response' },
-                    { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social platform communication' },
+                    { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement' },
+                    { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response' },
                     { type: 'twitter', icon: () => (
                       <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                       </svg>
-                    ), label: 'X/Twitter Reply', description: 'Public or direct message response' }
+                    ), label: 'X/Twitter Reply', description: 'Quick engagement response' }
                   ].map((platform) => (
                     <Button
                       key={platform.type}
                       onClick={() => setResponseMethod(platform.type as any)}
-                      className={`w-full justify-start p-4 h-auto border transition-all duration-200 group ${
+                      className={`justify-start p-4 h-auto border transition-all duration-200 group ${
                         responseMethod === platform.type
-                          ? 'bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/50 text-white'
+                          ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
                           : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
                       }`}
                     >
@@ -3892,24 +3907,19 @@ export default function OutreachToolPage() {
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg transition-all duration-200 ${
                             responseMethod === platform.type
-                              ? 'bg-gradient-to-r from-purple-600/40 to-blue-600/40'
-                              : 'bg-gradient-to-r from-gray-600/30 to-gray-700/30 group-hover:from-gray-600/40 group-hover:to-gray-700/40'
+                              ? 'bg-gray-500/30'
+                              : 'bg-gray-600/30 group-hover:bg-gray-600/40'
                           }`}>
-                            <platform.icon className="h-6 w-6" />
+                            <platform.icon className="h-5 w-5" />
                           </div>
                           <div className="text-left">
                             <div className="font-semibold">{platform.label}</div>
-                            <div className="text-sm text-gray-400 mt-1">{platform.description}</div>
+                            <div className="text-sm text-gray-400">{platform.description}</div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {responseMethod === platform.type && (
-                            <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-                          )}
-                          <ChevronRight className={`h-5 w-5 transition-colors ${
-                            responseMethod === platform.type ? 'text-purple-400' : 'text-gray-400 group-hover:text-white'
-                          }`} />
-                        </div>
+                        {responseMethod === platform.type && (
+                          <CheckCircle className="h-5 w-5 text-gray-300" />
+                        )}
                       </div>
                     </Button>
                   ))}
@@ -3918,80 +3928,69 @@ export default function OutreachToolPage() {
 
               {/* Response Input */}
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">What did they say?</h3>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-300">
-                    Paste their exact response below:
-                  </Label>
+                <Label className="text-lg font-semibold text-white">
+                  Paste their response below:
+                </Label>
+                <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 shadow-lg">
                   <Textarea
                     value={leadResponse}
                     onChange={(e) => setLeadResponse(e.target.value)}
-                    placeholder="Paste their exact response here... 
+                    placeholder="Paste their exact response here... For example:
 
-For example: 'Thanks for reaching out! I'm interested in learning more about your services. Can you tell me about pricing and how this works?'"
-                    className="bg-gradient-to-br from-[#2A2A2A] to-[#333] border-[#444] text-gray-300 min-h-[140px] resize-none focus:border-purple-500/50 transition-colors"
+'Thanks for reaching out! I'm interested in learning more about your services. Can you tell me about pricing and how this could help my business grow?'"
+                    className="bg-[#1A1A1A] border-[#333] text-gray-300 min-h-[140px] resize-none rounded-lg focus:border-gray-300 transition-colors"
                     maxLength={2000}
                   />
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">AI works best with their complete message</span>
-                    <span className="text-gray-500">{leadResponse.length}/2000 characters</span>
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="text-xs text-gray-500">
+                      Paste their exact message for the most accurate AI response
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {leadResponse.length}/2000 characters
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Generate Button */}
-              <div className="space-y-4">
-                <Button
-                  onClick={() => {
-                    if (selectedCampaignLead?.lead) {
-                      generateSmartResponse(leadResponse, responseMethod, selectedCampaignLead.lead)
-                    }
-                  }}
-                  disabled={!leadResponse.trim() || leadResponse.length < 10 || isGeneratingSmartResponse}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-4 text-lg rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGeneratingSmartResponse ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                      <div className="flex flex-col items-center">
-                        <span>Generating Smart Response...</span>
-                        <span className="text-sm text-purple-200">Analyzing context and crafting reply</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="h-5 w-5 mr-3" />
-                      <div className="flex flex-col items-center">
-                        <span>Generate AI Response</span>
-                        <span className="text-sm text-purple-200">Powered by advanced AI</span>
-                      </div>
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button
+                onClick={() => {
+                  if (selectedCampaignLead?.lead) {
+                    generateSmartResponse(leadResponse, responseMethod, selectedCampaignLead.lead)
+                  }
+                }}
+                disabled={!leadResponse.trim() || leadResponse.length < 10 || isGeneratingSmartResponse}
+                className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-4 rounded-lg text-lg transition-all duration-200 shadow-lg"
+              >
+                {isGeneratingSmartResponse ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                    AI is analyzing their response and generating your reply...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-5 w-5 mr-3" />
+                    Generate Smart Response with AI
+                  </>
+                )}
+              </Button>
 
               {/* Generated Response */}
               {generatedSmartResponse && (
                 <div className="space-y-4">
-                  <div className="border-t border-purple-500/20 pt-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="p-2 bg-gradient-to-r from-green-600/20 to-blue-600/20 rounded-lg">
-                        <CheckCircle className="h-5 w-5 text-green-400" />
+                  <div className="border-t border-[#444] pt-6">
+                    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-xl p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-5 w-5 text-gray-300" />
+                        <span className="text-gray-300 font-medium">Smart Response Generated Successfully</span>
                       </div>
-                      <h3 className="text-lg font-semibold text-white">Your AI-Generated Response</h3>
+                      <p className="text-sm text-gray-400">AI-crafted response optimized for engagement and conversion</p>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-[#2A2A2A] to-[#333] border border-[#444] rounded-xl p-6 shadow-xl">
-                      <div className="bg-gradient-to-r from-green-600/10 to-blue-600/10 border border-green-500/30 rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="h-4 w-4 text-green-400" />
-                          <span className="text-green-300 font-medium text-sm">Response Generated Successfully</span>
-                        </div>
-                        <p className="text-xs text-green-400/80">
-                          AI analyzed context, tone, and intent to craft this personalized response
-                        </p>
-                      </div>
-                      
+                    <Label className="text-lg font-semibold text-white mb-3 block">
+                      Your AI-Generated Response:
+                    </Label>
+                    <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 shadow-lg">
                       <div className="text-gray-300 whitespace-pre-wrap leading-relaxed bg-[#1A1A1A] rounded-lg p-4 border border-[#333]">
                         {generatedSmartResponse}
                       </div>
@@ -4005,23 +4004,17 @@ For example: 'Thanks for reaching out! I'm interested in learning more about you
                         setSmartResponseCopied(true)
                         setTimeout(() => setSmartResponseCopied(false), 2000)
                       }}
-                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
                       {smartResponseCopied ? (
                         <>
-                          <CheckCircle className="h-4 w-4 mr-2 text-green-200" />
-                          <div className="flex flex-col items-center">
-                            <span>Copied!</span>
-                            <span className="text-xs text-green-200">Ready to send</span>
-                          </div>
+                          <CheckCircle className="h-4 w-4 mr-2 text-gray-200" />
+                          Copied!
                         </>
                       ) : (
                         <>
                           <Copy className="h-4 w-4 mr-2" />
-                          <div className="flex flex-col items-center">
-                            <span>Copy Response</span>
-                            <span className="text-xs text-green-200">Ready to use</span>
-                          </div>
+                          Copy Response
                         </>
                       )}
                     </Button>
@@ -4032,44 +4025,35 @@ For example: 'Thanks for reaching out! I'm interested in learning more about you
                         }
                       }}
                       variant="outline"
-                      className="flex-1 bg-gradient-to-r from-[#2A2A2A] to-[#333] border-[#444] hover:from-[#333] hover:to-[#444] text-gray-300 hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
                       disabled={isGeneratingSmartResponse}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      <div className="flex flex-col items-center">
-                        <span>Regenerate</span>
-                        <span className="text-xs text-gray-400">Try different approach</span>
-                      </div>
+                      Regenerate Response
                     </Button>
                   </div>
                 </div>
               )}
 
               {/* Security Notice & Rate Limit */}
-              <div className="space-y-3 pt-4 border-t border-[#444]">
-                <div className="bg-gradient-to-r from-amber-800/20 to-orange-800/20 border border-amber-500/30 rounded-lg p-3">
-                  <div className="flex items-start gap-2 text-xs">
-                    <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <span className="font-medium text-amber-300">Security & Privacy:</span>
-                      <span className="text-amber-200/80"> Your responses are filtered for security. Inappropriate content will be blocked. Only business-related responses are generated.</span>
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-gray-300 mb-2">
+                      <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
                     </div>
+                    {smartResponsesRemaining !== null && (
+                      <div className="text-xs text-gray-500">
+                        {smartResponsesRemaining} smart responses remaining today
+                      </div>
+                    )}
                   </div>
                 </div>
-                {smartResponsesRemaining !== null && (
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 bg-[#2A2A2A] border border-[#444] rounded-full px-4 py-2">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                      <span className="text-sm text-gray-300">
-                        {smartResponsesRemaining} smart responses remaining today
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+          </DialogContent>
+        </Dialog>
 
 
                     </div>
