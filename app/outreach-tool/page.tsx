@@ -191,6 +191,23 @@ export default function OutreachToolPage() {
   const [isRecalculatingScores, setIsRecalculatingScores] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
   const [showLoadingOverride, setShowLoadingOverride] = useState(false)
+  const [showContractGenerator, setShowContractGenerator] = useState(false)
+  const [contractData, setContractData] = useState({
+    monthlyRetainer: '',
+    adSpend: '',
+    contractLength: '6',
+    servicesIncluded: {
+      metaAds: true,
+      googleAds: false,
+      creativeDesign: true,
+      landingPages: false,
+      analytics: true,
+      monthlyReports: true
+    },
+    startDate: '',
+    paymentTerms: 'net-30',
+    cancellationNotice: '30'
+  })
   
   // Simple Todo state
   const [todos, setTodos] = useState<TodoItem[]>([])
@@ -934,6 +951,123 @@ export default function OutreachToolPage() {
     } catch (error) {
       console.error('Error completing todo:', error)
       toast.error('Failed to complete task')
+    }
+  }
+
+  const generateContract = async (lead: Lead) => {
+    const currentDate = new Date().toLocaleDateString()
+    const startDate = contractData.startDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+    
+    const servicesString = Object.entries(contractData.servicesIncluded)
+      .filter(([_, included]) => included)
+      .map(([service, _]) => {
+        const serviceNames = {
+          metaAds: 'Meta (Facebook/Instagram) Advertising Management',
+          googleAds: 'Google Ads Management',
+          creativeDesign: 'Creative Design & Ad Copy',
+          landingPages: 'Landing Page Development',
+          analytics: 'Analytics & Performance Tracking',
+          monthlyReports: 'Monthly Performance Reports'
+        }
+        return serviceNames[service as keyof typeof serviceNames]
+      })
+      .join(', ')
+
+    const contract = `
+DIGITAL MARKETING SERVICES AGREEMENT
+
+This Digital Marketing Services Agreement ("Agreement") is entered into on ${currentDate} ("Effective Date") between:
+
+CLIENT:
+Business Name: ${lead.business_name}
+Owner/Authorized Representative: ${lead.owner_name || '[Owner Name Required]'}
+Email: ${lead.email || '[Email Required]'}
+Phone: ${lead.phone || '[Phone Required]'}
+Address: ${lead.city ? `${lead.city}, ${lead.state_province || '[State]'}` : '[Address Required]'}
+
+SERVICE PROVIDER:
+${agencySettings?.agency_name || '[Agency Name]'}
+[Agency Address]
+[Agency Phone]
+[Agency Email]
+
+TERMS AND CONDITIONS:
+
+1. SERVICES TO BE PROVIDED
+The Service Provider agrees to provide the following digital marketing services:
+${servicesString}
+
+2. COMPENSATION
+Monthly Retainer Fee: $${contractData.monthlyRetainer || '[Amount]'}
+Monthly Ad Spend Budget: $${contractData.adSpend || '[Amount]'}
+Payment Terms: ${contractData.paymentTerms === 'net-30' ? 'Net 30 days' : contractData.paymentTerms === 'net-15' ? 'Net 15 days' : 'Due upon receipt'}
+
+3. TERM AND TERMINATION
+Initial Term: ${contractData.contractLength} months
+Start Date: ${startDate}
+Either party may terminate this agreement with ${contractData.cancellationNotice} days written notice.
+
+4. PERFORMANCE EXPECTATIONS
+- Service Provider will manage advertising campaigns to industry best practices
+- Monthly performance reports will be provided
+- Client will provide necessary assets and approvals within 48 hours
+- Service Provider is not responsible for ad platform policy changes or account suspensions
+
+5. CONFIDENTIALITY
+Both parties agree to maintain confidentiality of proprietary information shared during the engagement.
+
+6. LIMITATION OF LIABILITY
+Service Provider's liability is limited to the monthly retainer fee. No guarantees are made regarding specific performance metrics or ROI.
+
+7. INTELLECTUAL PROPERTY
+All creative materials developed remain property of the Client. Service Provider retains rights to campaign strategies and methodologies.
+
+8. GOVERNING LAW
+This Agreement shall be governed by the laws of [State/Province].
+
+By signing below, both parties agree to the terms and conditions outlined in this Agreement.
+
+CLIENT SIGNATURE: _________________________ DATE: _____________
+${lead.owner_name || '[Owner Name]'}, ${lead.business_name}
+
+SERVICE PROVIDER SIGNATURE: _________________________ DATE: _____________
+[Representative Name], ${agencySettings?.agency_name || '[Agency Name]'}
+
+---
+This contract was generated on ${currentDate} for ${lead.business_name}
+Contract ID: ${lead.id}-${Date.now()}
+`
+
+    return contract
+  }
+
+  const downloadContract = async (lead: Lead) => {
+    try {
+      const contractText = await generateContract(lead)
+      const blob = new Blob([contractText], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${lead.business_name?.replace(/[^a-zA-Z0-9]/g, '_')}_Marketing_Contract.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success('Contract downloaded successfully!')
+    } catch (error) {
+      console.error('Error generating contract:', error)
+      toast.error('Failed to generate contract')
+    }
+  }
+
+  const copyContractToClipboard = async (lead: Lead) => {
+    try {
+      const contractText = await generateContract(lead)
+      await navigator.clipboard.writeText(contractText)
+      toast.success('Contract copied to clipboard!')
+    } catch (error) {
+      console.error('Error copying contract:', error)
+      toast.error('Failed to copy contract')
     }
   }
 
@@ -2713,10 +2847,18 @@ export default function OutreachToolPage() {
                                   Smart Response
                                 </Button>
                               ) : campaignLead.status === 'qualified' ? (
-                                <div className="flex items-center gap-2 text-green-400">
-                                  <Star className="h-3 w-3" />
-                                  <span className="text-xs font-medium">Qualified</span>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600/50 text-green-300 hover:bg-green-800/50 hover:text-green-200"
+                                  onClick={() => {
+                                    setSelectedCampaignLead(campaignLead)
+                                    setShowContractGenerator(true)
+                                  }}
+                                >
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  Generate Contract
+                                </Button>
                               ) : campaignLead.status === 'signed' ? (
                                 <div className="flex items-center gap-2 text-green-400">
                                   <CheckCircle className="h-3 w-3" />
@@ -4737,6 +4879,243 @@ export default function OutreachToolPage() {
             </div>
           </DialogContent>
                  </Dialog>
+
+        {/* Contract Generator Dialog */}
+        <Dialog open={showContractGenerator} onOpenChange={setShowContractGenerator}>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-4xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
+            <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-green-600 to-green-700 rounded-lg">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <span>Generate Marketing Contract</span>
+              </DialogTitle>
+              <DialogDescription className="text-gray-300">
+                Create a professional digital marketing services agreement for {selectedCampaignLead?.lead?.business_name}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Contract Details */}
+                <div className="space-y-6">
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Contract Details</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
+                          <Input
+                            type="number"
+                            placeholder="2500"
+                            value={contractData.monthlyRetainer}
+                            onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
+                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
+                          <Input
+                            type="number"
+                            placeholder="5000"
+                            value={contractData.adSpend}
+                            onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
+                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Contract Length (months)</Label>
+                          <Select value={contractData.contractLength} onValueChange={(value) => setContractData(prev => ({ ...prev, contractLength: value }))}>
+                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                              <SelectItem value="3">3 months</SelectItem>
+                              <SelectItem value="6">6 months</SelectItem>
+                              <SelectItem value="12">12 months</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Start Date</Label>
+                          <Input
+                            type="date"
+                            value={contractData.startDate}
+                            onChange={(e) => setContractData(prev => ({ ...prev, startDate: e.target.value }))}
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Payment Terms</Label>
+                          <Select value={contractData.paymentTerms} onValueChange={(value) => setContractData(prev => ({ ...prev, paymentTerms: value }))}>
+                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                              <SelectItem value="due-on-receipt">Due on Receipt</SelectItem>
+                              <SelectItem value="net-15">Net 15 days</SelectItem>
+                              <SelectItem value="net-30">Net 30 days</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Cancellation Notice (days)</Label>
+                          <Input
+                            type="number"
+                            placeholder="30"
+                            value={contractData.cancellationNotice}
+                            onChange={(e) => setContractData(prev => ({ ...prev, cancellationNotice: e.target.value }))}
+                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Services Included</h3>
+                    <div className="space-y-3">
+                      {Object.entries(contractData.servicesIncluded).map(([service, included]) => (
+                        <div key={service} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={service}
+                            checked={included}
+                            onCheckedChange={(checked) => 
+                              setContractData(prev => ({
+                                ...prev,
+                                servicesIncluded: { ...prev.servicesIncluded, [service]: checked as boolean }
+                              }))
+                            }
+                            className="border-[#444] data-[state=checked]:bg-green-600"
+                          />
+                          <label htmlFor={service} className="text-sm text-gray-300 cursor-pointer">
+                            {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising'}
+                            {service === 'googleAds' && 'Google Ads Management'}
+                            {service === 'creativeDesign' && 'Creative Design & Ad Copy'}
+                            {service === 'landingPages' && 'Landing Page Development'}
+                            {service === 'analytics' && 'Analytics & Performance Tracking'}
+                            {service === 'monthlyReports' && 'Monthly Performance Reports'}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right Column - Lead Information & Preview */}
+                <div className="space-y-6">
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Lead Information</h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Business:</span>
+                        <span className="text-white">{selectedCampaignLead?.lead?.business_name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Owner:</span>
+                        <span className="text-white">{selectedCampaignLead?.lead?.owner_name || 'Not provided'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Email:</span>
+                        <span className="text-white">{selectedCampaignLead?.lead?.email || 'Not provided'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Phone:</span>
+                        <span className="text-white">{selectedCampaignLead?.lead?.phone || 'Not provided'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Location:</span>
+                        <span className="text-white">
+                          {selectedCampaignLead?.lead?.city ? `${selectedCampaignLead.lead.city}, ${selectedCampaignLead.lead.state_province || ''}` : 'Not provided'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Industry:</span>
+                        <span className="text-white">{selectedCampaignLead?.lead?.niche_name || 'Not specified'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Contract Summary</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Monthly Retainer:</span>
+                        <span className="text-green-400">${contractData.monthlyRetainer || '0'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Ad Spend Budget:</span>
+                        <span className="text-green-400">${contractData.adSpend || '0'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Contract Length:</span>
+                        <span className="text-white">{contractData.contractLength} months</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Payment Terms:</span>
+                        <span className="text-white">{contractData.paymentTerms.replace('-', ' ').toUpperCase()}</span>
+                      </div>
+                      <div className="pt-2 border-t border-[#444]">
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-gray-400">Total Contract Value:</span>
+                          <span className="text-green-400">
+                            ${((parseInt(contractData.monthlyRetainer) || 0) * (parseInt(contractData.contractLength) || 0)).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-shrink-0 flex justify-between items-center p-6 border-t border-[#333] bg-[#1A1A1A]">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Info className="h-4 w-4" />
+                <span>Contract will be generated with fillable fields for signatures</span>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowContractGenerator(false)}
+                  variant="outline"
+                  className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (selectedCampaignLead?.lead) {
+                      copyContractToClipboard(selectedCampaignLead.lead)
+                    }
+                  }}
+                  variant="outline"
+                  className="bg-[#2A2A2A] border-[#444] text-blue-300 hover:bg-blue-900/30 hover:text-blue-200"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy to Clipboard
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (selectedCampaignLead?.lead) {
+                      downloadContract(selectedCampaignLead.lead)
+                    }
+                  }}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Download Contract
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
 
 
