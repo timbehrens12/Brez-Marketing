@@ -5710,18 +5710,35 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </Button>
                 
                 {!contractEditingMode && !contractPreviewMode && (
-                  <Button
-                    onClick={() => {
-                      if (selectedCampaignLead?.lead) {
-                        generateContractForEditing(selectedCampaignLead.lead)
-                      }
-                    }}
-                    disabled={validateContractData().length > 0}
-                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate Contract
-                  </Button>
+                  <div className="flex flex-col items-end">
+                    <Button
+                      onClick={() => {
+                        if (selectedCampaignLead?.lead) {
+                          generateContractForEditing(selectedCampaignLead.lead)
+                        }
+                      }}
+                      disabled={validateContractData().length > 0}
+                      className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Contract
+                    </Button>
+                    {validateContractData().length > 0 && (
+                      <div className="mt-2 text-xs text-red-400 max-w-xs">
+                        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-2">
+                          <div className="font-medium mb-1">Required to generate:</div>
+                          <ul className="space-y-1">
+                            {validateContractData().map((error, index) => (
+                              <li key={index} className="flex items-start gap-1">
+                                <span className="text-red-400 mt-0.5">•</span>
+                                <span>{error}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 
                 {(contractEditingMode || contractPreviewMode) && (
