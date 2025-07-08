@@ -201,12 +201,10 @@ export default function OutreachToolPage() {
     minimumAdSpend: '',
     contractLength: '6',
     servicesIncluded: {
-      metaAds: true,
-      googleAds: false,
-      creativeDesign: true,
-      landingPages: false,
-      analytics: true,
-      monthlyReports: true
+      metaAds: false,
+      creativeDesign: false,
+      analytics: false,
+      monthlyReports: false
     },
     startDate: '',
     paymentTerms: 'net-30',
@@ -974,9 +972,7 @@ export default function OutreachToolPage() {
       .map(([service, _]) => {
         const serviceNames = {
           metaAds: 'Meta (Facebook/Instagram) Advertising Management',
-          googleAds: 'Google Ads Management',
           creativeDesign: 'Creative Design & Ad Copy',
-          landingPages: 'Landing Page Development',
           analytics: 'Analytics & Performance Tracking',
           monthlyReports: 'Monthly Performance Reports'
         }
@@ -1089,8 +1085,40 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     return contract
   }
 
+  const validateContractData = () => {
+    const errors = []
+    
+    // Validate pricing model specific fields
+    if (contractData.pricingModel === 'retainer') {
+      if (!contractData.monthlyRetainer || contractData.monthlyRetainer.trim() === '') {
+        errors.push('Monthly retainer amount is required')
+      }
+      if (!contractData.adSpend || contractData.adSpend.trim() === '') {
+        errors.push('Ad spend budget is required')
+      }
+    } else if (contractData.pricingModel === 'revenue_share') {
+      if (!contractData.revenueSharePercentage || contractData.revenueSharePercentage.trim() === '') {
+        errors.push('Revenue share percentage is required')
+      }
+    }
+    
+    // Validate at least one service is selected
+    const hasSelectedService = Object.values(contractData.servicesIncluded).some(included => included)
+    if (!hasSelectedService) {
+      errors.push('At least one service must be selected')
+    }
+    
+    return errors
+  }
+
   const generateContractForEditing = async (lead: Lead) => {
     try {
+      const validationErrors = validateContractData()
+      if (validationErrors.length > 0) {
+        validationErrors.forEach(error => toast.error(error))
+        return
+      }
+      
       const contractText = await generateContract(lead)
       setGeneratedContractText(contractText)
       setEditableContractText(contractText)
@@ -5500,10 +5528,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
                           <label htmlFor={service} className="text-sm text-gray-300 cursor-pointer">
-                            {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising'}
-                            {service === 'googleAds' && 'Google Ads Management'}
+                            {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising Management'}
                             {service === 'creativeDesign' && 'Creative Design & Ad Copy'}
-                            {service === 'landingPages' && 'Landing Page Development'}
                             {service === 'analytics' && 'Analytics & Performance Tracking'}
                             {service === 'monthlyReports' && 'Monthly Performance Reports'}
                           </label>
@@ -5690,7 +5716,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         generateContractForEditing(selectedCampaignLead.lead)
                       }
                     }}
-                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
+                    disabled={validateContractData().length > 0}
+                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Contract
