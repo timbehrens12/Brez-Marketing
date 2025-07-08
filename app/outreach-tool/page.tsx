@@ -384,8 +384,8 @@ export default function OutreachToolPage() {
   const generateTodos = useCallback(() => {
     if (!campaignLeads.length) {
       setTodos([])
-      return
-    }
+        return
+      }
 
     const newTodos: TodoItem[] = []
     
@@ -415,7 +415,7 @@ export default function OutreachToolPage() {
       if (!cl.last_contacted_at) return false
       return new Date(cl.last_contacted_at) < sevenDaysAgo
     })
-    
+
 
 
     // Generate specific todo items for individual leads
@@ -423,10 +423,10 @@ export default function OutreachToolPage() {
     // High priority - Responded leads (need immediate attention)
     respondedLeads.forEach(cl => {
       if (cl.lead) {
-        newTodos.push({
+      newTodos.push({
           id: `respond_${cl.id}`,
           type: 'responded',
-          priority: 'high',
+        priority: 'high',
           title: `Respond to ${cl.lead.business_name}`,
           description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
           count: 1,
@@ -444,10 +444,10 @@ export default function OutreachToolPage() {
     // High priority - Qualified leads (ready to close)
     qualifiedLeads.forEach(cl => {
       if (cl.lead) {
-        newTodos.push({
+      newTodos.push({
           id: `close_${cl.id}`,
           type: 'hot_leads',
-          priority: 'high',
+        priority: 'high',
           title: `Send proposal to ${cl.lead.business_name}`,
           description: `${cl.lead.business_name} is qualified and ready for your proposal`,
           count: 1,
@@ -561,8 +561,8 @@ export default function OutreachToolPage() {
           description: 'These leads were contacted 5-6 days ago with no response. Consider follow-up or status updates.',
           count: remainingFollowUps.length,
           action: 'Review Follow-ups',
-          filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-        })
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+      })
       }
     }
 
@@ -2386,9 +2386,14 @@ export default function OutreachToolPage() {
                                 }
                               </div>
                               
-                              {/* Platform Icons - Overlapped Style */}
+                              {/* Platform Icons - Only show if lead was actually contacted */}
                               <div className="flex items-center relative max-w-[80px]">
                                 {(() => {
+                                  // Only show method icons if the lead has been contacted
+                                  if (!campaignLead.last_contacted_at) {
+                                    return <span className="text-gray-500 text-xs">No contact made</span>
+                                  }
+
                                   // Check which outreach methods have been used for this lead (last 7 days)
                                   const usedMethods: string[] = []
                                   
@@ -2409,9 +2414,14 @@ export default function OutreachToolPage() {
                                       }
                                     }
                                   }
+
+                                  // Also check the outreach_method field from the database
+                                  if (campaignLead.outreach_method && !usedMethods.includes(campaignLead.outreach_method)) {
+                                    usedMethods.push(campaignLead.outreach_method)
+                                  }
                                   
                                   if (usedMethods.length === 0) {
-                                    return <span className="text-gray-500 text-xs">No methods used</span>
+                                    return <span className="text-gray-500 text-xs">Method unknown</span>
                                   }
                                   
                                   return usedMethods.map((method, index) => (
@@ -2510,21 +2520,21 @@ export default function OutreachToolPage() {
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-4">
-                  {/* Quick Actions */}
+                    {/* Quick Actions */}
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
-                    <div className="space-y-2">
-                      <Button
-                        onClick={() => {
-                          // Reset all filters first, then apply specific ones
-                          setFilters({
-                            hasPhone: false,
-                            hasEmail: false,
-                            hasWebsite: false,
-                            hasSocials: false,
-                            socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                            selectedNicheFilter: [],
-                            statusFilter: 'all',
+                      <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => {
+                            // Reset all filters first, then apply specific ones
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'all',
                             minScore: 80,
                             hasOwnerName: false,
                             businessTypeFilter: [],
@@ -2532,17 +2542,17 @@ export default function OutreachToolPage() {
                             outreachMethodFilter: [],
                             lastContactedFilter: 'all',
                             scoreRange: { min: 0, max: 100 }
-                          });
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                      >
-                        <Star className="h-3 w-3 mr-2" />
-                        View High-Score Leads
-                      </Button>
-                      <Button
-                        onClick={() => {
+                            });
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <Star className="h-3 w-3 mr-2" />
+                          View High-Score Leads
+                        </Button>
+                        <Button
+                          onClick={() => {
                           const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
                           if (pendingLeads.length > 0) {
                             setPendingOutreachQueue(pendingLeads);
@@ -2553,14 +2563,14 @@ export default function OutreachToolPage() {
                           } else {
                             toast.error('No pending leads found');
                           }
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                      >
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
                         <Zap className="h-3 w-3 mr-2" />
                         Outreach All Pending ({stats.pending})
-                      </Button>
+                        </Button>
                     </div>
                   </div>
 
@@ -2642,7 +2652,7 @@ export default function OutreachToolPage() {
                                       onCheckedChange={(checked) => {
                                         if (checked) {
                                           completeTodo(todo.id)
-                                        } else {
+                            } else {
                                           // Remove from completed
                                           setCompletedTodos(prev => {
                                             const newSet = new Set(prev)
@@ -2674,21 +2684,21 @@ export default function OutreachToolPage() {
                                         onClick={() => {
                                           todo.filterAction()
                                         }}
-                                        size="sm"
+                          size="sm"
                                         variant="outline"
                                         className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                                      >
+                        >
                                         {todo.action}
-                                      </Button>
+                        </Button>
                                     )}
-                                  </div>
-                                </div>
+                      </div>
+                    </div>
                               </div>
                             )
                           })}
+                        </div>
+                      )}
                       </div>
-                    )}
-                  </div>
 
                   {/* Summary */}
                   <div className="pt-3 border-t border-[#333] space-y-2">
@@ -2704,8 +2714,8 @@ export default function OutreachToolPage() {
                           className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${(completedTodos.size / todos.length) * 100}%` }}
                         />
-                      </div>
-                    )}
+                  </div>
+                )}
                   </div>
                 </div>
               </CardContent>
@@ -2879,9 +2889,9 @@ export default function OutreachToolPage() {
                      method.type === 'facebook' ? 'Facebook Follow-up' : 
                      `${method.label} Follow-up`)
                   : (method.type === 'email' ? 'Email Outreach' :
-                     method.type === 'phone' ? 'Cold Call Script' :
-                     method.type === 'linkedin' ? 'LinkedIn Message' :
-                     method.type === 'instagram' ? 'Instagram DM' :
+                  method.type === 'phone' ? 'Cold Call Script' :
+                  method.type === 'linkedin' ? 'LinkedIn Message' :
+                  method.type === 'instagram' ? 'Instagram DM' :
                      method.type === 'facebook' ? 'Facebook Message' : method.label)
                 
                 const recommendation = isFollowUpMode
@@ -2899,17 +2909,17 @@ export default function OutreachToolPage() {
                        'Quick re-engagement - brief touchpoint' :
                        'AI-powered follow-up message')
                   : (method.type === 'email' ? 
-                     'Direct & professional - highest response rates' : 
-                     method.type === 'phone' ? 
-                     'Immediate connection - qualify leads instantly' :
-                     method.type === 'linkedin' ?
-                       'Professional networking - builds trust' :
-                     method.type === 'instagram' ?
-                       'Visual engagement - casual approach' :
-                     method.type === 'facebook' ?
-                       'Social connection - personal touch' :
-                     method.type === 'twitter' || method.type === 'x' ?
-                       'Quick engagement - viral potential' :
+                  'Direct & professional - highest response rates' : 
+                  method.type === 'phone' ? 
+                  'Immediate connection - qualify leads instantly' :
+                  method.type === 'linkedin' ?
+                    'Professional networking - builds trust' :
+                  method.type === 'instagram' ?
+                    'Visual engagement - casual approach' :
+                  method.type === 'facebook' ?
+                    'Social connection - personal touch' :
+                  method.type === 'twitter' || method.type === 'x' ?
+                    'Quick engagement - viral potential' :
                        'AI-powered personalization')
                   
                 return (
@@ -3103,11 +3113,11 @@ export default function OutreachToolPage() {
                          (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter Follow-up' :
                          'AI Follow-up Message')
                       : (messageType === 'phone' ? 'AI Cold Call Script' : 
-                         messageType === 'email' ? 'AI Email Outreach' :
-                         messageType === 'linkedin' ? 'AI LinkedIn Message' :
-                         messageType === 'instagram' ? 'AI Instagram DM' :
-                         messageType === 'facebook' ? 'AI Facebook Message' :
-                         (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
+                 messageType === 'email' ? 'AI Email Outreach' :
+                 messageType === 'linkedin' ? 'AI LinkedIn Message' :
+                 messageType === 'instagram' ? 'AI Instagram DM' :
+                 messageType === 'facebook' ? 'AI Facebook Message' :
+                 (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
                          'AI Outreach Message')
                     }
                   </span>
@@ -3246,7 +3256,7 @@ export default function OutreachToolPage() {
                               toast.success('Lead marked as contacted! All pending leads processed!')
                             }
                           } else {
-                            toast.success('Lead marked as contacted!')
+                          toast.success('Lead marked as contacted!')
                           }
                         }}
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
@@ -3474,7 +3484,7 @@ export default function OutreachToolPage() {
                       {isFollowUpMode ? 'Exit Follow-ups' : 'Exit Bulk Mode'}
                     </Button>
                   </div>
-                </div>
+                  </div>
               )}
             </div>
           </DialogContent>
@@ -3942,7 +3952,7 @@ export default function OutreachToolPage() {
           </Dialog>
 
 
-        </div>
+                    </div>
       </div>
     )
   } 
