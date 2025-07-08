@@ -218,6 +218,11 @@ export default function OutreachToolPage() {
   const [currentFollowUpIndex, setCurrentFollowUpIndex] = useState(0)
   const [isFollowUpMode, setIsFollowUpMode] = useState(false)
   
+  // Bulk Smart Response state for responded leads
+  const [respondedQueue, setRespondedQueue] = useState<CampaignLead[]>([])
+  const [currentRespondedIndex, setCurrentRespondedIndex] = useState(0)
+  const [isRespondedMode, setIsRespondedMode] = useState(false)
+  
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
     hasPhone: false,
@@ -453,25 +458,49 @@ export default function OutreachToolPage() {
     // Generate specific todo items for individual leads
     
     // High priority - Responded leads (need immediate attention)
-    respondedLeads.forEach(cl => {
-      if (cl.lead) {
+    if (respondedLeads.length >= 3) {
+      // If 3+ responded leads, show bulk action instead of individual items
       newTodos.push({
-          id: `respond_${cl.id}`,
-          type: 'responded',
+        id: 'bulk_responded_many',
+        type: 'responded',
         priority: 'high',
-          title: `Respond to ${cl.lead.business_name}`,
-          description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
-          count: 1,
-          action: 'Smart Response',
-          filterAction: () => {
-            setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
-            // Also select this specific lead
-            setSelectedCampaignLead(cl)
+        title: `${respondedLeads.length} leads have responded and need immediate attention`,
+        description: 'Use the bulk smart response tool to efficiently process all responded leads in sequence',
+        count: respondedLeads.length,
+        action: 'Start Bulk Smart Response',
+        filterAction: () => {
+          if (respondedLeads.length > 0) {
+            setRespondedQueue(respondedLeads)
+            setCurrentRespondedIndex(0)
+            setSelectedCampaignLead(respondedLeads[0])
+            setIsRespondedMode(true)
             setShowSmartResponse(true)
           }
+        }
+      })
+    } else {
+      // Show individual responded leads if less than 3
+      respondedLeads.forEach(cl => {
+        if (cl.lead) {
+        newTodos.push({
+            id: `respond_${cl.id}`,
+            type: 'responded',
+          priority: 'high',
+            title: `Respond to ${cl.lead.business_name}`,
+            description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
+            count: 1,
+            action: 'Smart Response',
+            filterAction: () => {
+              setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
+              // Also select this specific lead
+              setSelectedCampaignLead(cl)
+              setIsRespondedMode(false)
+              setShowSmartResponse(true)
+            }
+        })
+      }
       })
     }
-    })
 
     // High priority - Qualified leads (ready to close)
     qualifiedLeads.forEach(cl => {
@@ -623,7 +652,7 @@ export default function OutreachToolPage() {
     }
 
     setTodos(newTodos)
-  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode])
+  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode, setRespondedQueue, setCurrentRespondedIndex, setIsRespondedMode])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -1631,38 +1660,23 @@ export default function OutreachToolPage() {
   const getAvailablePlatforms = () => {
     const allPlatforms = [
       { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up', requiresConnection: false },
-      { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response', requiresConnection: false }, // Always available for now
-      { type: 'twitter', icon: () => (
-        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-        </svg>
-      ), label: 'X/Twitter Reply', description: 'Quick engagement response', requiresConnection: false }, // Always available for now
       { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement', requiresConnection: true, connectionType: 'meta' },
       { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response', requiresConnection: true, connectionType: 'meta' }
     ]
 
-    // Debug: Log platform connections to see what's available
-    console.log('🔍 Platform connections for debugging:', platformConnections)
-    console.log('🔍 Selected brand ID:', selectedBrandId)
-
     // Filter platforms based on connections
     const availablePlatforms = allPlatforms.filter(platform => {
-      // Email, LinkedIn, and Twitter are always available for now
+      // Email is always available
       if (!platform.requiresConnection) {
         return true
       }
       
       // Check if the required connection exists for this brand
-      const hasConnection = platformConnections.some(conn => 
+      return platformConnections.some(conn => 
         conn.platform_type === platform.connectionType && conn.status === 'active'
       )
-      
-      console.log(`🔍 Platform ${platform.type} (requires ${platform.connectionType}): ${hasConnection ? 'AVAILABLE' : 'NOT AVAILABLE'}`)
-      
-      return hasConnection
     })
 
-    console.log('🔍 Final available platforms:', availablePlatforms.map(p => p.type))
     return availablePlatforms
   }
 
@@ -3939,21 +3953,94 @@ export default function OutreachToolPage() {
         </Dialog>
 
         {/* Smart Response Dialog */}
-        <Dialog open={showSmartResponse} onOpenChange={setShowSmartResponse}>
+        <Dialog open={showSmartResponse} onOpenChange={(open) => {
+          setShowSmartResponse(open)
+          if (!open) {
+            // Clear bulk queue when closing
+            setRespondedQueue([])
+            setCurrentRespondedIndex(0)
+            setIsRespondedMode(false)
+          }
+        }}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white text-lg">
-                Smart Response for {selectedCampaignLead?.lead?.business_name}
+              <DialogTitle className="text-white flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span>Generate intelligent follow-up responses</span>
+                  {respondedQueue.length > 0 && (
+                    <span className="text-sm text-gray-400 font-normal">
+                      Response {currentRespondedIndex + 1} of {respondedQueue.length}
+                    </span>
+                  )}
+                </div>
               </DialogTitle>
-              {selectedCampaignLead?.lead?.owner_name && (
-                <DialogDescription className="text-gray-400 text-sm">
-                  {selectedCampaignLead.lead.owner_name}
-                  {selectedCampaignLead?.lead?.niche_name && ` • ${selectedCampaignLead.lead.niche_name}`}
-                </DialogDescription>
-              )}
+              <DialogDescription className="text-gray-300">
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
+                  </div>
+                  {selectedCampaignLead?.lead?.owner_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <User className="h-4 w-4" />
+                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
+                    </div>
+                  )}
+                  {selectedCampaignLead?.lead?.niche_name && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Building className="h-4 w-4" />
+                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
+                    </div>
+                )}
+                </div>
+              </DialogDescription>
             </DialogHeader>
             
+            {/* Bulk Progress Bar (only show when in bulk mode) */}
+            {respondedQueue.length > 0 && (
+              <div className="px-6 pb-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300 font-medium text-sm">
+                      Smart Response Progress
+                    </span>
+                    <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
+                      {currentRespondedIndex + 1} / {respondedQueue.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
+                      style={{ 
+                        width: `${((currentRespondedIndex + 1) / respondedQueue.length) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-6 py-4">
+              {/* AI Information Banner */}
+              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-gray-600/30 rounded-lg">
+                    <Zap className="h-5 w-5 text-gray-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-200 mb-1">
+                      AI-Powered Response Generation
+                    </h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      Advanced AI analyzes their response context and generates strategic follow-up messages that maintain engagement while moving the conversation toward your business goals.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Platform Selection */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-white mb-4">
@@ -3975,36 +4062,36 @@ export default function OutreachToolPage() {
                   return (
                     <div className={getGridClasses(availablePlatforms.length)}>
                       {optimizedPlatforms.map((platform) => (
-                        <Button
-                          key={platform.type}
-                          onClick={() => setResponseMethod(platform.type as any)}
-                          className={`justify-start p-4 h-auto border transition-all duration-200 group ${
+                    <Button
+                      key={platform.type}
+                      onClick={() => setResponseMethod(platform.type as any)}
+                      className={`justify-start p-4 h-auto border transition-all duration-200 group ${
+                        responseMethod === platform.type
+                          ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
+                          : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg transition-all duration-200 ${
                             responseMethod === platform.type
-                              ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
-                              : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-lg transition-all duration-200 ${
-                                responseMethod === platform.type
-                                  ? 'bg-gray-500/30'
-                                  : 'bg-gray-600/30 group-hover:bg-gray-600/40'
-                              }`}>
-                                <platform.icon className="h-5 w-5" />
-                              </div>
-                              <div className="text-left">
-                                <div className="font-semibold">{platform.label}</div>
-                                <div className="text-sm text-gray-400">{platform.description}</div>
-                              </div>
-                            </div>
-                            {responseMethod === platform.type && (
-                              <CheckCircle className="h-5 w-5 text-gray-300" />
-                            )}
+                              ? 'bg-gray-500/30'
+                              : 'bg-gray-600/30 group-hover:bg-gray-600/40'
+                          }`}>
+                            <platform.icon className="h-5 w-5" />
                           </div>
-                        </Button>
-                      ))}
-                    </div>
+                          <div className="text-left">
+                            <div className="font-semibold">{platform.label}</div>
+                            <div className="text-sm text-gray-400">{platform.description}</div>
+                          </div>
+                        </div>
+                        {responseMethod === platform.type && (
+                          <CheckCircle className="h-5 w-5 text-gray-300" />
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
                   )
                 })()}
               </div>
@@ -4133,8 +4220,78 @@ export default function OutreachToolPage() {
                 )}
                   </div>
                 </div>
-                              </div>
               </div>
+              
+              {/* Bulk Navigation Controls (only show when in bulk mode) */}
+              {respondedQueue.length > 0 && (
+                <div className="px-6 pt-4 border-t border-[#444]">
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        if (currentRespondedIndex > 0) {
+                          const newIndex = currentRespondedIndex - 1
+                          setCurrentRespondedIndex(newIndex)
+                          setSelectedCampaignLead(respondedQueue[newIndex])
+                          // Clear any generated responses
+                          setGeneratedSmartResponse('')
+                          setLeadResponse('')
+                        }
+                      }}
+                      disabled={currentRespondedIndex === 0}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
+                    >
+                      ← Previous
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentRespondedIndex < respondedQueue.length - 1) {
+                          const newIndex = currentRespondedIndex + 1
+                          setCurrentRespondedIndex(newIndex)
+                          setSelectedCampaignLead(respondedQueue[newIndex])
+                          // Clear any generated responses
+                          setGeneratedSmartResponse('')
+                          setLeadResponse('')
+                        } else {
+                          // Reached end of queue
+                          setShowSmartResponse(false)
+                          setRespondedQueue([])
+                          setCurrentRespondedIndex(0)
+                          setIsRespondedMode(false)
+                          setGeneratedSmartResponse('')
+                          setLeadResponse('')
+                          toast.success('All responded leads processed!')
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                    >
+                      {currentRespondedIndex < respondedQueue.length - 1 ? 'Skip to Next →' : 'Finish Responses'}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        setShowSmartResponse(false)
+                        setRespondedQueue([])
+                        setCurrentRespondedIndex(0)
+                        setIsRespondedMode(false)
+                        setGeneratedSmartResponse('')
+                        setLeadResponse('')
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Exit Responses
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
             </DialogContent>
           </Dialog>
 
