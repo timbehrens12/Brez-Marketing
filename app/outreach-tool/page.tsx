@@ -199,7 +199,7 @@ export default function OutreachToolPage() {
   // Smart Response state
   const [showSmartResponse, setShowSmartResponse] = useState(false)
   const [leadResponse, setLeadResponse] = useState('')
-  const [responseMethod, setResponseMethod] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter'>('email')
+  const [responseMethod, setResponseMethod] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'website'>('email')
   const [generatedSmartResponse, setGeneratedSmartResponse] = useState('')
   const [isGeneratingSmartResponse, setIsGeneratingSmartResponse] = useState(false)
   const [smartResponseCopied, setSmartResponseCopied] = useState(false)
@@ -1673,8 +1673,22 @@ export default function OutreachToolPage() {
     const lead = selectedCampaignLead.lead
     const availablePlatforms = []
 
+    // Debug: Log lead data to see what's available
+    console.log('🔍 Lead data for platform detection:', {
+      business_name: lead.business_name,
+      email: lead.email,
+      phone: lead.phone,
+      website: lead.website,
+      instagram_handle: lead.instagram_handle,
+      facebook_page: lead.facebook_page,
+      linkedin_profile: lead.linkedin_profile,
+      twitter_handle: lead.twitter_handle,
+      platformConnections: platformConnections
+    })
+
     // Check each platform based on what the lead actually has
     if (lead.email) {
+      console.log('✅ Adding Email platform')
       availablePlatforms.push({
         type: 'email',
         icon: Mail,
@@ -1684,6 +1698,7 @@ export default function OutreachToolPage() {
     }
 
     if (lead.phone) {
+      console.log('✅ Adding Phone platform')
       availablePlatforms.push({
         type: 'phone',
         icon: Phone,
@@ -1692,37 +1707,31 @@ export default function OutreachToolPage() {
       })
     }
 
+    // Instagram - show if they have a handle (manual outreach possible)
     if (lead.instagram_handle) {
-      // Only show if we have Meta connection
-      const hasMetaConnection = platformConnections.some(conn => 
-        conn.platform_type === 'meta' && conn.status === 'active'
-      )
-      if (hasMetaConnection) {
-        availablePlatforms.push({
-          type: 'instagram',
-          icon: Instagram,
-          label: 'Instagram DM',
-          description: 'Casual social engagement'
-        })
-      }
+      console.log('✅ Adding Instagram platform')
+      availablePlatforms.push({
+        type: 'instagram',
+        icon: Instagram,
+        label: 'Instagram DM',
+        description: 'Social media engagement'
+      })
     }
 
+    // Facebook - show if they have a page (manual outreach possible)
     if (lead.facebook_page) {
-      // Only show if we have Meta connection
-      const hasMetaConnection = platformConnections.some(conn => 
-        conn.platform_type === 'meta' && conn.status === 'active'
-      )
-      if (hasMetaConnection) {
-        availablePlatforms.push({
-          type: 'facebook',
-          icon: Facebook,
-          label: 'Facebook Message',
-          description: 'Social connection response'
-        })
-      }
+      console.log('✅ Adding Facebook platform')
+      availablePlatforms.push({
+        type: 'facebook',
+        icon: Facebook,
+        label: 'Facebook Message',
+        description: 'Social connection response'
+      })
     }
 
+    // LinkedIn - show if they have a profile
     if (lead.linkedin_profile) {
+      console.log('✅ Adding LinkedIn platform')
       availablePlatforms.push({
         type: 'linkedin',
         icon: Linkedin,
@@ -1731,7 +1740,9 @@ export default function OutreachToolPage() {
       })
     }
 
+    // Twitter/X - show if they have a handle
     if (lead.twitter_handle) {
+      console.log('✅ Adding Twitter platform')
       availablePlatforms.push({
         type: 'twitter',
         icon: Twitter,
@@ -1740,6 +1751,47 @@ export default function OutreachToolPage() {
       })
     }
 
+    // Website contact form - show if they have a website
+    if (lead.website) {
+      console.log('✅ Adding Website platform')
+      availablePlatforms.push({
+        type: 'website',
+        icon: Globe,
+        label: 'Website Contact',
+        description: 'Contact form submission'
+      })
+    }
+
+    // Fallback: If no platforms detected, show email and manual outreach options
+    if (availablePlatforms.length === 0) {
+      console.log('⚠️ No platforms detected, adding fallbacks')
+      
+      // Always offer email as fallback
+      availablePlatforms.push({
+        type: 'email',
+        icon: Mail,
+        label: 'Email Outreach',
+        description: 'General email outreach'
+      })
+      
+      // Add phone if it might exist
+      availablePlatforms.push({
+        type: 'phone',
+        icon: Phone,
+        label: 'Phone Outreach',
+        description: 'Cold calling approach'
+      })
+      
+      // Add social media research option
+      availablePlatforms.push({
+        type: 'linkedin',
+        icon: Linkedin,
+        label: 'LinkedIn Search',
+        description: 'Find them on LinkedIn'
+      })
+    }
+
+    console.log('🎯 Final available platforms:', availablePlatforms.map(p => p.type))
     return availablePlatforms
   }
 
