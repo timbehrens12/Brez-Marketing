@@ -199,7 +199,7 @@ export default function OutreachToolPage() {
   // Smart Response state
   const [showSmartResponse, setShowSmartResponse] = useState(false)
   const [leadResponse, setLeadResponse] = useState('')
-  const [responseMethod, setResponseMethod] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter' | 'website'>('email')
+  const [responseMethod, setResponseMethod] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter'>('email')
   const [generatedSmartResponse, setGeneratedSmartResponse] = useState('')
   const [isGeneratingSmartResponse, setIsGeneratingSmartResponse] = useState(false)
   const [smartResponseCopied, setSmartResponseCopied] = useState(false)
@@ -1751,16 +1751,7 @@ export default function OutreachToolPage() {
       })
     }
 
-    // Website contact form - show if they have a website
-    if (lead.website) {
-      console.log('✅ Adding Website platform')
-      availablePlatforms.push({
-        type: 'website',
-        icon: Globe,
-        label: 'Website Contact',
-        description: 'Contact form submission'
-      })
-    }
+
 
     // Fallback: If no platforms detected, show email and manual outreach options
     if (availablePlatforms.length === 0) {
