@@ -4205,22 +4205,15 @@ export default function OutreachToolPage() {
                   const availablePlatforms = getAvailablePlatforms()
                   const optimizedPlatforms = createPlatformGrid(availablePlatforms)
                   
-                  // Determine grid layout based on platform count
-                  const getGridClasses = (count: number) => {
-                    if (count === 1) return "grid grid-cols-1 gap-3 max-w-md mx-auto"
-                    if (count === 2) return "grid grid-cols-1 sm:grid-cols-2 gap-3"
-                    if (count === 3) return "grid grid-cols-1 sm:grid-cols-3 gap-3"
-                    if (count === 4) return "grid grid-cols-1 sm:grid-cols-2 gap-3"
-                    return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                  }
-                  
+                  // Always use single column layout for better mobile compatibility
+                  // and to prevent clipping issues with multiple platforms
                   return (
-                    <div className={getGridClasses(availablePlatforms.length)}>
+                    <div className="space-y-3">
                       {optimizedPlatforms.map((platform) => (
                     <Button
                       key={platform.type}
                       onClick={() => setResponseMethod(platform.type as any)}
-                      className={`justify-start p-4 h-auto border transition-all duration-200 group ${
+                      className={`w-full justify-start p-4 h-auto border transition-all duration-200 group ${
                         responseMethod === platform.type
                           ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
                           : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
