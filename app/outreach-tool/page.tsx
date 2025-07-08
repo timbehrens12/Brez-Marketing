@@ -5724,7 +5724,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       Generate Contract
                     </Button>
                     {validateContractData().length > 0 && (
-                      <div className="mt-2 text-xs text-red-400 max-w-xs">
+                      <div className="mt-2 text-xs text-red-400 text-right max-w-xs">
                         <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-2">
                           <div className="font-medium mb-1">Required to generate:</div>
                           <ul className="space-y-1">
