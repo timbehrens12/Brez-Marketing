@@ -23,7 +23,7 @@ import {
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
   Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-    CheckSquare, Square, Lightbulb, Brain, ArrowRight, X, FileText, Building
+    CheckSquare, Square, Brain, ArrowRight, X, FileText, Building
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
@@ -1578,7 +1578,7 @@ export default function OutreachToolPage() {
     switch (type) {
       case 'urgent': return <AlertCircle className="h-4 w-4 text-red-400" />
       case 'opportunity': return <Target className="h-4 w-4 text-blue-400" />
-      case 'insight': return <Lightbulb className="h-4 w-4 text-yellow-400" />
+      case 'insight': return <Info className="h-4 w-4 text-yellow-400" />
       case 'optimization': return <TrendingUp className="h-4 w-4 text-green-400" />
       default: return <CircleDot className="h-4 w-4 text-gray-400" />
     }
@@ -1997,7 +1997,7 @@ export default function OutreachToolPage() {
                       size="sm"
                       className="bg-[#1A1A1A] text-blue-400 border-blue-500/30 hover:bg-blue-900/30 hover:text-blue-300"
                     >
-                      <Lightbulb className="h-4 w-4 mr-2" />
+                      <Info className="h-4 w-4 mr-2" />
                       Help & Tutorial
                     </Button>
                     <Button
@@ -2024,14 +2024,7 @@ export default function OutreachToolPage() {
                         </Badge>
                       )}
                     </Button>
-                    <Button 
-                      onClick={() => { loadCampaignLeads(); loadCampaigns(); loadMessageUsage(); }}
-                      variant="outline" 
-                      size="sm"
-                      className="bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
+
                   </div>
                 </div>
               </CardHeader>
@@ -2720,19 +2713,10 @@ export default function OutreachToolPage() {
                                   Smart Response
                                 </Button>
                               ) : campaignLead.status === 'qualified' ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600/50 text-green-300 hover:bg-green-800/50 hover:text-green-200"
-                                  onClick={() => {
-                                    // TODO: Implement contract generation
-                                    toast.success('Contract generation coming soon!')
-                                    setSelectedCampaignLead(campaignLead)
-                                  }}
-                                >
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  Send Contract
-                                </Button>
+                                <div className="flex items-center gap-2 text-green-400">
+                                  <Star className="h-3 w-3" />
+                                  <span className="text-xs font-medium">Qualified</span>
+                                </div>
                               ) : campaignLead.status === 'signed' ? (
                                 <div className="flex items-center gap-2 text-green-400">
                                   <CheckCircle className="h-3 w-3" />
@@ -4027,57 +4011,7 @@ export default function OutreachToolPage() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={recalculateAllScores}
-                  disabled={isRecalculatingScores}
-                  className="bg-gray-600 hover:bg-gray-700 text-white"
-                >
-                  {isRecalculatingScores ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Recalculating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Recalculate All Scores
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    // Show sample scoring for testing
-                    const sampleLead: Lead = {
-                      id: 'sample',
-                      business_name: 'Test Business Inc.',
-                      owner_name: 'John Smith',
-                      email: 'john@testbusiness.com',
-                      phone: '+1-555-123-4567',
-                      website: 'https://testbusiness.com',
-                      city: 'New York',
-                      state_province: 'NY',
-                      niche_name: 'Technology',
-                      instagram_handle: '@testbusiness',
-                      linkedin_profile: 'https://linkedin.com/company/testbusiness',
-                      facebook_page: 'https://facebook.com/testbusiness',
-                      twitter_handle: '@testbiz'
-                    }
-                    
-                    const scoreData = calculateLeadScore(sampleLead)
-                    setSelectedScoreBreakdown({ lead: sampleLead, scoreData })
-                    setShowScoreBreakdown(true)
-                    setShowScoreManager(false)
-                  }}
-                  variant="outline"
-                  className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Test Perfect Score
-                </Button>
-              </div>
+
 
               {/* Score Distribution Chart */}
               <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
@@ -4437,7 +4371,7 @@ export default function OutreachToolPage() {
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-2xl">
                 <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
-                  <Lightbulb className="h-6 w-6 text-white" />
+                  <Info className="h-6 w-6 text-white" />
                 </div>
                 <span>Complete Outreach Tool Guide</span>
               </DialogTitle>
@@ -4804,17 +4738,7 @@ export default function OutreachToolPage() {
           </DialogContent>
                  </Dialog>
 
-        {/* Floating Help Button */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={() => setShowTutorial(true)}
-            size="lg"
-            className="h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-110"
-            title="Open Help & Tutorial"
-          >
-            <Lightbulb className="h-6 w-6" />
-          </Button>
-        </div>
+
 
 
                     </div>
