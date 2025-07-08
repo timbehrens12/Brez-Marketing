@@ -218,6 +218,9 @@ export default function OutreachToolPage() {
   const [contractHtmlContent, setContractHtmlContent] = useState('')
   const [contractPreviewMode, setContractPreviewMode] = useState(false)
   
+  // Contract validation state
+  const [flashingFields, setFlashingFields] = useState<string[]>([])
+  
   // Simple Todo state
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [completedTodos, setCompletedTodos] = useState<Set<string>>(new Set())
@@ -1115,7 +1118,34 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     try {
       const validationErrors = validateContractData()
       if (validationErrors.length > 0) {
-        validationErrors.forEach(error => toast.error(error))
+        // Flash required fields
+        const fieldsToFlash = []
+        if (contractData.pricingModel === 'retainer') {
+          if (!contractData.monthlyRetainer || contractData.monthlyRetainer.trim() === '') {
+            fieldsToFlash.push('monthlyRetainer')
+          }
+          if (!contractData.adSpend || contractData.adSpend.trim() === '') {
+            fieldsToFlash.push('adSpend')
+          }
+        } else if (contractData.pricingModel === 'revenue_share') {
+          if (!contractData.revenueSharePercentage || contractData.revenueSharePercentage.trim() === '') {
+            fieldsToFlash.push('revenueSharePercentage')
+          }
+        }
+        
+        const hasSelectedService = Object.values(contractData.servicesIncluded).some(included => included)
+        if (!hasSelectedService) {
+          fieldsToFlash.push('servicesIncluded')
+        }
+        
+        setFlashingFields(fieldsToFlash)
+        
+        // Clear flashing after 2 seconds
+        setTimeout(() => {
+          setFlashingFields([])
+        }, 2000)
+        
+        toast.error('Please fill in all required fields')
         return
       }
       
@@ -5413,36 +5443,57 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       {contractData.pricingModel === 'retainer' ? (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
+                            <Label className="text-sm font-medium text-gray-400">
+                              Monthly Retainer 
+                              <span className="text-red-400 ml-1">*Required</span>
+                            </Label>
                             <Input
                               type="number"
                               placeholder="2500"
                               value={contractData.monthlyRetainer}
                               onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                                flashingFields.includes('monthlyRetainer') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
                             />
                           </div>
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
+                            <Label className="text-sm font-medium text-gray-400">
+                              Monthly Ad Spend 
+                              <span className="text-red-400 ml-1">*Required</span>
+                            </Label>
                             <Input
                               type="number"
                               placeholder="5000"
                               value={contractData.adSpend}
                               onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                                flashingFields.includes('adSpend') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
                             />
                           </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Revenue Share %</Label>
+                            <Label className="text-sm font-medium text-gray-400">
+                              Revenue Share % 
+                              <span className="text-red-400 ml-1">*Required</span>
+                            </Label>
                             <Input
                               type="number"
                               placeholder="15"
                               value={contractData.revenueSharePercentage}
                               onChange={(e) => setContractData(prev => ({ ...prev, revenueSharePercentage: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                                flashingFields.includes('revenueSharePercentage') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
                             />
                           </div>
                           <div>
@@ -5511,8 +5562,15 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     </div>
                   </div>
                   
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">Services Included</h3>
+                  <div className={`bg-[#2A2A2A] border border-[#444] rounded-lg p-4 ${
+                    flashingFields.includes('servicesIncluded') 
+                      ? 'animate-pulse border-red-500 bg-red-900/20' 
+                      : ''
+                  }`}>
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Services Included 
+                      <span className="text-red-400 ml-1">*Required (select at least one)</span>
+                    </h3>
                     <div className="space-y-3">
                       {Object.entries(contractData.servicesIncluded).map(([service, included]) => (
                         <div key={service} className="flex items-center space-x-3">
@@ -5710,35 +5768,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </Button>
                 
                 {!contractEditingMode && !contractPreviewMode && (
-                  <div className="flex flex-col items-end">
-                    <Button
-                      onClick={() => {
-                        if (selectedCampaignLead?.lead) {
-                          generateContractForEditing(selectedCampaignLead.lead)
-                        }
-                      }}
-                      disabled={validateContractData().length > 0}
-                      className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Generate Contract
-                    </Button>
-                    {validateContractData().length > 0 && (
-                      <div className="mt-2 text-xs text-red-400 text-right max-w-xs">
-                        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-2">
-                          <div className="font-medium mb-1">Required to generate:</div>
-                          <ul className="space-y-1">
-                            {validateContractData().map((error, index) => (
-                              <li key={index} className="flex items-start gap-1">
-                                <span className="text-red-400 mt-0.5">•</span>
-                                <span>{error}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <Button
+                    onClick={() => {
+                      if (selectedCampaignLead?.lead) {
+                        generateContractForEditing(selectedCampaignLead.lead)
+                      }
+                    }}
+                    disabled={validateContractData().length > 0}
+                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Contract
+                  </Button>
                 )}
                 
                 {(contractEditingMode || contractPreviewMode) && (
