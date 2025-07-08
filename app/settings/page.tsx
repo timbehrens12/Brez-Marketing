@@ -50,14 +50,19 @@ export default function SettingsPage() {
   // Agency settings form state
   const [tempAgencyName, setTempAgencyName] = useState(agencySettings.agency_name)
   const [tempAgencyLogo, setTempAgencyLogo] = useState<File | null>(null)
+  const [tempSignatureName, setTempSignatureName] = useState(agencySettings.signature_name || '')
+  const [tempSignatureImage, setTempSignatureImage] = useState<File | null>(null)
   const [isSavingAgency, setIsSavingAgency] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null)
 
   // Sync temp agency name with context when agency settings change
   useEffect(() => {
     setTempAgencyName(agencySettings.agency_name)
+    setTempSignatureName(agencySettings.signature_name || '')
     setLogoPreview(null) // Clear preview when agency settings change
-  }, [agencySettings.agency_name])
+    setSignaturePreview(null) // Clear signature preview when agency settings change
+  }, [agencySettings.agency_name, agencySettings.signature_name])
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -90,7 +95,9 @@ export default function SettingsPage() {
     try {
       const success = await updateAgencySettings({
         agency_name: agencySettings.agency_name,
-        agency_logo_url: null
+        agency_logo_url: null,
+        signature_name: agencySettings.signature_name,
+        signature_image: agencySettings.signature_image
       })
 
       if (success) {
@@ -106,6 +113,46 @@ export default function SettingsPage() {
     }
   }
 
+  // Handle signature file selection
+  const handleSignatureChange = async (file: File | null) => {
+    setTempSignatureImage(file)
+    if (file) {
+      try {
+        const base64 = await fileToBase64(file)
+        setSignaturePreview(base64)
+      } catch (error) {
+        console.error('Error converting signature file to base64:', error)
+        toast.error('Failed to process signature image')
+      }
+    } else {
+      setSignaturePreview(null)
+    }
+  }
+
+  // Handle signature deletion
+  const handleDeleteSignature = async () => {
+    try {
+      const success = await updateAgencySettings({
+        agency_name: agencySettings.agency_name,
+        agency_logo_url: agencySettings.agency_logo_url,
+        signature_name: undefined,
+        signature_image: null
+      })
+
+      if (success) {
+        setTempSignatureImage(null)
+        setTempSignatureName('')
+        setSignaturePreview(null)
+        toast.success('Signature removed successfully!')
+      } else {
+        toast.error('Failed to remove signature')
+      }
+    } catch (error) {
+      console.error('Error removing signature:', error)
+      toast.error('Failed to remove signature')
+    }
+  }
+
   // Handle agency settings save
   const handleSaveAgencySettings = async () => {
     if (!tempAgencyName.trim()) {
@@ -117,21 +164,31 @@ export default function SettingsPage() {
     
     try {
       let logoUrl = agencySettings.agency_logo_url
+      let signatureUrl = agencySettings.signature_image
 
       // Handle logo upload if a new file was selected
       if (tempAgencyLogo) {
         logoUrl = await fileToBase64(tempAgencyLogo)
       }
 
+      // Handle signature upload if a new file was selected
+      if (tempSignatureImage) {
+        signatureUrl = await fileToBase64(tempSignatureImage)
+      }
+
       const success = await updateAgencySettings({
         agency_name: tempAgencyName.trim(),
-        agency_logo_url: logoUrl
+        agency_logo_url: logoUrl,
+        signature_name: tempSignatureName.trim() || undefined,
+        signature_image: signatureUrl
       })
 
       if (success) {
         toast.success('Agency settings updated successfully!')
         setTempAgencyLogo(null)
+        setTempSignatureImage(null)
         setLogoPreview(null)
+        setSignaturePreview(null)
       } else {
         toast.error('Failed to update agency settings')
       }
@@ -907,11 +964,94 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Digital Signature Section */}
+              <div>
+                <Label className="text-gray-200">Digital Signature</Label>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <Label className="text-sm text-gray-400">Signature Name</Label>
+                    <Input 
+                      value={tempSignatureName}
+                      onChange={(e) => setTempSignatureName(e.target.value)}
+                      placeholder="Your Full Name"
+                      className="bg-[#2A2A2A] border-[#333] text-white mt-1"
+                      disabled={agencyLoading || isSavingAgency}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      This name will appear on generated contracts
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm text-gray-400">Signature Image</Label>
+                    <div className="mt-1">
+                      {agencySettings.signature_image || signaturePreview ? (
+                        <div className="flex items-center space-x-4">
+                          <div className="relative group">
+                            <div className="w-32 h-16 rounded-lg bg-[#1A1A1A] border border-[#333] flex items-center justify-center p-2 overflow-hidden">
+                              <img 
+                                src={signaturePreview || agencySettings.signature_image!} 
+                                alt="Digital Signature" 
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => signaturePreview ? setSignaturePreview(null) : handleDeleteSignature()}
+                              disabled={agencyLoading || isSavingAgency}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="flex-1">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleSignatureChange(e.target.files?.[0] || null)}
+                              className="bg-[#2A2A2A] border-[#333] text-white file:bg-[#333] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3"
+                              disabled={agencyLoading || isSavingAgency}
+                            />
+                            <p className="text-xs text-gray-400 mt-1">
+                              Upload a new signature to replace the current one
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-4">
+                          <div className="w-32 h-16 rounded-lg bg-[#2A2A2A] border-2 border-dashed border-[#444] flex items-center justify-center">
+                            <div className="text-center">
+                              <Upload className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                              <span className="text-xs text-gray-400 font-medium">
+                                Signature
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleSignatureChange(e.target.files?.[0] || null)}
+                              className="bg-[#2A2A2A] border-[#333] text-white file:bg-[#333] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3"
+                              disabled={agencyLoading || isSavingAgency}
+                            />
+                            <p className="text-xs text-gray-400 mt-1">
+                              Upload your signature image (PNG, JPG, or SVG) for contracts
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-4 border-t border-[#333]">
                 <div className="flex space-x-3">
                   <Button
                     onClick={handleSaveAgencySettings}
-                    disabled={agencyLoading || isSavingAgency || (tempAgencyName === agencySettings.agency_name && !tempAgencyLogo)}
+                    disabled={agencyLoading || isSavingAgency || (tempAgencyName === agencySettings.agency_name && !tempAgencyLogo && !tempSignatureImage && tempSignatureName === (agencySettings.signature_name || ''))}
                     className="bg-[#333] hover:bg-[#444] text-white"
                   >
                     {isSavingAgency ? (
@@ -933,9 +1073,19 @@ export default function SettingsPage() {
                       Remove Logo
                     </Button>
                   )}
+                  {(agencySettings.signature_image || signaturePreview) && (
+                    <Button
+                      variant="outline"
+                      onClick={handleDeleteSignature}
+                      disabled={agencyLoading || isSavingAgency}
+                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                    >
+                      Remove Signature
+                    </Button>
+                  )}
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  Changes will be applied across all reports, PDFs, and platform branding
+                  Changes will be applied across all reports, PDFs, contracts, and platform branding
                 </p>
               </div>
             </div>

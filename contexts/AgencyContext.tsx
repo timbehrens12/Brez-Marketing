@@ -6,6 +6,8 @@ import { useAuth } from '@clerk/nextjs'
 interface AgencySettings {
   agency_name: string
   agency_logo_url: string | null
+  signature_name?: string
+  signature_image?: string | null
 }
 
 interface AgencyContextType {
@@ -17,7 +19,9 @@ interface AgencyContextType {
 
 const defaultAgencySettings: AgencySettings = {
   agency_name: 'Brez Marketing Assistant',
-  agency_logo_url: null
+  agency_logo_url: null,
+  signature_name: undefined,
+  signature_image: null
 }
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined)

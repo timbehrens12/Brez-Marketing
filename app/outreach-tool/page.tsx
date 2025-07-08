@@ -193,8 +193,11 @@ export default function OutreachToolPage() {
   const [showLoadingOverride, setShowLoadingOverride] = useState(false)
   const [showContractGenerator, setShowContractGenerator] = useState(false)
   const [contractData, setContractData] = useState({
+    pricingModel: 'retainer', // 'retainer' or 'revenue_share'
     monthlyRetainer: '',
     adSpend: '',
+    revenueSharePercentage: '',
+    minimumAdSpend: '',
     contractLength: '6',
     servicesIncluded: {
       metaAds: true,
@@ -973,6 +976,34 @@ export default function OutreachToolPage() {
       })
       .join(', ')
 
+    // Generate pricing section based on model
+    const pricingSection = contractData.pricingModel === 'revenue_share' ? `
+2. COMPENSATION (REVENUE SHARE MODEL)
+Revenue Share: ${contractData.revenueSharePercentage || '[Percentage]'}% of attributable revenue generated through advertising campaigns
+${contractData.minimumAdSpend ? `Minimum Monthly Ad Spend: $${contractData.minimumAdSpend}` : ''}
+Revenue Attribution: Revenue will be tracked through UTM parameters, conversion tracking, and platform analytics
+Payment Terms: Revenue share payments due ${contractData.paymentTerms === 'net-30' ? '30 days' : contractData.paymentTerms === 'net-15' ? '15 days' : 'immediately'} after month-end reporting
+Reporting: Detailed revenue attribution reports provided monthly
+
+REVENUE SHARE SPECIFIC TERMS:
+- Revenue share applies only to sales directly attributable to paid advertising campaigns
+- Client must provide full access to analytics platforms and sales data for accurate tracking
+- Disputed revenue attributions will be resolved through third-party analytics verification
+- Revenue share payments are in addition to actual ad spend, which remains client's responsibility
+- Service Provider will optimize campaigns for maximum profitable revenue generation
+` : `
+2. COMPENSATION (RETAINER MODEL)
+Monthly Retainer Fee: $${contractData.monthlyRetainer || '[Amount]'}
+Monthly Ad Spend Budget: $${contractData.adSpend || '[Amount]'}
+Payment Terms: ${contractData.paymentTerms === 'net-30' ? 'Net 30 days' : contractData.paymentTerms === 'net-15' ? 'Net 15 days' : 'Due upon receipt'}
+
+RETAINER SPECIFIC TERMS:
+- Retainer fee covers management, optimization, and reporting services
+- Ad spend is separate and billed directly to client's advertising accounts
+- Unused ad spend does not roll over to subsequent months
+- Service Provider will optimize campaigns within approved budget parameters
+`
+
     const contract = `
 DIGITAL MARKETING SERVICES AGREEMENT
 
@@ -997,10 +1028,7 @@ TERMS AND CONDITIONS:
 The Service Provider agrees to provide the following digital marketing services:
 ${servicesString}
 
-2. COMPENSATION
-Monthly Retainer Fee: $${contractData.monthlyRetainer || '[Amount]'}
-Monthly Ad Spend Budget: $${contractData.adSpend || '[Amount]'}
-Payment Terms: ${contractData.paymentTerms === 'net-30' ? 'Net 30 days' : contractData.paymentTerms === 'net-15' ? 'Net 15 days' : 'Due upon receipt'}
+${pricingSection}
 
 3. TERM AND TERMINATION
 Initial Term: ${contractData.contractLength} months
@@ -1009,20 +1037,27 @@ Either party may terminate this agreement with ${contractData.cancellationNotice
 
 4. PERFORMANCE EXPECTATIONS
 - Service Provider will manage advertising campaigns to industry best practices
-- Monthly performance reports will be provided
+- Monthly performance reports will be provided within 5 business days of month-end
 - Client will provide necessary assets and approvals within 48 hours
 - Service Provider is not responsible for ad platform policy changes or account suspensions
+- All campaign optimizations will be made with client's business objectives in mind
 
-5. CONFIDENTIALITY
+5. DATA AND ANALYTICS ACCESS
+- Client agrees to provide full access to necessary analytics platforms
+- Service Provider will maintain confidentiality of all client data
+- Performance tracking and attribution methods will be established within first 30 days
+- Client retains full ownership of all data and analytics accounts
+
+6. CONFIDENTIALITY
 Both parties agree to maintain confidentiality of proprietary information shared during the engagement.
 
-6. LIMITATION OF LIABILITY
-Service Provider's liability is limited to the monthly retainer fee. No guarantees are made regarding specific performance metrics or ROI.
+7. LIMITATION OF LIABILITY
+Service Provider's liability is limited to ${contractData.pricingModel === 'revenue_share' ? 'the average monthly revenue share payment' : 'the monthly retainer fee'}. No guarantees are made regarding specific performance metrics or ROI.
 
-7. INTELLECTUAL PROPERTY
+8. INTELLECTUAL PROPERTY
 All creative materials developed remain property of the Client. Service Provider retains rights to campaign strategies and methodologies.
 
-8. GOVERNING LAW
+9. GOVERNING LAW
 This Agreement shall be governed by the laws of [State/Province].
 
 By signing below, both parties agree to the terms and conditions outlined in this Agreement.
@@ -1031,11 +1066,16 @@ CLIENT SIGNATURE: _________________________ DATE: _____________
 ${lead.owner_name || '[Owner Name]'}, ${lead.business_name}
 
 SERVICE PROVIDER SIGNATURE: _________________________ DATE: _____________
-[Representative Name], ${agencySettings?.agency_name || '[Agency Name]'}
+${agencySettings?.signature_name || '[Representative Name]'}, ${agencySettings?.agency_name || '[Agency Name]'}
+${agencySettings?.signature_image ? `
+[DIGITAL SIGNATURE APPLIED]
+Signature on file: ${agencySettings?.signature_name}
+` : ''}
 
 ---
 This contract was generated on ${currentDate} for ${lead.business_name}
 Contract ID: ${lead.id}-${Date.now()}
+Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : 'Monthly Retainer'}
 `
 
     return contract
@@ -1044,16 +1084,153 @@ Contract ID: ${lead.id}-${Date.now()}
   const downloadContract = async (lead: Lead) => {
     try {
       const contractText = await generateContract(lead)
-      const blob = new Blob([contractText], { type: 'text/plain' })
+      
+      // Generate professional HTML format for better presentation
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Marketing Services Contract - ${lead.business_name}</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+        .parties {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .party {
+            flex: 1;
+            margin: 0 10px;
+        }
+        .party-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .signature-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+        .signature-line {
+            margin: 20px 0;
+            border-bottom: 1px solid #333;
+            height: 40px;
+            display: inline-block;
+            width: 300px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+        }
+        @media print {
+            body { margin: 0; padding: 15px; }
+            .header { border-bottom: 2px solid #000; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">DIGITAL MARKETING SERVICES AGREEMENT</div>
+        <div>Contract Date: ${new Date().toLocaleDateString()}</div>
+    </div>
+    
+    <div class="parties">
+        <div class="party">
+            <div class="party-title">CLIENT:</div>
+            <div><strong>Business Name:</strong> ${lead.business_name}</div>
+            <div><strong>Representative:</strong> ${lead.owner_name || '[Name Required]'}</div>
+            <div><strong>Email:</strong> ${lead.email || '[Email Required]'}</div>
+            <div><strong>Phone:</strong> ${lead.phone || '[Phone Required]'}</div>
+            <div><strong>Address:</strong> ${lead.city ? `${lead.city}, ${lead.state_province || '[State]'}` : '[Address Required]'}</div>
+        </div>
+        
+        <div class="party">
+            <div class="party-title">SERVICE PROVIDER:</div>
+            <div><strong>Agency:</strong> ${agencySettings?.agency_name || '[Agency Name]'}</div>
+            <div><strong>Representative:</strong> ${agencySettings?.signature_name || '[Representative Name]'}</div>
+            <div><strong>Contact:</strong> [Agency Email]</div>
+            <div><strong>Phone:</strong> [Agency Phone]</div>
+            <div><strong>Address:</strong> [Agency Address]</div>
+        </div>
+    </div>
+    
+    <div style="white-space: pre-wrap; font-family: inherit;">${contractText.replace(/DIGITAL MARKETING SERVICES AGREEMENT[\s\S]*?TERMS AND CONDITIONS:/, '').replace(/---[\s\S]*$/, '')}</div>
+    
+    <div class="signature-section">
+        <div style="margin-bottom: 40px;">
+            <div><strong>CLIENT SIGNATURE:</strong></div>
+            <div class="signature-line"></div>
+            <div style="margin-top: 5px;">Date: _____________</div>
+            <div style="margin-top: 5px;">${lead.owner_name || '[Owner Name]'}, ${lead.business_name}</div>
+        </div>
+        
+        <div>
+            <div><strong>SERVICE PROVIDER SIGNATURE:</strong></div>
+            ${agencySettings?.signature_image ? `
+                <div style="margin: 10px 0;">
+                    <img src="${agencySettings.signature_image}" alt="Digital Signature" style="max-height: 60px; border: 1px solid #ccc; padding: 5px;" />
+                </div>
+                <div style="margin-top: 5px;">Date: ${new Date().toLocaleDateString()}</div>
+                <div style="margin-top: 5px;">${agencySettings?.signature_name || '[Representative Name]'}, ${agencySettings?.agency_name || '[Agency Name]'}</div>
+            ` : `
+                <div class="signature-line"></div>
+                <div style="margin-top: 5px;">Date: _____________</div>
+                <div style="margin-top: 5px;">${agencySettings?.signature_name || '[Representative Name]'}, ${agencySettings?.agency_name || '[Agency Name]'}</div>
+            `}
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div>Contract ID: ${lead.id}-${Date.now()}</div>
+        <div>Generated: ${new Date().toLocaleString()}</div>
+        <div>Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : 'Monthly Retainer'}</div>
+    </div>
+</body>
+</html>`
+      
+      const blob = new Blob([htmlContent], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${lead.business_name?.replace(/[^a-zA-Z0-9]/g, '_')}_Marketing_Contract.txt`
+      a.download = `${lead.business_name?.replace(/[^a-zA-Z0-9]/g, '_')}_Marketing_Contract.html`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      toast.success('Contract downloaded successfully!')
+      toast.success('Professional contract downloaded! Open in browser to print or save as PDF.')
     } catch (error) {
       console.error('Error generating contract:', error)
       toast.error('Failed to generate contract')
@@ -4903,28 +5080,68 @@ Contract ID: ${lead.id}-${Date.now()}
                     <h3 className="text-lg font-semibold text-white mb-4">Contract Details</h3>
                     
                     <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
-                          <Input
-                            type="number"
-                            placeholder="2500"
-                            value={contractData.monthlyRetainer}
-                            onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
-                          <Input
-                            type="number"
-                            placeholder="5000"
-                            value={contractData.adSpend}
-                            onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
-                          />
-                        </div>
+                      {/* Pricing Model Selection */}
+                      <div>
+                        <Label className="text-sm font-medium text-gray-400">Pricing Model</Label>
+                        <Select value={contractData.pricingModel} onValueChange={(value) => setContractData(prev => ({ ...prev, pricingModel: value }))}>
+                          <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                            <SelectItem value="retainer">Monthly Retainer</SelectItem>
+                            <SelectItem value="revenue_share">Revenue Share</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
+
+                      {/* Conditional Fields Based on Pricing Model */}
+                      {contractData.pricingModel === 'retainer' ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
+                            <Input
+                              type="number"
+                              placeholder="2500"
+                              value={contractData.monthlyRetainer}
+                              onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
+                            <Input
+                              type="number"
+                              placeholder="5000"
+                              value={contractData.adSpend}
+                              onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">Revenue Share %</Label>
+                            <Input
+                              type="number"
+                              placeholder="15"
+                              value={contractData.revenueSharePercentage}
+                              onChange={(e) => setContractData(prev => ({ ...prev, revenueSharePercentage: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">Minimum Ad Spend (Optional)</Label>
+                            <Input
+                              type="number"
+                              placeholder="2000"
+                              value={contractData.minimumAdSpend}
+                              onChange={(e) => setContractData(prev => ({ ...prev, minimumAdSpend: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            />
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>

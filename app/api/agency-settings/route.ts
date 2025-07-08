@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
         success: true,
         settings: {
           agency_name: 'Brez Marketing Assistant',
-          agency_logo_url: null
+          agency_logo_url: null,
+          signature_name: undefined,
+          signature_image: null
         }
       })
     }
@@ -46,7 +48,9 @@ export async function GET(request: NextRequest) {
       success: true,
       settings: {
         agency_name: data.agency_name,
-        agency_logo_url: data.agency_logo_url
+        agency_logo_url: data.agency_logo_url,
+        signature_name: data.signature_name,
+        signature_image: data.signature_image
       }
     })
 
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { agency_name, agency_logo_url } = await request.json()
+    const { agency_name, agency_logo_url, signature_name, signature_image } = await request.json()
 
     if (!agency_name || typeof agency_name !== 'string') {
       return NextResponse.json({ error: 'Agency name is required' }, { status: 400 })
@@ -78,7 +82,9 @@ export async function POST(request: NextRequest) {
       .upsert({
         user_id: userId,
         agency_name: agency_name.trim(),
-        agency_logo_url: agency_logo_url || null
+        agency_logo_url: agency_logo_url || null,
+        signature_name: signature_name || null,
+        signature_image: signature_image || null
       }, {
         onConflict: 'user_id'
       })
@@ -95,7 +101,9 @@ export async function POST(request: NextRequest) {
       success: true,
       settings: {
         agency_name: data.agency_name,
-        agency_logo_url: data.agency_logo_url
+        agency_logo_url: data.agency_logo_url,
+        signature_name: data.signature_name,
+        signature_image: data.signature_image
       }
     })
 
