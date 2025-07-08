@@ -143,6 +143,7 @@ const WARNING_THRESHOLD = 0.8 // Show warning at 80% of limit
 export default function OutreachToolPage() {
   const { userId, getToken } = useAuth()
   const { agencySettings } = useAgency()
+  const { selectedBrandId } = useBrandContext()
   const pathname = usePathname()
   
   // Unified Supabase client function
@@ -203,6 +204,10 @@ export default function OutreachToolPage() {
   const [isGeneratingSmartResponse, setIsGeneratingSmartResponse] = useState(false)
   const [smartResponseCopied, setSmartResponseCopied] = useState(false)
   const [smartResponsesRemaining, setSmartResponsesRemaining] = useState<number | null>(null)
+
+  // Platform connections state
+  const [platformConnections, setPlatformConnections] = useState<any[]>([])
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false)
   
   // Bulk Outreach state
   const [pendingOutreachQueue, setPendingOutreachQueue] = useState<CampaignLead[]>([])
@@ -339,6 +344,32 @@ export default function OutreachToolPage() {
     }
   }, [userId])
 
+  const loadPlatformConnections = useCallback(async () => {
+    if (!selectedBrandId || isLoadingConnections) return
+
+    try {
+      setIsLoadingConnections(true)
+      console.log('Loading platform connections for brand:', selectedBrandId)
+      const supabase = await getSupabaseClient()
+      
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', selectedBrandId)
+        .eq('status', 'active')
+
+      if (error) throw error
+      
+      console.log('Loaded platform connections:', data?.length || 0)
+      setPlatformConnections(data || [])
+    } catch (error) {
+      console.error('Error loading platform connections:', error)
+      setPlatformConnections([])
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }, [selectedBrandId, isLoadingConnections])
+
   const loadInitialData = useCallback(async () => {
     console.log('🔄 loadInitialData called, userId:', userId)
     
@@ -353,11 +384,12 @@ export default function OutreachToolPage() {
       setIsLoadingPage(true)
       setIsLoading(true)
       
-      // Load campaigns, leads, and message usage in parallel with timeout
+      // Load campaigns, leads, message usage, and platform connections in parallel with timeout
       const loadPromises = Promise.all([
         loadCampaigns(),
         loadCampaignLeads(),
-        loadMessageUsage()
+        loadMessageUsage(),
+        loadPlatformConnections()
       ])
       
       // Add a timeout to the loading process
@@ -379,7 +411,7 @@ export default function OutreachToolPage() {
       setIsLoadingPage(false)
       setIsLoading(false)
     }
-  }, [userId, loadCampaigns, loadCampaignLeads, loadMessageUsage])
+  }, [userId, loadCampaigns, loadCampaignLeads, loadMessageUsage, loadPlatformConnections])
 
   const generateTodos = useCallback(() => {
     if (!campaignLeads.length) {
@@ -782,6 +814,15 @@ export default function OutreachToolPage() {
       mountedRef.current = false
     }
   }, [])
+
+  // Load platform connections when selected brand changes
+  useEffect(() => {
+    if (selectedBrandId) {
+      loadPlatformConnections()
+    } else {
+      setPlatformConnections([])
+    }
+  }, [selectedBrandId, loadPlatformConnections])
 
   const forceLoadPage = () => {
     console.log('🔧 Force loading page override triggered')
@@ -1584,6 +1625,56 @@ export default function OutreachToolPage() {
       scoreRange: { min: 0, max: 100 }
     }
     setTempFilters(clearedFilters)
+  }
+
+  // Get available platforms based on brand connections
+  const getAvailablePlatforms = () => {
+    const allPlatforms = [
+      { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up', requiresConnection: false },
+      { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response', requiresConnection: true, connectionType: 'linkedin' },
+      { type: 'twitter', icon: () => (
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      ), label: 'X/Twitter Reply', description: 'Quick engagement response', requiresConnection: true, connectionType: 'twitter' },
+      { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement', requiresConnection: true, connectionType: 'meta' },
+      { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response', requiresConnection: true, connectionType: 'meta' }
+    ]
+
+    // Filter platforms based on connections
+    const availablePlatforms = allPlatforms.filter(platform => {
+      // Email is always available
+      if (!platform.requiresConnection) {
+        return true
+      }
+      
+      // Check if the required connection exists for this brand
+      return platformConnections.some(conn => 
+        conn.platform_type === platform.connectionType && conn.status === 'active'
+      )
+    })
+
+    return availablePlatforms
+  }
+
+  // Create optimized grid layout for odd numbers - puts odd platform in center
+  const createPlatformGrid = (platforms: any[]) => {
+    if (platforms.length === 0) return platforms
+
+    // If odd number of platforms, arrange to put one in the middle
+    if (platforms.length % 2 === 1) {
+      // For odd numbers, arrange as: 
+      // First half | Center item | Second half
+      const centerIndex = Math.floor(platforms.length / 2)
+      const reorderedPlatforms = [
+        ...platforms.slice(0, centerIndex),
+        platforms[centerIndex], // Center item
+        ...platforms.slice(centerIndex + 1)
+      ]
+      return reorderedPlatforms
+    }
+    
+    return platforms
   }
 
   const filteredLeads = applyFilters(campaignLeads)
@@ -3898,48 +3989,54 @@ export default function OutreachToolPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Which platform did they respond on?
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up' },
-                    { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response' },
-                    { type: 'twitter', icon: () => (
-                      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                    ), label: 'X/Twitter Reply', description: 'Quick engagement response' },
-                    { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement' },
-                    { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response' }
-                  ].map((platform) => (
-                    <Button
-                      key={platform.type}
-                      onClick={() => setResponseMethod(platform.type as any)}
-                      className={`justify-start p-4 h-auto border transition-all duration-200 group ${
-                        responseMethod === platform.type
-                          ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
-                          : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg transition-all duration-200 ${
+                {(() => {
+                  const availablePlatforms = getAvailablePlatforms()
+                  const optimizedPlatforms = createPlatformGrid(availablePlatforms)
+                  
+                  // Determine grid layout based on platform count
+                  const getGridClasses = (count: number) => {
+                    if (count === 1) return "grid grid-cols-1 gap-3 max-w-md mx-auto"
+                    if (count === 2) return "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    if (count === 3) return "grid grid-cols-1 sm:grid-cols-3 gap-3"
+                    if (count === 4) return "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  }
+                  
+                  return (
+                    <div className={getGridClasses(availablePlatforms.length)}>
+                      {optimizedPlatforms.map((platform) => (
+                        <Button
+                          key={platform.type}
+                          onClick={() => setResponseMethod(platform.type as any)}
+                          className={`justify-start p-4 h-auto border transition-all duration-200 group ${
                             responseMethod === platform.type
-                              ? 'bg-gray-500/30'
-                              : 'bg-gray-600/30 group-hover:bg-gray-600/40'
-                          }`}>
-                            <platform.icon className="h-5 w-5" />
+                              ? 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500 text-white'
+                              : 'bg-gradient-to-r from-[#2A2A2A] to-[#333] hover:from-[#333] hover:to-[#444] text-white border-[#444] hover:border-[#555]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg transition-all duration-200 ${
+                                responseMethod === platform.type
+                                  ? 'bg-gray-500/30'
+                                  : 'bg-gray-600/30 group-hover:bg-gray-600/40'
+                              }`}>
+                                <platform.icon className="h-5 w-5" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold">{platform.label}</div>
+                                <div className="text-sm text-gray-400">{platform.description}</div>
+                              </div>
+                            </div>
+                            {responseMethod === platform.type && (
+                              <CheckCircle className="h-5 w-5 text-gray-300" />
+                            )}
                           </div>
-                          <div className="text-left">
-                            <div className="font-semibold">{platform.label}</div>
-                            <div className="text-sm text-gray-400">{platform.description}</div>
-                          </div>
-                        </div>
-                        {responseMethod === platform.type && (
-                          <CheckCircle className="h-5 w-5 text-gray-300" />
-                        )}
-                      </div>
-                    </Button>
-                  ))}
-                </div>
+                        </Button>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Response Input */}
