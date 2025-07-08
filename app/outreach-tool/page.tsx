@@ -204,6 +204,9 @@ export default function OutreachToolPage() {
   const [isGeneratingSmartResponse, setIsGeneratingSmartResponse] = useState(false)
   const [smartResponseCopied, setSmartResponseCopied] = useState(false)
   const [smartResponsesRemaining, setSmartResponsesRemaining] = useState<number | null>(null)
+  
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false)
 
   // Platform connections state
   const [platformConnections, setPlatformConnections] = useState<any[]>([])
@@ -1989,6 +1992,15 @@ export default function OutreachToolPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
+                      onClick={() => setShowTutorial(true)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-blue-400 border-blue-500/30 hover:bg-blue-900/30 hover:text-blue-300"
+                    >
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      Help & Tutorial
+                    </Button>
+                    <Button
                       onClick={() => setShowScoreManager(true)}
                       variant="outline"
                       size="sm"
@@ -2707,7 +2719,31 @@ export default function OutreachToolPage() {
                                   <Brain className="h-3 w-3 mr-1" />
                                   Smart Response
                                 </Button>
-                              ) : (
+                              ) : campaignLead.status === 'qualified' ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600/50 text-green-300 hover:bg-green-800/50 hover:text-green-200"
+                                  onClick={() => {
+                                    // TODO: Implement contract generation
+                                    toast.success('Contract generation coming soon!')
+                                    setSelectedCampaignLead(campaignLead)
+                                  }}
+                                >
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  Send Contract
+                                </Button>
+                              ) : campaignLead.status === 'signed' ? (
+                                <div className="flex items-center gap-2 text-green-400">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span className="text-xs font-medium">Deal Closed</span>
+                                </div>
+                              ) : campaignLead.status === 'rejected' ? (
+                                <div className="flex items-center gap-2 text-red-400">
+                                  <XCircle className="h-3 w-3" />
+                                  <span className="text-xs">Rejected</span>
+                                </div>
+                              ) : campaignLead.status === 'pending' ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2722,6 +2758,21 @@ export default function OutreachToolPage() {
                                   <Sparkles className="h-3 w-3 mr-1" />
                                   Outreach ({methodsUsed.length}/{outreachMethods.length})
                                   {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
+                                </Button>
+                              ) : (
+                                // For 'contacted' status - show follow-up option
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-yellow-300 hover:bg-[#333] hover:text-yellow-200"
+                                  onClick={() => {
+                                    setSelectedCampaignLead(campaignLead)
+                                    setIsFollowUpMode(true)
+                                    setShowOutreachOptions(true)
+                                  }}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Follow Up
                                 </Button>
                               )}
                           </TableCell>
@@ -4269,14 +4320,14 @@ export default function OutreachToolPage() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div className="flex justify-center">
                     <Button
                       onClick={() => {
                         copyToClipboard(generatedSmartResponse, 'Smart Response')
                         setSmartResponseCopied(true)
                         setTimeout(() => setSmartResponseCopied(false), 2000)
                       }}
-                      className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                      className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200"
                     >
                       {smartResponseCopied ? (
                         <>
@@ -4289,19 +4340,6 @@ export default function OutreachToolPage() {
                           Copy Response
                         </>
                       )}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        if (selectedCampaignLead?.lead) {
-                          generateSmartResponse(leadResponse, responseMethod, selectedCampaignLead.lead)
-                        }
-                      }}
-                      variant="outline"
-                      className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white font-medium py-3 rounded-lg transition-all duration-200"
-                      disabled={isGeneratingSmartResponse}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Regenerate Response
                     </Button>
                   </div>
                 </div>
@@ -4396,6 +4434,389 @@ export default function OutreachToolPage() {
               </div>
             </DialogContent>
           </Dialog>
+
+        {/* Comprehensive Tutorial Modal */}
+        <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-3 text-2xl">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
+                  <Lightbulb className="h-6 w-6 text-white" />
+                </div>
+                <span>Complete Outreach Tool Guide</span>
+              </DialogTitle>
+              <DialogDescription className="text-gray-300 text-lg">
+                Master every feature and workflow to maximize your outreach success
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-8 py-6">
+              {/* Overview Section */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-400" />
+                  Overview & Workflow
+                </h3>
+                <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-6">
+                  <p className="text-gray-300 mb-4 leading-relaxed">
+                    The Outreach Tool is your command center for managing leads through the entire sales pipeline. 
+                    Import leads from the Lead Generator, then systematically move them from pending → contacted → responded → qualified → signed.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white">Lead Statuses:</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <CircleDot className="h-3 w-3 text-gray-400" />
+                          <span className="text-gray-300"><strong>Pending:</strong> Ready for initial outreach</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="h-3 w-3 text-gray-400" />
+                          <span className="text-gray-300"><strong>Contacted:</strong> Outreach sent, awaiting response</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-3 w-3 text-gray-400" />
+                          <span className="text-gray-300"><strong>Responded:</strong> They replied, needs smart response</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Star className="h-3 w-3 text-green-400" />
+                          <span className="text-gray-300"><strong>Qualified:</strong> Ready for contract/proposal</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-3 w-3 text-green-400" />
+                          <span className="text-gray-300"><strong>Signed:</strong> Deal closed successfully</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-white">Daily Limits:</h4>
+                      <div className="space-y-2 text-sm text-gray-300">
+                        <div>• <strong>25 AI messages</strong> per day total</div>
+                        <div>• <strong>15 messages</strong> per hour max</div>
+                        <div>• <strong>1 message per lead</strong> per method per day</div>
+                        <div>• Smart responses: separate limit</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dashboard & Analytics */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-green-400" />
+                  Dashboard & Analytics
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Statistics Cards</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• <strong>Total Leads:</strong> All leads in your pipeline</div>
+                      <div>• <strong>Pending:</strong> Awaiting initial outreach</div>
+                      <div>• <strong>Contacted:</strong> Outreach sent + response rate</div>
+                      <div>• <strong>Responded:</strong> Active conversations</div>
+                      <div>• <strong>Qualified:</strong> Ready to close</div>
+                      <div>• <strong>Conversion Rate:</strong> % of leads that signed</div>
+                      <div>• <strong>AI Messages:</strong> Daily usage tracker</div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Performance Tracking</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Monitor response rates by platform</div>
+                      <div>• Track conversion funnel progression</div>
+                      <div>• Identify high-performing lead sources</div>
+                      <div>• Optimize outreach timing & messaging</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Outreach Features */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  Outreach Features
+                </h3>
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-purple-400" />
+                      AI-Powered Message Generation
+                    </h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Click "Outreach" button for any pending lead</div>
+                      <div>• AI analyzes business info, industry, location, social presence</div>
+                      <div>• Generates personalized messages for each platform</div>
+                      <div>• <strong>Available platforms:</strong> Email, Phone, LinkedIn, Instagram, Facebook, Twitter</div>
+                      <div>• Platform selection based on lead's available contact methods</div>
+                      <div>• Messages include compelling hooks, value propositions, clear CTAs</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-yellow-400" />
+                      Bulk Outreach
+                    </h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Process multiple leads in sequence efficiently</div>
+                      <div>• Click "Outreach All Pending" in Todo section</div>
+                      <div>• Navigate through leads with Previous/Next buttons</div>
+                      <div>• Skip leads or exit bulk mode anytime</div>
+                      <div>• Progress tracking shows current lead number</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Smart Response System */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-cyan-400" />
+                  Smart Response System
+                </h3>
+                <div className="bg-gradient-to-r from-cyan-900/20 to-cyan-800/20 border border-cyan-500/30 rounded-xl p-6">
+                  <h4 className="font-semibold text-white mb-3">When Leads Respond</h4>
+                  <div className="space-y-3 text-sm text-gray-300">
+                    <div>1. <strong>Update Status:</strong> Change lead to "Responded"</div>
+                    <div>2. <strong>Click "Smart Response":</strong> Opens AI response generator</div>
+                    <div>3. <strong>Select Platform:</strong> Choose where they responded (shows only available platforms)</div>
+                    <div>4. <strong>Paste Response:</strong> Copy their exact message</div>
+                    <div>5. <strong>Generate:</strong> AI analyzes context and creates strategic reply</div>
+                    <div>6. <strong>Copy & Send:</strong> Use generated response to continue conversation</div>
+                  </div>
+                  <div className="mt-4 p-3 bg-cyan-900/30 rounded-lg">
+                    <p className="text-cyan-200 text-sm">
+                      <strong>Pro Tip:</strong> The AI considers their response sentiment, business context, and relationship stage to craft the most effective reply.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lead Management */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Users className="h-5 w-5 text-orange-400" />
+                  Lead Management
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Filtering & Search</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• <strong>Quick Filters:</strong> Status buttons (All, Pending, etc.)</div>
+                      <div>• <strong>Search Bar:</strong> Find by business name or owner</div>
+                      <div>• <strong>Advanced Filters:</strong> Contact info, socials, location, scores</div>
+                      <div>• <strong>Score Range:</strong> Filter by lead quality (0-100)</div>
+                      <div>• <strong>Niche Filter:</strong> Industry-specific targeting</div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Lead Actions</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• <strong>Status Updates:</strong> Move leads through pipeline</div>
+                      <div>• <strong>Bulk Operations:</strong> Select multiple leads</div>
+                      <div>• <strong>Delete Leads:</strong> Remove unqualified prospects</div>
+                      <div>• <strong>Score Viewing:</strong> Click score to see breakdown</div>
+                      <div>• <strong>Social Links:</strong> Direct access to profiles</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lead Scoring */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Calculator className="h-5 w-5 text-red-400" />
+                  Lead Scoring System
+                </h3>
+                <div className="bg-gradient-to-r from-red-900/20 to-red-800/20 border border-red-500/30 rounded-xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-white mb-3">Scoring Factors</h4>
+                      <div className="space-y-2 text-sm text-gray-300">
+                        <div>• <strong>Contact Info (40 pts):</strong> Email, phone availability</div>
+                        <div>• <strong>Business Info (30 pts):</strong> Owner name, website quality</div>
+                        <div>• <strong>Social Presence (20 pts):</strong> Active profiles</div>
+                        <div>• <strong>Location (10 pts):</strong> Specific geography data</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-3">Score Ranges</h4>
+                      <div className="space-y-2 text-sm text-gray-300">
+                        <div>• <strong>90-100:</strong> Excellent (all info available)</div>
+                        <div>• <strong>70-89:</strong> Good (most info available)</div>
+                        <div>• <strong>50-69:</strong> Fair (basic info available)</div>
+                        <div>• <strong>Below 50:</strong> Poor (limited info)</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-red-900/30 rounded-lg">
+                    <p className="text-red-200 text-sm">
+                      <strong>Note:</strong> Use "Scoring" button to recalculate all scores or view detailed breakdowns.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Todo System */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-green-400" />
+                  Smart Todo System
+                </h3>
+                <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                  <h4 className="font-semibold text-white mb-3">Automated Task Generation</h4>
+                  <div className="space-y-3 text-sm text-gray-300">
+                    <div>• <strong>High Priority:</strong> Responded leads needing immediate attention</div>
+                    <div>• <strong>High Priority:</strong> Qualified leads ready for contracts</div>
+                    <div>• <strong>Medium Priority:</strong> Pending leads needing initial outreach</div>
+                    <div>• <strong>Medium Priority:</strong> Old contacted leads needing follow-up (7+ days)</div>
+                    <div>• <strong>Quick Actions:</strong> Bulk processing shortcuts</div>
+                    <div>• <strong>Progress Tracking:</strong> Mark tasks complete as you work</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Platform-Specific Actions */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Share2 className="h-5 w-5 text-violet-400" />
+                  Platform-Specific Guidance
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        Email Outreach
+                      </h4>
+                      <div className="text-sm text-gray-300">Professional, detailed messages with clear value propositions and meeting CTAs.</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Phone Outreach
+                      </h4>
+                      <div className="text-sm text-gray-300">Conversational scripts for cold calling with objection handling.</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Linkedin className="h-4 w-4" />
+                        LinkedIn Outreach
+                      </h4>
+                      <div className="text-sm text-gray-300">Professional networking messages focused on business growth.</div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Instagram className="h-4 w-4" />
+                        Instagram DMs
+                      </h4>
+                      <div className="text-sm text-gray-300">Casual, visual-focused messages that feel authentic and engaging.</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Facebook className="h-4 w-4" />
+                        Facebook Messages
+                      </h4>
+                      <div className="text-sm text-gray-300">Community-focused outreach that builds local business relationships.</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                      <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                        <Twitter className="h-4 w-4" />
+                        Twitter/X DMs
+                      </h4>
+                      <div className="text-sm text-gray-300">Concise, trend-aware messages that respect platform culture.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Best Practices */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Award className="h-5 w-5 text-yellow-400" />
+                  Best Practices & Tips
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Outreach Strategy</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Start with high-score leads (70+ points)</div>
+                      <div>• Use different platforms for follow-ups</div>
+                      <div>• Space messages 3-5 days apart</div>
+                      <div>• Track response patterns by industry</div>
+                      <div>• Personalize based on social media activity</div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Response Management</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Respond to interested leads within 2 hours</div>
+                      <div>• Use Smart Response for consistent quality</div>
+                      <div>• Move qualified leads to contract stage quickly</div>
+                      <div>• Set follow-up reminders for warm leads</div>
+                      <div>• Archive rejected leads to focus on active prospects</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Troubleshooting */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-gray-400" />
+                  Troubleshooting
+                </h3>
+                <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold text-white mb-3">Common Issues</h4>
+                      <div className="space-y-2 text-sm text-gray-300">
+                        <div>• <strong>Rate Limits:</strong> Wait for reset or try different platforms</div>
+                        <div>• <strong>No Platforms:</strong> Lead missing contact info</div>
+                        <div>• <strong>Poor Quality:</strong> Recalculate lead scores</div>
+                        <div>• <strong>Loading Issues:</strong> Use refresh button</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white mb-3">Quick Fixes</h4>
+                      <div className="space-y-2 text-sm text-gray-300">
+                        <div>• Clear browser cache if data seems stale</div>
+                        <div>• Check console logs for platform detection issues</div>
+                        <div>• Verify lead data completeness before outreach</div>
+                        <div>• Use bulk operations for efficiency</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center pt-6 border-t border-[#444]">
+              <Button
+                onClick={() => setShowTutorial(false)}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-8 rounded-lg"
+              >
+                Got It! Let's Start Outreaching
+              </Button>
+            </div>
+          </DialogContent>
+                 </Dialog>
+
+        {/* Floating Help Button */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => setShowTutorial(true)}
+            size="lg"
+            className="h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-110"
+            title="Open Help & Tutorial"
+          >
+            <Lightbulb className="h-6 w-6" />
+          </Button>
+        </div>
 
 
                     </div>
