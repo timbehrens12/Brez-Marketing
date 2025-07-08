@@ -1631,29 +1631,38 @@ export default function OutreachToolPage() {
   const getAvailablePlatforms = () => {
     const allPlatforms = [
       { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up', requiresConnection: false },
-      { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response', requiresConnection: true, connectionType: 'linkedin' },
+      { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response', requiresConnection: false }, // Always available for now
       { type: 'twitter', icon: () => (
         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
         </svg>
-      ), label: 'X/Twitter Reply', description: 'Quick engagement response', requiresConnection: true, connectionType: 'twitter' },
+      ), label: 'X/Twitter Reply', description: 'Quick engagement response', requiresConnection: false }, // Always available for now
       { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement', requiresConnection: true, connectionType: 'meta' },
       { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response', requiresConnection: true, connectionType: 'meta' }
     ]
 
+    // Debug: Log platform connections to see what's available
+    console.log('🔍 Platform connections for debugging:', platformConnections)
+    console.log('🔍 Selected brand ID:', selectedBrandId)
+
     // Filter platforms based on connections
     const availablePlatforms = allPlatforms.filter(platform => {
-      // Email is always available
+      // Email, LinkedIn, and Twitter are always available for now
       if (!platform.requiresConnection) {
         return true
       }
       
       // Check if the required connection exists for this brand
-      return platformConnections.some(conn => 
+      const hasConnection = platformConnections.some(conn => 
         conn.platform_type === platform.connectionType && conn.status === 'active'
       )
+      
+      console.log(`🔍 Platform ${platform.type} (requires ${platform.connectionType}): ${hasConnection ? 'AVAILABLE' : 'NOT AVAILABLE'}`)
+      
+      return hasConnection
     })
 
+    console.log('🔍 Final available platforms:', availablePlatforms.map(p => p.type))
     return availablePlatforms
   }
 
@@ -3933,57 +3942,18 @@ export default function OutreachToolPage() {
         <Dialog open={showSmartResponse} onOpenChange={setShowSmartResponse}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
-                  <Brain className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span>AI Smart Response Studio</span>
-                  <span className="text-sm text-gray-400 font-normal">
-                    Generate intelligent follow-up responses
-                  </span>
-                </div>
+              <DialogTitle className="text-white text-lg">
+                Smart Response for {selectedCampaignLead?.lead?.business_name}
               </DialogTitle>
-              <DialogDescription className="text-gray-300">
-                <div className="space-y-2 mt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
-                  </div>
-                  {selectedCampaignLead?.lead?.owner_name && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <User className="h-4 w-4" />
-                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
-                    </div>
-                  )}
-                  {selectedCampaignLead?.lead?.niche_name && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Building className="h-4 w-4" />
-                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
-                    </div>
-                )}
-                </div>
-              </DialogDescription>
+              {selectedCampaignLead?.lead?.owner_name && (
+                <DialogDescription className="text-gray-400 text-sm">
+                  {selectedCampaignLead.lead.owner_name}
+                  {selectedCampaignLead?.lead?.niche_name && ` • ${selectedCampaignLead.lead.niche_name}`}
+                </DialogDescription>
+              )}
             </DialogHeader>
             
             <div className="space-y-6 py-4">
-              {/* AI Information Banner */}
-              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-gray-600/30 rounded-lg">
-                    <Zap className="h-5 w-5 text-gray-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-200 mb-1">
-                      AI-Powered Response Generation
-                    </h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">
-                      Advanced AI analyzes their response context and generates strategic follow-up messages that maintain engagement while moving the conversation toward your business goals.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Platform Selection */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-white mb-4">
