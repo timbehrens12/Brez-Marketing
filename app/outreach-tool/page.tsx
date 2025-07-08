@@ -18,7 +18,7 @@ import {
   CheckCircle, Clock, AlertCircle, Star, TrendingUp,
   Plus, Edit, Copy, Sparkles, Target, Users, BarChart3,
   Building2, ExternalLink, Linkedin, Twitter, Instagram,
-  Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
+  Facebook, ChevronRight, ChevronLeft, Filter, RefreshCw, DollarSign,
   ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2,
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
@@ -205,7 +205,6 @@ export default function OutreachToolPage() {
   const [smartResponsesRemaining, setSmartResponsesRemaining] = useState<number | null>(null)
   
   // Bulk Outreach state
-  const [showBulkOutreach, setShowBulkOutreach] = useState(false)
   const [pendingOutreachQueue, setPendingOutreachQueue] = useState<CampaignLead[]>([])
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0)
   
@@ -527,7 +526,8 @@ export default function OutreachToolPage() {
           if (pendingLeads.length > 0) {
             setPendingOutreachQueue(pendingLeads)
             setCurrentQueueIndex(0)
-            setShowBulkOutreach(true)
+            setSelectedCampaignLead(pendingLeads[0])
+            setShowOutreachOptions(true)
           }
         }
       })
@@ -566,7 +566,7 @@ export default function OutreachToolPage() {
     }
 
     setTodos(newTodos)
-  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setShowBulkOutreach])
+  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -2520,7 +2520,8 @@ export default function OutreachToolPage() {
                           if (pendingLeads.length > 0) {
                             setPendingOutreachQueue(pendingLeads);
                             setCurrentQueueIndex(0);
-                            setShowBulkOutreach(true);
+                            setSelectedCampaignLead(pendingLeads[0]);
+                            setShowOutreachOptions(true);
                           } else {
                             toast.error('No pending leads found');
                           }
@@ -2676,14 +2677,28 @@ export default function OutreachToolPage() {
         </div>
 
         {/* Advanced Outreach Options Dialog */}
-        <Dialog open={showOutreachOptions} onOpenChange={setShowOutreachOptions}>
+        <Dialog open={showOutreachOptions} onOpenChange={(open) => {
+          setShowOutreachOptions(open)
+          if (!open) {
+            // Clear bulk queue when closing
+            setPendingOutreachQueue([])
+            setCurrentQueueIndex(0)
+          }
+        }}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
-                AI Outreach Studio
+                <div className="flex flex-col">
+                  <span>AI Outreach Studio</span>
+                  {pendingOutreachQueue.length > 0 && (
+                    <span className="text-sm text-gray-400 font-normal">
+                      Lead {currentQueueIndex + 1} of {pendingOutreachQueue.length}
+                    </span>
+                  )}
+                </div>
               </DialogTitle>
               <DialogDescription className="text-gray-300">
                 <div className="space-y-2 mt-2">
@@ -2706,6 +2721,26 @@ export default function OutreachToolPage() {
                 </div>
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Bulk Progress Bar (only show when in bulk mode) */}
+            {pendingOutreachQueue.length > 0 && (
+              <div className="px-6 pb-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300 font-medium text-sm">Progress</span>
+                    <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
+                      {currentQueueIndex + 1} / {pendingOutreachQueue.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="space-y-6 py-4">
               {/* AI Usage Status Bar */}
@@ -2804,6 +2839,9 @@ export default function OutreachToolPage() {
                       setShowOutreachOptions(false)
                       setShowMessageComposer(true)
                       setMessageType(method.type as any)
+                      // Clear previous message when starting new generation
+                      setGeneratedMessage('')
+                      setMessageSubject('')
                       if (selectedCampaignLead.lead) {
                         generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
                       }
@@ -2847,6 +2885,74 @@ export default function OutreachToolPage() {
                 )
               })}
               </div>
+              
+              {/* Bulk Navigation Controls (only show when in bulk mode) */}
+              {pendingOutreachQueue.length > 0 && (
+                <div className="px-6 pt-4 border-t border-[#444]">
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        if (currentQueueIndex > 0) {
+                          const newIndex = currentQueueIndex - 1
+                          setCurrentQueueIndex(newIndex)
+                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                          // Clear any generated messages
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                        }
+                      }}
+                      disabled={currentQueueIndex === 0}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
+                    >
+                      ← Previous
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                          const newIndex = currentQueueIndex + 1
+                          setCurrentQueueIndex(newIndex)
+                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                          // Clear any generated messages
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                        } else {
+                          // Reached end of queue
+                          setShowOutreachOptions(false)
+                          setPendingOutreachQueue([])
+                          setCurrentQueueIndex(0)
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                          toast.success('All pending leads processed!')
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                    >
+                      {currentQueueIndex < pendingOutreachQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue'}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        setShowOutreachOptions(false)
+                        setPendingOutreachQueue([])
+                        setCurrentQueueIndex(0)
+                        setGeneratedMessage('')
+                        setMessageSubject('')
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Exit Queue
+                    </Button>
+                  </div>
+                </div>
+              )}
           </div>
           </DialogContent>
         </Dialog>
@@ -2864,17 +2970,26 @@ export default function OutreachToolPage() {
                   {messageType === 'facebook' && <Facebook className="h-6 w-6 text-white" />}
                 {(messageType === 'twitter' || messageType === 'x') && (
                     <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.80l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                 )}
                 </div>
-                {messageType === 'phone' ? 'AI Cold Call Script' : 
-                 messageType === 'email' ? 'AI Email Outreach' :
-                 messageType === 'linkedin' ? 'AI LinkedIn Message' :
-                 messageType === 'instagram' ? 'AI Instagram DM' :
-                 messageType === 'facebook' ? 'AI Facebook Message' :
-                 (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
-                 'AI Outreach Message'}
+                <div className="flex flex-col">
+                  <span>
+                    {messageType === 'phone' ? 'AI Cold Call Script' : 
+                     messageType === 'email' ? 'AI Email Outreach' :
+                     messageType === 'linkedin' ? 'AI LinkedIn Message' :
+                     messageType === 'instagram' ? 'AI Instagram DM' :
+                     messageType === 'facebook' ? 'AI Facebook Message' :
+                     (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
+                     'AI Outreach Message'}
+                  </span>
+                  {pendingOutreachQueue.length > 0 && (
+                    <span className="text-sm text-gray-400 font-normal">
+                      Lead {currentQueueIndex + 1} of {pendingOutreachQueue.length}
+                    </span>
+                  )}
+                </div>
               </DialogTitle>
               <DialogDescription className="text-gray-300">
                 <div className="flex items-center gap-4 mt-2">
@@ -2983,12 +3098,31 @@ export default function OutreachToolPage() {
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                           setShowMessageComposer(false)
-                          toast.success('Lead marked as contacted!')
+                          
+                          // Handle bulk mode navigation
+                          if (pendingOutreachQueue.length > 0) {
+                            if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                              // Move to next lead in queue
+                              const newIndex = currentQueueIndex + 1
+                              setCurrentQueueIndex(newIndex)
+                              setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                              setShowOutreachOptions(true)
+                              toast.success('Lead marked as contacted! Moving to next lead...')
+                            } else {
+                              // Reached end of queue
+                              setShowOutreachOptions(false)
+                              setPendingOutreachQueue([])
+                              setCurrentQueueIndex(0)
+                              toast.success('Lead marked as contacted! All pending leads processed!')
+                            }
+                          } else {
+                            toast.success('Lead marked as contacted!')
+                          }
                         }}
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                       >
                         <CheckCircle className="h-5 w-5 mr-2" />
-                        Mark as Contacted
+                        {pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted'}
                       </Button>
                     </div>
                 )}
@@ -3089,6 +3223,83 @@ export default function OutreachToolPage() {
                     </div>
                   )}
                   </div>
+              )}
+              
+              {/* Bulk Navigation Controls (only show when in bulk mode) */}
+              {pendingOutreachQueue.length > 0 && (
+                <div className="px-6 pt-4 border-t border-[#444]">
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        if (currentQueueIndex > 0) {
+                          const newIndex = currentQueueIndex - 1
+                          setCurrentQueueIndex(newIndex)
+                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                          // Clear any generated messages
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                          setShowMessageComposer(false)
+                          setShowOutreachOptions(true)
+                        }
+                      }}
+                      disabled={currentQueueIndex === 0}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous Lead
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                          const newIndex = currentQueueIndex + 1
+                          setCurrentQueueIndex(newIndex)
+                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                          // Clear any generated messages
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                          setShowMessageComposer(false)
+                          setShowOutreachOptions(true)
+                        } else {
+                          // Reached end of queue
+                          setShowOutreachOptions(false)
+                          setShowMessageComposer(false)
+                          setPendingOutreachQueue([])
+                          setCurrentQueueIndex(0)
+                          setGeneratedMessage('')
+                          setMessageSubject('')
+                          toast.success('All pending leads processed!')
+                        }
+                      }}
+                      disabled={currentQueueIndex === pendingOutreachQueue.length - 1}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white"
+                    >
+                      Next Lead
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        setShowMessageComposer(false)
+                        setShowOutreachOptions(false)
+                        setPendingOutreachQueue([])
+                        setCurrentQueueIndex(0)
+                        setGeneratedMessage('')
+                        setMessageSubject('')
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white ml-auto"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Exit Bulk Mode
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           </DialogContent>
@@ -3555,365 +3766,7 @@ export default function OutreachToolPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Bulk Outreach Dialog */}
-          <Dialog open={showBulkOutreach} onOpenChange={setShowBulkOutreach}>
-            <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-              <DialogHeader className="border-b border-[#333] pb-4">
-                <DialogTitle className="text-white flex items-center gap-3 text-xl font-semibold">
-                  <div className="p-2 bg-[#2A2A2A] rounded-lg">
-                    <Send className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span>Lead Processing Workflow</span>
-                    <span className="text-sm text-gray-400 font-normal">
-                      Lead {currentQueueIndex + 1} of {pendingOutreachQueue.length}
-                    </span>
-                  </div>
-                </DialogTitle>
-                <DialogDescription className="text-gray-400 mt-2">
-                  Systematically process pending leads with AI-generated personalized outreach messages
-                </DialogDescription>
-              </DialogHeader>
-              
-              {pendingOutreachQueue.length > 0 && currentQueueIndex < pendingOutreachQueue.length && (
-                <div className="py-6 space-y-6">
-                  {/* Progress Bar */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-300 font-medium">Progress</span>
-                      <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
-                        {currentQueueIndex + 1} / {pendingOutreachQueue.length}
-                      </span>
-                    </div>
-                    <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
 
-                  {/* Current Lead Info */}
-                  {(() => {
-                    const currentLead = pendingOutreachQueue[currentQueueIndex]
-                    const lead = currentLead?.lead
-                    if (!lead) return null
-
-                    return (
-                      <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6 shadow-lg">
-                        <div className="flex items-start justify-between mb-6">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold text-white mb-2">{lead.business_name}</h3>
-                            {lead.owner_name && (
-                              <p className="text-gray-300 flex items-center gap-2">
-                                <User className="h-4 w-4 text-gray-400" />
-                                {lead.owner_name}
-                              </p>
-                            )}
-                            {lead.city && lead.state_province && (
-                              <p className="text-gray-400 flex items-center gap-2 mt-1">
-                                <MapPin className="h-4 w-4 text-gray-500" />
-                                {lead.city}, {lead.state_province}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {lead.lead_score && (
-                              <div className="bg-[#333] text-gray-200 px-3 py-2 rounded-lg text-sm font-medium border border-[#555]">
-                                Score: {lead.lead_score}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Contact Methods */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                          {lead.email && (
-                            <div className="bg-[#333] rounded-lg p-3 border border-[#555]">
-                              <Label className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                Email
-                              </Label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-200 truncate flex-1">{lead.email}</span>
-                                                                 <Button
-                                   onClick={() => copyToClipboard(lead.email || '', 'Email')}
-                                   size="sm"
-                                   variant="ghost"
-                                  className="h-7 w-7 p-0 hover:bg-[#444] text-gray-400 hover:text-gray-200"
-                                 >
-                                   <Copy className="h-3 w-3" />
-                                 </Button>
-                              </div>
-                            </div>
-                          )}
-                          {lead.phone && (
-                            <div className="bg-[#333] rounded-lg p-3 border border-[#555]">
-                              <Label className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                Phone
-                              </Label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-200">{lead.phone}</span>
-                                                                 <Button
-                                   onClick={() => copyToClipboard(lead.phone || '', 'Phone')}
-                                   size="sm"
-                                   variant="ghost"
-                                  className="h-7 w-7 p-0 hover:bg-[#444] text-gray-400 hover:text-gray-200"
-                                 >
-                                   <Copy className="h-3 w-3" />
-                                 </Button>
-                              </div>
-                            </div>
-                          )}
-                          {lead.website && (
-                            <div className="bg-[#333] rounded-lg p-3 border border-[#555]">
-                              <Label className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1">
-                                <Globe className="h-3 w-3" />
-                                Website
-                              </Label>
-                              <div className="flex items-center gap-2">
-                                <a 
-                                  href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-gray-300 hover:text-white truncate flex-1 transition-colors"
-                                >
-                                  {lead.website}
-                                </a>
-                                                                 <Button
-                                   onClick={() => copyToClipboard(lead.website || '', 'Website')}
-                                   size="sm"
-                                   variant="ghost"
-                                  className="h-7 w-7 p-0 hover:bg-[#444] text-gray-400 hover:text-gray-200"
-                                 >
-                                   <Copy className="h-3 w-3" />
-                                 </Button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Social Media */}
-                        {(lead.instagram_handle || lead.facebook_page || lead.linkedin_profile || lead.twitter_handle) && (
-                          <div className="space-y-3">
-                            <Label className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                              <Share2 className="h-3 w-3" />
-                              Social Presence
-                            </Label>
-                            <div className="flex flex-wrap gap-2">
-                              {lead.instagram_handle && (
-                                <a
-                                  href={getSocialMediaLink('instagram', lead.instagram_handle)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-xs bg-[#333] border border-[#555] text-gray-200 px-3 py-2 rounded-lg hover:bg-[#444] hover:border-[#666] transition-all"
-                                >
-                                  {getSocialMediaIcon('instagram')}
-                                  <span>{lead.instagram_handle}</span>
-                                  <ExternalLink className="h-3 w-3 text-gray-400" />
-                                </a>
-                              )}
-                              {lead.facebook_page && (
-                                <a
-                                  href={getSocialMediaLink('facebook', lead.facebook_page)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-xs bg-[#333] border border-[#555] text-gray-200 px-3 py-2 rounded-lg hover:bg-[#444] hover:border-[#666] transition-all"
-                                >
-                                  {getSocialMediaIcon('facebook')}
-                                  <span>Facebook</span>
-                                  <ExternalLink className="h-3 w-3 text-gray-400" />
-                                </a>
-                              )}
-                              {lead.linkedin_profile && (
-                                <a
-                                  href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-xs bg-[#333] border border-[#555] text-gray-200 px-3 py-2 rounded-lg hover:bg-[#444] hover:border-[#666] transition-all"
-                                >
-                                  {getSocialMediaIcon('linkedin')}
-                                  <span>LinkedIn</span>
-                                  <ExternalLink className="h-3 w-3 text-gray-400" />
-                                </a>
-                              )}
-                              {lead.twitter_handle && (
-                                <a
-                                  href={getSocialMediaLink('twitter', lead.twitter_handle)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-xs bg-[#333] border border-[#555] text-gray-200 px-3 py-2 rounded-lg hover:bg-[#444] hover:border-[#666] transition-all"
-                                >
-                                  {getSocialMediaIcon('twitter')}
-                                  <span>{lead.twitter_handle}</span>
-                                  <ExternalLink className="h-3 w-3 text-gray-400" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })()}
-
-                  {/* Message Generation Section */}
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6 space-y-5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-semibold text-gray-200 flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-gray-400" />
-                        AI Message Generation
-                      </Label>
-                      <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
-                        <SelectTrigger className="w-44 bg-[#333] border-[#555] text-gray-200 hover:bg-[#444]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#2A2A2A] border-[#555]">
-                          <SelectItem value="email" className="text-gray-200">Email</SelectItem>
-                          <SelectItem value="linkedin" className="text-gray-200">LinkedIn</SelectItem>
-                          <SelectItem value="instagram" className="text-gray-200">Instagram</SelectItem>
-                          <SelectItem value="facebook" className="text-gray-200">Facebook</SelectItem>
-                          <SelectItem value="twitter" className="text-gray-200">Twitter/X</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      onClick={() => {
-                        const currentLead = pendingOutreachQueue[currentQueueIndex]?.lead
-                        if (currentLead) {
-                          generatePersonalizedMessage(currentLead, messageType)
-                        }
-                      }}
-                      disabled={isGeneratingMessage}
-                      className="w-full bg-[#444] hover:bg-[#555] text-white border border-[#666] hover:border-[#777] transition-all py-3"
-                    >
-                      {isGeneratingMessage ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating personalized {messageType} message...
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="h-4 w-4 mr-2" />
-                          Generate {messageType.charAt(0).toUpperCase() + messageType.slice(1)} Message
-                        </>
-                      )}
-                    </Button>
-
-                    {/* Generated Message Display */}
-                    {generatedMessage && (
-                      <div className="space-y-4 mt-6">
-                        {messageSubject && (
-                          <div>
-                            <Label className="text-xs font-medium text-gray-400 mb-2 block flex items-center gap-1">
-                              <MailOpen className="h-3 w-3" />
-                              Subject Line
-                            </Label>
-                            <div className="bg-[#333] border border-[#555] rounded-lg p-4">
-                              <div className="text-gray-200 text-sm font-medium leading-relaxed">{messageSubject}</div>
-                              <Button
-                                onClick={() => copyToClipboard(messageSubject, 'Subject')}
-                                size="sm"
-                                variant="ghost"
-                                className="mt-3 text-xs bg-[#444] hover:bg-[#555] text-gray-300 hover:text-white"
-                              >
-                                <Copy className="h-3 w-3 mr-1" />
-                                Copy Subject
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          <Label className="text-xs font-medium text-gray-400 mb-2 block flex items-center gap-1">
-                            <MessageCircle className="h-3 w-3" />
-                            Generated Message
-                          </Label>
-                          <div className="bg-[#333] border border-[#555] rounded-lg p-4">
-                            <div className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">{generatedMessage}</div>
-                            <Button
-                              onClick={() => copyToClipboard(generatedMessage, 'Message')}
-                              size="sm"
-                              variant="ghost"
-                              className="mt-3 text-xs bg-[#444] hover:bg-[#555] text-gray-300 hover:text-white"
-                            >
-                              <Copy className="h-3 w-3 mr-1" />
-                              Copy Message
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-6 border-t border-[#444] mt-6">
-                    <Button
-                      onClick={() => {
-                        const currentLead = pendingOutreachQueue[currentQueueIndex]
-                        if (currentLead) {
-                          updateCampaignLeadStatus(currentLead.id, 'contacted', messageType)
-                          if (currentQueueIndex < pendingOutreachQueue.length - 1) {
-                            setCurrentQueueIndex(currentQueueIndex + 1)
-                            setGeneratedMessage('')
-                            setMessageSubject('')
-                          } else {
-                            setShowBulkOutreach(false)
-                            setPendingOutreachQueue([])
-                            setCurrentQueueIndex(0)
-                            setGeneratedMessage('')
-                            setMessageSubject('')
-                            toast.success('All pending leads processed successfully!')
-                          }
-                        }
-                      }}
-                      className="flex-1 bg-[#444] hover:bg-[#555] text-white border border-[#666] hover:border-[#777] transition-all py-3"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark as Contacted & Continue
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
-                        if (currentQueueIndex < pendingOutreachQueue.length - 1) {
-                          setCurrentQueueIndex(currentQueueIndex + 1)
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                        } else {
-                          setShowBulkOutreach(false)
-                          setPendingOutreachQueue([])
-                          setCurrentQueueIndex(0)
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                          toast.success('Bulk outreach session completed')
-                        }
-                      }}
-                      variant="outline"
-                      className="bg-[#2A2A2A] border-[#555] text-gray-300 hover:bg-[#333] hover:text-white hover:border-[#666] transition-all py-3"
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                       Skip to Next
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
-                        setShowBulkOutreach(false)
-                        setPendingOutreachQueue([])
-                        setCurrentQueueIndex(0)
-                        setGeneratedMessage('')
-                        setMessageSubject('')
-                      }}
-                      variant="outline"
-                      className="bg-[#2A2A2A] border-[#555] text-gray-300 hover:bg-[#333] hover:text-white hover:border-[#666] transition-all py-3"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                       Exit
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
     )
