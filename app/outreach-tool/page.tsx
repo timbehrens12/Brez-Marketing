@@ -208,6 +208,11 @@ export default function OutreachToolPage() {
   const [pendingOutreachQueue, setPendingOutreachQueue] = useState<CampaignLead[]>([])
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0)
   
+  // Bulk Follow-up state for contacted leads
+  const [contactedFollowUpQueue, setContactedFollowUpQueue] = useState<CampaignLead[]>([])
+  const [currentFollowUpIndex, setCurrentFollowUpIndex] = useState(0)
+  const [isFollowUpMode, setIsFollowUpMode] = useState(false)
+  
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
     hasPhone: false,
@@ -410,6 +415,8 @@ export default function OutreachToolPage() {
       if (!cl.last_contacted_at) return false
       return new Date(cl.last_contacted_at) < sevenDaysAgo
     })
+    
+
 
     // Generate specific todo items for individual leads
     
@@ -453,14 +460,14 @@ export default function OutreachToolPage() {
     })
 
     // Medium priority - Pending leads (need initial outreach)
-    if (pendingLeads.length >= 10) {
-      // If 10+ pending leads, show bulk action instead of individual items
+    if (pendingLeads.length > 1) {
+      // If 2+ pending leads, show bulk action instead of individual items
       newTodos.push({
         id: 'bulk_pending_many',
         type: 'new_leads',
         priority: 'medium',
-        title: `You have ${pendingLeads.length} pending leads ready for outreach`,
-        description: 'Use the "Outreach All Pending" quick action to efficiently process all leads in sequence',
+        title: `${pendingLeads.length} leads are pending and awaiting outreach`,
+        description: 'Use the bulk outreach tool to efficiently process all pending leads in sequence',
         count: pendingLeads.length,
         action: 'Start Bulk Outreach',
         filterAction: () => {
@@ -469,135 +476,100 @@ export default function OutreachToolPage() {
             setPendingOutreachQueue(pendingLeads)
             setCurrentQueueIndex(0)
             setSelectedCampaignLead(pendingLeads[0])
+            setIsFollowUpMode(false)
             setShowOutreachOptions(true)
           }
         }
       })
-    } else {
-      // Show individual pending leads if less than 10
-      pendingLeads.slice(0, 5).forEach(cl => {
-        if (cl.lead) {
-          newTodos.push({
-            id: `outreach_${cl.id}`,
-            type: 'new_leads',
-            priority: 'medium',
-            title: `Start outreach to ${cl.lead.business_name}`,
-            description: `${cl.lead.business_name} is ready for personalized outreach`,
-            count: 1,
-            action: 'Start Outreach',
-            filterAction: () => {
-              setSelectedCampaignLead(cl)
-              setShowOutreachOptions(true)
-            }
-          })
-        }
-      })
+    } else if (pendingLeads.length === 1) {
+      // Show individual pending lead if only 1
+      const cl = pendingLeads[0]
+      if (cl.lead) {
+        newTodos.push({
+          id: `outreach_${cl.id}`,
+          type: 'new_leads',
+          priority: 'medium',
+          title: `Start outreach to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} is ready for personalized outreach`,
+          count: 1,
+          action: 'Start Outreach',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setIsFollowUpMode(false)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
     }
 
-    // Medium priority - Follow-up needed (5+ days old)
-    if (needsFollowUp.length >= 10) {
-      // If 10+ follow-up leads, show bulk message instead of individual items
+    // Medium priority - Contacted leads needing follow-up (7+ days old)
+    if (goingCold.length > 1) {
+      // If 2+ contacted leads are 7+ days old, show bulk follow-up option
       newTodos.push({
-        id: 'bulk_followup_many',
+        id: 'bulk_contacted_followup',
         type: 'follow_up',
         priority: 'medium',
-        title: `${needsFollowUp.length} leads need follow-up outreach`,
-        description: 'These leads were contacted 5+ days ago with no response. Consider follow-up or status updates.',
-        count: needsFollowUp.length,
-        action: 'Review Follow-ups',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-      })
-    } else {
-      // Show individual follow-up leads if less than 10
-      needsFollowUp.slice(0, 5).forEach(cl => {
-        if (cl.lead) {
-          const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
-          newTodos.push({
-            id: `followup_${cl.id}`,
-            type: 'follow_up',
-            priority: 'medium',
-            title: `Follow up with ${cl.lead.business_name}`,
-            description: `No response from ${cl.lead.business_name} in ${daysSince} days - send follow-up`,
-            count: 1,
-            action: 'Follow Up',
-            filterAction: () => {
-              setSelectedCampaignLead(cl)
-              setShowOutreachOptions(true)
-            }
-          })
-        }
-      })
-    }
-
-    // Low priority - Going cold (7+ days old)
-    if (goingCold.length >= 10) {
-      // If 10+ going cold leads, show bulk message
-      newTodos.push({
-        id: 'bulk_cold_many',
-        type: 'going_cold',
-        priority: 'low',
-        title: `${goingCold.length} leads are going cold`,
-        description: 'These leads haven\'t responded in 7+ days. Consider final follow-up or marking as rejected.',
+        title: `${goingCold.length} leads have been marked as contacted for 7+ days with no updates`,
+        description: 'These leads need follow-up outreach or status updates. Use bulk follow-up to process efficiently.',
         count: goingCold.length,
-        action: 'Review Cold Leads',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-      })
-    } else {
-      // Show individual going cold leads if less than 10
-      goingCold.slice(0, 3).forEach(cl => {
-        if (cl.lead) {
-          const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
-          newTodos.push({
-            id: `cold_${cl.id}`,
-            type: 'going_cold',
-            priority: 'low',
-            title: `${cl.lead.business_name} going cold`,
-            description: `${daysSince} days since last contact - urgent follow-up or mark as rejected`,
-            count: 1,
-            action: 'Last Chance',
-            filterAction: () => {
-              setSelectedCampaignLead(cl)
-              setShowOutreachOptions(true)
-            }
-          })
-        }
-      })
-    }
-
-    // Add bulk action todos if there are many leads (but only if we're showing individual items)
-    if (pendingLeads.length > 5 && pendingLeads.length < 10) {
-      newTodos.push({
-        id: 'bulk_pending',
-        type: 'new_leads',
-        priority: 'medium',
-        title: `Bulk outreach to ${pendingLeads.length - 5} more pending leads`,
-        description: `You have ${pendingLeads.length - 5} additional pending leads ready for outreach`,
-        count: pendingLeads.length - 5,
-        action: 'Bulk Outreach',
+        action: 'Start Bulk Follow-up',
         filterAction: () => {
-          const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending')
-          if (pendingLeads.length > 0) {
-            setPendingOutreachQueue(pendingLeads)
-            setCurrentQueueIndex(0)
-            setSelectedCampaignLead(pendingLeads[0])
+          const oldContactedLeads = campaignLeads.filter(cl => {
+            if (!cl.last_contacted_at || cl.status !== 'contacted') return false
+            return new Date(cl.last_contacted_at) < sevenDaysAgo
+          })
+          if (oldContactedLeads.length > 0) {
+            setContactedFollowUpQueue(oldContactedLeads)
+            setCurrentFollowUpIndex(0)
+            setSelectedCampaignLead(oldContactedLeads[0])
+            setIsFollowUpMode(true)
             setShowOutreachOptions(true)
           }
         }
       })
+    } else if (goingCold.length === 1) {
+      // Show individual contacted lead if only 1
+      const cl = goingCold[0]
+      if (cl.lead) {
+        const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
+        newTodos.push({
+          id: `followup_${cl.id}`,
+          type: 'follow_up',
+          priority: 'medium',
+          title: `Follow up with ${cl.lead.business_name}`,
+          description: `No response from ${cl.lead.business_name} in ${daysSince} days - send follow-up`,
+          count: 1,
+          action: 'Re-reach Out',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setIsFollowUpMode(true)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
     }
 
-    if (needsFollowUp.length > 5 && needsFollowUp.length < 10) {
-      newTodos.push({
-        id: 'bulk_followup',
-        type: 'follow_up',
-        priority: 'medium',
-        title: `${needsFollowUp.length - 5} more leads need follow-up`,
-        description: `Additional leads haven't responded in 5+ days`,
-        count: needsFollowUp.length - 5,
-        action: 'View All',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-      })
+    // Medium priority - General follow-up needed (5+ days old) - only show if not covered by 7+ day bulk
+    if (needsFollowUp.length > goingCold.length && needsFollowUp.length > 1) {
+      const remainingFollowUps = needsFollowUp.filter(cl => !goingCold.includes(cl))
+      if (remainingFollowUps.length > 0) {
+        newTodos.push({
+          id: 'bulk_followup_general',
+          type: 'follow_up',
+          priority: 'medium',
+          title: `${remainingFollowUps.length} leads need follow-up outreach`,
+          description: 'These leads were contacted 5-6 days ago with no response. Consider follow-up or status updates.',
+          count: remainingFollowUps.length,
+          action: 'Review Follow-ups',
+          filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+        })
+      }
     }
+
+    // Note: Going cold leads are now handled in the bulk follow-up section above
+    // This keeps the todo list cleaner and more action-oriented
+
+
 
     // Add status update reminders
     const oldContactedLeads = contactedLeads.filter(cl => {
@@ -619,7 +591,7 @@ export default function OutreachToolPage() {
     }
 
     setTodos(newTodos)
-  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex])
+  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -914,7 +886,7 @@ export default function OutreachToolPage() {
     }
   }
 
-  const generatePersonalizedMessage = async (lead: Lead, method: string, retryCount = 0) => {
+  const generatePersonalizedMessage = async (lead: Lead, method: string, retryCount = 0, isFollowUp = false) => {
     setIsGeneratingMessage(true)
     setGeneratedMessage('') // Clear previous message
     setMessageSubject('') // Clear previous subject
@@ -965,7 +937,9 @@ export default function OutreachToolPage() {
           tone: method === 'phone' ? 'conversational and professional' : 'friendly but business-focused',
           personalization_level: 'high',
           call_to_action: method === 'email' ? 'schedule a brief call' : method === 'phone' ? 'book a strategy session' : 'connect for collaboration opportunities',
-          urgency: lead.lead_score && lead.lead_score > 70 ? 'medium' : 'low'
+          urgency: lead.lead_score && lead.lead_score > 70 ? 'medium' : 'low',
+          message_type: isFollowUp ? 'follow_up' : 'initial_outreach',
+          context: isFollowUp ? 'This is a follow-up message for a lead that was previously contacted but has not responded. Focus on re-engaging without being pushy.' : 'This is an initial outreach message to a new lead.'
         }
       }
 
@@ -999,7 +973,7 @@ export default function OutreachToolPage() {
               const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000 // 1-2s, 2-3s, 4-5s
               toast.loading(`Rate limited. Retrying in ${Math.ceil(delay/1000)} seconds...`)
               setTimeout(() => {
-                generatePersonalizedMessage(lead, method, retryCount + 1)
+                generatePersonalizedMessage(lead, method, retryCount + 1, isFollowUp)
               }, delay)
               return
             } else {
@@ -1052,7 +1026,7 @@ export default function OutreachToolPage() {
         const delay = Math.pow(2, retryCount) * 1000
         toast.loading(`Connection error. Retrying in ${Math.ceil(delay/1000)} seconds...`)
         setTimeout(() => {
-          generatePersonalizedMessage(lead, method, retryCount + 1)
+          generatePersonalizedMessage(lead, method, retryCount + 1, isFollowUp)
         }, delay)
         return
       }
@@ -2574,6 +2548,7 @@ export default function OutreachToolPage() {
                             setPendingOutreachQueue(pendingLeads);
                             setCurrentQueueIndex(0);
                             setSelectedCampaignLead(pendingLeads[0]);
+                            setIsFollowUpMode(false);
                             setShowOutreachOptions(true);
                           } else {
                             toast.error('No pending leads found');
@@ -2742,9 +2717,12 @@ export default function OutreachToolPage() {
         <Dialog open={showOutreachOptions} onOpenChange={(open) => {
           setShowOutreachOptions(open)
           if (!open) {
-            // Clear bulk queue when closing
+            // Clear bulk queues when closing
             setPendingOutreachQueue([])
             setCurrentQueueIndex(0)
+            setContactedFollowUpQueue([])
+            setCurrentFollowUpIndex(0)
+            setIsFollowUpMode(false)
           }
         }}>
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -2754,10 +2732,13 @@ export default function OutreachToolPage() {
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span>AI Outreach Studio</span>
-                  {pendingOutreachQueue.length > 0 && (
+                  <span>{isFollowUpMode ? 'AI Follow-up Studio' : 'AI Outreach Studio'}</span>
+                  {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
                     <span className="text-sm text-gray-400 font-normal">
-                      Lead {currentQueueIndex + 1} of {pendingOutreachQueue.length}
+                      {isFollowUpMode 
+                        ? `Follow-up ${currentFollowUpIndex + 1} of ${contactedFollowUpQueue.length}`
+                        : `Lead ${currentQueueIndex + 1} of ${pendingOutreachQueue.length}`
+                      }
                     </span>
                   )}
                 </div>
@@ -2785,19 +2766,29 @@ export default function OutreachToolPage() {
             </DialogHeader>
             
             {/* Bulk Progress Bar (only show when in bulk mode) */}
-            {pendingOutreachQueue.length > 0 && (
+            {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
               <div className="px-6 pb-4">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300 font-medium text-sm">Progress</span>
+                    <span className="text-gray-300 font-medium text-sm">
+                      {isFollowUpMode ? 'Follow-up Progress' : 'Outreach Progress'}
+                    </span>
                     <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
-                      {currentQueueIndex + 1} / {pendingOutreachQueue.length}
+                      {isFollowUpMode 
+                        ? `${currentFollowUpIndex + 1} / ${contactedFollowUpQueue.length}`
+                        : `${currentQueueIndex + 1} / ${pendingOutreachQueue.length}`
+                      }
                     </span>
                   </div>
                   <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
                     <div 
                       className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100}%` }}
+                      style={{ 
+                        width: `${isFollowUpMode 
+                          ? ((currentFollowUpIndex + 1) / contactedFollowUpQueue.length) * 100
+                          : ((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100
+                        }%` 
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -2857,9 +2848,14 @@ export default function OutreachToolPage() {
                     <Zap className="h-5 w-5 text-gray-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-200 mb-1">AI-Powered Personalization</h3>
+                    <h3 className="font-semibold text-gray-200 mb-1">
+                      {isFollowUpMode ? 'AI-Powered Follow-up Messages' : 'AI-Powered Personalization'}
+                    </h3>
                     <p className="text-sm text-gray-400 leading-relaxed">
-                      Advanced AI analyzes this lead's profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.
+                      {isFollowUpMode 
+                        ? 'Advanced AI generates strategic follow-up messages that re-engage leads without being pushy, using context from your previous outreach to maximize response rates.'
+                        : 'Advanced AI analyzes this lead\'s profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.'
+                      }
                     </p>
                   </div>
                 </div>
@@ -2867,31 +2863,54 @@ export default function OutreachToolPage() {
               
               {/* Outreach Method Selection */}
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white mb-4">Choose Your Outreach Method</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  {isFollowUpMode ? 'Choose Your Follow-up Method' : 'Choose Your Outreach Method'}
+                </h3>
               {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
                 // Check if this method has been used today
                 const today = new Date().toDateString()
                 const methodUsedToday = !!(selectedCampaignLead.lead?.business_name && 
                   localStorage.getItem(`method_used_${selectedCampaignLead.lead.business_name}_${method.type}_${today}`))
-                const methodLabel = method.type === 'email' ? 'Email Outreach' :
-                  method.type === 'phone' ? 'Cold Call Script' :
-                  method.type === 'linkedin' ? 'LinkedIn Message' :
-                  method.type === 'instagram' ? 'Instagram DM' :
-                  method.type === 'facebook' ? 'Facebook Message' : method.label
+                const methodLabel = isFollowUpMode 
+                  ? (method.type === 'email' ? 'Email Follow-up' :
+                     method.type === 'phone' ? 'Follow-up Call Script' :
+                     method.type === 'linkedin' ? 'LinkedIn Follow-up' :
+                     method.type === 'instagram' ? 'Instagram Follow-up' :
+                     method.type === 'facebook' ? 'Facebook Follow-up' : 
+                     `${method.label} Follow-up`)
+                  : (method.type === 'email' ? 'Email Outreach' :
+                     method.type === 'phone' ? 'Cold Call Script' :
+                     method.type === 'linkedin' ? 'LinkedIn Message' :
+                     method.type === 'instagram' ? 'Instagram DM' :
+                     method.type === 'facebook' ? 'Facebook Message' : method.label)
                 
-                const recommendation = method.type === 'email' ? 
-                  'Direct & professional - highest response rates' : 
-                  method.type === 'phone' ? 
-                  'Immediate connection - qualify leads instantly' :
-                  method.type === 'linkedin' ?
-                    'Professional networking - builds trust' :
-                  method.type === 'instagram' ?
-                    'Visual engagement - casual approach' :
-                  method.type === 'facebook' ?
-                    'Social connection - personal touch' :
-                  method.type === 'twitter' || method.type === 'x' ?
-                    'Quick engagement - viral potential' :
-                    'AI-powered personalization'
+                const recommendation = isFollowUpMode
+                  ? (method.type === 'email' ? 
+                     'Strategic follow-up - rekindle the conversation' : 
+                     method.type === 'phone' ? 
+                     'Personal touch - direct reconnection' :
+                     method.type === 'linkedin' ?
+                       'Professional follow-up - maintain relationship' :
+                     method.type === 'instagram' ?
+                       'Casual re-engagement - friendly approach' :
+                     method.type === 'facebook' ?
+                       'Social follow-up - personal connection' :
+                     method.type === 'twitter' || method.type === 'x' ?
+                       'Quick re-engagement - brief touchpoint' :
+                       'AI-powered follow-up message')
+                  : (method.type === 'email' ? 
+                     'Direct & professional - highest response rates' : 
+                     method.type === 'phone' ? 
+                     'Immediate connection - qualify leads instantly' :
+                     method.type === 'linkedin' ?
+                       'Professional networking - builds trust' :
+                     method.type === 'instagram' ?
+                       'Visual engagement - casual approach' :
+                     method.type === 'facebook' ?
+                       'Social connection - personal touch' :
+                     method.type === 'twitter' || method.type === 'x' ?
+                       'Quick engagement - viral potential' :
+                       'AI-powered personalization')
                   
                 return (
                 <Button
@@ -2905,7 +2924,7 @@ export default function OutreachToolPage() {
                       setGeneratedMessage('')
                       setMessageSubject('')
                       if (selectedCampaignLead.lead) {
-                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type)
+                        generatePersonalizedMessage(selectedCampaignLead.lead, method.type, 0, isFollowUpMode)
                       }
                     }
                   }}
@@ -2949,21 +2968,32 @@ export default function OutreachToolPage() {
               </div>
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
-              {pendingOutreachQueue.length > 0 && (
+              {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
                 <div className="px-6 pt-4 border-t border-[#444]">
                   <div className="flex gap-3">
                     <Button
                       onClick={() => {
-                        if (currentQueueIndex > 0) {
-                          const newIndex = currentQueueIndex - 1
-                          setCurrentQueueIndex(newIndex)
-                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
-                          // Clear any generated messages
-                          setGeneratedMessage('')
-                          setMessageSubject('')
+                        if (isFollowUpMode) {
+                          if (currentFollowUpIndex > 0) {
+                            const newIndex = currentFollowUpIndex - 1
+                            setCurrentFollowUpIndex(newIndex)
+                            setSelectedCampaignLead(contactedFollowUpQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                          }
+                        } else {
+                          if (currentQueueIndex > 0) {
+                            const newIndex = currentQueueIndex - 1
+                            setCurrentQueueIndex(newIndex)
+                            setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                          }
                         }
                       }}
-                      disabled={currentQueueIndex === 0}
+                      disabled={isFollowUpMode ? currentFollowUpIndex === 0 : currentQueueIndex === 0}
                       variant="outline"
                       size="sm"
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
@@ -2973,28 +3003,51 @@ export default function OutreachToolPage() {
                     
                     <Button
                       onClick={() => {
-                        if (currentQueueIndex < pendingOutreachQueue.length - 1) {
-                          const newIndex = currentQueueIndex + 1
-                          setCurrentQueueIndex(newIndex)
-                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
-                          // Clear any generated messages
-                          setGeneratedMessage('')
-                          setMessageSubject('')
+                        if (isFollowUpMode) {
+                          if (currentFollowUpIndex < contactedFollowUpQueue.length - 1) {
+                            const newIndex = currentFollowUpIndex + 1
+                            setCurrentFollowUpIndex(newIndex)
+                            setSelectedCampaignLead(contactedFollowUpQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                          } else {
+                            // Reached end of queue
+                            setShowOutreachOptions(false)
+                            setContactedFollowUpQueue([])
+                            setCurrentFollowUpIndex(0)
+                            setIsFollowUpMode(false)
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            toast.success('All follow-ups processed!')
+                          }
                         } else {
-                          // Reached end of queue
-                          setShowOutreachOptions(false)
-                          setPendingOutreachQueue([])
-                          setCurrentQueueIndex(0)
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                          toast.success('All pending leads processed!')
+                          if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                            const newIndex = currentQueueIndex + 1
+                            setCurrentQueueIndex(newIndex)
+                            setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                          } else {
+                            // Reached end of queue
+                            setShowOutreachOptions(false)
+                            setPendingOutreachQueue([])
+                            setCurrentQueueIndex(0)
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            toast.success('All pending leads processed!')
+                          }
                         }
                       }}
                       variant="outline"
                       size="sm"
                       className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                     >
-                      {currentQueueIndex < pendingOutreachQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue'}
+                      {isFollowUpMode 
+                        ? (currentFollowUpIndex < contactedFollowUpQueue.length - 1 ? 'Skip to Next →' : 'Finish Follow-ups')
+                        : (currentQueueIndex < pendingOutreachQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue')
+                      }
                     </Button>
                     
                     <Button
@@ -3002,6 +3055,9 @@ export default function OutreachToolPage() {
                         setShowOutreachOptions(false)
                         setPendingOutreachQueue([])
                         setCurrentQueueIndex(0)
+                        setContactedFollowUpQueue([])
+                        setCurrentFollowUpIndex(0)
+                        setIsFollowUpMode(false)
                         setGeneratedMessage('')
                         setMessageSubject('')
                       }}
@@ -3010,7 +3066,7 @@ export default function OutreachToolPage() {
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Exit Queue
+                      {isFollowUpMode ? 'Exit Follow-ups' : 'Exit Queue'}
                     </Button>
                   </div>
                 </div>
@@ -3038,17 +3094,29 @@ export default function OutreachToolPage() {
                 </div>
                 <div className="flex flex-col">
                   <span>
-                    {messageType === 'phone' ? 'AI Cold Call Script' : 
-                     messageType === 'email' ? 'AI Email Outreach' :
-                     messageType === 'linkedin' ? 'AI LinkedIn Message' :
-                     messageType === 'instagram' ? 'AI Instagram DM' :
-                     messageType === 'facebook' ? 'AI Facebook Message' :
-                     (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
-                     'AI Outreach Message'}
+                    {isFollowUpMode
+                      ? (messageType === 'phone' ? 'AI Follow-up Call Script' : 
+                         messageType === 'email' ? 'AI Email Follow-up' :
+                         messageType === 'linkedin' ? 'AI LinkedIn Follow-up' :
+                         messageType === 'instagram' ? 'AI Instagram Follow-up' :
+                         messageType === 'facebook' ? 'AI Facebook Follow-up' :
+                         (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter Follow-up' :
+                         'AI Follow-up Message')
+                      : (messageType === 'phone' ? 'AI Cold Call Script' : 
+                         messageType === 'email' ? 'AI Email Outreach' :
+                         messageType === 'linkedin' ? 'AI LinkedIn Message' :
+                         messageType === 'instagram' ? 'AI Instagram DM' :
+                         messageType === 'facebook' ? 'AI Facebook Message' :
+                         (messageType === 'twitter' || messageType === 'x') ? 'AI X/Twitter DM' :
+                         'AI Outreach Message')
+                    }
                   </span>
-                  {pendingOutreachQueue.length > 0 && (
+                  {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
                     <span className="text-sm text-gray-400 font-normal">
-                      Lead {currentQueueIndex + 1} of {pendingOutreachQueue.length}
+                      {isFollowUpMode
+                        ? `Follow-up ${currentFollowUpIndex + 1} of ${contactedFollowUpQueue.length}`
+                        : `Lead ${currentQueueIndex + 1} of ${pendingOutreachQueue.length}`
+                      }
                     </span>
                   )}
                 </div>
@@ -3184,7 +3252,10 @@ export default function OutreachToolPage() {
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                       >
                         <CheckCircle className="h-5 w-5 mr-2" />
-                        {pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted'}
+                        {isFollowUpMode 
+                          ? (contactedFollowUpQueue.length > 0 ? 'Mark Sent & Next' : 'Mark as Sent')
+                          : (pendingOutreachQueue.length > 0 ? 'Mark Contacted & Next' : 'Mark as Contacted')
+                        }
                       </Button>
                     </div>
                 )}
@@ -3280,7 +3351,7 @@ export default function OutreachToolPage() {
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
                         <Send className="h-5 w-5 mr-2" />
-                        Mark as Sent
+                        {isFollowUpMode ? 'Mark Follow-up Sent' : 'Mark as Sent'}
                     </Button>
                     </div>
                   )}
@@ -3288,59 +3359,98 @@ export default function OutreachToolPage() {
               )}
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
-              {pendingOutreachQueue.length > 0 && (
+              {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
                 <div className="px-6 pt-4 border-t border-[#444]">
                   <div className="flex gap-3">
                     <Button
                       onClick={() => {
-                        if (currentQueueIndex > 0) {
-                          const newIndex = currentQueueIndex - 1
-                          setCurrentQueueIndex(newIndex)
-                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
-                          // Clear any generated messages
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                          setShowMessageComposer(false)
-                          setShowOutreachOptions(true)
+                        if (isFollowUpMode) {
+                          if (currentFollowUpIndex > 0) {
+                            const newIndex = currentFollowUpIndex - 1
+                            setCurrentFollowUpIndex(newIndex)
+                            setSelectedCampaignLead(contactedFollowUpQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            setShowMessageComposer(false)
+                            setShowOutreachOptions(true)
+                          }
+                        } else {
+                          if (currentQueueIndex > 0) {
+                            const newIndex = currentQueueIndex - 1
+                            setCurrentQueueIndex(newIndex)
+                            setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            setShowMessageComposer(false)
+                            setShowOutreachOptions(true)
+                          }
                         }
                       }}
-                      disabled={currentQueueIndex === 0}
+                      disabled={isFollowUpMode ? currentFollowUpIndex === 0 : currentQueueIndex === 0}
                       variant="outline"
                       size="sm"
                       className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white"
                     >
                       <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous Lead
+                      {isFollowUpMode ? 'Previous Follow-up' : 'Previous Lead'}
                     </Button>
                     
                     <Button
                       onClick={() => {
-                        if (currentQueueIndex < pendingOutreachQueue.length - 1) {
-                          const newIndex = currentQueueIndex + 1
-                          setCurrentQueueIndex(newIndex)
-                          setSelectedCampaignLead(pendingOutreachQueue[newIndex])
-                          // Clear any generated messages
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                          setShowMessageComposer(false)
-                          setShowOutreachOptions(true)
+                        if (isFollowUpMode) {
+                          if (currentFollowUpIndex < contactedFollowUpQueue.length - 1) {
+                            const newIndex = currentFollowUpIndex + 1
+                            setCurrentFollowUpIndex(newIndex)
+                            setSelectedCampaignLead(contactedFollowUpQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            setShowMessageComposer(false)
+                            setShowOutreachOptions(true)
+                          } else {
+                            // Reached end of queue
+                            setShowOutreachOptions(false)
+                            setShowMessageComposer(false)
+                            setContactedFollowUpQueue([])
+                            setCurrentFollowUpIndex(0)
+                            setIsFollowUpMode(false)
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            toast.success('All follow-ups processed!')
+                          }
                         } else {
-                          // Reached end of queue
-                          setShowOutreachOptions(false)
-                          setShowMessageComposer(false)
-                          setPendingOutreachQueue([])
-                          setCurrentQueueIndex(0)
-                          setGeneratedMessage('')
-                          setMessageSubject('')
-                          toast.success('All pending leads processed!')
+                          if (currentQueueIndex < pendingOutreachQueue.length - 1) {
+                            const newIndex = currentQueueIndex + 1
+                            setCurrentQueueIndex(newIndex)
+                            setSelectedCampaignLead(pendingOutreachQueue[newIndex])
+                            // Clear any generated messages
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            setShowMessageComposer(false)
+                            setShowOutreachOptions(true)
+                          } else {
+                            // Reached end of queue
+                            setShowOutreachOptions(false)
+                            setShowMessageComposer(false)
+                            setPendingOutreachQueue([])
+                            setCurrentQueueIndex(0)
+                            setGeneratedMessage('')
+                            setMessageSubject('')
+                            toast.success('All pending leads processed!')
+                          }
                         }
                       }}
-                      disabled={currentQueueIndex === pendingOutreachQueue.length - 1}
+                      disabled={isFollowUpMode 
+                        ? currentFollowUpIndex === contactedFollowUpQueue.length - 1
+                        : currentQueueIndex === pendingOutreachQueue.length - 1
+                      }
                       variant="outline"
                       size="sm"
                       className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white"
                     >
-                      Next Lead
+                      {isFollowUpMode ? 'Next Follow-up' : 'Next Lead'}
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                     
@@ -3350,6 +3460,9 @@ export default function OutreachToolPage() {
                         setShowOutreachOptions(false)
                         setPendingOutreachQueue([])
                         setCurrentQueueIndex(0)
+                        setContactedFollowUpQueue([])
+                        setCurrentFollowUpIndex(0)
+                        setIsFollowUpMode(false)
                         setGeneratedMessage('')
                         setMessageSubject('')
                       }}
@@ -3358,7 +3471,7 @@ export default function OutreachToolPage() {
                       className="border-[#444] hover:bg-[#333] text-gray-300 hover:text-white ml-auto"
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Exit Bulk Mode
+                      {isFollowUpMode ? 'Exit Follow-ups' : 'Exit Bulk Mode'}
                     </Button>
                   </div>
                 </div>
