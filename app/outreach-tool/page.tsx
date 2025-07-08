@@ -1108,12 +1108,12 @@ export default function OutreachToolPage() {
           .select()
 
         if (error) {
-          console.error('❌ Update error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          })
+          console.error('❌ Update error details:')
+          console.error('  Message:', error.message)
+          console.error('  Details:', error.details)
+          console.error('  Hint:', error.hint)
+          console.error('  Code:', error.code)
+          console.error('  Full error:', JSON.stringify(error, null, 2))
           throw error
         }
         
