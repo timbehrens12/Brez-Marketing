@@ -4874,6 +4874,30 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </div>
               </div>
 
+              {/* Contract Generation */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-400" />
+                  Contract Generation
+                </h3>
+                <div className="bg-gradient-to-r from-green-900/20 to-green-800/20 border border-green-500/30 rounded-xl p-6">
+                  <h4 className="font-semibold text-white mb-3">Professional Contract System</h4>
+                  <div className="space-y-3 text-sm text-gray-300">
+                    <div>1. <strong>Qualify Leads:</strong> Update lead status to "Qualified" when ready to close</div>
+                    <div>2. <strong>Generate Contract:</strong> Click "Generate Contract" button for qualified leads</div>
+                    <div>3. <strong>Choose Pricing Model:</strong> Select between Monthly Retainer or Revenue Share</div>
+                    <div>4. <strong>Configure Terms:</strong> Set pricing, contract length, payment terms, and services</div>
+                    <div>5. <strong>Professional Download:</strong> Export as HTML format for PDF conversion</div>
+                    <div>6. <strong>Digital Signatures:</strong> Automatic signature inclusion from Settings</div>
+                  </div>
+                  <div className="mt-4 p-3 bg-green-900/30 rounded-lg">
+                    <p className="text-green-200 text-sm">
+                      <strong>Revenue Share Option:</strong> Set percentage-based pricing with optional minimum ad spend for performance-based agreements.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Lead Scoring */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -5009,6 +5033,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div>• Move qualified leads to contract stage quickly</div>
                       <div>• Set follow-up reminders for warm leads</div>
                       <div>• Archive rejected leads to focus on active prospects</div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                    <h4 className="font-semibold text-white mb-3">Contract & Closing</h4>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <div>• Upload signature in Settings for professional contracts</div>
+                      <div>• Choose revenue share for performance-based deals</div>
+                      <div>• Set realistic expectations in contract terms</div>
+                      <div>• Send contracts within 24 hours of lead qualification</div>
+                      <div>• Follow up if contract isn't signed within 3 days</div>
                     </div>
                   </div>
                 </div>
