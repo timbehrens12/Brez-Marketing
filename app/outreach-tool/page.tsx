@@ -1069,6 +1069,7 @@ export default function OutreachToolPage() {
     }
 
     try {
+      console.log('🔄 Updating campaign lead status:', { campaignLeadId, newStatus, outreachMethod })
       const supabase = await getSupabaseClient()
       
       if (newStatus === 'rejected') {
@@ -1078,7 +1079,10 @@ export default function OutreachToolPage() {
           .delete()
           .eq('id', campaignLeadId)
 
-        if (error) throw error
+        if (error) {
+          console.error('❌ Delete error:', error)
+          throw error
+        }
         
         setCampaignLeads(prev => prev.filter(cl => cl.id !== campaignLeadId))
         toast.success('Lead marked as rejected and removed from outreach!')
@@ -1095,12 +1099,25 @@ export default function OutreachToolPage() {
           updateData.outreach_method = outreachMethod
         }
         
-        const { error } = await supabase
+        console.log('📤 Sending update data:', updateData)
+        
+        const { data, error } = await supabase
           .from('outreach_campaign_leads')
           .update(updateData)
           .eq('id', campaignLeadId)
+          .select()
 
-      if (error) throw error
+        if (error) {
+          console.error('❌ Update error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          })
+          throw error
+        }
+        
+        console.log('✅ Update successful:', data)
       
         // Update state locally instead of reloading to prevent page jump
         setCampaignLeads(prev => prev.map(cl => 
@@ -1114,11 +1131,11 @@ export default function OutreachToolPage() {
               }
             : cl
         ))
-      toast.success('Status updated successfully!')
+        toast.success('Status updated successfully!')
       }
     } catch (error) {
-      console.error('Error updating status:', error)
-      toast.error('Failed to update status')
+      console.error('❌ Error updating status:', error)
+      toast.error('Failed to update status: ' + (error as any)?.message || 'Unknown error')
     }
   }
 
