@@ -4952,7 +4952,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <Target className="h-5 w-5 text-gray-400" />
                   Overview & Workflow
                 </h3>
-                <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <p className="text-gray-300 mb-4 leading-relaxed">
                     The Outreach Tool is your command center for managing leads through the entire sales pipeline. 
                     Import leads from the Lead Generator, then systematically move them from pending → contacted → responded → qualified → signed.
@@ -5003,7 +5003,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   Dashboard & Analytics
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Statistics Cards</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• <strong>Total Leads:</strong> All leads in your pipeline</div>
@@ -5015,7 +5015,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div>• <strong>AI Messages:</strong> Daily usage tracker</div>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Performance Tracking</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• Monitor response rates by platform</div>
@@ -5034,7 +5034,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   Outreach Features
                 </h3>
                 <div className="space-y-4">
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                       <Brain className="h-4 w-4 text-gray-400" />
                       AI-Powered Message Generation
@@ -5049,7 +5049,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                       <Zap className="h-4 w-4 text-gray-400" />
                       Bulk Outreach
@@ -5071,7 +5071,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <Brain className="h-5 w-5 text-gray-400" />
                   Smart Response System
                 </h3>
-                <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <h4 className="font-semibold text-white mb-3">When Leads Respond</h4>
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>1. <strong>Update Status:</strong> Change lead to "Responded"</div>
@@ -5096,7 +5096,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   Lead Management
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Filtering & Search</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• <strong>Quick Filters:</strong> Status buttons (All, Pending, etc.)</div>
@@ -5106,7 +5106,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div>• <strong>Niche Filter:</strong> Industry-specific targeting</div>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Lead Actions</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• <strong>Status Updates:</strong> Move leads through pipeline</div>
@@ -5125,7 +5125,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <FileText className="h-5 w-5 text-gray-400" />
                   Contract Generation
                 </h3>
-                <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <h4 className="font-semibold text-white mb-3">Professional Contract System</h4>
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>1. <strong>Qualify Leads:</strong> Update lead status to "Qualified" when ready to close</div>
@@ -5146,10 +5146,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Lead Scoring */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Calculator className="h-5 w-5 text-red-400" />
+                  <Calculator className="h-5 w-5 text-gray-400" />
                   Lead Scoring System
                 </h3>
-                <div className="bg-gradient-to-r from-red-900/20 to-red-800/20 border border-red-500/30 rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h4 className="font-semibold text-white mb-3">Scoring Factors</h4>
@@ -5170,8 +5170,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 p-3 bg-red-900/30 rounded-lg">
-                    <p className="text-red-200 text-sm">
+                  <div className="mt-4 p-3 bg-[#1A1A1A] rounded-lg">
+                    <p className="text-gray-300 text-sm">
                       <strong>Note:</strong> Use "Scoring" button to recalculate all scores or view detailed breakdowns.
                     </p>
                   </div>
@@ -5184,7 +5184,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <CheckSquare className="h-5 w-5 text-green-400" />
                   Smart Todo System
                 </h3>
-                <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                   <h4 className="font-semibold text-white mb-3">Automated Task Generation</h4>
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>• <strong>High Priority:</strong> Responded leads needing immediate attention</div>
@@ -5205,21 +5205,21 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Mail className="h-4 w-4" />
                         Email Outreach
                       </h4>
                       <div className="text-sm text-gray-300">Professional, detailed messages with clear value propositions and meeting CTAs.</div>
                     </div>
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Phone className="h-4 w-4" />
                         Phone Outreach
                       </h4>
                       <div className="text-sm text-gray-300">Conversational scripts for cold calling with objection handling.</div>
                     </div>
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Linkedin className="h-4 w-4" />
                         LinkedIn Outreach
@@ -5228,21 +5228,21 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Instagram className="h-4 w-4" />
                         Instagram DMs
                       </h4>
                       <div className="text-sm text-gray-300">Casual, visual-focused messages that feel authentic and engaging.</div>
                     </div>
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Facebook className="h-4 w-4" />
                         Facebook Messages
                       </h4>
                       <div className="text-sm text-gray-300">Community-focused outreach that builds local business relationships.</div>
                     </div>
-                    <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Twitter className="h-4 w-4" />
                         Twitter/X DMs
@@ -5256,11 +5256,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Best Practices */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Award className="h-5 w-5 text-yellow-400" />
+                  <Award className="h-5 w-5 text-gray-400" />
                   Best Practices & Tips
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Outreach Strategy</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• Start with high-score leads (70+ points)</div>
@@ -5270,7 +5270,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div>• Personalize based on social media activity</div>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Response Management</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• Respond to interested leads within 2 hours</div>
@@ -5280,7 +5280,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <div>• Archive rejected leads to focus on active prospects</div>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3">Contract & Closing</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• Upload signature in Settings for professional contracts</div>
@@ -5299,7 +5299,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <Settings className="h-5 w-5 text-gray-400" />
                   Troubleshooting
                 </h3>
-                <div className="bg-gradient-to-br from-[#252525] to-[#2A2A2A] border border-[#444] rounded-xl p-4">
+                <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold text-white mb-3">Common Issues</h4>
