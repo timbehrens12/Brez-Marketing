@@ -199,7 +199,7 @@ export default function OutreachToolPage() {
   // Smart Response state
   const [showSmartResponse, setShowSmartResponse] = useState(false)
   const [leadResponse, setLeadResponse] = useState('')
-  const [responseMethod, setResponseMethod] = useState<'email' | 'linkedin' | 'instagram' | 'facebook' | 'twitter'>('email')
+  const [responseMethod, setResponseMethod] = useState<'email' | 'phone' | 'linkedin' | 'instagram' | 'facebook' | 'twitter'>('email')
   const [generatedSmartResponse, setGeneratedSmartResponse] = useState('')
   const [isGeneratingSmartResponse, setIsGeneratingSmartResponse] = useState(false)
   const [smartResponseCopied, setSmartResponseCopied] = useState(false)
@@ -852,6 +852,16 @@ export default function OutreachToolPage() {
       setPlatformConnections([])
     }
   }, [selectedBrandId, loadPlatformConnections])
+
+  // Auto-set responseMethod to first available platform when lead is selected
+  useEffect(() => {
+    if (selectedCampaignLead?.lead && showSmartResponse) {
+      const availablePlatforms = getAvailablePlatforms()
+      if (availablePlatforms.length > 0) {
+        setResponseMethod(availablePlatforms[0].type as any)
+      }
+    }
+  }, [selectedCampaignLead, showSmartResponse, platformConnections])
 
   const forceLoadPage = () => {
     console.log('🔧 Force loading page override triggered')
@@ -1658,24 +1668,77 @@ export default function OutreachToolPage() {
 
   // Get available platforms based on brand connections
   const getAvailablePlatforms = () => {
-    const allPlatforms = [
-      { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up', requiresConnection: false },
-      { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement', requiresConnection: true, connectionType: 'meta' },
-      { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response', requiresConnection: true, connectionType: 'meta' }
-    ]
+    if (!selectedCampaignLead?.lead) return []
 
-    // Filter platforms based on connections
-    const availablePlatforms = allPlatforms.filter(platform => {
-      // Email is always available
-      if (!platform.requiresConnection) {
-        return true
-      }
-      
-      // Check if the required connection exists for this brand
-      return platformConnections.some(conn => 
-        conn.platform_type === platform.connectionType && conn.status === 'active'
+    const lead = selectedCampaignLead.lead
+    const availablePlatforms = []
+
+    // Check each platform based on what the lead actually has
+    if (lead.email) {
+      availablePlatforms.push({
+        type: 'email',
+        icon: Mail,
+        label: 'Email Response',
+        description: 'Professional email follow-up'
+      })
+    }
+
+    if (lead.phone) {
+      availablePlatforms.push({
+        type: 'phone',
+        icon: Phone,
+        label: 'Phone Call',
+        description: 'Direct phone conversation'
+      })
+    }
+
+    if (lead.instagram_handle) {
+      // Only show if we have Meta connection
+      const hasMetaConnection = platformConnections.some(conn => 
+        conn.platform_type === 'meta' && conn.status === 'active'
       )
-    })
+      if (hasMetaConnection) {
+        availablePlatforms.push({
+          type: 'instagram',
+          icon: Instagram,
+          label: 'Instagram DM',
+          description: 'Casual social engagement'
+        })
+      }
+    }
+
+    if (lead.facebook_page) {
+      // Only show if we have Meta connection
+      const hasMetaConnection = platformConnections.some(conn => 
+        conn.platform_type === 'meta' && conn.status === 'active'
+      )
+      if (hasMetaConnection) {
+        availablePlatforms.push({
+          type: 'facebook',
+          icon: Facebook,
+          label: 'Facebook Message',
+          description: 'Social connection response'
+        })
+      }
+    }
+
+    if (lead.linkedin_profile) {
+      availablePlatforms.push({
+        type: 'linkedin',
+        icon: Linkedin,
+        label: 'LinkedIn Message',
+        description: 'Professional networking'
+      })
+    }
+
+    if (lead.twitter_handle) {
+      availablePlatforms.push({
+        type: 'twitter',
+        icon: Twitter,
+        label: 'Twitter/X DM',
+        description: 'Social media outreach'
+      })
+    }
 
     return availablePlatforms
   }
@@ -3970,7 +4033,7 @@ export default function OutreachToolPage() {
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-3">
-                    <span>{agencySettings.agency_name}</span>
+                    <span>{selectedCampaignLead?.lead?.business_name}</span>
                     {selectedCampaignLead?.lead?.niche_name && (
                       <>
                         <span className="text-gray-400">•</span>
@@ -3986,18 +4049,12 @@ export default function OutreachToolPage() {
                 </div>
               </DialogTitle>
               <DialogDescription className="text-gray-300">
-                <div className="space-y-2 mt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="font-semibold text-white text-lg">{selectedCampaignLead?.lead?.business_name}</span>
+                {selectedCampaignLead?.lead?.owner_name && (
+                  <div className="flex items-center gap-2 text-gray-400 mt-2">
+                    <User className="h-4 w-4" />
+                    <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
                   </div>
-                  {selectedCampaignLead?.lead?.owner_name && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <User className="h-4 w-4" />
-                      <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
-                    </div>
-                  )}
-                </div>
+                )}
               </DialogDescription>
             </DialogHeader>
             
