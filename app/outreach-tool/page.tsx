@@ -23,7 +23,8 @@ import {
   XCircle, MessageCircle, MailOpen, PhoneCall, User,
   Share2, Globe, MapPin, Zap, CircleDot, CheckCircle2,
   Calculator, TrendingDown, Award, Settings, Info, ChevronUp, ChevronDown,
-    CheckSquare, Square, Brain, ArrowRight, X, FileText, Building
+    CheckSquare, Square, Brain, ArrowRight, X, FileText, Building,
+    Eye, RotateCcw, Download
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
@@ -211,6 +212,13 @@ export default function OutreachToolPage() {
     paymentTerms: 'net-30',
     cancellationNotice: '30'
   })
+  
+  // Contract editor state
+  const [contractEditingMode, setContractEditingMode] = useState(false)
+  const [generatedContractText, setGeneratedContractText] = useState('')
+  const [editableContractText, setEditableContractText] = useState('')
+  const [contractHtmlContent, setContractHtmlContent] = useState('')
+  const [contractPreviewMode, setContractPreviewMode] = useState(false)
   
   // Simple Todo state
   const [todos, setTodos] = useState<TodoItem[]>([])
@@ -1081,145 +1089,368 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     return contract
   }
 
-  const downloadContract = async (lead: Lead) => {
+  const generateContractForEditing = async (lead: Lead) => {
     try {
       const contractText = await generateContract(lead)
-      
-      // Generate professional HTML format for better presentation
-      const htmlContent = `
+      setGeneratedContractText(contractText)
+      setEditableContractText(contractText)
+      setContractEditingMode(true)
+      setContractPreviewMode(false)
+      toast.success('Contract generated! You can now edit it before downloading.')
+    } catch (error) {
+      console.error('Error generating contract:', error)
+      toast.error('Failed to generate contract')
+    }
+  }
+
+  const generateContractHTML = (lead: Lead, contractText: string) => {
+    const currentDate = new Date().toLocaleDateString()
+    
+    // Enhanced professional HTML format with DocuSign compatibility
+    const htmlContent = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Marketing Services Contract - ${lead.business_name}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Marketing Services Agreement - ${lead.business_name}</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: 'Arial', 'Helvetica', sans-serif;
             line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+            padding: 40px 20px;
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
-            background: white;
-            color: #333;
         }
-        .header {
+        
+        .document-header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 2px solid #0066cc;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .title {
-            font-size: 24px;
+        
+        .document-title {
+            font-size: 28px;
             font-weight: bold;
+            color: #0066cc;
             margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-        .section {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
-        .section-title {
+        
+        .document-subtitle {
             font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-decoration: underline;
+            color: #666;
+            margin-bottom: 15px;
         }
-        .parties {
+        
+        .contract-date {
+            font-size: 14px;
+            color: #333;
+            font-weight: bold;
+            background: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid #ddd;
+        }
+        
+        .parties-section {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin: 40px 0;
+            gap: 40px;
         }
-        .party {
+        
+        .party-block {
             flex: 1;
-            margin: 0 10px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+        
         .party-title {
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 5px;
+            color: #0066cc;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+        
+        .party-info {
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .party-info div {
+            margin-bottom: 8px;
+        }
+        
+        .party-info strong {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .contract-content {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+            margin: 30px 0;
+        }
+        
+        .contract-text {
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #333;
+        }
+        
+        .section-break {
+            margin: 25px 0;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 25px;
+        }
+        
         .signature-section {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ccc;
+            margin-top: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #0066cc;
         }
+        
+        .signature-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .signature-blocks {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+        }
+        
+        .signature-block {
+            flex: 1;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .signature-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        
         .signature-line {
+            border-bottom: 2px solid #333;
+            height: 50px;
             margin: 20px 0;
-            border-bottom: 1px solid #333;
-            height: 40px;
-            display: inline-block;
-            width: 300px;
+            position: relative;
         }
-        .footer {
-            margin-top: 30px;
+        
+        .signature-image {
+            max-height: 60px;
+            max-width: 200px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .signature-info {
             font-size: 12px;
             color: #666;
-            text-align: center;
-            border-top: 1px solid #ccc;
-            padding-top: 20px;
+            margin-top: 10px;
         }
+        
+        .date-line {
+            font-size: 14px;
+            color: #333;
+            margin: 15px 0;
+        }
+        
+        .name-line {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .document-footer {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+        
+        .footer-content {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .footer-content div {
+            margin-bottom: 5px;
+        }
+        
+        .contract-id {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        
+        .docusign-marker {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+        }
+        
         @media print {
-            body { margin: 0; padding: 15px; }
-            .header { border-bottom: 2px solid #000; }
+            body {
+                padding: 20px;
+                font-size: 12px;
+            }
+            
+            .document-header {
+                box-shadow: none;
+                border: 2px solid #000;
+            }
+            
+            .signature-section {
+                border: 2px solid #000;
+                box-shadow: none;
+            }
+            
+            .party-block,
+            .contract-content,
+            .signature-block {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+        }
+        
+        @page {
+            margin: 1in;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">DIGITAL MARKETING SERVICES AGREEMENT</div>
-        <div>Contract Date: ${new Date().toLocaleDateString()}</div>
+    <div class="document-header">
+        <div class="document-title">Digital Marketing Services Agreement</div>
+        <div class="document-subtitle">Professional Services Contract</div>
+        <div class="contract-date">Contract Date: ${currentDate}</div>
     </div>
     
-    <div class="parties">
-        <div class="party">
-            <div class="party-title">CLIENT:</div>
-            <div><strong>Business Name:</strong> ${lead.business_name}</div>
-            <div><strong>Representative:</strong> ${lead.owner_name || '[Name Required]'}</div>
-            <div><strong>Email:</strong> ${lead.email || '[Email Required]'}</div>
-            <div><strong>Phone:</strong> ${lead.phone || '[Phone Required]'}</div>
-            <div><strong>Address:</strong> ${lead.city ? `${lead.city}, ${lead.state_province || '[State]'}` : '[Address Required]'}</div>
+    <div class="parties-section">
+        <div class="party-block">
+            <div class="party-title">Client</div>
+            <div class="party-info">
+                <div><strong>Business Name:</strong> ${lead.business_name}</div>
+                <div><strong>Representative:</strong> ${lead.owner_name || '[Name Required]'}</div>
+                <div><strong>Email:</strong> ${lead.email || '[Email Required]'}</div>
+                <div><strong>Phone:</strong> ${lead.phone || '[Phone Required]'}</div>
+                <div><strong>Address:</strong> ${lead.city ? `${lead.city}, ${lead.state_province || '[State]'}` : '[Address Required]'}</div>
+            </div>
         </div>
         
-        <div class="party">
-            <div class="party-title">SERVICE PROVIDER:</div>
-            <div><strong>Agency:</strong> ${agencySettings?.agency_name || '[Agency Name]'}</div>
-            <div><strong>Representative:</strong> ${agencySettings?.signature_name || '[Representative Name]'}</div>
-            <div><strong>Contact:</strong> [Agency Email]</div>
-            <div><strong>Phone:</strong> [Agency Phone]</div>
-            <div><strong>Address:</strong> [Agency Address]</div>
+        <div class="party-block">
+            <div class="party-title">Service Provider</div>
+            <div class="party-info">
+                <div><strong>Agency:</strong> ${agencySettings?.agency_name || '[Agency Name]'}</div>
+                <div><strong>Representative:</strong> ${agencySettings?.signature_name || '[Representative Name]'}</div>
+                <div><strong>Email:</strong> [Agency Email]</div>
+                <div><strong>Phone:</strong> [Agency Phone]</div>
+                <div><strong>Address:</strong> [Agency Address]</div>
+            </div>
         </div>
     </div>
     
-    <div style="white-space: pre-wrap; font-family: inherit;">${contractText.replace(/DIGITAL MARKETING SERVICES AGREEMENT[\s\S]*?TERMS AND CONDITIONS:/, '').replace(/---[\s\S]*$/, '')}</div>
+    <div class="contract-content">
+        <div class="contract-text">${contractText.replace(/DIGITAL MARKETING SERVICES AGREEMENT[\s\S]*?TERMS AND CONDITIONS:/, 'TERMS AND CONDITIONS:').replace(/---[\s\S]*$/, '')}</div>
+    </div>
     
     <div class="signature-section">
-        <div style="margin-bottom: 40px;">
-            <div><strong>CLIENT SIGNATURE:</strong></div>
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">Date: _____________</div>
-            <div style="margin-top: 5px;">${lead.owner_name || '[Owner Name]'}, ${lead.business_name}</div>
-        </div>
-        
-        <div>
-            <div><strong>SERVICE PROVIDER SIGNATURE:</strong></div>
-            ${agencySettings?.signature_image ? `
-                <div style="margin: 10px 0;">
-                    <img src="${agencySettings.signature_image}" alt="Digital Signature" style="max-height: 60px; border: 1px solid #ccc; padding: 5px;" />
-                </div>
-                <div style="margin-top: 5px;">Date: ${new Date().toLocaleDateString()}</div>
-                <div style="margin-top: 5px;">${agencySettings?.signature_name || '[Representative Name]'}, ${agencySettings?.agency_name || '[Agency Name]'}</div>
-            ` : `
+        <div class="signature-title">Signatures</div>
+        <div class="signature-blocks">
+            <div class="signature-block">
+                <div class="signature-label">Client Signature</div>
                 <div class="signature-line"></div>
-                <div style="margin-top: 5px;">Date: _____________</div>
-                <div style="margin-top: 5px;">${agencySettings?.signature_name || '[Representative Name]'}, ${agencySettings?.agency_name || '[Agency Name]'}</div>
-            `}
+                <div class="date-line">Date: _____________</div>
+                <div class="name-line">${lead.owner_name || '[Owner Name]'}</div>
+                <div class="name-line">${lead.business_name}</div>
+            </div>
+            
+            <div class="signature-block">
+                <div class="signature-label">Service Provider Signature</div>
+                ${agencySettings?.signature_image ? `
+                    <div style="margin: 20px 0;">
+                        <img src="${agencySettings.signature_image}" alt="Digital Signature" class="signature-image" />
+                    </div>
+                    <div class="date-line">Date: ${currentDate}</div>
+                ` : `
+                    <div class="signature-line"></div>
+                    <div class="date-line">Date: _____________</div>
+                `}
+                <div class="name-line">${agencySettings?.signature_name || '[Representative Name]'}</div>
+                <div class="name-line">${agencySettings?.agency_name || '[Agency Name]'}</div>
+            </div>
         </div>
     </div>
     
-    <div class="footer">
-        <div>Contract ID: ${lead.id}-${Date.now()}</div>
-        <div>Generated: ${new Date().toLocaleString()}</div>
-        <div>Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : 'Monthly Retainer'}</div>
+    <div class="document-footer">
+        <div class="footer-content">
+            <div class="contract-id">Contract ID: ${lead.id}-${Date.now()}</div>
+            <div>Generated: ${new Date().toLocaleString()}</div>
+            <div>Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : 'Monthly Retainer'}</div>
+            <div>Document Type: Digital Marketing Services Agreement</div>
+        </div>
     </div>
+    
+    <!-- DocuSign compatibility markers -->
+    <div class="docusign-marker" id="client-signature-anchor">CLIENT_SIGNATURE_HERE</div>
+    <div class="docusign-marker" id="provider-signature-anchor">PROVIDER_SIGNATURE_HERE</div>
+    <div class="docusign-marker" id="date-anchor">DATE_HERE</div>
 </body>
 </html>`
+    
+    return htmlContent
+  }
+
+  const downloadContract = async (lead: Lead) => {
+    try {
+      const contractText = contractEditingMode ? editableContractText : await generateContract(lead)
+      const htmlContent = generateContractHTML(lead, contractText)
       
       const blob = new Blob([htmlContent], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
@@ -1237,9 +1468,23 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     }
   }
 
+  const previewContract = (lead: Lead) => {
+    const htmlContent = generateContractHTML(lead, editableContractText)
+    setContractHtmlContent(htmlContent)
+    setContractPreviewMode(true)
+  }
+
+  const resetContractEditor = () => {
+    setContractEditingMode(false)
+    setContractPreviewMode(false)
+    setGeneratedContractText('')
+    setEditableContractText('')
+    setContractHtmlContent('')
+  }
+
   const copyContractToClipboard = async (lead: Lead) => {
     try {
-      const contractText = await generateContract(lead)
+      const contractText = contractEditingMode ? editableContractText : await generateContract(lead)
       await navigator.clipboard.writeText(contractText)
       toast.success('Contract copied to clipboard!')
     } catch (error) {
@@ -5092,277 +5337,417 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                  </Dialog>
 
         {/* Contract Generator Dialog */}
-        <Dialog open={showContractGenerator} onOpenChange={setShowContractGenerator}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-4xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
+        <Dialog open={showContractGenerator} onOpenChange={(open) => {
+          if (!open) resetContractEditor()
+          setShowContractGenerator(open)
+        }}>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-6xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-green-600 to-green-700 rounded-lg">
                   <FileText className="h-6 w-6 text-white" />
                 </div>
-                <span>Generate Marketing Contract</span>
+                <span>
+                  {contractEditingMode ? 'Edit Contract' : contractPreviewMode ? 'Contract Preview' : 'Generate Marketing Contract'}
+                </span>
               </DialogTitle>
               <DialogDescription className="text-gray-300">
-                Create a professional digital marketing services agreement for {selectedCampaignLead?.lead?.business_name}
+                {contractEditingMode ? 'Edit the contract text before downloading' : 
+                 contractPreviewMode ? 'Preview the final contract' :
+                 `Create a professional digital marketing services agreement for ${selectedCampaignLead?.lead?.business_name}`}
               </DialogDescription>
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Contract Details */}
-                <div className="space-y-6">
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">Contract Details</h3>
-                    
-                    <div className="space-y-4">
-                      {/* Pricing Model Selection */}
-                      <div>
-                        <Label className="text-sm font-medium text-gray-400">Pricing Model</Label>
-                        <Select value={contractData.pricingModel} onValueChange={(value) => setContractData(prev => ({ ...prev, pricingModel: value }))}>
-                          <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#1A1A1A] border-[#444]">
-                            <SelectItem value="retainer">Monthly Retainer</SelectItem>
-                            <SelectItem value="revenue_share">Revenue Share</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+              {!contractEditingMode && !contractPreviewMode ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column - Contract Details */}
+                  <div className="space-y-6">
+                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-white mb-4">Contract Details</h3>
+                      
+                      <div className="space-y-4">
+                        {/* Pricing Model Selection */}
+                        <div>
+                          <Label className="text-sm font-medium text-gray-400">Pricing Model</Label>
+                          <Select value={contractData.pricingModel} onValueChange={(value) => setContractData(prev => ({ ...prev, pricingModel: value }))}>
+                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                              <SelectItem value="retainer">Monthly Retainer</SelectItem>
+                              <SelectItem value="revenue_share">Revenue Share</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      {/* Conditional Fields Based on Pricing Model */}
-                      {contractData.pricingModel === 'retainer' ? (
+                        {/* Conditional Fields Based on Pricing Model */}
+                        {contractData.pricingModel === 'retainer' ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
+                              <Input
+                                type="number"
+                                placeholder="2500"
+                                value={contractData.monthlyRetainer}
+                                onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
+                                className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
+                              <Input
+                                type="number"
+                                placeholder="5000"
+                                value={contractData.adSpend}
+                                onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
+                                className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">Revenue Share %</Label>
+                              <Input
+                                type="number"
+                                placeholder="15"
+                                value={contractData.revenueSharePercentage}
+                                onChange={(e) => setContractData(prev => ({ ...prev, revenueSharePercentage: e.target.value }))}
+                                className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">Minimum Ad Spend (Optional)</Label>
+                              <Input
+                                type="number"
+                                placeholder="2000"
+                                value={contractData.minimumAdSpend}
+                                onChange={(e) => setContractData(prev => ({ ...prev, minimumAdSpend: e.target.value }))}
+                                className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Monthly Retainer</Label>
-                            <Input
-                              type="number"
-                              placeholder="2500"
-                              value={contractData.monthlyRetainer}
-                              onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
-                            />
+                            <Label className="text-sm font-medium text-gray-400">Contract Length (months)</Label>
+                            <Select value={contractData.contractLength} onValueChange={(value) => setContractData(prev => ({ ...prev, contractLength: value }))}>
+                              <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                                <SelectItem value="3">3 months</SelectItem>
+                                <SelectItem value="6">6 months</SelectItem>
+                                <SelectItem value="12">12 months</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Monthly Ad Spend</Label>
+                            <Label className="text-sm font-medium text-gray-400">Start Date</Label>
                             <Input
-                              type="number"
-                              placeholder="5000"
-                              value={contractData.adSpend}
-                              onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                              type="date"
+                              value={contractData.startDate}
+                              onChange={(e) => setContractData(prev => ({ ...prev, startDate: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white"
                             />
                           </div>
                         </div>
-                      ) : (
+                        
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Revenue Share %</Label>
-                            <Input
-                              type="number"
-                              placeholder="15"
-                              value={contractData.revenueSharePercentage}
-                              onChange={(e) => setContractData(prev => ({ ...prev, revenueSharePercentage: e.target.value }))}
-                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
-                            />
+                            <Label className="text-sm font-medium text-gray-400">Payment Terms</Label>
+                            <Select value={contractData.paymentTerms} onValueChange={(value) => setContractData(prev => ({ ...prev, paymentTerms: value }))}>
+                              <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#1A1A1A] border-[#444]">
+                                <SelectItem value="due-on-receipt">Due on Receipt</SelectItem>
+                                <SelectItem value="net-15">Net 15 days</SelectItem>
+                                <SelectItem value="net-30">Net 30 days</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium text-gray-400">Minimum Ad Spend (Optional)</Label>
+                            <Label className="text-sm font-medium text-gray-400">Cancellation Notice (days)</Label>
                             <Input
                               type="number"
-                              placeholder="2000"
-                              value={contractData.minimumAdSpend}
-                              onChange={(e) => setContractData(prev => ({ ...prev, minimumAdSpend: e.target.value }))}
+                              placeholder="30"
+                              value={contractData.cancellationNotice}
+                              onChange={(e) => setContractData(prev => ({ ...prev, cancellationNotice: e.target.value }))}
                               className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
                             />
                           </div>
-                        </div>
-                      )}
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Contract Length (months)</Label>
-                          <Select value={contractData.contractLength} onValueChange={(value) => setContractData(prev => ({ ...prev, contractLength: value }))}>
-                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
-                              <SelectItem value="3">3 months</SelectItem>
-                              <SelectItem value="6">6 months</SelectItem>
-                              <SelectItem value="12">12 months</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Start Date</Label>
-                          <Input
-                            type="date"
-                            value={contractData.startDate}
-                            onChange={(e) => setContractData(prev => ({ ...prev, startDate: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white"
-                          />
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Payment Terms</Label>
-                          <Select value={contractData.paymentTerms} onValueChange={(value) => setContractData(prev => ({ ...prev, paymentTerms: value }))}>
-                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
-                              <SelectItem value="due-on-receipt">Due on Receipt</SelectItem>
-                              <SelectItem value="net-15">Net 15 days</SelectItem>
-                              <SelectItem value="net-30">Net 30 days</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-gray-400">Cancellation Notice (days)</Label>
-                          <Input
-                            type="number"
-                            placeholder="30"
-                            value={contractData.cancellationNotice}
-                            onChange={(e) => setContractData(prev => ({ ...prev, cancellationNotice: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
-                          />
-                        </div>
+                    </div>
+                    
+                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-white mb-4">Services Included</h3>
+                      <div className="space-y-3">
+                        {Object.entries(contractData.servicesIncluded).map(([service, included]) => (
+                          <div key={service} className="flex items-center space-x-3">
+                            <Checkbox
+                              id={service}
+                              checked={included}
+                              onCheckedChange={(checked) => 
+                                setContractData(prev => ({
+                                  ...prev,
+                                  servicesIncluded: { ...prev.servicesIncluded, [service]: checked as boolean }
+                                }))
+                              }
+                              className="border-[#444] data-[state=checked]:bg-green-600"
+                            />
+                            <label htmlFor={service} className="text-sm text-gray-300 cursor-pointer">
+                              {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising'}
+                              {service === 'googleAds' && 'Google Ads Management'}
+                              {service === 'creativeDesign' && 'Creative Design & Ad Copy'}
+                              {service === 'landingPages' && 'Landing Page Development'}
+                              {service === 'analytics' && 'Analytics & Performance Tracking'}
+                              {service === 'monthlyReports' && 'Monthly Performance Reports'}
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">Services Included</h3>
-                    <div className="space-y-3">
-                      {Object.entries(contractData.servicesIncluded).map(([service, included]) => (
-                        <div key={service} className="flex items-center space-x-3">
-                          <Checkbox
-                            id={service}
-                            checked={included}
-                            onCheckedChange={(checked) => 
-                              setContractData(prev => ({
-                                ...prev,
-                                servicesIncluded: { ...prev.servicesIncluded, [service]: checked as boolean }
-                              }))
-                            }
-                            className="border-[#444] data-[state=checked]:bg-green-600"
-                          />
-                          <label htmlFor={service} className="text-sm text-gray-300 cursor-pointer">
-                            {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising'}
-                            {service === 'googleAds' && 'Google Ads Management'}
-                            {service === 'creativeDesign' && 'Creative Design & Ad Copy'}
-                            {service === 'landingPages' && 'Landing Page Development'}
-                            {service === 'analytics' && 'Analytics & Performance Tracking'}
-                            {service === 'monthlyReports' && 'Monthly Performance Reports'}
-                          </label>
+                  {/* Right Column - Lead Information & Preview */}
+                  <div className="space-y-6">
+                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-white mb-4">Lead Information</h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Business:</span>
+                          <span className="text-white">{selectedCampaignLead?.lead?.business_name}</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Right Column - Lead Information & Preview */}
-                <div className="space-y-6">
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">Lead Information</h3>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Business:</span>
-                        <span className="text-white">{selectedCampaignLead?.lead?.business_name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Owner:</span>
-                        <span className="text-white">{selectedCampaignLead?.lead?.owner_name || 'Not provided'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Email:</span>
-                        <span className="text-white">{selectedCampaignLead?.lead?.email || 'Not provided'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Phone:</span>
-                        <span className="text-white">{selectedCampaignLead?.lead?.phone || 'Not provided'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Location:</span>
-                        <span className="text-white">
-                          {selectedCampaignLead?.lead?.city ? `${selectedCampaignLead.lead.city}, ${selectedCampaignLead.lead.state_province || ''}` : 'Not provided'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Industry:</span>
-                        <span className="text-white">{selectedCampaignLead?.lead?.niche_name || 'Not specified'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">Contract Summary</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Monthly Retainer:</span>
-                        <span className="text-green-400">${contractData.monthlyRetainer || '0'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Ad Spend Budget:</span>
-                        <span className="text-green-400">${contractData.adSpend || '0'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Contract Length:</span>
-                        <span className="text-white">{contractData.contractLength} months</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Payment Terms:</span>
-                        <span className="text-white">{contractData.paymentTerms.replace('-', ' ').toUpperCase()}</span>
-                      </div>
-                      <div className="pt-2 border-t border-[#444]">
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-gray-400">Total Contract Value:</span>
-                          <span className="text-green-400">
-                            ${((parseInt(contractData.monthlyRetainer) || 0) * (parseInt(contractData.contractLength) || 0)).toLocaleString()}
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Owner:</span>
+                          <span className="text-white">{selectedCampaignLead?.lead?.owner_name || 'Not provided'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Email:</span>
+                          <span className="text-white">{selectedCampaignLead?.lead?.email || 'Not provided'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Phone:</span>
+                          <span className="text-white">{selectedCampaignLead?.lead?.phone || 'Not provided'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Location:</span>
+                          <span className="text-white">
+                            {selectedCampaignLead?.lead?.city ? `${selectedCampaignLead.lead.city}, ${selectedCampaignLead.lead.state_province || ''}` : 'Not provided'}
                           </span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Industry:</span>
+                          <span className="text-white">{selectedCampaignLead?.lead?.niche_name || 'Not specified'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-white mb-4">Contract Summary</h3>
+                      <div className="space-y-2 text-sm">
+                        {contractData.pricingModel === 'retainer' ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Monthly Retainer:</span>
+                              <span className="text-green-400">${contractData.monthlyRetainer || '0'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Ad Spend Budget:</span>
+                              <span className="text-green-400">${contractData.adSpend || '0'}</span>
+                            </div>
+                            <div className="pt-2 border-t border-[#444]">
+                              <div className="flex justify-between font-semibold">
+                                <span className="text-gray-400">Total Contract Value:</span>
+                                <span className="text-green-400">
+                                  ${((parseInt(contractData.monthlyRetainer) || 0) * (parseInt(contractData.contractLength) || 0)).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Revenue Share:</span>
+                              <span className="text-green-400">{contractData.revenueSharePercentage || '0'}%</span>
+                            </div>
+                            {contractData.minimumAdSpend && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Minimum Ad Spend:</span>
+                                <span className="text-green-400">${contractData.minimumAdSpend}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Contract Length:</span>
+                          <span className="text-white">{contractData.contractLength} months</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Payment Terms:</span>
+                          <span className="text-white">{contractData.paymentTerms.replace('-', ' ').toUpperCase()}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : contractEditingMode ? (
+                /* Contract Editor */
+                <div className="space-y-6">
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Edit Contract</h3>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            if (selectedCampaignLead?.lead) {
+                              previewContract(selectedCampaignLead.lead)
+                            }
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="bg-[#1A1A1A] border-[#444] text-blue-300 hover:bg-blue-900/30"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Preview
+                        </Button>
+                        <Button
+                          onClick={() => setEditableContractText(generatedContractText)}
+                          variant="outline"
+                          size="sm"
+                          className="bg-[#1A1A1A] border-[#444] text-gray-300 hover:bg-[#333]"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reset
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border border-blue-500/30 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-blue-300 mb-2">
+                          <Edit className="h-4 w-4" />
+                          <span className="font-medium">Editing Instructions</span>
+                        </div>
+                        <p className="text-sm text-blue-200">
+                          Edit the contract text below to customize it for your client. You can modify any section, add custom clauses, or update terms as needed. The contract will maintain professional formatting when downloaded.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium text-gray-400 mb-3 block">Contract Text</Label>
+                        <textarea
+                          value={editableContractText}
+                          onChange={(e) => setEditableContractText(e.target.value)}
+                          className="w-full h-96 bg-[#1A1A1A] border border-[#444] rounded-lg p-4 text-white text-sm font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Contract text will appear here..."
+                        />
+                      </div>
+                      
+                      <div className="text-xs text-gray-500 bg-[#1A1A1A] border border-[#444] rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Info className="h-3 w-3" />
+                          <span className="font-medium">DocuSign Compatibility</span>
+                        </div>
+                        <p>This contract is formatted for DocuSign compatibility. Signature fields and professional styling will be applied automatically when you download the contract.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Contract Preview */
+                <div className="space-y-6">
+                  <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Contract Preview</h3>
+                      <Button
+                        onClick={() => {
+                          setContractPreviewMode(false)
+                          setContractEditingMode(true)
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="bg-[#1A1A1A] border-[#444] text-blue-300 hover:bg-blue-900/30"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 max-h-96 overflow-y-auto">
+                      <div dangerouslySetInnerHTML={{ __html: contractHtmlContent }} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="flex-shrink-0 flex justify-between items-center p-6 border-t border-[#333] bg-[#1A1A1A]">
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Info className="h-4 w-4" />
-                <span>Contract will be generated with fillable fields for signatures</span>
+                <span>
+                  {contractEditingMode ? 'Edit and preview your contract before downloading' : 
+                   contractPreviewMode ? 'Final preview - ready to download' :
+                   'Professional contract with DocuSign compatibility'}
+                </span>
               </div>
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setShowContractGenerator(false)}
+                  onClick={() => {
+                    resetContractEditor()
+                    setShowContractGenerator(false)
+                  }}
                   variant="outline"
                   className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={() => {
-                    if (selectedCampaignLead?.lead) {
-                      copyContractToClipboard(selectedCampaignLead.lead)
-                    }
-                  }}
-                  variant="outline"
-                  className="bg-[#2A2A2A] border-[#444] text-blue-300 hover:bg-blue-900/30 hover:text-blue-200"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy to Clipboard
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (selectedCampaignLead?.lead) {
-                      downloadContract(selectedCampaignLead.lead)
-                    }
-                  }}
-                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Download Contract
-                </Button>
+                
+                {!contractEditingMode && !contractPreviewMode && (
+                  <Button
+                    onClick={() => {
+                      if (selectedCampaignLead?.lead) {
+                        generateContractForEditing(selectedCampaignLead.lead)
+                      }
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Contract
+                  </Button>
+                )}
+                
+                {(contractEditingMode || contractPreviewMode) && (
+                  <>
+                    <Button
+                      onClick={() => {
+                        if (selectedCampaignLead?.lead) {
+                          copyContractToClipboard(selectedCampaignLead.lead)
+                        }
+                      }}
+                      variant="outline"
+                      className="bg-[#2A2A2A] border-[#444] text-blue-300 hover:bg-blue-900/30 hover:text-blue-200"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy to Clipboard
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedCampaignLead?.lead) {
+                          downloadContract(selectedCampaignLead.lead)
+                        }
+                      }}
+                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Contract
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </DialogContent>
