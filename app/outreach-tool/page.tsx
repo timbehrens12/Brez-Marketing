@@ -1137,14 +1137,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             padding: 20px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-radius: 8px;
-            border: 2px solid #0066cc;
+            border: 2px solid #333;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .document-title {
             font-size: 28px;
             font-weight: bold;
-            color: #0066cc;
+            color: #333;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -1179,14 +1179,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             background: #f8f9fa;
             padding: 25px;
             border-radius: 8px;
-            border-left: 4px solid #0066cc;
+            border-left: 4px solid #333;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         .party-title {
             font-size: 18px;
             font-weight: bold;
-            color: #0066cc;
+            color: #333;
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -1233,13 +1233,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             padding: 30px;
             background: #f8f9fa;
             border-radius: 8px;
-            border: 2px solid #0066cc;
+            border: 2px solid #333;
         }
         
         .signature-title {
             font-size: 20px;
             font-weight: bold;
-            color: #0066cc;
+            color: #333;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
@@ -1264,7 +1264,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         .signature-label {
             font-size: 16px;
             font-weight: bold;
-            color: #0066cc;
+            color: #333;
             margin-bottom: 20px;
             text-transform: uppercase;
         }
@@ -1325,7 +1325,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         
         .contract-id {
             font-weight: bold;
-            color: #0066cc;
+            color: #333;
         }
         
         .docusign-marker {
@@ -2551,7 +2551,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       onClick={() => setShowTutorial(true)}
                       variant="outline"
                       size="sm"
-                      className="bg-[#1A1A1A] text-blue-400 border-blue-500/30 hover:bg-blue-900/30 hover:text-blue-300"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                     >
                       <Info className="h-4 w-4 mr-2" />
                       Help & Tutorial
@@ -4934,8 +4934,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-4xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-2xl">
-                <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
-                  <Info className="h-6 w-6 text-white" />
+                <div className="p-2 bg-[#333] rounded-lg">
+                  <Info className="h-6 w-6 text-gray-400" />
                 </div>
                 <span>Complete Outreach Tool Guide</span>
               </DialogTitle>
@@ -4949,10 +4949,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Overview Section */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Target className="h-5 w-5 text-blue-400" />
+                  <Target className="h-5 w-5 text-gray-400" />
                   Overview & Workflow
                 </h3>
-                <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <p className="text-gray-300 mb-4 leading-relaxed">
                     The Outreach Tool is your command center for managing leads through the entire sales pipeline. 
                     Import leads from the Lead Generator, then systematically move them from pending → contacted → responded → qualified → signed.
@@ -4974,11 +4974,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <span className="text-gray-300"><strong>Responded:</strong> They replied, needs smart response</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Star className="h-3 w-3 text-green-400" />
+                          <Star className="h-3 w-3 text-gray-400" />
                           <span className="text-gray-300"><strong>Qualified:</strong> Ready for contract/proposal</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-3 w-3 text-green-400" />
+                          <CheckCircle className="h-3 w-3 text-gray-400" />
                           <span className="text-gray-300"><strong>Signed:</strong> Deal closed successfully</span>
                         </div>
                       </div>
@@ -4999,7 +4999,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Dashboard & Analytics */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-green-400" />
+                  <BarChart3 className="h-5 w-5 text-gray-400" />
                   Dashboard & Analytics
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -5030,13 +5030,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Outreach Features */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  <Sparkles className="h-5 w-5 text-gray-400" />
                   Outreach Features
                 </h3>
                 <div className="space-y-4">
                   <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-purple-400" />
+                      <Brain className="h-4 w-4 text-gray-400" />
                       AI-Powered Message Generation
                     </h4>
                     <div className="space-y-2 text-sm text-gray-300">
@@ -5051,7 +5051,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   
                   <div className="bg-gradient-to-r from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-4">
                     <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-yellow-400" />
+                      <Zap className="h-4 w-4 text-gray-400" />
                       Bulk Outreach
                     </h4>
                     <div className="space-y-2 text-sm text-gray-300">
@@ -5068,10 +5068,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Smart Response System */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-cyan-400" />
+                  <Brain className="h-5 w-5 text-gray-400" />
                   Smart Response System
                 </h3>
-                <div className="bg-gradient-to-r from-cyan-900/20 to-cyan-800/20 border border-cyan-500/30 rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <h4 className="font-semibold text-white mb-3">When Leads Respond</h4>
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>1. <strong>Update Status:</strong> Change lead to "Responded"</div>
@@ -5081,8 +5081,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     <div>5. <strong>Generate:</strong> AI analyzes context and creates strategic reply</div>
                     <div>6. <strong>Copy & Send:</strong> Use generated response to continue conversation</div>
                   </div>
-                  <div className="mt-4 p-3 bg-cyan-900/30 rounded-lg">
-                    <p className="text-cyan-200 text-sm">
+                  <div className="mt-4 p-3 bg-[#1A1A1A] rounded-lg">
+                    <p className="text-gray-300 text-sm">
                       <strong>Pro Tip:</strong> The AI considers their response sentiment, business context, and relationship stage to craft the most effective reply.
                     </p>
                   </div>
@@ -5092,7 +5092,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Lead Management */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="h-5 w-5 text-orange-400" />
+                  <Users className="h-5 w-5 text-gray-400" />
                   Lead Management
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -5122,10 +5122,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               {/* Contract Generation */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-green-400" />
+                  <FileText className="h-5 w-5 text-gray-400" />
                   Contract Generation
                 </h3>
-                <div className="bg-gradient-to-r from-green-900/20 to-green-800/20 border border-green-500/30 rounded-xl p-6">
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-xl p-6">
                   <h4 className="font-semibold text-white mb-3">Professional Contract System</h4>
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>1. <strong>Qualify Leads:</strong> Update lead status to "Qualified" when ready to close</div>
@@ -5344,8 +5344,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-6xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
-                <div className="p-2 bg-gradient-to-r from-green-600 to-green-700 rounded-lg">
-                  <FileText className="h-6 w-6 text-white" />
+                <div className="p-2 bg-[#333] rounded-lg">
+                  <FileText className="h-6 w-6 text-gray-400" />
                 </div>
                 <span>
                   {contractEditingMode ? 'Edit Contract' : contractPreviewMode ? 'Contract Preview' : 'Generate Marketing Contract'}
@@ -5497,7 +5497,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   servicesIncluded: { ...prev.servicesIncluded, [service]: checked as boolean }
                                 }))
                               }
-                              className="border-[#444] data-[state=checked]:bg-green-600"
+                              className="border-[#444] data-[state=checked]:bg-gray-600"
                             />
                             <label htmlFor={service} className="text-sm text-gray-300 cursor-pointer">
                               {service === 'metaAds' && 'Meta (Facebook/Instagram) Advertising'}
@@ -5563,7 +5563,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             <div className="pt-2 border-t border-[#444]">
                               <div className="flex justify-between font-semibold">
                                 <span className="text-gray-400">Total Contract Value:</span>
-                                <span className="text-green-400">
+                                <span className="text-gray-300">
                                   ${((parseInt(contractData.monthlyRetainer) || 0) * (parseInt(contractData.contractLength) || 0)).toLocaleString()}
                                 </span>
                               </div>
@@ -5573,12 +5573,12 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Revenue Share:</span>
-                              <span className="text-green-400">{contractData.revenueSharePercentage || '0'}%</span>
+                              <span className="text-gray-300">{contractData.revenueSharePercentage || '0'}%</span>
                             </div>
                             {contractData.minimumAdSpend && (
                               <div className="flex justify-between">
                                 <span className="text-gray-400">Minimum Ad Spend:</span>
-                                <span className="text-green-400">${contractData.minimumAdSpend}</span>
+                                <span className="text-gray-300">${contractData.minimumAdSpend}</span>
                               </div>
                             )}
                           </>
@@ -5601,39 +5601,15 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-white">Edit Contract</h3>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => {
-                            if (selectedCampaignLead?.lead) {
-                              previewContract(selectedCampaignLead.lead)
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="bg-[#1A1A1A] border-[#444] text-blue-300 hover:bg-blue-900/30"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Preview
-                        </Button>
-                        <Button
-                          onClick={() => setEditableContractText(generatedContractText)}
-                          variant="outline"
-                          size="sm"
-                          className="bg-[#1A1A1A] border-[#444] text-gray-300 hover:bg-[#333]"
-                        >
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Reset
-                        </Button>
-                      </div>
                     </div>
                     
                     <div className="space-y-4">
-                      <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border border-blue-500/30 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-blue-300 mb-2">
+                      <div className="bg-[#1A1A1A] border border-[#444] rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-gray-300 mb-2">
                           <Edit className="h-4 w-4" />
                           <span className="font-medium">Editing Instructions</span>
                         </div>
-                        <p className="text-sm text-blue-200">
+                        <p className="text-sm text-gray-400">
                           Edit the contract text below to customize it for your client. You can modify any section, add custom clauses, or update terms as needed. The contract will maintain professional formatting when downloaded.
                         </p>
                       </div>
@@ -5643,7 +5619,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         <textarea
                           value={editableContractText}
                           onChange={(e) => setEditableContractText(e.target.value)}
-                          className="w-full h-96 bg-[#1A1A1A] border border-[#444] rounded-lg p-4 text-white text-sm font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full h-96 bg-[#1A1A1A] border border-[#444] rounded-lg p-4 text-white text-sm font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                           placeholder="Contract text will appear here..."
                         />
                       </div>
@@ -5671,7 +5647,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         }}
                         variant="outline"
                         size="sm"
-                        className="bg-[#1A1A1A] border-[#444] text-blue-300 hover:bg-blue-900/30"
+                        className="bg-[#1A1A1A] border-[#444] text-gray-300 hover:bg-[#333]"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
@@ -5690,7 +5666,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Info className="h-4 w-4" />
                 <span>
-                  {contractEditingMode ? 'Edit and preview your contract before downloading' : 
+                  {contractEditingMode ? 'Edit and download your contract' : 
                    contractPreviewMode ? 'Final preview - ready to download' :
                    'Professional contract with DocuSign compatibility'}
                 </span>
@@ -5714,7 +5690,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         generateContractForEditing(selectedCampaignLead.lead)
                       }
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Contract
@@ -5730,7 +5706,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         }
                       }}
                       variant="outline"
-                      className="bg-[#2A2A2A] border-[#444] text-blue-300 hover:bg-blue-900/30 hover:text-blue-200"
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-gray-200"
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Copy to Clipboard
@@ -5741,7 +5717,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           downloadContract(selectedCampaignLead.lead)
                         }
                       }}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                      className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download Contract
