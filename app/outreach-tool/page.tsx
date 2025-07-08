@@ -480,26 +480,26 @@ export default function OutreachToolPage() {
       })
     } else {
       // Show individual responded leads if less than 3
-      respondedLeads.forEach(cl => {
-        if (cl.lead) {
-        newTodos.push({
-            id: `respond_${cl.id}`,
-            type: 'responded',
-          priority: 'high',
-            title: `Respond to ${cl.lead.business_name}`,
-            description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
-            count: 1,
-            action: 'Smart Response',
-            filterAction: () => {
-              setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
-              // Also select this specific lead
-              setSelectedCampaignLead(cl)
+    respondedLeads.forEach(cl => {
+      if (cl.lead) {
+      newTodos.push({
+          id: `respond_${cl.id}`,
+          type: 'responded',
+        priority: 'high',
+          title: `Respond to ${cl.lead.business_name}`,
+          description: `${cl.lead.business_name} responded to your outreach - follow up now!`,
+          count: 1,
+          action: 'Smart Response',
+          filterAction: () => {
+            setFilters(prev => ({ ...prev, statusFilter: 'responded' }))
+            // Also select this specific lead
+            setSelectedCampaignLead(cl)
               setIsRespondedMode(false)
-              setShowSmartResponse(true)
-            }
-        })
-      }
+            setShowSmartResponse(true)
+          }
       })
+    }
+    })
     }
 
     // High priority - Qualified leads (ready to close)
@@ -3969,11 +3969,19 @@ export default function OutreachToolPage() {
                   <Brain className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span>Generate intelligent follow-up responses</span>
+                  <div className="flex items-center gap-3">
+                    <span>{agencySettings.agency_name}</span>
+                    {selectedCampaignLead?.lead?.niche_name && (
+                      <>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-300">{selectedCampaignLead.lead.niche_name}</span>
+                      </>
+                    )}
+                  </div>
                   {respondedQueue.length > 0 && (
-                    <span className="text-sm text-gray-400 font-normal">
+                  <span className="text-sm text-gray-400 font-normal">
                       Response {currentRespondedIndex + 1} of {respondedQueue.length}
-                    </span>
+                  </span>
                   )}
                 </div>
               </DialogTitle>
@@ -3989,12 +3997,6 @@ export default function OutreachToolPage() {
                       <span>Owner: {selectedCampaignLead.lead.owner_name}</span>
                     </div>
                   )}
-                  {selectedCampaignLead?.lead?.niche_name && (
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Building className="h-4 w-4" />
-                      <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
-                    </div>
-                )}
                 </div>
               </DialogDescription>
             </DialogHeader>
@@ -4220,7 +4222,7 @@ export default function OutreachToolPage() {
                 )}
                   </div>
                 </div>
-              </div>
+                              </div>
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
               {respondedQueue.length > 0 && (
@@ -4291,7 +4293,7 @@ export default function OutreachToolPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
             </DialogContent>
           </Dialog>
 
