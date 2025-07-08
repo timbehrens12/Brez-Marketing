@@ -437,8 +437,8 @@ export default function OutreachToolPage() {
             setSelectedCampaignLead(cl)
             setShowSmartResponse(true)
           }
-        })
-      }
+      })
+    }
     })
 
     // High priority - Qualified leads (ready to close)
@@ -455,8 +455,8 @@ export default function OutreachToolPage() {
           filterAction: () => {
             setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
           }
-        })
-      }
+      })
+    }
     })
 
     // Medium priority - Pending leads (need initial outreach)
@@ -498,8 +498,8 @@ export default function OutreachToolPage() {
             setIsFollowUpMode(false)
             setShowOutreachOptions(true)
           }
-        })
-      }
+      })
+    }
     }
 
     // Medium priority - Contacted leads needing follow-up (7+ days old)
@@ -563,7 +563,7 @@ export default function OutreachToolPage() {
           action: 'Review Follow-ups',
         filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
       })
-      }
+    }
     }
 
     // Note: Going cold leads are now handled in the bulk follow-up section above
@@ -670,14 +670,23 @@ export default function OutreachToolPage() {
       return () => {}
     }
 
-    // Check for daily refresh
+    // Check for daily refresh on page load
     const today = new Date().toISOString().split('T')[0]
     const lastRefresh = localStorage.getItem(`last-todo-refresh-${userId}`)
+    const lastUsageRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
     
-    // If it's a new day, clear completed todos
+    // If it's a new day, clear completed todos and refresh usage
     if (lastRefresh && lastRefresh !== today) {
       setCompletedTodos(new Set())
       localStorage.removeItem(`completed-todos-${userId}`)
+      localStorage.setItem(`last-todo-refresh-${userId}`, today)
+    }
+    
+    // If it's a new day for usage, refresh message usage
+    if (lastUsageRefresh && lastUsageRefresh !== today) {
+      loadMessageUsage()
+      localStorage.setItem(`last-recommendation-refresh-${userId}`, today)
+      console.log('🌅 New day detected on page load - refreshing usage counters')
     }
 
     // Load completed todos
@@ -690,7 +699,7 @@ export default function OutreachToolPage() {
         console.error('Error loading completed todos:', error)
       }
     }
-  }, [userId])
+  }, [userId, loadMessageUsage])
 
   // Generate todos when data is ready - runs when campaign leads change
   useEffect(() => {
@@ -719,14 +728,16 @@ export default function OutreachToolPage() {
       const today = new Date().toISOString().split('T')[0]
       const lastRefresh = localStorage.getItem(`last-recommendation-refresh-${userId}`)
       
-      // If it's a new day and we have data loaded, refresh todos
+      // If it's a new day and we have data loaded, refresh todos and usage
       if (lastRefresh !== today && campaignCountRef.current > 0 && campaignLeadCountRef.current > 0) {
         // Check again if still mounted before setting state
         if (mountedRef.current) {
           setCompletedTodos(new Set()) // Clear completed todos for new day
           localStorage.removeItem(`completed-todos-${userId}`)
           generateTodos() // Generate fresh todos for new day
-          console.log('🌅 New day detected - refreshing todos')
+          loadMessageUsage() // Refresh usage counter for new day
+          localStorage.setItem(`last-recommendation-refresh-${userId}`, today)
+          console.log('🌅 New day detected - refreshing todos and usage counters')
         }
       }
     }
@@ -873,6 +884,11 @@ export default function OutreachToolPage() {
       const data = await response.json()
       setGeneratedSmartResponse(data.smartResponse)
       setSmartResponsesRemaining(data.remaining)
+      
+      // Refresh usage after generating a smart response to update daily counts
+      loadMessageUsage()
+      
+      toast.success('✨ Smart response generated successfully!')
       
     } catch (error) {
       console.error('Error generating smart response:', error)
@@ -1131,7 +1147,7 @@ export default function OutreachToolPage() {
               }
             : cl
         ))
-        toast.success('Status updated successfully!')
+      toast.success('Status updated successfully!')
       }
     } catch (error) {
       console.error('❌ Error updating status:', error)
@@ -2678,8 +2694,8 @@ export default function OutreachToolPage() {
                                           })
                                           const completed = Array.from(completedTodos).filter(id => id !== todo.id)
                                           localStorage.setItem(`completed-todos-${userId}`, JSON.stringify(completed))
-                                        }
-                                      }}
+                            }
+                          }}
                                       className="border-[#444] data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
                                     />
                                   </div>
@@ -3854,7 +3870,7 @@ export default function OutreachToolPage() {
                       <Building className="h-4 w-4" />
                       <span>Industry: {selectedCampaignLead.lead.niche_name}</span>
                     </div>
-                  )}
+                )}
                 </div>
               </DialogDescription>
             </DialogHeader>
@@ -3886,13 +3902,13 @@ export default function OutreachToolPage() {
                   {[
                     { type: 'email', icon: Mail, label: 'Email Response', description: 'Professional email follow-up' },
                     { type: 'linkedin', icon: Linkedin, label: 'LinkedIn Message', description: 'Professional networking response' },
-                    { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement' },
-                    { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response' },
                     { type: 'twitter', icon: () => (
                       <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                       </svg>
-                    ), label: 'X/Twitter Reply', description: 'Quick engagement response' }
+                    ), label: 'X/Twitter Reply', description: 'Quick engagement response' },
+                    { type: 'instagram', icon: Instagram, label: 'Instagram DM', description: 'Casual social engagement' },
+                    { type: 'facebook', icon: Facebook, label: 'Facebook Message', description: 'Social connection response' }
                   ].map((platform) => (
                     <Button
                       key={platform.type}
@@ -3932,21 +3948,21 @@ export default function OutreachToolPage() {
                   Paste their response below:
                 </Label>
                 <div className="bg-gradient-to-br from-[#2A2A2A] to-[#3A3A3A] border border-[#444] rounded-xl p-6 shadow-lg">
-                  <Textarea
-                    value={leadResponse}
-                    onChange={(e) => setLeadResponse(e.target.value)}
+                <Textarea
+                  value={leadResponse}
+                  onChange={(e) => setLeadResponse(e.target.value)}
                     placeholder="Paste their exact response here... For example:
 
 'Thanks for reaching out! I'm interested in learning more about your services. Can you tell me about pricing and how this could help my business grow?'"
                     className="bg-[#1A1A1A] border-[#333] text-gray-300 min-h-[140px] resize-none rounded-lg focus:border-gray-300 transition-colors"
-                    maxLength={2000}
-                  />
+                  maxLength={2000}
+                />
                   <div className="flex justify-between items-center mt-3">
                     <div className="text-xs text-gray-500">
                       Paste their exact message for the most accurate AI response
                     </div>
                     <div className="text-xs text-gray-400">
-                      {leadResponse.length}/2000 characters
+                  {leadResponse.length}/2000 characters
                     </div>
                   </div>
                 </div>
@@ -4042,18 +4058,18 @@ export default function OutreachToolPage() {
                   <div>
                     <div className="text-sm text-gray-300 mb-2">
                       <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
-                    </div>
-                    {smartResponsesRemaining !== null && (
+                </div>
+                {smartResponsesRemaining !== null && (
                       <div className="text-xs text-gray-500">
-                        {smartResponsesRemaining} smart responses remaining today
-                      </div>
-                    )}
+                    {smartResponsesRemaining} smart responses remaining today
+                  </div>
+                )}
                   </div>
                 </div>
+                              </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
 
 
                     </div>

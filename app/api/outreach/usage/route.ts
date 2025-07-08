@@ -28,21 +28,24 @@ export async function GET(request: NextRequest) {
 
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    
+    // Calculate start of current day (midnight) for proper daily reset
+    const startOfToday = new Date(now)
+    startOfToday.setHours(0, 0, 0, 0)
 
-    // Get hourly usage
+    // Get hourly usage (rolling 1 hour)
     const { data: hourlyUsage, error: hourlyError } = await supabase
       .from('outreach_message_usage')
       .select('*')
       .eq('user_id', userId)
       .gte('generated_at', oneHourAgo.toISOString())
 
-    // Get daily usage
+    // Get daily usage (since midnight today)
     const { data: dailyUsage, error: dailyError } = await supabase
       .from('outreach_message_usage')
       .select('*')
       .eq('user_id', userId)
-      .gte('generated_at', oneDayAgo.toISOString())
+      .gte('generated_at', startOfToday.toISOString())
 
     if (hourlyError || dailyError) {
       console.error('❌ Error fetching usage:', hourlyError || dailyError)
@@ -57,7 +60,9 @@ export async function GET(request: NextRequest) {
 
     // Calculate next reset times
     const nextHourReset = new Date(Math.ceil(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000))
-    const nextDayReset = new Date(now)
+    
+    // Next daily reset is tomorrow at midnight
+    const nextDayReset = new Date(startOfToday)
     nextDayReset.setDate(nextDayReset.getDate() + 1)
     nextDayReset.setHours(0, 0, 0, 0)
 
