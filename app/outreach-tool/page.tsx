@@ -4119,8 +4119,8 @@ export default function OutreachToolPage() {
             setIsRespondedMode(false)
           }
         }}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <DialogHeader>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-3xl h-[95vh] max-h-[800px] shadow-2xl flex flex-col overflow-hidden p-0">
+            <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-xl">
                 <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg">
                   <Brain className="h-6 w-6 text-white" />
@@ -4152,31 +4152,33 @@ export default function OutreachToolPage() {
               </DialogDescription>
             </DialogHeader>
             
-            {/* Bulk Progress Bar (only show when in bulk mode) */}
-            {respondedQueue.length > 0 && (
-              <div className="px-6 pb-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300 font-medium text-sm">
-                      Smart Response Progress
-                    </span>
-                    <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
-                      {currentRespondedIndex + 1} / {respondedQueue.length}
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
-                      style={{ 
-                        width: `${((currentRespondedIndex + 1) / respondedQueue.length) * 100}%` 
-                      }}
-                    ></div>
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Bulk Progress Bar (only show when in bulk mode) */}
+              {respondedQueue.length > 0 && (
+                <div className="px-6 py-4 border-b border-[#333]">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 font-medium text-sm">
+                        Smart Response Progress
+                      </span>
+                      <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
+                        {currentRespondedIndex + 1} / {respondedQueue.length}
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#2A2A2A] rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
+                        style={{ 
+                          width: `${((currentRespondedIndex + 1) / respondedQueue.length) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <div className="space-y-6 py-4">
+              )}
+              
+              <div className="space-y-6 p-6">
               {/* AI Information Banner */}
               <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
                 <div className="flex items-start gap-3">
@@ -4345,100 +4347,101 @@ export default function OutreachToolPage() {
                 </div>
               )}
 
-              {/* Security Notice & Rate Limit */}
-              <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-sm text-gray-300 mb-2">
-                      <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
-                </div>
-                {smartResponsesRemaining !== null && (
-                      <div className="text-xs text-gray-500">
-                    {smartResponsesRemaining} smart responses remaining today
+                {/* Security Notice & Rate Limit */}
+                <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm text-gray-300 mb-2">
+                        <span className="font-medium">Security & Privacy:</span> All responses are filtered for security and appropriateness. Only business-related content is generated.
                   </div>
-                )}
+                  {smartResponsesRemaining !== null && (
+                        <div className="text-xs text-gray-500">
+                      {smartResponsesRemaining} smart responses remaining today
+                    </div>
+                  )}
+                    </div>
                   </div>
                 </div>
-                              </div>
-              
-              {/* Bulk Navigation Controls (only show when in bulk mode) */}
-              {respondedQueue.length > 0 && (
-                <div className="px-6 pt-4 border-t border-[#444]">
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => {
-                        if (currentRespondedIndex > 0) {
-                          const newIndex = currentRespondedIndex - 1
-                          setCurrentRespondedIndex(newIndex)
-                          setSelectedCampaignLead(respondedQueue[newIndex])
-                          // Clear any generated responses
-                          setGeneratedSmartResponse('')
-                          setLeadResponse('')
-                        }
-                      }}
-                      disabled={currentRespondedIndex === 0}
-                      variant="outline"
-                      size="sm"
-                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
-                    >
-                      ← Previous
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
-                        if (currentRespondedIndex < respondedQueue.length - 1) {
-                          const newIndex = currentRespondedIndex + 1
-                          setCurrentRespondedIndex(newIndex)
-                          setSelectedCampaignLead(respondedQueue[newIndex])
-                          // Clear any generated responses
-                          setGeneratedSmartResponse('')
-                          setLeadResponse('')
-                        } else {
-                          // Reached end of queue
-                          setShowSmartResponse(false)
-                          setRespondedQueue([])
-                          setCurrentRespondedIndex(0)
-                          setIsRespondedMode(false)
-                          setGeneratedSmartResponse('')
-                          setLeadResponse('')
-                          toast.success('All responded leads processed!')
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                    >
-                      {currentRespondedIndex < respondedQueue.length - 1 ? 'Skip to Next →' : 'Finish Responses'}
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
+              </div>
+            </div>
+            
+            {/* Bulk Navigation Controls (only show when in bulk mode) */}
+            {respondedQueue.length > 0 && (
+              <div className="flex-shrink-0 px-6 py-4 border-t border-[#444] bg-[#1A1A1A]">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      if (currentRespondedIndex > 0) {
+                        const newIndex = currentRespondedIndex - 1
+                        setCurrentRespondedIndex(newIndex)
+                        setSelectedCampaignLead(respondedQueue[newIndex])
+                        // Clear any generated responses
+                        setGeneratedSmartResponse('')
+                        setLeadResponse('')
+                      }
+                    }}
+                    disabled={currentRespondedIndex === 0}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
+                  >
+                    ← Previous
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      if (currentRespondedIndex < respondedQueue.length - 1) {
+                        const newIndex = currentRespondedIndex + 1
+                        setCurrentRespondedIndex(newIndex)
+                        setSelectedCampaignLead(respondedQueue[newIndex])
+                        // Clear any generated responses
+                        setGeneratedSmartResponse('')
+                        setLeadResponse('')
+                      } else {
+                        // Reached end of queue
                         setShowSmartResponse(false)
                         setRespondedQueue([])
                         setCurrentRespondedIndex(0)
                         setIsRespondedMode(false)
                         setGeneratedSmartResponse('')
                         setLeadResponse('')
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Exit Responses
-                    </Button>
-                  </div>
+                        toast.success('All responded leads processed!')
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                  >
+                    {currentRespondedIndex < respondedQueue.length - 1 ? 'Skip to Next →' : 'Finish Responses'}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      setShowSmartResponse(false)
+                      setRespondedQueue([])
+                      setCurrentRespondedIndex(0)
+                      setIsRespondedMode(false)
+                      setGeneratedSmartResponse('')
+                      setLeadResponse('')
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Exit Responses
+                  </Button>
                 </div>
-              )}
               </div>
+            )}
             </DialogContent>
           </Dialog>
 
         {/* Comprehensive Tutorial Modal */}
         <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
-          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <DialogHeader>
+          <DialogContent className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] border-[#333] w-[95vw] max-w-4xl h-[95vh] max-h-[900px] shadow-2xl flex flex-col overflow-hidden p-0">
+            <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-[#333]">
               <DialogTitle className="text-white flex items-center gap-3 text-2xl">
                 <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg">
                   <Lightbulb className="h-6 w-6 text-white" />
@@ -4450,7 +4453,8 @@ export default function OutreachToolPage() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-8 py-6">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-8">
               {/* Overview Section */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -4793,9 +4797,10 @@ export default function OutreachToolPage() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
 
-            <div className="flex justify-center pt-6 border-t border-[#444]">
+            <div className="flex-shrink-0 flex justify-center p-6 border-t border-[#444] bg-[#1A1A1A]">
               <Button
                 onClick={() => setShowTutorial(false)}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-8 rounded-lg"
