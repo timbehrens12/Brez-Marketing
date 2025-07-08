@@ -5328,7 +5328,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             <div className="flex-shrink-0 flex justify-center p-6 border-t border-[#444] bg-[#1A1A1A]">
               <Button
                 onClick={() => setShowTutorial(false)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-8 rounded-lg"
+                className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium py-3 px-8 rounded-lg"
               >
                 Got It! Let's Start Outreaching
               </Button>
