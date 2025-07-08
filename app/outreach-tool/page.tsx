@@ -453,66 +453,119 @@ export default function OutreachToolPage() {
     })
 
     // Medium priority - Pending leads (need initial outreach)
-    pendingLeads.slice(0, 5).forEach(cl => {
-      if (cl.lead) {
-        newTodos.push({
-          id: `outreach_${cl.id}`,
-          type: 'new_leads',
-          priority: 'medium',
-          title: `Start outreach to ${cl.lead.business_name}`,
-          description: `${cl.lead.business_name} is ready for personalized outreach`,
-          count: 1,
-          action: 'Start Outreach',
-          filterAction: () => {
-            setSelectedCampaignLead(cl)
+    if (pendingLeads.length >= 10) {
+      // If 10+ pending leads, show bulk action instead of individual items
+      newTodos.push({
+        id: 'bulk_pending_many',
+        type: 'new_leads',
+        priority: 'medium',
+        title: `You have ${pendingLeads.length} pending leads ready for outreach`,
+        description: 'Use the "Outreach All Pending" quick action to efficiently process all leads in sequence',
+        count: pendingLeads.length,
+        action: 'Start Bulk Outreach',
+        filterAction: () => {
+          const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending')
+          if (pendingLeads.length > 0) {
+            setPendingOutreachQueue(pendingLeads)
+            setCurrentQueueIndex(0)
+            setSelectedCampaignLead(pendingLeads[0])
             setShowOutreachOptions(true)
           }
-        })
-      }
-    })
+        }
+      })
+    } else {
+      // Show individual pending leads if less than 10
+      pendingLeads.slice(0, 5).forEach(cl => {
+        if (cl.lead) {
+          newTodos.push({
+            id: `outreach_${cl.id}`,
+            type: 'new_leads',
+            priority: 'medium',
+            title: `Start outreach to ${cl.lead.business_name}`,
+            description: `${cl.lead.business_name} is ready for personalized outreach`,
+            count: 1,
+            action: 'Start Outreach',
+            filterAction: () => {
+              setSelectedCampaignLead(cl)
+              setShowOutreachOptions(true)
+            }
+          })
+        }
+      })
+    }
 
     // Medium priority - Follow-up needed (5+ days old)
-    needsFollowUp.slice(0, 5).forEach(cl => {
-      if (cl.lead) {
-        const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
-        newTodos.push({
-          id: `followup_${cl.id}`,
-          type: 'follow_up',
-          priority: 'medium',
-          title: `Follow up with ${cl.lead.business_name}`,
-          description: `No response from ${cl.lead.business_name} in ${daysSince} days - send follow-up`,
-          count: 1,
-          action: 'Follow Up',
-          filterAction: () => {
-            setSelectedCampaignLead(cl)
-            setShowOutreachOptions(true)
-          }
-        })
-      }
-    })
+    if (needsFollowUp.length >= 10) {
+      // If 10+ follow-up leads, show bulk message instead of individual items
+      newTodos.push({
+        id: 'bulk_followup_many',
+        type: 'follow_up',
+        priority: 'medium',
+        title: `${needsFollowUp.length} leads need follow-up outreach`,
+        description: 'These leads were contacted 5+ days ago with no response. Consider follow-up or status updates.',
+        count: needsFollowUp.length,
+        action: 'Review Follow-ups',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+      })
+    } else {
+      // Show individual follow-up leads if less than 10
+      needsFollowUp.slice(0, 5).forEach(cl => {
+        if (cl.lead) {
+          const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
+          newTodos.push({
+            id: `followup_${cl.id}`,
+            type: 'follow_up',
+            priority: 'medium',
+            title: `Follow up with ${cl.lead.business_name}`,
+            description: `No response from ${cl.lead.business_name} in ${daysSince} days - send follow-up`,
+            count: 1,
+            action: 'Follow Up',
+            filterAction: () => {
+              setSelectedCampaignLead(cl)
+              setShowOutreachOptions(true)
+            }
+          })
+        }
+      })
+    }
 
     // Low priority - Going cold (7+ days old)
-    goingCold.slice(0, 3).forEach(cl => {
-      if (cl.lead) {
-        const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
-        newTodos.push({
-          id: `cold_${cl.id}`,
-          type: 'going_cold',
-          priority: 'low',
-          title: `${cl.lead.business_name} going cold`,
-          description: `${daysSince} days since last contact - urgent follow-up or mark as rejected`,
-          count: 1,
-          action: 'Last Chance',
-          filterAction: () => {
-            setSelectedCampaignLead(cl)
-            setShowOutreachOptions(true)
-          }
-        })
-      }
-    })
+    if (goingCold.length >= 10) {
+      // If 10+ going cold leads, show bulk message
+      newTodos.push({
+        id: 'bulk_cold_many',
+        type: 'going_cold',
+        priority: 'low',
+        title: `${goingCold.length} leads are going cold`,
+        description: 'These leads haven\'t responded in 7+ days. Consider final follow-up or marking as rejected.',
+        count: goingCold.length,
+        action: 'Review Cold Leads',
+        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
+      })
+    } else {
+      // Show individual going cold leads if less than 10
+      goingCold.slice(0, 3).forEach(cl => {
+        if (cl.lead) {
+          const daysSince = Math.floor((now.getTime() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))
+          newTodos.push({
+            id: `cold_${cl.id}`,
+            type: 'going_cold',
+            priority: 'low',
+            title: `${cl.lead.business_name} going cold`,
+            description: `${daysSince} days since last contact - urgent follow-up or mark as rejected`,
+            count: 1,
+            action: 'Last Chance',
+            filterAction: () => {
+              setSelectedCampaignLead(cl)
+              setShowOutreachOptions(true)
+            }
+          })
+        }
+      })
+    }
 
-    // Add bulk action todos if there are many leads
-    if (pendingLeads.length > 5) {
+    // Add bulk action todos if there are many leads (but only if we're showing individual items)
+    if (pendingLeads.length > 5 && pendingLeads.length < 10) {
       newTodos.push({
         id: 'bulk_pending',
         type: 'new_leads',
@@ -533,7 +586,7 @@ export default function OutreachToolPage() {
       })
     }
 
-    if (needsFollowUp.length > 5) {
+    if (needsFollowUp.length > 5 && needsFollowUp.length < 10) {
       newTodos.push({
         id: 'bulk_followup',
         type: 'follow_up',
@@ -2579,21 +2632,34 @@ export default function OutreachToolPage() {
                           })
                           .map((todo) => {
                             const isCompleted = completedTodos.has(todo.id)
-                            const priorityColors = {
-                              high: 'border-red-500/30 bg-red-500/5',
-                              medium: 'border-yellow-500/30 bg-yellow-500/5',
-                              low: 'border-gray-500/30 bg-gray-500/5'
+                            const priorityInfo = {
+                              high: { color: 'bg-red-400', label: 'High Priority', borderColor: 'border-red-500/20' },
+                              medium: { color: 'bg-yellow-400', label: 'Medium Priority', borderColor: 'border-yellow-500/20' },
+                              low: { color: 'bg-gray-400', label: 'Low Priority', borderColor: 'border-gray-500/20' }
                             }
                             
                             return (
                               <div
                                 key={todo.id}
-                                className={`p-3 rounded-lg border transition-all ${
+                                className={`relative p-3 rounded-lg border transition-all ${
                                   isCompleted 
                                     ? 'border-green-500/30 bg-green-500/5 opacity-60' 
-                                    : priorityColors[todo.priority]
+                                    : `border-[#333] bg-[#1A1A1A]/50 hover:bg-[#2A2A2A]/50 hover:${priorityInfo[todo.priority].borderColor}`
                                 }`}
                               >
+                                {/* Priority indicator dot in top-right corner */}
+                                {!isCompleted && (
+                                  <div 
+                                    className={`absolute top-2 right-2 w-2 h-2 rounded-full ${priorityInfo[todo.priority].color} group`}
+                                    title={priorityInfo[todo.priority].label}
+                                  >
+                                    {/* Hover tooltip */}
+                                    <div className="absolute right-0 top-4 px-2 py-1 bg-black text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                      {priorityInfo[todo.priority].label}
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 <div className="flex items-start gap-3">
                                   <div className="flex-shrink-0 mt-0.5">
                                     <Checkbox
@@ -2615,12 +2681,8 @@ export default function OutreachToolPage() {
                                       className="border-[#444] data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
                                     />
                                   </div>
-                                  <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0 pr-4">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <div className={`w-2 h-2 rounded-full ${
-                                        todo.priority === 'high' ? 'bg-red-400' :
-                                        todo.priority === 'medium' ? 'bg-yellow-400' : 'bg-gray-400'
-                                      }`} />
                                       <span className={`text-sm font-medium ${
                                         isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
                                       }`}>
