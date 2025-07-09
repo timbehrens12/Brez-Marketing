@@ -607,6 +607,7 @@ export default function OutreachToolPage() {
             setCurrentQueueIndex(0)
             setSelectedCampaignLead(pendingLeads[0])
             setIsFollowUpMode(false)
+            setShowContractGenerator(false) // Clear contract state
             setShowOutreachOptions(true)
           }
         }
@@ -626,6 +627,7 @@ export default function OutreachToolPage() {
           filterAction: () => {
             setSelectedCampaignLead(cl)
             setIsFollowUpMode(false)
+            setShowContractGenerator(false) // Clear contract state
             setShowOutreachOptions(true)
           }
       })
@@ -3524,8 +3526,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   size="sm"
                                   className="h-8 text-xs bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-600/50 text-green-300 hover:bg-green-800/50 hover:text-green-200"
                                   onClick={() => {
-                                    setSelectedCampaignLead(campaignLead)
-                                    setShowContractGenerator(true)
+                                    // Only open contract generator for qualified leads
+                                    if (campaignLead.status === 'qualified') {
+                                      setSelectedCampaignLead(campaignLead)
+                                      setIsContractMode(false) // Single contract mode
+                                      setShowOutreachOptions(false) // Clear outreach state
+                                      setShowContractGenerator(true)
+                                    }
                                   }}
                                 >
                                   <FileText className="h-3 w-3 mr-1" />
@@ -3547,8 +3554,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   size="sm"
                                   className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                                   onClick={() => {
-                                    setSelectedCampaignLead(campaignLead)
-                                    setShowOutreachOptions(true)
+                                    // Only open outreach for pending leads
+                                    if (campaignLead.status === 'pending') {
+                                      setSelectedCampaignLead(campaignLead)
+                                      setIsFollowUpMode(false) // Not follow-up mode
+                                      setShowContractGenerator(false) // Clear contract state
+                                      setShowOutreachOptions(true)
+                                    }
                                   }}
                                   disabled={outreachMethods.length === 0}
                                   title={`${methodsUsed.length} of ${outreachMethods.length} methods used today`}
@@ -3564,9 +3576,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   size="sm"
                                   className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-yellow-300 hover:bg-[#333] hover:text-yellow-200"
                                   onClick={() => {
-                                    setSelectedCampaignLead(campaignLead)
-                                    setIsFollowUpMode(true)
-                                    setShowOutreachOptions(true)
+                                    // Only open follow-up for contacted leads
+                                    if (campaignLead.status === 'contacted') {
+                                      setSelectedCampaignLead(campaignLead)
+                                      setIsFollowUpMode(true)
+                                      setShowContractGenerator(false) // Clear contract state
+                                      setShowOutreachOptions(true)
+                                    }
                                   }}
                                 >
                                   <RefreshCw className="h-3 w-3 mr-1" />
@@ -3661,6 +3677,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             setCurrentQueueIndex(0);
                             setSelectedCampaignLead(pendingLeads[0]);
                             setIsFollowUpMode(false);
+                            setShowContractGenerator(false); // Clear contract state
                             setShowOutreachOptions(true);
                           } else {
                             toast.error('No pending leads found');
@@ -6185,6 +6202,79 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               )}
             </div>
             
+            {/* Independent Navigation Controls for Bulk Contract Mode */}
+            {qualifiedContractQueue.length > 0 && (
+              <div className="px-6 pt-4 border-t border-[#444] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">
+                    Contract {currentContractIndex + 1} of {qualifiedContractQueue.length}
+                  </span>
+                  <div className="w-48 bg-[#444] rounded-full h-2">
+                    <div 
+                      className="bg-gray-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((currentContractIndex + 1) / qualifiedContractQueue.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      if (currentContractIndex > 0) {
+                        const newIndex = currentContractIndex - 1
+                        setCurrentContractIndex(newIndex)
+                        setSelectedCampaignLead(qualifiedContractQueue[newIndex])
+                        // Reset states for new lead
+                        resetContractEditor()
+                      }
+                    }}
+                    disabled={currentContractIndex === 0}
+                    variant="outline"
+                    className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] disabled:opacity-50"
+                  >
+                    ← Previous
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      if (currentContractIndex < qualifiedContractQueue.length - 1) {
+                        const newIndex = currentContractIndex + 1
+                        setCurrentContractIndex(newIndex)
+                        setSelectedCampaignLead(qualifiedContractQueue[newIndex])
+                        // Reset states for new lead
+                        resetContractEditor()
+                      } else {
+                        // Finished all contracts
+                        setQualifiedContractQueue([])
+                        setCurrentContractIndex(0)
+                        setIsContractMode(false)
+                        setShowContractGenerator(false)
+                        toast.success(`Completed all contracts! Generated ${qualifiedContractQueue.length} contracts.`)
+                      }
+                    }}
+                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white flex-1"
+                  >
+                    {currentContractIndex < qualifiedContractQueue.length - 1 ? 'Skip to Next →' : 'Finish Contracts'}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      setQualifiedContractQueue([])
+                      setCurrentContractIndex(0)
+                      setIsContractMode(false)
+                      resetContractEditor()
+                      setShowContractGenerator(false)
+                      toast.success('Exited bulk contract generation')
+                    }}
+                    variant="outline"
+                    className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333]"
+                  >
+                    ✕ Exit Contracts
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex-shrink-0 flex justify-between items-center p-6 border-t border-[#333] bg-[#1A1A1A]">
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Info className="h-4 w-4" />
@@ -6195,16 +6285,19 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </span>
               </div>
               <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    resetContractEditor()
-                    setShowContractGenerator(false)
-                  }}
-                  variant="outline"
-                  className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                >
-                  Cancel
-                </Button>
+                {/* Only show Cancel button when NOT in bulk mode */}
+                {qualifiedContractQueue.length === 0 && (
+                  <Button
+                    onClick={() => {
+                      resetContractEditor()
+                      setShowContractGenerator(false)
+                    }}
+                    variant="outline"
+                    className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                )}
                 
                 {!contractEditingMode && !contractPreviewMode && (
                   <Button
