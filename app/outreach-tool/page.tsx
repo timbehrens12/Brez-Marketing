@@ -2288,6 +2288,41 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       if (filters.selectedNicheFilter.length > 0 && cl.lead?.niche_name) {
         if (!filters.selectedNicheFilter.includes(cl.lead.niche_name)) return false
       }
+
+      // Last contacted filter
+      if (filters.lastContactedFilter !== 'all') {
+        const lastContacted = cl.last_contacted_at;
+        
+        if (filters.lastContactedFilter === 'never') {
+          if (lastContacted) return false;
+        } else if (filters.lastContactedFilter === 'today') {
+          if (!lastContacted) return false;
+          const contactDate = new Date(lastContacted);
+          const today = new Date();
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          if (contactDate < todayStart) return false;
+        } else if (filters.lastContactedFilter === 'yesterday') {
+          if (!lastContacted) return false;
+          const contactDate = new Date(lastContacted);
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStart = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          const yesterdayEnd = new Date(yesterdayStart.getTime() + 24 * 60 * 60 * 1000);
+          if (contactDate < yesterdayStart || contactDate >= yesterdayEnd) return false;
+        } else if (filters.lastContactedFilter === 'week') {
+          if (!lastContacted) return false;
+          const contactDate = new Date(lastContacted);
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          if (contactDate < weekAgo) return false;
+        } else if (filters.lastContactedFilter === 'month') {
+          if (!lastContacted) return false;
+          const contactDate = new Date(lastContacted);
+          const monthAgo = new Date();
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          if (contactDate < monthAgo) return false;
+        }
+      }
       
       return true
     })
@@ -3877,9 +3912,6 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
                         <Button
                           onClick={() => {
-                            const today = new Date();
-                            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                            
                             setFilters({
                               hasPhone: false,
                               hasEmail: false,
@@ -3898,13 +3930,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             });
                             setSearchQuery('');
                             
+                            // Calculate count for toast message
+                            const today = new Date();
+                            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                             const todayContacted = campaignLeads.filter(l => {
                               if (!l.last_contacted_at) return false;
                               const contactDate = new Date(l.last_contacted_at);
                               return contactDate >= todayStart;
                             });
                             
-                            toast.success(`Showing ${todayContacted.length} leads contacted today`);
+                            toast.success(`Showing ${todayContacted.length} leads contacted since midnight today`);
                           }}
                           variant="outline"
                           size="sm"
