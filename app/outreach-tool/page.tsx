@@ -3797,21 +3797,160 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
                               selectedNicheFilter: [],
                               statusFilter: 'all',
-                            minScore: 80,
-                            hasOwnerName: false,
-                            businessTypeFilter: [],
-                            locationFilter: { city: '', state: '' },
-                            outreachMethodFilter: [],
-                            lastContactedFilter: 'all',
-                            scoreRange: { min: 0, max: 100 }
+                              minScore: 80,
+                              hasOwnerName: false,
+                              businessTypeFilter: [],
+                              locationFilter: { city: '', state: '' },
+                              outreachMethodFilter: [],
+                              lastContactedFilter: 'all',
+                              scoreRange: { min: 0, max: 100 }
                             });
+                            setSortConfig({ key: 'lead_score', direction: 'desc' });
+                            setSearchQuery('');
+                            toast.success(`Showing ${campaignLeads.filter(l => l.lead?.lead_score && l.lead.lead_score >= 80).length} high-score leads`);
                           }}
                           variant="outline"
                           size="sm"
                           className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
                           <Star className="h-3 w-3 mr-2" />
-                          View High-Score Leads
+                          High-Score Leads ({campaignLeads.filter(l => l.lead?.lead_score && l.lead.lead_score >= 80).length})
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'pending',
+                              minScore: 0,
+                              hasOwnerName: false,
+                              businessTypeFilter: [],
+                              locationFilter: { city: '', state: '' },
+                              outreachMethodFilter: [],
+                              lastContactedFilter: 'all',
+                              scoreRange: { min: 0, max: 100 }
+                            });
+                            setSearchQuery('');
+                            toast.success(`Showing ${campaignLeads.filter(l => l.status === 'pending').length} leads ready for outreach`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <Clock className="h-3 w-3 mr-2" />
+                          Ready to Contact ({campaignLeads.filter(l => l.status === 'pending').length})
+                        </Button>
+
+                        <Button
+                          onClick={() => {
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'responded',
+                              minScore: 0,
+                              hasOwnerName: false,
+                              businessTypeFilter: [],
+                              locationFilter: { city: '', state: '' },
+                              outreachMethodFilter: [],
+                              lastContactedFilter: 'all',
+                              scoreRange: { min: 0, max: 100 }
+                            });
+                            setSearchQuery('');
+                            toast.success(`Showing ${campaignLeads.filter(l => l.status === 'responded').length} hot leads that responded`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <MessageCircle className="h-3 w-3 mr-2" />
+                          Hot Responses ({campaignLeads.filter(l => l.status === 'responded').length})
+                        </Button>
+
+                        <Button
+                          onClick={() => {
+                            const today = new Date();
+                            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                            
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'all',
+                              minScore: 0,
+                              hasOwnerName: false,
+                              businessTypeFilter: [],
+                              locationFilter: { city: '', state: '' },
+                              outreachMethodFilter: [],
+                              lastContactedFilter: 'today',
+                              scoreRange: { min: 0, max: 100 }
+                            });
+                            setSearchQuery('');
+                            
+                            const todayContacted = campaignLeads.filter(l => {
+                              if (!l.last_contacted_at) return false;
+                              const contactDate = new Date(l.last_contacted_at);
+                              return contactDate >= todayStart;
+                            });
+                            
+                            toast.success(`Showing ${todayContacted.length} leads contacted today`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <Calendar className="h-3 w-3 mr-2" />
+                          Today's Outreach ({(() => {
+                            const today = new Date();
+                            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                            return campaignLeads.filter(l => {
+                              if (!l.last_contacted_at) return false;
+                              const contactDate = new Date(l.last_contacted_at);
+                              return contactDate >= todayStart;
+                            }).length;
+                          })()})
+                        </Button>
+
+                        <Button
+                          onClick={() => {
+                            // Clear all filters and search
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'all',
+                              minScore: 0,
+                              hasOwnerName: false,
+                              businessTypeFilter: [],
+                              locationFilter: { city: '', state: '' },
+                              outreachMethodFilter: [],
+                              lastContactedFilter: 'all',
+                              scoreRange: { min: 0, max: 100 }
+                            });
+                            setSearchQuery('');
+                            setSortConfig({ key: '', direction: 'asc' });
+                            toast.success(`Showing all ${campaignLeads.length} leads`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-2" />
+                          Show All Leads ({campaignLeads.length})
                         </Button>
                     </div>
                   </div>
