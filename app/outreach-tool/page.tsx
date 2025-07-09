@@ -3671,24 +3671,109 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         </Button>
                         <Button
                           onClick={() => {
-                          const pendingLeads = campaignLeads.filter(lead => lead.status === 'pending');
-                          if (pendingLeads.length > 0) {
-                            setPendingOutreachQueue(pendingLeads);
-                            setCurrentQueueIndex(0);
-                            setSelectedCampaignLead(pendingLeads[0]);
-                            setIsFollowUpMode(false);
-                            setShowContractGenerator(false); // Clear contract state
-                            setShowOutreachOptions(true);
-                          } else {
-                            toast.error('No pending leads found');
-                          }
+                            const recentLeads = campaignLeads.filter(lead => {
+                              const dateStr = lead.added_at || lead.lead?.created_at;
+                              if (!dateStr) return false;
+                              const createdDate = new Date(dateStr);
+                              const twoDaysAgo = new Date();
+                              twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                              return createdDate > twoDaysAgo;
+                            });
+                            setFilters(prev => ({ ...prev, statusFilter: 'all' }));
+                            setSearchQuery('');
+                            toast.success(`Showing ${recentLeads.length} leads added in the last 48 hours`);
                           }}
                           variant="outline"
                           size="sm"
                           className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                        <Zap className="h-3 w-3 mr-2" />
-                        Outreach All Pending ({stats.pending})
+                          <Clock className="h-3 w-3 mr-2" />
+                          Recent Leads ({campaignLeads.filter(l => {
+                            const dateStr = l.added_at || l.lead?.created_at;
+                            if (!dateStr) return false;
+                            const createdDate = new Date(dateStr);
+                            const twoDaysAgo = new Date();
+                            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                            return createdDate > twoDaysAgo;
+                          }).length})
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const warmLeads = campaignLeads.filter(lead => 
+                              lead.status === 'responded' || lead.status === 'qualified'
+                            );
+                            setFilters(prev => ({ ...prev, statusFilter: 'all' }));
+                            setSearchQuery('');
+                            toast.success(`Showing ${warmLeads.length} leads with positive engagement`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <TrendingUp className="h-3 w-3 mr-2" />
+                          Warm Leads ({campaignLeads.filter(l => l.status === 'responded' || l.status === 'qualified').length})
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const coldLeads = campaignLeads.filter(lead => {
+                              const dateStr = lead.last_contacted_at || lead.added_at;
+                              if (!dateStr) return false;
+                              const contactedDate = new Date(dateStr);
+                              const oneWeekAgo = new Date();
+                              oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                              return lead.status === 'contacted' && contactedDate < oneWeekAgo;
+                            });
+                            setFilters(prev => ({ ...prev, statusFilter: 'all' }));
+                            setSearchQuery('');
+                            toast.success(`Showing ${coldLeads.length} contacted leads with no response`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <AlertCircle className="h-3 w-3 mr-2" />
+                          Cold Leads ({campaignLeads.filter(l => {
+                            const dateStr = l.last_contacted_at || l.added_at;
+                            if (!dateStr) return false;
+                            const contactedDate = new Date(dateStr);
+                            const oneWeekAgo = new Date();
+                            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                            return l.status === 'contacted' && contactedDate < oneWeekAgo;
+                          }).length})
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const multiPlatformLeads = campaignLeads.filter(lead => {
+                              const platforms = [
+                                lead.lead?.email, 
+                                lead.lead?.linkedin_profile, 
+                                lead.lead?.instagram_handle, 
+                                lead.lead?.facebook_page, 
+                                lead.lead?.phone,
+                                lead.lead?.twitter_handle
+                              ].filter(Boolean);
+                              return platforms.length >= 2;
+                            });
+                            setFilters(prev => ({ ...prev, statusFilter: 'all' }));
+                            setSearchQuery('');
+                            toast.success(`Showing ${multiPlatformLeads.length} leads with multiple contact methods`);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <Share2 className="h-3 w-3 mr-2" />
+                          Multi-Platform ({campaignLeads.filter(l => {
+                            const platforms = [
+                              l.lead?.email, 
+                              l.lead?.linkedin_profile, 
+                              l.lead?.instagram_handle, 
+                              l.lead?.facebook_page, 
+                              l.lead?.phone,
+                              l.lead?.twitter_handle
+                            ].filter(Boolean);
+                            return platforms.length >= 2;
+                          }).length})
                         </Button>
                     </div>
                   </div>
