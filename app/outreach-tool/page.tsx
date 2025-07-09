@@ -3393,7 +3393,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                     <Mail className="h-3 w-3" />
                                     <span 
                                       className={`text-xs cursor-pointer hover:text-gray-300 transition-colors ${
-                                        copiedField === `email-${campaignLead.id}` ? 'text-green-400' : ''
+                                        copiedField === `email-${campaignLead.id}` ? 'text-gray-300' : ''
                                       }`}
                                       onClick={() => copyToClipboard(campaignLead.lead!.email!, 'Email', `email-${campaignLead.id}`)}
                                       title="Click to copy email"
@@ -3407,7 +3407,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                     <Phone className="h-3 w-3" />
                                     <span 
                                       className={`text-xs cursor-pointer hover:text-gray-300 transition-colors ${
-                                        copiedField === `phone-${campaignLead.id}` ? 'text-green-400' : ''
+                                        copiedField === `phone-${campaignLead.id}` ? 'text-gray-300' : ''
                                       }`}
                                       onClick={() => copyToClipboard(campaignLead.lead!.phone!, 'Phone', `phone-${campaignLead.id}`)}
                                       title="Click to copy phone"
