@@ -86,6 +86,9 @@ export function CampaignOptimizer() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
+  // Add state for quick actions
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+
   // Simulated data - in a real app, this would come from your API calls
   const mockData = {
     overview: {
@@ -279,6 +282,91 @@ export function CampaignOptimizer() {
   const handleCampaignSelect = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setSelectedTab("campaign-details");
+  };
+
+  // Add quick action handlers
+  const handleQuickAction = async (actionText: string) => {
+    setIsProcessingAction(true);
+    
+    try {
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Handle different quick actions
+      switch (actionText) {
+        case "Pause Underperforming Ads (3)":
+          // Mock pausing ads
+          console.log("Pausing 3 underperforming ads...");
+          alert("Successfully paused 3 underperforming ads. Saving $87.45/day!");
+          break;
+        case "Increase Budget on Top 2 Ad Sets":
+          // Mock budget increase
+          console.log("Increasing budget on top ad sets...");
+          alert("Increased budget on 2 top-performing ad sets. Expected +$164.20 daily revenue!");
+          break;
+        case "Update Ad Creative Rotation":
+          // Mock creative rotation
+          console.log("Updating ad creative rotation...");
+          alert("Updated ad creative rotation. Audience fatigue reduced by 31%!");
+          break;
+        case "Fix Audience Overlap Issues":
+          // Mock audience overlap fix
+          console.log("Fixing audience overlap...");
+          alert("Fixed audience overlap issues. CPM improved by up to 18%!");
+          break;
+        default:
+          alert("Quick action executed successfully!");
+      }
+    } catch (error) {
+      console.error("Error executing quick action:", error);
+      alert("Error executing action. Please try again.");
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  // Add AI insight action handlers
+  const handleInsightAction = async (actionText: string, insightTitle: string) => {
+    setIsProcessingAction(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log(`Executing AI insight action: ${actionText} for ${insightTitle}`);
+      alert(`Successfully executed: ${actionText}`);
+    } catch (error) {
+      console.error("Error executing insight action:", error);
+      alert("Error executing insight action. Please try again.");
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  // Add creative action handlers
+  const handleCreativeAction = async (action: string, creativeName: string) => {
+    setIsProcessingAction(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      switch (action) {
+        case "pause":
+          console.log(`Pausing creative: ${creativeName}`);
+          alert(`Successfully paused "${creativeName}"`);
+          break;
+        case "replace":
+          console.log(`Replacing creative: ${creativeName}`);
+          alert(`Initiated replacement process for "${creativeName}"`);
+          break;
+        default:
+          alert("Creative action executed successfully!");
+      }
+    } catch (error) {
+      console.error("Error executing creative action:", error);
+      alert("Error executing creative action. Please try again.");
+    } finally {
+      setIsProcessingAction(false);
+    }
   };
 
   // Insight type to icon and color mapping
@@ -480,16 +568,25 @@ export function CampaignOptimizer() {
           <CardContent>
             <div className="space-y-3">
               {mockData.overview.quickActions.map((action, index) => (
-                <div key={index} className="bg-[#242424] p-3 rounded-md hover:bg-[#2A2A2A] cursor-pointer transition-colors">
+                <button
+                  key={index}
+                  onClick={() => handleQuickAction(action.text)}
+                  disabled={isProcessingAction}
+                  className="w-full bg-[#242424] p-3 rounded-md hover:bg-[#2A2A2A] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      {action.icon}
+                      {isProcessingAction ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        action.icon
+                      )}
                       <span className="text-white font-medium">{action.text}</span>
                     </div>
                     <ArrowRight className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="text-xs text-green-500 mt-1">{action.impact}</div>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -520,7 +617,7 @@ export function CampaignOptimizer() {
                           <span className="text-gray-400">Impact: </span>
                           <span className="text-white">{insight.impact}</span>
                         </div>
-                        <Button size="sm" className="mt-3">
+                        <Button size="sm" className="mt-3" onClick={() => handleInsightAction(insight.action, insight.title)}>
                           {insight.action} <ArrowRight className="ml-2 h-3 w-3" />
                         </Button>
                       </div>
@@ -581,10 +678,10 @@ export function CampaignOptimizer() {
                         <div>Conv. Rate: <span className="text-white">{creative.convRate}%</span></div>
                       </div>
                       <div className="mt-3 flex space-x-2">
-                        <Button size="sm" variant="destructive">
+                        <Button size="sm" variant="destructive" onClick={() => handleCreativeAction("pause", creative.name)}>
                           <PauseCircle className="h-3 w-3 mr-1" /> Pause
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleCreativeAction("replace", creative.name)}>
                           <RefreshCw className="h-3 w-3 mr-1" /> Replace
                         </Button>
                       </div>
