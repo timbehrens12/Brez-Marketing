@@ -256,6 +256,11 @@ export default function OutreachToolPage() {
   const [currentRespondedIndex, setCurrentRespondedIndex] = useState(0)
   const [isRespondedMode, setIsRespondedMode] = useState(false)
   
+  // Bulk Contract Generation state for qualified leads
+  const [qualifiedContractQueue, setQualifiedContractQueue] = useState<CampaignLead[]>([])
+  const [currentContractIndex, setCurrentContractIndex] = useState(0)
+  const [isContractMode, setIsContractMode] = useState(false)
+  
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
     hasPhone: false,
@@ -536,22 +541,49 @@ export default function OutreachToolPage() {
     }
 
     // High priority - Qualified leads (ready to close)
-    qualifiedLeads.forEach(cl => {
-      if (cl.lead) {
+    if (qualifiedLeads.length >= 3) {
+      // If 3+ qualified leads, show bulk contract generation instead of individual items
       newTodos.push({
-          id: `close_${cl.id}`,
-          type: 'hot_leads',
+        id: 'bulk_contracts_many',
+        type: 'hot_leads',
         priority: 'high',
-          title: `Send proposal to ${cl.lead.business_name}`,
-          description: `${cl.lead.business_name} is qualified and ready for your proposal`,
-          count: 1,
-          action: 'Send Proposal',
-          filterAction: () => {
-            setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
+        title: `${qualifiedLeads.length} qualified leads are ready for contracts`,
+        description: 'Use the bulk contract generator to efficiently create contracts for all qualified leads in sequence',
+        count: qualifiedLeads.length,
+        action: 'Start Bulk Contract Generation',
+        filterAction: () => {
+          if (qualifiedLeads.length > 0) {
+            setQualifiedContractQueue(qualifiedLeads)
+            setCurrentContractIndex(0)
+            setSelectedCampaignLead(qualifiedLeads[0])
+            setIsContractMode(true)
+            setShowContractGenerator(true)
           }
+        }
+      })
+    } else {
+      // Show individual qualified leads if less than 3
+      qualifiedLeads.forEach(cl => {
+        if (cl.lead) {
+        newTodos.push({
+            id: `close_${cl.id}`,
+            type: 'hot_leads',
+          priority: 'high',
+            title: `Send proposal to ${cl.lead.business_name}`,
+            description: `${cl.lead.business_name} is qualified and ready for your proposal`,
+            count: 1,
+            action: 'Send Proposal',
+            filterAction: () => {
+              setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))
+              // Also select this specific lead
+              setSelectedCampaignLead(cl)
+              setIsContractMode(false)
+              setShowContractGenerator(true)
+            }
+        })
+      }
       })
     }
-    })
 
     // Medium priority - Pending leads (need initial outreach)
     if (pendingLeads.length > 1) {
@@ -685,7 +717,7 @@ export default function OutreachToolPage() {
     }
 
     setTodos(newTodos)
-  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode, setRespondedQueue, setCurrentRespondedIndex, setIsRespondedMode])
+  }, [campaignLeads, setFilters, setSelectedCampaignLead, setShowOutreachOptions, setShowSmartResponse, setPendingOutreachQueue, setCurrentQueueIndex, setContactedFollowUpQueue, setCurrentFollowUpIndex, setIsFollowUpMode, setRespondedQueue, setCurrentRespondedIndex, setIsRespondedMode, setQualifiedContractQueue, setCurrentContractIndex, setIsContractMode, setShowContractGenerator])
 
   // Component mount tracking and cleanup
   useEffect(() => {
@@ -3687,12 +3719,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span>{isFollowUpMode ? 'AI Follow-up Studio' : 'AI Outreach Studio'}</span>
-                  {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
+                  <span>{qualifiedContractQueue.length > 0 ? 'AI Contract Generator' : isFollowUpMode ? 'AI Follow-up Studio' : 'AI Outreach Studio'}</span>
+                  {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0 || qualifiedContractQueue.length > 0) && (
                     <span className="text-sm text-gray-400 font-normal">
-                      {isFollowUpMode 
-                        ? `Follow-up ${currentFollowUpIndex + 1} of ${contactedFollowUpQueue.length}`
-                        : `Lead ${currentQueueIndex + 1} of ${pendingOutreachQueue.length}`
+                      {qualifiedContractQueue.length > 0 
+                        ? `Contract ${currentContractIndex + 1} of ${qualifiedContractQueue.length}`
+                        : isFollowUpMode 
+                          ? `Follow-up ${currentFollowUpIndex + 1} of ${contactedFollowUpQueue.length}`
+                          : `Lead ${currentQueueIndex + 1} of ${pendingOutreachQueue.length}`
                       }
                     </span>
                   )}
@@ -3721,17 +3755,20 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             </DialogHeader>
             
             {/* Bulk Progress Bar (only show when in bulk mode) */}
-            {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
+            {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0 || qualifiedContractQueue.length > 0) && (
               <div className="px-6 pb-4">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300 font-medium text-sm">
-                      {isFollowUpMode ? 'Follow-up Progress' : 'Outreach Progress'}
+                      {qualifiedContractQueue.length > 0 ? 'Contract Generation Progress' : 
+                       isFollowUpMode ? 'Follow-up Progress' : 'Outreach Progress'}
                     </span>
                     <span className="text-gray-200 bg-[#2A2A2A] px-3 py-1 rounded-full text-sm font-medium">
-                      {isFollowUpMode 
-                        ? `${currentFollowUpIndex + 1} / ${contactedFollowUpQueue.length}`
-                        : `${currentQueueIndex + 1} / ${pendingOutreachQueue.length}`
+                      {qualifiedContractQueue.length > 0 
+                        ? `${currentContractIndex + 1} / ${qualifiedContractQueue.length}`
+                        : isFollowUpMode 
+                          ? `${currentFollowUpIndex + 1} / ${contactedFollowUpQueue.length}`
+                          : `${currentQueueIndex + 1} / ${pendingOutreachQueue.length}`
                       }
                     </span>
                   </div>
@@ -3739,9 +3776,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     <div 
                       className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500 ease-out"
                       style={{ 
-                        width: `${isFollowUpMode 
-                          ? ((currentFollowUpIndex + 1) / contactedFollowUpQueue.length) * 100
-                          : ((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100
+                        width: `${qualifiedContractQueue.length > 0 
+                          ? ((currentContractIndex + 1) / qualifiedContractQueue.length) * 100
+                          : isFollowUpMode 
+                            ? ((currentFollowUpIndex + 1) / contactedFollowUpQueue.length) * 100
+                            : ((currentQueueIndex + 1) / pendingOutreachQueue.length) * 100
                         }%` 
                       }}
                     ></div>
@@ -3816,11 +3855,164 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 </div>
               </div>
               
-              {/* Outreach Method Selection */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {isFollowUpMode ? 'Choose Your Follow-up Method' : 'Choose Your Outreach Method'}
-                </h3>
+              {/* Contract Generation or Outreach Method Selection */}
+              {qualifiedContractQueue.length > 0 ? (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">
+                    Generate Contract for {selectedCampaignLead?.lead?.business_name}
+                  </h3>
+                  
+                  {/* Contract Generator Content */}
+                  <div className="space-y-6 bg-[#2A2A2A] p-6 rounded-lg border border-[#444]">
+                    {/* Pricing Model Selection */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-gray-300">
+                        Pricing Model <span className="text-red-500 text-xs">*</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => setContractData(prev => ({ ...prev, pricingModel: 'retainer' }))}
+                          variant={contractData.pricingModel === 'retainer' ? 'default' : 'outline'}
+                          className={`h-12 ${
+                            contractData.pricingModel === 'retainer'
+                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                          }`}
+                        >
+                          Monthly Retainer
+                        </Button>
+                        <Button
+                          onClick={() => setContractData(prev => ({ ...prev, pricingModel: 'revenue_share' }))}
+                          variant={contractData.pricingModel === 'revenue_share' ? 'default' : 'outline'}
+                          className={`h-12 ${
+                            contractData.pricingModel === 'revenue_share'
+                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                          }`}
+                        >
+                          Revenue Share
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Pricing Fields */}
+                    {contractData.pricingModel === 'retainer' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="monthlyRetainer" className="text-sm font-medium text-gray-300">
+                            Monthly Retainer <span className="text-red-500 text-xs">*</span>
+                          </Label>
+                          <Input
+                            id="monthlyRetainer"
+                            value={contractData.monthlyRetainer}
+                            onChange={(e) => setContractData(prev => ({ ...prev, monthlyRetainer: e.target.value }))}
+                            placeholder="5000"
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="adSpend" className="text-sm font-medium text-gray-300">
+                            Monthly Ad Spend <span className="text-red-500 text-xs">*</span>
+                          </Label>
+                          <Input
+                            id="adSpend"
+                            value={contractData.adSpend}
+                            onChange={(e) => setContractData(prev => ({ ...prev, adSpend: e.target.value }))}
+                            placeholder="10000"
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {contractData.pricingModel === 'revenue_share' && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="revenueSharePercentage" className="text-sm font-medium text-gray-300">
+                            Revenue Share Percentage <span className="text-red-500 text-xs">*</span>
+                          </Label>
+                          <Input
+                            id="revenueSharePercentage"
+                            value={contractData.revenueSharePercentage}
+                            onChange={(e) => setContractData(prev => ({ ...prev, revenueSharePercentage: e.target.value }))}
+                            placeholder="15"
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="minimumAdSpend" className="text-sm font-medium text-gray-300">
+                            Minimum Monthly Ad Spend
+                          </Label>
+                          <Input
+                            id="minimumAdSpend"
+                            value={contractData.minimumAdSpend}
+                            onChange={(e) => setContractData(prev => ({ ...prev, minimumAdSpend: e.target.value }))}
+                            placeholder="5000"
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Generate Contract Button */}
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => {
+                          if (selectedCampaignLead?.lead) {
+                            generateContractForEditing(selectedCampaignLead.lead)
+                          }
+                        }}
+                        disabled={validateContractData().length > 0}
+                        className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white"
+                      >
+                        Generate Contract
+                      </Button>
+                      
+                      {/* Next/Skip Buttons for Bulk Mode */}
+                      {qualifiedContractQueue.length > 0 && (
+                        <>
+                          <Button
+                            onClick={() => {
+                              if (currentContractIndex < qualifiedContractQueue.length - 1) {
+                                const newIndex = currentContractIndex + 1
+                                setCurrentContractIndex(newIndex)
+                                setSelectedCampaignLead(qualifiedContractQueue[newIndex])
+                              } else {
+                                // Finished all contracts
+                                setQualifiedContractQueue([])
+                                setCurrentContractIndex(0)
+                                setIsContractMode(false)
+                                setShowContractGenerator(false)
+                                toast.success('All contracts generated!')
+                              }
+                            }}
+                            variant="outline"
+                            className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                          >
+                            {currentContractIndex < qualifiedContractQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue'}
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setQualifiedContractQueue([])
+                              setCurrentContractIndex(0)
+                              setIsContractMode(false)
+                              setShowContractGenerator(false)
+                            }}
+                            variant="ghost"
+                            className="text-gray-400 hover:text-white"
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white mb-4">
+                    {isFollowUpMode ? 'Choose Your Follow-up Method' : 'Choose Your Outreach Method'}
+                  </h3>
               {selectedCampaignLead && selectedCampaignLead.lead && getOutreachMethods(selectedCampaignLead.lead).map((method) => {
                 // Check if this method has been used today
                 const today = new Date().toDateString()
@@ -3921,6 +4113,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                 )
               })}
               </div>
+              )}
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
               {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
