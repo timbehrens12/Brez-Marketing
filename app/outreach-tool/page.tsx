@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -1111,6 +1112,23 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       errors.push('At least one service must be selected')
     }
     
+    // Validate additional required fields
+    if (!contractData.startDate || contractData.startDate.trim() === '') {
+      errors.push('Start date is required')
+    }
+    
+    if (!contractData.contractLength || contractData.contractLength.trim() === '') {
+      errors.push('Contract length is required')
+    }
+    
+    if (!contractData.paymentTerms || contractData.paymentTerms.trim() === '') {
+      errors.push('Payment terms are required')
+    }
+    
+    if (!contractData.cancellationNotice || contractData.cancellationNotice.trim() === '') {
+      errors.push('Cancellation notice is required')
+    }
+    
     return errors
   }
 
@@ -1136,6 +1154,23 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         const hasSelectedService = Object.values(contractData.servicesIncluded).some(included => included)
         if (!hasSelectedService) {
           fieldsToFlash.push('servicesIncluded')
+        }
+        
+        // Flash additional required fields
+        if (!contractData.startDate || contractData.startDate.trim() === '') {
+          fieldsToFlash.push('startDate')
+        }
+        
+        if (!contractData.contractLength || contractData.contractLength.trim() === '') {
+          fieldsToFlash.push('contractLength')
+        }
+        
+        if (!contractData.paymentTerms || contractData.paymentTerms.trim() === '') {
+          fieldsToFlash.push('paymentTerms')
+        }
+        
+        if (!contractData.cancellationNotice || contractData.cancellationNotice.trim() === '') {
+          fieldsToFlash.push('cancellationNotice')
         }
         
         setFlashingFields(fieldsToFlash)
@@ -5445,7 +5480,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <div>
                             <Label className="text-sm font-medium text-gray-400">
                               Monthly Retainer 
-                              <span className="text-red-400 ml-1">*Required</span>
+                              <span className="text-red-400 ml-1 text-xs">*</span>
                             </Label>
                             <Input
                               type="number"
@@ -5462,7 +5497,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <div>
                             <Label className="text-sm font-medium text-gray-400">
                               Monthly Ad Spend 
-                              <span className="text-red-400 ml-1">*Required</span>
+                              <span className="text-red-400 ml-1 text-xs">*</span>
                             </Label>
                             <Input
                               type="number"
@@ -5482,7 +5517,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <div>
                             <Label className="text-sm font-medium text-gray-400">
                               Revenue Share % 
-                              <span className="text-red-400 ml-1">*Required</span>
+                              <span className="text-red-400 ml-1 text-xs">*</span>
                             </Label>
                             <Input
                               type="number"
@@ -5511,34 +5546,76 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium text-gray-400">Contract Length (months)</Label>
-                          <Select value={contractData.contractLength} onValueChange={(value) => setContractData(prev => ({ ...prev, contractLength: value }))}>
-                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1A1A1A] border-[#444]">
-                              <SelectItem value="3">3 months</SelectItem>
-                              <SelectItem value="6">6 months</SelectItem>
-                              <SelectItem value="12">12 months</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Label className="text-sm font-medium text-gray-400">
+                            Contract Length: {contractData.contractLength} months
+                            <span className="text-red-400 ml-1 text-xs">*</span>
+                          </Label>
+                          <div className={`space-y-3 ${
+                            flashingFields.includes('contractLength') 
+                              ? 'animate-pulse' 
+                              : ''
+                          }`}>
+                            <Slider
+                              value={[parseInt(contractData.contractLength) || 6]}
+                              onValueChange={(value) => setContractData(prev => ({ ...prev, contractLength: value[0].toString() }))}
+                              max={36}
+                              min={1}
+                              step={1}
+                              className="w-full"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              {[3, 6, 12, 15, 24, 36].map(months => (
+                                <Button
+                                  key={months}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setContractData(prev => ({ ...prev, contractLength: months.toString() }))}
+                                  className={`text-xs px-2 py-1 ${
+                                    parseInt(contractData.contractLength) === months
+                                      ? 'bg-gray-600 text-white border-gray-600'
+                                      : 'bg-[#1A1A1A] border-[#444] text-gray-300 hover:bg-[#333]'
+                                  } ${
+                                    flashingFields.includes('contractLength') 
+                                      ? 'border-red-500 bg-red-900/20' 
+                                      : ''
+                                  }`}
+                                >
+                                  {months}m
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-gray-400">Start Date</Label>
+                          <Label className="text-sm font-medium text-gray-400">
+                            Start Date
+                            <span className="text-red-400 ml-1 text-xs">*</span>
+                          </Label>
                           <Input
                             type="date"
                             value={contractData.startDate}
                             onChange={(e) => setContractData(prev => ({ ...prev, startDate: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white"
+                            className={`bg-[#1A1A1A] border-[#444] text-white ${
+                              flashingFields.includes('startDate') 
+                                ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                : ''
+                            }`}
                           />
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium text-gray-400">Payment Terms</Label>
+                          <Label className="text-sm font-medium text-gray-400">
+                            Payment Terms
+                            <span className="text-red-400 ml-1 text-xs">*</span>
+                          </Label>
                           <Select value={contractData.paymentTerms} onValueChange={(value) => setContractData(prev => ({ ...prev, paymentTerms: value }))}>
-                            <SelectTrigger className="bg-[#1A1A1A] border-[#444] text-white">
+                            <SelectTrigger className={`bg-[#1A1A1A] border-[#444] text-white ${
+                              flashingFields.includes('paymentTerms') 
+                                ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                : ''
+                            }`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1A1A1A] border-[#444]">
@@ -5549,13 +5626,20 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-gray-400">Cancellation Notice (days)</Label>
+                          <Label className="text-sm font-medium text-gray-400">
+                            Cancellation Notice (days)
+                            <span className="text-red-400 ml-1 text-xs">*</span>
+                          </Label>
                           <Input
                             type="number"
                             placeholder="30"
                             value={contractData.cancellationNotice}
                             onChange={(e) => setContractData(prev => ({ ...prev, cancellationNotice: e.target.value }))}
-                            className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                              flashingFields.includes('cancellationNotice') 
+                                ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                : ''
+                            }`}
                           />
                         </div>
                       </div>
@@ -5569,7 +5653,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   }`}>
                     <h3 className="text-lg font-semibold text-white mb-4">
                       Services Included 
-                      <span className="text-red-400 ml-1">*Required (select at least one)</span>
+                      <span className="text-red-400 ml-1 text-xs">*</span>
                     </h3>
                     <div className="space-y-3">
                       {Object.entries(contractData.servicesIncluded).map(([service, included]) => (
