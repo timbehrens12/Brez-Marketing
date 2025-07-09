@@ -2226,7 +2226,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   const copyToClipboard = async (text: string, type: string, fieldId?: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      toast.success(`${type} copied to clipboard!`)
+      toast(`${type} copied to clipboard!`, {
+        style: {
+          background: '#2A2A2A',
+          color: '#E5E5E5',
+          border: '1px solid #444',
+        },
+        icon: '📋',
+      })
       
       // Add visual feedback
       if (fieldId) {
