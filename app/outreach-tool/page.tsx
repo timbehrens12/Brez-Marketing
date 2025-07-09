@@ -3638,38 +3638,22 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-4">
-                    {/* Quick Actions */}
+                  {/* Progress Today */}
                   <div className="space-y-2">
-                      <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
-                      <div className="space-y-2">
-                        <Button
-                          onClick={() => {
-                            // Reset all filters first, then apply specific ones
-                            setFilters({
-                              hasPhone: false,
-                              hasEmail: false,
-                              hasWebsite: false,
-                              hasSocials: false,
-                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                              selectedNicheFilter: [],
-                              statusFilter: 'all',
-                            minScore: 80,
-                            hasOwnerName: false,
-                            businessTypeFilter: [],
-                            locationFilter: { city: '', state: '' },
-                            outreachMethodFilter: [],
-                            lastContactedFilter: 'all',
-                            scoreRange: { min: 0, max: 100 }
-                            });
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                          <Star className="h-3 w-3 mr-2" />
-                          View High-Score Leads
-                        </Button>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Progress Today</span>
+                      <span className="text-gray-200">
+                        {completedTodos.size} / {todos.length} completed
+                      </span>
                     </div>
+                    {todos.length > 0 && (
+                      <div className="w-full bg-[#2A2A2A] rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${(completedTodos.size / todos.length) * 100}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Todo List */}
@@ -3798,22 +3782,38 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       )}
                       </div>
 
-                  {/* Summary */}
+                    {/* Quick Actions */}
                   <div className="pt-3 border-t border-[#333] space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Progress Today</span>
-                      <span className="text-gray-200">
-                        {completedTodos.size} / {todos.length} completed
-                      </span>
+                      <h4 className="text-xs font-medium text-gray-400 mb-2">Quick Actions</h4>
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => {
+                            // Reset all filters first, then apply specific ones
+                            setFilters({
+                              hasPhone: false,
+                              hasEmail: false,
+                              hasWebsite: false,
+                              hasSocials: false,
+                              socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
+                              selectedNicheFilter: [],
+                              statusFilter: 'all',
+                            minScore: 80,
+                            hasOwnerName: false,
+                            businessTypeFilter: [],
+                            locationFilter: { city: '', state: '' },
+                            outreachMethodFilter: [],
+                            lastContactedFilter: 'all',
+                            scoreRange: { min: 0, max: 100 }
+                            });
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                          <Star className="h-3 w-3 mr-2" />
+                          View High-Score Leads
+                        </Button>
                     </div>
-                    {todos.length > 0 && (
-                      <div className="w-full bg-[#2A2A2A] rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-gray-600 to-gray-400 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${(completedTodos.size / todos.length) * 100}%` }}
-                        />
-                  </div>
-                )}
                   </div>
                 </div>
               </CardContent>
