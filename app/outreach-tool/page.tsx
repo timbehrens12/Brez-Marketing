@@ -554,7 +554,7 @@ export default function OutreachToolPage() {
         title: `${qualifiedLeads.length} qualified leads are ready for contracts`,
         description: 'Use the bulk contract generator to efficiently create contracts for all qualified leads in sequence',
         count: qualifiedLeads.length,
-        action: 'Start Bulk Contract Generation',
+        action: 'Generate Contracts',
         filterAction: () => {
           if (qualifiedLeads.length > 0) {
             setQualifiedContractQueue(qualifiedLeads)
@@ -3747,7 +3747,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   </div>
                                 )}
                                 
-                                <div className="flex items-start gap-3 w-full">
+                                <div className="flex items-start gap-3">
                                   <div className="flex-shrink-0 mt-0.5">
                                     <Checkbox
                                       checked={isCompleted}
@@ -3768,7 +3768,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       className="border-[#444] data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
                                     />
                                   </div>
-                                  <div className="flex-1 overflow-hidden">
+                                  <div className="flex-1 min-w-0 pr-4">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className={`text-sm font-medium ${
                                         isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
@@ -3782,18 +3782,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       {todo.description}
                                     </p>
                                     {!isCompleted && (
-                                      <div className="overflow-x-auto">
-                                        <Button
-                                          onClick={() => {
-                                            todo.filterAction()
-                                          }}
-                            size="sm"
-                                          variant="outline"
-                                          className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white whitespace-nowrap flex-shrink-0"
-                          >
-                                          {todo.action}
-                          </Button>
-                                      </div>
+                                      <Button
+                                        onClick={() => {
+                                          todo.filterAction()
+                                        }}
+                          size="sm"
+                                        variant="outline"
+                                        className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                        >
+                                        {todo.action}
+                        </Button>
                                     )}
                       </div>
                     </div>
@@ -4095,43 +4093,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         Generate Contract
                       </Button>
                       
-                      {/* Next/Skip Buttons for Bulk Mode */}
-                      {qualifiedContractQueue.length > 0 && (
-                        <>
-                          <Button
-                            onClick={() => {
-                              if (currentContractIndex < qualifiedContractQueue.length - 1) {
-                                const newIndex = currentContractIndex + 1
-                                setCurrentContractIndex(newIndex)
-                                setSelectedCampaignLead(qualifiedContractQueue[newIndex])
-                              } else {
-                                // Finished all contracts
-                                setQualifiedContractQueue([])
-                                setCurrentContractIndex(0)
-                                setIsContractMode(false)
-                                setShowContractGenerator(false)
-                                toast.success('All contracts generated!')
-                              }
-                            }}
-                            variant="outline"
-                            className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
-                          >
-                            {currentContractIndex < qualifiedContractQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue'}
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setQualifiedContractQueue([])
-                              setCurrentContractIndex(0)
-                              setIsContractMode(false)
-                              setShowContractGenerator(false)
-                            }}
-                            variant="ghost"
-                            className="text-gray-400 hover:text-white"
-                          >
-                            ✕
-                          </Button>
-                        </>
-                      )}
+
                     </div>
                   </div>
                 </div>
@@ -4243,7 +4205,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               )}
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
-              {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
+              {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0 || qualifiedContractQueue.length > 0) && (
                 <div className="px-6 pt-4 border-t border-[#444] space-y-3">
                   {/* Snooze Options (only show for follow-up mode) */}
                   {isFollowUpMode && (
@@ -4289,7 +4251,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="flex gap-3">
                     <Button
                       onClick={() => {
-                        if (isFollowUpMode) {
+                        if (qualifiedContractQueue.length > 0) {
+                          // Contract mode navigation
+                          if (currentContractIndex > 0) {
+                            const newIndex = currentContractIndex - 1
+                            setCurrentContractIndex(newIndex)
+                            setSelectedCampaignLead(qualifiedContractQueue[newIndex])
+                          }
+                        } else if (isFollowUpMode) {
                           if (currentFollowUpIndex > 0) {
                             const newIndex = currentFollowUpIndex - 1
                             setCurrentFollowUpIndex(newIndex)
@@ -4309,7 +4278,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }
                         }
                       }}
-                      disabled={isFollowUpMode ? currentFollowUpIndex === 0 : currentQueueIndex === 0}
+                      disabled={
+                        qualifiedContractQueue.length > 0 ? currentContractIndex === 0 :
+                        isFollowUpMode ? currentFollowUpIndex === 0 : currentQueueIndex === 0
+                      }
                       variant="outline"
                       size="sm"
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white disabled:opacity-50"
@@ -4319,7 +4291,22 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     
                     <Button
                       onClick={() => {
-                        if (isFollowUpMode) {
+                        if (qualifiedContractQueue.length > 0) {
+                          // Contract mode navigation
+                          if (currentContractIndex < qualifiedContractQueue.length - 1) {
+                            const newIndex = currentContractIndex + 1
+                            setCurrentContractIndex(newIndex)
+                            setSelectedCampaignLead(qualifiedContractQueue[newIndex])
+                          } else {
+                            // Reached end of contract queue
+                            setShowOutreachOptions(false)
+                            setQualifiedContractQueue([])
+                            setCurrentContractIndex(0)
+                            setIsContractMode(false)
+                            setShowContractGenerator(false)
+                            toast.success('All contracts processed!')
+                          }
+                        } else if (isFollowUpMode) {
                           if (currentFollowUpIndex < contactedFollowUpQueue.length - 1) {
                             const newIndex = currentFollowUpIndex + 1
                             setCurrentFollowUpIndex(newIndex)
@@ -4360,9 +4347,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                     >
-                      {isFollowUpMode 
-                        ? (currentFollowUpIndex < contactedFollowUpQueue.length - 1 ? 'Skip to Next →' : 'Finish Follow-ups')
-                        : (currentQueueIndex < pendingOutreachQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue')
+                      {qualifiedContractQueue.length > 0
+                        ? (currentContractIndex < qualifiedContractQueue.length - 1 ? 'Skip to Next →' : 'Finish Contracts')
+                        : isFollowUpMode 
+                          ? (currentFollowUpIndex < contactedFollowUpQueue.length - 1 ? 'Skip to Next →' : 'Finish Follow-ups')
+                          : (currentQueueIndex < pendingOutreachQueue.length - 1 ? 'Skip to Next →' : 'Finish Queue')
                       }
                     </Button>
                     
@@ -4374,6 +4363,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         setContactedFollowUpQueue([])
                         setCurrentFollowUpIndex(0)
                         setIsFollowUpMode(false)
+                        setQualifiedContractQueue([])
+                        setCurrentContractIndex(0)
+                        setIsContractMode(false)
+                        setShowContractGenerator(false)
                         setGeneratedMessage('')
                         setMessageSubject('')
                       }}
@@ -4382,7 +4375,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                     >
                       <X className="h-4 w-4 mr-1" />
-                      {isFollowUpMode ? 'Exit Follow-ups' : 'Exit Queue'}
+                      {qualifiedContractQueue.length > 0 ? 'Exit Contracts' : 
+                       isFollowUpMode ? 'Exit Follow-ups' : 'Exit Queue'}
                     </Button>
                   </div>
                 </div>
