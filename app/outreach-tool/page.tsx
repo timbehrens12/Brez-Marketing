@@ -2862,7 +2862,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       Filters
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials ||
                         filters.statusFilter !== 'all' || filters.selectedNicheFilter.length > 0 || filters.minScore > 0) && (
-                        <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
+                        <Badge className="ml-2 bg-gray-600/20 text-gray-400" variant="secondary">
                           Active
                         </Badge>
                       )}
@@ -3605,24 +3605,42 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   {methodsUsed.length > 0 && <Info className="h-3 w-3 ml-1" />}
                                 </Button>
                               ) : (
-                                // For 'contacted' status - show follow-up option
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-yellow-300 hover:bg-[#333] hover:text-yellow-200"
-                                  onClick={() => {
-                                    // Only open follow-up for contacted leads
-                                    if (campaignLead.status === 'contacted') {
-                                      setSelectedCampaignLead(campaignLead)
-                                      setIsFollowUpMode(true)
-                                      setShowContractGenerator(false) // Clear contract state
-                                      setShowOutreachOptions(true)
-                                    }
-                                  }}
-                                >
-                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                  Follow Up
-                                </Button>
+                                // For 'contacted' status - show follow-up option only after 3+ days
+                                (() => {
+                                  // Check if enough time has passed for follow-up
+                                  if (!campaignLead.last_contacted_at) return null;
+                                  
+                                  const contactDate = new Date(campaignLead.last_contacted_at);
+                                  const now = new Date();
+                                  const daysSinceContact = Math.floor((now.getTime() - contactDate.getTime()) / (1000 * 60 * 60 * 24));
+                                  
+                                  // Only show Follow Up button if 3+ days have passed since last contact
+                                  if (daysSinceContact < 3) {
+                                    return (
+                                      <div className="h-8 text-xs text-gray-500 flex items-center">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        Follow-up in {3 - daysSinceContact} day{3 - daysSinceContact === 1 ? '' : 's'}
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  return (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-yellow-300 hover:bg-[#333] hover:text-yellow-200"
+                                      onClick={() => {
+                                        setSelectedCampaignLead(campaignLead)
+                                        setIsFollowUpMode(true)
+                                        setShowContractGenerator(false) // Clear contract state
+                                        setShowOutreachOptions(true)
+                                      }}
+                                    >
+                                      <RefreshCw className="h-3 w-3 mr-1" />
+                                      Follow Up ({daysSinceContact}d)
+                                    </Button>
+                                  );
+                                })()
                               )}
                           </TableCell>
                         </TableRow>
