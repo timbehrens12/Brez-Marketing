@@ -3747,7 +3747,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                   </div>
                                 )}
                                 
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 w-full">
                                   <div className="flex-shrink-0 mt-0.5">
                                     <Checkbox
                                       checked={isCompleted}
@@ -3768,7 +3768,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       className="border-[#444] data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600"
                                     />
                                   </div>
-                                  <div className="flex-1 min-w-0 pr-4">
+                                  <div className="flex-1 overflow-hidden">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className={`text-sm font-medium ${
                                         isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
@@ -3782,16 +3782,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       {todo.description}
                                     </p>
                                     {!isCompleted && (
-                                      <Button
-                                        onClick={() => {
-                                          todo.filterAction()
-                                        }}
-                          size="sm"
-                                        variant="outline"
-                                        className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                                        {todo.action}
-                        </Button>
+                                      <div className="overflow-x-auto">
+                                        <Button
+                                          onClick={() => {
+                                            todo.filterAction()
+                                          }}
+                            size="sm"
+                                          variant="outline"
+                                          className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white whitespace-nowrap flex-shrink-0"
+                          >
+                                          {todo.action}
+                          </Button>
+                                      </div>
                                     )}
                       </div>
                     </div>
