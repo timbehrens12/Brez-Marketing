@@ -4032,7 +4032,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span>{qualifiedContractQueue.length > 0 ? 'AI Contract Generator' : isFollowUpMode ? 'AI Follow-up Studio' : 'AI Outreach Studio'}</span>
+                  <span>{qualifiedContractQueue.length > 0 ? 'AI Contract Generator' : isFollowUpMode ? '🔄 AI Follow-up Studio' : '🚀 AI Outreach Studio'}</span>
                   {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0 || qualifiedContractQueue.length > 0) && (
                     <span className="text-sm text-gray-400 font-normal">
                       {qualifiedContractQueue.length > 0 
@@ -4156,11 +4156,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-200 mb-1">
-                      {isFollowUpMode ? 'AI-Powered Follow-up Messages' : 'AI-Powered Personalization'}
+                      {isFollowUpMode ? '🔄 AI-Powered Follow-up Messages' : '🚀 AI-Powered Personalization'}
                     </h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">
-                      {isFollowUpMode 
-                        ? 'Advanced AI generates strategic follow-up messages that re-engage leads without being pushy, using context from your previous outreach to maximize response rates.'
+                                          <p className="text-sm text-gray-400 leading-relaxed">
+                        {isFollowUpMode
+                          ? '🎯 Advanced AI generates strategic follow-up messages that re-engage previously contacted leads without being pushy, acknowledging your prior outreach to maximize response rates.'
                         : 'Advanced AI analyzes this lead\'s profile, industry, and social presence to generate highly personalized outreach messages with superior conversion rates.'
                       }
                     </p>
