@@ -479,15 +479,19 @@ export default function OutreachToolPage() {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(now.getDate() - 7)
     
-    // Get leads that need follow-up (5+ days old and still contacted)
+    // Get leads that need follow-up (5+ days old and still contacted, not snoozed)
     const needsFollowUp = contactedLeads.filter(cl => {
       if (!cl.last_contacted_at) return false
+      // Exclude snoozed leads (those with future next_follow_up_date)
+      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
       return new Date(cl.last_contacted_at) < fiveDaysAgo
     })
     
-    // Get leads going cold (7+ days old)
+    // Get leads going cold (7+ days old, not snoozed)
     const goingCold = contactedLeads.filter(cl => {
       if (!cl.last_contacted_at) return false
+      // Exclude snoozed leads (those with future next_follow_up_date)
+      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
       return new Date(cl.last_contacted_at) < sevenDaysAgo
     })
 
@@ -496,8 +500,8 @@ export default function OutreachToolPage() {
     // Generate specific todo items for individual leads
     
     // High priority - Responded leads (need immediate attention)
-    if (respondedLeads.length >= 3) {
-      // If 3+ responded leads, show bulk action instead of individual items
+    if (respondedLeads.length > 1) {
+      // If 2+ responded leads, show bulk action instead of individual items
       newTodos.push({
         id: 'bulk_responded_many',
         type: 'responded',
@@ -517,7 +521,7 @@ export default function OutreachToolPage() {
         }
       })
     } else {
-      // Show individual responded leads if less than 3
+      // Show individual responded leads if only 1
     respondedLeads.forEach(cl => {
       if (cl.lead) {
       newTodos.push({
@@ -541,8 +545,8 @@ export default function OutreachToolPage() {
     }
 
     // High priority - Qualified leads (ready to close)
-    if (qualifiedLeads.length >= 3) {
-      // If 3+ qualified leads, show bulk contract generation instead of individual items
+    if (qualifiedLeads.length > 1) {
+      // If 2+ qualified leads, show bulk contract generation instead of individual items
       newTodos.push({
         id: 'bulk_contracts_many',
         type: 'hot_leads',
@@ -562,7 +566,7 @@ export default function OutreachToolPage() {
         }
       })
     } else {
-      // Show individual qualified leads if less than 3
+      // Show individual qualified leads if only 1
       qualifiedLeads.forEach(cl => {
         if (cl.lead) {
         newTodos.push({
@@ -642,6 +646,8 @@ export default function OutreachToolPage() {
         filterAction: () => {
           const oldContactedLeads = campaignLeads.filter(cl => {
             if (!cl.last_contacted_at || cl.status !== 'contacted') return false
+            // Exclude snoozed leads
+            if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
             return new Date(cl.last_contacted_at) < sevenDaysAgo
           })
           if (oldContactedLeads.length > 0) {
@@ -680,16 +686,36 @@ export default function OutreachToolPage() {
       const remainingFollowUps = needsFollowUp.filter(cl => !goingCold.includes(cl))
       if (remainingFollowUps.length > 0) {
         newTodos.push({
-          id: 'bulk_followup_general',
+          id: 'bulk_followup_5days',
           type: 'follow_up',
           priority: 'medium',
-          title: `${remainingFollowUps.length} leads need follow-up outreach`,
-          description: 'These leads were contacted 5-6 days ago with no response. Consider follow-up or status updates.',
+          title: `${remainingFollowUps.length} leads were contacted 5+ days ago - time for follow-up`,
+          description: 'These leads need follow-up outreach or status updates. Use bulk follow-up to process efficiently.',
           count: remainingFollowUps.length,
-          action: 'Review Follow-ups',
-        filterAction: () => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))
-      })
-    }
+          action: 'Start Bulk Follow-up',
+          filterAction: () => {
+            const fiveDayOldLeads = campaignLeads.filter(cl => {
+              if (!cl.last_contacted_at || cl.status !== 'contacted') return false
+              // Exclude snoozed leads
+              if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
+              const fiveDaysAgo = new Date()
+              fiveDaysAgo.setDate(new Date().getDate() - 5)
+              const sevenDaysAgo = new Date()
+              sevenDaysAgo.setDate(new Date().getDate() - 7)
+              const contactDate = new Date(cl.last_contacted_at)
+              // Only include leads that are 5+ days old but not 7+ days old (those are handled separately)
+              return contactDate < fiveDaysAgo && contactDate >= sevenDaysAgo
+            })
+            if (fiveDayOldLeads.length > 0) {
+              setContactedFollowUpQueue(fiveDayOldLeads)
+              setCurrentFollowUpIndex(0)
+              setSelectedCampaignLead(fiveDayOldLeads[0])
+              setIsFollowUpMode(true)
+              setShowOutreachOptions(true)
+            }
+          }
+        })
+      }
     }
 
     // Note: Going cold leads are now handled in the bulk follow-up section above
@@ -697,9 +723,57 @@ export default function OutreachToolPage() {
 
 
 
+    // Check for leads whose snooze period has expired
+    const unsnoozedLeads = contactedLeads.filter(cl => {
+      if (!cl.next_follow_up_date) return false
+      return new Date(cl.next_follow_up_date) <= now
+    })
+
+    if (unsnoozedLeads.length > 1) {
+      newTodos.push({
+        id: 'bulk_unsnoozed',
+        type: 'follow_up',
+        priority: 'high',
+        title: `${unsnoozedLeads.length} snoozed leads are ready for follow-up`,
+        description: 'These leads were snoozed and are now ready for re-engagement. Time to follow up!',
+        count: unsnoozedLeads.length,
+        action: 'Start Bulk Follow-up',
+        filterAction: () => {
+          if (unsnoozedLeads.length > 0) {
+            setContactedFollowUpQueue(unsnoozedLeads)
+            setCurrentFollowUpIndex(0)
+            setSelectedCampaignLead(unsnoozedLeads[0])
+            setIsFollowUpMode(true)
+            setShowOutreachOptions(true)
+          }
+        }
+      })
+    } else if (unsnoozedLeads.length === 1) {
+      const cl = unsnoozedLeads[0]
+      if (cl.lead) {
+        newTodos.push({
+          id: `unsnoozed_${cl.id}`,
+          type: 'follow_up',
+          priority: 'high',
+          title: `Follow up with ${cl.lead.business_name} (snooze expired)`,
+          description: `${cl.lead.business_name} was snoozed and is now ready for re-engagement`,
+          count: 1,
+          action: 'Follow Up',
+          filterAction: () => {
+            setSelectedCampaignLead(cl)
+            setIsFollowUpMode(true)
+            setShowOutreachOptions(true)
+          }
+        })
+      }
+    }
+
     // Add status update reminders
     const oldContactedLeads = contactedLeads.filter(cl => {
       if (!cl.last_contacted_at) return false
+      // Exclude snoozed leads and leads that are already covered by unsnoozed todos
+      if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
+      if (unsnoozedLeads.includes(cl)) return false
       return new Date(cl.last_contacted_at) < threeDaysAgo
     })
 
@@ -1834,6 +1908,57 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         return ['rejected'] // Can't change from rejected (but this shouldn't show anyway)
       default:
         return ['pending', 'contacted', 'responded', 'qualified', 'signed', 'rejected']
+    }
+  }
+
+  const snoozeLead = async (campaignLeadId: string, days: number) => {
+    try {
+      const supabase = await getSupabaseClient()
+      
+      // Calculate the snooze date
+      const snoozeDate = new Date()
+      snoozeDate.setDate(snoozeDate.getDate() + days)
+      
+      const { error } = await supabase
+        .from('outreach_campaign_leads')
+        .update({ 
+          next_follow_up_date: snoozeDate.toISOString()
+        })
+        .eq('id', campaignLeadId)
+
+      if (error) throw error
+      
+      // Update local state
+      setCampaignLeads(prev => prev.map(cl => 
+        cl.id === campaignLeadId 
+          ? { ...cl, next_follow_up_date: snoozeDate.toISOString() }
+          : cl
+      ))
+      
+      toast.success(`Lead snoozed for ${days} days! Will reappear in follow-up queue on ${snoozeDate.toLocaleDateString()}`)
+      
+      // If in bulk mode, move to next lead or finish queue
+      if (contactedFollowUpQueue.length > 0) {
+        const remainingLeads = contactedFollowUpQueue.filter(cl => cl.id !== campaignLeadId)
+        setContactedFollowUpQueue(remainingLeads)
+        
+        if (remainingLeads.length > 0) {
+          // If there are more leads, stay at same index (which becomes the next lead)
+          const newIndex = Math.min(currentFollowUpIndex, remainingLeads.length - 1)
+          setCurrentFollowUpIndex(newIndex)
+          setSelectedCampaignLead(remainingLeads[newIndex])
+        } else {
+          // No more leads in queue
+          setShowOutreachOptions(false)
+          setContactedFollowUpQueue([])
+          setCurrentFollowUpIndex(0)
+          setIsFollowUpMode(false)
+          toast.success('All follow-ups processed!')
+        }
+      }
+    } catch (error) {
+      console.error('Error snoozing lead:', error)
+      toast.error('Failed to snooze lead. Please try again.')
     }
   }
 
@@ -4117,7 +4242,48 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               
               {/* Bulk Navigation Controls (only show when in bulk mode) */}
               {(pendingOutreachQueue.length > 0 || contactedFollowUpQueue.length > 0) && (
-                <div className="px-6 pt-4 border-t border-[#444]">
+                <div className="px-6 pt-4 border-t border-[#444] space-y-3">
+                  {/* Snooze Options (only show for follow-up mode) */}
+                  {isFollowUpMode && (
+                    <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-500/30 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-300">Snooze this lead</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => selectedCampaignLead && snoozeLead(selectedCampaignLead.id, 5)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-yellow-200 hover:border-yellow-300"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          5 Days
+                        </Button>
+                        <Button
+                          onClick={() => selectedCampaignLead && snoozeLead(selectedCampaignLead.id, 7)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-yellow-200 hover:border-yellow-300"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          7 Days
+                        </Button>
+                        <Button
+                          onClick={() => selectedCampaignLead && snoozeLead(selectedCampaignLead.id, 14)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-yellow-200 hover:border-yellow-300"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          14 Days
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">Lead will reappear in follow-up queue after snooze period</p>
+                    </div>
+                  )}
+                  
+                  {/* Navigation Controls */}
                   <div className="flex gap-3">
                     <Button
                       onClick={() => {
