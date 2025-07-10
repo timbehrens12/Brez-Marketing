@@ -1758,8 +1758,8 @@ export default function LeadGeneratorPage() {
   }
 
   return (
-    <div className="bg-[#0A0A0A] text-white p-6 pb-6">
-      <div className="w-full space-y-6 min-h-[calc(100vh-12rem)]">
+    <div className="bg-[#0A0A0A] text-white p-6">
+      <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
