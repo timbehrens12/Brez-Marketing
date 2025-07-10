@@ -388,17 +388,17 @@ export default function OutreachToolPage() {
   }, [userId])
 
   const loadPlatformConnections = useCallback(async () => {
-    if (!selectedBrandId || isLoadingConnections) return
+    if (!userId) return
 
     try {
       setIsLoadingConnections(true)
-      console.log('Loading platform connections for brand:', selectedBrandId)
+      console.log('Loading platform connections for user:', userId)
       const supabase = await getSupabaseClient()
       
       const { data, error } = await supabase
         .from('platform_connections')
         .select('*')
-        .eq('brand_id', selectedBrandId)
+        .eq('user_id', userId)
         .eq('status', 'active')
 
       if (error) throw error
@@ -411,7 +411,7 @@ export default function OutreachToolPage() {
     } finally {
       setIsLoadingConnections(false)
     }
-  }, [selectedBrandId, isLoadingConnections])
+  }, [userId])
 
   const loadInitialData = useCallback(async () => {
     console.log('🔄 loadInitialData called, userId:', userId)
@@ -985,14 +985,15 @@ export default function OutreachToolPage() {
     }
   }, [])
 
-  // Load platform connections when selected brand changes
+  // Load platform connections when component mounts (independent of brand selection)
   useEffect(() => {
-    if (selectedBrandId) {
+    // Only load once when userId is available, not when brand changes
+    if (userId) {
       loadPlatformConnections()
     } else {
       setPlatformConnections([])
     }
-  }, [selectedBrandId, loadPlatformConnections])
+  }, [userId, loadPlatformConnections])
 
   // Auto-set responseMethod to first available platform when lead is selected
   useEffect(() => {

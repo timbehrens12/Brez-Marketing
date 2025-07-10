@@ -726,25 +726,10 @@ export default function MarketingAssistantPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-[#0F0F0F]">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Brain className="h-6 w-6 text-purple-500" />
-                Marketing Assistant
-              </h1>
-            </div>
-            
-
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Controls Header */}
-      <div className="px-6 py-4 bg-[#0F0F0F] border-b border-gray-800">
-        <div className="flex items-center justify-between">
+      {/* Top Metrics */}
+      <div className="px-6 py-6">
+        {/* Header with controls moved inline */}
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
             {lastRefreshTime && (
@@ -767,19 +752,16 @@ export default function MarketingAssistantPage() {
               variant="outline"
               size="sm"
               onClick={() => loadAllData()}
-              className="bg-[#1A1A1A] border-gray-700 hover:bg-[#252525]"
+              className="bg-[#1A1A1A] border-[#333] hover:bg-[#252525]"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Top Metrics */}
-      <div className="px-6 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <div className="bg-[#1A1A1A] border border-gray-800 hover:border-gray-700 transition-colors rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] hover:border-[#444] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Total Spend</p>
@@ -793,7 +775,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 hover:border-gray-700 transition-colors rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] hover:border-[#444] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Total ROAS</p>
@@ -814,7 +796,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Active Campaigns</p>
@@ -824,7 +806,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Avg CTR</p>
@@ -834,7 +816,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Conversions</p>
@@ -844,7 +826,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Impressions</p>
@@ -854,7 +836,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Clicks</p>
@@ -864,7 +846,7 @@ export default function MarketingAssistantPage() {
             </div>
           </div>
           
-          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+          <div className="bg-[#111] border-[#333] rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Avg CPC</p>
@@ -877,7 +859,7 @@ export default function MarketingAssistantPage() {
         
         {/* Quick Performance Summary */}
         {campaigns.length > 0 && (
-          <div className="mt-6 p-4 bg-[#1A1A1A] border border-gray-800 rounded-lg">
+          <div className="mt-6 p-4 bg-[#111] border-[#333] rounded-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-white mb-1">Account Performance Summary</h3>
@@ -910,12 +892,15 @@ export default function MarketingAssistantPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Campaigns Section - 2 columns */}
           <div className="lg:col-span-2">
-            <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg">
-              <div className="p-6 border-b border-gray-800">
+            <div className="bg-[#111] border-[#333] rounded-lg shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+              <div className="p-4 pb-2 border-b border-[#333]">
                 <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Campaign Performance</h3>
-                    <p className="text-sm text-gray-400">Comprehensive campaign analytics and optimization insights</p>
+                  <div className="flex items-center gap-3">
+                    <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png" className="w-5 h-5" alt="Meta Logo" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Campaign Performance</h3>
+                      <p className="text-sm text-gray-400">Meta advertising performance and optimization insights</p>
+                    </div>
                   </div>
                   
                   {/* Filters */}
@@ -924,14 +909,14 @@ export default function MarketingAssistantPage() {
                       placeholder="Search campaigns..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 h-8 bg-[#0A0A0A] border-gray-700 text-white placeholder-gray-500"
+                      className="w-48 h-8 bg-[#1A1A1A] border-[#333] text-white placeholder-gray-500"
                     />
                     
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-32 h-8 bg-[#0A0A0A] border-gray-700 text-white">
+                      <SelectTrigger className="w-32 h-8 bg-[#1A1A1A] border-[#333] text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-gray-700">
+                      <SelectContent className="bg-[#111] border-[#333]">
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="ACTIVE">Active</SelectItem>
                         <SelectItem value="PAUSED">Paused</SelectItem>
@@ -940,25 +925,71 @@ export default function MarketingAssistantPage() {
                   </div>
                 </div>
                 
-                {/* Platform Tabs */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                    <span className="text-sm font-medium text-white">Meta (Facebook/Instagram)</span>
-                    <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400">
-                      {campaigns.length} campaigns
-                    </Badge>
+                {/* Platform Section Header */}
+                <div className="bg-gradient-to-r from-blue-900/30 via-blue-800/20 to-blue-900/30 p-4 rounded-lg border border-blue-700/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full shadow-lg"></div>
+                        <span className="text-sm font-medium text-white">Meta Business Platform</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge className="bg-blue-600/20 text-blue-400 border-blue-500/30 text-xs">
+                          {campaigns.length} Campaign{campaigns.length !== 1 ? 's' : ''}
+                        </Badge>
+                        <Badge className="bg-green-600/20 text-green-400 border-green-500/30 text-xs">
+                          {campaigns.filter(c => c.status === 'ACTIVE').length} Active
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-3 w-3" />
+                        <span>Real-time sync</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>Last 7 days</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Activity className="h-3 w-3" />
-                    <span>Real-time data</span>
+                </div>
+                
+                {/* Platform Performance Summary */}
+                <div className="mt-3 grid grid-cols-5 gap-4">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">Total Spend</p>
+                    <p className="text-sm font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">ROAS</p>
+                    <p className={cn(
+                      "text-sm font-bold",
+                      totalMetrics.roas >= 3 ? "text-green-400" : 
+                      totalMetrics.roas >= 2 ? "text-yellow-400" : "text-red-400"
+                    )}>
+                      {totalMetrics.roas.toFixed(2)}x
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">Impressions</p>
+                    <p className="text-sm font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">CTR</p>
+                    <p className="text-sm font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-1">Conversions</p>
+                    <p className="text-sm font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="p-6">
+              <div className="p-4">
                 <ScrollArea className="h-[600px] pr-4">
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {isLoadingCampaigns ? (
                       <div className="flex items-center justify-center py-12">
                         <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
@@ -974,238 +1005,255 @@ export default function MarketingAssistantPage() {
                           <AccordionItem
                             key={campaign.campaign_id}
                             value={campaign.campaign_id}
-                            className="border-b border-gray-800"
+                            className="border-0"
                           >
-                            <AccordionTrigger
-                              onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
-                              className="hover:no-underline"
-                            >
-                              <div className="flex items-center justify-between w-full pr-4">
-                                <div className="flex items-center gap-3">
-                                  <Badge
-                                    variant={campaign.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                    className={cn(
-                                      campaign.status === 'ACTIVE' 
-                                        ? 'bg-green-500/20 text-green-500' 
-                                        : 'bg-gray-500/20 text-gray-400'
-                                    )}
-                                  >
-                                    {campaign.status}
-                                  </Badge>
-                                  <div className="text-left">
-                                    <p className="font-medium text-white">{campaign.campaign_name}</p>
-                                    <p className="text-xs text-gray-400">{campaign.objective}</p>
-                                  </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-8 gap-4 text-right">
-                                  <div>
-                                    <p className="text-xs text-gray-400">Spend</p>
-                                    <p className="font-medium text-white">{formatCurrency(campaign.spent)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">ROAS</p>
-                                    <p className={cn(
-                                      "font-medium",
-                                      campaign.roas >= 2 ? "text-green-500" : 
-                                      campaign.roas >= 1 ? "text-yellow-500" : "text-red-500"
-                                    )}>
-                                      {campaign.roas.toFixed(2)}x
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">Impressions</p>
-                                    <p className="font-medium text-white">{formatNumber(campaign.impressions)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">Reach</p>
-                                    <p className="font-medium text-white">{formatNumber(campaign.reach)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">CTR</p>
-                                    <p className="font-medium text-white">{campaign.ctr.toFixed(2)}%</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">CPC</p>
-                                    <p className="font-medium text-white">{formatCurrency(campaign.cpc)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">Conv.</p>
-                                    <p className="font-medium text-white">{formatNumber(campaign.conversions)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400">CPConv</p>
-                                    <p className="font-medium text-white">{formatCurrency(campaign.cost_per_conversion)}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            
-                            <AccordionContent>
-                              <div className="pl-12 space-y-3">
-                                {/* Campaign Analysis */}
-                                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
-                                  <div className="grid grid-cols-4 gap-4 text-sm">
-                                    <div>
-                                      <p className="text-gray-400">Budget</p>
-                                      <p className="text-white font-medium">{formatCurrency(campaign.budget)}</p>
-                                      <p className="text-xs text-gray-500">{campaign.budget_type}</p>
+                            <div className="bg-[#1A1A1A] border border-[#333] rounded-lg mb-3 hover:border-[#444] transition-colors">
+                              <AccordionTrigger
+                                onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
+                                className="px-4 py-3 hover:no-underline"
+                              >
+                                <div className="flex items-center justify-between w-full pr-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex flex-col items-center gap-1">
+                                      <Badge
+                                        variant={campaign.status === 'ACTIVE' ? 'default' : 'secondary'}
+                                        className={cn(
+                                          "text-xs",
+                                          campaign.status === 'ACTIVE' 
+                                            ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                                            : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                                        )}
+                                      >
+                                        {campaign.status}
+                                      </Badge>
+                                      <div className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        campaign.status === 'ACTIVE' ? "bg-green-500" : "bg-gray-500"
+                                      )}></div>
                                     </div>
-                                    <div>
-                                      <p className="text-gray-400">Clicks</p>
-                                      <p className="text-white font-medium">{formatNumber(campaign.clicks)}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-gray-400">Account</p>
-                                      <p className="text-white font-medium">{campaign.account_name}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-gray-400">Period</p>
-                                      <p className="text-xs text-white">
-                                        {campaign.start_date ? format(new Date(campaign.start_date), 'MMM dd') : 'N/A'} - 
-                                        {campaign.end_date ? format(new Date(campaign.end_date), 'MMM dd') : 'Ongoing'}
-                                      </p>
+                                    <div className="text-left">
+                                      <p className="font-medium text-white text-sm">{campaign.campaign_name}</p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-xs text-gray-400">{campaign.objective}</p>
+                                        <span className="text-xs text-gray-500">•</span>
+                                        <p className="text-xs text-gray-500">{campaign.account_name}</p>
+                                      </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center gap-2">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
-                                      onClick={() => runDailyCampaignAnalysis(campaign.campaign_id)}
-                                      disabled={dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString()}
-                                    >
-                                      <Brain className="h-3 w-3 mr-1" />
-                                      {dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString() 
-                                        ? 'Analyzed Today' 
-                                        : 'AI Analyze (1/day)'}
-                                    </Button>
+                                  <div className="grid grid-cols-6 gap-6 text-right">
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">Spend</p>
+                                      <p className="font-medium text-white text-sm">{formatCurrency(campaign.spent)}</p>
+                                    </div>
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">ROAS</p>
+                                      <p className={cn(
+                                        "font-medium text-sm",
+                                        campaign.roas >= 2 ? "text-green-400" : 
+                                        campaign.roas >= 1 ? "text-yellow-400" : "text-red-400"
+                                      )}>
+                                        {campaign.roas.toFixed(2)}x
+                                      </p>
+                                    </div>
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">Impressions</p>
+                                      <p className="font-medium text-white text-sm">{formatNumber(campaign.impressions)}</p>
+                                    </div>
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">CTR</p>
+                                      <p className="font-medium text-white text-sm">{campaign.ctr.toFixed(2)}%</p>
+                                    </div>
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">Conversions</p>
+                                      <p className="font-medium text-white text-sm">{formatNumber(campaign.conversions)}</p>
+                                    </div>
+                                    <div className="bg-[#222] p-2 rounded">
+                                      <p className="text-xs text-gray-400 mb-1">CPC</p>
+                                      <p className="font-medium text-white text-sm">{formatCurrency(campaign.cpc)}</p>
+                                    </div>
                                   </div>
                                 </div>
-                                
-                                {/* Ad Sets */}
-                                {campaign.adSets && campaign.adSets.length > 0 && (
-                                  <div className="space-y-2">
-                                    <p className="text-sm font-medium text-gray-300">Ad Sets</p>
-                                    <Accordion type="multiple" value={Array.from(expandedAdSets)}>
-                                      {campaign.adSets.map((adSet) => (
-                                        <AccordionItem
-                                          key={adSet.adset_id}
-                                          value={adSet.adset_id}
-                                          className="border border-gray-800 rounded-lg"
-                                        >
-                                          <AccordionTrigger
-                                            onClick={() => toggleAdSetExpanded(campaign.campaign_id, adSet.adset_id)}
-                                            className="px-3 py-2 hover:no-underline"
-                                          >
-                                            <div className="flex items-center justify-between w-full pr-2">
-                                              <div className="flex items-center gap-2">
-                                                <Badge
-                                                  variant={adSet.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                                  className="text-xs"
-                                                >
-                                                  {adSet.status}
-                                                </Badge>
-                                                <p className="text-sm text-white">{adSet.adset_name}</p>
-                                              </div>
-                                              
-                                              <div className="grid grid-cols-6 gap-3 text-right text-xs">
-                                                <div>
-                                                  <p className="text-gray-400">Spend</p>
-                                                  <p className="text-white">{formatCurrency(adSet.spent)}</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-gray-400">Budget</p>
-                                                  <p className="text-white">{formatCurrency(adSet.budget)}</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-gray-400">Impressions</p>
-                                                  <p className="text-white">{formatNumber(adSet.impressions)}</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-gray-400">CTR</p>
-                                                  <p className="text-white">{adSet.ctr.toFixed(2)}%</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-gray-400">CPC</p>
-                                                  <p className="text-white">{formatCurrency(adSet.cpc)}</p>
-                                                </div>
-                                                <div>
-                                                  <p className="text-gray-400">Conv.</p>
-                                                  <p className="text-white">{formatNumber(adSet.conversions)}</p>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </AccordionTrigger>
-                                          
-                                          <AccordionContent>
-                                            <div className="px-3 pb-2">
-                                              {/* Ads */}
-                                              {adSet.ads && adSet.ads.length > 0 ? (
-                                                <div className="space-y-2">
-                                                  <p className="text-xs font-medium text-gray-400 mb-2">Ads</p>
-                                                  {adSet.ads.map((ad) => (
-                                                    <div
-                                                      key={ad.ad_id}
-                                                      className="p-3 bg-[#0A0A0A] rounded-lg border border-gray-800"
-                                                    >
-                                                      <div className="flex items-center justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
-                                                          <Badge
-                                                            variant={ad.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                                            className="text-xs"
-                                                          >
-                                                            {ad.status}
-                                                          </Badge>
-                                                          <p className="text-xs text-white font-medium">{ad.ad_name}</p>
-                                                        </div>
-                                                        
-                                                        {ad.creative_url && (
-                                                          <div className="flex items-center gap-1">
-                                                            <Eye className="h-3 w-3 text-gray-400" />
-                                                            <span className="text-xs text-gray-400">Creative</span>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                      
-                                                      <div className="grid grid-cols-5 gap-2 text-xs">
-                                                        <div>
-                                                          <p className="text-gray-500">Spend</p>
-                                                          <p className="text-white">{formatCurrency(ad.spent)}</p>
-                                                        </div>
-                                                        <div>
-                                                          <p className="text-gray-500">Impressions</p>
-                                                          <p className="text-white">{formatNumber(ad.impressions)}</p>
-                                                        </div>
-                                                        <div>
-                                                          <p className="text-gray-500">CTR</p>
-                                                          <p className="text-white">{ad.ctr.toFixed(2)}%</p>
-                                                        </div>
-                                                        <div>
-                                                          <p className="text-gray-500">CPC</p>
-                                                          <p className="text-white">{formatCurrency(ad.cpc)}</p>
-                                                        </div>
-                                                        <div>
-                                                          <p className="text-gray-500">Conv.</p>
-                                                          <p className="text-white">{formatNumber(ad.conversions)}</p>
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              ) : (
-                                                <p className="text-xs text-gray-500 text-center py-2">Loading ads...</p>
-                                              )}
-                                            </div>
-                                          </AccordionContent>
-                                        </AccordionItem>
-                                      ))}
-                                    </Accordion>
+                              </AccordionTrigger>
+                              
+                              <AccordionContent>
+                                <div className="px-4 pb-4 border-t border-[#333]">
+                                  {/* Campaign Analysis */}
+                                  <div className="pt-4 space-y-4">
+                                    <div className="grid grid-cols-4 gap-4">
+                                      <div className="bg-[#222] p-3 rounded-lg">
+                                        <p className="text-gray-400 text-xs mb-1">Budget</p>
+                                        <p className="text-white font-medium">{formatCurrency(campaign.budget)}</p>
+                                        <p className="text-xs text-gray-500">{campaign.budget_type}</p>
+                                      </div>
+                                      <div className="bg-[#222] p-3 rounded-lg">
+                                        <p className="text-gray-400 text-xs mb-1">Clicks</p>
+                                        <p className="text-white font-medium">{formatNumber(campaign.clicks)}</p>
+                                        <p className="text-xs text-gray-500">Total clicks</p>
+                                      </div>
+                                      <div className="bg-[#222] p-3 rounded-lg">
+                                        <p className="text-gray-400 text-xs mb-1">Reach</p>
+                                        <p className="text-white font-medium">{formatNumber(campaign.reach)}</p>
+                                        <p className="text-xs text-gray-500">Unique users</p>
+                                      </div>
+                                      <div className="bg-[#222] p-3 rounded-lg">
+                                        <p className="text-gray-400 text-xs mb-1">Cost/Conv</p>
+                                        <p className="text-white font-medium">{formatCurrency(campaign.cost_per_conversion)}</p>
+                                        <p className="text-xs text-gray-500">Per conversion</p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between pt-2">
+                                      <div className="text-xs text-gray-500">
+                                        Period: {campaign.start_date ? format(new Date(campaign.start_date), 'MMM dd') : 'N/A'} - 
+                                        {campaign.end_date ? format(new Date(campaign.end_date), 'MMM dd') : 'Ongoing'}
+                                      </div>
+                                      
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
+                                        onClick={() => runDailyCampaignAnalysis(campaign.campaign_id)}
+                                        disabled={dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString()}
+                                      >
+                                        <Brain className="h-3 w-3 mr-1" />
+                                        {dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString() 
+                                          ? 'Analyzed Today' 
+                                          : 'AI Analyze'}
+                                      </Button>
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            </AccordionContent>
+                                  
+                                  {/* Ad Sets */}
+                                  {campaign.adSets && campaign.adSets.length > 0 && (
+                                    <div className="mt-4 space-y-2">
+                                      <p className="text-sm font-medium text-gray-300 mb-3">Ad Sets ({campaign.adSets.length})</p>
+                                      <Accordion type="multiple" value={Array.from(expandedAdSets)}>
+                                        {campaign.adSets.map((adSet) => (
+                                          <AccordionItem
+                                            key={adSet.adset_id}
+                                            value={adSet.adset_id}
+                                            className="border-0"
+                                          >
+                                            <div className="bg-[#0F0F0F] border border-[#444] rounded-lg mb-2">
+                                              <AccordionTrigger
+                                                onClick={() => toggleAdSetExpanded(campaign.campaign_id, adSet.adset_id)}
+                                                className="px-3 py-2 hover:no-underline"
+                                              >
+                                                <div className="flex items-center justify-between w-full pr-2">
+                                                  <div className="flex items-center gap-2">
+                                                    <Badge
+                                                      variant={adSet.status === 'ACTIVE' ? 'default' : 'secondary'}
+                                                      className={cn(
+                                                        "text-xs",
+                                                        adSet.status === 'ACTIVE' 
+                                                          ? 'bg-green-500/20 text-green-400' 
+                                                          : 'bg-gray-500/20 text-gray-400'
+                                                      )}
+                                                    >
+                                                      {adSet.status}
+                                                    </Badge>
+                                                    <p className="text-sm text-white font-medium">{adSet.adset_name}</p>
+                                                  </div>
+                                                  
+                                                  <div className="grid grid-cols-5 gap-3 text-right text-xs">
+                                                    <div>
+                                                      <p className="text-gray-400">Spend</p>
+                                                      <p className="text-white font-medium">{formatCurrency(adSet.spent)}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400">Budget</p>
+                                                      <p className="text-white font-medium">{formatCurrency(adSet.budget)}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400">CTR</p>
+                                                      <p className="text-white font-medium">{adSet.ctr.toFixed(2)}%</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400">CPC</p>
+                                                      <p className="text-white font-medium">{formatCurrency(adSet.cpc)}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400">Conv.</p>
+                                                      <p className="text-white font-medium">{formatNumber(adSet.conversions)}</p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </AccordionTrigger>
+                                              
+                                              <AccordionContent>
+                                                <div className="px-3 pb-2 border-t border-[#333] pt-2">
+                                                  {/* Ads */}
+                                                  {adSet.ads && adSet.ads.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                      <p className="text-xs font-medium text-gray-400 mb-2">Ads ({adSet.ads.length})</p>
+                                                      {adSet.ads.map((ad) => (
+                                                        <div
+                                                          key={ad.ad_id}
+                                                          className="p-3 bg-[#0A0A0A] rounded-lg border border-[#555]"
+                                                        >
+                                                          <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                              <Badge
+                                                                variant={ad.status === 'ACTIVE' ? 'default' : 'secondary'}
+                                                                className="text-xs"
+                                                              >
+                                                                {ad.status}
+                                                              </Badge>
+                                                              <p className="text-xs text-white font-medium">{ad.ad_name}</p>
+                                                            </div>
+                                                            
+                                                            {ad.creative_url && (
+                                                              <div className="flex items-center gap-1">
+                                                                <Eye className="h-3 w-3 text-gray-400" />
+                                                                <span className="text-xs text-gray-400">Creative</span>
+                                                              </div>
+                                                            )}
+                                                          </div>
+                                                          
+                                                          <div className="grid grid-cols-6 gap-2 text-xs">
+                                                            <div>
+                                                              <p className="text-gray-400">Spend</p>
+                                                              <p className="text-white">{formatCurrency(ad.spent)}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-gray-400">Impressions</p>
+                                                              <p className="text-white">{formatNumber(ad.impressions)}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-gray-400">Clicks</p>
+                                                              <p className="text-white">{formatNumber(ad.clicks)}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-gray-400">CTR</p>
+                                                              <p className="text-white">{ad.ctr.toFixed(2)}%</p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-gray-400">CPC</p>
+                                                              <p className="text-white">{formatCurrency(ad.cpc)}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-gray-400">Conv.</p>
+                                                              <p className="text-white">{formatNumber(ad.conversions)}</p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  ) : (
+                                                    <p className="text-xs text-gray-500 text-center py-2">No ads available</p>
+                                                  )}
+                                                </div>
+                                              </AccordionContent>
+                                            </div>
+                                          </AccordionItem>
+                                        ))}
+                                      </Accordion>
+                                    </div>
+                                  )}
+                                </div>
+                              </AccordionContent>
+                            </div>
                           </AccordionItem>
                         ))}
                       </Accordion>
