@@ -156,7 +156,9 @@ export default function MarketingAssistantPage() {
     conversions: 0,
     impressions: 0,
     clicks: 0,
-    cpc: 0
+    cpc: 0,
+    revenue: 0,
+    cpa: 0
   })
   
   // State for campaigns
@@ -166,20 +168,12 @@ export default function MarketingAssistantPage() {
   const [expandedAdSets, setExpandedAdSets] = useState<Set<string>>(new Set())
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   
-  // State for AI insights with memory
+  // State for AI insights
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [isLoadingInsights, setIsLoadingInsights] = useState(false)
   const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null)
-  const [pastRecommendations, setPastRecommendations] = useState<Record<string, {
-    recommendation: AIInsight
-    implementedAt?: Date
-    effectiveness?: 'positive' | 'negative' | 'neutral'
-    metricsBeforeAfter?: {
-      before: { roas: number, ctr: number, spend: number }
-      after: { roas: number, ctr: number, spend: number }
-    }
-  }>>({})
   const [dailyCampaignAnalysis, setDailyCampaignAnalysis] = useState<Record<string, { lastAnalyzed: Date, analysis: any }>>({})
+  const [insightHistory, setInsightHistory] = useState<Record<string, AIInsight[]>>({})
   
   // State for platform selection
   const [selectedPlatform, setSelectedPlatform] = useState<string>('meta')
@@ -201,119 +195,43 @@ export default function MarketingAssistantPage() {
   const [objectiveFilter, setObjectiveFilter] = useState('all')
   const [showPausedCampaigns, setShowPausedCampaigns] = useState(true)
   
-  // Filtered campaigns based on search and filters
-  const filteredCampaigns = campaigns.filter(campaign => {
-    const matchesSearch = campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter
-    const matchesObjective = objectiveFilter === 'all' || campaign.objective === objectiveFilter
-    const shouldShowPaused = showPausedCampaigns || campaign.status === 'ACTIVE'
-    
-    return matchesSearch && matchesStatus && matchesObjective && shouldShowPaused
-  })
+  // State for creative performance
+  const [topCreatives, setTopCreatives] = useState<any[]>([])
+  const [showABTestLauncher, setShowABTestLauncher] = useState(false)
+  
+  // State for budget recommendations
+  const [budgetRecommendations, setBudgetRecommendations] = useState<any[]>([])
+
 
   // Load initial data
   useEffect(() => {
     if (selectedBrandId) {
-      loadPastRecommendations()
       loadAllData()
-      // Load AI insights automatically on page load
-      loadAIInsights()
     }
   }, [selectedBrandId, dateRange])
-
-  // Load past recommendations from localStorage
-  const loadPastRecommendations = () => {
-    try {
-      const stored = localStorage.getItem(`ai_recommendations_${selectedBrandId}`)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        // Convert date strings back to Date objects
-        Object.keys(parsed).forEach(key => {
-          if (parsed[key].implementedAt) {
-            parsed[key].implementedAt = new Date(parsed[key].implementedAt)
-          }
-          if (parsed[key].recommendation?.timestamp) {
-            parsed[key].recommendation.timestamp = new Date(parsed[key].recommendation.timestamp)
-          }
-        })
-        setPastRecommendations(parsed)
+  
+  // Auto-refresh AI insights daily
+  useEffect(() => {
+    if (selectedBrandId) {
+      // Load insights from localStorage
+      const savedInsights = localStorage.getItem(`ai_insights_history_${selectedBrandId}`)
+      if (savedInsights) {
+        setInsightHistory(JSON.parse(savedInsights))
       }
-    } catch (error) {
-      console.error('Error loading past recommendations:', error)
-    }
-  }
-
-  // Save recommendations to localStorage
-  const savePastRecommendations = (recommendations: typeof pastRecommendations) => {
-    try {
-      localStorage.setItem(`ai_recommendations_${selectedBrandId}`, JSON.stringify(recommendations))
-    } catch (error) {
-      console.error('Error saving past recommendations:', error)
-    }
-  }
-
-  // Track when a recommendation is implemented
-  const markRecommendationImplemented = (insightId: string) => {
-    const updated = {
-      ...pastRecommendations,
-      [insightId]: {
-        ...pastRecommendations[insightId],
-        implementedAt: new Date(),
-        metricsBeforeAfter: {
-          before: {
-            roas: totalMetrics.roas,
-            ctr: totalMetrics.ctr,
-            spend: totalMetrics.spend
-          },
-          after: { roas: 0, ctr: 0, spend: 0 } // Will be updated later
-        }
+      
+      // Check if we need to refresh insights (daily)
+      const lastInsightDate = localStorage.getItem(`last_insight_date_${selectedBrandId}`)
+      const today = new Date().toDateString()
+      
+      if (!lastInsightDate || lastInsightDate !== today) {
+        // Generate new insights for today
+        setTimeout(() => {
+          loadAIInsights()
+          localStorage.setItem(`last_insight_date_${selectedBrandId}`, today)
+        }, 2000) // Small delay to ensure data is loaded
       }
     }
-    setPastRecommendations(updated)
-    savePastRecommendations(updated)
-  }
-
-  // Measure effectiveness of past recommendations
-  const measureRecommendationEffectiveness = () => {
-    const updated = { ...pastRecommendations }
-    let hasUpdates = false
-
-    Object.keys(updated).forEach(insightId => {
-      const rec = updated[insightId]
-      if (rec.implementedAt && rec.metricsBeforeAfter && !rec.effectiveness) {
-        const daysSinceImplemented = Math.floor((new Date().getTime() - rec.implementedAt.getTime()) / (1000 * 60 * 60 * 24))
-        
-        // Wait at least 3 days before measuring effectiveness
-        if (daysSinceImplemented >= 3) {
-          // Update "after" metrics
-          rec.metricsBeforeAfter.after = {
-            roas: totalMetrics.roas,
-            ctr: totalMetrics.ctr,
-            spend: totalMetrics.spend
-          }
-
-          // Determine effectiveness based on metric improvements
-          const roasImprovement = totalMetrics.roas - rec.metricsBeforeAfter.before.roas
-          const ctrImprovement = totalMetrics.ctr - rec.metricsBeforeAfter.before.ctr
-          
-          if (roasImprovement > 0.2 || ctrImprovement > 0.5) {
-            rec.effectiveness = 'positive'
-          } else if (roasImprovement < -0.2 || ctrImprovement < -0.5) {
-            rec.effectiveness = 'negative'
-          } else {
-            rec.effectiveness = 'neutral'
-          }
-          
-          hasUpdates = true
-        }
-      }
-    })
-
-    if (hasUpdates) {
-      setPastRecommendations(updated)
-      savePastRecommendations(updated)
-    }
-  }
+  }, [selectedBrandId])
 
   const loadAllData = async (silent = false) => {
     if (!silent) setIsLoading(true)
@@ -323,13 +241,21 @@ export default function MarketingAssistantPage() {
       await Promise.all([
         loadCampaigns(),
         loadMetrics(),
-        loadBrandGoals()
+        loadBrandGoals(),
+        loadCreativePerformance(),
+        generateBudgetRecommendations()
       ])
       
-      setLastRefreshTime(new Date())
-      if (!silent) {
-        toast.success('Data refreshed successfully')
+      // Load AI insights if not already loaded today
+      const lastInsightDate = localStorage.getItem(`last_insight_date_${selectedBrandId}`)
+      const today = new Date().toDateString()
+      
+      if (!lastInsightDate || lastInsightDate !== today || aiInsights.length === 0) {
+        await loadAIInsights()
+        localStorage.setItem(`last_insight_date_${selectedBrandId}`, today)
       }
+      
+      setLastRefreshTime(new Date())
     } catch (error) {
       console.error('Error loading data:', error)
       toast.error('Failed to load marketing data')
@@ -461,7 +387,9 @@ export default function MarketingAssistantPage() {
         conversions: data.conversions || 0,
         impressions: data.impressions || 0,
         clicks: data.clicks || 0,
-        cpc: data.cpc || 0
+        cpc: data.cpc || 0,
+        revenue: data.revenue || 0,
+        cpa: data.cpa || 0
       })
     } catch (error) {
       console.error('Error loading metrics:', error)
@@ -469,160 +397,144 @@ export default function MarketingAssistantPage() {
   }
 
   const loadAIInsights = async () => {
+    if (!selectedBrandId || campaigns.length === 0) return
+    
     setIsLoadingInsights(true)
     
     try {
-      // Measure effectiveness of past recommendations first
-      measureRecommendationEffectiveness()
-      
+      // Generate new insights
       const insights = await generateAIInsights()
       setAiInsights(insights)
       
-      // Save new insights to past recommendations if they're actionable
-      const newRecommendations = { ...pastRecommendations }
-      insights.forEach(insight => {
-        if (insight.actionable && !newRecommendations[insight.id]) {
-          newRecommendations[insight.id] = {
-            recommendation: insight
-          }
-        }
-      })
-      
-      if (Object.keys(newRecommendations).length !== Object.keys(pastRecommendations).length) {
-        setPastRecommendations(newRecommendations)
-        savePastRecommendations(newRecommendations)
+      // Save to history
+      const today = new Date().toDateString()
+      const history = { ...insightHistory }
+      if (!history[today]) {
+        history[today] = []
       }
+      history[today] = insights
+      
+      // Keep only last 30 days of history
+      const dates = Object.keys(history).sort()
+      if (dates.length > 30) {
+        delete history[dates[0]]
+      }
+      
+      setInsightHistory(history)
+      localStorage.setItem(`ai_insights_history_${selectedBrandId}`, JSON.stringify(history))
+      
     } catch (error) {
       console.error('Error loading AI insights:', error)
-      toast.error('Failed to load AI insights')
     } finally {
       setIsLoadingInsights(false)
     }
   }
 
   const generateAIInsights = async (): Promise<AIInsight[]> => {
-    if (campaigns.length === 0) return []
-    
     const insights: AIInsight[] = []
     
-    // Get effectiveness of past recommendations for context
-    const pastEffectiveness = Object.values(pastRecommendations).filter(r => r.effectiveness)
-    const successfulRecommendations = pastEffectiveness.filter(r => r.effectiveness === 'positive').length
-    const totalPastRecommendations = pastEffectiveness.length
+    // Analyze campaign performance
+    const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE')
+    const topPerformers = activeCampaigns.sort((a, b) => b.roas - a.roas).slice(0, 3)
+    const poorPerformers = activeCampaigns.filter(c => c.roas < 1.5 || c.ctr < 1)
     
-    // Add context about past recommendation success
-    if (totalPastRecommendations > 0) {
-      const successRate = (successfulRecommendations / totalPastRecommendations) * 100
-      insights.push({
-        id: `past-performance-${Date.now()}`,
-        type: 'insight',
-        priority: 'medium',
-        title: 'AI Recommendation Track Record',
-        description: `${successfulRecommendations}/${totalPastRecommendations} past recommendations showed positive results (${successRate.toFixed(1)}% success rate).`,
-        actionable: false,
-        timestamp: new Date()
-      })
-    }
-
-    // Campaign performance analysis
-    const poorPerformers = campaigns.filter(c => c.roas < 1.5 && c.spent > 100)
-    const topPerformers = campaigns.filter(c => c.roas > 3 && c.status === 'ACTIVE')
-    const lowCtrCampaigns = campaigns.filter(c => c.ctr < 1.0 && c.status === 'ACTIVE')
-    
-    // Budget reallocation recommendations (avoiding past failed recommendations)
-    if (poorPerformers.length > 0 && topPerformers.length > 0) {
-      const budgetReallocId = `budget-realloc-${Date.now()}`
-      const pastBudgetRecs = Object.values(pastRecommendations).filter(r => 
-        r.recommendation.title.includes('budget') && r.effectiveness === 'negative'
-      )
-      
-      if (pastBudgetRecs.length === 0) { // Only suggest if past budget recommendations weren't negative
+    // Budget optimization insights
+    topPerformers.forEach(campaign => {
+      if (campaign.ctr > 2 && campaign.cpc < totalMetrics.cpc * 0.8) {
         insights.push({
-          id: budgetReallocId,
-          type: 'opportunity',
+          id: `budget-${campaign.campaign_id}`,
+          type: 'recommendation',
           priority: 'high',
-          title: `Reallocate budget from ${poorPerformers.length} underperforming campaigns`,
-          description: `Move budget from campaigns with ROAS < 1.5x to campaigns with ROAS > 3x to improve overall performance.`,
+          title: `Increase budget by 20% on ${campaign.campaign_name}`,
+          description: `High CTR (${campaign.ctr.toFixed(2)}%), low CPC (${formatCurrency(campaign.cpc)})`,
           actionable: true,
           action: {
-            type: 'budget_reallocation',
-            label: 'Implement Budget Changes',
-            params: { poorPerformers: poorPerformers.map(c => c.campaign_id), topPerformers: topPerformers.map(c => c.campaign_id) }
+            type: 'increase_budget',
+            label: 'Apply Budget Increase',
+            params: { campaignId: campaign.campaign_id, increase: 20 }
           },
           metrics: [
-            { label: 'Potential ROAS Gain', value: '+0.5x', trend: 'up' },
-            { label: 'Budget Impact', value: formatCurrency(poorPerformers.reduce((sum, c) => sum + c.spent, 0)) }
+            { label: 'Current ROAS', value: `${campaign.roas.toFixed(2)}x` },
+            { label: 'Potential Revenue', value: formatCurrency(campaign.spent * campaign.roas * 1.2) }
           ],
           timestamp: new Date()
         })
       }
-    }
-
+    })
+    
+    // Poor performer insights
+    poorPerformers.forEach(campaign => {
+      if (campaign.spent > totalMetrics.spend * 0.1) {
+        insights.push({
+          id: `pause-${campaign.campaign_id}`,
+          type: 'alert',
+          priority: 'high',
+          title: `Pause ${campaign.campaign_name}`,
+          description: `Low performance (${campaign.roas.toFixed(2)}x ROAS), high spend (${formatCurrency(campaign.spent)})`,
+          actionable: true,
+          action: {
+            type: 'pause_campaign',
+            label: 'Pause Campaign',
+            params: { campaignId: campaign.campaign_id }
+          },
+          metrics: [
+            { label: 'Wasted Spend', value: formatCurrency(campaign.spent - (campaign.spent * campaign.roas)) },
+            { label: 'CTR', value: `${campaign.ctr.toFixed(2)}%`, trend: 'down' }
+          ],
+          timestamp: new Date()
+        })
+      }
+    })
+    
     // Creative fatigue detection
-    if (lowCtrCampaigns.length > 0) {
-      const creativeRefreshId = `creative-refresh-${Date.now()}`
-      insights.push({
-        id: creativeRefreshId,
-        type: 'alert',
-        priority: 'medium',
-        title: `${lowCtrCampaigns.length} campaigns show signs of creative fatigue`,
-        description: 'CTR below 1% suggests audiences may be tired of current creatives. Consider refreshing ad content.',
-        actionable: true,
-        action: {
-          type: 'creative_refresh',
-          label: 'Launch Creative Tests',
-          params: { campaigns: lowCtrCampaigns.map(c => c.campaign_id) }
-        },
-        metrics: [
-          { label: 'Avg CTR', value: `${(lowCtrCampaigns.reduce((sum, c) => sum + c.ctr, 0) / lowCtrCampaigns.length).toFixed(2)}%`, trend: 'down' },
-          { label: 'Affected Spend', value: formatCurrency(lowCtrCampaigns.reduce((sum, c) => sum + c.spent, 0)) }
-        ],
-        timestamp: new Date()
-      })
-    }
-
-    // Account-level insights
+    campaigns.forEach(campaign => {
+      if (campaign.daily_insights && campaign.daily_insights.length > 7) {
+        const recentCTR = campaign.daily_insights.slice(-7).map(d => d.ctr)
+        const avgRecentCTR = recentCTR.reduce((a, b) => a + b, 0) / recentCTR.length
+        const olderCTR = campaign.daily_insights.slice(0, -7).map(d => d.ctr)
+        const avgOlderCTR = olderCTR.reduce((a, b) => a + b, 0) / olderCTR.length
+        
+        if (avgOlderCTR > 0 && avgRecentCTR < avgOlderCTR * 0.7) {
+          insights.push({
+            id: `creative-fatigue-${campaign.campaign_id}`,
+            type: 'opportunity',
+            priority: 'medium',
+            title: `Test new creative for ${campaign.campaign_name}`,
+            description: `Creative fatigue detected - CTR dropped ${((1 - avgRecentCTR/avgOlderCTR) * 100).toFixed(0)}%`,
+            actionable: true,
+            action: {
+              type: 'launch_ab_test',
+              label: 'Launch A/B Test',
+              params: { campaignId: campaign.campaign_id }
+            },
+            metrics: [
+              { label: 'Recent CTR', value: `${avgRecentCTR.toFixed(2)}%`, trend: 'down' },
+              { label: 'Previous CTR', value: `${avgOlderCTR.toFixed(2)}%` }
+            ],
+            timestamp: new Date()
+          })
+        }
+      }
+    })
+    
+    // Overall account insights
     if (totalMetrics.roas < 2) {
       insights.push({
-        id: `account-optimization-${Date.now()}`,
-        type: 'recommendation',
+        id: 'account-optimization',
+        type: 'insight',
         priority: 'high',
-        title: 'Account ROAS below target threshold',
-        description: 'Overall ROAS is below 2x. Focus on audience refinement and bid optimization.',
-        actionable: true,
-        action: {
-          type: 'account_optimization',
-          label: 'Review Account Settings',
-          params: { currentRoas: totalMetrics.roas }
-        },
+        title: 'Account needs optimization',
+        description: `Overall ROAS (${totalMetrics.roas.toFixed(2)}x) is below target. Consider pausing low performers and reallocating budget.`,
+        actionable: false,
         metrics: [
-          { label: 'Current ROAS', value: `${totalMetrics.roas.toFixed(2)}x`, trend: 'down' },
-          { label: 'Target ROAS', value: '2.0x' }
+          { label: 'Total Spend', value: formatCurrency(totalMetrics.spend) },
+          { label: 'Revenue Lost', value: formatCurrency(totalMetrics.spend * (2 - totalMetrics.roas)) }
         ],
         timestamp: new Date()
       })
     }
-
-    // Positive reinforcement for successful past implementations
-    const recentSuccesses = Object.values(pastRecommendations).filter(r => 
-      r.effectiveness === 'positive' && 
-      r.implementedAt &&
-      (new Date().getTime() - r.implementedAt.getTime()) < (7 * 24 * 60 * 60 * 1000) // Last 7 days
-    )
     
-    if (recentSuccesses.length > 0) {
-      insights.push({
-        id: `success-reinforcement-${Date.now()}`,
-        type: 'insight',
-        priority: 'low',
-        title: `Recent optimization success detected`,
-        description: `${recentSuccesses.length} recent recommendations are showing positive results. Keep monitoring performance.`,
-        actionable: false,
-        timestamp: new Date()
-      })
-    }
-
-    return insights.slice(0, 8) // Limit to 8 insights
+    return insights
   }
 
   const loadBrandGoals = async () => {
@@ -639,6 +551,67 @@ export default function MarketingAssistantPage() {
         active: true
       }
     ])
+  }
+
+  const loadCreativePerformance = async () => {
+    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) return
+    try {
+      // For now, we'll use campaign data to simulate creative performance
+      // In a real implementation, this would fetch actual creative data
+      const topCampaigns = campaigns
+        .filter(c => c.status === 'ACTIVE')
+        .sort((a, b) => b.ctr - a.ctr)
+        .slice(0, 5)
+        .map(campaign => ({
+          id: campaign.campaign_id,
+          name: campaign.campaign_name,
+          ctr: campaign.ctr,
+          cpc: campaign.cpc,
+          impressions: campaign.impressions,
+          conversions: campaign.conversions,
+          creative_url: null // Would be actual creative URL in real implementation
+        }))
+      
+      setTopCreatives(topCampaigns)
+    } catch (error) {
+      console.error('Error loading creative performance:', error)
+    }
+  }
+
+  const generateBudgetRecommendations = async () => {
+    if (!selectedBrandId || !dateRange?.from || !dateRange?.to || campaigns.length === 0) return
+    try {
+      // Generate budget recommendations based on campaign performance
+      const recommendations = campaigns
+        .filter(c => c.status === 'ACTIVE')
+        .map(campaign => {
+          let recommendation = { 
+            campaignId: campaign.campaign_id,
+            campaignName: campaign.campaign_name,
+            currentBudget: campaign.budget,
+            suggestedBudget: campaign.budget,
+            reason: '',
+            expectedImpact: ''
+          }
+          
+          if (campaign.roas > 2.5 && campaign.ctr > 2) {
+            recommendation.suggestedBudget = campaign.budget * 1.5
+            recommendation.reason = 'High performing campaign'
+            recommendation.expectedImpact = `+${formatCurrency(campaign.spent * 0.5 * campaign.roas)} revenue`
+          } else if (campaign.roas < 1 || campaign.ctr < 0.5) {
+            recommendation.suggestedBudget = campaign.budget * 0.5
+            recommendation.reason = 'Poor performance'
+            recommendation.expectedImpact = `Save ${formatCurrency(campaign.budget * 0.5)}`
+          }
+          
+          return recommendation
+        })
+        .filter(r => r.suggestedBudget !== r.currentBudget)
+      
+      setBudgetRecommendations(recommendations)
+    } catch (error) {
+      console.error('Error generating budget recommendations:', error)
+    }
   }
 
   const toggleCampaignExpanded = (campaignId: string) => {
@@ -672,51 +645,22 @@ export default function MarketingAssistantPage() {
   const handleInsightAction = async (insight: AIInsight) => {
     if (!insight.action) return
     
-    try {
-      // Mark the recommendation as implemented
-      markRecommendationImplemented(insight.id)
-      
-      switch (insight.action.type) {
-        case 'budget_reallocation':
-          toast.info('Budget reallocation recommendations noted. Review your Meta Ads Manager to implement changes.')
-          break
-          
-        case 'creative_refresh':
-          toast.info('Creative refresh recommended. Consider A/B testing new ad creatives for the affected campaigns.')
-          break
-          
-        case 'account_optimization':
-          toast.info('Account optimization needed. Review audience targeting and bid strategies in Meta Ads Manager.')
-          break
-          
-        case 'pause_campaign':
-          toast.info('Campaign pause recommended. Review performance in Meta Ads Manager.')
-          break
-          
-        case 'increase_budget':
-          toast.info('Budget increase recommended. Consider scaling successful campaigns in Meta Ads Manager.')
-          break
-          
-        case 'refresh_creative':
-          toast.info('Creative refresh suggested. Test new ad formats and messaging.')
-          break
-          
-        case 'create_audience':
-          toast.info('New audience opportunity identified. Create custom audiences in Meta Ads Manager.')
-          break
-          
-        default:
-          toast.info('Recommendation noted. Review details in Meta Ads Manager.')
-      }
-      
-      // Show feedback message about tracking
-      setTimeout(() => {
-        toast.success('✅ Action implemented! We\'ll track the effectiveness of this change over the next few days.')
-      }, 1000)
-      
-    } catch (error) {
-      console.error('Error handling insight action:', error)
-      toast.error('Failed to process action')
+    // Handle different action types
+    switch (insight.action.type) {
+      case 'pause_campaign':
+        toast.info('Opening campaign settings...')
+        break
+      case 'increase_budget':
+        toast.info('Opening budget optimizer...')
+        break
+      case 'refresh_creative':
+        toast.info('Opening creative recommendations...')
+        break
+      case 'create_audience':
+        toast.info('Opening audience builder...')
+        break
+      default:
+        toast.info('Action not implemented yet')
     }
   }
 
@@ -807,6 +751,30 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  const filteredCampaigns = campaigns.filter(campaign => {
+    // Search filter
+    if (searchQuery && !campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false
+    }
+    
+    // Status filter
+    if (statusFilter !== 'all' && campaign.status !== statusFilter) {
+      return false
+    }
+    
+    // Objective filter
+    if (objectiveFilter !== 'all' && campaign.objective !== objectiveFilter) {
+      return false
+    }
+    
+    // Show/hide paused campaigns
+    if (!showPausedCampaigns && campaign.status === 'PAUSED') {
+      return false
+    }
+    
+    return true
+  })
+
   // Show brand selection message if no brand is selected
   if (!selectedBrandId) {
     return (
@@ -837,15 +805,14 @@ export default function MarketingAssistantPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      {/* Top Metrics */}
-      <div className="px-6 py-6">
-        {/* Header with controls moved inline */}
+      <div className="p-6 max-w-[1600px] mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
+            <h1 className="text-2xl font-bold text-white">Marketing Command Center</h1>
             {lastRefreshTime && (
               <p className="text-xs text-gray-500">
-                Last refreshed: {format(lastRefreshTime, 'MMM dd, yyyy HH:mm')}
+                Updated {format(lastRefreshTime, 'h:mm a')}
               </p>
             )}
           </div>
@@ -871,326 +838,264 @@ export default function MarketingAssistantPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Total Spend</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
-                <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
-              </div>
-              <div className="text-right">
-                <DollarSign className="h-8 w-8 text-gray-400 mb-1" />
-                <div className="text-xs text-gray-400">+12%</div>
-              </div>
-            </div>
-          </div>
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Total ROAS</p>
-                <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(2)}x</p>
-                <p className={cn(
-                  "text-xs mt-1 font-medium",
-                  totalMetrics.roas >= 3 ? "text-green-500" : 
-                  totalMetrics.roas >= 2 ? "text-yellow-500" : "text-red-500"
-                )}>
-                  {totalMetrics.roas >= 3 ? "Excellent" : 
-                   totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
-                </p>
-              </div>
-              <div className="text-right">
-                <TrendingUp className="h-8 w-8 text-gray-400 mb-1" />
-                <div className="text-xs text-gray-400">+8%</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Active Campaigns</p>
-                <p className="text-xl font-bold text-white">{totalMetrics.activeCampaigns}</p>
-              </div>
-              <Target className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Avg CTR</p>
-                <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
-              </div>
-              <MousePointerClick className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Conversions</p>
-                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
-              </div>
-              <Zap className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Impressions</p>
-                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
-              </div>
-              <Eye className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Clicks</p>
-                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.clicks)}</p>
-              </div>
-              <MousePointerClick className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Avg CPC</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.cpc)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
-        </div>
-        
-        {/* Quick Performance Summary */}
-        {campaigns.length > 0 && (
-          <div className="mt-6 p-4 bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-white mb-1">Account Performance Summary</h3>
-                <p className="text-xs text-gray-400">
-                  {campaigns.filter(c => c.status === 'ACTIVE').length} active campaigns • 
-                  Avg ROAS: {totalMetrics.roas.toFixed(2)}x • 
-                  Best Campaign: {campaigns.reduce((prev, current) => (prev.roas > current.roas) ? prev : current, campaigns[0])?.campaign_name}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Optimization Score</p>
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full",
-                    totalMetrics.roas >= 3 ? "bg-green-500" : 
-                    totalMetrics.roas >= 2 ? "bg-yellow-500" : "bg-red-500"
-                  )}></div>
-                  <span className="text-sm font-medium text-white">
-                    {Math.round((totalMetrics.roas / 4) * 100)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content - New 3-Column Layout */}
-      <div className="px-6 pb-6">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          
-          {/* Left Column: Performance Overview */}
-          <div className="xl:col-span-4 space-y-6">
-            {/* Key Metrics */}
+          {/* Left Column - Performance Overview */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Performance Overview Card */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-gray-400" />
-                  Performance Overview
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  {dateRange?.from && dateRange?.to ? 
-                    `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : 
-                    'Last 7 days'}
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white">Performance Overview</CardTitle>
+                <CardDescription className="text-xs text-gray-400">
+                  {dateRange?.from && dateRange?.to && 
+                    `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</div>
-                    <div className="text-xs text-gray-400">Total Spend</div>
-                    <div className="text-xs text-gray-500 mt-1">+12% vs last period</div>
+                {/* Total Spend */}
+                <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-gray-400">Total Spend</p>
+                    <DollarSign className="h-4 w-4 text-gray-400" />
                   </div>
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-2xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</div>
-                    <div className="text-xs text-gray-400">ROAS</div>
-                    <div className={cn(
-                      "text-xs mt-1 font-medium",
-                      totalMetrics.roas >= 2 ? "text-green-400" : "text-yellow-400"
-                    )}>
-                      {totalMetrics.roas >= 3 ? "Excellent" : totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
+                  <p className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Budget utilized</p>
+                </div>
+                
+                {/* ROAS & Conversions */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                    <p className="text-xs text-gray-400 mb-1">ROAS</p>
+                    <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</p>
+                    <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)}</p>
+                    <p className="text-xs text-gray-500">Conversions</p>
+                  </div>
+                  
+                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                    <p className="text-xs text-gray-400 mb-1">CPA</p>
+                    <p className="text-xl font-bold text-white">
+                      {formatCurrency(totalMetrics.spend / (totalMetrics.conversions || 1))}
+                    </p>
+                    <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)}</p>
+                    <p className="text-xs text-gray-500">Conversions</p>
+                  </div>
+                </div>
+                
+                {/* CTR */}
+                <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                  <p className="text-xs text-gray-400 mb-1">CTR</p>
+                  <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
+                  <div className="mt-2">
+                    <div className="w-full bg-[#222] rounded-full h-1.5">
+                      <div 
+                        className={cn(
+                          "h-1.5 rounded-full",
+                          totalMetrics.ctr >= 2 ? "bg-green-500" : 
+                          totalMetrics.ctr >= 1 ? "bg-yellow-500" : "bg-red-500"
+                        )} 
+                        style={{ width: `${Math.min(totalMetrics.ctr * 20, 100)}%` }}
+                      />
                     </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-lg font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</div>
-                    <div className="text-xs text-gray-400">CTR</div>
-                  </div>
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-lg font-bold text-white">{formatNumber(totalMetrics.conversions)}</div>
-                    <div className="text-xs text-gray-400">Conversions</div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-lg font-bold text-white">{formatCurrency(totalMetrics.cpc)}</div>
-                    <div className="text-xs text-gray-400">CPC</div>
-                  </div>
-                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
-                    <div className="text-lg font-bold text-white">{formatNumber(totalMetrics.impressions)}</div>
-                    <div className="text-xs text-gray-400">Impressions</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Account Performance Suggestions */}
+            
+            {/* Account Performance */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-gray-400" />
-                  Account Performance
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Suggested budget allocations
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white">Account Performance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {campaigns.slice(0, 3).map((campaign, index) => (
-                    <div key={campaign.campaign_id} className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium text-white text-sm truncate">{campaign.campaign_name}</div>
-                        <div className="text-xs text-gray-400">
-                          {campaign.roas >= 2 ? 'High performer' : 'Optimization needed'}
+                  <p className="text-xs text-gray-400 mb-2">Suggested Budget Allocation</p>
+                  {campaigns
+                    .filter(c => c.status === 'ACTIVE')
+                    .sort((a, b) => b.roas - a.roas)
+                    .slice(0, 3)
+                    .map((campaign, idx) => {
+                      const suggestedBudget = campaign.roas > 2.5 ? campaign.budget * 1.5 : 
+                                             campaign.roas > 1.5 ? campaign.budget : 
+                                             campaign.budget * 0.5
+                      return (
+                        <div key={campaign.campaign_id} className="flex items-center justify-between py-2 border-b border-[#333] last:border-0">
+                          <div className="flex-1">
+                            <p className="text-sm text-white truncate">{campaign.campaign_name}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white">{formatCurrency(suggestedBudget)}</span>
+                            <ChevronRight className="h-3 w-3 text-gray-400" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
-                        <div className="text-xs text-gray-400">
-                          {campaign.roas >= 2 ? '↑ Increase' : '↓ Reduce'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      )
+                    })}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
+            
+            {/* Goals */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-gray-400" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-2">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-white">Goals</CardTitle>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                    onClick={() => loadAllData()}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh Data
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
                     onClick={() => setShowGoalDialog(true)}
+                    className="h-8 w-8 p-0"
                   >
-                    <Target className="h-4 w-4 mr-2" />
-                    Set Goal
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+              </CardHeader>
+              <CardContent>
+                {brandGoals.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">No goals set</p>
+                ) : (
+                  <div className="space-y-3">
+                    {brandGoals.slice(0, 3).map((goal) => {
+                      const progress = goal.targetValue ? 
+                        Math.min((totalMetrics.revenue / goal.targetValue) * 100, 100) : 
+                        50
+                      return (
+                        <div key={goal.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-white">{goal.name}</p>
+                            <Badge variant="outline" className="text-xs">
+                              {goal.type.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          {goal.targetValue && (
+                            <>
+                              <Progress value={progress} className="h-1.5" />
+                              <p className="text-xs text-gray-400">
+                                {formatCurrency(totalMetrics.revenue)} of {formatCurrency(goal.targetValue)}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Middle Column: AI Recommendations & Goals */}
-          <div className="xl:col-span-4 space-y-6">
-            {/* AI Recommendations */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+          {/* Center Column - AI Recommendations */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-gray-400" />
-                    AI Recommendations
-                  </CardTitle>
+                  <div>
+                    <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-gray-400" />
+                      AI RECOMMENDATIONS
+                    </CardTitle>
+                    <CardDescription className="text-xs text-gray-400 mt-1">
+                      Powered by campaign performance analysis
+                    </CardDescription>
+                  </div>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => loadAIInsights()}
-                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-400"
+                    disabled={isLoadingInsights}
                   >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Refresh
+                    <RefreshCw className={cn("h-4 w-4", isLoadingInsights && "animate-spin")} />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3">
+                <ScrollArea className="h-[600px] pr-4">
+                  <div className="space-y-4">
                     {isLoadingInsights ? (
                       <div className="flex items-center justify-center py-12">
-                        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+                        <div className="text-center">
+                          <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
+                          <p className="text-sm text-gray-400">Analyzing campaign performance...</p>
+                        </div>
                       </div>
                     ) : aiInsights.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Brain className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-400 text-sm">Generating insights...</p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                          onClick={() => loadAIInsights()}
-                        >
-                          Generate Now
-                        </Button>
+                      <div className="text-center py-12">
+                        <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-400 mb-2">No recommendations available</p>
+                        <p className="text-xs text-gray-500">Run campaigns to generate insights</p>
                       </div>
                     ) : (
                       aiInsights.map((insight) => (
                         <div
                           key={insight.id}
-                          className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333] hover:border-[#444] transition-colors"
+                          className={cn(
+                            "p-4 bg-[#0A0A0A] rounded-lg border transition-all cursor-pointer",
+                            selectedInsight?.id === insight.id 
+                              ? "border-blue-500" 
+                              : "border-[#333] hover:border-[#444]"
+                          )}
+                          onClick={() => setSelectedInsight(insight)}
                         >
-                          <div className="flex items-start gap-2">
-                            <div className="mt-1">
-                              {insight.type === 'alert' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-                              {insight.type === 'opportunity' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                              {insight.type === 'recommendation' && <Sparkles className="h-4 w-4 text-blue-500" />}
-                              {insight.type === 'insight' && <Eye className="h-4 w-4 text-purple-500" />}
+                          <div className="flex items-start gap-3">
+                            <div className={cn(
+                              "p-2 rounded-lg flex-shrink-0",
+                              insight.type === 'alert' ? "bg-red-500/10" :
+                              insight.type === 'opportunity' ? "bg-green-500/10" :
+                              insight.type === 'recommendation' ? "bg-blue-500/10" :
+                              "bg-gray-500/10"
+                            )}>
+                              {getInsightIcon(insight.type)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium text-white">{insight.title}</h4>
-                              <p className="text-xs text-gray-400 mt-1">{insight.description}</p>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="text-sm font-medium text-white pr-2">
+                                  {insight.title}
+                                </h4>
+                                <Badge 
+                                  variant={getPriorityBadgeVariant(insight.priority)}
+                                  className="text-xs flex-shrink-0"
+                                >
+                                  {insight.priority}
+                                </Badge>
+                              </div>
+                              
+                              <p className="text-xs text-gray-400 mb-3">
+                                {insight.description}
+                              </p>
+                              
+                              {insight.metrics && insight.metrics.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                  {insight.metrics.map((metric, idx) => (
+                                    <div key={idx} className="bg-[#1A1A1A] p-2 rounded">
+                                      <p className="text-xs text-gray-500">{metric.label}</p>
+                                      <p className="text-sm font-medium text-white flex items-center gap-1">
+                                        {metric.value}
+                                        {metric.trend && (
+                                          metric.trend === 'up' ? (
+                                            <ArrowUpRight className="h-3 w-3 text-green-500" />
+                                          ) : metric.trend === 'down' ? (
+                                            <ArrowDownRight className="h-3 w-3 text-red-500" />
+                                          ) : null
+                                        )}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
                               {insight.actionable && insight.action && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="mt-2 h-6 text-xs bg-[#222] border-[#444] hover:bg-[#333] text-gray-300"
-                                  onClick={() => handleInsightAction(insight)}
+                                  className="w-full bg-blue-500/10 border-blue-500/50 hover:bg-blue-500/20 text-blue-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleInsightAction(insight)
+                                  }}
                                 >
                                   {insight.action.label}
+                                  <ChevronRight className="h-3 w-3 ml-1" />
                                 </Button>
                               )}
                             </div>
@@ -1202,193 +1107,82 @@ export default function MarketingAssistantPage() {
                 </ScrollArea>
               </CardContent>
             </Card>
-
-            {/* Goals */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Target className="h-5 w-5 text-gray-400" />
-                    Goals
-                  </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowGoalDialog(true)}
-                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-400"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {brandGoals.length === 0 ? (
-                  <div className="text-center py-6">
-                    <Target className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400 mb-3">No goals set</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowGoalDialog(true)}
-                      className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                    >
-                      Create First Goal
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {brandGoals.map((goal) => (
-                      <div key={goal.id} className="p-3 bg-[#0A0A0A] rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-white">{goal.name}</h4>
-                          <Badge variant="outline" className="text-xs border-[#444] text-gray-400">
-                            {goal.type.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        {goal.targetValue && (
-                          <div>
-                            <div className="flex justify-between text-xs text-gray-400 mb-1">
-                              <span>Progress</span>
-                              <span>65%</span>
-                            </div>
-                            <Progress value={65} className="h-2" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Right Column: Creative Performance & Campaign Details */}
-          <div className="xl:col-span-4 space-y-6">
+          {/* Right Column - Creative Performance & A/B Testing */}
+          <div className="lg:col-span-1 space-y-6">
             {/* Creative Performance */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-gray-400" />
-                  Creative Performance
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Top performing ads and creatives
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white">Creative Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                {campaigns.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Eye className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No campaigns data</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {campaigns.slice(0, 2).map((campaign) => (
-                      <div key={campaign.campaign_id} className="p-3 bg-[#0A0A0A] rounded-lg">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-[#333] rounded-lg flex items-center justify-center">
-                            <Eye className="h-6 w-6 text-gray-400" />
+                <div className="space-y-4">
+                  {campaigns
+                    .filter(c => c.status === 'ACTIVE')
+                    .sort((a, b) => b.ctr - a.ctr)
+                    .slice(0, 2)
+                    .map((campaign, idx) => (
+                      <div key={campaign.campaign_id} className="space-y-2">
+                        <div className="aspect-video bg-[#0A0A0A] rounded-lg border border-[#333] overflow-hidden relative">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Eye className="h-8 w-8 text-gray-600" />
                           </div>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-white truncate">{campaign.campaign_name}</h4>
-                            <p className="text-xs text-gray-400">{campaign.objective}</p>
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                            <p className="text-xs text-white font-medium truncate">{campaign.campaign_name}</p>
                           </div>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="flex items-center justify-between text-xs">
                           <div>
-                            <span className="text-gray-400">CTR: </span>
-                            <span className="text-white font-medium">{campaign.ctr.toFixed(2)}%</span>
+                            <p className="text-gray-400">CTR</p>
+                            <p className="font-medium text-white">{campaign.ctr.toFixed(1)}%</p>
                           </div>
-                          <div>
-                            <span className="text-gray-400">ROAS: </span>
-                            <span className={cn(
-                              "font-medium",
-                              campaign.roas >= 2 ? "text-green-400" : "text-yellow-400"
-                            )}>
-                              {campaign.roas.toFixed(1)}x
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Spend: </span>
-                            <span className="text-white font-medium">{formatCurrency(campaign.spent)}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Conv: </span>
-                            <span className="text-white font-medium">{formatNumber(campaign.conversions)}</span>
+                          <div className="text-right">
+                            <p className="text-gray-400">CPC</p>
+                            <p className="font-medium text-white">{formatCurrency(campaign.cpc)}</p>
                           </div>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* A/B Test Suggestion */}
-                    <div className="p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg border border-blue-800/30">
-                      <h4 className="text-sm font-medium text-white mb-2">Launch A/B Test</h4>
-                      <p className="text-xs text-gray-400 mb-3">Test new creative variations for top campaigns</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full bg-blue-600/20 border-blue-500/50 hover:bg-blue-600/30 text-blue-400"
-                        onClick={() => toast.info('A/B testing feature coming soon!')}
-                      >
-                        Launch Test
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
-
-            {/* Campaign List */}
+            
+            {/* A/B Test Launcher */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-gray-400" />
-                  Campaigns ({campaigns.length})
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white">Launch AI-Optimized A/B Test</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-2">
-                    {isLoadingCampaigns ? (
-                      <div className="flex items-center justify-center py-8">
-                        <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-                      </div>
-                    ) : filteredCampaigns.length === 0 ? (
-                      <div className="text-center py-8">
-                        <BarChart3 className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-400 text-sm">No campaigns found</p>
-                      </div>
-                    ) : (
-                      filteredCampaigns.map((campaign) => (
-                        <div
-                          key={campaign.campaign_id}
-                          className="p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#111] transition-colors cursor-pointer"
-                          onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <div className={cn(
-                                  "w-2 h-2 rounded-full",
-                                  campaign.status === 'ACTIVE' ? "bg-green-500" : "bg-gray-500"
-                                )}></div>
-                                <h4 className="text-sm font-medium text-white truncate">{campaign.campaign_name}</h4>
-                              </div>
-                              <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
-                                <span>{formatCurrency(campaign.spent)}</span>
-                                <span>ROAS: {campaign.roas.toFixed(1)}x</span>
-                                <span>CTR: {campaign.ctr.toFixed(2)}%</span>
-                              </div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </div>
-                      ))
-                    )}
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                    <p className="text-sm font-medium text-white mb-2">Copy 1</p>
+                    <p className="text-xs text-gray-400">Get 50% Off Your First Month</p>
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500 mb-1">Primary text</p>
+                      <p className="text-xs text-gray-300">Enjoy 50% Off the First Month</p>
+                    </div>
                   </div>
-                </ScrollArea>
+                  
+                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
+                    <p className="text-sm font-medium text-white mb-2">Copy 2</p>
+                    <p className="text-xs text-gray-400">Limited Time: Half Price First Month</p>
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500 mb-1">Primary text</p>
+                      <p className="text-xs text-gray-300">Start Today - 50% Off</p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => {
+                      setShowABTestLauncher(true)
+                      toast.info('A/B test launcher coming soon!')
+                    }}
+                  >
+                    Launch Test
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1426,7 +1220,16 @@ export default function MarketingAssistantPage() {
             <div>
               <Label className="text-gray-300">Goal Name</Label>
               <Input
-                placeholder="e.g., Black Friday Sales Target"
+                placeholder="e.g., Q4 Revenue Target"
+                className="bg-[#0A0A0A] border-gray-700 text-white"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-gray-300">Target Value</Label>
+              <Input
+                type="number"
+                placeholder="e.g., 150000"
                 className="bg-[#0A0A0A] border-gray-700 text-white"
               />
             </div>
@@ -1453,7 +1256,7 @@ export default function MarketingAssistantPage() {
                   toast.success('Goal added successfully')
                   setShowGoalDialog(false)
                 }}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Save Goal
               </Button>
