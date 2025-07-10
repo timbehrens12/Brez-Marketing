@@ -805,112 +805,136 @@ export default function MarketingAssistantPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      <div className="p-6 max-w-[1600px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">Marketing Command Center</h1>
-            {lastRefreshTime && (
-              <p className="text-xs text-gray-500">
-                Updated {format(lastRefreshTime, 'h:mm a')}
+      <div className="max-w-[1800px] mx-auto p-6">
+        
+        {/* Modern Header with improved styling */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Marketing Command Center</h1>
+              <p className="text-gray-400 text-sm">
+                Real-time insights and AI-powered optimization for your campaigns
               </p>
-            )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <DateRangePicker
+                dateRange={{
+                  from: dateRange?.from || addDays(new Date(), -7),
+                  to: dateRange?.to || new Date()
+                }}
+                setDateRange={(range) => setDateRange(range)}
+              />
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadAllData()}
+                className="bg-[#1A1A1A] border-[#333] hover:bg-[#252525] text-white"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <DateRangePicker
-              dateRange={{
-                from: dateRange?.from || addDays(new Date(), -7),
-                to: dateRange?.to || new Date()
-              }}
-              setDateRange={(range) => setDateRange(range)}
-            />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadAllData()}
-              className="bg-[#1A1A1A] border-[#333] hover:bg-[#252525]"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
+          {lastRefreshTime && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Clock className="h-3 w-3" />
+              Last updated {format(lastRefreshTime, 'h:mm a')}
+            </div>
+          )}
         </div>
 
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Modernized Grid Layout - Better proportions */}
+        <div className="grid grid-cols-12 gap-6">
           
-          {/* Left Column - Performance Overview */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Performance Overview Card */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white">Performance Overview</CardTitle>
-                <CardDescription className="text-xs text-gray-400">
+          {/* Left Sidebar - Key Metrics & Quick Actions */}
+          <div className="col-span-12 xl:col-span-3 space-y-6">
+            
+            {/* Performance Dashboard */}
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  Performance Overview
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-400">
                   {dateRange?.from && dateRange?.to && 
                     `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Total Spend */}
-                <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-gray-400">Total Spend</p>
-                    <DollarSign className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Budget utilized</p>
-                </div>
-                
-                {/* ROAS & Conversions */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                    <p className="text-xs text-gray-400 mb-1">ROAS</p>
-                    <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</p>
-                    <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)}</p>
-                    <p className="text-xs text-gray-500">Conversions</p>
+              <CardContent className="space-y-5">
+                {/* Primary Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#0F0F0F] p-4 rounded-lg border border-[#333] hover:border-[#444] transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Spend</p>
+                      <DollarSign className="h-4 w-4 text-green-400" />
+                    </div>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Budget utilized</p>
                   </div>
                   
-                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                    <p className="text-xs text-gray-400 mb-1">CPA</p>
-                    <p className="text-xl font-bold text-white">
-                      {formatCurrency(totalMetrics.spend / (totalMetrics.conversions || 1))}
-                    </p>
-                    <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)}</p>
-                    <p className="text-xs text-gray-500">Conversions</p>
+                  <div className="bg-[#0F0F0F] p-4 rounded-lg border border-[#333] hover:border-[#444] transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">ROAS</p>
+                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <p className="text-2xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatNumber(totalMetrics.conversions)} conversions</p>
                   </div>
                 </div>
                 
-                {/* CTR */}
-                <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                  <p className="text-xs text-gray-400 mb-1">CTR</p>
-                  <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
-                  <div className="mt-2">
-                    <div className="w-full bg-[#222] rounded-full h-1.5">
+                {/* Secondary Metrics */}
+                <div className="space-y-3">
+                  <div className="bg-[#0F0F0F] p-4 rounded-lg border border-[#333]">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-white">Click-Through Rate</p>
+                      <span className="text-sm font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</span>
+                    </div>
+                    <div className="w-full bg-[#222] rounded-full h-2">
                       <div 
                         className={cn(
-                          "h-1.5 rounded-full",
+                          "h-2 rounded-full transition-all duration-500",
                           totalMetrics.ctr >= 2 ? "bg-green-500" : 
                           totalMetrics.ctr >= 1 ? "bg-yellow-500" : "bg-red-500"
                         )} 
                         style={{ width: `${Math.min(totalMetrics.ctr * 20, 100)}%` }}
                       />
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">Industry benchmark: 1.9%</p>
+                  </div>
+                  
+                  <div className="bg-[#0F0F0F] p-4 rounded-lg border border-[#333]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-white">Cost Per Acquisition</p>
+                        <p className="text-2xl font-bold text-white">
+                          {formatCurrency(totalMetrics.spend / (totalMetrics.conversions || 1))}
+                        </p>
+                      </div>
+                      <Target className="h-6 w-6 text-purple-400" />
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            {/* Account Performance */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white">Account Performance</CardTitle>
+            {/* Smart Budget Allocation */}
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-yellow-400" />
+                  Smart Budget Allocation
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-400">
+                  AI-optimized recommendations
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <p className="text-xs text-gray-400 mb-2">Suggested Budget Allocation</p>
+                <div className="space-y-4">
                   {campaigns
                     .filter(c => c.status === 'ACTIVE')
                     .sort((a, b) => b.roas - a.roas)
@@ -919,14 +943,22 @@ export default function MarketingAssistantPage() {
                       const suggestedBudget = campaign.roas > 2.5 ? campaign.budget * 1.5 : 
                                              campaign.roas > 1.5 ? campaign.budget : 
                                              campaign.budget * 0.5
+                      const changePercent = ((suggestedBudget - campaign.budget) / campaign.budget) * 100
+                      
                       return (
-                        <div key={campaign.campaign_id} className="flex items-center justify-between py-2 border-b border-[#333] last:border-0">
-                          <div className="flex-1">
-                            <p className="text-sm text-white truncate">{campaign.campaign_name}</p>
+                        <div key={campaign.campaign_id} className="p-3 bg-[#0F0F0F] rounded-lg border border-[#333] hover:border-[#444] transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-white truncate flex-1">{campaign.campaign_name}</p>
+                            <Badge variant={changePercent > 0 ? "default" : "destructive"} className="text-xs">
+                              {changePercent > 0 ? '+' : ''}{changePercent.toFixed(0)}%
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-white">{formatCurrency(suggestedBudget)}</span>
-                            <ChevronRight className="h-3 w-3 text-gray-400" />
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <span>Current: {formatCurrency(campaign.budget)}</span>
+                            <span>Suggested: {formatCurrency(suggestedBudget)}</span>
+                          </div>
+                          <div className="mt-2 text-xs text-gray-500">
+                            ROAS: {campaign.roas.toFixed(1)}x
                           </div>
                         </div>
                       )
@@ -935,16 +967,19 @@ export default function MarketingAssistantPage() {
               </CardContent>
             </Card>
             
-            {/* Goals */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader className="pb-3">
+            {/* Goals Tracker */}
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-white">Goals</CardTitle>
+                  <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Target className="h-5 w-5 text-green-400" />
+                    Campaign Goals
+                  </CardTitle>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowGoalDialog(true)}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 hover:bg-[#333]"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -952,27 +987,39 @@ export default function MarketingAssistantPage() {
               </CardHeader>
               <CardContent>
                 {brandGoals.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">No goals set</p>
+                  <div className="text-center py-6">
+                    <Target className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400">No goals set</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowGoalDialog(true)}
+                      className="mt-2 text-xs text-gray-500 hover:text-white"
+                    >
+                      Create your first goal
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {brandGoals.slice(0, 3).map((goal) => {
                       const progress = goal.targetValue ? 
                         Math.min((totalMetrics.revenue / goal.targetValue) * 100, 100) : 
                         50
                       return (
-                        <div key={goal.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
+                        <div key={goal.id} className="p-3 bg-[#0F0F0F] rounded-lg border border-[#333]">
+                          <div className="flex items-center justify-between mb-3">
                             <p className="text-sm font-medium text-white">{goal.name}</p>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-[#444]">
                               {goal.type.replace('_', ' ')}
                             </Badge>
                           </div>
                           {goal.targetValue && (
                             <>
-                              <Progress value={progress} className="h-1.5" />
-                              <p className="text-xs text-gray-400">
-                                {formatCurrency(totalMetrics.revenue)} of {formatCurrency(goal.targetValue)}
-                              </p>
+                              <Progress value={progress} className="h-2 mb-2" />
+                              <div className="flex justify-between text-xs text-gray-400">
+                                <span>{formatCurrency(totalMetrics.revenue)}</span>
+                                <span>{formatCurrency(goal.targetValue)}</span>
+                              </div>
                             </>
                           )}
                         </div>
@@ -984,115 +1031,121 @@ export default function MarketingAssistantPage() {
             </Card>
           </div>
 
-          {/* Center Column - AI Recommendations */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
+          {/* Main Content Area - AI Insights & Recommendations */}
+          <div className="col-span-12 xl:col-span-6 space-y-6">
+            
+            {/* AI Insights Dashboard */}
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-gray-400" />
-                      AI RECOMMENDATIONS
+                    <CardTitle className="text-2xl font-semibold text-white flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+                        <Brain className="h-6 w-6 text-white" />
+                      </div>
+                      AI INSIGHTS & RECOMMENDATIONS
                     </CardTitle>
-                    <CardDescription className="text-xs text-gray-400 mt-1">
-                      Powered by campaign performance analysis
+                    <CardDescription className="text-sm text-gray-400 mt-2">
+                      Powered by advanced campaign performance analysis
                     </CardDescription>
                   </div>
+                  
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => loadAIInsights()}
+                    onClick={loadAIInsights}
                     disabled={isLoadingInsights}
+                    className="bg-[#1A1A1A] border-[#444] hover:bg-[#252525]"
                   >
-                    <RefreshCw className={cn("h-4 w-4", isLoadingInsights && "animate-spin")} />
+                    {isLoadingInsights ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4">
+                {isLoadingInsights ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-3" />
+                      <p className="text-sm text-gray-400">Analyzing campaign performance...</p>
+                    </div>
+                  </div>
+                ) : aiInsights.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-gray-300 mb-2">No insights available</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      We need more campaign data to generate intelligent recommendations
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      onClick={loadAIInsights}
+                      className="bg-[#1A1A1A] border-[#444] hover:bg-[#252525]"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Analysis
+                    </Button>
+                  </div>
+                ) : (
                   <div className="space-y-4">
-                    {isLoadingInsights ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                          <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
-                          <p className="text-sm text-gray-400">Analyzing campaign performance...</p>
-                        </div>
-                      </div>
-                    ) : aiInsights.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400 mb-2">No recommendations available</p>
-                        <p className="text-xs text-gray-500">Run campaigns to generate insights</p>
-                      </div>
-                    ) : (
-                      aiInsights.map((insight) => (
-                        <div
-                          key={insight.id}
-                          className={cn(
-                            "p-4 bg-[#0A0A0A] rounded-lg border transition-all cursor-pointer",
-                            selectedInsight?.id === insight.id 
-                              ? "border-blue-500" 
-                              : "border-[#333] hover:border-[#444]"
-                          )}
-                          onClick={() => setSelectedInsight(insight)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={cn(
-                              "p-2 rounded-lg flex-shrink-0",
-                              insight.type === 'alert' ? "bg-red-500/10" :
-                              insight.type === 'opportunity' ? "bg-green-500/10" :
-                              insight.type === 'recommendation' ? "bg-blue-500/10" :
-                              "bg-gray-500/10"
-                            )}>
-                              {getInsightIcon(insight.type)}
+                    {aiInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className="p-4 bg-[#0F0F0F] rounded-lg border border-[#333] hover:border-[#444] transition-all duration-200 cursor-pointer"
+                        onClick={() => setSelectedInsight(insight)}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={cn(
+                            "p-2 rounded-lg",
+                            insight.type === 'alert' ? 'bg-red-500/20 text-red-400' :
+                            insight.type === 'opportunity' ? 'bg-green-500/20 text-green-400' :
+                            insight.type === 'recommendation' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-purple-500/20 text-purple-400'
+                          )}>
+                            {getInsightIcon(insight.type)}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-semibold text-white truncate">{insight.title}</h4>
+                              <Badge 
+                                variant={getPriorityBadgeVariant(insight.priority)}
+                                className="text-xs"
+                              >
+                                {insight.priority}
+                              </Badge>
                             </div>
                             
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className="text-sm font-medium text-white pr-2">
-                                  {insight.title}
-                                </h4>
-                                <Badge 
-                                  variant={getPriorityBadgeVariant(insight.priority)}
-                                  className="text-xs flex-shrink-0"
-                                >
-                                  {insight.priority}
-                                </Badge>
+                            <p className="text-sm text-gray-400 mb-3 line-clamp-2">{insight.description}</p>
+                            
+                            {insight.metrics && (
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                {insight.metrics.slice(0, 2).map((metric, idx) => (
+                                  <div key={idx} className="text-xs">
+                                    <p className="text-gray-500">{metric.label}</p>
+                                    <p className="text-white font-medium">{metric.value}</p>
+                                  </div>
+                                ))}
                               </div>
-                              
-                              <p className="text-xs text-gray-400 mb-3">
-                                {insight.description}
+                            )}
+                            
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-gray-500">
+                                {format(insight.timestamp, 'MMM dd, h:mm a')}
                               </p>
-                              
-                              {insight.metrics && insight.metrics.length > 0 && (
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                  {insight.metrics.map((metric, idx) => (
-                                    <div key={idx} className="bg-[#1A1A1A] p-2 rounded">
-                                      <p className="text-xs text-gray-500">{metric.label}</p>
-                                      <p className="text-sm font-medium text-white flex items-center gap-1">
-                                        {metric.value}
-                                        {metric.trend && (
-                                          metric.trend === 'up' ? (
-                                            <ArrowUpRight className="h-3 w-3 text-green-500" />
-                                          ) : metric.trend === 'down' ? (
-                                            <ArrowDownRight className="h-3 w-3 text-red-500" />
-                                          ) : null
-                                        )}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
                               
                               {insight.actionable && insight.action && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="w-full bg-blue-500/10 border-blue-500/50 hover:bg-blue-500/20 text-blue-400"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleInsightAction(insight)
                                   }}
+                                  className="text-xs bg-[#1A1A1A] border-[#444] hover:bg-[#252525]"
                                 >
                                   {insight.action.label}
                                   <ChevronRight className="h-3 w-3 ml-1" />
@@ -1101,45 +1154,51 @@ export default function MarketingAssistantPage() {
                             </div>
                           </div>
                         </div>
-                      ))
-                    )}
+                      </div>
+                    ))}
                   </div>
-                </ScrollArea>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column - Creative Performance & A/B Testing */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Right Sidebar - Creative Performance & Tools */}
+          <div className="col-span-12 xl:col-span-3 space-y-6">
+            
             {/* Creative Performance */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white">Creative Performance</CardTitle>
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-pink-400" />
+                  Creative Performance
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-400">
+                  Top performing campaigns by CTR
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {campaigns
-                    .filter(c => c.status === 'ACTIVE')
                     .sort((a, b) => b.ctr - a.ctr)
-                    .slice(0, 2)
+                    .slice(0, 4)
                     .map((campaign, idx) => (
-                      <div key={campaign.campaign_id} className="space-y-2">
-                        <div className="aspect-video bg-[#0A0A0A] rounded-lg border border-[#333] overflow-hidden relative">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Eye className="h-8 w-8 text-gray-600" />
+                      <div key={campaign.campaign_id} className="p-3 bg-[#0F0F0F] rounded-lg border border-[#333] hover:border-[#444] transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">#{idx + 1}</span>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                            <p className="text-xs text-white font-medium truncate">{campaign.campaign_name}</p>
+                          
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{campaign.campaign_name}</p>
+                            <div className="flex items-center gap-4 mt-1">
+                              <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>
+                              <span className="text-xs text-gray-400">ROAS: {campaign.roas.toFixed(1)}x</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <div>
-                            <p className="text-gray-400">CTR</p>
-                            <p className="font-medium text-white">{campaign.ctr.toFixed(1)}%</p>
-                          </div>
+                          
                           <div className="text-right">
-                            <p className="text-gray-400">CPC</p>
-                            <p className="font-medium text-white">{formatCurrency(campaign.cpc)}</p>
+                            <p className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</p>
+                            <p className="text-xs text-gray-500">spent</p>
                           </div>
                         </div>
                       </div>
@@ -1149,47 +1208,260 @@ export default function MarketingAssistantPage() {
             </Card>
             
             {/* A/B Test Launcher */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-white">Launch AI-Optimized A/B Test</CardTitle>
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-orange-400" />
+                  AI A/B Test Launcher
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-400">
+                  Launch optimized split tests
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                    <p className="text-sm font-medium text-white mb-2">Copy 1</p>
-                    <p className="text-xs text-gray-400">Get 50% Off Your First Month</p>
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500 mb-1">Primary text</p>
-                      <p className="text-xs text-gray-300">Enjoy 50% Off the First Month</p>
+                  <div className="p-4 bg-[#0F0F0F] rounded-lg border border-[#333]">
+                    <h4 className="text-sm font-medium text-white mb-2">Quick Test Ideas</h4>
+                    <div className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-left h-auto p-2 hover:bg-[#333]"
+                        onClick={() => toast.info('A/B test launcher coming soon!')}
+                      >
+                        <div>
+                          <p className="text-sm text-white">Headline Variations</p>
+                          <p className="text-xs text-gray-500">Test emotional vs. rational appeals</p>
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-left h-auto p-2 hover:bg-[#333]"
+                        onClick={() => toast.info('A/B test launcher coming soon!')}
+                      >
+                        <div>
+                          <p className="text-sm text-white">CTA Optimization</p>
+                          <p className="text-xs text-gray-500">Test button text and placement</p>
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-left h-auto p-2 hover:bg-[#333]"
+                        onClick={() => toast.info('A/B test launcher coming soon!')}
+                      >
+                        <div>
+                          <p className="text-sm text-white">Visual Testing</p>
+                          <p className="text-xs text-gray-500">Test image styles and formats</p>
+                        </div>
+                      </Button>
                     </div>
                   </div>
                   
-                  <div className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333]">
-                    <p className="text-sm font-medium text-white mb-2">Copy 2</p>
-                    <p className="text-xs text-gray-400">Limited Time: Half Price First Month</p>
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-500 mb-1">Primary text</p>
-                      <p className="text-xs text-gray-300">Start Today - 50% Off</p>
-                    </div>
-                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                    onClick={() => setShowABTestLauncher(true)}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Launch Test
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Quick Actions */}
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-yellow-400" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-auto p-3 flex flex-col gap-2 bg-[#0F0F0F] border-[#333] hover:bg-[#252525]"
+                    onClick={() => loadAllData()}
+                  >
+                    <RefreshCw className="h-5 w-5 text-blue-400" />
+                    <span className="text-xs">Sync Data</span>
+                  </Button>
                   
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      setShowABTestLauncher(true)
-                      toast.info('A/B test launcher coming soon!')
-                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-auto p-3 flex flex-col gap-2 bg-[#0F0F0F] border-[#333] hover:bg-[#252525]"
+                    onClick={() => setShowGoalDialog(true)}
                   >
-                    Launch Test
+                    <Target className="h-5 w-5 text-green-400" />
+                    <span className="text-xs">Set Goal</span>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-auto p-3 flex flex-col gap-2 bg-[#0F0F0F] border-[#333] hover:bg-[#252525]"
+                    onClick={() => toast.info('Export feature coming soon!')}
+                  >
+                    <FileText className="h-5 w-5 text-purple-400" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-auto p-3 flex flex-col gap-2 bg-[#0F0F0F] border-[#333] hover:bg-[#252525]"
+                    onClick={() => toast.info('Settings coming soon!')}
+                  >
+                    <Settings className="h-5 w-5 text-gray-400" />
+                    <span className="text-xs">Settings</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Bottom Section - Detailed Campaign Analysis */}
+        <div className="mt-8">
+          <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#151515] border-[#333] shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  Campaign Performance Analysis
+                </CardTitle>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Search campaigns..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-48 bg-[#0F0F0F] border-[#333] text-white placeholder:text-gray-500"
+                    />
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-32 bg-[#0F0F0F] border-[#333] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="PAUSED">Paused</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredCampaigns.length === 0 ? (
+                <div className="text-center py-12">
+                  <BarChart3 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-gray-300">No campaigns found</p>
+                  <p className="text-sm text-gray-500">Try adjusting your filters or search query</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredCampaigns.map((campaign) => (
+                    <div 
+                      key={campaign.campaign_id} 
+                      className="p-4 bg-[#0F0F0F] rounded-lg border border-[#333] hover:border-[#444] transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-lg font-semibold text-white">{campaign.campaign_name}</h4>
+                          <Badge 
+                            variant={campaign.status === 'ACTIVE' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {campaign.status}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-[#444]">
+                            {campaign.objective}
+                          </Badge>
+                        </div>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
+                          className="hover:bg-[#333]"
+                        >
+                          {expandedCampaigns.has(campaign.campaign_id) ? 
+                            <ChevronUp className="h-4 w-4" /> : 
+                            <ChevronDown className="h-4 w-4" />
+                          }
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">Spend</p>
+                          <p className="text-lg font-bold text-white">{formatCurrency(campaign.spent)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">ROAS</p>
+                          <p className="text-lg font-bold text-white">{campaign.roas.toFixed(1)}x</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">CTR</p>
+                          <p className="text-lg font-bold text-white">{campaign.ctr.toFixed(2)}%</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">CPC</p>
+                          <p className="text-lg font-bold text-white">{formatCurrency(campaign.cpc)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">Conversions</p>
+                          <p className="text-lg font-bold text-white">{formatNumber(campaign.conversions)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 uppercase tracking-wider">Impressions</p>
+                          <p className="text-lg font-bold text-white">{formatNumber(campaign.impressions)}</p>
+                        </div>
+                      </div>
+                      
+                      {expandedCampaigns.has(campaign.campaign_id) && (
+                        <div className="border-t border-[#333] pt-4 mt-4">
+                          <p className="text-sm text-gray-400 mb-3">Ad Set Performance</p>
+                          {campaign.adSets && campaign.adSets.length > 0 ? (
+                            <div className="space-y-2">
+                              {campaign.adSets.map((adSet) => (
+                                <div key={adSet.adset_id} className="p-3 bg-[#1A1A1A] rounded border border-[#444]">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-white">{adSet.adset_name}</span>
+                                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                                      <span>Spent: {formatCurrency(adSet.spent)}</span>
+                                      <span>CTR: {adSet.ctr.toFixed(2)}%</span>
+                                      <span>Conversions: {formatNumber(adSet.conversions)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500">No ad sets available</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Goal Dialog */}
+      {/* Dialogs and modals remain the same */}
       <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
         <DialogContent className="bg-[#1A1A1A] border-gray-800">
           <DialogHeader>
