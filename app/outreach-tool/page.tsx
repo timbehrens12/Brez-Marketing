@@ -195,11 +195,15 @@ export default function OutreachToolPage() {
   const [showLoadingOverride, setShowLoadingOverride] = useState(false)
   const [showContractGenerator, setShowContractGenerator] = useState(false)
   const [contractData, setContractData] = useState({
-    pricingModel: 'retainer', // 'retainer' or 'revenue_share'
+    pricingModel: 'retainer', // 'retainer', 'revenue_share', or 'per_lead'
     monthlyRetainer: '',
     adSpend: '',
     revenueSharePercentage: '',
     minimumAdSpend: '',
+    pricePerLead: '',
+    estimatedMonthlyLeads: '',
+    leadQualifications: '',
+    setupFee: '',
     contractLength: '6',
     servicesIncluded: {
       metaAds: false,
@@ -1108,6 +1112,24 @@ REVENUE SHARE SPECIFIC TERMS:
 - Disputed revenue attributions will be resolved through third-party analytics verification
 - Revenue share payments are in addition to actual ad spend, which remains client's responsibility
 - Service Provider will optimize campaigns for maximum profitable revenue generation
+` : contractData.pricingModel === 'per_lead' ? `
+2. COMPENSATION (PERFORMANCE-BASED LEAD GENERATION)
+Price Per Lead: $${contractData.pricePerLead || '[Amount]'} per qualified lead
+Estimated Monthly Leads: ${contractData.estimatedMonthlyLeads || '[Number]'} qualified leads
+${contractData.setupFee ? `Setup Fee: $${contractData.setupFee}` : ''}
+Payment Terms: ${contractData.paymentTerms === 'net-30' ? 'Net 30 days' : contractData.paymentTerms === 'net-15' ? 'Net 15 days' : 'Due upon receipt'}
+
+LEAD QUALIFICATION CRITERIA:
+${contractData.leadQualifications || '[Define what constitutes a qualified lead]'}
+
+PERFORMANCE-BASED SPECIFIC TERMS:
+- Payment is due only for leads that meet the agreed qualification criteria
+- Service Provider will implement lead tracking and verification systems
+- All leads will be delivered with complete contact information and verification
+- Client has 7 days to dispute lead qualification after delivery
+- Service Provider optimizes campaigns for lead quality and cost-effectiveness
+- Monthly reporting includes lead sources, conversion rates, and cost per lead analysis
+- Lead attribution tracked through dedicated landing pages and phone numbers
 ` : `
 2. COMPENSATION (RETAINER MODEL)
 Monthly Retainer Fee: $${contractData.monthlyRetainer || '[Amount]'}
@@ -1169,7 +1191,7 @@ Either party may terminate this agreement with ${contractData.cancellationNotice
 Both parties agree to maintain confidentiality of proprietary information shared during the engagement.
 
 7. LIMITATION OF LIABILITY
-Service Provider's liability is limited to ${contractData.pricingModel === 'revenue_share' ? 'the average monthly revenue share payment' : 'the monthly retainer fee'}. No guarantees are made regarding specific performance metrics or ROI.
+Service Provider's liability is limited to ${contractData.pricingModel === 'revenue_share' ? 'the average monthly revenue share payment' : contractData.pricingModel === 'per_lead' ? 'the cost of qualified leads delivered in the previous month' : 'the monthly retainer fee'}. No guarantees are made regarding specific performance metrics or ROI.
 
 8. INTELLECTUAL PROPERTY
 All creative materials developed remain property of the Client. Service Provider retains rights to campaign strategies and methodologies.
@@ -1192,7 +1214,7 @@ Signature on file: ${agencySettings?.signature_name}
 ---
 This contract was generated on ${currentDate} for ${lead.business_name}
 Contract ID: ${lead.id}-${Date.now()}
-Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : 'Monthly Retainer'}
+Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share' : contractData.pricingModel === 'per_lead' ? 'Performance-Based Lead Generation' : 'Monthly Retainer'}
 `
 
     return contract
@@ -1212,6 +1234,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     } else if (contractData.pricingModel === 'revenue_share') {
       if (!contractData.revenueSharePercentage || contractData.revenueSharePercentage.trim() === '') {
         errors.push('Revenue share percentage is required')
+      }
+    } else if (contractData.pricingModel === 'per_lead') {
+      if (!contractData.pricePerLead || contractData.pricePerLead.trim() === '') {
+        errors.push('Price per lead is required')
+      }
+      if (!contractData.estimatedMonthlyLeads || contractData.estimatedMonthlyLeads.trim() === '') {
+        errors.push('Estimated monthly leads is required')
+      }
+      if (!contractData.leadQualifications || contractData.leadQualifications.trim() === '') {
+        errors.push('Lead qualification criteria is required')
       }
     }
     
@@ -1257,6 +1289,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         } else if (contractData.pricingModel === 'revenue_share') {
           if (!contractData.revenueSharePercentage || contractData.revenueSharePercentage.trim() === '') {
             fieldsToFlash.push('revenueSharePercentage')
+          }
+        } else if (contractData.pricingModel === 'per_lead') {
+          if (!contractData.pricePerLead || contractData.pricePerLead.trim() === '') {
+            fieldsToFlash.push('pricePerLead')
+          }
+          if (!contractData.estimatedMonthlyLeads || contractData.estimatedMonthlyLeads.trim() === '') {
+            fieldsToFlash.push('estimatedMonthlyLeads')
+          }
+          if (!contractData.leadQualifications || contractData.leadQualifications.trim() === '') {
+            fieldsToFlash.push('leadQualifications')
           }
         }
         
@@ -4190,11 +4232,11 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       <Label className="text-sm font-medium text-gray-300">
                         Pricing Model <span className="text-red-500 text-xs">*</span>
                       </Label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         <Button
                           onClick={() => setContractData(prev => ({ ...prev, pricingModel: 'retainer' }))}
                           variant={contractData.pricingModel === 'retainer' ? 'default' : 'outline'}
-                          className={`h-12 ${
+                          className={`h-12 text-xs ${
                             contractData.pricingModel === 'retainer'
                               ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
@@ -4205,13 +4247,24 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                         <Button
                           onClick={() => setContractData(prev => ({ ...prev, pricingModel: 'revenue_share' }))}
                           variant={contractData.pricingModel === 'revenue_share' ? 'default' : 'outline'}
-                          className={`h-12 ${
+                          className={`h-12 text-xs ${
                             contractData.pricingModel === 'revenue_share'
                               ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
                           Revenue Share
+                        </Button>
+                        <Button
+                          onClick={() => setContractData(prev => ({ ...prev, pricingModel: 'per_lead' }))}
+                          variant={contractData.pricingModel === 'per_lead' ? 'default' : 'outline'}
+                          className={`h-12 text-xs ${
+                            contractData.pricingModel === 'per_lead'
+                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                          }`}
+                        >
+                          Pay Per Lead
                         </Button>
                       </div>
                     </div>
@@ -4271,6 +4324,75 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             placeholder="5000"
                             className="bg-[#1A1A1A] border-[#444] text-white"
                           />
+                        </div>
+                      </div>
+                    )}
+
+                    {contractData.pricingModel === 'per_lead' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="pricePerLead" className="text-sm font-medium text-gray-300">
+                              Price Per Lead <span className="text-red-500 text-xs">*</span>
+                            </Label>
+                            <Input
+                              id="pricePerLead"
+                              value={contractData.pricePerLead}
+                              onChange={(e) => setContractData(prev => ({ ...prev, pricePerLead: e.target.value }))}
+                              placeholder="50"
+                              className={`bg-[#1A1A1A] border-[#444] text-white ${
+                                flashingFields.includes('pricePerLead') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="estimatedMonthlyLeads" className="text-sm font-medium text-gray-300">
+                              Est. Monthly Leads <span className="text-red-500 text-xs">*</span>
+                            </Label>
+                            <Input
+                              id="estimatedMonthlyLeads"
+                              value={contractData.estimatedMonthlyLeads}
+                              onChange={(e) => setContractData(prev => ({ ...prev, estimatedMonthlyLeads: e.target.value }))}
+                              placeholder="20"
+                              className={`bg-[#1A1A1A] border-[#444] text-white ${
+                                flashingFields.includes('estimatedMonthlyLeads') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="setupFee" className="text-sm font-medium text-gray-300">
+                            Setup Fee (Optional)
+                          </Label>
+                          <Input
+                            id="setupFee"
+                            value={contractData.setupFee}
+                            onChange={(e) => setContractData(prev => ({ ...prev, setupFee: e.target.value }))}
+                            placeholder="500"
+                            className="bg-[#1A1A1A] border-[#444] text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="leadQualifications" className="text-sm font-medium text-gray-300">
+                            Lead Qualification Criteria <span className="text-red-500 text-xs">*</span>
+                          </Label>
+                          <textarea
+                            id="leadQualifications"
+                            value={contractData.leadQualifications}
+                            onChange={(e) => setContractData(prev => ({ ...prev, leadQualifications: e.target.value }))}
+                            placeholder="e.g., Homeowners with properties built before 2010, located within 25 miles of contractor, with household income $50K+, expressing interest in roofing services"
+                            className={`w-full min-h-[80px] bg-[#1A1A1A] border-[#444] text-white rounded-md px-3 py-2 text-sm resize-y ${
+                              flashingFields.includes('leadQualifications') 
+                                ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                : ''
+                            }`}
+                            rows={3}
+                          />
+                          <p className="text-xs text-gray-500">Define specific criteria that qualify a lead for payment</p>
                         </div>
                       </div>
                     )}
@@ -5774,14 +5896,14 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="space-y-3 text-sm text-gray-300">
                     <div>1. <strong>Qualify Leads:</strong> Update lead status to "Qualified" when ready to close</div>
                     <div>2. <strong>Generate Contract:</strong> Click "Generate Contract" button for qualified leads</div>
-                    <div>3. <strong>Choose Pricing Model:</strong> Select between Monthly Retainer or Revenue Share</div>
+                    <div>3. <strong>Choose Pricing Model:</strong> Select between Monthly Retainer, Revenue Share, or Pay Per Lead</div>
                     <div>4. <strong>Configure Terms:</strong> Set pricing, contract length, payment terms, and services</div>
                     <div>5. <strong>Professional Download:</strong> Export as HTML format for PDF conversion</div>
                     <div>6. <strong>Digital Signatures:</strong> Automatic signature inclusion from Settings</div>
                   </div>
-                  <div className="mt-4 p-3 bg-green-900/30 rounded-lg">
-                    <p className="text-green-200 text-sm">
-                      <strong>Revenue Share Option:</strong> Set percentage-based pricing with optional minimum ad spend for performance-based agreements.
+                  <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/30 to-green-900/30 rounded-lg">
+                    <p className="text-blue-200 text-sm">
+                      <strong>Pricing Models:</strong> Monthly Retainer (fixed fee), Revenue Share (% of sales), or Pay Per Lead (perfect for roofing, landscaping, and local service businesses requiring qualified leads).
                     </p>
                   </div>
                 </div>
@@ -5928,7 +6050,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     <h4 className="font-semibold text-white mb-3">Contract & Closing</h4>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div>• Upload signature in Settings for professional contracts</div>
-                      <div>• Choose revenue share for performance-based deals</div>
+                      <div>• Choose revenue share or pay-per-lead for performance-based deals</div>
                       <div>• Set realistic expectations in contract terms</div>
                       <div>• Send contracts within 24 hours of lead qualification</div>
                       <div>• Follow up if contract isn't signed within 3 days</div>
@@ -6021,12 +6143,13 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           <SelectContent className="bg-[#1A1A1A] border-[#444]">
                             <SelectItem value="retainer">Monthly Retainer</SelectItem>
                             <SelectItem value="revenue_share">Revenue Share</SelectItem>
+                            <SelectItem value="per_lead">Pay Per Lead</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       {/* Conditional Fields Based on Pricing Model */}
-                      {contractData.pricingModel === 'retainer' ? (
+                      {contractData.pricingModel === 'retainer' && (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label className="text-sm font-medium text-gray-400">
@@ -6063,7 +6186,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             />
                           </div>
                         </div>
-                      ) : (
+                      )}
+
+                      {contractData.pricingModel === 'revenue_share' && (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label className="text-sm font-medium text-gray-400">
@@ -6091,6 +6216,75 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               onChange={(e) => setContractData(prev => ({ ...prev, minimumAdSpend: e.target.value }))}
                               className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
                             />
+                          </div>
+                        </div>
+                      )}
+
+                      {contractData.pricingModel === 'per_lead' && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">
+                                Price Per Lead 
+                                <span className="text-red-400 ml-1 text-xs">*</span>
+                              </Label>
+                              <Input
+                                type="number"
+                                placeholder="50"
+                                value={contractData.pricePerLead}
+                                onChange={(e) => setContractData(prev => ({ ...prev, pricePerLead: e.target.value }))}
+                                className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                                  flashingFields.includes('pricePerLead') 
+                                    ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                    : ''
+                                }`}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-400">
+                                Est. Monthly Leads 
+                                <span className="text-red-400 ml-1 text-xs">*</span>
+                              </Label>
+                              <Input
+                                type="number"
+                                placeholder="20"
+                                value={contractData.estimatedMonthlyLeads}
+                                onChange={(e) => setContractData(prev => ({ ...prev, estimatedMonthlyLeads: e.target.value }))}
+                                className={`bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500 ${
+                                  flashingFields.includes('estimatedMonthlyLeads') 
+                                    ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                    : ''
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">Setup Fee (Optional)</Label>
+                            <Input
+                              type="number"
+                              placeholder="500"
+                              value={contractData.setupFee}
+                              onChange={(e) => setContractData(prev => ({ ...prev, setupFee: e.target.value }))}
+                              className="bg-[#1A1A1A] border-[#444] text-white placeholder-gray-500"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-400">
+                              Lead Qualification Criteria 
+                              <span className="text-red-400 ml-1 text-xs">*</span>
+                            </Label>
+                            <textarea
+                              value={contractData.leadQualifications}
+                              onChange={(e) => setContractData(prev => ({ ...prev, leadQualifications: e.target.value }))}
+                              placeholder="e.g., Homeowners with properties built before 2010, located within 25 miles of contractor, with household income $50K+, expressing interest in roofing services"
+                              className={`w-full min-h-[80px] bg-[#1A1A1A] border border-[#444] text-white rounded-md px-3 py-2 text-sm placeholder-gray-500 resize-y ${
+                                flashingFields.includes('leadQualifications') 
+                                  ? 'animate-pulse border-red-500 bg-red-900/20' 
+                                  : ''
+                              }`}
+                              rows={3}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Define specific criteria that qualify a lead for payment</p>
                           </div>
                         </div>
                       )}
