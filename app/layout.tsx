@@ -238,7 +238,7 @@ export default function RootLayout({
           >
             <AuthenticatedProviders>
               <div className="flex h-screen overflow-hidden fixed inset-0">
-                <Sidebar className="w-64 flex-shrink-0 h-screen sticky top-0" />
+                <Sidebar className="flex-shrink-0 h-screen sticky top-0" />
                 <ConditionalLayout>
                   <div className="flex-1">
                     {children}
