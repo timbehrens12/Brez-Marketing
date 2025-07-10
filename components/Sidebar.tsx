@@ -122,24 +122,24 @@ export function Sidebar({ className }: SidebarProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Logo Section */}
-        <div className="p-4 flex items-center justify-center">
-          <div className="w-12 h-12 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center relative">
+                 <div className="p-4 flex items-center justify-center">
+           <div className="w-14 h-14 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center relative">
             <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
-            {agencyLoading ? (
-              <div className="w-8 h-8 animate-pulse bg-[#444] rounded"></div>
-            ) : agencySettings.agency_logo_url ? (
-              <img 
-                src={agencySettings.agency_logo_url} 
-                alt={`${agencySettings.agency_name} Logo`} 
-                className="w-8 h-8 object-contain rounded" 
-              />
-            ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-              <span className="text-white font-bold text-lg">
-                {agencySettings.agency_name.slice(0, 2).toUpperCase()}
-              </span>
-            ) : (
-              <div className="w-8 h-8 rounded" style={{backgroundColor: '#3a3a3a'}}></div>
-            )}
+                         {agencyLoading ? (
+               <div className="w-10 h-10 animate-pulse bg-[#444] rounded"></div>
+             ) : agencySettings.agency_logo_url ? (
+               <img 
+                 src={agencySettings.agency_logo_url} 
+                 alt={`${agencySettings.agency_name} Logo`} 
+                 className="w-10 h-10 object-contain rounded" 
+               />
+             ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+               <span className="text-white font-bold text-xl">
+                 {agencySettings.agency_name.slice(0, 2).toUpperCase()}
+               </span>
+             ) : (
+               <div className="w-10 h-10 rounded" style={{backgroundColor: '#3a3a3a'}}></div>
+             )}
           </div>
         </div>
         
@@ -147,21 +147,21 @@ export function Sidebar({ className }: SidebarProps) {
         
         <div className="flex-1 px-2">
           <nav className="space-y-3 opacity-50">
-            <div className="flex items-center justify-center p-3 bg-[#2A2A2A] text-white rounded-lg">
-              <LayoutDashboard className="h-6 w-6" />
-            </div>
+                         <div className="flex items-center justify-center p-3 bg-[#2A2A2A] text-white rounded-lg">
+               <LayoutDashboard className="h-5 w-5" />
+             </div>
           </nav>
         </div>
         
         <div className="p-4 mt-auto border-t border-[#2A2A2A] flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-12 h-12 p-0 text-gray-400 hover:text-white hover:bg-[#2A2A2A] rounded-lg"
-            disabled
-          >
-            <LogOut className="h-6 w-6" />
-          </Button>
+                     <Button
+             variant="ghost"
+             size="sm"
+             className="w-12 h-12 p-0 text-gray-400 hover:text-white hover:bg-[#2A2A2A] rounded-lg"
+             disabled
+           >
+             <LogOut className="h-5 w-5" />
+           </Button>
         </div>
       </aside>
     )
@@ -220,50 +220,47 @@ export function Sidebar({ className }: SidebarProps) {
 
         {/* Logo Section */}
         <div className="p-4 flex items-center justify-center">
-          <div className={cn(
-            "bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center relative transition-all duration-300",
-            showExpanded ? "w-full p-3" : "w-12 h-12 justify-center"
-          )}>
+                     <div className={cn(
+             "bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center relative transition-all duration-300",
+             showExpanded ? "w-full p-3" : "w-14 h-14 justify-center"
+           )}>
             <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
             
-            <div className={cn("flex-shrink-0", showExpanded ? "ml-2" : "")}>
-              {agencyLoading ? (
-                <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 animate-pulse bg-[#444] rounded"></div>
-                </div>
-              ) : agencySettings.agency_logo_url ? (
-                <div className="w-8 h-8 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-1 overflow-hidden">
-                  <img 
-                    src={agencySettings.agency_logo_url} 
-                    alt={`${agencySettings.agency_name} Logo`} 
-                    className="max-w-full max-h-full object-contain rounded" 
-                  />
-                </div>
-              ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-                <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">
-                    {agencySettings.agency_name.slice(0, 2).toUpperCase()}
-                  </span>
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
-                  {/* Gray placeholder square */}
-                </div>
-              )}
-            </div>
+                         <div className={cn("flex-shrink-0", showExpanded ? "ml-2" : "")}>
+               {agencyLoading ? (
+                 <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                   <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
+                 </div>
+               ) : agencySettings.agency_logo_url ? (
+                 <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-1.5 overflow-hidden">
+                   <img 
+                     src={agencySettings.agency_logo_url} 
+                     alt={`${agencySettings.agency_name} Logo`} 
+                     className="max-w-full max-h-full object-contain rounded" 
+                   />
+                 </div>
+               ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                 <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                   <span className="text-white font-bold text-lg">
+                     {agencySettings.agency_name.slice(0, 2).toUpperCase()}
+                   </span>
+                 </div>
+               ) : (
+                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
+                   {/* Gray placeholder square */}
+                 </div>
+               )}
+             </div>
             
             {showExpanded && (
-              <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
-                <h3 className="text-sm font-semibold text-white break-words leading-tight tracking-wide">
+              <div className="flex-1 min-w-0 ml-3 transition-opacity duration-500 delay-200">
+                <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
                   {agencyLoading ? (
-                    <div className="h-4 bg-[#444] rounded animate-pulse"></div>
+                    <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
                   ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
                     agencySettings.agency_name
                   ) : (
-                    <div className="space-y-1">
-                      <div className="h-3 rounded w-20" style={{backgroundColor: '#3a3a3a'}}></div>
-                      <div className="h-2 rounded w-16" style={{backgroundColor: '#3a3a3a'}}></div>
-                    </div>
+                    "Agency"
                   )}
                 </h3>
               </div>
@@ -309,7 +306,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
                     )}
                     <div className={cn("flex items-center w-full", showExpanded ? "space-x-3" : "justify-center")}>
-                      <item.icon className="h-6 w-6 flex-shrink-0" />
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
                       {showExpanded && (
                         <div className="flex-1 min-w-0 transition-opacity duration-200">
                           <div className="flex items-center justify-between">
