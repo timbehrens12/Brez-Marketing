@@ -22,73 +22,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { brandId, campaignId, campaign, includeCreatives, brandStats, brandSettings } = await request.json()
+    const { brandId, campaignId, campaign, includeCreatives } = await request.json()
     
-    // If we have the simplified campaign object from marketing assistant
-    if (campaign && !campaignId) {
-      // Simplified analysis for quick recommendations
-      const quickAnalysisPrompt = `
-Analyze this Meta advertising campaign and provide a quick recommendation:
-
-CAMPAIGN: ${campaign.name}
-- Status: ${campaign.status}
-- Budget: $${campaign.budget}
-- Spent: $${campaign.spent} (${((campaign.spent / campaign.budget) * 100).toFixed(0)}% of budget)
-- ROAS: ${campaign.roas.toFixed(2)}x
-- CTR: ${campaign.ctr.toFixed(2)}%
-- CPC: $${campaign.cpc.toFixed(2)}
-- Conversions: ${campaign.conversions}
-
-BRAND CONTEXT:
-- Overall ROAS: ${brandStats?.roas?.toFixed(2) || 'N/A'}x
-- Brand Settings: ${JSON.stringify(brandSettings || {})}
-
-Provide ONE concise recommendation (max 5 words) and severity level.
-Examples:
-- "Increase budget" (success)
-- "Reduce CPC targeting" (warning)
-- "Pause underperforming ads" (error)
-- "Scale winning creative" (success)
-- "Test new audiences" (warning)
-
-Response format: { "recommendation": "Your recommendation", "severity": "success|warning|error" }
-`
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "You are a Meta ads expert. Provide extremely concise, actionable recommendations."
-          },
-          {
-            role: "user",
-            content: quickAnalysisPrompt
-          }
-        ],
-        max_tokens: 100,
-        temperature: 0.3
-      })
-
-      try {
-        const result = JSON.parse(completion.choices[0].message.content || '{}')
-        return NextResponse.json({
-          recommendation: result.recommendation || 'Optimize campaign',
-          severity: result.severity || 'warning'
-        })
-      } catch {
-        // Determine severity based on ROAS
-        let severity = 'warning'
-        if (campaign.roas >= 3) severity = 'success'
-        else if (campaign.roas < 1.5) severity = 'error'
-        
-        return NextResponse.json({
-          recommendation: completion.choices[0].message.content || 'Review performance',
-          severity
-        })
-      }
-    }
-
     if (!brandId || !campaignId || !campaign) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }

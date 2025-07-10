@@ -40,146 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const { brandId, focusArea, dateRange, type, stats, campaigns, brandSettings } = await request.json();
-    
-    // Check if this is a marketing assistant insights request
-    if (type && stats && campaigns) {
-      console.log(`Generating marketing ${type} insights...`);
-      
-      let insightsPrompt = '';
-      
-      if (type === 'performance') {
-        insightsPrompt = `
-Analyze marketing performance and provide insights:
-
-CURRENT METRICS:
-- Total Spend: $${stats.totalSpend}
-- ROAS: ${stats.roas}x
-- CTR: ${stats.ctr}%
-- CPC: $${stats.cpc}
-- Conversions: ${stats.conversions}
-
-TOP CAMPAIGNS:
-${campaigns.slice(0, 5).map((c: any) => `- ${c.name}: ${c.roas}x ROAS, $${c.spent} spent`).join('\n')}
-
-Provide:
-1. Key findings (3-5 insights about current performance)
-2. Opportunities (2-3 high-impact optimization opportunities with priority levels)
-3. Specific actions to improve performance
-
-Format as JSON: {
-  "findings": ["Finding 1", "Finding 2"],
-  "opportunities": [
-    { "title": "Title", "description": "Description", "impact": "High ROI opportunity", "priority": "high|medium|low" }
-  ]
-}`;
-      } else if (type === 'forecast') {
-        insightsPrompt = `
-Create a 7-day forecast based on current trends:
-
-CURRENT METRICS:
-- Daily Spend: $${(stats.totalSpend / 30).toFixed(2)}
-- Current ROAS: ${stats.roas}x
-- Conversion Rate: ${stats.conversionRate}%
-
-CAMPAIGN PERFORMANCE:
-${campaigns.slice(0, 3).map((c: any) => `- ${c.name}: trending ${c.roas > 3 ? 'up' : 'stable'}`).join('\n')}
-
-Generate a 7-day forecast with expected spend, revenue, ROAS, and confidence level.
-
-Format as JSON: {
-  "findings": ["Key trend 1", "Key trend 2"],
-  "forecast": {
-    "spend": ${stats.totalSpend * 7 / 30},
-    "revenue": ${stats.totalRevenue * 7 / 30},
-    "roas": ${stats.roas},
-    "confidence": 85
-  },
-  "opportunities": [
-    { "title": "Opportunity", "description": "How to improve forecast", "impact": "Expected outcome", "priority": "high" }
-  ]
-}`;
-      } else if (type === 'anomalies') {
-        insightsPrompt = `
-Detect anomalies and unusual patterns in marketing data:
-
-METRICS:
-- Spend: $${stats.totalSpend} (check for unusual spikes)
-- CTR: ${stats.ctr}% (industry avg: 2-3%)
-- CPC: $${stats.cpc} (check for increases)
-- ROAS: ${stats.roas}x (check for drops)
-
-CAMPAIGNS:
-${campaigns.map((c: any) => `- ${c.name}: ${c.roas}x ROAS, ${c.ctr}% CTR`).join('\n')}
-
-Identify:
-1. Any metrics significantly above/below normal ranges
-2. Campaigns performing unusually well or poorly
-3. Potential issues that need immediate attention
-
-Format as JSON: {
-  "findings": ["Anomaly 1", "Anomaly 2"],
-  "opportunities": [
-    { "title": "Issue/Opportunity", "description": "Details", "impact": "Impact description", "priority": "high|medium|low" }
-  ]
-}`;
-      }
-      
-      const openai = require('openai');
-      const client = new openai.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      
-      const completion = await client.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert digital marketing analyst. Provide specific, actionable insights based on the data.'
-          },
-          {
-            role: 'user',
-            content: insightsPrompt
-          }
-        ],
-        model: 'gpt-4',
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-      
-      try {
-        const result = JSON.parse(completion.choices[0].message.content || '{}');
-        return NextResponse.json(result);
-      } catch (parseError) {
-        // Fallback response
-        return NextResponse.json({
-          findings: [
-            `Your campaigns are achieving ${stats.roas.toFixed(2)}x ROAS`,
-            `CTR of ${stats.ctr.toFixed(2)}% is ${stats.ctr > 2 ? 'above' : 'below'} industry average`,
-            `You have ${campaigns.length} active campaigns with varying performance`
-          ],
-          opportunities: [
-            {
-              title: 'Optimize Underperformers',
-              description: 'Several campaigns are below target ROAS',
-              impact: 'Could improve overall ROAS by 15-20%',
-              priority: 'high'
-            },
-            {
-              title: 'Scale Winners',
-              description: 'Top campaigns have room for budget increase',
-              impact: 'Potential 30% revenue increase',
-              priority: 'medium'
-            }
-          ],
-          ...(type === 'forecast' && {
-            forecast: {
-              spend: stats.totalSpend * 7 / 30,
-              revenue: stats.totalRevenue * 7 / 30,
-              roas: stats.roas,
-              confidence: 75
-            }
-          })
-        });
-      }
-    }
+    const { brandId, focusArea, dateRange } = await request.json();
     
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 });
@@ -288,7 +149,7 @@ Format as JSON: {
           // Extract and aggregate product data from line items
           const productMap = new Map();
           
-          orderData.forEach((order: { line_items: any[] }) => {
+          orderData.forEach((order: ShopifyOrder) => {
             const lineItems = order.line_items || [];
             lineItems.forEach((item: LineItem) => {
               const productId = item.product_id?.toString();
