@@ -1758,13 +1758,13 @@ export default function LeadGeneratorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white p-6">
+    <div className="bg-[#0A0A0A] text-white p-6 pb-20">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2 h-[calc(100vh-50px)]">
-            <CardContent className="space-y-6 pt-6 h-full overflow-y-auto">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
+            <CardContent className="space-y-6 pt-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
               <CardHeader className="pb-3">
@@ -2175,7 +2175,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 h-[calc(100vh-50px)] flex flex-col">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -2253,7 +2253,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col flex-1 overflow-hidden">
+              <CardContent className="space-y-4">
 
 
                 {/* Search Bar */}
