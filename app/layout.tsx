@@ -221,7 +221,7 @@ export default function RootLayout({
           }
         `}</style>
       </head>
-      <body className={cn("h-screen overflow-hidden bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
+      <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
@@ -237,8 +237,8 @@ export default function RootLayout({
             }}
           >
             <AuthenticatedProviders>
-              <div className="flex h-screen overflow-hidden fixed inset-0">
-                <Sidebar className="flex-shrink-0 h-screen sticky top-0" />
+              <div className="flex min-h-screen">
+                <Sidebar className="flex-shrink-0 sticky top-0 h-screen" />
                 <ConditionalLayout>
                   <div className="flex-1">
                     {children}
