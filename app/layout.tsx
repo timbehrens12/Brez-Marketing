@@ -239,12 +239,14 @@ export default function RootLayout({
             <AuthenticatedProviders>
               <div className="flex min-h-screen">
                 <Sidebar className="flex-shrink-0 sticky top-0 h-screen" />
-                <ConditionalLayout>
-                  <div className="flex-1">
-                    {children}
-                  </div>
+                <div className="flex-1 flex flex-col">
+                  <ConditionalLayout>
+                    <div className="flex-1">
+                      {children}
+                    </div>
+                  </ConditionalLayout>
                   <ConditionalFooter />
-                </ConditionalLayout>
+                </div>
               </div>
             </AuthenticatedProviders>
           </ClerkProvider>

@@ -13,7 +13,7 @@ export function ConditionalLayout({ children, className = "" }: ConditionalLayou
   
   // All pages now use natural scrolling layout
   return (
-    <main className={`flex-1 flex flex-col ${className}`}>
+    <main className={`flex-1 ${className}`}>
       {children}
     </main>
   )
