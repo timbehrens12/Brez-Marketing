@@ -12,8 +12,83 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const { brandId, area } = await request.json();
+    const { brandId, area, campaign, brandSettings, requestType } = await request.json();
     
+    // Check if this is a marketing assistant detailed recommendation request
+    if (requestType === 'detailed' && campaign) {
+      console.log('Generating detailed campaign recommendations...');
+      
+      const detailPrompt = `
+Provide a detailed analysis and recommendations for this campaign:
+
+CAMPAIGN: ${campaign.name}
+- Platform: ${campaign.platform}
+- Status: ${campaign.status}
+- Budget: $${campaign.budget} 
+- Spent: $${campaign.spent} (${((campaign.spent / campaign.budget) * 100).toFixed(0)}% utilized)
+- ROAS: ${campaign.roas.toFixed(2)}x
+- CTR: ${campaign.ctr.toFixed(2)}%
+- CPC: $${campaign.cpc.toFixed(2)}
+- Conversions: ${campaign.conversions}
+- Ad Sets: ${campaign.adsets?.length || 0}
+
+BRAND SETTINGS: ${JSON.stringify(brandSettings || {})}
+
+Provide a comprehensive analysis including:
+1. Current Status Assessment
+2. Specific Recommendation with reasoning
+3. Step-by-step implementation guide
+4. Expected impact with metrics
+5. 7-day forecast if implemented
+
+Format as JSON: {
+  "currentStatus": "Detailed assessment",
+  "recommendation": "Primary recommendation",
+  "steps": ["Step 1", "Step 2", "Step 3"],
+  "expectedImpact": "Quantified impact prediction",
+  "forecast": "7-day projection"
+}`;
+
+      try {
+        const responseText = await getGPT4Response(
+          'You are an expert Meta ads strategist. Provide detailed, actionable campaign optimization recommendations.',
+          detailPrompt,
+          0.7
+        );
+        
+        const analysis = JSON.parse(responseText);
+        return NextResponse.json(analysis);
+      } catch (error) {
+        // Fallback response
+        const isHighPerformer = campaign.roas >= 3;
+        const isLowCTR = campaign.ctr < 1.5;
+        
+        return NextResponse.json({
+          currentStatus: `This campaign is ${isHighPerformer ? 'performing well' : 'underperforming'} with ${campaign.roas.toFixed(2)}x ROAS. CTR of ${campaign.ctr.toFixed(2)}% is ${isLowCTR ? 'below' : 'at'} industry standards.`,
+          recommendation: isHighPerformer ? 
+            'Increase budget by 20-30% to scale winning campaign' : 
+            isLowCTR ? 
+              'Improve ad creative and targeting to boost CTR' : 
+              'Optimize bidding strategy to improve ROAS',
+          steps: isHighPerformer ? [
+            'Analyze top-performing ad sets',
+            'Gradually increase daily budget by 20%',
+            'Monitor performance metrics daily',
+            'Duplicate winning ad sets with new audiences'
+          ] : [
+            'Pause underperforming ad sets',
+            'A/B test new creative variations',
+            'Refine audience targeting',
+            'Review and optimize landing pages'
+          ],
+          expectedImpact: isHighPerformer ? 
+            'Scaling this campaign could increase conversions by 25-35% while maintaining ROAS above 2.5x' :
+            'Optimization could improve ROAS to 2.5-3x within 7-10 days',
+          forecast: `Based on current trends, implementing these changes could result in ${isHighPerformer ? '30%' : '50%'} improvement in campaign performance over the next week.`
+        });
+      }
+    }
+
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 });
     }

@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     
     // Parse the request body
     const body = await request.json()
-    const { customPrompt, enrichedData, period, brandId, isScheduledRefresh: bodyFlag } = body
+    const { customPrompt, enrichedData, period, brandId, isScheduledRefresh: bodyFlag, stats, campaigns, brandSettings, date } = body
     
     // Combined flag for scheduled refresh from either header or body
     const isAutomatedRefresh = isScheduledRefresh || bodyFlag
@@ -128,6 +128,98 @@ export async function POST(request: Request) {
       }
       
       body.customPrompt = prompt
+    }
+    
+    // Check if this is a marketing assistant daily insight request
+    if (stats && campaigns && !customPrompt) {
+      console.log('Generating marketing assistant daily insight...')
+      
+      const insightPrompt = `
+Generate a daily AI marketing insight for ${new Date(date || Date.now()).toLocaleDateString()}:
+
+CURRENT PERFORMANCE:
+- Total Spend: $${stats.totalSpend.toFixed(2)}
+- Total Revenue: $${stats.totalRevenue.toFixed(2)}
+- ROAS: ${stats.roas.toFixed(2)}x
+- Conversions: ${stats.conversions}
+- CTR: ${stats.ctr.toFixed(2)}%
+- CPC: $${stats.cpc.toFixed(2)}
+
+ACTIVE CAMPAIGNS (${campaigns.length}):
+${campaigns.slice(0, 5).map((c: any) => `- ${c.name}: ${c.roas.toFixed(2)}x ROAS, ${c.ctr.toFixed(2)}% CTR`).join('\n')}
+
+BRAND CONTEXT:
+${JSON.stringify(brandSettings || {})}
+
+Generate a response with:
+1. A brief summary paragraph (2-3 sentences) about today's performance
+2. 1-3 alerts (success/warning/error) about important events or metrics
+3. 2-4 specific, actionable recommendations for today
+
+Format as JSON: {
+  "summary": "Your summary here",
+  "alerts": [
+    { "type": "success|warning|error", "message": "Alert message" }
+  ],
+  "recommendations": ["Recommendation 1", "Recommendation 2"],
+  "metrics": {
+    "spend": ${stats.totalSpend},
+    "revenue": ${stats.totalRevenue},
+    "roas": ${stats.roas},
+    "conversions": ${stats.conversions}
+  }
+}
+`
+
+      const chatCompletion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert digital marketing analyst providing daily insights and recommendations. Be specific, actionable, and focus on immediate opportunities.'
+          },
+          {
+            role: 'user',
+            content: insightPrompt
+          }
+        ],
+        model: 'gpt-4',
+        temperature: 0.7,
+        max_tokens: 800
+      })
+      
+      try {
+        const insight = JSON.parse(chatCompletion.choices[0].message.content || '{}')
+        return NextResponse.json({
+          date: new Date(date || Date.now()).toISOString(),
+          summary: insight.summary || 'Performance analysis complete.',
+          alerts: insight.alerts || [],
+          recommendations: insight.recommendations || [],
+          metrics: insight.metrics || stats
+        })
+      } catch (parseError) {
+        // Fallback response if JSON parsing fails
+        return NextResponse.json({
+          date: new Date(date || Date.now()).toISOString(),
+          summary: chatCompletion.choices[0].message.content || 'Daily analysis complete.',
+          alerts: [
+            { 
+              type: stats.roas >= 3 ? 'success' : stats.roas >= 2 ? 'warning' : 'error',
+              message: `Current ROAS is ${stats.roas.toFixed(2)}x`
+            }
+          ],
+          recommendations: [
+            'Review campaign performance metrics',
+            'Optimize underperforming ad sets',
+            'Scale successful campaigns'
+          ],
+          metrics: {
+            spend: stats.totalSpend,
+            revenue: stats.totalRevenue,
+            roas: stats.roas,
+            conversions: stats.conversions
+          }
+        })
+      }
     }
     
     if (!body.customPrompt) {
