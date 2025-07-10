@@ -846,10 +846,10 @@ export default function MarketingAssistantPage() {
         </div>
 
         {/* Clean 3-Column Layout */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           
           {/* Left Column - Performance Overview */}
-          <div className="col-span-12 lg:col-span-4 space-y-6">
+          <div className="space-y-6">
             
             {/* Performance Metrics */}
             <Card className="bg-[#1A1A1A] border-[#333]">
@@ -862,49 +862,51 @@ export default function MarketingAssistantPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Primary Metrics */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Total Spend</p>
-                      <p className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
-                    </div>
+                {/* Total Spend */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
                     <DollarSign className="h-5 w-5 text-gray-400" />
+                    <p className="text-sm text-gray-400">TOTAL SPEND</p>
+                  </div>
+                  <p className="text-3xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Budget utilized</p>
+                </div>
+                
+                {/* Key Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-[#0F0F0F] rounded border border-[#333]">
+                    <p className="text-sm text-gray-400 mb-1">ROAS</p>
+                    <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</p>
+                    <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)}</p>
+                    <p className="text-xs text-gray-500">Conversions</p>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-400">ROAS</p>
-                      <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</p>
-                      <p className="text-xs text-gray-500">{formatNumber(totalMetrics.conversions)} conversions</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-400">CPA</p>
-                      <p className="text-xl font-bold text-white">
-                        {formatCurrency(totalMetrics.spend / (totalMetrics.conversions || 1))}
-                      </p>
-                      <p className="text-xs text-gray-500">Cost per acquisition</p>
-                    </div>
+                  <div className="text-center p-3 bg-[#0F0F0F] rounded border border-[#333]">
+                    <p className="text-sm text-gray-400 mb-1">CPA</p>
+                    <p className="text-xl font-bold text-white">
+                      {formatCurrency(totalMetrics.spend / (totalMetrics.conversions || 1))}
+                    </p>
+                    <p className="text-xs text-gray-500">Cost per acquisition</p>
                   </div>
-                  
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-gray-400">Click-Through Rate</p>
-                      <span className="text-sm font-medium text-white">{totalMetrics.ctr.toFixed(2)}%</span>
-                    </div>
-                    <div className="w-full bg-[#333] rounded-full h-2">
-                      <div 
-                        className={cn(
-                          "h-2 rounded-full transition-all duration-500",
-                          totalMetrics.ctr >= 2 ? "bg-green-500" : 
-                          totalMetrics.ctr >= 1 ? "bg-yellow-500" : "bg-red-500"
-                        )} 
-                        style={{ width: `${Math.min(totalMetrics.ctr * 20, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Industry benchmark: 1.9%</p>
+                </div>
+                
+                {/* CTR Progress */}
+                <div className="p-3 bg-[#0F0F0F] rounded border border-[#333]">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-400">Click-Through Rate</p>
+                    <span className="text-sm font-medium text-white">{totalMetrics.ctr.toFixed(2)}%</span>
                   </div>
+                  <div className="w-full bg-[#333] rounded-full h-2">
+                    <div 
+                      className={cn(
+                        "h-2 rounded-full transition-all duration-500",
+                        totalMetrics.ctr >= 2 ? "bg-green-500" : 
+                        totalMetrics.ctr >= 1 ? "bg-yellow-500" : "bg-red-500"
+                      )} 
+                      style={{ width: `${Math.min(totalMetrics.ctr * 20, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Industry benchmark: 1.9%</p>
                 </div>
               </CardContent>
             </Card>
@@ -948,6 +950,91 @@ export default function MarketingAssistantPage() {
                       )
                     })}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Center Column - AI Recommendations */}
+          <div className="space-y-6">
+            
+            {/* AI Insights */}
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-medium text-white flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-gray-400" />
+                  AI RECOMMENDATIONS
+                </CardTitle>
+                <CardDescription className="text-sm text-gray-400">
+                  Powered by advanced campaign performance analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingInsights ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
+                      <p className="text-sm text-gray-400">Analyzing campaign performance...</p>
+                    </div>
+                  </div>
+                ) : aiInsights.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-gray-300 mb-2">No insights available</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      We need more campaign data to generate intelligent recommendations
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {aiInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className="p-4 bg-[#0F0F0F] rounded border border-[#333] hover:border-[#444] transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={cn(
+                            "p-2 rounded flex-shrink-0",
+                            insight.type === 'alert' ? 'bg-red-500/20' :
+                            insight.type === 'opportunity' ? 'bg-green-500/20' :
+                            insight.type === 'recommendation' ? 'bg-blue-500/20' :
+                            'bg-gray-500/20'
+                          )}>
+                            {getInsightIcon(insight.type)}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-sm font-medium text-white">{insight.title}</h4>
+                              <Badge 
+                                variant={getPriorityBadgeVariant(insight.priority)}
+                                className="text-xs"
+                              >
+                                {insight.priority}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-sm text-gray-400 mb-3">{insight.description}</p>
+                            
+                            {insight.metrics && insight.metrics.length > 0 && (
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                {insight.metrics.slice(0, 2).map((metric, idx) => (
+                                  <div key={idx} className="text-xs">
+                                    <p className="text-gray-500">{metric.label}</p>
+                                    <p className="text-white font-medium">{metric.value}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            <p className="text-xs text-gray-500">
+                              {format(insight.timestamp, 'MMM dd, h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -1011,99 +1098,8 @@ export default function MarketingAssistantPage() {
             </Card>
           </div>
 
-          {/* Center Column - AI Recommendations */}
-          <div className="col-span-12 lg:col-span-5 space-y-6">
-            
-            {/* AI Insights */}
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-medium text-white flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-gray-400" />
-                      AI RECOMMENDATIONS
-                    </CardTitle>
-                    <CardDescription className="text-sm text-gray-400 mt-1">
-                      Powered by advanced campaign performance analysis
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoadingInsights ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
-                      <p className="text-sm text-gray-400">Analyzing campaign performance...</p>
-                    </div>
-                  </div>
-                ) : aiInsights.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-gray-300 mb-2">No insights available</p>
-                    <p className="text-sm text-gray-500 mb-4">
-                      We need more campaign data to generate intelligent recommendations
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {aiInsights.map((insight) => (
-                      <div 
-                        key={insight.id} 
-                        className="p-4 bg-[#0F0F0F] rounded border border-[#333] hover:border-[#444] transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "p-2 rounded flex-shrink-0",
-                            insight.type === 'alert' ? 'bg-red-500/20' :
-                            insight.type === 'opportunity' ? 'bg-green-500/20' :
-                            insight.type === 'recommendation' ? 'bg-blue-500/20' :
-                            'bg-gray-500/20'
-                          )}>
-                            {getInsightIcon(insight.type)}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-sm font-medium text-white">{insight.title}</h4>
-                              <Badge 
-                                variant={getPriorityBadgeVariant(insight.priority)}
-                                className="text-xs"
-                              >
-                                {insight.priority}
-                              </Badge>
-                            </div>
-                            
-                            <p className="text-sm text-gray-400 mb-3">{insight.description}</p>
-                            
-                            {insight.metrics && insight.metrics.length > 0 && (
-                              <div className="grid grid-cols-2 gap-3 mb-3">
-                                {insight.metrics.slice(0, 2).map((metric, idx) => (
-                                  <div key={idx} className="text-xs">
-                                    <p className="text-gray-500">{metric.label}</p>
-                                    <p className="text-white font-medium">{metric.value}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs text-gray-500">
-                                {format(insight.timestamp, 'MMM dd, h:mm a')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Right Column - Creative Performance */}
-          <div className="col-span-12 lg:col-span-3 space-y-6">
+          <div className="space-y-6">
             
             {/* Creative Performance with actual images */}
             <Card className="bg-[#1A1A1A] border-[#333]">
