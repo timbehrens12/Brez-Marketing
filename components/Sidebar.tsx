@@ -232,16 +232,16 @@ export function Sidebar({ className }: SidebarProps) {
                    <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
                  </div>
                ) : agencySettings.agency_logo_url ? (
-                 <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-1.5 overflow-hidden">
+                 <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-1 overflow-hidden">
                    <img 
                      src={agencySettings.agency_logo_url} 
                      alt={`${agencySettings.agency_name} Logo`} 
-                     className="max-w-full max-h-full object-contain rounded" 
+                     className="w-8 h-8 object-contain rounded" 
                    />
                  </div>
                ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
                  <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
-                   <span className="text-white font-bold text-lg">
+                   <span className="text-white font-bold text-xl">
                      {agencySettings.agency_name.slice(0, 2).toUpperCase()}
                    </span>
                  </div>
@@ -297,7 +297,7 @@ export function Sidebar({ className }: SidebarProps) {
                     ? "bg-[#2A2A2A] text-white" 
                     : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
                     isComingSoon && "cursor-not-allowed opacity-60",
-                    showExpanded ? "px-3 py-2" : "p-3 justify-center"
+                    showExpanded ? "px-3 py-3" : "p-3 justify-center"
                   )}
                   onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
                 >
@@ -305,21 +305,23 @@ export function Sidebar({ className }: SidebarProps) {
                     {isActive && (
                       <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
                     )}
-                    <div className={cn("flex items-center w-full", showExpanded ? "space-x-3" : "justify-center")}>
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {showExpanded && (
-                        <div className="flex-1 min-w-0 transition-opacity duration-200">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium truncate">{item.name}</p>
-                            {isComingSoon && (
-                              <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
-                                Soon
-                              </span>
-                            )}
+                    <div className="flex items-center w-full">
+                      <div className={cn("flex items-center", showExpanded ? "w-full" : "justify-center w-full")}>
+                        <item.icon className="h-6 w-6 flex-shrink-0" />
+                        {showExpanded && (
+                          <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium truncate">{item.name}</p>
+                              {isComingSoon && (
+                                <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
+                                  Soon
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{item.description}</p>
                           </div>
-                          <p className="text-xs text-gray-500 truncate">{item.description}</p>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                 </Link>
               );
@@ -363,7 +365,7 @@ export function Sidebar({ className }: SidebarProps) {
                 className="flex-1 ml-2 justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A] transition-opacity duration-200"
                 onClick={() => signOut(() => router.push("/dashboard"))}
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-5 w-5" />
                 Sign Out
               </Button>
             )}
