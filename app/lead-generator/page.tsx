@@ -1761,7 +1761,7 @@ export default function LeadGeneratorPage() {
     <div className="bg-[#0A0A0A] text-white p-6 min-h-screen">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-[calc(100vh-12rem)]">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-[calc(100vh-3rem)]">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2 flex flex-col">
             <CardContent className="space-y-6 pt-6">
