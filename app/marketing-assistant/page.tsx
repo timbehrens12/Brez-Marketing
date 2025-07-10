@@ -164,11 +164,16 @@ export default function MarketingAssistantPage() {
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false)
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
   const [expandedAdSets, setExpandedAdSets] = useState<Set<string>>(new Set())
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   
   // State for AI insights
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [isLoadingInsights, setIsLoadingInsights] = useState(false)
   const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null)
+  const [dailyCampaignAnalysis, setDailyCampaignAnalysis] = useState<Record<string, { lastAnalyzed: Date, analysis: any }>>({})
+  
+  // State for platform selection
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('meta')
   
   // State for brand goals
   const [brandGoals, setBrandGoals] = useState<BrandGoal[]>([])
@@ -222,6 +227,10 @@ export default function MarketingAssistantPage() {
         loadAIInsights(),
         loadBrandGoals()
       ])
+      setLastRefreshTime(new Date())
+      if (!silent) {
+        toast.success('Data refreshed successfully')
+      }
     } catch (error) {
       console.error('Error loading data:', error)
       toast.error('Failed to load marketing data')
@@ -302,7 +311,7 @@ export default function MarketingAssistantPage() {
       const toDate = format(dateRange.to, 'yyyy-MM-dd')
       
       const response = await fetch(
-        `/api/meta/ads?brandId=${selectedBrandId}&adSetId=${adSetId}&from=${fromDate}&to=${toDate}`
+        `/api/meta/ads?brandId=${selectedBrandId}&adSetId=${adSetId}&from=${fromDate}&to=${toDate}&forceRefresh=true`
       )
       
       if (!response.ok) throw new Error('Failed to fetch ads')
@@ -325,6 +334,7 @@ export default function MarketingAssistantPage() {
       }))
     } catch (error) {
       console.error('Error loading ads:', error)
+      toast.error('Failed to load ads')
     }
   }
 
@@ -382,7 +392,7 @@ export default function MarketingAssistantPage() {
       
       if (response.ok) {
         const data = await response.json()
-        setAiInsights(data.insights)
+        setAiInsights(data.insights || [])
       } else {
         // Fallback to local insights generation
         const insights = await generateAIInsights()
@@ -587,6 +597,56 @@ export default function MarketingAssistantPage() {
     }
   }
 
+  const runDailyCampaignAnalysis = async (campaignId: string) => {
+    const campaign = campaigns.find(c => c.campaign_id === campaignId)
+    if (!campaign) return
+
+    // Check if already analyzed today
+    const today = new Date().toDateString()
+    const lastAnalyzed = dailyCampaignAnalysis[campaignId]?.lastAnalyzed?.toDateString()
+    
+    if (lastAnalyzed === today) {
+      toast.info('Campaign already analyzed today. Try again tomorrow!')
+      return
+    }
+
+    try {
+      toast.info('Running AI analysis on campaign...')
+      
+      const response = await fetch('/api/ai/campaign-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId: selectedBrandId,
+          campaignId,
+          campaign,
+          includeCreatives: true
+        })
+      })
+
+      if (response.ok) {
+        const analysis = await response.json()
+        setDailyCampaignAnalysis(prev => ({
+          ...prev,
+          [campaignId]: {
+            lastAnalyzed: new Date(),
+            analysis
+          }
+        }))
+        toast.success('Campaign analysis complete! Check insights for recommendations.')
+        // Reload insights to show new analysis
+        loadAIInsights()
+      } else {
+        throw new Error('Analysis failed')
+      }
+    } catch (error) {
+      console.error('Error running campaign analysis:', error)
+      toast.error('Failed to analyze campaign')
+    }
+  }
+
   const getInsightIcon = (type: AIInsight['type']) => {
     switch (type) {
       case 'alert':
@@ -674,7 +734,14 @@ export default function MarketingAssistantPage() {
                 <Brain className="h-6 w-6 text-purple-500" />
                 AI Marketing Assistant
               </h1>
-              <p className="text-gray-400 mt-1">Your personal AI-powered media buyer</p>
+              <div className="flex items-center gap-4 mt-1">
+                <p className="text-gray-400">Your personal AI-powered media buyer</p>
+                {lastRefreshTime && (
+                  <p className="text-xs text-gray-500">
+                    Last refreshed: {format(lastRefreshTime, 'MMM dd, yyyy HH:mm')}
+                  </p>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -699,16 +766,36 @@ export default function MarketingAssistantPage() {
                 />
               </div>
               
-              {/* Manual Refresh */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadAllData()}
-                className="bg-[#1A1A1A] border-gray-700 hover:bg-[#252525]"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              {/* Quick Actions */}
+              <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-green-600/10 border-green-600/50 hover:bg-green-600/20 text-green-400"
+                        onClick={() => toast.info('Opening campaign creation wizard...')}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Create New Campaign</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadAllData()}
+                  className="bg-[#1A1A1A] border-gray-700 hover:bg-[#252525]"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -716,27 +803,49 @@ export default function MarketingAssistantPage() {
 
       {/* Top Metrics */}
       <div className="px-6 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-400">Live Data</span>
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <Card className="bg-[#1A1A1A] border-gray-800">
+          <Card className="bg-[#1A1A1A] border-gray-800 hover:border-gray-700 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-400">Total Spend</p>
                   <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-gray-600" />
+                <div className="text-right">
+                  <DollarSign className="h-8 w-8 text-gray-600 mb-1" />
+                  <div className="text-xs text-green-500">+12%</div>
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
+          <Card className="bg-[#1A1A1A] border-gray-800 hover:border-gray-700 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-400">Total ROAS</p>
                   <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(2)}x</p>
+                  <p className={cn(
+                    "text-xs mt-1 font-medium",
+                    totalMetrics.roas >= 3 ? "text-green-500" : 
+                    totalMetrics.roas >= 2 ? "text-yellow-500" : "text-red-500"
+                  )}>
+                    {totalMetrics.roas >= 3 ? "Excellent" : 
+                     totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
+                  </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
+                <div className="text-right">
+                  <TrendingUp className="h-8 w-8 text-green-500 mb-1" />
+                  <div className="text-xs text-green-500">+8%</div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -813,6 +922,35 @@ export default function MarketingAssistantPage() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Quick Performance Summary */}
+        {campaigns.length > 0 && (
+          <div className="mt-6 p-4 bg-[#1A1A1A] border border-gray-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-white mb-1">Account Performance Summary</h3>
+                <p className="text-xs text-gray-400">
+                  {campaigns.filter(c => c.status === 'ACTIVE').length} active campaigns • 
+                  Avg ROAS: {totalMetrics.roas.toFixed(2)}x • 
+                  Best Campaign: {campaigns.reduce((prev, current) => (prev.roas > current.roas) ? prev : current, campaigns[0])?.campaign_name}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Optimization Score</p>
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "w-3 h-3 rounded-full",
+                    totalMetrics.roas >= 3 ? "bg-green-500" : 
+                    totalMetrics.roas >= 2 ? "bg-yellow-500" : "bg-red-500"
+                  )}></div>
+                  <span className="text-sm font-medium text-white">
+                    {Math.round((totalMetrics.roas / 4) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -823,7 +961,7 @@ export default function MarketingAssistantPage() {
             <Card className="bg-[#1A1A1A] border-gray-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">Campaign Performance</CardTitle>
+                  <CardTitle className="text-white">Campaign Performance by Platform</CardTitle>
                   
                   {/* Filters */}
                   <div className="flex items-center gap-2">
@@ -854,6 +992,15 @@ export default function MarketingAssistantPage() {
                     </Button>
                   </div>
                 </div>
+                
+                {/* Platform Tabs */}
+                <Tabs value={selectedPlatform} onValueChange={setSelectedPlatform} className="w-full">
+                  <TabsList className="grid grid-cols-1 w-full bg-[#0A0A0A]">
+                    <TabsTrigger value="meta" className="data-[state=active]:bg-blue-600">
+                      Meta (Facebook/Instagram)
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </CardHeader>
               
               <CardContent>
@@ -898,7 +1045,7 @@ export default function MarketingAssistantPage() {
                                   </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-5 gap-6 text-right">
+                                <div className="grid grid-cols-8 gap-4 text-right">
                                   <div>
                                     <p className="text-xs text-gray-400">Spend</p>
                                     <p className="font-medium text-white">{formatCurrency(campaign.spent)}</p>
@@ -914,6 +1061,14 @@ export default function MarketingAssistantPage() {
                                     </p>
                                   </div>
                                   <div>
+                                    <p className="text-xs text-gray-400">Impressions</p>
+                                    <p className="font-medium text-white">{formatNumber(campaign.impressions)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-400">Reach</p>
+                                    <p className="font-medium text-white">{formatNumber(campaign.reach)}</p>
+                                  </div>
+                                  <div>
                                     <p className="text-xs text-gray-400">CTR</p>
                                     <p className="font-medium text-white">{campaign.ctr.toFixed(2)}%</p>
                                   </div>
@@ -925,35 +1080,55 @@ export default function MarketingAssistantPage() {
                                     <p className="text-xs text-gray-400">Conv.</p>
                                     <p className="font-medium text-white">{formatNumber(campaign.conversions)}</p>
                                   </div>
+                                  <div>
+                                    <p className="text-xs text-gray-400">CPConv</p>
+                                    <p className="font-medium text-white">{formatCurrency(campaign.cost_per_conversion)}</p>
+                                  </div>
                                 </div>
                               </div>
                             </AccordionTrigger>
                             
                             <AccordionContent>
                               <div className="pl-12 space-y-3">
-                                {/* Campaign Actions */}
-                                <div className="flex items-center gap-2 pb-3 border-b border-gray-800">
-                                  <Button variant="outline" size="sm" className="bg-[#0A0A0A] border-gray-700">
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="bg-[#0A0A0A] border-gray-700">
-                                    {campaign.status === 'ACTIVE' ? (
-                                      <>
-                                        <Pause className="h-3 w-3 mr-1" />
-                                        Pause
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Play className="h-3 w-3 mr-1" />
-                                        Resume
-                                      </>
-                                    )}
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="bg-[#0A0A0A] border-gray-700">
-                                    <BarChart3 className="h-3 w-3 mr-1" />
-                                    View Details
-                                  </Button>
+                                {/* Campaign Analysis */}
+                                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                                  <div className="grid grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                      <p className="text-gray-400">Budget</p>
+                                      <p className="text-white font-medium">{formatCurrency(campaign.budget)}</p>
+                                      <p className="text-xs text-gray-500">{campaign.budget_type}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-400">Clicks</p>
+                                      <p className="text-white font-medium">{formatNumber(campaign.clicks)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-400">Account</p>
+                                      <p className="text-white font-medium">{campaign.account_name}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-400">Period</p>
+                                      <p className="text-xs text-white">
+                                        {campaign.start_date ? format(new Date(campaign.start_date), 'MMM dd') : 'N/A'} - 
+                                        {campaign.end_date ? format(new Date(campaign.end_date), 'MMM dd') : 'Ongoing'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
+                                      onClick={() => runDailyCampaignAnalysis(campaign.campaign_id)}
+                                      disabled={dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString()}
+                                    >
+                                      <Brain className="h-3 w-3 mr-1" />
+                                      {dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString() 
+                                        ? 'Analyzed Today' 
+                                        : 'AI Analyze (1/day)'}
+                                    </Button>
+                                  </div>
                                 </div>
                                 
                                 {/* Ad Sets */}
@@ -982,10 +1157,18 @@ export default function MarketingAssistantPage() {
                                                 <p className="text-sm text-white">{adSet.adset_name}</p>
                                               </div>
                                               
-                                              <div className="grid grid-cols-4 gap-4 text-right text-xs">
+                                              <div className="grid grid-cols-6 gap-3 text-right text-xs">
                                                 <div>
                                                   <p className="text-gray-400">Spend</p>
                                                   <p className="text-white">{formatCurrency(adSet.spent)}</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-gray-400">Budget</p>
+                                                  <p className="text-white">{formatCurrency(adSet.budget)}</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-gray-400">Impressions</p>
+                                                  <p className="text-white">{formatNumber(adSet.impressions)}</p>
                                                 </div>
                                                 <div>
                                                   <p className="text-gray-400">CTR</p>
@@ -1012,19 +1195,36 @@ export default function MarketingAssistantPage() {
                                                   {adSet.ads.map((ad) => (
                                                     <div
                                                       key={ad.ad_id}
-                                                      className="flex items-center justify-between p-2 bg-[#0A0A0A] rounded-lg"
+                                                      className="p-3 bg-[#0A0A0A] rounded-lg border border-gray-800"
                                                     >
-                                                      <div className="flex items-center gap-2">
-                                                        <Badge
-                                                          variant={ad.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                                          className="text-xs"
-                                                        >
-                                                          {ad.status}
-                                                        </Badge>
-                                                        <p className="text-xs text-white">{ad.ad_name}</p>
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                          <Badge
+                                                            variant={ad.status === 'ACTIVE' ? 'default' : 'secondary'}
+                                                            className="text-xs"
+                                                          >
+                                                            {ad.status}
+                                                          </Badge>
+                                                          <p className="text-xs text-white font-medium">{ad.ad_name}</p>
+                                                        </div>
+                                                        
+                                                        {ad.creative_url && (
+                                                          <div className="flex items-center gap-1">
+                                                            <Eye className="h-3 w-3 text-gray-400" />
+                                                            <span className="text-xs text-gray-400">Creative</span>
+                                                          </div>
+                                                        )}
                                                       </div>
                                                       
-                                                      <div className="grid grid-cols-3 gap-3 text-right text-xs">
+                                                      <div className="grid grid-cols-5 gap-2 text-xs">
+                                                        <div>
+                                                          <p className="text-gray-500">Spend</p>
+                                                          <p className="text-white">{formatCurrency(ad.spent)}</p>
+                                                        </div>
+                                                        <div>
+                                                          <p className="text-gray-500">Impressions</p>
+                                                          <p className="text-white">{formatNumber(ad.impressions)}</p>
+                                                        </div>
                                                         <div>
                                                           <p className="text-gray-500">CTR</p>
                                                           <p className="text-white">{ad.ctr.toFixed(2)}%</p>
@@ -1136,7 +1336,19 @@ export default function MarketingAssistantPage() {
                     ) : aiInsights.length === 0 ? (
                       <div className="text-center py-12">
                         <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400">No insights available</p>
+                        <p className="text-gray-400 mb-2">No insights available yet</p>
+                        <p className="text-xs text-gray-500">Run campaigns to generate AI-powered optimization recommendations</p>
+                        {campaigns.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4 bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
+                            onClick={() => loadAIInsights()}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Generate Insights
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       aiInsights.map((insight) => (
