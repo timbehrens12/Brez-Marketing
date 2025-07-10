@@ -1758,12 +1758,12 @@ export default function LeadGeneratorPage() {
   }
 
   return (
-    <div className="bg-[#0A0A0A] text-white p-6">
+    <div className="bg-[#0A0A0A] text-white p-6 min-h-screen">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-[calc(100vh-12rem)]">
           {/* Lead Search Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2 flex flex-col">
             <CardContent className="space-y-6 pt-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
@@ -2175,7 +2175,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
