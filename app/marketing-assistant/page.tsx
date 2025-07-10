@@ -15,7 +15,7 @@ import {
   AlertTriangle, CheckCircle, RefreshCw, Settings, Calendar,
   BarChart3, Users, Eye, ArrowUpRight, ArrowDownRight, ChevronRight,
   Sparkles, Activity, AlertCircle, Info, ChevronDown, ChevronUp,
-  Play, Pause, Edit, Trash2, Clock, Filter, Search, Plus
+  Play, Pause, Edit, Trash2, Clock, Filter, Search, Plus, FileText
 } from 'lucide-react'
 import { formatCurrency, formatPercentage, formatNumber } from '@/lib/formatters'
 import { DateRange } from "react-day-picker"
@@ -761,7 +761,7 @@ export default function MarketingAssistantPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <div className="bg-[#111] border-[#333] hover:border-[#444] transition-colors rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Total Spend</p>
@@ -769,13 +769,13 @@ export default function MarketingAssistantPage() {
                 <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
               </div>
               <div className="text-right">
-                <DollarSign className="h-8 w-8 text-gray-600 mb-1" />
-                <div className="text-xs text-green-500">+12%</div>
+                <DollarSign className="h-8 w-8 text-gray-400 mb-1" />
+                <div className="text-xs text-gray-400">+12%</div>
               </div>
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] hover:border-[#444] transition-colors rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Total ROAS</p>
@@ -790,76 +790,76 @@ export default function MarketingAssistantPage() {
                 </p>
               </div>
               <div className="text-right">
-                <TrendingUp className="h-8 w-8 text-green-500 mb-1" />
-                <div className="text-xs text-green-500">+8%</div>
+                <TrendingUp className="h-8 w-8 text-gray-400 mb-1" />
+                <div className="text-xs text-gray-400">+8%</div>
               </div>
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Active Campaigns</p>
                 <p className="text-xl font-bold text-white">{totalMetrics.activeCampaigns}</p>
               </div>
-              <Target className="h-8 w-8 text-blue-500" />
+              <Target className="h-8 w-8 text-gray-400" />
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Avg CTR</p>
                 <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
               </div>
-              <MousePointerClick className="h-8 w-8 text-purple-500" />
+              <MousePointerClick className="h-8 w-8 text-gray-400" />
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Conversions</p>
                 <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
               </div>
-              <Zap className="h-8 w-8 text-yellow-500" />
+              <Zap className="h-8 w-8 text-gray-400" />
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Impressions</p>
                 <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
               </div>
-              <Eye className="h-8 w-8 text-gray-600" />
+              <Eye className="h-8 w-8 text-gray-400" />
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Clicks</p>
                 <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.clicks)}</p>
               </div>
-              <MousePointerClick className="h-8 w-8 text-gray-600" />
+              <MousePointerClick className="h-8 w-8 text-gray-400" />
             </div>
           </div>
           
-          <div className="bg-[#111] border-[#333] rounded-lg p-4">
+          <div className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">Avg CPC</p>
                 <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.cpc)}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-gray-600" />
+              <DollarSign className="h-8 w-8 text-gray-400" />
             </div>
           </div>
         </div>
         
         {/* Quick Performance Summary */}
         {campaigns.length > 0 && (
-          <div className="mt-6 p-4 bg-[#111] border-[#333] rounded-lg">
+          <div className="mt-6 p-4 bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors rounded-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-white mb-1">Account Performance Summary</h3>
@@ -892,7 +892,7 @@ export default function MarketingAssistantPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Campaigns Section - 2 columns */}
           <div className="lg:col-span-2">
-            <div className="bg-[#111] border-[#333] rounded-lg shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+            <div className="bg-[#1A1A1A] border-[#333] rounded-lg shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
               <div className="p-4 pb-2 border-b border-[#333]">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -1266,19 +1266,84 @@ export default function MarketingAssistantPage() {
 
           {/* AI Media Buyer Assistant - 1 column */}
           <div className="space-y-6">
+            {/* Quick Actions Panel */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-gray-400" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Common marketing tasks and optimizations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    onClick={() => loadAllData()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh All Data
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    onClick={() => loadAIInsights()}
+                  >
+                    <Brain className="h-4 w-4 mr-2" />
+                    Generate AI Insights
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    onClick={() => toast.info('Campaign optimization feature coming soon!')}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Optimize Campaigns
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    onClick={() => toast.info('Report export feature coming soon!')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export Report
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    onClick={() => setShowGoalDialog(true)}
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Set New Goal
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
             {/* Brand Goals */}
-            <Card className="bg-[#1A1A1A] border-gray-800">
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
-                    <Target className="h-5 w-5 text-purple-500" />
+                    <Target className="h-5 w-5 text-gray-400" />
                     Brand Goals
                   </CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowGoalDialog(true)}
-                    className="bg-[#0A0A0A] border-gray-700"
+                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222]"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Goal
@@ -1317,10 +1382,10 @@ export default function MarketingAssistantPage() {
             </Card>
 
             {/* AI Insights */}
-            <Card className="bg-[#1A1A1A] border-gray-800">
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-500" />
+                  <Brain className="h-5 w-5 text-gray-400" />
                   AI Media Buyer Insights
                 </CardTitle>
                 <CardDescription className="text-gray-400">
