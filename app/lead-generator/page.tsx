@@ -932,15 +932,20 @@ export default function LeadGeneratorPage() {
     const hours = Math.floor((msUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
     
-    // For weekly system, always show in context of days/week
+    // Calculate the actual reset day
+    const resetDate = new Date(Date.now() + msUntilReset)
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const resetDayName = dayNames[resetDate.getDay()]
+    
+    // For weekly system, show actual reset day
     if (days > 1) {
-      return `in ${days} days (next Monday)`
+      return `in ${days} days (${resetDayName})`
     } else if (days === 1) {
-      return `tomorrow (Monday)`
+      return `tomorrow (${resetDayName})`
     } else if (hours > 0) {
-      return `in ${hours}h ${minutes}m (Monday)`
+      return `in ${hours}h ${minutes}m (${resetDayName})`
     }
-    return `in ${minutes}m (Monday)`
+    return `in ${minutes}m (${resetDayName})`
   }
 
   const getTimeUntilMidnight = () => {
