@@ -166,10 +166,19 @@ export default function MarketingAssistantPage() {
   const [expandedAdSets, setExpandedAdSets] = useState<Set<string>>(new Set())
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   
-  // State for AI insights
+  // State for AI insights with memory
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [isLoadingInsights, setIsLoadingInsights] = useState(false)
   const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null)
+  const [pastRecommendations, setPastRecommendations] = useState<Record<string, {
+    recommendation: AIInsight
+    implementedAt?: Date
+    effectiveness?: 'positive' | 'negative' | 'neutral'
+    metricsBeforeAfter?: {
+      before: { roas: number, ctr: number, spend: number }
+      after: { roas: number, ctr: number, spend: number }
+    }
+  }>>({})
   const [dailyCampaignAnalysis, setDailyCampaignAnalysis] = useState<Record<string, { lastAnalyzed: Date, analysis: any }>>({})
   
   // State for platform selection
@@ -192,14 +201,119 @@ export default function MarketingAssistantPage() {
   const [objectiveFilter, setObjectiveFilter] = useState('all')
   const [showPausedCampaigns, setShowPausedCampaigns] = useState(true)
   
-
+  // Filtered campaigns based on search and filters
+  const filteredCampaigns = campaigns.filter(campaign => {
+    const matchesSearch = campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter
+    const matchesObjective = objectiveFilter === 'all' || campaign.objective === objectiveFilter
+    const shouldShowPaused = showPausedCampaigns || campaign.status === 'ACTIVE'
+    
+    return matchesSearch && matchesStatus && matchesObjective && shouldShowPaused
+  })
 
   // Load initial data
   useEffect(() => {
     if (selectedBrandId) {
+      loadPastRecommendations()
       loadAllData()
+      // Load AI insights automatically on page load
+      loadAIInsights()
     }
   }, [selectedBrandId, dateRange])
+
+  // Load past recommendations from localStorage
+  const loadPastRecommendations = () => {
+    try {
+      const stored = localStorage.getItem(`ai_recommendations_${selectedBrandId}`)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        // Convert date strings back to Date objects
+        Object.keys(parsed).forEach(key => {
+          if (parsed[key].implementedAt) {
+            parsed[key].implementedAt = new Date(parsed[key].implementedAt)
+          }
+          if (parsed[key].recommendation?.timestamp) {
+            parsed[key].recommendation.timestamp = new Date(parsed[key].recommendation.timestamp)
+          }
+        })
+        setPastRecommendations(parsed)
+      }
+    } catch (error) {
+      console.error('Error loading past recommendations:', error)
+    }
+  }
+
+  // Save recommendations to localStorage
+  const savePastRecommendations = (recommendations: typeof pastRecommendations) => {
+    try {
+      localStorage.setItem(`ai_recommendations_${selectedBrandId}`, JSON.stringify(recommendations))
+    } catch (error) {
+      console.error('Error saving past recommendations:', error)
+    }
+  }
+
+  // Track when a recommendation is implemented
+  const markRecommendationImplemented = (insightId: string) => {
+    const updated = {
+      ...pastRecommendations,
+      [insightId]: {
+        ...pastRecommendations[insightId],
+        implementedAt: new Date(),
+        metricsBeforeAfter: {
+          before: {
+            roas: totalMetrics.roas,
+            ctr: totalMetrics.ctr,
+            spend: totalMetrics.spend
+          },
+          after: { roas: 0, ctr: 0, spend: 0 } // Will be updated later
+        }
+      }
+    }
+    setPastRecommendations(updated)
+    savePastRecommendations(updated)
+  }
+
+  // Measure effectiveness of past recommendations
+  const measureRecommendationEffectiveness = () => {
+    const updated = { ...pastRecommendations }
+    let hasUpdates = false
+
+    Object.keys(updated).forEach(insightId => {
+      const rec = updated[insightId]
+      if (rec.implementedAt && rec.metricsBeforeAfter && !rec.effectiveness) {
+        const daysSinceImplemented = Math.floor((new Date().getTime() - rec.implementedAt.getTime()) / (1000 * 60 * 60 * 24))
+        
+        // Wait at least 3 days before measuring effectiveness
+        if (daysSinceImplemented >= 3) {
+          // Update "after" metrics
+          rec.metricsBeforeAfter.after = {
+            roas: totalMetrics.roas,
+            ctr: totalMetrics.ctr,
+            spend: totalMetrics.spend
+          }
+
+          // Determine effectiveness based on metric improvements
+          const roasImprovement = totalMetrics.roas - rec.metricsBeforeAfter.before.roas
+          const ctrImprovement = totalMetrics.ctr - rec.metricsBeforeAfter.before.ctr
+          
+          if (roasImprovement > 0.2 || ctrImprovement > 0.5) {
+            rec.effectiveness = 'positive'
+          } else if (roasImprovement < -0.2 || ctrImprovement < -0.5) {
+            rec.effectiveness = 'negative'
+          } else {
+            rec.effectiveness = 'neutral'
+          }
+          
+          hasUpdates = true
+        }
+      }
+    })
+
+    if (hasUpdates) {
+      setPastRecommendations(updated)
+      savePastRecommendations(updated)
+    }
+  }
 
   const loadAllData = async (silent = false) => {
     if (!silent) setIsLoading(true)
@@ -211,9 +325,6 @@ export default function MarketingAssistantPage() {
         loadMetrics(),
         loadBrandGoals()
       ])
-      
-      // Then load AI insights after we have campaign data
-      await loadAIInsights()
       
       setLastRefreshTime(new Date())
       if (!silent) {
@@ -358,165 +469,160 @@ export default function MarketingAssistantPage() {
   }
 
   const loadAIInsights = async () => {
-    if (!selectedBrandId) return
-    
     setIsLoadingInsights(true)
     
     try {
-      // First try to get AI-powered insights from the API
-      const response = await fetch('/api/ai/marketing-assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId: selectedBrandId,
-          campaigns,
-          totalMetrics,
-          brandGoals,
-          dateRange
-        })
+      // Measure effectiveness of past recommendations first
+      measureRecommendationEffectiveness()
+      
+      const insights = await generateAIInsights()
+      setAiInsights(insights)
+      
+      // Save new insights to past recommendations if they're actionable
+      const newRecommendations = { ...pastRecommendations }
+      insights.forEach(insight => {
+        if (insight.actionable && !newRecommendations[insight.id]) {
+          newRecommendations[insight.id] = {
+            recommendation: insight
+          }
+        }
       })
       
-      if (response.ok) {
-        const data = await response.json()
-        setAiInsights(data.insights || [])
-      } else {
-        // Fallback to local insights generation
-        const insights = await generateAIInsights()
-        setAiInsights(insights)
+      if (Object.keys(newRecommendations).length !== Object.keys(pastRecommendations).length) {
+        setPastRecommendations(newRecommendations)
+        savePastRecommendations(newRecommendations)
       }
     } catch (error) {
       console.error('Error loading AI insights:', error)
-      // Fallback to local insights generation
-      const insights = await generateAIInsights()
-      setAiInsights(insights)
+      toast.error('Failed to load AI insights')
     } finally {
       setIsLoadingInsights(false)
     }
   }
 
   const generateAIInsights = async (): Promise<AIInsight[]> => {
+    if (campaigns.length === 0) return []
+    
     const insights: AIInsight[] = []
     
-    // Analyze campaign performance
-    campaigns.forEach(campaign => {
-      // High spend with low ROAS
-      if (campaign.spent > 1000 && campaign.roas < 1.5) {
-        insights.push({
-          id: `${campaign.campaign_id}-low-roas`,
-          type: 'alert',
-          priority: 'high',
-          title: `Low ROAS Alert: ${campaign.campaign_name}`,
-          description: `Campaign has spent ${formatCurrency(campaign.spent)} with only ${campaign.roas.toFixed(2)}x ROAS. Consider pausing or optimizing targeting.`,
-          actionable: true,
-          action: {
-            type: 'pause_campaign',
-            label: 'Pause Campaign',
-            params: { campaignId: campaign.campaign_id }
-          },
-          metrics: [
-            { label: 'Spend', value: formatCurrency(campaign.spent) },
-            { label: 'ROAS', value: `${campaign.roas.toFixed(2)}x`, trend: 'down' }
-          ],
-          timestamp: new Date()
-        })
-      }
-      
-      // High performing campaigns to scale
-      if (campaign.roas > 3 && campaign.spent < 500) {
-        insights.push({
-          id: `${campaign.campaign_id}-scale-opportunity`,
-          type: 'opportunity',
-          priority: 'high',
-          title: `Scaling Opportunity: ${campaign.campaign_name}`,
-          description: `Campaign achieving ${campaign.roas.toFixed(2)}x ROAS with only ${formatCurrency(campaign.spent)} spend. Increase budget to capture more conversions.`,
-          actionable: true,
-          action: {
-            type: 'increase_budget',
-            label: 'Increase Budget 50%',
-            params: { campaignId: campaign.campaign_id, increase: 0.5 }
-          },
-          metrics: [
-            { label: 'ROAS', value: `${campaign.roas.toFixed(2)}x`, trend: 'up' },
-            { label: 'Potential', value: '+$2,500/mo' }
-          ],
-          timestamp: new Date()
-        })
-      }
-      
-      // CTR optimization opportunities
-      if (campaign.ctr < 1 && campaign.impressions > 10000) {
-        insights.push({
-          id: `${campaign.campaign_id}-low-ctr`,
-          type: 'recommendation',
-          priority: 'medium',
-          title: `Improve Ad Creative: ${campaign.campaign_name}`,
-          description: `CTR is only ${campaign.ctr.toFixed(2)}% after ${formatNumber(campaign.impressions)} impressions. Test new ad creatives to improve engagement.`,
-          actionable: true,
-          action: {
-            type: 'refresh_creative',
-            label: 'View Creative Tips',
-            params: { campaignId: campaign.campaign_id }
-          },
-          metrics: [
-            { label: 'CTR', value: `${campaign.ctr.toFixed(2)}%`, trend: 'down' },
-            { label: 'Industry Avg', value: '2.5%' }
-          ],
-          timestamp: new Date()
-        })
-      }
-    })
+    // Get effectiveness of past recommendations for context
+    const pastEffectiveness = Object.values(pastRecommendations).filter(r => r.effectiveness)
+    const successfulRecommendations = pastEffectiveness.filter(r => r.effectiveness === 'positive').length
+    const totalPastRecommendations = pastEffectiveness.length
     
-    // Overall insights
-    if (totalMetrics.spend > 0) {
-      // Budget efficiency insight
-      const budgetEfficiency = (totalMetrics.conversions / totalMetrics.spend) * 100
+    // Add context about past recommendation success
+    if (totalPastRecommendations > 0) {
+      const successRate = (successfulRecommendations / totalPastRecommendations) * 100
       insights.push({
-        id: 'overall-efficiency',
+        id: `past-performance-${Date.now()}`,
         type: 'insight',
         priority: 'medium',
-        title: 'Overall Budget Efficiency',
-        description: `You're generating ${budgetEfficiency.toFixed(1)} conversions per $100 spent. ${budgetEfficiency > 5 ? 'Great performance!' : 'Room for improvement.'}`,
+        title: 'AI Recommendation Track Record',
+        description: `${successfulRecommendations}/${totalPastRecommendations} past recommendations showed positive results (${successRate.toFixed(1)}% success rate).`,
         actionable: false,
-        metrics: [
-          { label: 'Efficiency', value: `${budgetEfficiency.toFixed(1)}/100` },
-          { label: 'Total Spend', value: formatCurrency(totalMetrics.spend) }
-        ],
         timestamp: new Date()
       })
+    }
+
+    // Campaign performance analysis
+    const poorPerformers = campaigns.filter(c => c.roas < 1.5 && c.spent > 100)
+    const topPerformers = campaigns.filter(c => c.roas > 3 && c.status === 'ACTIVE')
+    const lowCtrCampaigns = campaigns.filter(c => c.ctr < 1.0 && c.status === 'ACTIVE')
+    
+    // Budget reallocation recommendations (avoiding past failed recommendations)
+    if (poorPerformers.length > 0 && topPerformers.length > 0) {
+      const budgetReallocId = `budget-realloc-${Date.now()}`
+      const pastBudgetRecs = Object.values(pastRecommendations).filter(r => 
+        r.recommendation.title.includes('budget') && r.effectiveness === 'negative'
+      )
       
-      // New audience segment discovery (simulated)
-      if (Math.random() > 0.7) {
+      if (pastBudgetRecs.length === 0) { // Only suggest if past budget recommendations weren't negative
         insights.push({
-          id: 'new-audience-segment',
+          id: budgetReallocId,
           type: 'opportunity',
-          priority: 'medium',
-          title: 'New High-Value Audience Discovered',
-          description: 'Analysis shows women 25-34 interested in sustainable fashion have 3.2x higher conversion rate. Create targeted campaign for this segment.',
+          priority: 'high',
+          title: `Reallocate budget from ${poorPerformers.length} underperforming campaigns`,
+          description: `Move budget from campaigns with ROAS < 1.5x to campaigns with ROAS > 3x to improve overall performance.`,
           actionable: true,
           action: {
-            type: 'create_audience',
-            label: 'Create Audience',
-            params: { segment: 'sustainable_fashion_25_34_f' }
+            type: 'budget_reallocation',
+            label: 'Implement Budget Changes',
+            params: { poorPerformers: poorPerformers.map(c => c.campaign_id), topPerformers: topPerformers.map(c => c.campaign_id) }
           },
           metrics: [
-            { label: 'Potential ROAS', value: '4.5x' },
-            { label: 'Est. Audience', value: '125K' }
+            { label: 'Potential ROAS Gain', value: '+0.5x', trend: 'up' },
+            { label: 'Budget Impact', value: formatCurrency(poorPerformers.reduce((sum, c) => sum + c.spent, 0)) }
           ],
           timestamp: new Date()
         })
       }
     }
+
+    // Creative fatigue detection
+    if (lowCtrCampaigns.length > 0) {
+      const creativeRefreshId = `creative-refresh-${Date.now()}`
+      insights.push({
+        id: creativeRefreshId,
+        type: 'alert',
+        priority: 'medium',
+        title: `${lowCtrCampaigns.length} campaigns show signs of creative fatigue`,
+        description: 'CTR below 1% suggests audiences may be tired of current creatives. Consider refreshing ad content.',
+        actionable: true,
+        action: {
+          type: 'creative_refresh',
+          label: 'Launch Creative Tests',
+          params: { campaigns: lowCtrCampaigns.map(c => c.campaign_id) }
+        },
+        metrics: [
+          { label: 'Avg CTR', value: `${(lowCtrCampaigns.reduce((sum, c) => sum + c.ctr, 0) / lowCtrCampaigns.length).toFixed(2)}%`, trend: 'down' },
+          { label: 'Affected Spend', value: formatCurrency(lowCtrCampaigns.reduce((sum, c) => sum + c.spent, 0)) }
+        ],
+        timestamp: new Date()
+      })
+    }
+
+    // Account-level insights
+    if (totalMetrics.roas < 2) {
+      insights.push({
+        id: `account-optimization-${Date.now()}`,
+        type: 'recommendation',
+        priority: 'high',
+        title: 'Account ROAS below target threshold',
+        description: 'Overall ROAS is below 2x. Focus on audience refinement and bid optimization.',
+        actionable: true,
+        action: {
+          type: 'account_optimization',
+          label: 'Review Account Settings',
+          params: { currentRoas: totalMetrics.roas }
+        },
+        metrics: [
+          { label: 'Current ROAS', value: `${totalMetrics.roas.toFixed(2)}x`, trend: 'down' },
+          { label: 'Target ROAS', value: '2.0x' }
+        ],
+        timestamp: new Date()
+      })
+    }
+
+    // Positive reinforcement for successful past implementations
+    const recentSuccesses = Object.values(pastRecommendations).filter(r => 
+      r.effectiveness === 'positive' && 
+      r.implementedAt &&
+      (new Date().getTime() - r.implementedAt.getTime()) < (7 * 24 * 60 * 60 * 1000) // Last 7 days
+    )
     
-    return insights.sort((a, b) => {
-      // Sort by priority then by timestamp
-      const priorityOrder = { high: 0, medium: 1, low: 2 }
-      if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-        return priorityOrder[a.priority] - priorityOrder[b.priority]
-      }
-      return b.timestamp.getTime() - a.timestamp.getTime()
-    })
+    if (recentSuccesses.length > 0) {
+      insights.push({
+        id: `success-reinforcement-${Date.now()}`,
+        type: 'insight',
+        priority: 'low',
+        title: `Recent optimization success detected`,
+        description: `${recentSuccesses.length} recent recommendations are showing positive results. Keep monitoring performance.`,
+        actionable: false,
+        timestamp: new Date()
+      })
+    }
+
+    return insights.slice(0, 8) // Limit to 8 insights
   }
 
   const loadBrandGoals = async () => {
@@ -566,22 +672,51 @@ export default function MarketingAssistantPage() {
   const handleInsightAction = async (insight: AIInsight) => {
     if (!insight.action) return
     
-    // Handle different action types
-    switch (insight.action.type) {
-      case 'pause_campaign':
-        toast.info('Opening campaign settings...')
-        break
-      case 'increase_budget':
-        toast.info('Opening budget optimizer...')
-        break
-      case 'refresh_creative':
-        toast.info('Opening creative recommendations...')
-        break
-      case 'create_audience':
-        toast.info('Opening audience builder...')
-        break
-      default:
-        toast.info('Action not implemented yet')
+    try {
+      // Mark the recommendation as implemented
+      markRecommendationImplemented(insight.id)
+      
+      switch (insight.action.type) {
+        case 'budget_reallocation':
+          toast.info('Budget reallocation recommendations noted. Review your Meta Ads Manager to implement changes.')
+          break
+          
+        case 'creative_refresh':
+          toast.info('Creative refresh recommended. Consider A/B testing new ad creatives for the affected campaigns.')
+          break
+          
+        case 'account_optimization':
+          toast.info('Account optimization needed. Review audience targeting and bid strategies in Meta Ads Manager.')
+          break
+          
+        case 'pause_campaign':
+          toast.info('Campaign pause recommended. Review performance in Meta Ads Manager.')
+          break
+          
+        case 'increase_budget':
+          toast.info('Budget increase recommended. Consider scaling successful campaigns in Meta Ads Manager.')
+          break
+          
+        case 'refresh_creative':
+          toast.info('Creative refresh suggested. Test new ad formats and messaging.')
+          break
+          
+        case 'create_audience':
+          toast.info('New audience opportunity identified. Create custom audiences in Meta Ads Manager.')
+          break
+          
+        default:
+          toast.info('Recommendation noted. Review details in Meta Ads Manager.')
+      }
+      
+      // Show feedback message about tracking
+      setTimeout(() => {
+        toast.success('✅ Action implemented! We\'ll track the effectiveness of this change over the next few days.')
+      }, 1000)
+      
+    } catch (error) {
+      console.error('Error handling insight action:', error)
+      toast.error('Failed to process action')
     }
   }
 
@@ -671,30 +806,6 @@ export default function MarketingAssistantPage() {
         return 'outline'
     }
   }
-
-  const filteredCampaigns = campaigns.filter(campaign => {
-    // Search filter
-    if (searchQuery && !campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false
-    }
-    
-    // Status filter
-    if (statusFilter !== 'all' && campaign.status !== statusFilter) {
-      return false
-    }
-    
-    // Objective filter
-    if (objectiveFilter !== 'all' && campaign.objective !== objectiveFilter) {
-      return false
-    }
-    
-    // Show/hide paused campaigns
-    if (!showPausedCampaigns && campaign.status === 'PAUSED') {
-      return false
-    }
-    
-    return true
-  })
 
   // Show brand selection message if no brand is selected
   if (!selectedBrandId) {
@@ -887,398 +998,111 @@ export default function MarketingAssistantPage() {
         )}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - New 3-Column Layout */}
       <div className="px-6 pb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Campaigns Section - 2 columns */}
-          <div className="lg:col-span-2">
-            <div className="bg-[#1A1A1A] border-[#333] rounded-lg shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
-              <div className="p-4 pb-2 border-b border-[#333]">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png" className="w-5 h-5" alt="Meta Logo" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Campaign Performance</h3>
-                      <p className="text-sm text-gray-400">Meta advertising performance and optimization insights</p>
-                    </div>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          
+          {/* Left Column: Performance Overview */}
+          <div className="xl:col-span-4 space-y-6">
+            {/* Key Metrics */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-gray-400" />
+                  Performance Overview
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  {dateRange?.from && dateRange?.to ? 
+                    `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : 
+                    'Last 7 days'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-2xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</div>
+                    <div className="text-xs text-gray-400">Total Spend</div>
+                    <div className="text-xs text-gray-500 mt-1">+12% vs last period</div>
                   </div>
-                  
-                  {/* Filters */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Search campaigns..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 h-8 bg-[#1A1A1A] border-[#333] text-white placeholder-gray-500"
-                    />
-                    
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-32 h-8 bg-[#1A1A1A] border-[#333] text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#111] border-[#333]">
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="ACTIVE">Active</SelectItem>
-                        <SelectItem value="PAUSED">Paused</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                {/* Platform Section Header */}
-                <div className="bg-gradient-to-r from-blue-900/30 via-blue-800/20 to-blue-900/30 p-4 rounded-lg border border-blue-700/30">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full shadow-lg"></div>
-                        <span className="text-sm font-medium text-white">Meta Business Platform</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-blue-600/20 text-blue-400 border-blue-500/30 text-xs">
-                          {campaigns.length} Campaign{campaigns.length !== 1 ? 's' : ''}
-                        </Badge>
-                        <Badge className="bg-green-600/20 text-green-400 border-green-500/30 text-xs">
-                          {campaigns.filter(c => c.status === 'ACTIVE').length} Active
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-xs text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Activity className="h-3 w-3" />
-                        <span>Real-time sync</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>Last 7 days</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Platform Performance Summary */}
-                <div className="mt-3 grid grid-cols-5 gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">Total Spend</p>
-                    <p className="text-sm font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">ROAS</p>
-                    <p className={cn(
-                      "text-sm font-bold",
-                      totalMetrics.roas >= 3 ? "text-green-400" : 
-                      totalMetrics.roas >= 2 ? "text-yellow-400" : "text-red-400"
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-2xl font-bold text-white">{totalMetrics.roas.toFixed(1)}x</div>
+                    <div className="text-xs text-gray-400">ROAS</div>
+                    <div className={cn(
+                      "text-xs mt-1 font-medium",
+                      totalMetrics.roas >= 2 ? "text-green-400" : "text-yellow-400"
                     )}>
-                      {totalMetrics.roas.toFixed(2)}x
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">Impressions</p>
-                    <p className="text-sm font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">CTR</p>
-                    <p className="text-sm font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                    <p className="text-sm font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
+                      {totalMetrics.roas >= 3 ? "Excellent" : totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-4">
-                <ScrollArea className="h-[600px] pr-4">
-                  <div className="space-y-3">
-                    {isLoadingCampaigns ? (
-                      <div className="flex items-center justify-center py-12">
-                        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-                      </div>
-                    ) : filteredCampaigns.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Target className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400">No campaigns found</p>
-                      </div>
-                    ) : (
-                      <Accordion type="multiple" value={Array.from(expandedCampaigns)}>
-                        {filteredCampaigns.map((campaign) => (
-                          <AccordionItem
-                            key={campaign.campaign_id}
-                            value={campaign.campaign_id}
-                            className="border-0"
-                          >
-                            <div className="bg-[#1A1A1A] border border-[#333] rounded-lg mb-3 hover:border-[#444] transition-colors">
-                              <AccordionTrigger
-                                onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
-                                className="px-4 py-3 hover:no-underline"
-                              >
-                                <div className="flex items-center justify-between w-full pr-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex flex-col items-center gap-1">
-                                      <Badge
-                                        variant={campaign.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                        className={cn(
-                                          "text-xs",
-                                          campaign.status === 'ACTIVE' 
-                                            ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                                            : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                                        )}
-                                      >
-                                        {campaign.status}
-                                      </Badge>
-                                      <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        campaign.status === 'ACTIVE' ? "bg-green-500" : "bg-gray-500"
-                                      )}></div>
-                                    </div>
-                                    <div className="text-left">
-                                      <p className="font-medium text-white text-sm">{campaign.campaign_name}</p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <p className="text-xs text-gray-400">{campaign.objective}</p>
-                                        <span className="text-xs text-gray-500">•</span>
-                                        <p className="text-xs text-gray-500">{campaign.account_name}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-6 gap-6 text-right">
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">Spend</p>
-                                      <p className="font-medium text-white text-sm">{formatCurrency(campaign.spent)}</p>
-                                    </div>
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">ROAS</p>
-                                      <p className={cn(
-                                        "font-medium text-sm",
-                                        campaign.roas >= 2 ? "text-green-400" : 
-                                        campaign.roas >= 1 ? "text-yellow-400" : "text-red-400"
-                                      )}>
-                                        {campaign.roas.toFixed(2)}x
-                                      </p>
-                                    </div>
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">Impressions</p>
-                                      <p className="font-medium text-white text-sm">{formatNumber(campaign.impressions)}</p>
-                                    </div>
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">CTR</p>
-                                      <p className="font-medium text-white text-sm">{campaign.ctr.toFixed(2)}%</p>
-                                    </div>
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                                      <p className="font-medium text-white text-sm">{formatNumber(campaign.conversions)}</p>
-                                    </div>
-                                    <div className="bg-[#222] p-2 rounded">
-                                      <p className="text-xs text-gray-400 mb-1">CPC</p>
-                                      <p className="font-medium text-white text-sm">{formatCurrency(campaign.cpc)}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </AccordionTrigger>
-                              
-                              <AccordionContent>
-                                <div className="px-4 pb-4 border-t border-[#333]">
-                                  {/* Campaign Analysis */}
-                                  <div className="pt-4 space-y-4">
-                                    <div className="grid grid-cols-4 gap-4">
-                                      <div className="bg-[#222] p-3 rounded-lg">
-                                        <p className="text-gray-400 text-xs mb-1">Budget</p>
-                                        <p className="text-white font-medium">{formatCurrency(campaign.budget)}</p>
-                                        <p className="text-xs text-gray-500">{campaign.budget_type}</p>
-                                      </div>
-                                      <div className="bg-[#222] p-3 rounded-lg">
-                                        <p className="text-gray-400 text-xs mb-1">Clicks</p>
-                                        <p className="text-white font-medium">{formatNumber(campaign.clicks)}</p>
-                                        <p className="text-xs text-gray-500">Total clicks</p>
-                                      </div>
-                                      <div className="bg-[#222] p-3 rounded-lg">
-                                        <p className="text-gray-400 text-xs mb-1">Reach</p>
-                                        <p className="text-white font-medium">{formatNumber(campaign.reach)}</p>
-                                        <p className="text-xs text-gray-500">Unique users</p>
-                                      </div>
-                                      <div className="bg-[#222] p-3 rounded-lg">
-                                        <p className="text-gray-400 text-xs mb-1">Cost/Conv</p>
-                                        <p className="text-white font-medium">{formatCurrency(campaign.cost_per_conversion)}</p>
-                                        <p className="text-xs text-gray-500">Per conversion</p>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between pt-2">
-                                      <div className="text-xs text-gray-500">
-                                        Period: {campaign.start_date ? format(new Date(campaign.start_date), 'MMM dd') : 'N/A'} - 
-                                        {campaign.end_date ? format(new Date(campaign.end_date), 'MMM dd') : 'Ongoing'}
-                                      </div>
-                                      
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
-                                        onClick={() => runDailyCampaignAnalysis(campaign.campaign_id)}
-                                        disabled={dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString()}
-                                      >
-                                        <Brain className="h-3 w-3 mr-1" />
-                                        {dailyCampaignAnalysis[campaign.campaign_id]?.lastAnalyzed?.toDateString() === new Date().toDateString() 
-                                          ? 'Analyzed Today' 
-                                          : 'AI Analyze'}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Ad Sets */}
-                                  {campaign.adSets && campaign.adSets.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                      <p className="text-sm font-medium text-gray-300 mb-3">Ad Sets ({campaign.adSets.length})</p>
-                                      <Accordion type="multiple" value={Array.from(expandedAdSets)}>
-                                        {campaign.adSets.map((adSet) => (
-                                          <AccordionItem
-                                            key={adSet.adset_id}
-                                            value={adSet.adset_id}
-                                            className="border-0"
-                                          >
-                                            <div className="bg-[#0F0F0F] border border-[#444] rounded-lg mb-2">
-                                              <AccordionTrigger
-                                                onClick={() => toggleAdSetExpanded(campaign.campaign_id, adSet.adset_id)}
-                                                className="px-3 py-2 hover:no-underline"
-                                              >
-                                                <div className="flex items-center justify-between w-full pr-2">
-                                                  <div className="flex items-center gap-2">
-                                                    <Badge
-                                                      variant={adSet.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                                      className={cn(
-                                                        "text-xs",
-                                                        adSet.status === 'ACTIVE' 
-                                                          ? 'bg-green-500/20 text-green-400' 
-                                                          : 'bg-gray-500/20 text-gray-400'
-                                                      )}
-                                                    >
-                                                      {adSet.status}
-                                                    </Badge>
-                                                    <p className="text-sm text-white font-medium">{adSet.adset_name}</p>
-                                                  </div>
-                                                  
-                                                  <div className="grid grid-cols-5 gap-3 text-right text-xs">
-                                                    <div>
-                                                      <p className="text-gray-400">Spend</p>
-                                                      <p className="text-white font-medium">{formatCurrency(adSet.spent)}</p>
-                                                    </div>
-                                                    <div>
-                                                      <p className="text-gray-400">Budget</p>
-                                                      <p className="text-white font-medium">{formatCurrency(adSet.budget)}</p>
-                                                    </div>
-                                                    <div>
-                                                      <p className="text-gray-400">CTR</p>
-                                                      <p className="text-white font-medium">{adSet.ctr.toFixed(2)}%</p>
-                                                    </div>
-                                                    <div>
-                                                      <p className="text-gray-400">CPC</p>
-                                                      <p className="text-white font-medium">{formatCurrency(adSet.cpc)}</p>
-                                                    </div>
-                                                    <div>
-                                                      <p className="text-gray-400">Conv.</p>
-                                                      <p className="text-white font-medium">{formatNumber(adSet.conversions)}</p>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              </AccordionTrigger>
-                                              
-                                              <AccordionContent>
-                                                <div className="px-3 pb-2 border-t border-[#333] pt-2">
-                                                  {/* Ads */}
-                                                  {adSet.ads && adSet.ads.length > 0 ? (
-                                                    <div className="space-y-2">
-                                                      <p className="text-xs font-medium text-gray-400 mb-2">Ads ({adSet.ads.length})</p>
-                                                      {adSet.ads.map((ad) => (
-                                                        <div
-                                                          key={ad.ad_id}
-                                                          className="p-3 bg-[#0A0A0A] rounded-lg border border-[#555]"
-                                                        >
-                                                          <div className="flex items-center justify-between mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                              <Badge
-                                                                variant={ad.status === 'ACTIVE' ? 'default' : 'secondary'}
-                                                                className="text-xs"
-                                                              >
-                                                                {ad.status}
-                                                              </Badge>
-                                                              <p className="text-xs text-white font-medium">{ad.ad_name}</p>
-                                                            </div>
-                                                            
-                                                            {ad.creative_url && (
-                                                              <div className="flex items-center gap-1">
-                                                                <Eye className="h-3 w-3 text-gray-400" />
-                                                                <span className="text-xs text-gray-400">Creative</span>
-                                                              </div>
-                                                            )}
-                                                          </div>
-                                                          
-                                                          <div className="grid grid-cols-6 gap-2 text-xs">
-                                                            <div>
-                                                              <p className="text-gray-400">Spend</p>
-                                                              <p className="text-white">{formatCurrency(ad.spent)}</p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-gray-400">Impressions</p>
-                                                              <p className="text-white">{formatNumber(ad.impressions)}</p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-gray-400">Clicks</p>
-                                                              <p className="text-white">{formatNumber(ad.clicks)}</p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-gray-400">CTR</p>
-                                                              <p className="text-white">{ad.ctr.toFixed(2)}%</p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-gray-400">CPC</p>
-                                                              <p className="text-white">{formatCurrency(ad.cpc)}</p>
-                                                            </div>
-                                                            <div>
-                                                              <p className="text-gray-400">Conv.</p>
-                                                              <p className="text-white">{formatNumber(ad.conversions)}</p>
-                                                            </div>
-                                                          </div>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  ) : (
-                                                    <p className="text-xs text-gray-500 text-center py-2">No ads available</p>
-                                                  )}
-                                                </div>
-                                              </AccordionContent>
-                                            </div>
-                                          </AccordionItem>
-                                        ))}
-                                      </Accordion>
-                                    </div>
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </div>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    )}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-lg font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</div>
+                    <div className="text-xs text-gray-400">CTR</div>
                   </div>
-                </ScrollArea>
-              </div>
-            </div>
-          </div>
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-lg font-bold text-white">{formatNumber(totalMetrics.conversions)}</div>
+                    <div className="text-xs text-gray-400">Conversions</div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-lg font-bold text-white">{formatCurrency(totalMetrics.cpc)}</div>
+                    <div className="text-xs text-gray-400">CPC</div>
+                  </div>
+                  <div className="text-center p-3 bg-[#0A0A0A] rounded-lg">
+                    <div className="text-lg font-bold text-white">{formatNumber(totalMetrics.impressions)}</div>
+                    <div className="text-xs text-gray-400">Impressions</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* AI Media Buyer Assistant - 1 column */}
-          <div className="space-y-6">
-            {/* Quick Actions Panel */}
+            {/* Account Performance Suggestions */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-gray-400" />
+                  Account Performance
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Suggested budget allocations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {campaigns.slice(0, 3).map((campaign, index) => (
+                    <div key={campaign.campaign_id} className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-white text-sm truncate">{campaign.campaign_name}</div>
+                        <div className="text-xs text-gray-400">
+                          {campaign.roas >= 2 ? 'High performer' : 'Optimization needed'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
+                        <div className="text-xs text-gray-400">
+                          {campaign.roas >= 2 ? '↑ Increase' : '↓ Reduce'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Zap className="h-5 w-5 text-gray-400" />
                   Quick Actions
                 </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Common marketing tasks and optimizations
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -1286,39 +1110,8 @@ export default function MarketingAssistantPage() {
                     onClick={() => loadAllData()}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh All Data
+                    Refresh Data
                   </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                    onClick={() => loadAIInsights()}
-                  >
-                    <Brain className="h-4 w-4 mr-2" />
-                    Generate AI Insights
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                    onClick={() => toast.info('Campaign optimization feature coming soon!')}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Optimize Campaigns
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
-                    onClick={() => toast.info('Report export feature coming soon!')}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export Report
-                  </Button>
-                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -1326,71 +1119,33 @@ export default function MarketingAssistantPage() {
                     onClick={() => setShowGoalDialog(true)}
                   >
                     <Target className="h-4 w-4 mr-2" />
-                    Set New Goal
+                    Set Goal
                   </Button>
                 </div>
               </CardContent>
             </Card>
-            {/* Brand Goals */}
+          </div>
+
+          {/* Middle Column: AI Recommendations & Goals */}
+          <div className="xl:col-span-4 space-y-6">
+            {/* AI Recommendations */}
             <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
-                    <Target className="h-5 w-5 text-gray-400" />
-                    Brand Goals
+                    <Brain className="h-5 w-5 text-gray-400" />
+                    AI Recommendations
                   </CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowGoalDialog(true)}
-                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222]"
+                    onClick={() => loadAIInsights()}
+                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-400"
                   >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Goal
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Refresh
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {brandGoals.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-400">No active goals set</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {brandGoals.map((goal) => (
-                      <div
-                        key={goal.id}
-                        className="p-3 bg-[#0A0A0A] rounded-lg border border-gray-800"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-medium text-white">{goal.name}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {goal.type.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        {goal.description && (
-                          <p className="text-xs text-gray-400 mb-2">{goal.description}</p>
-                        )}
-                        {goal.targetValue && (
-                          <Progress value={65} className="h-1" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* AI Insights */}
-            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-gray-400" />
-                  AI Media Buyer Insights
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Real-time optimization recommendations
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">
@@ -1400,91 +1155,236 @@ export default function MarketingAssistantPage() {
                         <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
                       </div>
                     ) : aiInsights.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400 mb-2">No insights available yet</p>
-                        <p className="text-xs text-gray-500">Run campaigns to generate AI-powered optimization recommendations</p>
-                        {campaigns.length > 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-4 bg-purple-600/10 border-purple-600/50 hover:bg-purple-600/20 text-purple-400"
-                            onClick={() => loadAIInsights()}
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Generate Insights
-                          </Button>
-                        )}
+                      <div className="text-center py-8">
+                        <Brain className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                        <p className="text-gray-400 text-sm">Generating insights...</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                          onClick={() => loadAIInsights()}
+                        >
+                          Generate Now
+                        </Button>
                       </div>
                     ) : (
                       aiInsights.map((insight) => (
-                        <Card
+                        <div
                           key={insight.id}
-                          className={cn(
-                            "bg-[#0A0A0A] border-gray-800 cursor-pointer transition-all hover:border-gray-700",
-                            selectedInsight?.id === insight.id && "border-purple-500"
-                          )}
-                          onClick={() => setSelectedInsight(insight)}
+                          className="p-3 bg-[#0A0A0A] rounded-lg border border-[#333] hover:border-[#444] transition-colors"
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className={getInsightColor(insight.type)}>
-                                  {getInsightIcon(insight.type)}
-                                </div>
-                                <Badge variant={getPriorityBadgeVariant(insight.priority)}>
-                                  {insight.priority}
-                                </Badge>
-                              </div>
-                              <span className="text-xs text-gray-500">
-                                {format(insight.timestamp, 'HH:mm')}
-                              </span>
+                          <div className="flex items-start gap-2">
+                            <div className="mt-1">
+                              {insight.type === 'alert' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                              {insight.type === 'opportunity' && <TrendingUp className="h-4 w-4 text-green-500" />}
+                              {insight.type === 'recommendation' && <Sparkles className="h-4 w-4 text-blue-500" />}
+                              {insight.type === 'insight' && <Eye className="h-4 w-4 text-purple-500" />}
                             </div>
-                            
-                            <h4 className="text-sm font-medium text-white mb-1">
-                              {insight.title}
-                            </h4>
-                            
-                            <p className="text-xs text-gray-400 mb-3">
-                              {insight.description}
-                            </p>
-                            
-                            {insight.metrics && insight.metrics.length > 0 && (
-                              <div className="grid grid-cols-2 gap-2 mb-3">
-                                {insight.metrics.map((metric, idx) => (
-                                  <div key={idx} className="text-xs">
-                                    <p className="text-gray-500">{metric.label}</p>
-                                    <p className="text-white font-medium flex items-center gap-1">
-                                      {metric.value}
-                                      {metric.trend && (
-                                        metric.trend === 'up' ? (
-                                          <ArrowUpRight className="h-3 w-3 text-green-500" />
-                                        ) : metric.trend === 'down' ? (
-                                          <ArrowDownRight className="h-3 w-3 text-red-500" />
-                                        ) : null
-                                      )}
-                                    </p>
-                                  </div>
-                                ))}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-white">{insight.title}</h4>
+                              <p className="text-xs text-gray-400 mt-1">{insight.description}</p>
+                              {insight.actionable && insight.action && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-2 h-6 text-xs bg-[#222] border-[#444] hover:bg-[#333] text-gray-300"
+                                  onClick={() => handleInsightAction(insight)}
+                                >
+                                  {insight.action.label}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Goals */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Target className="h-5 w-5 text-gray-400" />
+                    Goals
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowGoalDialog(true)}
+                    className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-400"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {brandGoals.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Target className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400 mb-3">No goals set</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowGoalDialog(true)}
+                      className="bg-[#0A0A0A] border-[#333] hover:bg-[#222] text-gray-300"
+                    >
+                      Create First Goal
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {brandGoals.map((goal) => (
+                      <div key={goal.id} className="p-3 bg-[#0A0A0A] rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-white">{goal.name}</h4>
+                          <Badge variant="outline" className="text-xs border-[#444] text-gray-400">
+                            {goal.type.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        {goal.targetValue && (
+                          <div>
+                            <div className="flex justify-between text-xs text-gray-400 mb-1">
+                              <span>Progress</span>
+                              <span>65%</span>
+                            </div>
+                            <Progress value={65} className="h-2" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Creative Performance & Campaign Details */}
+          <div className="xl:col-span-4 space-y-6">
+            {/* Creative Performance */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-gray-400" />
+                  Creative Performance
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Top performing ads and creatives
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {campaigns.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Eye className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">No campaigns data</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {campaigns.slice(0, 2).map((campaign) => (
+                      <div key={campaign.campaign_id} className="p-3 bg-[#0A0A0A] rounded-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 bg-[#333] rounded-lg flex items-center justify-center">
+                            <Eye className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-white truncate">{campaign.campaign_name}</h4>
+                            <p className="text-xs text-gray-400">{campaign.objective}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-gray-400">CTR: </span>
+                            <span className="text-white font-medium">{campaign.ctr.toFixed(2)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">ROAS: </span>
+                            <span className={cn(
+                              "font-medium",
+                              campaign.roas >= 2 ? "text-green-400" : "text-yellow-400"
+                            )}>
+                              {campaign.roas.toFixed(1)}x
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Spend: </span>
+                            <span className="text-white font-medium">{formatCurrency(campaign.spent)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Conv: </span>
+                            <span className="text-white font-medium">{formatNumber(campaign.conversions)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* A/B Test Suggestion */}
+                    <div className="p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg border border-blue-800/30">
+                      <h4 className="text-sm font-medium text-white mb-2">Launch A/B Test</h4>
+                      <p className="text-xs text-gray-400 mb-3">Test new creative variations for top campaigns</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full bg-blue-600/20 border-blue-500/50 hover:bg-blue-600/30 text-blue-400"
+                        onClick={() => toast.info('A/B testing feature coming soon!')}
+                      >
+                        Launch Test
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Campaign List */}
+            <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-gray-400" />
+                  Campaigns ({campaigns.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {isLoadingCampaigns ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                      </div>
+                    ) : filteredCampaigns.length === 0 ? (
+                      <div className="text-center py-8">
+                        <BarChart3 className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                        <p className="text-gray-400 text-sm">No campaigns found</p>
+                      </div>
+                    ) : (
+                      filteredCampaigns.map((campaign) => (
+                        <div
+                          key={campaign.campaign_id}
+                          className="p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#111] transition-colors cursor-pointer"
+                          onClick={() => toggleCampaignExpanded(campaign.campaign_id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <div className={cn(
+                                  "w-2 h-2 rounded-full",
+                                  campaign.status === 'ACTIVE' ? "bg-green-500" : "bg-gray-500"
+                                )}></div>
+                                <h4 className="text-sm font-medium text-white truncate">{campaign.campaign_name}</h4>
                               </div>
-                            )}
-                            
-                            {insight.actionable && insight.action && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full bg-purple-500/10 border-purple-500/50 hover:bg-purple-500/20 text-purple-400"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleInsightAction(insight)
-                                }}
-                              >
-                                {insight.action.label}
-                                <ChevronRight className="h-3 w-3 ml-1" />
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                                <span>{formatCurrency(campaign.spent)}</span>
+                                <span>ROAS: {campaign.roas.toFixed(1)}x</span>
+                                <span>CTR: {campaign.ctr.toFixed(2)}%</span>
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </div>
                       ))
                     )}
                   </div>
