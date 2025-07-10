@@ -192,41 +192,29 @@ export default function MarketingAssistantPage() {
   const [objectiveFilter, setObjectiveFilter] = useState('all')
   const [showPausedCampaigns, setShowPausedCampaigns] = useState(true)
   
-  // Auto-refresh timer
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [refreshInterval, setRefreshInterval] = useState(60) // seconds
+
 
   // Load initial data
   useEffect(() => {
     if (selectedBrandId) {
       loadAllData()
-      
-      // Set up auto-refresh
-      if (autoRefresh) {
-        refreshIntervalRef.current = setInterval(() => {
-          loadAllData(true) // Silent refresh
-        }, refreshInterval * 1000)
-      }
     }
-    
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
-    }
-  }, [selectedBrandId, dateRange, autoRefresh, refreshInterval])
+  }, [selectedBrandId, dateRange])
 
   const loadAllData = async (silent = false) => {
     if (!silent) setIsLoading(true)
     
     try {
+      // Load campaigns and metrics first
       await Promise.all([
         loadCampaigns(),
         loadMetrics(),
-        loadAIInsights(),
         loadBrandGoals()
       ])
+      
+      // Then load AI insights after we have campaign data
+      await loadAIInsights()
+      
       setLastRefreshTime(new Date())
       if (!silent) {
         toast.success('Data refreshed successfully')
@@ -708,6 +696,19 @@ export default function MarketingAssistantPage() {
     return true
   })
 
+  // Show brand selection message if no brand is selected
+  if (!selectedBrandId) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="h-16 w-16 text-purple-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Marketing Assistant</h1>
+          <p className="text-gray-400">Please select a brand to view marketing insights and campaign data</p>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoading) {
     const loadingConfig = getPageLoadingConfig(pathname)
     
@@ -732,195 +733,146 @@ export default function MarketingAssistantPage() {
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                 <Brain className="h-6 w-6 text-purple-500" />
-                AI Marketing Assistant
+                Marketing Assistant
               </h1>
-              <div className="flex items-center gap-4 mt-1">
-                <p className="text-gray-400">Your personal AI-powered media buyer</p>
-                {lastRefreshTime && (
-                  <p className="text-xs text-gray-500">
-                    Last refreshed: {format(lastRefreshTime, 'MMM dd, yyyy HH:mm')}
-                  </p>
-                )}
-              </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              {/* Date Range Picker */}
-              <DateRangePicker
-                dateRange={{
-                  from: dateRange?.from || addDays(new Date(), -7),
-                  to: dateRange?.to || new Date()
-                }}
-                setDateRange={(range) => setDateRange(range)}
-              />
-              
-              {/* Auto Refresh */}
-              <div className="flex items-center gap-2">
-                <Label htmlFor="auto-refresh" className="text-sm text-gray-400">
-                  Auto-refresh
-                </Label>
-                <Switch
-                  id="auto-refresh"
-                  checked={autoRefresh}
-                  onCheckedChange={setAutoRefresh}
-                />
-              </div>
-              
-              {/* Quick Actions */}
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-green-600/10 border-green-600/50 hover:bg-green-600/20 text-green-400"
-                        onClick={() => toast.info('Opening campaign creation wizard...')}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Create New Campaign</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadAllData()}
-                  className="bg-[#1A1A1A] border-gray-700 hover:bg-[#252525]"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Controls Header */}
+      <div className="px-6 py-4 bg-[#0F0F0F] border-b border-gray-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
+            {lastRefreshTime && (
+              <p className="text-xs text-gray-500">
+                Last refreshed: {format(lastRefreshTime, 'MMM dd, yyyy HH:mm')}
+              </p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <DateRangePicker
+              dateRange={{
+                from: dateRange?.from || addDays(new Date(), -7),
+                to: dateRange?.to || new Date()
+              }}
+              setDateRange={(range) => setDateRange(range)}
+            />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadAllData()}
+              className="bg-[#1A1A1A] border-gray-700 hover:bg-[#252525]"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Top Metrics */}
       <div className="px-6 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs text-gray-400">Live Data</span>
-          </div>
-        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <Card className="bg-[#1A1A1A] border-gray-800 hover:border-gray-700 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Total Spend</p>
-                  <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
-                </div>
-                <div className="text-right">
-                  <DollarSign className="h-8 w-8 text-gray-600 mb-1" />
-                  <div className="text-xs text-green-500">+12%</div>
-                </div>
+          <div className="bg-[#1A1A1A] border border-gray-800 hover:border-gray-700 transition-colors rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Total Spend</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.spend)}</p>
+                <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="text-right">
+                <DollarSign className="h-8 w-8 text-gray-600 mb-1" />
+                <div className="text-xs text-green-500">+12%</div>
+              </div>
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800 hover:border-gray-700 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Total ROAS</p>
-                  <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(2)}x</p>
-                  <p className={cn(
-                    "text-xs mt-1 font-medium",
-                    totalMetrics.roas >= 3 ? "text-green-500" : 
-                    totalMetrics.roas >= 2 ? "text-yellow-500" : "text-red-500"
-                  )}>
-                    {totalMetrics.roas >= 3 ? "Excellent" : 
-                     totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <TrendingUp className="h-8 w-8 text-green-500 mb-1" />
-                  <div className="text-xs text-green-500">+8%</div>
-                </div>
+          <div className="bg-[#1A1A1A] border border-gray-800 hover:border-gray-700 transition-colors rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Total ROAS</p>
+                <p className="text-xl font-bold text-white">{totalMetrics.roas.toFixed(2)}x</p>
+                <p className={cn(
+                  "text-xs mt-1 font-medium",
+                  totalMetrics.roas >= 3 ? "text-green-500" : 
+                  totalMetrics.roas >= 2 ? "text-yellow-500" : "text-red-500"
+                )}>
+                  {totalMetrics.roas >= 3 ? "Excellent" : 
+                   totalMetrics.roas >= 2 ? "Good" : "Needs Work"}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="text-right">
+                <TrendingUp className="h-8 w-8 text-green-500 mb-1" />
+                <div className="text-xs text-green-500">+8%</div>
+              </div>
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Active Campaigns</p>
-                  <p className="text-xl font-bold text-white">{totalMetrics.activeCampaigns}</p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Active Campaigns</p>
+                <p className="text-xl font-bold text-white">{totalMetrics.activeCampaigns}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Target className="h-8 w-8 text-blue-500" />
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Avg CTR</p>
-                  <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
-                </div>
-                <MousePointerClick className="h-8 w-8 text-purple-500" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Avg CTR</p>
+                <p className="text-xl font-bold text-white">{totalMetrics.ctr.toFixed(2)}%</p>
               </div>
-            </CardContent>
-          </Card>
+              <MousePointerClick className="h-8 w-8 text-purple-500" />
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Conversions</p>
-                  <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
-                </div>
-                <Zap className="h-8 w-8 text-yellow-500" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Conversions</p>
+                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.conversions)}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Zap className="h-8 w-8 text-yellow-500" />
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Impressions</p>
-                  <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
-                </div>
-                <Eye className="h-8 w-8 text-gray-600" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Impressions</p>
+                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.impressions)}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Eye className="h-8 w-8 text-gray-600" />
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Clicks</p>
-                  <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.clicks)}</p>
-                </div>
-                <MousePointerClick className="h-8 w-8 text-gray-600" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Clicks</p>
+                <p className="text-xl font-bold text-white">{formatNumber(totalMetrics.clicks)}</p>
               </div>
-            </CardContent>
-          </Card>
+              <MousePointerClick className="h-8 w-8 text-gray-600" />
+            </div>
+          </div>
           
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Avg CPC</p>
-                  <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.cpc)}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-gray-600" />
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Avg CPC</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(totalMetrics.cpc)}</p>
               </div>
-            </CardContent>
-          </Card>
+              <DollarSign className="h-8 w-8 text-gray-600" />
+            </div>
+          </div>
         </div>
         
         {/* Quick Performance Summary */}
@@ -958,10 +910,13 @@ export default function MarketingAssistantPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Campaigns Section - 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="bg-[#1A1A1A] border-gray-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">Campaign Performance by Platform</CardTitle>
+            <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg">
+              <div className="p-6 border-b border-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Campaign Performance</h3>
+                    <p className="text-sm text-gray-400">Comprehensive campaign analytics and optimization insights</p>
+                  </div>
                   
                   {/* Filters */}
                   <div className="flex items-center gap-2">
@@ -982,28 +937,26 @@ export default function MarketingAssistantPage() {
                         <SelectItem value="PAUSED">Paused</SelectItem>
                       </SelectContent>
                     </Select>
-                    
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 bg-[#0A0A0A] border-gray-700"
-                    >
-                      <Filter className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
                 
                 {/* Platform Tabs */}
-                <Tabs value={selectedPlatform} onValueChange={setSelectedPlatform} className="w-full">
-                  <TabsList className="grid grid-cols-1 w-full bg-[#0A0A0A]">
-                    <TabsTrigger value="meta" className="data-[state=active]:bg-blue-600">
-                      Meta (Facebook/Instagram)
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                    <span className="text-sm font-medium text-white">Meta (Facebook/Instagram)</span>
+                    <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400">
+                      {campaigns.length} campaigns
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Activity className="h-3 w-3" />
+                    <span>Real-time data</span>
+                  </div>
+                </div>
+              </div>
               
-              <CardContent>
+              <div className="p-6">
                 <ScrollArea className="h-[600px] pr-4">
                   <div className="space-y-4">
                     {isLoadingCampaigns ? (
@@ -1259,8 +1212,8 @@ export default function MarketingAssistantPage() {
                     )}
                   </div>
                 </ScrollArea>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* AI Media Buyer Assistant - 1 column */}
