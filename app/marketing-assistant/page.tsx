@@ -10,69 +10,8 @@ import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-lo
 import { useAgency } from "@/contexts/AgencyContext"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
-
-// Meta logo SVG component
-const MetaLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M1.5 12C1.5 8.5 4.5 5.5 8 5.5C9.5 5.5 10.8 6.2 11.7 7.2C12.3 6.2 13.5 5.5 15 5.5C18.5 5.5 21.5 8.5 21.5 12C21.5 15.5 18.5 18.5 15 18.5C13.5 18.5 12.3 17.8 11.7 16.8C10.8 17.8 9.5 18.5 8 18.5C4.5 18.5 1.5 15.5 1.5 12Z" fill="url(#paint0_linear_meta)"/>
-    <defs>
-      <linearGradient id="paint0_linear_meta" x1="1.5" y1="12" x2="21.5" y2="12" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#0866FF"/>
-        <stop offset="1" stopColor="#0866FF"/>
-      </linearGradient>
-    </defs>
-  </svg>
-)
-
-// TikTok logo SVG component  
-const TikTokLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" fill="#FF0050"/>
-    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" fill="#25F4EE"/>
-  </svg>
-)
-
-// Google Ads logo SVG component
-const GoogleAdsLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M12 3L21 9L15 21H9L3 9L12 3Z" fill="#4285F4"/>
-    <path d="M12 3L21 9L12 12L3 9L12 3Z" fill="#34A853"/>
-    <path d="M12 12L21 9L15 21L12 12Z" fill="#FBBC05"/>
-    <path d="M12 12L15 21H9L3 9L12 12Z" fill="#EA4335"/>
-  </svg>
-)
-
-// Platform logos component
-const PlatformLogos = () => {
-  return (
-    <div className="flex items-center justify-center space-x-1.5 my-2">
-      {/* Meta logo - active */}
-      <div className="w-4 h-4 flex items-center justify-center">
-        <MetaLogo className="w-4 h-4" />
-      </div>
-      {/* TikTok logo - grayed out */}
-      <div className="w-4 h-4 flex items-center justify-center opacity-30 grayscale">
-        <TikTokLogo className="w-4 h-4" />
-      </div>
-      {/* Google Ads logo - grayed out */}
-      <div className="w-4 h-4 flex items-center justify-center opacity-30 grayscale">
-        <GoogleAdsLogo className="w-4 h-4" />
-      </div>
-    </div>
-  )
-}
-
-// Custom title component that includes platform logos
-const MetricTitleWithLogos = ({ title }: { title: string }) => {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="text-sm font-medium text-gray-200 text-center mb-1">
-        {title}
-      </div>
-      <PlatformLogos />
-    </div>
-  )
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import Image from "next/image"
 
 // Extend Window interface for global state management
 declare global {
@@ -586,11 +525,117 @@ export default function MarketingAssistantPage() {
         </div>
       ) : (
         <>
+          {/* Platform Logos Section */}
+          <div className="flex justify-center items-center gap-8 px-6 py-4">
+            <TooltipProvider>
+              {/* Meta Logo - Active */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105">
+                    <div className="w-12 h-12 p-2 bg-[#1877F2]/10 rounded-full flex items-center justify-center">
+                      <Image 
+                        src="https://i.imgur.com/6hyyRrs.png" 
+                        alt="Meta" 
+                        width={32} 
+                        height={32} 
+                        className="object-contain"
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-white">Meta</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-[#1877F2] mb-2">Meta Contribution</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>Spend: ${metaMetrics.adSpend.toFixed(2)}</div>
+                      <div>ROAS: {metaMetrics.roas.toFixed(2)}x</div>
+                      <div>Revenue: ${(metaMetrics.roas * metaMetrics.adSpend).toFixed(2)}</div>
+                      <div>Conversions: {metaMetrics.conversions.toLocaleString()}</div>
+                      <div>Impressions: {metaMetrics.impressions.toLocaleString()}</div>
+                      <div>Clicks: {metaMetrics.clicks.toLocaleString()}</div>
+                      <div>CTR: {(metaMetrics.ctr).toFixed(2)}%</div>
+                      <div>CPC: ${metaMetrics.cpc.toFixed(2)}</div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* TikTok Logo - Grayed Out */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 opacity-40">
+                    <div className="w-12 h-12 p-2 bg-gray-600/20 rounded-full flex items-center justify-center">
+                      <Image 
+                        src="https://i.imgur.com/AXHa9UT.png" 
+                        alt="TikTok" 
+                        width={32} 
+                        height={32} 
+                        className="object-contain grayscale"
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-500">TikTok</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-gray-400 mb-2">TikTok Contribution</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                      <div>Spend: $0.00</div>
+                      <div>ROAS: 0.00x</div>
+                      <div>Revenue: $0.00</div>
+                      <div>Conversions: 0</div>
+                      <div>Impressions: 0</div>
+                      <div>Clicks: 0</div>
+                      <div>CTR: 0.00%</div>
+                      <div>CPC: $0.00</div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Not connected yet</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Google Ads Logo - Grayed Out */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 opacity-40">
+                    <div className="w-12 h-12 p-2 bg-gray-600/20 rounded-full flex items-center justify-center">
+                      <Image 
+                        src="https://i.imgur.com/TavV4UJ.png" 
+                        alt="Google Ads" 
+                        width={32} 
+                        height={32} 
+                        className="object-contain grayscale"
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-500">Google Ads</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-gray-400 mb-2">Google Ads Contribution</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                      <div>Spend: $0.00</div>
+                      <div>ROAS: 0.00x</div>
+                      <div>Revenue: $0.00</div>
+                      <div>Conversions: 0</div>
+                      <div>Impressions: 0</div>
+                      <div>Clicks: 0</div>
+                      <div>CTR: 0.00%</div>
+                      <div>CPC: $0.00</div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Not connected yet</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
           {/* Key Metrics Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 px-6">
             {/* Total Spend */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total Spend" />}
+              title="Total Spend"
               value={metaMetrics.adSpend}
               change={metaMetrics.adSpendGrowth}
               previousValue={metaMetrics.previousAdSpend}
@@ -612,7 +657,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total ROAS */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total ROAS" />}
+              title="Total ROAS"
               value={metaMetrics.roas}
               change={metaMetrics.roasGrowth}
               previousValue={metaMetrics.previousRoas}
@@ -634,7 +679,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Revenue */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total Revenue" />}
+              title="Total Revenue"
               value={metaMetrics.roas * metaMetrics.adSpend}
               change={metaMetrics.roasGrowth} // Using ROAS growth as proxy for revenue growth
               previousValue={metaMetrics.previousRoas * metaMetrics.previousAdSpend}
@@ -656,7 +701,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Conversions */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total Conversions" />}
+              title="Total Conversions"
               value={metaMetrics.conversions}
               change={metaMetrics.conversionGrowth}
               previousValue={metaMetrics.previousConversions}
@@ -676,7 +721,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Impressions */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total Impressions" />}
+              title="Total Impressions"
               value={metaMetrics.impressions}
               change={metaMetrics.impressionGrowth}
               previousValue={metaMetrics.previousImpressions}
@@ -696,7 +741,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Clicks */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total Clicks" />}
+              title="Total Clicks"
               value={metaMetrics.clicks}
               change={metaMetrics.clickGrowth}
               previousValue={metaMetrics.previousClicks}
@@ -716,7 +761,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total CTR */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total CTR" />}
+              title="Total CTR"
               value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
               change={metaMetrics.ctrGrowth}
               previousValue={metaMetrics.previousCtr / 100}
@@ -736,7 +781,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total CPC */}
             <MetricCard 
-              title={<MetricTitleWithLogos title="Total CPC" />}
+              title="Total CPC"
               value={metaMetrics.cpc}
               change={metaMetrics.cpcGrowth}
               previousValue={metaMetrics.previousCpc}
