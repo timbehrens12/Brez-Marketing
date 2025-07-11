@@ -713,6 +713,10 @@ export default function DashboardPage() {
         };
         
         if (isMounted.current && !cancelled) {
+          // Mark that we've successfully loaded data BEFORE updating metrics
+          // This ensures the loading screen is dismissed immediately
+          setHasLoadedData(true);
+          
           // Batch the metrics update with other state changes
           startTransition(() => {
             setMetrics(prevMetrics => ({
@@ -758,15 +762,16 @@ export default function DashboardPage() {
               setInitialDataLoad(false);
               initialLoadStarted.current = false;
             }
-            
-            // Mark that we've successfully loaded data
-            setHasLoadedData(true);
           });
         }
         
       } catch (error) {
         // console.error('Error loading metrics:', error);
         if (isMounted.current && !cancelled) {
+          // Mark that we've "loaded" data (even if it's just defaults) to prevent infinite loading
+          // This must happen BEFORE other state updates to dismiss loading screen immediately
+          setHasLoadedData(true);
+          
           // Initialize with empty metrics to prevent undefined errors
           setMetrics(defaultMetrics);
           toast({
@@ -780,9 +785,6 @@ export default function DashboardPage() {
             setInitialDataLoad(false);
             initialLoadStarted.current = false;
           }
-          
-          // Mark that we've "loaded" data (even if it's just defaults) to prevent infinite loading
-          setHasLoadedData(true);
         }
               } finally {
           if (isMounted.current && !cancelled) {
