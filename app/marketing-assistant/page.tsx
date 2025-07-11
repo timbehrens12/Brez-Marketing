@@ -491,16 +491,14 @@ export default function MarketingAssistantPage() {
     const loadingConfig = getPageLoadingConfig(pathname)
     
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] z-50 flex items-center justify-center">
-        <UnifiedLoading
-          variant="page"
-          size="lg"
-          message="Loading Marketing Assistant"
-          subMessage="Preparing your marketing insights"
-          agencyLogo={agencySettings.agency_logo_url}
-          agencyName={agencySettings.agency_name}
-        />
-      </div>
+      <UnifiedLoading
+        variant="page"
+        size="lg"
+        message="Loading Marketing Assistant"
+        subMessage="Preparing your marketing insights"
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
     )
   }
 
