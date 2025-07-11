@@ -157,7 +157,6 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [isLoading, setIsLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
-  const [hasLoadedData, setHasLoadedData] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -211,7 +210,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedBrandId) {
       resetStatus();
-      setHasLoadedData(false); // Reset loaded data flag when brand changes
     }
   }, [selectedBrandId, resetStatus]);
 
@@ -713,10 +711,6 @@ export default function DashboardPage() {
         };
         
         if (isMounted.current && !cancelled) {
-          // Mark that we've successfully loaded data BEFORE updating metrics
-          // This ensures the loading screen is dismissed immediately
-          setHasLoadedData(true);
-          
           // Batch the metrics update with other state changes
           startTransition(() => {
             setMetrics(prevMetrics => ({
@@ -756,22 +750,12 @@ export default function DashboardPage() {
               aovData: data.aovData ?? prevMetrics.aovData,
               unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
             }));
-            
-            // Only set initialDataLoad to false after metrics are updated
-            if (initialDataLoad) {
-              setInitialDataLoad(false);
-              initialLoadStarted.current = false;
-            }
           });
         }
         
       } catch (error) {
         // console.error('Error loading metrics:', error);
         if (isMounted.current && !cancelled) {
-          // Mark that we've "loaded" data (even if it's just defaults) to prevent infinite loading
-          // This must happen BEFORE other state updates to dismiss loading screen immediately
-          setHasLoadedData(true);
-          
           // Initialize with empty metrics to prevent undefined errors
           setMetrics(defaultMetrics);
           toast({
@@ -779,16 +763,12 @@ export default function DashboardPage() {
             description: "There was an error loading the dashboard data. Please try refreshing.",
             variant: "destructive"
           });
-          
-          // Set initialDataLoad to false even on error to prevent infinite loading
-          if (initialDataLoad) {
-            setInitialDataLoad(false);
-            initialLoadStarted.current = false;
-          }
         }
               } finally {
           if (isMounted.current && !cancelled) {
             setIsLoading(false);
+            setInitialDataLoad(false);
+            initialLoadStarted.current = false;
           }
           if (timeoutId) {
             clearTimeout(timeoutId);
@@ -1439,24 +1419,24 @@ export default function DashboardPage() {
     )
   }
 
-  // Show full-screen loading during initial data load or when no brand is selected
-  if (!hasLoadedData || !selectedBrandId) {
-    return (
-      <UnifiedLoading
-        size="lg"
-        variant="fullscreen"
-        message={!selectedBrandId ? "Select a brand to continue..." : "Loading dashboard..."}
-        subMessage={!selectedBrandId ? "Choose a brand from the selector" : "Setting up your workspace"}
-        agencyLogo={agencySettings.agency_logo_url}
-        agencyName={agencySettings.agency_name}
-      />
-    )
-  }
+    // Show fullscreen loading if loading or no brand selected
+    if (isLoading || initialDataLoad || !selectedBrandId) {
+      return (
+        <UnifiedLoading
+          size="lg"
+          variant="fullscreen"
+          message={!selectedBrandId ? "Select a brand to get started" : "Loading Dashboard"}
+          subMessage={!selectedBrandId ? "Choose your brand from the dropdown to view analytics" : "Setting up your workspace"}
+          agencyLogo={agencySettings.agency_logo_url}
+          agencyName={agencySettings.agency_name}
+        />
+      )
+    }
 
-    // Main dashboard content
-  return (
+    // Main dashboard content - only show when not loading and brand is selected
+    return (
       <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
-        {/* Remove p-8 temporarily for diagnosis */}
+        {/* Dashboard header */}
         <div className="flex items-center justify-between mb-6 px-8 pt-8">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
@@ -1499,26 +1479,24 @@ export default function DashboardPage() {
           </div>
         </div>
         
-
-        
         {/* WidgetManager and other content will take up remaining space */}
         <div className="flex-grow px-8 pb-8">
-                      <WidgetManager
-              dateRange={dateRange}
-              brandId={selectedBrandId}
-              metrics={metrics}
-              isLoading={isLoading}
-              isRefreshingData={isRefreshingData || backfillStatus.isBackfilling}
-              initialDataLoad={false}
-              backfillStatus={backfillStatus}
-              platformStatus={activePlatforms}
-              existingConnections={connections}
-              brands={brands}
-              isEditMode={isEditMode}
-              handleTabChange={handleTabChange}
-              agencyLogo={agencySettings.agency_logo_url}
-              agencyName={agencySettings.agency_name}
-            >
+          <WidgetManager
+            dateRange={dateRange}
+            brandId={selectedBrandId}
+            metrics={metrics}
+            isLoading={false} // Never pass loading here since we handle it at page level
+            isRefreshingData={isRefreshingData || backfillStatus.isBackfilling}
+            initialDataLoad={false} // Never pass initialDataLoad here since we handle it at page level
+            backfillStatus={backfillStatus}
+            platformStatus={activePlatforms}
+            existingConnections={connections}
+            brands={brands}
+            isEditMode={isEditMode}
+            handleTabChange={handleTabChange}
+            agencyLogo={agencySettings.agency_logo_url}
+            agencyName={agencySettings.agency_name}
+          >
             {isEditMode && (
               <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
                 <div className="flex items-center">
