@@ -184,11 +184,11 @@ export default function MarketingAssistantPage() {
         </div>
       ) : (
         <>
-          {/* Top Metrics Row */}
+          {/* Key Metrics Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 px-6">
-            {/* Ad Spend */}
+            {/* Total Spend */}
             <MetricCard 
-              title="Ad Spend"
+              title="Total Spend"
               value={metaMetrics.adSpend}
               change={metaMetrics.adSpendGrowth}
               previousValue={metaMetrics.previousAdSpend}
@@ -200,7 +200,7 @@ export default function MarketingAssistantPage() {
               previousValueFormat="currency"
               previousValueDecimals={2}
               previousValuePrefix="$"
-              infoTooltip="Total amount spent on Meta ads"
+              infoTooltip="Total amount spent on advertising across all platforms"
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
@@ -208,9 +208,9 @@ export default function MarketingAssistantPage() {
               className="min-h-[120px]"
             />
 
-            {/* ROAS */}
+            {/* Total ROAS */}
             <MetricCard 
-              title="ROAS"
+              title="Total ROAS"
               value={metaMetrics.roas}
               change={metaMetrics.roasGrowth}
               previousValue={metaMetrics.previousRoas}
@@ -222,7 +222,7 @@ export default function MarketingAssistantPage() {
               previousValueFormat="number"
               previousValueDecimals={2}
               previousValueSuffix="x"
-              infoTooltip="Return on ad spend (revenue / ad spend)"
+              infoTooltip="Return on ad spend across all platforms (revenue / ad spend)"
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
@@ -230,9 +230,31 @@ export default function MarketingAssistantPage() {
               className="min-h-[120px]"
             />
 
-            {/* Conversions */}
+            {/* Total Revenue */}
             <MetricCard 
-              title="Conversions"
+              title="Total Revenue"
+              value={metaMetrics.roas * metaMetrics.adSpend}
+              change={metaMetrics.roasGrowth} // Using ROAS growth as proxy for revenue growth
+              previousValue={metaMetrics.previousRoas * metaMetrics.previousAdSpend}
+              prefix="$"
+              valueFormat="currency"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="currency"
+              previousValueDecimals={2}
+              previousValuePrefix="$"
+              infoTooltip="Total revenue generated from advertising across all platforms"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingMetrics}
+              className="min-h-[120px]"
+            />
+
+            {/* Total Conversions */}
+            <MetricCard 
+              title="Total Conversions"
               value={metaMetrics.conversions}
               change={metaMetrics.conversionGrowth}
               previousValue={metaMetrics.previousConversions}
@@ -242,7 +264,7 @@ export default function MarketingAssistantPage() {
               showPreviousPeriod={true}
               previousValueFormat="number"
               previousValueDecimals={0}
-              infoTooltip="Total number of conversions from your ads"
+              infoTooltip="Total number of conversions from advertising across all platforms"
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
@@ -250,9 +272,69 @@ export default function MarketingAssistantPage() {
               className="min-h-[120px]"
             />
 
-            {/* CPC */}
+            {/* Total Impressions */}
             <MetricCard 
-              title="CPC"
+              title="Total Impressions"
+              value={metaMetrics.impressions}
+              change={metaMetrics.impressionGrowth}
+              previousValue={metaMetrics.previousImpressions}
+              hideGraph={true}
+              valueFormat="number"
+              decimals={0}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={0}
+              infoTooltip="Total number of times your ads were viewed across all platforms"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingMetrics}
+              className="min-h-[120px]"
+            />
+
+            {/* Total Clicks */}
+            <MetricCard 
+              title="Total Clicks"
+              value={metaMetrics.clicks}
+              change={metaMetrics.clickGrowth}
+              previousValue={metaMetrics.previousClicks}
+              hideGraph={true}
+              valueFormat="number"
+              decimals={0}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={0}
+              infoTooltip="Total number of clicks on your ads across all platforms"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingMetrics}
+              className="min-h-[120px]"
+            />
+
+            {/* Total CTR */}
+            <MetricCard 
+              title="Total CTR"
+              value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
+              change={metaMetrics.ctrGrowth}
+              previousValue={metaMetrics.previousCtr / 100}
+              valueFormat="percentage"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="percentage"
+              previousValueDecimals={2}
+              infoTooltip="Click-through rate across all platforms (clicks ÷ impressions)"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingMetrics}
+              className="min-h-[120px]"
+            />
+
+            {/* Total CPC */}
+            <MetricCard 
+              title="Total CPC"
               value={metaMetrics.cpc}
               change={metaMetrics.cpcGrowth}
               previousValue={metaMetrics.previousCpc}
@@ -264,151 +346,9 @@ export default function MarketingAssistantPage() {
               previousValueFormat="currency"
               previousValueDecimals={2}
               previousValuePrefix="$"
-              infoTooltip="Average cost per click (spend ÷ clicks)"
+              infoTooltip="Average cost per click across all platforms (spend ÷ clicks)"
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Impressions */}
-            <MetricCard 
-              title="Impressions"
-              value={metaMetrics.impressions}
-              change={metaMetrics.impressionGrowth}
-              previousValue={metaMetrics.previousImpressions}
-              hideGraph={true}
-              valueFormat="number"
-              decimals={0}
-              showPreviousPeriod={true}
-              previousValueFormat="number"
-              previousValueDecimals={0}
-              infoTooltip="Total number of times your ads were viewed"
-              nullChangeText="N/A"
-              nullChangeTooltip="No data for previous period"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Clicks */}
-            <MetricCard 
-              title="Clicks"
-              value={metaMetrics.clicks}
-              change={metaMetrics.clickGrowth}
-              previousValue={metaMetrics.previousClicks}
-              hideGraph={true}
-              valueFormat="number"
-              decimals={0}
-              showPreviousPeriod={true}
-              previousValueFormat="number"
-              previousValueDecimals={0}
-              infoTooltip="Total number of clicks on your ads"
-              nullChangeText="N/A"
-              nullChangeTooltip="No data for previous period"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* CTR */}
-            <MetricCard 
-              title="CTR"
-              value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
-              change={metaMetrics.ctrGrowth}
-              previousValue={metaMetrics.previousCtr / 100}
-              valueFormat="percentage"
-              decimals={2}
-              hideGraph={true}
-              showPreviousPeriod={true}
-              previousValueFormat="percentage"
-              previousValueDecimals={2}
-              infoTooltip="Click-through rate (clicks ÷ impressions)"
-              nullChangeText="N/A"
-              nullChangeTooltip="No data for previous period"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Cost Per Result */}
-            <MetricCard 
-              title="Cost Per Result"
-              value={metaMetrics.costPerResult}
-              change={metaMetrics.cprGrowth}
-              prefix="$"
-              valueFormat="currency"
-              decimals={2}
-              hideGraph={true}
-              showPreviousPeriod={true}
-              previousValueFormat="currency"
-              previousValueDecimals={2}
-              previousValuePrefix="$"
-              infoTooltip="Average cost per conversion"
-              nullChangeText="N/A"
-              nullChangeTooltip="No data for previous period"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-          </div>
-
-          {/* Additional Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6">
-            {/* Reach */}
-            <MetricCard 
-              title="Reach"
-              value={metaMetrics.reach}
-              hideGraph={true}
-              valueFormat="number"
-              decimals={0}
-              hideChange={true}
-              infoTooltip="Total number of unique people who saw your ads"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Frequency */}
-            <MetricCard 
-              title="Frequency"
-              value={metaMetrics.frequency}
-              hideGraph={true}
-              valueFormat="number"
-              decimals={2}
-              hideChange={true}
-              infoTooltip="Average number of times each person saw your ads"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Daily Budget */}
-            <MetricCard 
-              title="Daily Budget"
-              value={metaMetrics.budget}
-              prefix="$"
-              valueFormat="currency"
-              decimals={2}
-              hideGraph={true}
-              hideChange={true}
-              infoTooltip="Average daily budget across all campaigns"
-              data={[]}
-              loading={isLoadingMetrics}
-              className="min-h-[120px]"
-            />
-
-            {/* Purchase Value */}
-            <MetricCard 
-              title="Purchase Value"
-              value={metaMetrics.roas * metaMetrics.adSpend}
-              prefix="$"
-              valueFormat="currency"
-              decimals={2}
-              hideGraph={true}
-              hideChange={true}
-              infoTooltip="Total purchase value from ads (ROAS × Ad Spend)"
               data={[]}
               loading={isLoadingMetrics}
               className="min-h-[120px]"
