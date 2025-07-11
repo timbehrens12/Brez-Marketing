@@ -116,13 +116,15 @@ interface MetaTab2Props {
   brandName: string
   dateRange: DateRange
   connections: PlatformConnection[]
+  onMetaWidgetsLoadingChange?: (isLoading: boolean) => void
 }
 
 export function MetaTab2({
   brandId,
   brandName,
   dateRange,
-  connections
+  connections,
+  onMetaWidgetsLoadingChange
 }: MetaTab2Props) {
   // Get Meta connection
   const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
@@ -624,6 +626,13 @@ export function MetaTab2({
       console.log("[MetaTab2] Meta connection lost, clearing unified loading state");
     }
   }, [metaConnection, brandId, dateRange?.from, dateRange?.to]);
+
+  // Effect to notify parent when loading state changes
+  useEffect(() => {
+    if (onMetaWidgetsLoadingChange) {
+      onMetaWidgetsLoadingChange(isLoadingAllMetaWidgets);
+    }
+  }, [isLoadingAllMetaWidgets, onMetaWidgetsLoadingChange]);
 
   // Initial data load - only on mount to avoid conflicts with dashboard refresh logic
   useEffect(() => {

@@ -166,6 +166,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("site")
   const [isEditMode, setIsEditMode] = useState(false)
   
+  // Add a state to track if meta widgets are loading
+  const [isMetaWidgetsLoading, setIsMetaWidgetsLoading] = useState(false)
+  
   // Add a state to track if we're in the initial setup phase
   const [isInitialSetup, setIsInitialSetup] = useState(true)
   
@@ -1419,8 +1422,8 @@ export default function DashboardPage() {
     )
   }
 
-  // Show loading state during initial data load or when no brand is selected
-  if (initialDataLoad || !selectedBrandId) {
+  // Show loading state during initial data load, when no brand is selected, or when meta widgets are loading
+  if (initialDataLoad || !selectedBrandId || (activeTab === "meta" && isMetaWidgetsLoading)) {
     // Determine the message based on backfill status and brand selection
     let message = "Loading Dashboard";
     let subMessage = "Setting up your workspace";
@@ -1434,6 +1437,9 @@ export default function DashboardPage() {
     } else if (backfillStatus?.isBackfilling) {
       message = "Backfilling Historical Data";
       subMessage = "Syncing missing data from Meta and Shopify...";
+    } else if (activeTab === "meta" && isMetaWidgetsLoading) {
+      message = "Loading Marketing Assistant";
+      subMessage = "Fetching Meta advertising data...";
     }
     
     return (
@@ -1513,6 +1519,7 @@ export default function DashboardPage() {
               handleTabChange={handleTabChange}
               agencyLogo={agencySettings.agency_logo_url}
               agencyName={agencySettings.agency_name}
+              onMetaWidgetsLoadingChange={setIsMetaWidgetsLoading}
             >
             {isEditMode && (
               <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
