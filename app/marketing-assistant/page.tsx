@@ -503,7 +503,7 @@ export default function MarketingAssistantPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 pt-8">
       {!selectedBrandId ? (
         <div className="text-center py-12 px-6">
           <p className="text-gray-400 text-lg">Please select a brand to view marketing metrics</p>
