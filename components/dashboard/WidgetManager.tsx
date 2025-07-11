@@ -117,7 +117,31 @@ export function WidgetManager({
     );
   }
 
-  // Loading is now handled at the dashboard level, so no loading state here
+  // Show a loading spinner during the initial data load for a selected brand
+  if (initialDataLoad) {
+    // Determine the message based on backfill status
+    let message = "Loading Dashboard";
+    let subMessage = "Setting up your workspace";
+    
+    if (backfillStatus?.isChecking) {
+      message = "Checking Data Coverage";
+      subMessage = "Scanning for missing historical data...";
+    } else if (backfillStatus?.isBackfilling) {
+      message = "Backfilling Historical Data";
+      subMessage = "Syncing missing data from Meta and Shopify...";
+    }
+    
+    return (
+      <UnifiedLoading
+        size="lg"
+        variant="fullscreen"
+        message={message}
+        subMessage={subMessage}
+        agencyLogo={agencyLogo}
+        agencyName={agencyName}
+      />
+    );
+  }
 
   const handleTabChangeInternal = (value: string) => {
     setActiveTab(value)

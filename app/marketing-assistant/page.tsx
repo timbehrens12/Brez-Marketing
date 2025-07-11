@@ -141,7 +141,7 @@ export default function MarketingAssistantPage() {
   const pathname = usePathname()
   const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [metaMetrics, setMetaMetrics] = useState<MetaMetrics>(defaultMetrics)
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true)
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -161,19 +161,6 @@ export default function MarketingAssistantPage() {
     }, 1000)
     return () => clearTimeout(timer)
   }, [])
-
-  // Handle loading state when no brand or date range is available
-  useEffect(() => {
-    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      setIsLoadingMetrics(false)
-      setIsRefreshingData(false)
-    } else {
-      // When brand and date range become available, ensure loading stays true until data is fetched
-      if (!hasInitialDataLoaded.current) {
-        setIsLoadingMetrics(true)
-      }
-    }
-  }, [selectedBrandId, dateRange])
 
   // Helper function to calculate previous period date range - matches home page
   const getPreviousPeriodDates = useCallback((from: Date, to: Date): { prevFrom: string, prevTo: string } => {
@@ -400,9 +387,6 @@ export default function MarketingAssistantPage() {
         previousCpc: previousData.cpc || 0
       })
       
-      // Mark initial data as loaded only after successful data update
-      hasInitialDataLoaded.current = true
-      
       console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
     } catch (error) {
       console.error(`[MarketingAssistant] Error fetching Meta data from database:`, error)
@@ -437,6 +421,9 @@ export default function MarketingAssistantPage() {
       
       // Trigger database-based sync
       syncMetaInsights()
+      
+      // Mark initial load as complete
+      hasInitialDataLoaded.current = true
       
       // Clear the in-progress flag after a delay
       setTimeout(() => {
