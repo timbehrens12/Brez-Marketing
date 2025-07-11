@@ -543,8 +543,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -566,8 +565,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -589,8 +587,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -610,8 +607,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -631,8 +627,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -652,8 +647,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -673,8 +667,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
 
@@ -696,8 +689,7 @@ export default function MarketingAssistantPage() {
               nullChangeText="N/A"
               nullChangeTooltip="No data for previous period"
               data={[]}
-              loading={isLoadingMetrics}
-              refreshing={isRefreshingData}
+              loading={isLoadingMetrics || isRefreshingData}
               className="min-h-[120px]"
             />
           </div>
