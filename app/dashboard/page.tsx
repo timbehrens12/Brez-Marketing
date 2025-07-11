@@ -750,6 +750,12 @@ export default function DashboardPage() {
               aovData: data.aovData ?? prevMetrics.aovData,
               unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
             }));
+            
+            // Only set initialDataLoad to false after metrics are updated
+            if (initialDataLoad) {
+              setInitialDataLoad(false);
+              initialLoadStarted.current = false;
+            }
           });
         }
         
@@ -763,12 +769,16 @@ export default function DashboardPage() {
             description: "There was an error loading the dashboard data. Please try refreshing.",
             variant: "destructive"
           });
+          
+          // Set initialDataLoad to false even on error to prevent infinite loading
+          if (initialDataLoad) {
+            setInitialDataLoad(false);
+            initialLoadStarted.current = false;
+          }
         }
               } finally {
           if (isMounted.current && !cancelled) {
             setIsLoading(false);
-            setInitialDataLoad(false);
-            initialLoadStarted.current = false;
           }
           if (timeoutId) {
             clearTimeout(timeoutId);
