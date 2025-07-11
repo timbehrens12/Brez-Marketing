@@ -134,11 +134,12 @@ export function WidgetManager({
     return (
       <UnifiedLoading
         size="lg"
-        variant="fullscreen"
+        variant="page"
         message={message}
         subMessage={subMessage}
         agencyLogo={agencyLogo}
         agencyName={agencyName}
+        className="py-16"
       />
     );
   }

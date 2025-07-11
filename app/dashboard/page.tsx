@@ -1419,24 +1419,10 @@ export default function DashboardPage() {
     )
   }
 
-    // Show fullscreen loading if loading or no brand selected
-    if (isLoading || initialDataLoad || !selectedBrandId) {
-      return (
-        <UnifiedLoading
-          size="lg"
-          variant="fullscreen"
-          message={!selectedBrandId ? "Select a brand to get started" : "Loading Dashboard"}
-          subMessage={!selectedBrandId ? "Choose your brand from the dropdown to view analytics" : "Setting up your workspace"}
-          agencyLogo={agencySettings.agency_logo_url}
-          agencyName={agencySettings.agency_name}
-        />
-      )
-    }
-
-    // Main dashboard content - only show when not loading and brand is selected
-    return (
+    // Main dashboard content
+  return (
       <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
-        {/* Dashboard header */}
+        {/* Remove p-8 temporarily for diagnosis */}
         <div className="flex items-center justify-between mb-6 px-8 pt-8">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
@@ -1479,24 +1465,26 @@ export default function DashboardPage() {
           </div>
         </div>
         
+
+        
         {/* WidgetManager and other content will take up remaining space */}
         <div className="flex-grow px-8 pb-8">
-          <WidgetManager
-            dateRange={dateRange}
-            brandId={selectedBrandId}
-            metrics={metrics}
-            isLoading={false} // Never pass loading here since we handle it at page level
-            isRefreshingData={isRefreshingData || backfillStatus.isBackfilling}
-            initialDataLoad={false} // Never pass initialDataLoad here since we handle it at page level
-            backfillStatus={backfillStatus}
-            platformStatus={activePlatforms}
-            existingConnections={connections}
-            brands={brands}
-            isEditMode={isEditMode}
-            handleTabChange={handleTabChange}
-            agencyLogo={agencySettings.agency_logo_url}
-            agencyName={agencySettings.agency_name}
-          >
+                      <WidgetManager
+              dateRange={dateRange}
+              brandId={selectedBrandId}
+              metrics={metrics}
+              isLoading={isLoading}
+              isRefreshingData={isRefreshingData || backfillStatus.isBackfilling}
+              initialDataLoad={initialDataLoad}
+              backfillStatus={backfillStatus}
+              platformStatus={activePlatforms}
+              existingConnections={connections}
+              brands={brands}
+              isEditMode={isEditMode}
+              handleTabChange={handleTabChange}
+              agencyLogo={agencySettings.agency_logo_url}
+              agencyName={agencySettings.agency_name}
+            >
             {isEditMode && (
               <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
                 <div className="flex items-center">
