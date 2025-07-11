@@ -162,9 +162,9 @@ export default function MarketingAssistantPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-6 pt-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
           <p className="text-gray-400 mt-1">Monitor your Meta advertising performance</p>
@@ -179,13 +179,13 @@ export default function MarketingAssistantPage() {
       </div>
 
       {!selectedBrandId ? (
-        <div className="text-center py-12">
+        <div className="text-center py-12 px-6">
           <p className="text-gray-400 text-lg">Please select a brand to view marketing metrics</p>
         </div>
       ) : (
         <>
           {/* Top Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 px-6">
             {/* Ad Spend */}
             <MetricCard 
               title="Ad Spend"
@@ -355,7 +355,7 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Additional Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6">
             {/* Reach */}
             <MetricCard 
               title="Reach"
@@ -416,7 +416,7 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Placeholder for future marketing assistant features */}
-          <div className="mt-8 p-8 bg-[#111] border border-[#333] rounded-lg text-center">
+          <div className="mt-8 mx-6 p-8 bg-[#111] border border-[#333] rounded-lg text-center">
             <h2 className="text-xl font-semibold text-white mb-2">Marketing Assistant Features</h2>
             <p className="text-gray-400">Additional marketing insights and AI-powered recommendations will be available here soon.</p>
           </div>
