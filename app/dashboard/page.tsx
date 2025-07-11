@@ -157,6 +157,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [isLoading, setIsLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
+  const [hasLoadedData, setHasLoadedData] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -210,6 +211,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedBrandId) {
       resetStatus();
+      setHasLoadedData(false); // Reset loaded data flag when brand changes
     }
   }, [selectedBrandId, resetStatus]);
 
@@ -756,6 +758,9 @@ export default function DashboardPage() {
               setInitialDataLoad(false);
               initialLoadStarted.current = false;
             }
+            
+            // Mark that we've successfully loaded data
+            setHasLoadedData(true);
           });
         }
         
@@ -775,6 +780,9 @@ export default function DashboardPage() {
             setInitialDataLoad(false);
             initialLoadStarted.current = false;
           }
+          
+          // Mark that we've "loaded" data (even if it's just defaults) to prevent infinite loading
+          setHasLoadedData(true);
         }
               } finally {
           if (isMounted.current && !cancelled) {
@@ -1430,7 +1438,7 @@ export default function DashboardPage() {
   }
 
   // Show full-screen loading during initial data load or when no brand is selected
-  if (initialDataLoad || !selectedBrandId) {
+  if (!hasLoadedData || !selectedBrandId) {
     return (
       <UnifiedLoading
         size="lg"
