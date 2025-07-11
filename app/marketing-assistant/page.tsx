@@ -167,6 +167,11 @@ export default function MarketingAssistantPage() {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
       setIsLoadingMetrics(false)
       setIsRefreshingData(false)
+    } else {
+      // When brand and date range become available, ensure loading stays true until data is fetched
+      if (!hasInitialDataLoaded.current) {
+        setIsLoadingMetrics(true)
+      }
     }
   }, [selectedBrandId, dateRange])
 
@@ -395,6 +400,9 @@ export default function MarketingAssistantPage() {
         previousCpc: previousData.cpc || 0
       })
       
+      // Mark initial data as loaded only after successful data update
+      hasInitialDataLoaded.current = true
+      
       console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
     } catch (error) {
       console.error(`[MarketingAssistant] Error fetching Meta data from database:`, error)
@@ -429,9 +437,6 @@ export default function MarketingAssistantPage() {
       
       // Trigger database-based sync
       syncMetaInsights()
-      
-      // Mark initial load as complete
-      hasInitialDataLoaded.current = true
       
       // Clear the in-progress flag after a delay
       setTimeout(() => {
