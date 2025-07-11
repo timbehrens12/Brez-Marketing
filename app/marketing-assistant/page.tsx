@@ -11,6 +11,38 @@ import { useAgency } from "@/contexts/AgencyContext"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 
+// Platform logos component
+const PlatformLogos = () => {
+  return (
+    <div className="flex items-center justify-center space-x-1.5 my-2">
+      {/* Meta logo - active */}
+      <div className="w-4 h-4 bg-[#1877F2] rounded-full flex items-center justify-center">
+        <span className="text-white text-[10px] font-bold">f</span>
+      </div>
+      {/* TikTok logo - grayed out */}
+      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center opacity-30">
+        <span className="text-white text-[10px] font-bold">T</span>
+      </div>
+      {/* Google Ads logo - grayed out */}
+      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center opacity-30">
+        <span className="text-white text-[10px] font-bold">G</span>
+      </div>
+    </div>
+  )
+}
+
+// Custom title component that includes platform logos
+const MetricTitleWithLogos = ({ title }: { title: string }) => {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="text-sm font-medium text-gray-200 text-center mb-1">
+        {title}
+      </div>
+      <PlatformLogos />
+    </div>
+  )
+}
+
 // Extend Window interface for global state management
 declare global {
   interface Window {
@@ -527,7 +559,7 @@ export default function MarketingAssistantPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 px-6">
             {/* Total Spend */}
             <MetricCard 
-              title="Total Spend"
+              title={<MetricTitleWithLogos title="Total Spend" />}
               value={metaMetrics.adSpend}
               change={metaMetrics.adSpendGrowth}
               previousValue={metaMetrics.previousAdSpend}
@@ -549,7 +581,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total ROAS */}
             <MetricCard 
-              title="Total ROAS"
+              title={<MetricTitleWithLogos title="Total ROAS" />}
               value={metaMetrics.roas}
               change={metaMetrics.roasGrowth}
               previousValue={metaMetrics.previousRoas}
@@ -571,7 +603,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Revenue */}
             <MetricCard 
-              title="Total Revenue"
+              title={<MetricTitleWithLogos title="Total Revenue" />}
               value={metaMetrics.roas * metaMetrics.adSpend}
               change={metaMetrics.roasGrowth} // Using ROAS growth as proxy for revenue growth
               previousValue={metaMetrics.previousRoas * metaMetrics.previousAdSpend}
@@ -593,7 +625,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Conversions */}
             <MetricCard 
-              title="Total Conversions"
+              title={<MetricTitleWithLogos title="Total Conversions" />}
               value={metaMetrics.conversions}
               change={metaMetrics.conversionGrowth}
               previousValue={metaMetrics.previousConversions}
@@ -613,7 +645,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Impressions */}
             <MetricCard 
-              title="Total Impressions"
+              title={<MetricTitleWithLogos title="Total Impressions" />}
               value={metaMetrics.impressions}
               change={metaMetrics.impressionGrowth}
               previousValue={metaMetrics.previousImpressions}
@@ -633,7 +665,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total Clicks */}
             <MetricCard 
-              title="Total Clicks"
+              title={<MetricTitleWithLogos title="Total Clicks" />}
               value={metaMetrics.clicks}
               change={metaMetrics.clickGrowth}
               previousValue={metaMetrics.previousClicks}
@@ -653,7 +685,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total CTR */}
             <MetricCard 
-              title="Total CTR"
+              title={<MetricTitleWithLogos title="Total CTR" />}
               value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
               change={metaMetrics.ctrGrowth}
               previousValue={metaMetrics.previousCtr / 100}
@@ -673,7 +705,7 @@ export default function MarketingAssistantPage() {
 
             {/* Total CPC */}
             <MetricCard 
-              title="Total CPC"
+              title={<MetricTitleWithLogos title="Total CPC" />}
               value={metaMetrics.cpc}
               change={metaMetrics.cpcGrowth}
               previousValue={metaMetrics.previousCpc}
