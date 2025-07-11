@@ -1419,6 +1419,35 @@ export default function DashboardPage() {
     )
   }
 
+  // Show loading state during initial data load or when no brand is selected
+  if (initialDataLoad || !selectedBrandId) {
+    // Determine the message based on backfill status and brand selection
+    let message = "Loading Dashboard";
+    let subMessage = "Setting up your workspace";
+    
+    if (!selectedBrandId) {
+      message = "Loading Dashboard";
+      subMessage = "Please select a brand to continue";
+    } else if (backfillStatus?.isChecking) {
+      message = "Checking Data Coverage";
+      subMessage = "Scanning for missing historical data...";
+    } else if (backfillStatus?.isBackfilling) {
+      message = "Backfilling Historical Data";
+      subMessage = "Syncing missing data from Meta and Shopify...";
+    }
+    
+    return (
+      <UnifiedLoading
+        size="lg"
+        variant="fullscreen"
+        message={message}
+        subMessage={subMessage}
+        agencyLogo={agencySettings.agency_logo_url}
+        agencyName={agencySettings.agency_name}
+      />
+    );
+  }
+
     // Main dashboard content
   return (
       <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
