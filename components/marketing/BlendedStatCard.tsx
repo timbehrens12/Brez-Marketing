@@ -71,21 +71,21 @@ export function BlendedStatCard({
 
   if (loading) {
     return (
-      <Card className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
+      <Card className="bg-gray-900/80 border-gray-700 transition-colors">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <Skeleton className="h-4 w-16 bg-gray-700" />
-            <Skeleton className="h-4 w-4 bg-gray-700" />
+            <Skeleton className="h-4 w-16 bg-gray-600" />
+            <Skeleton className="h-4 w-4 bg-gray-600" />
           </div>
-          <Skeleton className="h-6 w-20 bg-gray-700 mb-2" />
-          <Skeleton className="h-3 w-12 bg-gray-700" />
+          <Skeleton className="h-6 w-20 bg-gray-600 mb-2" />
+          <Skeleton className="h-3 w-12 bg-gray-600" />
         </CardContent>
       </Card>
     )
   }
 
   const card = (
-    <Card className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors group">
+    <Card className="bg-gray-900/80 border-gray-700 hover:border-gray-600 transition-colors group">
       <CardContent className="p-4">
         {/* Header with title and icon */}
         <div className="flex items-center justify-between mb-3">

@@ -39,7 +39,7 @@ export default function MarketingPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-full bg-transparent">
       <div className="container mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -59,21 +59,21 @@ export default function MarketingPage() {
             {/* Future Sections - Coming Soon */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Placeholder for future sections */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/80 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
                 <h3 className="text-white font-semibold mb-4">Campaign Management</h3>
                 <p className="text-gray-400 text-sm">
                   Active campaigns with AI recommendations - Coming Soon
                 </p>
               </div>
               
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/80 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
                 <h3 className="text-white font-semibold mb-4">Creative Analysis</h3>
                 <p className="text-gray-400 text-sm">
                   Performance insights for all running creatives - Coming Soon
                 </p>
               </div>
               
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/80 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
                 <h3 className="text-white font-semibold mb-4">AI Daily Report</h3>
                 <p className="text-gray-400 text-sm">
                   Automated daily insights and recommendations - Coming Soon

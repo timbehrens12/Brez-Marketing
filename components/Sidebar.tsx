@@ -26,6 +26,12 @@ const navItems = [
     description: "Marketing overview"
   },
   { 
+    name: "Marketing", 
+    href: "/marketing", 
+    icon: BarChart2,
+    description: "Blended ad performance"
+  },
+  { 
     name: "Marketing Assistant", 
     href: "/marketing-assistant", 
     icon: BrainCircuit,
