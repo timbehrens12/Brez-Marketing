@@ -525,117 +525,65 @@ export default function MarketingAssistantPage() {
         </div>
       ) : (
         <>
-          {/* Platform Logos Section */}
-          <div className="flex justify-center items-center gap-8 px-6 py-4">
-            <TooltipProvider>
-              {/* Meta Logo - Active */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105">
-                    <div className="w-12 h-12 p-2 bg-[#1877F2]/10 rounded-full flex items-center justify-center">
-                      <Image 
-                        src="https://i.imgur.com/6hyyRrs.png" 
-                        alt="Meta" 
-                        width={32} 
-                        height={32} 
-                        className="object-contain"
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-white">Meta</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
-                  <div className="space-y-2">
-                    <p className="font-semibold text-[#1877F2] mb-2">Meta Contribution</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>Spend: ${metaMetrics.adSpend.toFixed(2)}</div>
-                      <div>ROAS: {metaMetrics.roas.toFixed(2)}x</div>
-                      <div>Revenue: ${(metaMetrics.roas * metaMetrics.adSpend).toFixed(2)}</div>
-                      <div>Conversions: {metaMetrics.conversions.toLocaleString()}</div>
-                      <div>Impressions: {metaMetrics.impressions.toLocaleString()}</div>
-                      <div>Clicks: {metaMetrics.clicks.toLocaleString()}</div>
-                      <div>CTR: {(metaMetrics.ctr).toFixed(2)}%</div>
-                      <div>CPC: ${metaMetrics.cpc.toFixed(2)}</div>
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* TikTok Logo - Grayed Out */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 opacity-40">
-                    <div className="w-12 h-12 p-2 bg-gray-600/20 rounded-full flex items-center justify-center">
-                      <Image 
-                        src="https://i.imgur.com/AXHa9UT.png" 
-                        alt="TikTok" 
-                        width={32} 
-                        height={32} 
-                        className="object-contain grayscale"
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-gray-500">TikTok</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
-                  <div className="space-y-2">
-                    <p className="font-semibold text-gray-400 mb-2">TikTok Contribution</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                      <div>Spend: $0.00</div>
-                      <div>ROAS: 0.00x</div>
-                      <div>Revenue: $0.00</div>
-                      <div>Conversions: 0</div>
-                      <div>Impressions: 0</div>
-                      <div>Clicks: 0</div>
-                      <div>CTR: 0.00%</div>
-                      <div>CPC: $0.00</div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">Not connected yet</p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Google Ads Logo - Grayed Out */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 opacity-40">
-                    <div className="w-12 h-12 p-2 bg-gray-600/20 rounded-full flex items-center justify-center">
-                      <Image 
-                        src="https://i.imgur.com/TavV4UJ.png" 
-                        alt="Google Ads" 
-                        width={32} 
-                        height={32} 
-                        className="object-contain grayscale"
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-gray-500">Google Ads</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white p-4 max-w-xs">
-                  <div className="space-y-2">
-                    <p className="font-semibold text-gray-400 mb-2">Google Ads Contribution</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                      <div>Spend: $0.00</div>
-                      <div>ROAS: 0.00x</div>
-                      <div>Revenue: $0.00</div>
-                      <div>Conversions: 0</div>
-                      <div>Impressions: 0</div>
-                      <div>Clicks: 0</div>
-                      <div>CTR: 0.00%</div>
-                      <div>CPC: $0.00</div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">Not connected yet</p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
           {/* Key Metrics Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 px-6">
             {/* Total Spend */}
             <MetricCard 
-              title="Total Spend"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total Spend</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: ${metaMetrics.adSpend.toFixed(2)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.adSpend}
               change={metaMetrics.adSpendGrowth}
               previousValue={metaMetrics.previousAdSpend}
@@ -657,7 +605,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total ROAS */}
             <MetricCard 
-              title="Total ROAS"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total ROAS</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: {metaMetrics.roas.toFixed(2)}x</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: 0.00x</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: 0.00x</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.roas}
               change={metaMetrics.roasGrowth}
               previousValue={metaMetrics.previousRoas}
@@ -679,7 +681,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total Revenue */}
             <MetricCard 
-              title="Total Revenue"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total Revenue</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: ${(metaMetrics.roas * metaMetrics.adSpend).toFixed(2)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.roas * metaMetrics.adSpend}
               change={metaMetrics.roasGrowth} // Using ROAS growth as proxy for revenue growth
               previousValue={metaMetrics.previousRoas * metaMetrics.previousAdSpend}
@@ -701,7 +757,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total Conversions */}
             <MetricCard 
-              title="Total Conversions"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total Conversions</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: {metaMetrics.conversions.toLocaleString()}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.conversions}
               change={metaMetrics.conversionGrowth}
               previousValue={metaMetrics.previousConversions}
@@ -721,7 +831,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total Impressions */}
             <MetricCard 
-              title="Total Impressions"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total Impressions</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: {metaMetrics.impressions.toLocaleString()}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.impressions}
               change={metaMetrics.impressionGrowth}
               previousValue={metaMetrics.previousImpressions}
@@ -741,7 +905,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total Clicks */}
             <MetricCard 
-              title="Total Clicks"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total Clicks</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: {metaMetrics.clicks.toLocaleString()}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: 0</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.clicks}
               change={metaMetrics.clickGrowth}
               previousValue={metaMetrics.previousClicks}
@@ -761,7 +979,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total CTR */}
             <MetricCard 
-              title="Total CTR"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total CTR</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: {metaMetrics.ctr.toFixed(2)}%</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: 0.00%</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: 0.00%</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
               change={metaMetrics.ctrGrowth}
               previousValue={metaMetrics.previousCtr / 100}
@@ -781,7 +1053,61 @@ export default function MarketingAssistantPage() {
 
             {/* Total CPC */}
             <MetricCard 
-              title="Total CPC"
+              title={
+                <div className="flex flex-col gap-1">
+                  <span>Total CPC</span>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Meta: ${metaMetrics.cpc.toFixed(2)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>TikTok: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            width={14} 
+                            height={14} 
+                            className="object-contain grayscale opacity-40"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#111] border border-[#333] text-white text-xs">
+                          <p>Google Ads: $0.00</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              }
               value={metaMetrics.cpc}
               change={metaMetrics.cpcGrowth}
               previousValue={metaMetrics.previousCpc}
