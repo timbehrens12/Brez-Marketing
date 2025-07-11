@@ -43,7 +43,6 @@ interface WidgetManagerProps {
   handleTabChange?: (tab: string) => void;
   agencyLogo?: string | null;
   agencyName?: string;
-  onMetaWidgetsLoadingChange?: (isLoading: boolean) => void;
 }
 
 export function WidgetManager({ 
@@ -61,8 +60,7 @@ export function WidgetManager({
   isEditMode = false,
   handleTabChange,
   agencyLogo,
-  agencyName,
-  onMetaWidgetsLoadingChange
+  agencyName
 }: WidgetManagerProps) {
   // All hooks must be called before any conditional returns
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
@@ -144,7 +142,6 @@ export function WidgetManager({
         onTabChange={handleTabChangeInternal}
         brands={brands}
         isEditMode={isEditMode}
-        onMetaWidgetsLoadingChange={onMetaWidgetsLoadingChange}
       />
       
       {/* Only show Meta widgets when Meta tab is active */}

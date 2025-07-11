@@ -62,7 +62,6 @@ interface PlatformTabsProps {
   onTabChange?: (value: string) => void
   brands?: Array<{ id: string, name: string }>
   isEditMode?: boolean
-  onMetaWidgetsLoadingChange?: (isLoading: boolean) => void
 }
 
 // Add type for Supabase order
@@ -88,8 +87,7 @@ export function PlatformTabs({
   children,
   onTabChange,
   brands = [],
-  isEditMode,
-  onMetaWidgetsLoadingChange
+  isEditMode
 }: PlatformTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("site")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
@@ -226,7 +224,6 @@ export function PlatformTabs({
         brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
         dateRange={dateRange}
         connections={connections}
-        onMetaWidgetsLoadingChange={onMetaWidgetsLoadingChange}
       />
     );
   }

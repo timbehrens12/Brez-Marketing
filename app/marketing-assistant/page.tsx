@@ -141,7 +141,7 @@ export default function MarketingAssistantPage() {
   const pathname = usePathname()
   const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [metaMetrics, setMetaMetrics] = useState<MetaMetrics>(defaultMetrics)
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -161,6 +161,14 @@ export default function MarketingAssistantPage() {
     }, 1000)
     return () => clearTimeout(timer)
   }, [])
+
+  // Handle loading state when no brand or date range is available
+  useEffect(() => {
+    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
+      setIsLoadingMetrics(false)
+      setIsRefreshingData(false)
+    }
+  }, [selectedBrandId, dateRange])
 
   // Helper function to calculate previous period date range - matches home page
   const getPreviousPeriodDates = useCallback((from: Date, to: Date): { prevFrom: string, prevTo: string } => {
