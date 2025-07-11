@@ -144,7 +144,7 @@ export default function MarketingAssistantPage() {
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 7),
+    from: new Date(),
     to: new Date()
   })
 
@@ -504,21 +504,6 @@ export default function MarketingAssistantPage() {
 
   return (
     <div className="w-full space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
-          <p className="text-gray-400 mt-1">Monitor your Meta advertising performance</p>
-        </div>
-        <DateRangePicker 
-          dateRange={{
-            from: dateRange?.from || subDays(new Date(), 7),
-            to: dateRange?.to || new Date()
-          }} 
-          setDateRange={(range) => setDateRange(range)}
-        />
-      </div>
-
       {!selectedBrandId ? (
         <div className="text-center py-12 px-6">
           <p className="text-gray-400 text-lg">Please select a brand to view marketing metrics</p>
