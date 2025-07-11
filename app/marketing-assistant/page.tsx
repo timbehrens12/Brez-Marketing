@@ -11,21 +11,55 @@ import { useAgency } from "@/contexts/AgencyContext"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 
+// Meta logo SVG component
+const MetaLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M22.085 8.5C22.085 12.64 18.725 16 14.585 16C13.905 16 13.255 15.89 12.645 15.69C12.035 15.49 11.475 15.21 10.975 14.86C10.475 14.51 10.035 14.1 9.665 13.64C9.295 13.18 8.995 12.68 8.775 12.15C8.555 11.62 8.415 11.06 8.365 10.48C8.315 9.9 8.355 9.32 8.485 8.76C8.615 8.2 8.835 7.67 9.135 7.18C9.435 6.69 9.815 6.25 10.265 5.87C10.715 5.49 11.225 5.18 11.775 4.95C12.325 4.72 12.915 4.57 13.515 4.51C14.115 4.45 14.715 4.48 15.305 4.6C15.895 4.72 16.465 4.93 16.995 5.22C17.525 5.51 18.005 5.88 18.425 6.31C18.845 6.74 19.195 7.23 19.465 7.76C19.735 8.29 19.925 8.85 20.025 9.43C20.125 10.01 20.135 10.6 20.055 11.18C19.975 11.76 19.805 12.32 19.555 12.84C19.305 13.36 18.975 13.83 18.575 14.24C18.175 14.65 17.715 14.99 17.205 15.25C16.695 15.51 16.145 15.69 15.575 15.78C15.005 15.87 14.425 15.87 13.855 15.78C13.285 15.69 12.735 15.51 12.225 15.25C11.715 14.99 11.255 14.65 10.855 14.24C10.455 13.83 10.125 13.36 9.875 12.84C9.625 12.32 9.455 11.76 9.375 11.18C9.295 10.6 9.305 10.01 9.405 9.43C9.505 8.85 9.695 8.29 9.965 7.76C10.235 7.23 10.585 6.74 11.005 6.31C11.425 5.88 11.905 5.51 12.435 5.22C12.965 4.93 13.535 4.72 14.125 4.6C14.715 4.48 15.315 4.45 15.915 4.51C16.515 4.57 17.105 4.72 17.655 4.95C18.205 5.18 18.715 5.49 19.165 5.87C19.615 6.25 19.995 6.69 20.295 7.18C20.595 7.67 20.815 8.2 20.945 8.76C21.075 9.32 21.115 9.9 21.065 10.48C21.015 11.06 20.875 11.62 20.655 12.15C20.435 12.68 20.135 13.18 19.765 13.64C19.395 14.1 18.955 14.51 18.455 14.86C17.955 15.21 17.395 15.49 16.785 15.69C16.175 15.89 15.525 16 14.845 16C10.705 16 7.345 12.64 7.345 8.5C7.345 4.36 10.705 1 14.845 1C18.985 1 22.345 4.36 22.345 8.5H22.085Z" fill="#0866FF"/>
+    <path d="M9.165 8.5C9.165 11.537 11.627 14 14.665 14C17.703 14 20.165 11.537 20.165 8.5C20.165 5.462 17.703 3 14.665 3C11.627 3 9.165 5.462 9.165 8.5Z" fill="url(#paint0_linear_meta)"/>
+    <defs>
+      <linearGradient id="paint0_linear_meta" x1="9.165" y1="8.5" x2="20.165" y2="8.5" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#0866FF"/>
+        <stop offset="1" stopColor="#0866FF"/>
+      </linearGradient>
+    </defs>
+  </svg>
+)
+
+// TikTok logo SVG component  
+const TikTokLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" fill="#FF0050"/>
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" fill="#25F4EE"/>
+  </svg>
+)
+
+// Google Ads logo SVG component
+const GoogleAdsLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#4285F4"/>
+    <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#34A853"/>
+    <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#FBBC05"/>
+    <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#EA4335"/>
+    <circle cx="12" cy="12" r="3" fill="#FFF"/>
+    <path d="M12 10.5C12.83 10.5 13.5 11.17 13.5 12C13.5 12.83 12.83 13.5 12 13.5C11.17 13.5 10.5 12.83 10.5 12C10.5 11.17 11.17 10.5 12 10.5Z" fill="#4285F4"/>
+  </svg>
+)
+
 // Platform logos component
 const PlatformLogos = () => {
   return (
     <div className="flex items-center justify-center space-x-1.5 my-2">
       {/* Meta logo - active */}
-      <div className="w-4 h-4 bg-[#1877F2] rounded-full flex items-center justify-center">
-        <span className="text-white text-[10px] font-bold">f</span>
+      <div className="w-4 h-4 flex items-center justify-center">
+        <MetaLogo className="w-4 h-4" />
       </div>
       {/* TikTok logo - grayed out */}
-      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center opacity-30">
-        <span className="text-white text-[10px] font-bold">T</span>
+      <div className="w-4 h-4 flex items-center justify-center opacity-30 grayscale">
+        <TikTokLogo className="w-4 h-4" />
       </div>
       {/* Google Ads logo - grayed out */}
-      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center opacity-30">
-        <span className="text-white text-[10px] font-bold">G</span>
+      <div className="w-4 h-4 flex items-center justify-center opacity-30 grayscale">
+        <GoogleAdsLogo className="w-4 h-4" />
       </div>
     </div>
   )
