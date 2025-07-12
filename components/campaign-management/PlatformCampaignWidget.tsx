@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -58,6 +58,7 @@ interface Campaign {
   roas: number
   account_name?: string
   last_recommendation_refresh?: string
+  last_refresh_date?: string
   recommendation?: {
     action: string
     reasoning: string
@@ -82,6 +83,20 @@ interface PlatformData {
   campaigns: Campaign[]
   isLoading: boolean
   error?: string
+}
+
+// Throttling utility
+const throttleCache = new Map<string, number>()
+const throttle = (key: string, delay: number): boolean => {
+  const now = Date.now()
+  const lastCall = throttleCache.get(key) || 0
+  
+  if (now - lastCall < delay) {
+    return false
+  }
+  
+  throttleCache.set(key, now)
+  return true
 }
 
 export default function PlatformCampaignWidget() {
@@ -118,6 +133,19 @@ export default function PlatformCampaignWidget() {
   const [sortBy, setSortBy] = useState('spent')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
+  const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  // Add refs for tracking component state
+  const isMountedRef = useRef(true)
+  const lastRefresh = useRef(0)
+  const refreshInProgressRef = useRef(false)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Check if a campaign can get a new recommendation (weekly limit)
   const canRefreshRecommendation = (campaign: Campaign) => {
@@ -144,6 +172,215 @@ export default function PlatformCampaignWidget() {
     
     return Math.max(0, diffDays)
   }
+
+  // Function to check campaign statuses - copied from dashboard widget
+  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
+    if (!selectedBrandId || !isMountedRef.current || campaignsToCheck.length === 0) return
+    
+    // Apply throttling to prevent multiple status checks
+    const key = `check-statuses-${selectedBrandId}`
+    if (!forceRefresh && !throttle(key, 15000)) {
+      console.log(`[CampaignWidget] Throttled status check - skipping`)
+      return
+    }
+    
+    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`)
+    
+    // Filter out campaigns with invalid campaign_id values
+    const validCampaigns = campaignsToCheck.filter(campaign => 
+      campaign && campaign.campaign_id && typeof campaign.campaign_id === 'string' && campaign.campaign_id.trim() !== ''
+    )
+    
+    if (validCampaigns.length === 0) {
+      console.log('[CampaignWidget] No valid campaigns to check statuses for')
+      return
+    }
+    
+    // Prioritize campaigns: active > recently modified > others
+    const prioritizedCampaigns = [...validCampaigns].sort((a, b) => {
+      // Active campaigns first
+      const aActive = a.status.toUpperCase() === 'ACTIVE'
+      const bActive = b.status.toUpperCase() === 'ACTIVE'
+      
+      if (aActive && !bActive) return -1
+      if (!aActive && bActive) return 1
+      
+      // Then recently modified ones
+      const aDate = new Date(a.last_refresh_date || 0)
+      const bDate = new Date(b.last_refresh_date || 0)
+      
+      return bDate.getTime() - aDate.getTime()
+    })
+    
+    // Process campaigns in batches to avoid rate limits
+    const batchSize = forceRefresh ? Math.min(5, prioritizedCampaigns.length) : Math.min(2, prioritizedCampaigns.length)
+    const campaignsToProcess = prioritizedCampaigns.slice(0, batchSize)
+    
+    console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`)
+    
+    let updatedCount = 0
+    let pendingRequests = campaignsToProcess.length
+    
+    // Check each campaign's status with a slight delay between requests
+    campaignsToProcess.forEach((campaign, index) => {
+      setTimeout(() => {
+        if (!isMountedRef.current) return
+        
+        if (!campaign || !campaign.campaign_id) {
+          console.log('[CampaignWidget] Invalid campaign object or missing campaign_id')
+          pendingRequests--
+          return
+        }
+        
+        console.log(`[CampaignWidget] Checking status for campaign: ${campaign.campaign_id}`)
+        
+        fetch(`/api/meta/campaign-status-check`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId: selectedBrandId,
+            campaignId: campaign.campaign_id,
+            forceRefresh: forceRefresh
+          })
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json()
+          }
+          
+          // Handle different error types
+          if (response.status === 400) {
+            console.log(`[CampaignWidget] Bad request when checking campaign ${campaign.campaign_id} status`)
+            return { error: 'Invalid campaign parameters', status: campaign.status }
+          } else if (response.status === 429) {
+            console.log(`[CampaignWidget] Rate limited when checking campaign ${campaign.campaign_id} status`)
+            return { error: 'Rate limited', status: campaign.status }
+          } else if (response.status === 404) {
+            console.log(`[CampaignWidget] Campaign ${campaign.campaign_id} not found in Meta`)
+            return { error: 'Campaign not found', status: campaign.status }
+          }
+          
+          console.log(`[CampaignWidget] Error ${response.status} when checking campaign ${campaign.campaign_id} status`)
+          return { error: `API error (${response.status})`, status: campaign.status }
+        })
+        .then(statusData => {
+          pendingRequests--
+          
+          // Skip update if we have an error
+          if (statusData.error) {
+            return
+          }
+          
+          if (statusData.status) {
+            // Always update local state when force refreshing, otherwise only update if status changed
+            const shouldUpdate = forceRefresh || statusData.status.toUpperCase() !== campaign.status.toUpperCase()
+            
+            if (shouldUpdate) {
+              console.log(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`)
+              updatedCount++
+              
+              // Update the local campaigns state immediately
+              setLocalCampaigns(currentCampaigns => 
+                currentCampaigns.map(c => 
+                  c.campaign_id === campaign.campaign_id 
+                    ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                    : c
+                )
+              )
+              
+              // Also update the platforms state
+              setPlatforms(prev => ({
+                ...prev,
+                meta: {
+                  ...prev.meta,
+                  campaigns: prev.meta.campaigns.map(c => 
+                    c.campaign_id === campaign.campaign_id 
+                      ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                      : c
+                  )
+                }
+              }))
+            }
+          }
+          
+          // If this is the last request and any statuses were updated, show success message
+          if (pendingRequests === 0 && updatedCount > 0) {
+            console.log(`[CampaignWidget] ${updatedCount} campaign statuses were updated.`)
+            toast.success(`Updated ${updatedCount} campaign status${updatedCount > 1 ? 'es' : ''}`)
+          }
+        })
+        .catch(error => {
+          pendingRequests--
+          console.log(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error)
+          
+          // Show error message for rate limiting
+          if (error.message?.includes('429')) {
+            toast.warning('Rate limit reached. Please wait before checking again.')
+          }
+        })
+      }, index * (forceRefresh ? 500 : 2000)) // Increase delay between requests to reduce rate limiting
+    })
+  }, [selectedBrandId, isMountedRef])
+
+  // Function to refresh single campaign status
+  const refreshCampaignStatus = useCallback(async (campaignId: string, force: boolean = false): Promise<void> => {
+    if (!selectedBrandId || !campaignId) return
+    
+    console.log(`[CampaignWidget] Refreshing status for campaign ${campaignId}`)
+    
+    try {
+      const response = await fetch(`/api/meta/campaign-status-check`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId: selectedBrandId,
+          campaignId,
+          forceRefresh: force
+        })
+      })
+      
+      if (response.ok) {
+        const statusData = await response.json()
+        console.log(`[CampaignWidget] Status refresh successful for ${campaignId}`)
+        
+        if (statusData.status) {
+          // Update the local campaigns state immediately
+          setLocalCampaigns(currentCampaigns => 
+            currentCampaigns.map(c => 
+              c.campaign_id === campaignId 
+                ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                : c
+            )
+          )
+          
+          // Also update the platforms state
+          setPlatforms(prev => ({
+            ...prev,
+            meta: {
+              ...prev.meta,
+              campaigns: prev.meta.campaigns.map(c => 
+                c.campaign_id === campaignId 
+                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                  : c
+              )
+            }
+          }))
+          
+          toast.success('Campaign status updated')
+        }
+      } else {
+        console.error(`[CampaignWidget] Status refresh failed for ${campaignId}`)
+        toast.error("Failed to refresh campaign status")
+      }
+    } catch (error) {
+      console.error(`[CampaignWidget] Error refreshing status: ${error}`)
+      toast.error("An error occurred while refreshing campaign status")
+    }
+  }, [selectedBrandId])
 
   // Fetch Meta campaigns - now includes ALL campaigns, not just active ones
   const fetchMetaCampaigns = async (forceRefresh = false) => {
@@ -215,6 +452,9 @@ export default function PlatformCampaignWidget() {
         }
       }))
 
+      // Update local campaigns state
+      setLocalCampaigns(campaignsWithRecommendations)
+
       setLastRefreshTime(now)
       console.log('[CampaignWidget] Successfully fetched campaigns:', campaignsWithRecommendations.length)
 
@@ -231,6 +471,13 @@ export default function PlatformCampaignWidget() {
       toast.error('Failed to load Meta campaigns')
     }
   }
+
+  // Sync local campaigns with platform campaigns
+  useEffect(() => {
+    if (platforms.meta.campaigns.length > 0) {
+      setLocalCampaigns(platforms.meta.campaigns)
+    }
+  }, [platforms.meta.campaigns])
 
   // Data refresh effect - matches home page widget pattern
   useEffect(() => {
@@ -254,6 +501,58 @@ export default function PlatformCampaignWidget() {
       clearInterval(intervalId)
     }
   }, [selectedBrandId])
+
+  // Status check effect - check campaign statuses when campaigns change
+  useEffect(() => {
+    if (!localCampaigns.length || !selectedBrandId) return
+    
+    // Check statuses of campaigns periodically
+    const intervalId = setInterval(() => {
+      if (isRefreshing) {
+        console.log("[CampaignWidget] Skipping auto status check because manual refresh is in progress")
+        return
+      }
+      
+      // Check if we should refresh (apply throttling)
+      if (!throttle('auto-refresh-campaign-statuses', 120000)) {
+        console.log("[CampaignWidget] Throttled auto-refresh of campaign statuses")
+        return
+      }
+      
+      console.log("[CampaignWidget] Auto-refreshing campaign statuses")
+      // Only check active campaigns to minimize API calls
+      const activeCampaigns = localCampaigns.filter(c => c.status.toUpperCase() === 'ACTIVE')
+      if (activeCampaigns.length > 0) {
+        checkCampaignStatuses(activeCampaigns.slice(0, 2))
+      }
+    }, 120000) // 2 minutes interval
+    
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [localCampaigns, selectedBrandId, checkCampaignStatuses, isRefreshing])
+
+  // Manual refresh with status checking
+  const handleManualRefresh = useCallback(async () => {
+    if (isRefreshing) return
+    
+    setIsRefreshing(true)
+    
+    try {
+      // First refresh campaign data
+      await fetchMetaCampaigns(true)
+      
+      // Then check statuses of all campaigns
+      if (localCampaigns.length > 0) {
+        console.log('[CampaignWidget] Checking statuses after manual refresh')
+        checkCampaignStatuses(localCampaigns, true)
+      }
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false)
+      }, 2000)
+    }
+  }, [isRefreshing, localCampaigns, checkCampaignStatuses])
 
   const togglePlatform = (platformKey: string) => {
     setExpandedPlatforms(prev => {
@@ -365,7 +664,7 @@ export default function PlatformCampaignWidget() {
     return `${num.toFixed(2)}%`
   }
 
-  // Filter and sort campaigns
+  // Filter and sort campaigns - use localCampaigns for real-time updates
   const getFilteredAndSortedCampaigns = (campaigns: Campaign[]) => {
     let filtered = [...campaigns]
     
@@ -446,11 +745,11 @@ export default function PlatformCampaignWidget() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => fetchMetaCampaigns(true)}
-                    disabled={platform.isLoading}
+                    onClick={handleManualRefresh}
+                    disabled={platform.isLoading || isRefreshing}
                     className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                   >
-                    <RefreshCw className={`w-4 h-4 ${platform.isLoading ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 ${(platform.isLoading || isRefreshing) ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
               )}
@@ -525,7 +824,8 @@ export default function PlatformCampaignWidget() {
                   </div>
 
                   {(() => {
-                    const filteredCampaigns = getFilteredAndSortedCampaigns(platform.campaigns)
+                    // Use localCampaigns for real-time updates
+                    const filteredCampaigns = getFilteredAndSortedCampaigns(localCampaigns)
                     
                     if (filteredCampaigns.length === 0) {
                       return (
