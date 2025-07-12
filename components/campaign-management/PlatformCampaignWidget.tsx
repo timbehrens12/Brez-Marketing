@@ -186,7 +186,7 @@ export default function PlatformCampaignWidget() {
         if (response.ok) {
           const statusData = await response.json()
           
-          if (statusData.status && statusData.status.toUpperCase() !== campaign.status.toUpperCase()) {
+          if (statusData.success && statusData.status && statusData.status.toUpperCase() !== campaign.status.toUpperCase()) {
             console.log(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`)
             updatedCount++
             
@@ -211,6 +211,15 @@ export default function PlatformCampaignWidget() {
                 )
               }
             }))
+          }
+        } else {
+          // Handle different error types
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.log(`[CampaignWidget] API error for campaign ${campaign.campaign_id}:`, response.status, errorData.error)
+          
+          if (response.status === 429) {
+            console.log('[CampaignWidget] Rate limit reached, skipping remaining checks')
+            break // Stop checking other campaigns if we hit rate limit
           }
         }
       } catch (error) {

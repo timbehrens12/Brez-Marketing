@@ -188,14 +188,13 @@ export async function POST(req: NextRequest) {
       if (failureRecord && now < failureRecord.until) {
         return NextResponse.json(
           { 
-            success: false, 
-            error: 'Too many requests with expired session',
-            status: 'RATE_LIMITED',
-            source: 'repeated_auth_failure',
-            retryAfter: Math.ceil((failureRecord.until - now) / 1000),
-            message: 'Please refresh the page to continue'
-          },
-          { status: 200 }
+                    success: false, 
+        error: 'Too many requests with expired session',
+        source: 'repeated_auth_failure',
+        retryAfter: Math.ceil((failureRecord.until - now) / 1000),
+        message: 'Please refresh the page to continue'
+      },
+      { status: 429 }
         );
       }
       
@@ -215,11 +214,10 @@ export async function POST(req: NextRequest) {
         { 
           success: false, 
           error: 'Session expired',
-          status: 'NOT_ACTIVE',
           source: 'session_expired',
           message: 'Please refresh the page to continue'
         },
-        { status: 200 }
+        { status: 401 }
       );
     }
 
@@ -471,10 +469,9 @@ export async function POST(req: NextRequest) {
       { 
         success: false, 
         error: error.message || 'An unexpected error occurred',
-        status: 'ERROR',
         source: 'api_error'
       }, 
-      { status: 200 }
+      { status: 500 }
     );
   }
 } 
