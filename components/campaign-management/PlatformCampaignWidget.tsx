@@ -147,7 +147,7 @@ export default function PlatformCampaignWidget() {
     return Math.max(0, diffDays)
   }
 
-  // Function to check campaign statuses - robust version like dashboard
+  // Function to check campaign statuses - conservative version to avoid rate limits
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
     if (!selectedBrandId || campaignsToCheck.length === 0) {
       console.log('[CampaignWidget] Skipping status check:', { selectedBrandId, campaignCount: campaignsToCheck.length })
@@ -155,7 +155,6 @@ export default function PlatformCampaignWidget() {
     }
     
     console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`)
-    console.log('[CampaignWidget] Campaign IDs to check:', campaignsToCheck.map(c => c.campaign_id))
     
     // Filter out campaigns with invalid campaign_id values
     const validCampaigns = campaignsToCheck.filter(campaign => 
@@ -169,8 +168,8 @@ export default function PlatformCampaignWidget() {
     
     console.log('[CampaignWidget] Valid campaign count:', validCampaigns.length)
     
-    // Process more campaigns when forceRefresh is true, but limit to avoid rate limits
-    const batchSize = forceRefresh ? Math.min(5, validCampaigns.length) : Math.min(2, validCampaigns.length)
+    // Be much more conservative with batch sizes to avoid rate limits
+    const batchSize = forceRefresh ? Math.min(2, validCampaigns.length) : Math.min(1, validCampaigns.length)
     const campaignsToProcess = validCampaigns.slice(0, batchSize)
     
     console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`)
@@ -178,9 +177,11 @@ export default function PlatformCampaignWidget() {
     let updatedCount = 0
     let pendingRequests = campaignsToProcess.length
     
-    // Check each campaign's status with a slight delay between requests
+    // Check each campaign's status with much longer delays between requests
     campaignsToProcess.forEach((campaign, index) => {
-      // Add a small delay between requests to avoid rate limiting
+      // Use much longer delays to avoid rate limiting
+      const delay = index * (forceRefresh ? 3000 : 5000) // 3-5 second delays
+      
       setTimeout(() => {
         // Extra validation before API call
         if (!campaign || !campaign.campaign_id) {
@@ -209,20 +210,19 @@ export default function PlatformCampaignWidget() {
           
           // Check for different types of errors
           if (response.status === 400) {
-            // Bad request - likely invalid parameters
             console.log(`[CampaignWidget] Bad request when checking campaign ${campaign.campaign_id} status`)
             return { error: 'Invalid campaign parameters', status: campaign.status }
           } else if (response.status === 429) {
-            // Rate limiting
             console.log(`[CampaignWidget] Rate limited when checking campaign ${campaign.campaign_id} status`)
             return { error: 'Rate limited', status: campaign.status }
           } else if (response.status === 404) {
-            // Campaign not found
             console.log(`[CampaignWidget] Campaign ${campaign.campaign_id} not found in Meta`)
             return { error: 'Campaign not found', status: campaign.status }
+          } else if (response.status === 401) {
+            console.log(`[CampaignWidget] Authentication error when checking campaign ${campaign.campaign_id} status`)
+            return { error: 'Authentication error', status: campaign.status }
           }
           
-          // For other errors, return a generic error with the current status
           console.log(`[CampaignWidget] Error ${response.status} when checking campaign ${campaign.campaign_id} status`)
           return { error: `API error (${response.status})`, status: campaign.status }
         })
@@ -231,6 +231,10 @@ export default function PlatformCampaignWidget() {
           
           // Skip update if we have an error
           if (statusData.error) {
+            // For rate limiting errors, don't show as errors since they're expected
+            if (statusData.error !== 'Rate limited' && statusData.error !== 'Authentication error') {
+              console.log(`[CampaignWidget] Error for campaign ${campaign.campaign_id}: ${statusData.error}`)
+            }
             return
           }
           
@@ -281,7 +285,7 @@ export default function PlatformCampaignWidget() {
             toast.success(`Updated ${updatedCount} campaign status${updatedCount > 1 ? 'es' : ''}`)
           }
         })
-      }, index * (forceRefresh ? 500 : 2000)) // Increase delay between requests to reduce rate limiting
+      }, delay)
     })
   }, [selectedBrandId])
 
@@ -361,10 +365,11 @@ export default function PlatformCampaignWidget() {
       setLastRefreshTime(now)
       console.log('[CampaignWidget] Successfully fetched campaigns:', campaignsWithRecommendations.length)
 
-      // Check campaign statuses after fetching (like dashboard does)
+      // Check campaign statuses after fetching (only when explicitly requested)
       if (checkStatuses && campaignsWithRecommendations.length > 0) {
         console.log('[CampaignWidget] Checking statuses after fetch...')
-        checkCampaignStatuses(campaignsWithRecommendations, true)
+        // Don't force refresh on status check to avoid rate limits
+        checkCampaignStatuses(campaignsWithRecommendations, false)
       }
 
     } catch (error) {
@@ -388,11 +393,12 @@ export default function PlatformCampaignWidget() {
     }
   }, [platforms.meta.campaigns])
 
-  // Data refresh effect - matches home page widget pattern
+  // Data refresh effect - conservative approach to avoid rate limits
   useEffect(() => {
     if (selectedBrandId) {
       console.log('[CampaignWidget] Brand changed, fetching campaigns...', selectedBrandId)
-      fetchMetaCampaigns(true, true) // Force refresh with status check on brand change
+      // Don't force refresh or check statuses on initial page load to avoid rate limits
+      fetchMetaCampaigns(false, false) // Normal refresh without status check on brand change
     }
   }, [selectedBrandId, fetchMetaCampaigns])
 
