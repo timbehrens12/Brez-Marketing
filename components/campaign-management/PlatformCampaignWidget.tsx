@@ -505,14 +505,14 @@ export default function PlatformCampaignWidget() {
                           Options
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700 text-white">
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="hover:bg-gray-800 focus:bg-gray-800">
                           <div className="flex items-center justify-between w-full">
                             <span className="text-white">Show Inactive Campaigns</span>
                             <Switch 
                               checked={showInactive} 
                               onCheckedChange={setShowInactive}
-                              className="ml-2"
+                              className="ml-2 data-[state=checked]:bg-gray-600 data-[state=unchecked]:bg-gray-700"
                             />
                           </div>
                         </DropdownMenuItem>
