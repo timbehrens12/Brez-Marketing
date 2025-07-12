@@ -434,68 +434,62 @@ export default function CampaignRecommendationModal({
               </TabsContent>
 
               <TabsContent value="analysis" className="p-6 space-y-6 mt-0">
-                {/* Detailed Analysis */}
+                {/* Performance Metrics */}
                 <Card className="bg-[#111] border-[#333]">
                   <CardHeader>
-                    <CardTitle className="text-lg text-white">Deep Dive Analysis</CardTitle>
+                    <CardTitle className="text-lg text-white">Performance Breakdown</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Performance Metrics */}
-                      <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
-                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                          <BarChart3 className="w-4 h-4 text-gray-400" />
-                          Performance Metrics
-                        </h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-400">Impressions</span>
-                            <span className="text-sm text-white">{campaign.impressions.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-400">Clicks</span>
-                            <span className="text-sm text-white">{campaign.clicks.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-400">Conversions</span>
-                            <span className="text-sm text-white">{campaign.conversions}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-400">CPC</span>
-                            <span className="text-sm text-white">${campaign.cpc.toFixed(2)}</span>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                          <h4 className="text-sm font-medium text-white mb-3">Efficiency Scores</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-400">ROAS Efficiency</span>
+                                <span className="text-white">{Math.round(campaign.roas * 20)}%</span>
+                              </div>
+                              <Progress value={campaign.roas * 20} className="h-2 bg-[#222]" />
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-400">CTR Performance</span>
+                                <span className="text-white">{Math.round(campaign.ctr * 10)}%</span>
+                              </div>
+                              <Progress value={campaign.ctr * 10} className="h-2 bg-[#222]" />
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-400">Budget Efficiency</span>
+                                <span className="text-white">{Math.round((campaign.spent / campaign.budget) * 100)}%</span>
+                              </div>
+                              <Progress value={(campaign.spent / campaign.budget) * 100} className="h-2 bg-[#222]" />
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Efficiency Scores */}
-                      <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
-                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                          <Gauge className="w-4 h-4 text-gray-400" />
-                          Efficiency Scores
-                        </h4>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between mb-1">
-                              <span className="text-sm text-gray-400">Budget Efficiency</span>
-                              <span className="text-sm text-white">
-                                {Math.round((campaign.spent / campaign.budget) * 100)}%
-                              </span>
+                      <div className="space-y-4">
+                        <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                          <h4 className="text-sm font-medium text-white mb-3">Key Metrics</h4>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Total Spend</span>
+                              <span className="text-white">${campaign.spent.toLocaleString()}</span>
                             </div>
-                            <Progress value={(campaign.spent / campaign.budget) * 100} className="h-2 bg-[#222]" />
-                          </div>
-                          <div>
-                            <div className="flex justify-between mb-1">
-                              <span className="text-sm text-gray-400">CTR Performance</span>
-                              <span className="text-sm text-white">{campaign.ctr.toFixed(1)}%</span>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Conversions</span>
+                              <span className="text-white">{campaign.conversions.toLocaleString()}</span>
                             </div>
-                            <Progress value={Math.min(campaign.ctr * 20, 100)} className="h-2 bg-[#222]" />
-                          </div>
-                          <div>
-                            <div className="flex justify-between mb-1">
-                              <span className="text-sm text-gray-400">ROAS Score</span>
-                              <span className="text-sm text-white">{campaign.roas.toFixed(1)}x</span>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Avg. CPC</span>
+                              <span className="text-white">${campaign.cpc.toFixed(2)}</span>
                             </div>
-                            <Progress value={Math.min(campaign.roas * 20, 100)} className="h-2 bg-[#222]" />
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Impressions</span>
+                              <span className="text-white">{campaign.impressions.toLocaleString()}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -503,74 +497,41 @@ export default function CampaignRecommendationModal({
 
                     {/* Specific Actions */}
                     {recommendation.specific_actions && (
-                      <div className="mt-6">
-                        <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                          <ListChecks className="w-4 h-4 text-gray-400" />
-                          Specific Actions Required
-                        </h4>
-                        
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium text-white">Specific Actions Recommended</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* AdSet Actions */}
-                          {(recommendation.specific_actions.adsets_to_scale?.length || 
-                            recommendation.specific_actions.adsets_to_optimize?.length || 
-                            recommendation.specific_actions.adsets_to_pause?.length) ? (
-                            <div className="space-y-3">
-                              <h5 className="text-sm font-medium text-gray-300">AdSet Actions</h5>
-                              
-                                                             {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
-                                 <ActionCard
-                                   icon={<TrendingUp className="w-4 h-4" />}
-                                   title="Scale Budget"
-                                   items={recommendation.specific_actions.adsets_to_scale}
-                                   color="green"
-                                 />
-                               )}
-                               
-                               {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
-                                 <ActionCard
-                                   icon={<Settings className="w-4 h-4" />}
-                                   title="Optimize"
-                                   items={recommendation.specific_actions.adsets_to_optimize}
-                                   color="blue"
-                                 />
-                               )}
-                               
-                               {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
-                                 <ActionCard
-                                   icon={<Clock className="w-4 h-4" />}
-                                   title="Pause"
-                                   items={recommendation.specific_actions.adsets_to_pause}
-                                   color="red"
-                                 />
-                               )}
-                            </div>
-                          ) : null}
-
-                          {/* Ad Actions */}
-                          {(recommendation.specific_actions.ads_to_duplicate?.length || 
-                            recommendation.specific_actions.ads_to_pause?.length) ? (
-                            <div className="space-y-3">
-                              <h5 className="text-sm font-medium text-gray-300">Ad Actions</h5>
-                              
-                              {recommendation.specific_actions.ads_to_duplicate?.length > 0 && (
-                                <ActionCard
-                                  icon={<ArrowRight className="w-4 h-4" />}
-                                  title="Duplicate"
-                                  items={recommendation.specific_actions.ads_to_duplicate}
-                                  color="purple"
-                                />
-                              )}
-                              
-                              {recommendation.specific_actions.ads_to_pause?.length > 0 && (
-                                <ActionCard
-                                  icon={<Clock className="w-4 h-4" />}
-                                  title="Pause"
-                                  items={recommendation.specific_actions.ads_to_pause}
-                                  color="red"
-                                />
-                              )}
-                            </div>
-                          ) : null}
+                          {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
+                            <ActionCard 
+                              icon={<TrendingUp className="w-4 h-4" />}
+                              title="AdSets to Scale"
+                              items={recommendation.specific_actions.adsets_to_scale}
+                              color="green"
+                            />
+                          )}
+                          {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
+                            <ActionCard 
+                              icon={<Target className="w-4 h-4" />}
+                              title="AdSets to Optimize"
+                              items={recommendation.specific_actions.adsets_to_optimize}
+                              color="blue"
+                            />
+                          )}
+                          {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
+                            <ActionCard 
+                              icon={<Clock className="w-4 h-4" />}
+                              title="AdSets to Pause"
+                              items={recommendation.specific_actions.adsets_to_pause}
+                              color="red"
+                            />
+                          )}
+                          {recommendation.specific_actions.ads_to_pause && recommendation.specific_actions.ads_to_pause.length > 0 && (
+                            <ActionCard 
+                              icon={<Eye className="w-4 h-4" />}
+                              title="Ads to Pause"
+                              items={recommendation.specific_actions.ads_to_pause}
+                              color="purple"
+                            />
+                          )}
                         </div>
                       </div>
                     )}
@@ -579,153 +540,149 @@ export default function CampaignRecommendationModal({
               </TabsContent>
 
               <TabsContent value="implementation" className="p-6 space-y-6 mt-0">
-                {/* Implementation Guide */}
                 <Card className="bg-[#111] border-[#333]">
                   <CardHeader>
-                    <CardTitle className="text-lg text-white">Step-by-Step Implementation</CardTitle>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <ListChecks className="w-4 h-4 text-gray-400" />
+                      Implementation Guide
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="prose prose-invert max-w-none">
-                      <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                        {recommendation.implementation}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 space-y-4">
-                      <div className="bg-yellow-950/20 border border-yellow-800/50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-yellow-400 mb-2 flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4" />
-                          Important Considerations
-                        </h4>
-                        <ul className="text-sm text-yellow-300/80 space-y-1">
-                          <li>• Monitor performance closely for the first 48 hours</li>
-                          <li>• Be prepared to adjust if metrics decline</li>
-                          <li>• Document all changes for future reference</li>
-                          <li>• Consider A/B testing major changes</li>
-                        </ul>
-                      </div>
-
-                      <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                          <Timer className="w-4 h-4 text-gray-400" />
-                          Implementation Timeline
-                        </h4>
-                        <div className="space-y-3">
-                          <TimelineItem
-                            time="Immediately"
-                            title="Initial Changes"
-                            description="Apply recommended budget and bid adjustments"
-                          />
-                          <TimelineItem
-                            time="24-48 hours"
-                            title="Monitor & Adjust"
-                            description="Check key metrics and fine-tune if needed"
-                          />
-                          <TimelineItem
-                            time="3-5 days"
-                            title="Evaluate Results"
-                            description="Assess overall impact and plan next steps"
-                          />
-                          <TimelineItem
-                            time="1 week"
-                            title="Full Analysis"
-                            description="Complete performance review and optimization"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-gray-400" />
-                          Success Metrics to Track
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                                                     <MetricToTrack label="ROAS" target="&gt; 3.5x" />
-                           <MetricToTrack label="CTR" target="&gt; 2.5%" />
-                                                     <MetricToTrack label="CPC" target="&lt; $2.00" />
-                          <MetricToTrack label="Conversions" target="+25%" />
-                        </div>
+                  <CardContent className="space-y-6">
+                    <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                      <h4 className="text-sm font-medium text-white mb-3">Step-by-Step Instructions</h4>
+                      <div className="prose prose-sm prose-invert max-w-none">
+                        <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                          {recommendation.implementation}
+                        </p>
                       </div>
                     </div>
+
+                    {/* Implementation Timeline */}
+                    <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                      <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                        <Timer className="w-4 h-4 text-gray-400" />
+                        Implementation Timeline
+                      </h4>
+                      <div className="space-y-4">
+                        <TimelineItem
+                          time="0-5 min"
+                          title="Backup Current Settings"
+                          description="Export current campaign settings and create a backup before making changes"
+                        />
+                        <TimelineItem
+                          time="5-15 min"
+                          title="Apply Recommended Changes"
+                          description="Implement the specific modifications outlined in the recommendation"
+                        />
+                        <TimelineItem
+                          time="15-30 min"
+                          title="Configure Monitoring"
+                          description="Set up alerts and monitoring to track performance changes"
+                        />
+                        <TimelineItem
+                          time="Day 1-3"
+                          title="Initial Observation"
+                          description="Monitor early performance indicators and make minor adjustments if needed"
+                        />
+                        <TimelineItem
+                          time="Day 3-7"
+                          title="Performance Evaluation"
+                          description="Analyze full impact and determine if further optimizations are needed"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Key Metrics to Track */}
+                    <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                      <h4 className="text-sm font-medium text-white mb-4">Key Metrics to Track</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <MetricToTrack label="ROAS Target" target="> 3.5x" />
+                        <MetricToTrack label="CTR Target" target="> 2.0%" />
+                        <MetricToTrack label="CPC Target" target="< $1.50" />
+                      </div>
+                    </div>
+
+                    {/* Warnings & Considerations */}
+                    <Alert className="bg-yellow-950/20 border-yellow-800/50 text-yellow-400">
+                      <AlertTriangle className="w-4 h-4" />
+                      <AlertDescription className="text-yellow-300">
+                        <span className="font-medium">Important:</span> Monitor performance closely for the first 24-48 hours after implementation. Be prepared to revert changes if performance drops significantly.
+                      </AlertDescription>
+                    </Alert>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="tutorial" className="p-6 space-y-6 mt-0">
-                {/* Tutorial Section */}
                 <Card className="bg-[#111] border-[#333]">
                   <CardHeader>
                     <CardTitle className="text-lg text-white flex items-center gap-2">
                       <BookOpen className="w-4 h-4 text-gray-400" />
-                      How to Implement This Recommendation
+                      Meta Ads Manager Tutorial
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <Alert className="bg-blue-950/20 border-blue-800/50">
-                      <Info className="w-4 h-4 text-blue-400" />
-                      <AlertDescription className="text-blue-300">
-                        This tutorial will guide you through implementing the recommendation in Meta Ads Manager
-                      </AlertDescription>
-                    </Alert>
+                    <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                      <h4 className="text-sm font-medium text-white mb-4">How to Apply These Changes</h4>
+                      <div className="space-y-6">
+                        <TutorialStep
+                          number={1}
+                          title="Access Meta Ads Manager"
+                          description="Log into your Meta Ads Manager account and navigate to the Campaigns tab. Locate your specific campaign in the list."
+                          tip="Use the search function to quickly find your campaign by name"
+                        />
+                        
+                        <TutorialStep
+                          number={2}
+                          title="Navigate to Campaign Settings"
+                          description="Click on your campaign name to open the campaign overview. Then click on the 'Edit' button to access campaign settings."
+                          tip="Keep the original tab open in case you need to reference current settings"
+                        />
+                        
+                        <TutorialStep
+                          number={3}
+                          title="Apply Recommended Changes"
+                          description={`Based on the "${recommendation.action}" recommendation, make the specific adjustments to your campaign settings.`}
+                          tip="Make changes during off-peak hours to minimize disruption"
+                        />
+                        
+                        <TutorialStep
+                          number={4}
+                          title="Set Up Monitoring"
+                          description="Create custom alerts in Ads Manager to notify you if performance drops below thresholds. Set up automated rules if appropriate."
+                          tip="Set alerts for: ROAS < 2.5, CTR < 1.5%, or daily spend > 120% of target"
+                        />
+                        
+                        <TutorialStep
+                          number={5}
+                          title="Document Changes"
+                          description="Record all changes made, including timestamps and reasoning. This helps with future optimization and troubleshooting."
+                          tip="Use the Notes feature in Ads Manager or maintain a separate optimization log"
+                        />
+                      </div>
 
-                    <div className="space-y-4">
-                      <TutorialStep
-                        number={1}
-                        title="Access Meta Ads Manager"
-                        description="Log into your Meta Business account and navigate to Ads Manager. Select the campaign you want to optimize."
-                        tip="Use the campaign ID for quick search: " + campaign.campaign_id
-                      />
-                      
-                      <TutorialStep
-                        number={2}
-                        title="Review Current Performance"
-                        description="Before making changes, take a screenshot of current metrics for comparison. Check the Breakdown menu to see performance by placement, device, and audience."
-                        tip="Export current data to CSV for detailed before/after analysis"
-                      />
-                      
-                      <TutorialStep
-                        number={3}
-                        title="Apply Recommended Changes"
-                        description={`Based on the "${recommendation.action}" recommendation, make the specific adjustments to your campaign settings.`}
-                        tip="Make changes during off-peak hours to minimize disruption"
-                      />
-                      
-                      <TutorialStep
-                        number={4}
-                        title="Set Up Monitoring"
-                        description="Create custom alerts in Ads Manager to notify you if performance drops below thresholds. Set up automated rules if appropriate."
-                        tip="Set alerts for: ROAS < 2.5, CTR < 1.5%, or daily spend > 120% of target"
-                      />
-                      
-                      <TutorialStep
-                        number={5}
-                        title="Document Changes"
-                        description="Record all changes made, including timestamps and reasoning. This helps with future optimization and troubleshooting."
-                        tip="Use the Notes feature in Ads Manager or maintain a separate optimization log"
-                      />
-                    </div>
-
-                    <div className="mt-6 bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                        <PlayCircle className="w-4 h-4 text-gray-400" />
-                        Video Resources
-                      </h4>
-                      <div className="space-y-2">
-                        <VideoResource 
-                          title="Meta Ads Budget Optimization" 
-                          duration="5:23"
-                          link="#"
-                        />
-                        <VideoResource 
-                          title="Advanced Audience Targeting" 
-                          duration="8:45"
-                          link="#"
-                        />
-                        <VideoResource 
-                          title="Creative Testing Strategies" 
-                          duration="6:12"
-                          link="#"
-                        />
+                      <div className="mt-6 bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                          <PlayCircle className="w-4 h-4 text-gray-400" />
+                          Video Resources
+                        </h4>
+                        <div className="space-y-2">
+                          <VideoResource 
+                            title="Meta Ads Budget Optimization" 
+                            duration="5:23"
+                            link="#"
+                          />
+                          <VideoResource 
+                            title="Advanced Audience Targeting" 
+                            duration="8:45"
+                            link="#"
+                          />
+                          <VideoResource 
+                            title="Creative Testing Strategies" 
+                            duration="6:12"
+                            link="#"
+                          />
+                        </div>
                       </div>
                     </div>
                   </CardContent>
