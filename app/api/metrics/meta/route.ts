@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
 // Define interfaces for our data types
@@ -50,9 +49,49 @@ interface ProcessedMetaData {
   dailyData: DailyDataItem[];
 }
 
-// Add a simple in-memory cache for identical requests
-const apiCache = new Map();
+// Simple in-memory cache for the API to prevent duplicate calls
+const apiCache = new Map<string, { timestamp: number; data: any; cacheDate: string }>();
+
+// Cache TTL: 1 minute, but we'll also check if the cache crosses day boundaries
 const CACHE_TTL = 60000; // 1 minute cache duration
+
+// Helper function to get current date string for cache validation
+function getCurrentDateString(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Helper function to check if cache is still valid for the current day
+function isCacheValidForToday(cacheEntry: { timestamp: number; data: any; cacheDate: string }): boolean {
+  const now = Date.now();
+  const timeSinceCache = now - cacheEntry.timestamp;
+  
+  // If cache is older than TTL, it's invalid
+  if (timeSinceCache >= CACHE_TTL) {
+    return false;
+  }
+  
+  // If cache was created on a different day, it's invalid
+  const currentDate = getCurrentDateString();
+  if (cacheEntry.cacheDate !== currentDate) {
+    console.log(`[CACHE] Cache invalid due to date change: cached on ${cacheEntry.cacheDate}, now ${currentDate}`);
+    return false;
+  }
+  
+  return true;
+}
+
+// Helper function to clean up expired cache entries
+function cleanupExpiredCache(): void {
+  for (const [key, entry] of apiCache.entries()) {
+    if (!isCacheValidForToday(entry)) {
+      console.log(`[CACHE] Removing expired cache entry: ${key}`);
+      apiCache.delete(key);
+    }
+  }
+}
+
+// Run cache cleanup every 30 seconds
+setInterval(cleanupExpiredCache, 30000);
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,8 +125,9 @@ export async function GET(request: NextRequest) {
     // Check for yesterday preset explicitly
     let isYesterdayPreset = preset === 'yesterday';
     
-    // Create a cache key from the request parameters
-    const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}`;
+    // Create a more intelligent cache key that includes the current date
+    const currentDate = getCurrentDateString();
+    const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}-${currentDate}`;
     
     // Add detailed logging to troubleshoot date filtering issues
     console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}, bypassCache: ${bypassCache}, forceRefresh: ${forceRefresh}, strictDateRange: ${strictDateRange}`)
@@ -109,16 +149,13 @@ export async function GET(request: NextRequest) {
     // Check if this exact request is in our cache and not expired (unless bypass requested)
     if (!bypassCache && !refresh) {
       const cachedResponse = apiCache.get(cacheKey);
-      if (cachedResponse) {
-        const { timestamp, data } = cachedResponse;
-        if (Date.now() - timestamp < CACHE_TTL) {
-          console.log(`🔥🔥🔥 [META API] RETURNING CACHED DATA for ${cacheKey} (this is the problem!)`);
-          return NextResponse.json(data);
-        } else {
-          // Cache expired, remove it
-          apiCache.delete(cacheKey);
-          console.log(`🔥🔥🔥 [META API] CACHE EXPIRED for ${cacheKey}, will fetch fresh data`);
-        }
+      if (cachedResponse && isCacheValidForToday(cachedResponse)) {
+        console.log(`🔥🔥🔥 [META API] RETURNING CACHED DATA for ${cacheKey} (cached on ${cachedResponse.cacheDate})`);
+        return NextResponse.json(cachedResponse.data);
+      } else if (cachedResponse) {
+        // Cache expired or invalid, remove it
+        apiCache.delete(cacheKey);
+        console.log(`🔥🔥🔥 [META API] CACHE EXPIRED/INVALID for ${cacheKey}, will fetch fresh data`);
       }
     } else {
       console.log(`🔥🔥🔥 [META API] BYPASSING CACHE for ${cacheKey} because bypassCache=${bypassCache}, refresh=${refresh}`);
@@ -468,7 +505,7 @@ export async function GET(request: NextRequest) {
       // Cache the response (unless bypass requested)
       if (!bypassCache && !refresh) {
         console.log(`🔥🔥🔥 [META API] CACHING RESPONSE for future requests with key: ${cacheKey}`);
-        apiCache.set(cacheKey, { timestamp: Date.now(), data: response });
+        apiCache.set(cacheKey, { timestamp: Date.now(), data: response, cacheDate: currentDate });
       } else {
         console.log(`🔥🔥🔥 [META API] NOT CACHING RESPONSE because bypassCache=${bypassCache}, refresh=${refresh}`);
       }
