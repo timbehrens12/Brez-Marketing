@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
+import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
 
 // Extend Window interface for global state management
 declare global {
@@ -1117,10 +1118,11 @@ export default function MarketingAssistantPage() {
           <div className="mt-8 mx-6 flex gap-6">
             {/* Left Widget - 2/3 Width */}
             <div className="flex-1 p-8 bg-[#111] border border-[#333] rounded-lg" style={{ flexBasis: '66.666%' }}>
-              {/* Left widget content will go here */}
-              <div className="text-center text-gray-400">
-                <p>Left Widget (2/3 width)</p>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-white mb-2">Campaign Management</h2>
+                <p className="text-gray-400 text-sm">Monitor and optimize your advertising campaigns across all platforms</p>
               </div>
+              <PlatformCampaignWidget />
             </div>
 
             {/* Right Widget - 1/3 Width */}
