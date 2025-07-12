@@ -1113,10 +1113,23 @@ export default function MarketingAssistantPage() {
             />
           </div>
 
-          {/* Placeholder for future marketing assistant features */}
-          <div className="mt-8 mx-6 p-8 bg-[#111] border border-[#333] rounded-lg text-center">
-            <h2 className="text-xl font-semibold text-white mb-2">Marketing Assistant Features</h2>
-            <p className="text-gray-400">Additional marketing insights and AI-powered recommendations will be available here soon.</p>
+          {/* Main Content Area - 2/3 Left Widget and 1/3 Right Widget */}
+          <div className="mt-8 mx-6 flex gap-6">
+            {/* Left Widget - 2/3 Width */}
+            <div className="flex-1 p-8 bg-[#111] border border-[#333] rounded-lg" style={{ flexBasis: '66.666%' }}>
+              {/* Left widget content will go here */}
+              <div className="text-center text-gray-400">
+                <p>Left Widget (2/3 width)</p>
+              </div>
+            </div>
+
+            {/* Right Widget - 1/3 Width */}
+            <div className="flex-1 p-8 bg-[#111] border border-[#333] rounded-lg" style={{ flexBasis: '33.333%' }}>
+              {/* Right widget content will go here */}
+              <div className="text-center text-gray-400">
+                <p>Right Widget (1/3 width)</p>
+              </div>
+            </div>
           </div>
         </>
       )}
