@@ -12,17 +12,22 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Progress } from "@/components/ui/progress"
 import { 
   TrendingUp, 
   TrendingDown, 
   Target, 
-  DollarSign, 
   BarChart3, 
   CheckCircle, 
   AlertCircle, 
   Lightbulb,
   Calendar,
-  Zap
+  Clock,
+  ArrowRight,
+  Users,
+  Zap,
+  Settings,
+  Info
 } from "lucide-react"
 
 interface CampaignRecommendationModalProps {
@@ -63,37 +68,25 @@ export default function CampaignRecommendationModal({
   const getActionIcon = (action: string) => {
     const actionLower = action.toLowerCase()
     
-    if (actionLower.includes('increase')) return <TrendingUp className="w-5 h-5 text-green-400" />
-    if (actionLower.includes('reduce')) return <TrendingDown className="w-5 h-5 text-red-400" />
-    if (actionLower.includes('optimize')) return <Target className="w-5 h-5 text-blue-400" />
-    if (actionLower.includes('budget')) return <DollarSign className="w-5 h-5 text-yellow-400" />
-    if (actionLower.includes('pause')) return <AlertCircle className="w-5 h-5 text-orange-400" />
+    if (actionLower.includes('increase')) return <TrendingUp className="w-4 h-4" />
+    if (actionLower.includes('reduce')) return <TrendingDown className="w-4 h-4" />
+    if (actionLower.includes('optimize')) return <Target className="w-4 h-4" />
+    if (actionLower.includes('budget')) return <BarChart3 className="w-4 h-4" />
+    if (actionLower.includes('pause')) return <Clock className="w-4 h-4" />
     
-    return <BarChart3 className="w-5 h-5 text-purple-400" />
-  }
-
-  const getActionColor = (action: string) => {
-    const actionLower = action.toLowerCase()
-    
-    if (actionLower.includes('increase')) return 'bg-green-500/20 text-green-400 border-green-500/30'
-    if (actionLower.includes('reduce')) return 'bg-red-500/20 text-red-400 border-red-500/30'
-    if (actionLower.includes('optimize')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-    if (actionLower.includes('budget')) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-    if (actionLower.includes('pause')) return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-    
-    return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 8) return 'text-green-400'
-    if (confidence >= 6) return 'text-yellow-400'
-    return 'text-red-400'
+    return <Settings className="w-4 h-4" />
   }
 
   const getConfidenceLabel = (confidence: number) => {
     if (confidence >= 8) return 'High Confidence'
     if (confidence >= 6) return 'Medium Confidence'
     return 'Low Confidence'
+  }
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 8) return 'text-green-400'
+    if (confidence >= 6) return 'text-yellow-400'
+    return 'text-red-400'
   }
 
   const handleImplement = async () => {
@@ -110,29 +103,29 @@ export default function CampaignRecommendationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border-[#333]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-            <Lightbulb className="w-6 h-6 text-yellow-400" />
-            AI Campaign Recommendation
+          <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-gray-400" />
+            Campaign Recommendation
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Detailed analysis and implementation guidance for <span className="font-semibold text-white">{campaign.campaign_name}</span>
+            AI-powered optimization recommendations for <span className="font-medium text-white">{campaign.campaign_name}</span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-6">
+        <div className="space-y-6">
           {/* Recommendation Summary */}
-          <Card className="bg-[#111] border-[#333]">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl text-white flex items-center gap-2">
+                <CardTitle className="text-lg text-white flex items-center gap-2">
                   {getActionIcon(recommendation.action)}
                   Recommended Action
                 </CardTitle>
                 <Badge 
                   variant="outline" 
-                  className={`${getActionColor(recommendation.action)} text-sm px-3 py-1`}
+                  className="bg-gray-800/50 text-gray-300 border-gray-600"
                 >
                   {recommendation.action}
                 </Badge>
@@ -142,14 +135,14 @@ export default function CampaignRecommendationModal({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Confidence Level</p>
-                  <p className={`text-lg font-semibold ${getConfidenceColor(recommendation.confidence)}`}>
+                  <p className={`text-base font-medium ${getConfidenceColor(recommendation.confidence)}`}>
                     {recommendation.confidence}/10 - {getConfidenceLabel(recommendation.confidence)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-gray-800 rounded-full h-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-24 bg-gray-700 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full transition-all duration-300"
+                      className="bg-white h-2 rounded-full transition-all duration-300"
                       style={{ width: `${recommendation.confidence * 10}%` }}
                     />
                   </div>
@@ -160,10 +153,10 @@ export default function CampaignRecommendationModal({
           </Card>
 
           {/* Analysis & Reasoning */}
-          <Card className="bg-[#111] border-[#333]">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-400" />
+                <BarChart3 className="w-4 h-4 text-gray-400" />
                 Analysis & Reasoning
               </CardTitle>
             </CardHeader>
@@ -175,10 +168,10 @@ export default function CampaignRecommendationModal({
           </Card>
 
           {/* Expected Impact */}
-          <Card className="bg-[#111] border-[#333]">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-400" />
+                <Target className="w-4 h-4 text-gray-400" />
                 Expected Impact
               </CardTitle>
             </CardHeader>
@@ -190,10 +183,10 @@ export default function CampaignRecommendationModal({
           </Card>
 
           {/* Implementation Guide */}
-          <Card className="bg-[#111] border-[#333]">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-white flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+                <CheckCircle className="w-4 h-4 text-gray-400" />
                 Implementation Guide
               </CardTitle>
             </CardHeader>
@@ -203,11 +196,11 @@ export default function CampaignRecommendationModal({
                   {recommendation.implementation}
                 </p>
                 
-                <Separator className="bg-[#333]" />
+                <Separator className="bg-gray-700" />
                 
-                <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
-                  <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-400" />
+                <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                  <h4 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-gray-400" />
                     Important Note
                   </h4>
                   <p className="text-sm text-gray-400">
@@ -221,31 +214,31 @@ export default function CampaignRecommendationModal({
 
           {/* Specific Actions for AdSets and Ads */}
           {recommendation.specific_actions && (
-            <Card className="bg-[#111] border-[#333]">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-white flex items-center gap-2">
-                  <Target className="w-5 h-5 text-blue-400" />
+                  <Target className="w-4 h-4 text-gray-400" />
                   Specific Actions Required
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* AdSet Actions */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-white border-b border-[#333] pb-2">
+                    <h4 className="text-sm font-medium text-white border-b border-gray-700 pb-2">
                       AdSet Actions
                     </h4>
                     
                     {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
-                      <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-                        <h5 className="text-sm font-medium text-green-400 mb-2 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4" />
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <TrendingUp className="w-3 h-3 text-gray-400" />
                           Scale Budget ({recommendation.specific_actions.adsets_to_scale.length})
                         </h5>
                         <ul className="text-sm text-gray-300 space-y-1">
                           {recommendation.specific_actions.adsets_to_scale.map((adset, index) => (
                             <li key={index} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-green-400 rounded-full" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
                               {adset}
                             </li>
                           ))}
@@ -254,15 +247,15 @@ export default function CampaignRecommendationModal({
                     )}
 
                     {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
-                      <div className="bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
-                        <h5 className="text-sm font-medium text-yellow-400 mb-2 flex items-center gap-2">
-                          <Target className="w-4 h-4" />
-                          Optimize Targeting ({recommendation.specific_actions.adsets_to_optimize.length})
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <Settings className="w-3 h-3 text-gray-400" />
+                          Optimize Settings ({recommendation.specific_actions.adsets_to_optimize.length})
                         </h5>
                         <ul className="text-sm text-gray-300 space-y-1">
                           {recommendation.specific_actions.adsets_to_optimize.map((adset, index) => (
                             <li key={index} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-yellow-400 rounded-full" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
                               {adset}
                             </li>
                           ))}
@@ -271,15 +264,15 @@ export default function CampaignRecommendationModal({
                     )}
 
                     {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
-                      <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
-                        <h5 className="text-sm font-medium text-red-400 mb-2 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" />
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <Clock className="w-3 h-3 text-gray-400" />
                           Pause AdSets ({recommendation.specific_actions.adsets_to_pause.length})
                         </h5>
                         <ul className="text-sm text-gray-300 space-y-1">
                           {recommendation.specific_actions.adsets_to_pause.map((adset, index) => (
                             <li key={index} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-red-400 rounded-full" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
                               {adset}
                             </li>
                           ))}
@@ -290,20 +283,20 @@ export default function CampaignRecommendationModal({
 
                   {/* Ad Actions */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-white border-b border-[#333] pb-2">
+                    <h4 className="text-sm font-medium text-white border-b border-gray-700 pb-2">
                       Ad Actions
                     </h4>
                     
                     {recommendation.specific_actions.ads_to_duplicate && recommendation.specific_actions.ads_to_duplicate.length > 0 && (
-                      <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
-                        <h5 className="text-sm font-medium text-blue-400 mb-2 flex items-center gap-2">
-                          <Zap className="w-4 h-4" />
-                          Duplicate Top Performers ({recommendation.specific_actions.ads_to_duplicate.length})
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <ArrowRight className="w-3 h-3 text-gray-400" />
+                          Duplicate Ads ({recommendation.specific_actions.ads_to_duplicate.length})
                         </h5>
                         <ul className="text-sm text-gray-300 space-y-1">
                           {recommendation.specific_actions.ads_to_duplicate.map((ad, index) => (
                             <li key={index} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
                               {ad}
                             </li>
                           ))}
@@ -312,15 +305,15 @@ export default function CampaignRecommendationModal({
                     )}
 
                     {recommendation.specific_actions.ads_to_pause && recommendation.specific_actions.ads_to_pause.length > 0 && (
-                      <div className="bg-orange-500/10 p-3 rounded-lg border border-orange-500/20">
-                        <h5 className="text-sm font-medium text-orange-400 mb-2 flex items-center gap-2">
-                          <TrendingDown className="w-4 h-4" />
-                          Pause Underperforming ({recommendation.specific_actions.ads_to_pause.length})
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <h5 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                          <Clock className="w-3 h-3 text-gray-400" />
+                          Pause Ads ({recommendation.specific_actions.ads_to_pause.length})
                         </h5>
                         <ul className="text-sm text-gray-300 space-y-1">
                           {recommendation.specific_actions.ads_to_pause.map((ad, index) => (
                             <li key={index} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
                               {ad}
                             </li>
                           ))}
@@ -330,8 +323,8 @@ export default function CampaignRecommendationModal({
 
                     {(!recommendation.specific_actions.ads_to_duplicate || recommendation.specific_actions.ads_to_duplicate.length === 0) && 
                      (!recommendation.specific_actions.ads_to_pause || recommendation.specific_actions.ads_to_pause.length === 0) && (
-                      <div className="bg-gray-500/10 p-3 rounded-lg border border-gray-500/20">
-                        <p className="text-sm text-gray-400">No specific ad actions recommended at this time.</p>
+                      <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
+                        <p className="text-sm text-gray-400">No specific ad actions required at this time.</p>
                       </div>
                     )}
                   </div>
@@ -341,10 +334,10 @@ export default function CampaignRecommendationModal({
           )}
 
           {/* Performance Forecast */}
-          <Card className="bg-[#111] border-[#333]">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-purple-400" />
+                <Calendar className="w-4 h-4 text-gray-400" />
                 Performance Forecast
               </CardTitle>
             </CardHeader>
@@ -356,11 +349,11 @@ export default function CampaignRecommendationModal({
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-700">
             <Button 
               variant="outline" 
               onClick={onClose}
-              className="border-[#333] text-gray-400 hover:text-white hover:bg-[#333]"
+              className="border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
             >
               Close
             </Button>
@@ -368,7 +361,7 @@ export default function CampaignRecommendationModal({
             <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
-                className="border-[#333] text-gray-400 hover:text-white hover:bg-[#333]"
+                className="border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
                 onClick={() => {
                   // In a real implementation, this would save the recommendation for later
                   console.log('Recommendation saved for later review')
@@ -380,11 +373,11 @@ export default function CampaignRecommendationModal({
               <Button 
                 onClick={handleImplement}
                 disabled={isImplementing}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-white text-gray-900 hover:bg-gray-200"
               >
                 {isImplementing ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900 border-t-transparent mr-2" />
                     Implementing...
                   </>
                 ) : (
