@@ -400,7 +400,7 @@ export default function PlatformCampaignWidget() {
   return (
     <div className="space-y-6">
       {Object.entries(platforms).map(([platformKey, platform]) => (
-        <Card key={platformKey} className="bg-gray-900/50 border-gray-800">
+        <Card key={platformKey} className="bg-red-900/50 border-red-600">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
