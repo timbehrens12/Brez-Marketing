@@ -408,7 +408,7 @@ export default function PlatformCampaignWidget() {
                   variant="ghost"
                   size="sm"
                   onClick={() => togglePlatform(platformKey)}
-                  className="p-0 h-auto hover:bg-transparent text-gray-400 hover:text-white focus:ring-0 focus:outline-0"
+                  className="p-0 h-auto hover:bg-transparent text-gray-400 hover:text-white"
                 >
                   {expandedPlatforms.has(platformKey) ? (
                     <ChevronDown className="w-4 h-4" />
@@ -422,7 +422,7 @@ export default function PlatformCampaignWidget() {
                   alt={platform.name}
                   width={24}
                   height={24}
-                  className={`object-contain ${!platform.isActive ? 'grayscale opacity-40' : 'grayscale'}`}
+                  className={`object-contain ${!platform.isActive ? 'grayscale opacity-40' : ''}`}
                 />
                 
                 <CardTitle className="text-lg text-white">
@@ -431,7 +431,11 @@ export default function PlatformCampaignWidget() {
                 
                 <Badge 
                   variant="outline" 
-                  className="bg-gray-800/50 text-gray-300 border-gray-700"
+                  className={`${
+                    platform.isActive 
+                      ? 'bg-red-950/30 text-red-400 border-red-800/50' 
+                      : 'bg-gray-950/30 text-gray-400 border-gray-800/50'
+                  }`}
                 >
                   {platform.isActive ? 'Connected' : 'Not Connected'}
                 </Badge>
@@ -439,13 +443,13 @@ export default function PlatformCampaignWidget() {
               
               {platform.isActive && (
                 <div className="flex items-center gap-2">
-                                      <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fetchMetaCampaigns(true)}
-                      disabled={platform.isLoading}
-                      className="text-gray-400 hover:text-white hover:bg-gray-800/50 focus:ring-0 focus:outline-0"
-                    >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchMetaCampaigns(true)}
+                    disabled={platform.isLoading}
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50"
+                  >
                     <RefreshCw className={`w-4 h-4 ${platform.isLoading ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
@@ -494,25 +498,25 @@ export default function PlatformCampaignWidget() {
                         placeholder="Search campaigns..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:ring-gray-600 focus:border-gray-600"
+                        className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400"
                       />
                     </div>
                     
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="bg-transparent border-gray-700 text-white hover:bg-gray-800/50 focus:ring-gray-600 focus:border-gray-600">
+                        <Button variant="outline" size="sm" className="bg-transparent border-gray-700 text-white hover:bg-gray-800/50">
                           <Settings className="h-4 w-4 mr-2" />
                           Options
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700 text-white">
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="hover:bg-gray-800 focus:bg-gray-800">
+                      <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                           <div className="flex items-center justify-between w-full">
                             <span className="text-white">Show Inactive Campaigns</span>
                             <Switch 
                               checked={showInactive} 
                               onCheckedChange={setShowInactive}
-                              className="ml-2 data-[state=checked]:bg-gray-600 data-[state=unchecked]:bg-gray-700"
+                              className="ml-2"
                             />
                           </div>
                         </DropdownMenuItem>
