@@ -148,13 +148,13 @@ export default function PlatformCampaignWidget() {
   }
 
   // Function to check campaign statuses - conservative version to avoid rate limits
-  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
+  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false, isInitialLoad = false): void => {
     if (!selectedBrandId || campaignsToCheck.length === 0) {
       console.log('[CampaignWidget] Skipping status check:', { selectedBrandId, campaignCount: campaignsToCheck.length })
       return
     }
     
-    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`)
+    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}, isInitialLoad: ${isInitialLoad}`)
     
     // Filter out campaigns with invalid campaign_id values
     const validCampaigns = campaignsToCheck.filter(campaign => 
@@ -169,7 +169,8 @@ export default function PlatformCampaignWidget() {
     console.log('[CampaignWidget] Valid campaign count:', validCampaigns.length)
     
     // Be much more conservative with batch sizes to avoid rate limits
-    const batchSize = forceRefresh ? Math.min(2, validCampaigns.length) : Math.min(1, validCampaigns.length)
+    // For initial load, check first 2 campaigns immediately, for manual refresh check 2, otherwise check 1
+    const batchSize = isInitialLoad ? Math.min(2, validCampaigns.length) : forceRefresh ? Math.min(2, validCampaigns.length) : Math.min(1, validCampaigns.length)
     const campaignsToProcess = validCampaigns.slice(0, batchSize)
     
     console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`)
@@ -177,10 +178,17 @@ export default function PlatformCampaignWidget() {
     let updatedCount = 0
     let pendingRequests = campaignsToProcess.length
     
-    // Check each campaign's status with much longer delays between requests
+    // Check each campaign's status with different delays based on context
     campaignsToProcess.forEach((campaign, index) => {
-      // Use much longer delays to avoid rate limiting
-      const delay = index * (forceRefresh ? 3000 : 5000) // 3-5 second delays
+      // Use shorter delays for initial load to show status immediately
+      let delay = 0
+      if (isInitialLoad) {
+        delay = index * 1000 // 1-second delays for initial load
+      } else if (forceRefresh) {
+        delay = index * 3000 // 3-second delays for manual refresh
+      } else {
+        delay = index * 5000 // 5-second delays for background checks
+      }
       
       setTimeout(() => {
         // Extra validation before API call
@@ -369,8 +377,9 @@ export default function PlatformCampaignWidget() {
       // Check campaign statuses after fetching (only when explicitly requested)
       if (checkStatuses && campaignsWithRecommendations.length > 0) {
         console.log('[CampaignWidget] Checking statuses after fetch...')
-        // Don't force refresh on status check to avoid rate limits
-        checkCampaignStatuses(campaignsWithRecommendations, false)
+        // Don't force refresh on status check to avoid rate limits, but mark as initial load if it's the first fetch
+        const isInitialLoad = !forceRefresh && localCampaigns.length === 0
+        checkCampaignStatuses(campaignsWithRecommendations, false, isInitialLoad)
       }
 
     } catch (error) {
@@ -637,7 +646,7 @@ export default function PlatformCampaignWidget() {
                       size="sm"
                       onClick={() => {
                         console.log('[Widget] Manual status check clicked for campaigns:', localCampaigns.length)
-                        checkCampaignStatuses(localCampaigns, true)
+                        checkCampaignStatuses(localCampaigns, true, false)
                       }}
                       className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                       title="Check Campaign Status"
