@@ -34,7 +34,10 @@ import {
   Search,
   Settings,
   Info,
-  Clock
+  Clock,
+  Target,
+  Sparkles,
+  MousePointer
 } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -506,30 +509,62 @@ export default function PlatformCampaignWidget() {
     
     if (!recommendation) {
       return (
-        <Badge variant="outline" className="bg-gray-950/30 text-gray-400 border-gray-800/50">
-          <Minus className="w-3 h-3 mr-1" />
-          No Data
+        <Badge 
+          variant="outline" 
+          className="bg-gray-950/30 text-gray-400 border-gray-800/50 cursor-pointer hover:bg-gray-800/50 hover:text-gray-300 hover:border-gray-700 transition-all group"
+          onClick={() => handleRecommendationClick(campaign)}
+        >
+          <AlertCircle className="w-3 h-3 mr-1 group-hover:text-yellow-500 transition-colors" />
+          <span className="group-hover:underline">Analyze</span>
         </Badge>
       )
     }
 
     const canRefresh = canRefreshRecommendation(campaign)
     const daysUntilRefresh = getDaysUntilNextRefresh(campaign)
-
-    // Get priority color based on recommendation priority
-    const getPriorityColor = (action: string) => {
+    
+    // Color coding based on recommendation action
+    const getRecommendationStyle = (action: string) => {
       const actionLower = action.toLowerCase()
       
-      if (actionLower.includes('aggressive_scale') || actionLower.includes('critical') || actionLower.includes('pause_underperformers')) {
-        return 'bg-red-950/30 text-red-400 border-red-800/50 hover:bg-red-900/40 hover:border-red-700/60'
-      } else if (actionLower.includes('conservative_scale') || actionLower.includes('creative_refresh') || actionLower.includes('optimization')) {
-        return 'bg-yellow-950/30 text-yellow-400 border-yellow-800/50 hover:bg-yellow-900/40 hover:border-yellow-700/60'
-      } else if (actionLower.includes('scale') || actionLower.includes('expansion') || actionLower.includes('boost')) {
-        return 'bg-green-950/30 text-green-400 border-green-800/50 hover:bg-green-900/40 hover:border-green-700/60'
-      } else {
-        return 'bg-blue-950/30 text-blue-400 border-blue-800/50 hover:bg-blue-900/40 hover:border-blue-700/60'
+      if (actionLower.includes('increase budget') || actionLower.includes('scale')) {
+        return {
+          bgColor: 'bg-green-950/30',
+          textColor: 'text-green-400',
+          borderColor: 'border-green-800/50',
+          hoverBg: 'hover:bg-green-900/50',
+          icon: <TrendingUp className="w-3 h-3 mr-1" />
+        }
+      }
+      if (actionLower.includes('pause') || actionLower.includes('reduce budget')) {
+        return {
+          bgColor: 'bg-red-950/30',
+          textColor: 'text-red-400',
+          borderColor: 'border-red-800/50',
+          hoverBg: 'hover:bg-red-900/50',
+          icon: <TrendingDown className="w-3 h-3 mr-1" />
+        }
+      }
+      if (actionLower.includes('optimize') || actionLower.includes('restructure')) {
+        return {
+          bgColor: 'bg-blue-950/30',
+          textColor: 'text-blue-400',
+          borderColor: 'border-blue-800/50',
+          hoverBg: 'hover:bg-blue-900/50',
+          icon: <Target className="w-3 h-3 mr-1" />
+        }
+      }
+      
+      return {
+        bgColor: 'bg-gray-950/30',
+        textColor: 'text-gray-300',
+        borderColor: 'border-gray-800/50',
+        hoverBg: 'hover:bg-gray-800/50',
+        icon: <Settings className="w-3 h-3 mr-1" />
       }
     }
+    
+    const style = getRecommendationStyle(recommendation.action)
 
     return (
       <TooltipProvider>
@@ -537,48 +572,36 @@ export default function PlatformCampaignWidget() {
           <TooltipTrigger>
             <Badge 
               variant="outline" 
-              className={`relative cursor-pointer transition-all duration-200 transform hover:scale-105 ${getPriorityColor(recommendation.action)} shadow-lg hover:shadow-xl`}
+              className={`${style.bgColor} ${style.textColor} ${style.borderColor} cursor-pointer ${style.hoverBg} transition-all duration-200 group hover:shadow-lg hover:shadow-gray-900/50 animate-pulse-subtle`}
               onClick={() => handleRecommendationClick(campaign)}
             >
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  <span className="font-medium">{recommendation.action.replace(/_/g, ' ')}</span>
-                </div>
-                {!canRefresh && (
-                  <Clock className="w-3 h-3 opacity-50" />
-                )}
-                <div className="w-1 h-1 bg-current rounded-full animate-pulse ml-1" />
-              </div>
-              
-              {/* Glow effect for high priority recommendations */}
-              {recommendation.action.toLowerCase().includes('aggressive') && (
-                <div className="absolute inset-0 bg-red-400/20 rounded-full blur-sm -z-10 animate-pulse" />
+              {style.icon}
+              <span className="group-hover:underline font-medium">{recommendation.action}</span>
+              {!canRefresh && (
+                <Clock className="w-3 h-3 ml-1 opacity-50" />
               )}
+              <ChevronRight className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Badge>
           </TooltipTrigger>
-          <TooltipContent className="max-w-80 p-4 bg-gray-900 border-gray-700">
-            <div className="space-y-3">
+          <TooltipContent className="bg-gray-800 border-gray-700 max-w-xs">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                <p className="font-semibold text-white">🚀 AI Recommendation Ready!</p>
+                <Sparkles className="w-4 h-4 text-yellow-400" />
+                <p className="font-semibold text-white">AI Recommendation Ready</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300 font-medium">
-                  Action: <span className="text-white">{recommendation.action.replace(/_/g, ' ')}</span>
+              <p className="text-sm text-gray-300">
+                {recommendation.reasoning.substring(0, 100)}...
+              </p>
+              <div className="pt-2 border-t border-gray-700">
+                <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <MousePointer className="w-3 h-3" />
+                  Click to see full analysis & implementation guide
                 </p>
-                <p className="text-sm text-gray-400">
-                  💡 {canRefresh 
-                    ? "Click to view comprehensive analysis, step-by-step implementation guide, and detailed tutorials"
-                    : `Next refresh available in ${daysUntilRefresh} day${daysUntilRefresh !== 1 ? 's' : ''}`
-                  }
-                </p>
-                <div className="pt-2 border-t border-gray-700">
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Updated weekly with fresh insights
+                {!canRefresh && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Next refresh in {daysUntilRefresh} day{daysUntilRefresh !== 1 ? 's' : ''}
                   </p>
-                </div>
+                )}
               </div>
             </div>
           </TooltipContent>

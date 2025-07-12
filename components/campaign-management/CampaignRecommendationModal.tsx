@@ -5,8 +5,7 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
+  DialogTitle
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -29,22 +29,37 @@ import {
   Zap,
   Settings,
   Info,
-  PlayCircle,
   BookOpen,
-  AlertTriangle,
-  Activity,
-  Eye,
-  ChevronRight,
-  Star,
-  ShieldCheck,
-  Rocket,
-  Brain,
-  Timer,
+  LineChart,
   DollarSign,
+  Eye,
+  MousePointer,
+  ShieldCheck,
+  ListChecks,
+  PlayCircle,
+  AlertTriangle,
+  Sparkles,
+  ChevronRight,
+  Activity,
   Gauge,
-  TrendingUpIcon
+  Timer,
+  TrendingUpDown
 } from "lucide-react"
-import { toast } from "sonner"
+import { 
+  ResponsiveContainer, 
+  LineChart as ReLineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as ReTooltip,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart as ReBarChart,
+  Legend
+} from 'recharts'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface CampaignRecommendationModalProps {
   isOpen: boolean
@@ -52,43 +67,27 @@ interface CampaignRecommendationModalProps {
   campaign: {
     campaign_name: string
     campaign_id: string
+    spent: number
+    budget: number
+    impressions: number
+    clicks: number
+    conversions: number
+    ctr: number
+    cpc: number
+    roas: number
     recommendation?: {
       action: string
-      priority?: string
       reasoning: string
       impact: string
       confidence: number
       implementation: string
       forecast: string
-      timeline?: string
-      risk_level?: string
-      monitoring_plan?: string
-      rollback_plan?: string
-      seasonal_considerations?: string
       specific_actions?: {
         adsets_to_scale?: string[]
         adsets_to_optimize?: string[]
         adsets_to_pause?: string[]
         ads_to_pause?: string[]
         ads_to_duplicate?: string[]
-        new_audiences_to_test?: string[]
-        creative_actions?: string[]
-        budget_adjustments?: string[]
-      }
-      success_metrics?: {
-        primary: string
-        secondary: string[]
-        targets: {
-          '7_day': string
-          '14_day': string
-          '30_day': string
-        }
-      }
-      tutorial?: {
-        title: string
-        steps: string[]
-        tips: string[]
-        common_mistakes: string[]
       }
     }
   } | null
@@ -100,634 +99,789 @@ export default function CampaignRecommendationModal({
   campaign 
 }: CampaignRecommendationModalProps) {
   const [isImplementing, setIsImplementing] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState("overview")
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
-  if (!campaign?.recommendation) return null
+  if (!campaign) return null
 
   const { recommendation } = campaign
   
+  // Mock historical data for visualization
+  const historicalData = [
+    { day: 'Mon', spend: 120, conversions: 8, roas: 2.8 },
+    { day: 'Tue', spend: 145, conversions: 12, roas: 3.2 },
+    { day: 'Wed', spend: 138, conversions: 10, roas: 2.9 },
+    { day: 'Thu', spend: 165, conversions: 15, roas: 3.6 },
+    { day: 'Fri', spend: 152, conversions: 13, roas: 3.4 },
+    { day: 'Sat', spend: 128, conversions: 9, roas: 2.8 },
+    { day: 'Sun', spend: 110, conversions: 7, roas: 2.5 },
+  ]
+  
   const getActionIcon = (action: string) => {
-    const actionLower = action.toLowerCase()
+    const actionLower = action?.toLowerCase() || ''
     
-    if (actionLower.includes('aggressive_scale')) return <Rocket className="w-5 h-5" />
-    if (actionLower.includes('conservative_scale')) return <TrendingUp className="w-5 h-5" />
-    if (actionLower.includes('creative_refresh')) return <Lightbulb className="w-5 h-5" />
-    if (actionLower.includes('budget')) return <DollarSign className="w-5 h-5" />
+    if (actionLower.includes('increase')) return <TrendingUp className="w-5 h-5" />
+    if (actionLower.includes('reduce')) return <TrendingDown className="w-5 h-5" />
+    if (actionLower.includes('optimize')) return <Target className="w-5 h-5" />
     if (actionLower.includes('pause')) return <Clock className="w-5 h-5" />
-    if (actionLower.includes('optimization')) return <Target className="w-5 h-5" />
-    if (actionLower.includes('audience')) return <Users className="w-5 h-5" />
+    if (actionLower.includes('scale')) return <Zap className="w-5 h-5" />
+    if (actionLower.includes('restructure')) return <Settings className="w-5 h-5" />
     
-    return <Settings className="w-5 h-5" />
+    return <Activity className="w-5 h-5" />
   }
 
-  const getPriorityConfig = (priority: string = 'medium') => {
-    const configs = {
-      critical: {
-        color: 'text-red-400',
-        bg: 'bg-red-950/30',
-        border: 'border-red-800/50',
-        label: 'Critical Priority',
-        icon: <AlertTriangle className="w-4 h-4" />,
-        description: 'Immediate action required to prevent losses'
-      },
-      high: {
-        color: 'text-orange-400',
-        bg: 'bg-orange-950/30',
-        border: 'border-orange-800/50',
-        label: 'High Priority',
-        icon: <Zap className="w-4 h-4" />,
-        description: 'Significant opportunity for improvement'
-      },
-      medium: {
-        color: 'text-yellow-400',
-        bg: 'bg-yellow-950/30',
-        border: 'border-yellow-800/50',
-        label: 'Medium Priority',
-        icon: <Activity className="w-4 h-4" />,
-        description: 'Optimization opportunity available'
-      },
-      low: {
-        color: 'text-green-400',
-        bg: 'bg-green-950/30',
-        border: 'border-green-800/50',
-        label: 'Low Priority',
-        icon: <Eye className="w-4 h-4" />,
-        description: 'Minor adjustment recommended'
-      }
+  const getConfidenceInfo = (confidence: number) => {
+    if (confidence >= 8) return {
+      label: 'High Confidence',
+      color: 'text-green-400',
+      bgColor: 'bg-green-950/30',
+      borderColor: 'border-green-800/50',
+      description: 'Strong data patterns support this recommendation'
     }
-    return configs[priority as keyof typeof configs] || configs.medium
-  }
-
-  const getRiskConfig = (riskLevel: string = 'medium') => {
-    const configs = {
-      high: {
-        color: 'text-red-400',
-        bg: 'bg-red-950/20',
-        label: 'High Risk',
-        icon: <AlertTriangle className="w-4 h-4" />,
-        description: 'Requires careful monitoring and possible rollback plan'
-      },
-      medium: {
-        color: 'text-yellow-400',
-        bg: 'bg-yellow-950/20',
-        label: 'Medium Risk',
-        icon: <ShieldCheck className="w-4 h-4" />,
-        description: 'Standard risk level with monitoring recommended'
-      },
-      low: {
-        color: 'text-green-400',
-        bg: 'bg-green-950/20',
-        label: 'Low Risk',
-        icon: <CheckCircle className="w-4 h-4" />,
-        description: 'Safe implementation with minimal downside'
-      }
+    if (confidence >= 6) return {
+      label: 'Medium Confidence',
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-950/30',
+      borderColor: 'border-yellow-800/50',
+      description: 'Good indicators but some uncertainty remains'
     }
-    return configs[riskLevel as keyof typeof configs] || configs.medium
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 8) return 'text-green-400'
-    if (confidence >= 6) return 'text-yellow-400'
-    return 'text-red-400'
-  }
-
-  const getTimelineConfig = (timeline: string = '1_week') => {
-    const configs = {
-      immediate: { label: 'Immediate', color: 'text-red-400', description: 'Implement within hours' },
-      '1-3_days': { label: '1-3 Days', color: 'text-orange-400', description: 'Implement within this week' },
-      '1_week': { label: '1 Week', color: 'text-yellow-400', description: 'Implement within 7 days' },
-      '2_weeks': { label: '2 Weeks', color: 'text-green-400', description: 'Implement within 14 days' }
+    return {
+      label: 'Low Confidence',
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-950/30',
+      borderColor: 'border-orange-800/50',
+      description: 'Limited data - proceed with caution'
     }
-    return configs[timeline as keyof typeof configs] || configs['1_week']
+  }
+
+  const getRiskAssessment = (action: string) => {
+    const actionLower = action?.toLowerCase() || ''
+    
+    if (actionLower.includes('pause')) return {
+      level: 'Low',
+      color: 'text-green-400',
+      description: 'Minimal risk - can be easily reversed'
+    }
+    if (actionLower.includes('increase budget')) return {
+      level: 'Medium',
+      color: 'text-yellow-400',
+      description: 'Moderate risk - monitor spend closely'
+    }
+    if (actionLower.includes('restructure')) return {
+      level: 'High',
+      color: 'text-orange-400',
+      description: 'Significant changes - test carefully'
+    }
+    
+    return {
+      level: 'Low',
+      color: 'text-green-400',
+      description: 'Standard optimization with minimal risk'
+    }
   }
 
   const handleImplement = async () => {
     setIsImplementing(true)
     
-    try {
-      // Simulate implementation process
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      toast.success('Recommendation implementation initiated! Monitor performance closely.')
-      onClose()
-    } catch (error) {
-      toast.error('Failed to implement recommendation. Please try again.')
-    } finally {
-      setIsImplementing(false)
-    }
+    // Simulate implementation process
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setIsImplementing(false)
+    onClose()
   }
 
-  const priorityConfig = getPriorityConfig(recommendation.priority)
-  const riskConfig = getRiskConfig(recommendation.risk_level)
-  const timelineConfig = getTimelineConfig(recommendation.timeline)
+  if (!recommendation) {
+    // Show analysis prompt if no recommendation exists
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl bg-[#0a0a0a] border-[#333]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              Campaign Analysis
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <Card className="bg-[#111] border-[#333]">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-yellow-950/30 rounded-full flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-8 h-8 text-yellow-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">No Analysis Available</h3>
+                  <p className="text-gray-400 max-w-md mx-auto">
+                    This campaign hasn't been analyzed yet. Click the button below to generate AI-powered recommendations based on historical performance data.
+                  </p>
+                  <Button 
+                    className="bg-white text-gray-900 hover:bg-gray-100"
+                    onClick={() => {
+                      // Trigger analysis
+                      console.log('Triggering analysis for campaign:', campaign.campaign_id)
+                      onClose()
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate AI Analysis
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  const confidenceInfo = getConfidenceInfo(recommendation.confidence)
+  const riskInfo = getRiskAssessment(recommendation.action)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-[#111] border-[#333] text-white">
-        <DialogHeader className="border-b border-[#333] pb-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 bg-[#222] rounded-lg border border-[#444]">
-                  <Brain className="w-6 h-6 text-blue-400" />
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-[#0a0a0a] border-[#333] p-0">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-[#333]">
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <div className="p-2 bg-[#111] rounded-lg border border-[#333]">
+                {getActionIcon(recommendation.action)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  AI Campaign Optimization
+                  <Badge variant="outline" className="bg-[#111] text-gray-300 border-[#333] text-xs">
+                    {campaign.campaign_name}
+                  </Badge>
                 </div>
-                AI Campaign Optimization
-              </DialogTitle>
-              <DialogDescription className="text-gray-400 text-base">
-                Advanced AI analysis and recommendations for <span className="font-semibold text-white">{campaign.campaign_name}</span>
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge className={`${priorityConfig.bg} ${priorityConfig.color} ${priorityConfig.border} px-3 py-1 text-sm font-medium`}>
-                {priorityConfig.icon}
-                <span className="ml-2">{priorityConfig.label}</span>
-              </Badge>
-            </div>
+                <p className="text-sm text-gray-400 font-normal mt-1">
+                  Personalized recommendations based on 7-day performance analysis
+                </p>
+              </div>
+            </DialogTitle>
           </div>
-        </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-[#222] border border-[#444] p-1 w-full justify-start">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="implementation" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
-              <PlayCircle className="w-4 h-4 mr-2" />
-              Implementation
-            </TabsTrigger>
-            <TabsTrigger value="tutorial" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Tutorial
-            </TabsTrigger>
-            <TabsTrigger value="monitoring" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
-              <Activity className="w-4 h-4 mr-2" />
-              Monitoring
-            </TabsTrigger>
-          </TabsList>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+              <div className="px-6 py-3 border-b border-[#333] bg-[#0a0a0a] sticky top-0 z-10">
+                <TabsList className="bg-[#111] border border-[#333]">
+                  <TabsTrigger value="overview" className="data-[state=active]:bg-[#222] data-[state=active]:text-white">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="analysis" className="data-[state=active]:bg-[#222] data-[state=active]:text-white">
+                    <LineChart className="w-4 h-4 mr-2" />
+                    Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="implementation" className="data-[state=active]:bg-[#222] data-[state=active]:text-white">
+                    <ListChecks className="w-4 h-4 mr-2" />
+                    Implementation
+                  </TabsTrigger>
+                  <TabsTrigger value="tutorial" className="data-[state=active]:bg-[#222] data-[state=active]:text-white">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Tutorial
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-          <TabsContent value="overview" className="space-y-6">
-            {/* Action Summary Card */}
-            <Card className="bg-[#111] border-[#333]">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-white flex items-center gap-3">
-                    {getActionIcon(recommendation.action)}
-                    <div>
-                      <div className="text-xl font-bold">{recommendation.action.replace(/_/g, ' ').toUpperCase()}</div>
-                      <div className="text-sm font-normal text-gray-400 mt-1">{priorityConfig.description}</div>
-                    </div>
-                  </CardTitle>
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-400">{recommendation.confidence}/10</div>
-                      <div className="text-xs text-gray-400">Confidence</div>
-                    </div>
-                    <div className="w-16 h-16 relative">
-                      <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                        <path
-                          d="m18,2.0845 a 15.9155,15.9155 0 0,1 0,31.831 a 15.9155,15.9155 0 0,1 0,-31.831"
-                          fill="none"
-                          stroke="#333"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="m18,2.0845 a 15.9155,15.9155 0 0,1 0,31.831 a 15.9155,15.9155 0 0,1 0,-31.831"
-                          fill="none"
-                          stroke="#3b82f6"
-                          strokeWidth="2"
-                          strokeDasharray={`${recommendation.confidence * 10}, 100`}
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Star className="w-6 h-6 text-blue-400" />
+              <TabsContent value="overview" className="p-6 space-y-6 mt-0">
+                {/* Recommendation Summary */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <Card className="bg-[#111] border-[#333] lg:col-span-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg text-white">Recommended Action</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-3 mb-4">
+                        <Badge 
+                          className="text-lg px-4 py-2 bg-white text-gray-900 border-0"
+                        >
+                          {recommendation.action}
+                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge 
+                                variant="outline" 
+                                className={`${confidenceInfo.bgColor} ${confidenceInfo.color} ${confidenceInfo.borderColor}`}
+                              >
+                                <Gauge className="w-3 h-3 mr-1" />
+                                {recommendation.confidence}/10
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-[#222] border-[#444]">
+                              <p className="font-medium">{confidenceInfo.label}</p>
+                              <p className="text-sm text-gray-400">{confidenceInfo.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-[#222] border-[#444]">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Timer className={`w-5 h-5 ${timelineConfig.color}`} />
-                        <div>
-                          <div className="font-semibold text-white">{timelineConfig.label}</div>
-                          <div className="text-sm text-gray-400">{timelineConfig.description}</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-[#222] border-[#444]">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        {riskConfig.icon}
-                        <div>
-                          <div className={`font-semibold ${riskConfig.color}`}>{riskConfig.label}</div>
-                          <div className="text-sm text-gray-400">{riskConfig.description}</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-[#222] border-[#444]">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Gauge className="w-5 h-5 text-green-400" />
-                        <div>
-                          <div className="font-semibold text-white">Success Rate</div>
-                          <div className="text-sm text-gray-400">85% similar campaigns</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="bg-[#222] border border-[#444] rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-blue-400" />
-                      AI Analysis & Reasoning
-                    </h4>
-                    <p className="text-gray-300 leading-relaxed text-base">
-                      {recommendation.reasoning}
-                    </p>
-                  </div>
-
-                  <div className="bg-[#222] border border-[#444] rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                      <TrendingUpIcon className="w-5 h-5 text-green-400" />
-                      Expected Impact
-                    </h4>
-                    <p className="text-gray-300 leading-relaxed text-base">
-                      {recommendation.impact}
-                    </p>
-                  </div>
-
-                  <div className="bg-[#222] border border-[#444] rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-purple-400" />
-                      Performance Forecast
-                    </h4>
-                    <p className="text-gray-300 leading-relaxed text-base">
-                      {recommendation.forecast}
-                    </p>
-                    
-                    {recommendation.success_metrics && (
-                      <div className="mt-4 grid grid-cols-3 gap-4">
-                        <div className="text-center p-3 bg-[#111] rounded-lg border border-[#333]">
-                          <div className="text-lg font-bold text-blue-400">7 Days</div>
-                          <div className="text-sm text-gray-400">{recommendation.success_metrics.targets['7_day']}</div>
-                        </div>
-                        <div className="text-center p-3 bg-[#111] rounded-lg border border-[#333]">
-                          <div className="text-lg font-bold text-green-400">14 Days</div>
-                          <div className="text-sm text-gray-400">{recommendation.success_metrics.targets['14_day']}</div>
-                        </div>
-                        <div className="text-center p-3 bg-[#111] rounded-lg border border-[#333]">
-                          <div className="text-lg font-bold text-purple-400">30 Days</div>
-                          <div className="text-sm text-gray-400">{recommendation.success_metrics.targets['30_day']}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {recommendation.seasonal_considerations && (
-                    <div className="bg-[#222] border border-[#444] rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-orange-400" />
-                        Seasonal Considerations
-                      </h4>
-                      <p className="text-gray-300 leading-relaxed text-base">
-                        {recommendation.seasonal_considerations}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="implementation" className="space-y-6">
-            <Card className="bg-[#111] border-[#333]">
-              <CardHeader>
-                <CardTitle className="text-xl text-white flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-green-400" />
-                  Step-by-Step Implementation Guide
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-[#222] border border-[#444] rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-white mb-4">Implementation Instructions</h4>
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">
-                      {recommendation.implementation}
-                    </p>
-                  </div>
-                </div>
-
-                {recommendation.specific_actions && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* AdSet Actions */}
-                    <Card className="bg-[#222] border-[#444]">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg text-white flex items-center gap-2">
-                          <Target className="w-4 h-4 text-blue-400" />
-                          AdSet Actions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-green-400 flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4" />
-                              Scale Budget ({recommendation.specific_actions.adsets_to_scale.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.adsets_to_scale.map((adset, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-green-400 flex-shrink-0" />
-                                  {adset}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-yellow-400 flex items-center gap-2">
-                              <Settings className="w-4 h-4" />
-                              Optimize Settings ({recommendation.specific_actions.adsets_to_optimize.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.adsets_to_optimize.map((adset, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-yellow-400 flex-shrink-0" />
-                                  {adset}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-red-400 flex items-center gap-2">
-                              <Clock className="w-4 h-4" />
-                              Pause AdSets ({recommendation.specific_actions.adsets_to_pause.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.adsets_to_pause.map((adset, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-red-400 flex-shrink-0" />
-                                  {adset}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Ad Actions */}
-                    <Card className="bg-[#222] border-[#444]">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg text-white flex items-center gap-2">
-                          <Lightbulb className="w-4 h-4 text-purple-400" />
-                          Creative Actions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {recommendation.specific_actions.ads_to_duplicate && recommendation.specific_actions.ads_to_duplicate.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-green-400 flex items-center gap-2">
-                              <ArrowRight className="w-4 h-4" />
-                              Duplicate Top Performers ({recommendation.specific_actions.ads_to_duplicate.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.ads_to_duplicate.map((ad, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-green-400 flex-shrink-0" />
-                                  {ad}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {recommendation.specific_actions.ads_to_pause && recommendation.specific_actions.ads_to_pause.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-red-400 flex items-center gap-2">
-                              <Clock className="w-4 h-4" />
-                              Pause Underperformers ({recommendation.specific_actions.ads_to_pause.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.ads_to_pause.map((ad, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-red-400 flex-shrink-0" />
-                                  {ad}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {recommendation.specific_actions.creative_actions && recommendation.specific_actions.creative_actions.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="font-medium text-purple-400 flex items-center gap-2">
-                              <Lightbulb className="w-4 h-4" />
-                              Creative Changes ({recommendation.specific_actions.creative_actions.length})
-                            </h5>
-                            <ul className="space-y-1 text-sm text-gray-300">
-                              {recommendation.specific_actions.creative_actions.map((action, index) => (
-                                <li key={index} className="flex items-center gap-2 p-2 bg-[#111] rounded border border-[#333]">
-                                  <ArrowRight className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                                  {action}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tutorial" className="space-y-6">
-            {recommendation.tutorial && (
-              <Card className="bg-[#111] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-xl text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-blue-400" />
-                    {recommendation.tutorial.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Steps */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-400" />
-                      Step-by-Step Process
-                    </h4>
-                    <div className="space-y-3">
-                      {recommendation.tutorial.steps.map((step, index) => (
-                        <div key={index} className="flex gap-4 p-4 bg-[#222] border border-[#444] rounded-lg">
-                          <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-gray-300 leading-relaxed">{step}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Pro Tips */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-400" />
-                      Pro Tips
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {recommendation.tutorial.tips.map((tip, index) => (
-                        <div key={index} className="p-4 bg-[#222] border border-[#444] rounded-lg border-l-4 border-l-yellow-400">
-                          <p className="text-gray-300 leading-relaxed">{tip}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Common Mistakes */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-400" />
-                      Common Mistakes to Avoid
-                    </h4>
-                    <div className="space-y-3">
-                      {recommendation.tutorial.common_mistakes.map((mistake, index) => (
-                        <div key={index} className="p-4 bg-[#222] border border-[#444] rounded-lg border-l-4 border-l-red-400">
-                          <p className="text-gray-300 leading-relaxed">{mistake}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="monitoring" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Monitoring Plan */}
-              <Card className="bg-[#111] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-green-400" />
-                    Monitoring Plan
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-[#222] border border-[#444] rounded-lg">
                       <p className="text-gray-300 leading-relaxed">
-                        {recommendation.monitoring_plan || 'Monitor key performance metrics daily for the first week, then weekly thereafter.'}
+                        {recommendation.reasoning}
                       </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-[#111] border-[#333]">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg text-white">Quick Stats</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Current ROAS</span>
+                        <span className="text-lg font-semibold text-white">{campaign.roas.toFixed(2)}x</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Budget Utilization</span>
+                        <span className="text-lg font-semibold text-white">
+                          {Math.round((campaign.spent / campaign.budget) * 100)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">CTR</span>
+                        <span className="text-lg font-semibold text-white">{campaign.ctr.toFixed(2)}%</span>
+                      </div>
+                      <Separator className="bg-[#333]" />
+                      <div className="pt-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <ShieldCheck className={`w-4 h-4 ${riskInfo.color}`} />
+                          <span className="text-gray-400">Risk Level:</span>
+                          <span className={riskInfo.color}>{riskInfo.level}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{riskInfo.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Performance Visualization */}
+                <Card className="bg-[#111] border-[#333]">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-gray-400" />
+                      7-Day Performance Trend
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={historicalData}>
+                          <defs>
+                            <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorROAS" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                          <XAxis dataKey="day" stroke="#666" />
+                          <YAxis stroke="#666" />
+                          <ReTooltip 
+                            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                            labelStyle={{ color: '#fff' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="spend" 
+                            stroke="#3b82f6" 
+                            fillOpacity={1} 
+                            fill="url(#colorSpend)" 
+                            name="Spend ($)"
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="roas" 
+                            stroke="#10b981" 
+                            fillOpacity={1} 
+                            fill="url(#colorROAS)" 
+                            name="ROAS"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Expected Impact */}
+                <Card className="bg-[#111] border-[#333]">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <Target className="w-4 h-4 text-gray-400" />
+                      Expected Impact
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Alert className="bg-green-950/20 border-green-800/50 text-green-400">
+                      <TrendingUp className="w-4 h-4" />
+                      <AlertDescription className="text-green-300">
+                        {recommendation.impact}
+                      </AlertDescription>
+                    </Alert>
                     
-                    {recommendation.success_metrics && (
-                      <div>
-                        <h5 className="font-medium text-white mb-3">Key Metrics to Track</h5>
+                    <div className="mt-4 space-y-3">
+                      <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                        <h4 className="text-sm font-medium text-white mb-2">Performance Forecast</h4>
+                        <p className="text-sm text-gray-400">
+                          {recommendation.forecast}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="analysis" className="p-6 space-y-6 mt-0">
+                {/* Detailed Analysis */}
+                <Card className="bg-[#111] border-[#333]">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white">Deep Dive Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Performance Metrics */}
+                      <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-gray-400" />
+                          Performance Metrics
+                        </h4>
                         <div className="space-y-2">
-                          <div className="p-3 bg-[#222] border border-[#444] rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Target className="w-4 h-4 text-blue-400" />
-                              <span className="font-medium text-white">Primary:</span>
-                              <span className="text-gray-300">{recommendation.success_metrics.primary}</span>
-                            </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-400">Impressions</span>
+                            <span className="text-sm text-white">{campaign.impressions.toLocaleString()}</span>
                           </div>
-                          {recommendation.success_metrics.secondary.map((metric, index) => (
-                            <div key={index} className="p-3 bg-[#222] border border-[#444] rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <BarChart3 className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium text-white">Secondary:</span>
-                                <span className="text-gray-300">{metric}</span>
-                              </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-400">Clicks</span>
+                            <span className="text-sm text-white">{campaign.clicks.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-400">Conversions</span>
+                            <span className="text-sm text-white">{campaign.conversions}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-400">CPC</span>
+                            <span className="text-sm text-white">${campaign.cpc.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Efficiency Scores */}
+                      <div className="bg-[#0a0a0a] p-4 rounded-lg border border-[#333]">
+                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                          <Gauge className="w-4 h-4 text-gray-400" />
+                          Efficiency Scores
+                        </h4>
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-400">Budget Efficiency</span>
+                              <span className="text-sm text-white">
+                                {Math.round((campaign.spent / campaign.budget) * 100)}%
+                              </span>
                             </div>
-                          ))}
+                            <Progress value={(campaign.spent / campaign.budget) * 100} className="h-2 bg-[#222]" />
+                          </div>
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-400">CTR Performance</span>
+                              <span className="text-sm text-white">{campaign.ctr.toFixed(1)}%</span>
+                            </div>
+                            <Progress value={Math.min(campaign.ctr * 20, 100)} className="h-2 bg-[#222]" />
+                          </div>
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-400">ROAS Score</span>
+                              <span className="text-sm text-white">{campaign.roas.toFixed(1)}x</span>
+                            </div>
+                            <Progress value={Math.min(campaign.roas * 20, 100)} className="h-2 bg-[#222]" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Specific Actions */}
+                    {recommendation.specific_actions && (
+                      <div className="mt-6">
+                        <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                          <ListChecks className="w-4 h-4 text-gray-400" />
+                          Specific Actions Required
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* AdSet Actions */}
+                          {(recommendation.specific_actions.adsets_to_scale?.length || 
+                            recommendation.specific_actions.adsets_to_optimize?.length || 
+                            recommendation.specific_actions.adsets_to_pause?.length) ? (
+                            <div className="space-y-3">
+                              <h5 className="text-sm font-medium text-gray-300">AdSet Actions</h5>
+                              
+                                                             {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
+                                 <ActionCard
+                                   icon={<TrendingUp className="w-4 h-4" />}
+                                   title="Scale Budget"
+                                   items={recommendation.specific_actions.adsets_to_scale}
+                                   color="green"
+                                 />
+                               )}
+                               
+                               {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
+                                 <ActionCard
+                                   icon={<Settings className="w-4 h-4" />}
+                                   title="Optimize"
+                                   items={recommendation.specific_actions.adsets_to_optimize}
+                                   color="blue"
+                                 />
+                               )}
+                               
+                               {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
+                                 <ActionCard
+                                   icon={<Clock className="w-4 h-4" />}
+                                   title="Pause"
+                                   items={recommendation.specific_actions.adsets_to_pause}
+                                   color="red"
+                                 />
+                               )}
+                            </div>
+                          ) : null}
+
+                          {/* Ad Actions */}
+                          {(recommendation.specific_actions.ads_to_duplicate?.length || 
+                            recommendation.specific_actions.ads_to_pause?.length) ? (
+                            <div className="space-y-3">
+                              <h5 className="text-sm font-medium text-gray-300">Ad Actions</h5>
+                              
+                              {recommendation.specific_actions.ads_to_duplicate?.length > 0 && (
+                                <ActionCard
+                                  icon={<ArrowRight className="w-4 h-4" />}
+                                  title="Duplicate"
+                                  items={recommendation.specific_actions.ads_to_duplicate}
+                                  color="purple"
+                                />
+                              )}
+                              
+                              {recommendation.specific_actions.ads_to_pause?.length > 0 && (
+                                <ActionCard
+                                  icon={<Clock className="w-4 h-4" />}
+                                  title="Pause"
+                                  items={recommendation.specific_actions.ads_to_pause}
+                                  color="red"
+                                />
+                              )}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              {/* Rollback Plan */}
-              <Card className="bg-[#111] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-red-400" />
-                    Rollback Plan
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="p-4 bg-[#222] border border-[#444] rounded-lg">
-                    <p className="text-gray-300 leading-relaxed">
-                      {recommendation.rollback_plan || 'If performance declines by more than 20% within 48 hours, revert all changes and reassess strategy.'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <TabsContent value="implementation" className="p-6 space-y-6 mt-0">
+                {/* Implementation Guide */}
+                <Card className="bg-[#111] border-[#333]">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white">Step-by-Step Implementation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose prose-invert max-w-none">
+                      <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {recommendation.implementation}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      <div className="bg-yellow-950/20 border border-yellow-800/50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-yellow-400 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Important Considerations
+                        </h4>
+                        <ul className="text-sm text-yellow-300/80 space-y-1">
+                          <li>• Monitor performance closely for the first 48 hours</li>
+                          <li>• Be prepared to adjust if metrics decline</li>
+                          <li>• Document all changes for future reference</li>
+                          <li>• Consider A/B testing major changes</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                          <Timer className="w-4 h-4 text-gray-400" />
+                          Implementation Timeline
+                        </h4>
+                        <div className="space-y-3">
+                          <TimelineItem
+                            time="Immediately"
+                            title="Initial Changes"
+                            description="Apply recommended budget and bid adjustments"
+                          />
+                          <TimelineItem
+                            time="24-48 hours"
+                            title="Monitor & Adjust"
+                            description="Check key metrics and fine-tune if needed"
+                          />
+                          <TimelineItem
+                            time="3-5 days"
+                            title="Evaluate Results"
+                            description="Assess overall impact and plan next steps"
+                          />
+                          <TimelineItem
+                            time="1 week"
+                            title="Full Analysis"
+                            description="Complete performance review and optimization"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-gray-400" />
+                          Success Metrics to Track
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                                                     <MetricToTrack label="ROAS" target="&gt; 3.5x" />
+                           <MetricToTrack label="CTR" target="&gt; 2.5%" />
+                                                     <MetricToTrack label="CPC" target="&lt; $2.00" />
+                          <MetricToTrack label="Conversions" target="+25%" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="tutorial" className="p-6 space-y-6 mt-0">
+                {/* Tutorial Section */}
+                <Card className="bg-[#111] border-[#333]">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-gray-400" />
+                      How to Implement This Recommendation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <Alert className="bg-blue-950/20 border-blue-800/50">
+                      <Info className="w-4 h-4 text-blue-400" />
+                      <AlertDescription className="text-blue-300">
+                        This tutorial will guide you through implementing the recommendation in Meta Ads Manager
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="space-y-4">
+                      <TutorialStep
+                        number={1}
+                        title="Access Meta Ads Manager"
+                        description="Log into your Meta Business account and navigate to Ads Manager. Select the campaign you want to optimize."
+                        tip="Use the campaign ID for quick search: " + campaign.campaign_id
+                      />
+                      
+                      <TutorialStep
+                        number={2}
+                        title="Review Current Performance"
+                        description="Before making changes, take a screenshot of current metrics for comparison. Check the Breakdown menu to see performance by placement, device, and audience."
+                        tip="Export current data to CSV for detailed before/after analysis"
+                      />
+                      
+                      <TutorialStep
+                        number={3}
+                        title="Apply Recommended Changes"
+                        description={`Based on the "${recommendation.action}" recommendation, make the specific adjustments to your campaign settings.`}
+                        tip="Make changes during off-peak hours to minimize disruption"
+                      />
+                      
+                      <TutorialStep
+                        number={4}
+                        title="Set Up Monitoring"
+                        description="Create custom alerts in Ads Manager to notify you if performance drops below thresholds. Set up automated rules if appropriate."
+                        tip="Set alerts for: ROAS < 2.5, CTR < 1.5%, or daily spend > 120% of target"
+                      />
+                      
+                      <TutorialStep
+                        number={5}
+                        title="Document Changes"
+                        description="Record all changes made, including timestamps and reasoning. This helps with future optimization and troubleshooting."
+                        tip="Use the Notes feature in Ads Manager or maintain a separate optimization log"
+                      />
+                    </div>
+
+                    <div className="mt-6 bg-[#0a0a0a] border border-[#333] rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                        <PlayCircle className="w-4 h-4 text-gray-400" />
+                        Video Resources
+                      </h4>
+                      <div className="space-y-2">
+                        <VideoResource 
+                          title="Meta Ads Budget Optimization" 
+                          duration="5:23"
+                          link="#"
+                        />
+                        <VideoResource 
+                          title="Advanced Audience Targeting" 
+                          duration="8:45"
+                          link="#"
+                        />
+                        <VideoResource 
+                          title="Creative Testing Strategies" 
+                          duration="6:12"
+                          link="#"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-[#333] bg-[#0a0a0a]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="bg-transparent border-[#333] text-gray-400 hover:text-white hover:bg-[#111] hover:border-[#444]"
+                >
+                  Close
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="bg-transparent border-[#333] text-gray-400 hover:text-white hover:bg-[#111] hover:border-[#444]"
+                  onClick={() => {
+                    console.log('Recommendation saved for later review')
+                  }}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Save for Later
+                </Button>
+              </div>
+              
+              <Button 
+                onClick={handleImplement}
+                disabled={isImplementing}
+                className="bg-white text-gray-900 hover:bg-gray-100"
+              >
+                {isImplementing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900 border-t-transparent mr-2" />
+                    Implementing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Implement Now
+                  </>
+                )}
+              </Button>
             </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-[#333]">
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            className="border-[#444] text-gray-400 hover:text-white hover:bg-[#222] bg-transparent"
-          >
-            Close
-          </Button>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              className="border-[#444] text-gray-400 hover:text-white hover:bg-[#222] bg-transparent"
-              onClick={() => {
-                toast.success('Recommendation saved for later review')
-              }}
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              Save for Later
-            </Button>
-            
-            <Button 
-              onClick={handleImplement}
-              disabled={isImplementing}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 px-6 py-2"
-            >
-              {isImplementing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  Implementing...
-                </>
-              ) : (
-                <>
-                  <Rocket className="w-4 h-4 mr-2" />
-                  Implement Now
-                </>
-              )}
-            </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// Helper Components
+function ActionCard({ icon, title, items, color }: { 
+  icon: React.ReactNode
+  title: string
+  items: string[]
+  color: 'green' | 'blue' | 'red' | 'purple'
+}) {
+  const colors = {
+    green: 'bg-green-950/20 border-green-800/50 text-green-400',
+    blue: 'bg-blue-950/20 border-blue-800/50 text-blue-400',
+    red: 'bg-red-950/20 border-red-800/50 text-red-400',
+    purple: 'bg-purple-950/20 border-purple-800/50 text-purple-400'
+  }
+  
+  return (
+    <div className={`p-3 rounded-lg border ${colors[color]}`}>
+      <h6 className="text-sm font-medium mb-2 flex items-center gap-2">
+        {icon}
+        {title} ({items.length})
+      </h6>
+      <ul className="text-sm opacity-80 space-y-1">
+        {items.map((item, index) => (
+          <li key={index} className="flex items-center gap-2 truncate">
+            <div className="w-1 h-1 rounded-full bg-current" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function TimelineItem({ time, title, description }: {
+  time: string
+  title: string
+  description: string
+}) {
+  return (
+    <div className="flex gap-3">
+      <div className="w-2 h-2 rounded-full bg-white mt-1.5 flex-shrink-0" />
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs text-gray-500">{time}</span>
+          <span className="text-sm font-medium text-white">{title}</span>
+        </div>
+        <p className="text-sm text-gray-400">{description}</p>
+      </div>
+    </div>
+  )
+}
+
+function MetricToTrack({ label, target }: { label: string; target: string }) {
+  return (
+    <div className="bg-[#111] p-3 rounded-lg border border-[#333]">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm font-medium text-white">{target}</p>
+    </div>
+  )
+}
+
+function TutorialStep({ number, title, description, tip }: {
+  number: number
+  title: string
+  description: string
+  tip: string
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-gray-900 flex items-center justify-center font-semibold text-sm">
+        {number}
+      </div>
+      <div className="flex-1 space-y-2">
+        <h4 className="font-medium text-white">{title}</h4>
+        <p className="text-sm text-gray-400">{description}</p>
+        <div className="bg-blue-950/20 border border-blue-800/50 rounded-lg p-3">
+          <p className="text-xs text-blue-300">
+            <span className="font-medium">Pro tip:</span> {tip}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VideoResource({ title, duration, link }: {
+  title: string
+  duration: string
+  link: string
+}) {
+  return (
+    <a 
+      href={link}
+      className="flex items-center justify-between p-3 bg-[#111] border border-[#333] rounded-lg hover:bg-[#1a1a1a] transition-colors group"
+    >
+      <div className="flex items-center gap-3">
+        <PlayCircle className="w-5 h-5 text-gray-400 group-hover:text-white" />
+        <span className="text-sm text-gray-300 group-hover:text-white">{title}</span>
+      </div>
+      <span className="text-xs text-gray-500">{duration}</span>
+    </a>
   )
 } 
