@@ -1399,6 +1399,11 @@ const CampaignWidget = ({
           let effectiveRangeStart = dateRange?.from;
           let effectiveRangeEnd = dateRange?.to;
 
+          // MIDNIGHT BOUNDARY FIX: For exact date matching, normalize both dates to just the date part
+          const insightDateOnly = insightDateStr; // e.g., "2025-07-13"
+          const effectiveRangeStartDateOnly = effectiveRangeStart?.toISOString().split('T')[0]; // e.g., "2025-07-13"
+          const effectiveRangeEndDateOnly = effectiveRangeEnd?.toISOString().split('T')[0]; // e.g., "2025-07-13"
+
           // If dateRange is a single day, adjust effectiveRangeEnd to be end of that day
           if (effectiveRangeStart && effectiveRangeEnd && 
               effectiveRangeStart.getFullYear() === effectiveRangeEnd.getFullYear() &&
@@ -1420,12 +1425,15 @@ const CampaignWidget = ({
             conversions: insight.conversions
           });
 
+          // MIDNIGHT BOUNDARY FIX: Use exact date string matching instead of date range comparison
+          // This prevents yesterday's data from being included in today's range
           let isInRange = false;
-          if (effectiveRangeStart && effectiveRangeEnd && insightDateObj >= effectiveRangeStart && insightDateObj <= effectiveRangeEnd) {
-            isInRange = true;
+          if (effectiveRangeStartDateOnly && effectiveRangeEndDateOnly) {
+            // Check if insight date is within the requested date range (inclusive)
+            isInRange = insightDateOnly >= effectiveRangeStartDateOnly && insightDateOnly <= effectiveRangeEndDateOnly;
           }
           
-          console.log(`[CW DEBUG DATE] Is "${insightDateStr}" in range? ${isInRange}`);
+          console.log(`[CW DEBUG DATE] Is "${insightDateStr}" in range? ${isInRange} (comparing ${insightDateOnly} with ${effectiveRangeStartDateOnly} to ${effectiveRangeEndDateOnly})`);
           
           if (isInRange) {
             insightsInRange++;
