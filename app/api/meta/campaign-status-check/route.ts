@@ -9,7 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from '@/lib/supabase/server';
+import { auth } from '@clerk/nextjs/server';
+import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
 // Simple rate limiter implementation since we can't find the import
@@ -41,43 +42,58 @@ const rateLimiter = {
 // In-memory store for rate limiter
 const rateLimitStore = new Map<string, number[]>();
 
-// Simple session implementation
+// Updated session function using Clerk
 const getSession = async (request: NextRequest) => {
-  // Add basic session check logic
   try {
-    const supabase = createClient();
+    const { userId } = auth();
     
-    // Get the user from Supabase auth
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error || !user) {
-      console.log("No valid session found");
+    if (!userId) {
+      console.log("No valid Clerk session found");
       return null;
     }
     
     return {
       user: {
-        id: user.id,
-        accountId: user.id
+        id: userId,
+        accountId: userId
       }
     };
   } catch (error) {
-    console.error("Error getting session:", error);
+    console.error("Error getting Clerk session:", error);
     return null;
   }
 };
 
-// Simple database access
+// Updated database access using authenticated Supabase client
+const getAuthenticatedSupabaseClient = async () => {
+  const { getToken } = auth();
+  const token = await getToken({ template: 'supabase' });
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  if (token) {
+    return createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+// Updated database access object
 const db = {
   brand: {
     findUnique: async ({ where }: any) => {
-      // In a real implementation, this would query the database
-      // For now, just return a mock brand with metaConnection
-      const supabase = createClient();
-      
       try {
+        const supabase = await getAuthenticatedSupabaseClient();
+        
         const { data } = await supabase
-          .from('brand')
+          .from('brands')
           .select('*, platform_connections(*)')
           .eq('id', where.id)
           .single();
