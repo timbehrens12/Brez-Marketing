@@ -2,7 +2,6 @@
 
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { format, parseISO, isToday, isYesterday, isSameDay, differenceInDays } from 'date-fns'
-import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
 import { useMemo } from 'react'
 import type { DateRange } from 'react-day-picker'
 import type { MetricData } from '@/types/metrics'
@@ -86,8 +85,7 @@ export function MetricLineChart({
             const date = parseISO(item.date);
             if (isNaN(date.getTime())) return;
             
-            const localDate = toZonedTime(date, userTimeZone);
-            const hour = localDate.getHours();
+            const hour = date.getHours();
             
             if (hour >= 0 && hour < 24) {
               hourlyData[hour].value += item.value;
