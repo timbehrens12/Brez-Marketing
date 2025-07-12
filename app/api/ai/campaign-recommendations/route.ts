@@ -59,11 +59,14 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching ads:', adsError)
     }
 
-    // Calculate key metrics and benchmarks
-    const metrics = calculateCampaignMetrics(campaignData, adSets || [], ads || [])
+    // Fetch 7-day historical data for trend analysis
+    const historicalData = await fetchCampaignHistoricalData(supabase, campaignId, brandId)
     
-    // Generate AI recommendation
-    const recommendation = await generateAIRecommendation(campaign, metrics, adSets || [], ads || [])
+    // Calculate key metrics and benchmarks with historical context
+    const metrics = calculateCampaignMetrics(campaignData, adSets || [], ads || [], historicalData)
+    
+    // Generate AI recommendation with historical analysis
+    const recommendation = await generateAIRecommendation(campaign, metrics, adSets || [], ads || [], historicalData)
 
     return NextResponse.json({
       success: true,
@@ -94,9 +97,128 @@ interface CampaignMetrics {
   }
   keyIssues: string[]
   strengths: string[]
+  trends: {
+    spendTrend: string
+    ctrTrend: string
+    roasTrend: string
+    weekOverWeekChange: number
+  }
+  consistency: {
+    isStable: boolean
+    volatilityScore: number
+  }
 }
 
-function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[]): CampaignMetrics {
+interface DailyPerformance {
+  date: string
+  spend: number
+  impressions: number
+  clicks: number
+  conversions: number
+  ctr: number
+  cpc: number
+  roas: number
+}
+
+interface HistoricalData {
+  last7Days: DailyPerformance[]
+  previous7Days: DailyPerformance[]
+  averages: {
+    spend: number
+    ctr: number
+    cpc: number
+    roas: number
+    impressions: number
+    clicks: number
+    conversions: number
+  }
+  trends: {
+    spendTrend: number // percentage change over 7 days
+    performanceTrend: number // overall performance trend
+  }
+}
+
+async function fetchCampaignHistoricalData(supabase: any, campaignId: string, brandId: string): Promise<HistoricalData> {
+  const today = new Date()
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+  // Fetch last 7 days
+  const { data: last7Days } = await supabase
+    .from('meta_campaign_daily_stats')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .eq('brand_id', brandId)
+    .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+    .lt('date', today.toISOString().split('T')[0])
+    .order('date', { ascending: false })
+
+  // Fetch previous 7 days (for comparison)
+  const { data: previous7Days } = await supabase
+    .from('meta_campaign_daily_stats')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .eq('brand_id', brandId)
+    .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
+    .lt('date', sevenDaysAgo.toISOString().split('T')[0])
+    .order('date', { ascending: false })
+
+  const processedLast7Days: DailyPerformance[] = (last7Days || []).map((day: any) => ({
+    date: day.date,
+    spend: Number(day.spend) || 0,
+    impressions: Number(day.impressions) || 0,
+    clicks: Number(day.clicks) || 0,
+    conversions: Number(day.conversions) || 0,
+    ctr: Number(day.ctr) || 0,
+    cpc: Number(day.cpc) || 0,
+    roas: Number(day.roas) || 0
+  }))
+
+  const processedPrevious7Days: DailyPerformance[] = (previous7Days || []).map((day: any) => ({
+    date: day.date,
+    spend: Number(day.spend) || 0,
+    impressions: Number(day.impressions) || 0,
+    clicks: Number(day.clicks) || 0,
+    conversions: Number(day.conversions) || 0,
+    ctr: Number(day.ctr) || 0,
+    cpc: Number(day.cpc) || 0,
+    roas: Number(day.roas) || 0
+  }))
+
+  // Calculate averages for last 7 days
+  const averages = processedLast7Days.length > 0 ? {
+    spend: processedLast7Days.reduce((sum, day) => sum + day.spend, 0) / processedLast7Days.length,
+    ctr: processedLast7Days.reduce((sum, day) => sum + day.ctr, 0) / processedLast7Days.length,
+    cpc: processedLast7Days.reduce((sum, day) => sum + day.cpc, 0) / processedLast7Days.length,
+    roas: processedLast7Days.reduce((sum, day) => sum + day.roas, 0) / processedLast7Days.length,
+    impressions: processedLast7Days.reduce((sum, day) => sum + day.impressions, 0) / processedLast7Days.length,
+    clicks: processedLast7Days.reduce((sum, day) => sum + day.clicks, 0) / processedLast7Days.length,
+    conversions: processedLast7Days.reduce((sum, day) => sum + day.conversions, 0) / processedLast7Days.length
+  } : {
+    spend: 0, ctr: 0, cpc: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0
+  }
+
+  // Calculate trends
+  const lastWeekSpend = processedLast7Days.reduce((sum, day) => sum + day.spend, 0)
+  const prevWeekSpend = processedPrevious7Days.reduce((sum, day) => sum + day.spend, 0)
+  const spendTrend = prevWeekSpend > 0 ? ((lastWeekSpend - prevWeekSpend) / prevWeekSpend) * 100 : 0
+
+  const lastWeekPerf = processedLast7Days.reduce((sum, day) => sum + day.roas, 0) / Math.max(processedLast7Days.length, 1)
+  const prevWeekPerf = processedPrevious7Days.reduce((sum, day) => sum + day.roas, 0) / Math.max(processedPrevious7Days.length, 1)
+  const performanceTrend = prevWeekPerf > 0 ? ((lastWeekPerf - prevWeekPerf) / prevWeekPerf) * 100 : 0
+
+  return {
+    last7Days: processedLast7Days,
+    previous7Days: processedPrevious7Days,
+    averages,
+    trends: {
+      spendTrend,
+      performanceTrend
+    }
+  }
+}
+
+function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], historicalData: HistoricalData): CampaignMetrics {
   const { spent, budget, impressions, clicks, conversions, ctr, cpc, roas } = campaign
   
   // Calculate budget utilization
@@ -156,6 +278,26 @@ function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[]): Cam
   if (impressions > 100000) strengths.push('Excellent reach')
   if (conversionRate > 5) strengths.push('High conversion rate')
 
+  // Calculate trends based on historical data
+  const calculateTrend = (current: number, historical: number) => {
+    if (historical === 0) return 'stable'
+    const change = ((current - historical) / historical) * 100
+    if (change > 10) return 'improving'
+    if (change < -10) return 'declining'
+    return 'stable'
+  }
+
+  const spendTrend = calculateTrend(spent, historicalData.averages.spend * 7)
+  const ctrTrend = calculateTrend(ctr, historicalData.averages.ctr)
+  const roasTrend = calculateTrend(roas, historicalData.averages.roas)
+
+  // Calculate performance consistency (volatility)
+  const roasValues = historicalData.last7Days.map(day => day.roas).filter(val => val > 0)
+  const avgRoas = roasValues.reduce((sum, val) => sum + val, 0) / Math.max(roasValues.length, 1)
+  const variance = roasValues.reduce((sum, val) => sum + Math.pow(val - avgRoas, 2), 0) / Math.max(roasValues.length, 1)
+  const volatilityScore = Math.sqrt(variance) / Math.max(avgRoas, 1) * 100
+  const isStable = volatilityScore < 25 // Less than 25% coefficient of variation is considered stable
+
   return {
     performanceGrade,
     budgetUtilization,
@@ -171,13 +313,23 @@ function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[]): Cam
             roas >= benchmarks.roas.average ? 'Average' : 'Poor'
     },
     keyIssues,
-    strengths
+    strengths,
+    trends: {
+      spendTrend,
+      ctrTrend,
+      roasTrend,
+      weekOverWeekChange: historicalData.trends.performanceTrend
+    },
+    consistency: {
+      isStable,
+      volatilityScore
+    }
   }
 }
 
-async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[]) {
+async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData) {
   const prompt = `
-You are an expert Meta advertising strategist. Analyze the following campaign data and provide a specific, actionable recommendation.
+You are an expert Meta advertising strategist. Analyze the following campaign data including 7-day historical trends and provide a specific, actionable recommendation.
 
 Campaign: ${campaign.campaign_name}
 Objective: ${campaign.objective}
@@ -186,7 +338,7 @@ Budget: $${campaign.budget} (${campaign.budget_type})
 Spent: $${campaign.spent}
 Budget Utilization: ${metrics.budgetUtilization.toFixed(1)}%
 
-Performance Metrics:
+Performance Metrics (Current):
 - Impressions: ${campaign.impressions?.toLocaleString() || 0}
 - Clicks: ${campaign.clicks?.toLocaleString() || 0}
 - CTR: ${campaign.ctr?.toFixed(2) || 0}%
@@ -195,27 +347,49 @@ Performance Metrics:
 - Conversion Rate: ${metrics.conversionRate.toFixed(2)}%
 - ROAS: ${campaign.roas?.toFixed(2) || 0}x
 
-Performance Grade: ${metrics.performanceGrade}
-Cost Efficiency: ${metrics.costEfficiency}
-Audience Reach: ${metrics.audienceReach}
+7-Day Historical Analysis:
+- Spend Trend: ${metrics.trends.spendTrend} (${historicalData.trends.spendTrend > 0 ? '+' : ''}${historicalData.trends.spendTrend.toFixed(1)}% vs previous week)
+- CTR Trend: ${metrics.trends.ctrTrend}
+- ROAS Trend: ${metrics.trends.roasTrend}
+- Performance Consistency: ${metrics.consistency.isStable ? 'Stable' : 'Volatile'} (${metrics.consistency.volatilityScore.toFixed(1)}% volatility)
+- Week-over-Week Performance Change: ${historicalData.trends.performanceTrend > 0 ? '+' : ''}${historicalData.trends.performanceTrend.toFixed(1)}%
+
+Historical Averages (Last 7 Days):
+- Avg Daily Spend: $${historicalData.averages.spend.toFixed(2)}
+- Avg CTR: ${historicalData.averages.ctr.toFixed(2)}%
+- Avg CPC: $${historicalData.averages.cpc.toFixed(2)}
+- Avg ROAS: ${historicalData.averages.roas.toFixed(2)}x
+- Data Points Available: ${historicalData.last7Days.length} days
+
+Performance Assessment:
+- Grade: ${metrics.performanceGrade}
+- Cost Efficiency: ${metrics.costEfficiency}
+- Audience Reach: ${metrics.audienceReach}
 
 Key Issues: ${metrics.keyIssues.join(', ') || 'None'}
 Strengths: ${metrics.strengths.join(', ') || 'None'}
 
-Ad Sets: ${adSets.length} ad sets
-Ads: ${ads.length} ads
+Campaign Structure:
+- Ad Sets: ${adSets.length} ad sets
+- Ads: ${ads.length} ads
+
+IMPORTANT: Base your recommendation primarily on the 7-day trends and patterns, not just current snapshot data. Consider:
+1. Is the campaign trending up or down?
+2. Is performance consistent or volatile?
+3. Are recent changes showing positive or negative impact?
+4. Is there sufficient data to make a confident recommendation?
 
 Provide a recommendation in the following JSON format:
 {
   "action": "One of: increase budget, reduce budget, increase cpc, reduce cpc, optimize targeting, pause campaign, leave as is",
-  "reasoning": "Brief explanation of why this action is recommended",
-  "impact": "Expected outcome of implementing this recommendation",
-  "confidence": "Confidence level from 1-10",
+  "reasoning": "Brief explanation based on 7-day trends and patterns",
+  "impact": "Expected outcome based on historical patterns",
+  "confidence": "Confidence level from 1-10 (lower if insufficient historical data)",
   "implementation": "Step-by-step guide on how to implement this recommendation",
-  "forecast": "Predicted performance changes after implementing the recommendation"
+  "forecast": "Predicted performance changes based on observed trends"
 }
 
-Focus on the most impactful single action that would improve campaign performance.
+Focus on the most impactful single action that would improve campaign performance based on trend analysis.
 `
 
   try {
@@ -248,23 +422,48 @@ Focus on the most impactful single action that would improve campaign performanc
     console.error('Error generating AI recommendation:', error)
     
     // Fallback to rule-based recommendation if AI fails
-    return generateRuleBasedRecommendation(campaign, metrics)
+    return generateRuleBasedRecommendation(campaign, metrics, historicalData)
   }
 }
 
-function generateRuleBasedRecommendation(campaign: any, metrics: CampaignMetrics) {
+function generateRuleBasedRecommendation(campaign: any, metrics: CampaignMetrics, historicalData: HistoricalData) {
   const { spent, budget, ctr, cpc, roas, conversions, impressions } = campaign
-  const { budgetUtilization, performanceGrade } = metrics
+  const { budgetUtilization, performanceGrade, trends, consistency } = metrics
 
-  // Rule-based logic for common scenarios
-  if (roas < 1.5 && cpc > 3.0) {
+  // Enhanced rule-based logic using historical trends
+  // If trending down with high volatility, recommend pause or optimization
+  if (trends.roasTrend === 'declining' && !consistency.isStable) {
+    return {
+      action: 'pause campaign',
+      reasoning: 'Campaign shows declining ROAS trend with high volatility over the last 7 days, indicating systematic issues',
+      impact: 'Pausing will prevent further budget waste while allowing for comprehensive optimization',
+      confidence: 8,
+      implementation: 'Pause campaign immediately, analyze audience performance, review ad creative fatigue, and adjust targeting before reactivating',
+      forecast: 'Stop budget drain and provide opportunity for 20-30% performance improvement after optimization'
+    }
+  }
+
+  // If trending up but under-spending, recommend budget increase
+  if (trends.roasTrend === 'improving' && trends.spendTrend !== 'declining' && budgetUtilization < 60) {
+    return {
+      action: 'increase budget',
+      reasoning: 'Campaign shows improving ROAS trend over 7 days with low budget utilization, indicating scalable opportunity',
+      impact: 'Higher budget should generate more conversions while maintaining efficiency gains',
+      confidence: 9,
+      implementation: 'Increase daily budget by 40-60% while monitoring CPA and ROAS daily for next week',
+      forecast: 'Expected 50-80% increase in conversions with maintained or improved efficiency based on current trend'
+    }
+  }
+
+  // If stable performance but high CPC compared to average
+  if (cpc > historicalData.averages.cpc * 1.2 && trends.ctrTrend !== 'improving') {
     return {
       action: 'reduce cpc',
-      reasoning: 'High cost per click with poor return on ad spend indicates inefficient bidding',
-      impact: 'Lower CPC should improve cost efficiency and ROAS',
-      confidence: 8,
+      reasoning: 'Current CPC is 20% higher than 7-day average without improving CTR trends',
+      impact: 'Lower CPC should improve cost efficiency while maintaining reach',
+      confidence: 7,
       implementation: 'Reduce bid amounts by 15-20% and monitor performance for 3-5 days',
-      forecast: 'Expected 20-30% improvement in cost efficiency within one week'
+      forecast: 'Expected 15-25% improvement in cost efficiency based on historical patterns'
     }
   }
 
