@@ -516,34 +516,70 @@ export default function PlatformCampaignWidget() {
     const canRefresh = canRefreshRecommendation(campaign)
     const daysUntilRefresh = getDaysUntilNextRefresh(campaign)
 
+    // Get priority color based on recommendation priority
+    const getPriorityColor = (action: string) => {
+      const actionLower = action.toLowerCase()
+      
+      if (actionLower.includes('aggressive_scale') || actionLower.includes('critical') || actionLower.includes('pause_underperformers')) {
+        return 'bg-red-950/30 text-red-400 border-red-800/50 hover:bg-red-900/40 hover:border-red-700/60'
+      } else if (actionLower.includes('conservative_scale') || actionLower.includes('creative_refresh') || actionLower.includes('optimization')) {
+        return 'bg-yellow-950/30 text-yellow-400 border-yellow-800/50 hover:bg-yellow-900/40 hover:border-yellow-700/60'
+      } else if (actionLower.includes('scale') || actionLower.includes('expansion') || actionLower.includes('boost')) {
+        return 'bg-green-950/30 text-green-400 border-green-800/50 hover:bg-green-900/40 hover:border-green-700/60'
+      } else {
+        return 'bg-blue-950/30 text-blue-400 border-blue-800/50 hover:bg-blue-900/40 hover:border-blue-700/60'
+      }
+    }
+
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
             <Badge 
               variant="outline" 
-              className="bg-gray-950/30 text-gray-300 border-gray-800/50 cursor-pointer hover:bg-gray-800/50 transition-colors"
+              className={`relative cursor-pointer transition-all duration-200 transform hover:scale-105 ${getPriorityColor(recommendation.action)} shadow-lg hover:shadow-xl`}
               onClick={() => handleRecommendationClick(campaign)}
             >
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {recommendation.action}
-              {!canRefresh && (
-                <Clock className="w-3 h-3 ml-1 opacity-50" />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-medium">{recommendation.action.replace(/_/g, ' ')}</span>
+                </div>
+                {!canRefresh && (
+                  <Clock className="w-3 h-3 opacity-50" />
+                )}
+                <div className="w-1 h-1 bg-current rounded-full animate-pulse ml-1" />
+              </div>
+              
+              {/* Glow effect for high priority recommendations */}
+              {recommendation.action.toLowerCase().includes('aggressive') && (
+                <div className="absolute inset-0 bg-red-400/20 rounded-full blur-sm -z-10 animate-pulse" />
               )}
             </Badge>
           </TooltipTrigger>
-          <TooltipContent>
-            <div className="space-y-1">
-              <p className="font-medium">AI Recommendation Available</p>
-              <p className="text-sm text-gray-400">
-                {canRefresh 
-                  ? "Click to view detailed analysis and recommendations"
-                  : `Next refresh in ${daysUntilRefresh} day${daysUntilRefresh !== 1 ? 's' : ''}`
-                }
-              </p>
-              <p className="text-xs text-gray-500">
-                Recommendations refresh weekly
-              </p>
+          <TooltipContent className="max-w-80 p-4 bg-gray-900 border-gray-700">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                <p className="font-semibold text-white">🚀 AI Recommendation Ready!</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-300 font-medium">
+                  Action: <span className="text-white">{recommendation.action.replace(/_/g, ' ')}</span>
+                </p>
+                <p className="text-sm text-gray-400">
+                  💡 {canRefresh 
+                    ? "Click to view comprehensive analysis, step-by-step implementation guide, and detailed tutorials"
+                    : `Next refresh available in ${daysUntilRefresh} day${daysUntilRefresh !== 1 ? 's' : ''}`
+                  }
+                </p>
+                <div className="pt-2 border-t border-gray-700">
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Updated weekly with fresh insights
+                  </p>
+                </div>
+              </div>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -844,8 +880,8 @@ export default function PlatformCampaignWidget() {
                                 </TableCell>
                                                                 <TableCell>
                                   {campaignsBeingChecked.has(campaign.campaign_id) ? (
-                                    <Badge className="text-xs px-1.5 py-0 h-5 flex items-center gap-1 bg-blue-950/30 text-blue-500 border border-blue-800/50">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                    <Badge className="text-xs px-1.5 py-0 h-5 flex items-center gap-1 bg-gray-800/50 text-gray-400 border border-gray-700/50">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse"></div>
                                       Checking...
                                     </Badge>
                                   ) : (
