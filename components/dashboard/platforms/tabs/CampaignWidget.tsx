@@ -1272,11 +1272,8 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!campaigns.length || !brandId) return;
     
-    // Check campaign statuses on initial load, but be conservative to avoid rate limits
-    // Only check the first 3 campaigns to minimize API calls
-    const campaignsToCheck = campaigns.slice(0, 3);
-    logger.debug(`[CampaignWidget] Checking initial statuses for ${campaignsToCheck.length} campaigns`);
-    checkCampaignStatuses(campaignsToCheck, false);
+    // Temporarily disable status check on initial load for debugging
+    // checkCampaignStatuses(campaigns);
     
     // Check for recent status updates every 1-2 minutes to keep them fresh
     const intervalId = setInterval(() => {
@@ -1292,12 +1289,13 @@ const CampaignWidget = ({
         return;
       }
       
-      // Only check active campaigns to minimize API calls during periodic refresh
-      logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
-      const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
-      if (activeCampaigns.length > 0) {
-        checkCampaignStatuses(activeCampaigns.slice(0, 2));
-      }
+      // Temporarily disable periodic status check for debugging
+      // logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
+      // // Only check active campaigns to minimize API calls
+      // const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
+      // if (activeCampaigns.length > 0) {
+      //   checkCampaignStatuses(activeCampaigns.slice(0, 2));
+      // }
     }, 120000); // 2 minutes interval
     
     return () => {

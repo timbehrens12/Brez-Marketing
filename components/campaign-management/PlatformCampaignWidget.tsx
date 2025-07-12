@@ -398,8 +398,8 @@ export default function PlatformCampaignWidget() {
   useEffect(() => {
     if (selectedBrandId) {
       console.log('[CampaignWidget] Brand changed, fetching campaigns...', selectedBrandId)
-      // Don't force refresh or check statuses on initial page load to avoid rate limits
-      fetchMetaCampaigns(false, false) // Normal refresh without status check on brand change
+      // Enable status checking on initial load so status is correct from the start
+      fetchMetaCampaigns(false, true) // Normal refresh with status check on brand change
     }
   }, [selectedBrandId, fetchMetaCampaigns])
 
