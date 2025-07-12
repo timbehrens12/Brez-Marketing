@@ -408,7 +408,7 @@ export default function PlatformCampaignWidget() {
                   variant="ghost"
                   size="sm"
                   onClick={() => togglePlatform(platformKey)}
-                  className="p-0 h-auto hover:bg-transparent text-gray-400 hover:text-white"
+                  className="p-0 h-auto hover:bg-transparent text-gray-400 hover:text-white focus:ring-0 focus:outline-0"
                 >
                   {expandedPlatforms.has(platformKey) ? (
                     <ChevronDown className="w-4 h-4" />
@@ -422,7 +422,7 @@ export default function PlatformCampaignWidget() {
                   alt={platform.name}
                   width={24}
                   height={24}
-                  className={`object-contain ${!platform.isActive ? 'grayscale opacity-40' : ''}`}
+                  className={`object-contain ${!platform.isActive ? 'grayscale opacity-40' : 'grayscale'}`}
                 />
                 
                 <CardTitle className="text-lg text-white">
@@ -439,13 +439,13 @@ export default function PlatformCampaignWidget() {
               
               {platform.isActive && (
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fetchMetaCampaigns(true)}
-                    disabled={platform.isLoading}
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-                  >
+                                      <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fetchMetaCampaigns(true)}
+                      disabled={platform.isLoading}
+                      className="text-gray-400 hover:text-white hover:bg-gray-800/50 focus:ring-0 focus:outline-0"
+                    >
                     <RefreshCw className={`w-4 h-4 ${platform.isLoading ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
@@ -494,13 +494,13 @@ export default function PlatformCampaignWidget() {
                         placeholder="Search campaigns..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400"
+                        className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:ring-gray-600 focus:border-gray-600"
                       />
                     </div>
                     
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="bg-transparent border-gray-700 text-white hover:bg-gray-800/50">
+                        <Button variant="outline" size="sm" className="bg-transparent border-gray-700 text-white hover:bg-gray-800/50 focus:ring-gray-600 focus:border-gray-600">
                           <Settings className="h-4 w-4 mr-2" />
                           Options
                         </Button>
