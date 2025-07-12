@@ -274,11 +274,11 @@ export default function PlatformCampaignWidget() {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
-      'ACTIVE': 'bg-gray-800/50 text-gray-300 border-gray-700',
-      'PAUSED': 'bg-gray-800/50 text-gray-400 border-gray-700',
-      'DELETED': 'bg-gray-800/50 text-gray-400 border-gray-700',
-      'DRAFT': 'bg-gray-800/50 text-gray-400 border-gray-700',
-      'ARCHIVED': 'bg-gray-800/50 text-gray-400 border-gray-700'
+      'ACTIVE': 'bg-green-950/30 text-green-400 border-green-800/50',
+      'PAUSED': 'bg-slate-800/50 text-slate-400 border-slate-700/50',
+      'DELETED': 'bg-red-950/30 text-red-400 border-red-800/50',
+      'DRAFT': 'bg-gray-950/30 text-gray-400 border-gray-800/50',
+      'ARCHIVED': 'bg-red-950/30 text-red-400 border-red-800/50'
     }
     
     const statusLabels = {
@@ -304,7 +304,7 @@ export default function PlatformCampaignWidget() {
     
     if (!recommendation) {
       return (
-        <Badge variant="outline" className="bg-gray-800/50 text-gray-400 border-gray-700">
+        <Badge variant="outline" className="bg-gray-950/30 text-gray-400 border-gray-800/50">
           <Minus className="w-3 h-3 mr-1" />
           No Data
         </Badge>
@@ -320,7 +320,7 @@ export default function PlatformCampaignWidget() {
           <TooltipTrigger>
             <Badge 
               variant="outline" 
-              className="bg-gray-800/50 text-gray-300 border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors"
+              className="bg-gray-950/30 text-gray-300 border-gray-800/50 cursor-pointer hover:bg-gray-800/50 transition-colors"
               onClick={() => handleRecommendationClick(campaign)}
             >
               <TrendingUp className="w-3 h-3 mr-1" />
