@@ -42,21 +42,23 @@ const rateLimiter = {
 const rateLimitStore = new Map<string, number[]>();
 
 // Simple session implementation
-const getSession = async () => {
+const getSession = async (request: NextRequest) => {
   // Add basic session check logic
   try {
-    const request = new Request(new URL("http://localhost"), {
-      headers: {
-        cookie: document?.cookie || "",
-      },
-    });
+    const supabase = createClient();
     
-    // In a real implementation, this would verify the session
-    // For now, just return a mock session
+    // Get the user from Supabase auth
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      console.log("No valid session found");
+      return null;
+    }
+    
     return {
       user: {
-        id: "mock-user-id",
-        accountId: "mock-account-id"
+        id: user.id,
+        accountId: user.id
       }
     };
   } catch (error) {
@@ -174,7 +176,7 @@ setInterval(cleanupCacheEntries, 15 * 60 * 1000);
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(req);
 
     if (!session?.user) {
       // Check if we're getting too many failed requests
@@ -347,16 +349,6 @@ export async function POST(req: NextRequest) {
         const brand = await db.brand.findUnique({
           where: {
             id: brandId,
-            account: {
-              users: {
-                some: {
-                  id: userId,
-                },
-              },
-            },
-          },
-          include: {
-            metaConnection: true,
           },
         });
 
