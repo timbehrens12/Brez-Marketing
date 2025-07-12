@@ -149,9 +149,13 @@ export default function PlatformCampaignWidget() {
 
   // Function to check campaign statuses - robust version like dashboard
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
-    if (!selectedBrandId || campaignsToCheck.length === 0) return
+    if (!selectedBrandId || campaignsToCheck.length === 0) {
+      console.log('[CampaignWidget] Skipping status check:', { selectedBrandId, campaignCount: campaignsToCheck.length })
+      return
+    }
     
     console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`)
+    console.log('[CampaignWidget] Campaign IDs to check:', campaignsToCheck.map(c => c.campaign_id))
     
     // Filter out campaigns with invalid campaign_id values
     const validCampaigns = campaignsToCheck.filter(campaign => 
@@ -162,6 +166,8 @@ export default function PlatformCampaignWidget() {
       console.log('[CampaignWidget] No valid campaigns to check statuses for')
       return
     }
+    
+    console.log('[CampaignWidget] Valid campaign count:', validCampaigns.length)
     
     // Process more campaigns when forceRefresh is true, but limit to avoid rate limits
     const batchSize = forceRefresh ? Math.min(5, validCampaigns.length) : Math.min(2, validCampaigns.length)
@@ -586,6 +592,12 @@ export default function PlatformCampaignWidget() {
                   {platform.name}
                 </CardTitle>
                 
+                {platformKey === 'meta' && (
+                  <span className="text-xs text-gray-500">
+                    ({localCampaigns.length} campaigns)
+                  </span>
+                )}
+                
                 <Badge 
                   variant="outline" 
                   className={`${
@@ -603,12 +615,47 @@ export default function PlatformCampaignWidget() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => fetchMetaCampaigns(true, true)}
+                    onClick={() => {
+                      console.log('[Widget] Manual refresh clicked')
+                      fetchMetaCampaigns(true, true)
+                    }}
                     disabled={platform.isLoading}
                     className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                   >
                     <RefreshCw className={`w-4 h-4 ${platform.isLoading ? 'animate-spin' : ''}`} />
                   </Button>
+                  {localCampaigns.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        console.log('[Widget] Manual status check clicked for campaigns:', localCampaigns.length)
+                        checkCampaignStatuses(localCampaigns, true)
+                      }}
+                      className="text-gray-400 hover:text-white hover:bg-gray-800/50"
+                      title="Check Campaign Status"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {process.env.NODE_ENV === 'development' && localCampaigns.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        console.log('[Widget] DEBUG - All campaigns:', localCampaigns.map(c => ({
+                          id: c.campaign_id,
+                          name: c.campaign_name,
+                          status: c.status
+                        })))
+                        toast.info(`Campaigns in console: ${localCampaigns.length}`)
+                      }}
+                      className="text-yellow-400 hover:text-yellow-300 hover:bg-gray-800/50"
+                      title="Debug Campaigns"
+                    >
+                      🐛
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
