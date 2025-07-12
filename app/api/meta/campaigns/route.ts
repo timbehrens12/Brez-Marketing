@@ -147,6 +147,14 @@ export async function GET(request: NextRequest) {
     if (from && to) {
       console.log(`[Meta Campaigns] Date range parameters detected: ${from} to ${to}`)
       
+      // Check if we're requesting data for today
+      const today = new Date().toISOString().split('T')[0]
+      const isRequestingToday = to === today
+      
+      if (isRequestingToday) {
+        console.log(`[Meta Campaigns] Requesting data for today (${today}) - checking for midnight boundary issues`)
+      }
+      
       // Try using the get_campaign_insights_by_date_range function first
       try {
         // TEMPORARY: Disable the database function to force using the fallback logic
@@ -302,6 +310,41 @@ export async function GET(request: NextRequest) {
       
       // Debug: Log what data we found for debugging date filtering issues
       console.log(`[Meta Campaigns DEBUG] Found ${dailyAdStats?.length || 0} daily campaign stats for date range ${normalizedFromDate} to ${normalizedToDate}`);
+      
+      // Handle midnight boundary case: if requesting today's data and no data exists, return zero values
+      if (isRequestingToday && (!dailyAdStats || dailyAdStats.length === 0)) {
+        console.log(`[Meta Campaigns] Midnight boundary detected: No data exists for today (${today}). Returning zero values instead of stale data.`);
+        
+        // Return campaigns with zero metrics for today
+        const campaignsWithZeroMetrics = campaignDetails.map(campaign => ({
+          ...campaign,
+          spent: 0,
+          impressions: 0,
+          clicks: 0,
+          reach: 0,
+          conversions: 0,
+          ctr: 0,
+          cpc: 0,
+          cost_per_conversion: 0,
+          roas: 0,
+          purchase_value: 0,
+          has_data_in_range: false,
+          daily_insights: []
+        }));
+        
+        return NextResponse.json({
+          campaigns: campaignsWithZeroMetrics,
+          dateRange: {
+            from: from,
+            to: to
+          },
+          campaignsWithData: 0,
+          totalCampaigns: campaignDetails.length,
+          lastRefresh: new Date().toISOString(),
+          source: 'midnight_boundary_zero_values',
+          message: 'No data exists for today yet - returning zero values'
+        });
+      }
       
       // Get the set of campaign IDs that have data in this date range
       const campaignIdsWithData = new Set<string>();
@@ -663,11 +706,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Execute query
-    const { data: campaigns, error: fetchError } = await query
+    let { data: campaigns, error: fetchError } = await query
     
     if (fetchError) {
       console.error('Error fetching Meta campaigns:', fetchError)
       return NextResponse.json({ error: 'Error fetching campaign data' }, { status: 500 })
+    }
+    
+    // Handle null campaigns
+    if (!campaigns) {
+      campaigns = []
     }
     
     // Log campaign budget info for debugging

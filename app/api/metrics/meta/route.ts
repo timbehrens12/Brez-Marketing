@@ -188,6 +188,14 @@ export async function GET(request: NextRequest) {
     
     console.log(`Found Meta connection: ${connection.id} for brand ${brandId}`)
     
+    // Check if we're requesting data for today (midnight boundary handling)
+    const today = new Date().toISOString().split('T')[0]
+    const isRequestingToday = to === today
+    
+    if (isRequestingToday) {
+      console.log(`[META API] Requesting data for today (${today}) - checking for midnight boundary issues`)
+    }
+    
     // Handle date range with more precision for exact queries
     let fromDate: string
     let toDate: string
@@ -341,6 +349,42 @@ export async function GET(request: NextRequest) {
             insightsForProcessing = dailyStatsData;
         } else {
           console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
+          
+          // Handle midnight boundary case: if requesting today's data and no data exists, return zero values
+          if (isRequestingToday && (!dailyStatsData || dailyStatsData.length === 0)) {
+            console.log(`[META API] Midnight boundary detected: No data exists for today (${today}). Returning zero values instead of trying to sync.`);
+            
+            const response = {
+              adSpend: 0, 
+              impressions: 0, 
+              clicks: 0, 
+              conversions: 0, 
+              ctr: 0, 
+              cpc: 0, 
+              costPerResult: 0, 
+              dailyData: [],
+              _dateRange: { 
+                from: fromDate, 
+                to: toDate, 
+                requested: { 
+                  from: requestedFromDate || fromDate, 
+                  to: requestedToDate || toDate 
+                } 
+              },
+              source: 'midnight_boundary_zero_values',
+              message: 'No data exists for today yet - returning zero values'
+            };
+            
+            // Cache the response with the date-aware cache key
+            const cacheEntry = {
+              timestamp: Date.now(),
+              data: response,
+              cacheDate: getCurrentDateString()
+            };
+            apiCache.set(cacheKey, cacheEntry);
+            
+            return NextResponse.json(response);
+          }
       
       // Try to update data for today only if needed and explicitly requested
       const todayStr = new Date().toISOString().split('T')[0];
