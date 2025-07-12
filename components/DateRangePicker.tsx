@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+
 
 // Add custom styles to hide the default navigation buttons
 const calendarStyles = `
@@ -35,24 +37,31 @@ interface DateRangePickerProps {
   setDateRange: (range: { from: Date; to: Date }) => void;
 }
 
+// Get user's timezone - the backend can handle any timezone
+const getUserTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
+
 const presets = [
   {
     name: 'Today',
     value: 'today',
-    getDate: () => ({
-      from: startOfDay(new Date()),
-      to: endOfDay(new Date())
-    })
+    getDate: () => {
+      // Use current date in user's timezone
+      const now = new Date()
+      
+      return {
+        from: startOfDay(now),
+        to: endOfDay(now)
+      }
+    }
   },
   {
     name: 'Yesterday',
     value: 'yesterday',
     getDate: () => {
-      // Create yesterday's date
-      const yesterday = subDays(new Date(), 1);
-      
-      // Format dates - use the same date for both from and to
-      const yesterdayStart = startOfDay(yesterday);
+      // Get yesterday's date in user's timezone
+      const now = new Date()
+      const yesterday = subDays(now, 1)
+      const yesterdayStart = startOfDay(yesterday)
       
       // Add a special parameter to the date object - use the same date for both
       const date = {
@@ -61,9 +70,6 @@ const presets = [
         // Add a property to identify this as the yesterday preset
         _preset: 'yesterday'
       };
-      
-              // console.log('Setting yesterday preset with special marker - same date for both');
-        // console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
       
       return date;
     }
@@ -414,6 +420,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       setCurrentMonth(nextYear)
     }
   }
+
+
 
   return (
     <div className="grid gap-2">

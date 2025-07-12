@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(cachedResponse.data);
       } else if (cachedResponse) {
         // Cache expired or invalid, remove it
-        apiCache.delete(cacheKey);
+          apiCache.delete(cacheKey);
         console.log(`🔥🔥🔥 [META API] CACHE EXPIRED/INVALID for ${cacheKey}, will fetch fresh data`);
       }
     } else {
