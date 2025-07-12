@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -117,10 +117,7 @@ export default function PlatformCampaignWidget() {
   const [showInactive, setShowInactive] = useState(true)
   const [sortBy, setSortBy] = useState('spent')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  
-  // Add refs for coordinated refresh behavior like home page widgets
-  const lastRefreshTime = useRef(0)
-  const isInitialLoadComplete = useRef(false)
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
 
   // Check if a campaign can get a new recommendation (weekly limit)
   const canRefreshRecommendation = (campaign: Campaign) => {
@@ -149,25 +146,26 @@ export default function PlatformCampaignWidget() {
   }
 
   // Fetch Meta campaigns - now includes ALL campaigns, not just active ones
-  const fetchMetaCampaigns = useCallback(async (forceRefresh = false) => {
+  const fetchMetaCampaigns = async (forceRefresh = false) => {
     if (!selectedBrandId) return
 
-    // Throttle requests to prevent excessive API calls
+    // Prevent too frequent refreshes (unless forced)
     const now = Date.now()
-    if (!forceRefresh && (now - lastRefreshTime.current) < 30000) {
-      console.log('[PlatformCampaignWidget] Throttling campaign fetch request')
+    if (!forceRefresh && now - lastRefreshTime < 30000) { // 30 second throttle
+      console.log('[CampaignWidget] Throttling refresh request')
       return
     }
-    lastRefreshTime.current = now
 
     try {
+      console.log('[CampaignWidget] Fetching Meta campaigns...', { forceRefresh, selectedBrandId })
+      
       setPlatforms(prev => ({
         ...prev,
         meta: { ...prev.meta, isLoading: true, error: undefined }
       }))
 
       // Remove the status=ACTIVE filter to get all campaigns
-      const response = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&_t=${Date.now()}`)
+      const response = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch campaigns')
@@ -217,7 +215,8 @@ export default function PlatformCampaignWidget() {
         }
       }))
 
-      console.log(`[PlatformCampaignWidget] Fetched ${campaignsWithRecommendations.length} campaigns`)
+      setLastRefreshTime(now)
+      console.log('[CampaignWidget] Successfully fetched campaigns:', campaignsWithRecommendations.length)
 
     } catch (error) {
       console.error('Error fetching Meta campaigns:', error)
@@ -231,81 +230,30 @@ export default function PlatformCampaignWidget() {
       }))
       toast.error('Failed to load Meta campaigns')
     }
+  }
+
+  // Data refresh effect - matches home page widget pattern
+  useEffect(() => {
+    if (selectedBrandId) {
+      console.log('[CampaignWidget] Brand changed, fetching campaigns...', selectedBrandId)
+      fetchMetaCampaigns(true) // Force refresh on brand change
+    }
   }, [selectedBrandId])
 
-  // Initial data fetch
+  // Auto-refresh effect - matches home page widget pattern
   useEffect(() => {
-    if (selectedBrandId && !isInitialLoadComplete.current) {
-      fetchMetaCampaigns(true)
-      isInitialLoadComplete.current = true
-    }
-  }, [selectedBrandId, fetchMetaCampaigns])
+    if (!selectedBrandId) return
 
-  // Listen for global refresh events like home page widgets
-  useEffect(() => {
-    const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log("[PlatformCampaignWidget] Received global refresh event:", event.detail)
-      
-      // Only process if this is for our brand
-      if (event.detail?.brandId !== selectedBrandId) {
-        console.log("[PlatformCampaignWidget] Ignoring global refresh for different brand")
-        return
-      }
-      
-      const { platforms: refreshPlatforms, source } = event.detail
-      console.log(`[PlatformCampaignWidget] Processing global refresh from ${source}`)
-      
-      // Refresh Meta campaigns if Meta platform was refreshed
-      if (refreshPlatforms?.meta || source === 'global-refresh') {
-        console.log("[PlatformCampaignWidget] Refreshing Meta campaigns due to global refresh")
-        fetchMetaCampaigns(true)
-      }
-    }
+    // Set up auto-refresh interval
+    const intervalId = setInterval(() => {
+      console.log('[CampaignWidget] Auto-refreshing campaigns...')
+      fetchMetaCampaigns(false) // Don't force, respect throttling
+    }, 300000) // 5 minutes
 
-    const handleForceMetaRefresh = (event: CustomEvent) => {
-      console.log("[PlatformCampaignWidget] Received force Meta refresh event:", event.detail)
-      
-      if (event.detail?.brandId === selectedBrandId) {
-        console.log("[PlatformCampaignWidget] Triggering Meta campaigns refresh")
-        fetchMetaCampaigns(true)
-      }
-    }
-
-    const handleMetaDataRefreshed = (event: CustomEvent) => {
-      console.log("[PlatformCampaignWidget] Received Meta data refreshed event:", event.detail)
-      
-      if (event.detail?.brandId === selectedBrandId) {
-        console.log("[PlatformCampaignWidget] Refreshing campaigns after Meta data refresh")
-        fetchMetaCampaigns(true)
-      }
-    }
-
-    // Listen for the same events as home page widgets
-    window.addEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
-    window.addEventListener('refresh-all-widgets', handleGlobalRefresh as EventListener)
-    window.addEventListener('force-meta-refresh', handleForceMetaRefresh as EventListener)
-    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
-    
     return () => {
-      window.removeEventListener('global-refresh-all', handleGlobalRefresh as EventListener)
-      window.removeEventListener('refresh-all-widgets', handleGlobalRefresh as EventListener)
-      window.removeEventListener('force-meta-refresh', handleForceMetaRefresh as EventListener)
-      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
+      clearInterval(intervalId)
     }
-  }, [selectedBrandId, fetchMetaCampaigns])
-
-  // Listen for visibility changes to refresh data like home page widgets
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && selectedBrandId) {
-        console.log("[PlatformCampaignWidget] Page became visible - refreshing data")
-        fetchMetaCampaigns(true)
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [selectedBrandId, fetchMetaCampaigns])
+  }, [selectedBrandId])
 
   const togglePlatform = (platformKey: string) => {
     setExpandedPlatforms(prev => {
@@ -489,7 +437,7 @@ export default function PlatformCampaignWidget() {
                       : 'bg-gray-950/30 text-gray-400 border-gray-800/50'
                   }`}
                 >
-                  {platform.isActive ? 'Active' : 'Inactive'}
+                  {platform.isActive ? 'Connected' : 'Not Connected'}
                 </Badge>
               </div>
               
@@ -500,7 +448,7 @@ export default function PlatformCampaignWidget() {
                     size="sm"
                     onClick={() => fetchMetaCampaigns(true)}
                     disabled={platform.isLoading}
-                    className="text-gray-400 hover:text-white"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                   >
                     <RefreshCw className={`w-4 h-4 ${platform.isLoading ? 'animate-spin' : ''}`} />
                   </Button>
@@ -533,6 +481,12 @@ export default function PlatformCampaignWidget() {
                 <div className="text-center py-8 text-red-400">
                   <AlertCircle className="w-12 h-12 mx-auto mb-4" />
                   <p>{platform.error}</p>
+                  <Button 
+                    onClick={() => fetchMetaCampaigns(true)}
+                    className="mt-4 bg-gray-800/50 text-white hover:bg-gray-700/50"
+                  >
+                    Try Again
+                  </Button>
                 </div>
               ) : (
                 <>
