@@ -38,6 +38,13 @@ interface CampaignRecommendationModalProps {
       confidence: number
       implementation: string
       forecast: string
+      specific_actions?: {
+        adsets_to_scale?: string[]
+        adsets_to_optimize?: string[]
+        adsets_to_pause?: string[]
+        ads_to_pause?: string[]
+        ads_to_duplicate?: string[]
+      }
     }
   } | null
 }
@@ -211,6 +218,127 @@ export default function CampaignRecommendationModal({
               </div>
             </CardContent>
           </Card>
+
+          {/* Specific Actions for AdSets and Ads */}
+          {recommendation.specific_actions && (
+            <Card className="bg-[#111] border-[#333]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-white flex items-center gap-2">
+                  <Target className="w-5 h-5 text-blue-400" />
+                  Specific Actions Required
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* AdSet Actions */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-white border-b border-[#333] pb-2">
+                      AdSet Actions
+                    </h4>
+                    
+                    {recommendation.specific_actions.adsets_to_scale && recommendation.specific_actions.adsets_to_scale.length > 0 && (
+                      <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+                        <h5 className="text-sm font-medium text-green-400 mb-2 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Scale Budget ({recommendation.specific_actions.adsets_to_scale.length})
+                        </h5>
+                        <ul className="text-sm text-gray-300 space-y-1">
+                          {recommendation.specific_actions.adsets_to_scale.map((adset, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1 h-1 bg-green-400 rounded-full" />
+                              {adset}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {recommendation.specific_actions.adsets_to_optimize && recommendation.specific_actions.adsets_to_optimize.length > 0 && (
+                      <div className="bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+                        <h5 className="text-sm font-medium text-yellow-400 mb-2 flex items-center gap-2">
+                          <Target className="w-4 h-4" />
+                          Optimize Targeting ({recommendation.specific_actions.adsets_to_optimize.length})
+                        </h5>
+                        <ul className="text-sm text-gray-300 space-y-1">
+                          {recommendation.specific_actions.adsets_to_optimize.map((adset, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1 h-1 bg-yellow-400 rounded-full" />
+                              {adset}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {recommendation.specific_actions.adsets_to_pause && recommendation.specific_actions.adsets_to_pause.length > 0 && (
+                      <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                        <h5 className="text-sm font-medium text-red-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Pause AdSets ({recommendation.specific_actions.adsets_to_pause.length})
+                        </h5>
+                        <ul className="text-sm text-gray-300 space-y-1">
+                          {recommendation.specific_actions.adsets_to_pause.map((adset, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1 h-1 bg-red-400 rounded-full" />
+                              {adset}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ad Actions */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-white border-b border-[#333] pb-2">
+                      Ad Actions
+                    </h4>
+                    
+                    {recommendation.specific_actions.ads_to_duplicate && recommendation.specific_actions.ads_to_duplicate.length > 0 && (
+                      <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+                        <h5 className="text-sm font-medium text-blue-400 mb-2 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          Duplicate Top Performers ({recommendation.specific_actions.ads_to_duplicate.length})
+                        </h5>
+                        <ul className="text-sm text-gray-300 space-y-1">
+                          {recommendation.specific_actions.ads_to_duplicate.map((ad, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                              {ad}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {recommendation.specific_actions.ads_to_pause && recommendation.specific_actions.ads_to_pause.length > 0 && (
+                      <div className="bg-orange-500/10 p-3 rounded-lg border border-orange-500/20">
+                        <h5 className="text-sm font-medium text-orange-400 mb-2 flex items-center gap-2">
+                          <TrendingDown className="w-4 h-4" />
+                          Pause Underperforming ({recommendation.specific_actions.ads_to_pause.length})
+                        </h5>
+                        <ul className="text-sm text-gray-300 space-y-1">
+                          {recommendation.specific_actions.ads_to_pause.map((ad, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                              {ad}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(!recommendation.specific_actions.ads_to_duplicate || recommendation.specific_actions.ads_to_duplicate.length === 0) && 
+                     (!recommendation.specific_actions.ads_to_pause || recommendation.specific_actions.ads_to_pause.length === 0) && (
+                      <div className="bg-gray-500/10 p-3 rounded-lg border border-gray-500/20">
+                        <p className="text-sm text-gray-400">No specific ad actions recommended at this time.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Performance Forecast */}
           <Card className="bg-[#111] border-[#333]">

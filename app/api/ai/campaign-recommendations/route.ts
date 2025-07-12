@@ -59,14 +59,24 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching ads:', adsError)
     }
 
-    // Fetch 7-day historical data for trend analysis
+    // Fetch 7-day historical data for campaign, adsets, and ads
     const historicalData = await fetchCampaignHistoricalData(supabase, campaignId, brandId)
+    const adSetHistoricalData = await fetchAdSetHistoricalData(supabase, campaignId, brandId)
+    const adHistoricalData = await fetchAdHistoricalData(supabase, campaignId, brandId)
     
     // Calculate key metrics and benchmarks with historical context
     const metrics = calculateCampaignMetrics(campaignData, adSets || [], ads || [], historicalData)
     
-    // Generate AI recommendation with historical analysis
-    const recommendation = await generateAIRecommendation(campaign, metrics, adSets || [], ads || [], historicalData)
+    // Generate AI recommendation with comprehensive analysis
+    const recommendation = await generateAIRecommendation(
+      campaign, 
+      metrics, 
+      adSets || [], 
+      ads || [], 
+      historicalData,
+      adSetHistoricalData,
+      adHistoricalData
+    )
 
     return NextResponse.json({
       success: true,
@@ -135,6 +145,47 @@ interface HistoricalData {
   trends: {
     spendTrend: number // percentage change over 7 days
     performanceTrend: number // overall performance trend
+  }
+}
+
+interface AdSetPerformance {
+  adset_id: string
+  adset_name: string
+  status: string
+  budget: number
+  spent: number
+  impressions: number
+  clicks: number
+  ctr: number
+  cpc: number
+  conversions: number
+  roas: number
+  historical: {
+    trend: string
+    averageCtr: number
+    averageCpc: number
+    averageRoas: number
+    weekOverWeekChange: number
+  }
+}
+
+interface AdPerformance {
+  ad_id: string
+  ad_name: string
+  adset_id: string
+  status: string
+  impressions: number
+  clicks: number
+  ctr: number
+  cpc: number
+  conversions: number
+  roas: number
+  historical: {
+    trend: string
+    averageCtr: number
+    averageCpc: number
+    averageRoas: number
+    weekOverWeekChange: number
   }
 }
 
@@ -216,6 +267,175 @@ async function fetchCampaignHistoricalData(supabase: any, campaignId: string, br
       performanceTrend
     }
   }
+}
+
+async function fetchAdSetHistoricalData(supabase: any, campaignId: string, brandId: string): Promise<AdSetPerformance[]> {
+  const today = new Date()
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+  // Get current adset data
+  const { data: adSets } = await supabase
+    .from('meta_adsets')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .eq('brand_id', brandId)
+
+  if (!adSets || adSets.length === 0) {
+    return []
+  }
+
+  const adSetPerformances: AdSetPerformance[] = []
+
+  for (const adSet of adSets) {
+    // Fetch 7-day historical data for this adset
+    const { data: last7Days } = await supabase
+      .from('meta_adset_daily_stats')
+      .select('*')
+      .eq('adset_id', adSet.adset_id)
+      .eq('brand_id', brandId)
+      .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+      .lt('date', today.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+
+    // Fetch previous 7 days for comparison
+    const { data: previous7Days } = await supabase
+      .from('meta_adset_daily_stats')
+      .select('*')
+      .eq('adset_id', adSet.adset_id)
+      .eq('brand_id', brandId)
+      .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
+      .lt('date', sevenDaysAgo.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+
+    // Calculate averages and trends
+    const recentData = last7Days || []
+    const previousData = previous7Days || []
+
+    const averageCtr = recentData.length > 0 ? 
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.ctr) || 0), 0) / recentData.length : 0
+    const averageCpc = recentData.length > 0 ?
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.cpc) || 0), 0) / recentData.length : 0
+    const averageRoas = recentData.length > 0 ?
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.roas) || 0), 0) / recentData.length : 0
+
+    const previousAverageRoas = previousData.length > 0 ?
+      previousData.reduce((sum: number, day: any) => sum + (Number(day.roas) || 0), 0) / previousData.length : 0
+
+    const weekOverWeekChange = previousAverageRoas > 0 ? 
+      ((averageRoas - previousAverageRoas) / previousAverageRoas) * 100 : 0
+
+    let trend = 'stable'
+    if (weekOverWeekChange > 10) trend = 'improving'
+    else if (weekOverWeekChange < -10) trend = 'declining'
+
+    adSetPerformances.push({
+      adset_id: adSet.adset_id,
+      adset_name: adSet.adset_name,
+      status: adSet.status,
+      budget: Number(adSet.budget) || 0,
+      spent: Number(adSet.spent) || 0,
+      impressions: Number(adSet.impressions) || 0,
+      clicks: Number(adSet.clicks) || 0,
+      ctr: Number(adSet.ctr) || 0,
+      cpc: Number(adSet.cpc) || 0,
+      conversions: Number(adSet.conversions) || 0,
+      roas: Number(adSet.roas) || 0,
+      historical: {
+        trend,
+        averageCtr,
+        averageCpc,
+        averageRoas,
+        weekOverWeekChange
+      }
+    })
+  }
+
+  return adSetPerformances
+}
+
+async function fetchAdHistoricalData(supabase: any, campaignId: string, brandId: string): Promise<AdPerformance[]> {
+  const today = new Date()
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+  // Get current ad data
+  const { data: ads } = await supabase
+    .from('meta_ads')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .eq('brand_id', brandId)
+
+  if (!ads || ads.length === 0) {
+    return []
+  }
+
+  const adPerformances: AdPerformance[] = []
+
+  for (const ad of ads) {
+    // Fetch 7-day historical data for this ad
+    const { data: last7Days } = await supabase
+      .from('meta_ad_daily_stats')
+      .select('*')
+      .eq('ad_id', ad.ad_id)
+      .eq('brand_id', brandId)
+      .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+      .lt('date', today.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+
+    // Fetch previous 7 days for comparison
+    const { data: previous7Days } = await supabase
+      .from('meta_ad_daily_stats')
+      .select('*')
+      .eq('ad_id', ad.ad_id)
+      .eq('brand_id', brandId)
+      .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
+      .lt('date', sevenDaysAgo.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+
+    // Calculate averages and trends
+    const recentData = last7Days || []
+    const previousData = previous7Days || []
+
+    const averageCtr = recentData.length > 0 ? 
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.ctr) || 0), 0) / recentData.length : 0
+    const averageCpc = recentData.length > 0 ?
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.cpc) || 0), 0) / recentData.length : 0
+    const averageRoas = recentData.length > 0 ?
+      recentData.reduce((sum: number, day: any) => sum + (Number(day.roas) || 0), 0) / recentData.length : 0
+
+    const previousAverageRoas = previousData.length > 0 ?
+      previousData.reduce((sum: number, day: any) => sum + (Number(day.roas) || 0), 0) / previousData.length : 0
+
+    const weekOverWeekChange = previousAverageRoas > 0 ? 
+      ((averageRoas - previousAverageRoas) / previousAverageRoas) * 100 : 0
+
+    let trend = 'stable'
+    if (weekOverWeekChange > 15) trend = 'improving'
+    else if (weekOverWeekChange < -15) trend = 'declining'
+
+    adPerformances.push({
+      ad_id: ad.ad_id,
+      ad_name: ad.ad_name,
+      adset_id: ad.adset_id,
+      status: ad.status,
+      impressions: Number(ad.impressions) || 0,
+      clicks: Number(ad.clicks) || 0,
+      ctr: Number(ad.ctr) || 0,
+      cpc: Number(ad.cpc) || 0,
+      conversions: Number(ad.conversions) || 0,
+      roas: Number(ad.roas) || 0,
+      historical: {
+        trend,
+        averageCtr,
+        averageCpc,
+        averageRoas,
+        weekOverWeekChange
+      }
+    })
+  }
+
+  return adPerformances
 }
 
 function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], historicalData: HistoricalData): CampaignMetrics {
@@ -327,10 +547,38 @@ function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], hist
   }
 }
 
-async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData) {
-  const prompt = `
-You are an expert Meta advertising strategist. Analyze the following campaign data including 7-day historical trends and provide a specific, actionable recommendation.
+async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData, adSetHistoricalData: AdSetPerformance[], adHistoricalData: AdPerformance[]) {
+  // Format adset analysis
+  const adSetAnalysis = adSetHistoricalData.map(adSet => 
+    `AdSet: ${adSet.adset_name} (${adSet.status})
+    - Budget: $${adSet.budget}, Spent: $${adSet.spent} (${adSet.budget > 0 ? ((adSet.spent / adSet.budget) * 100).toFixed(1) : 0}% utilization)
+    - CTR: ${adSet.ctr?.toFixed(2) || 0}% (7-day avg: ${adSet.historical.averageCtr.toFixed(2)}%)
+    - CPC: $${adSet.cpc?.toFixed(2) || 0} (7-day avg: $${adSet.historical.averageCpc.toFixed(2)})
+    - ROAS: ${adSet.roas?.toFixed(2) || 0}x (7-day avg: ${adSet.historical.averageRoas.toFixed(2)}x)
+    - Trend: ${adSet.historical.trend} (${adSet.historical.weekOverWeekChange > 0 ? '+' : ''}${adSet.historical.weekOverWeekChange.toFixed(1)}% WoW)
+    - Impressions: ${adSet.impressions?.toLocaleString() || 0}, Clicks: ${adSet.clicks?.toLocaleString() || 0}, Conversions: ${adSet.conversions || 0}`
+  ).join('\n\n')
 
+  // Format ad analysis
+  const adAnalysis = adHistoricalData.map(ad => 
+    `Ad: ${ad.ad_name} (${ad.status}) - AdSet: ${ad.adset_id}
+    - CTR: ${ad.ctr?.toFixed(2) || 0}% (7-day avg: ${ad.historical.averageCtr.toFixed(2)}%)
+    - CPC: $${ad.cpc?.toFixed(2) || 0} (7-day avg: $${ad.historical.averageCpc.toFixed(2)})
+    - ROAS: ${ad.roas?.toFixed(2) || 0}x (7-day avg: ${ad.historical.averageRoas.toFixed(2)}x)
+    - Trend: ${ad.historical.trend} (${ad.historical.weekOverWeekChange > 0 ? '+' : ''}${ad.historical.weekOverWeekChange.toFixed(1)}% WoW)
+    - Impressions: ${ad.impressions?.toLocaleString() || 0}, Clicks: ${ad.clicks?.toLocaleString() || 0}, Conversions: ${ad.conversions || 0}`
+  ).join('\n\n')
+
+  // Identify top performing and underperforming assets
+  const topAdSets = adSetHistoricalData.filter(as => as.historical.trend === 'improving' && as.roas > 2.0)
+  const underperformingAdSets = adSetHistoricalData.filter(as => as.historical.trend === 'declining' || as.roas < 1.0)
+  const topAds = adHistoricalData.filter(ad => ad.historical.trend === 'improving' && ad.roas > 2.0)
+  const underperformingAds = adHistoricalData.filter(ad => ad.historical.trend === 'declining' || ad.roas < 1.0)
+
+  const prompt = `
+You are an expert Meta advertising strategist. Analyze the following campaign data including detailed adset and ad performance with 7-day historical trends. Provide a specific, actionable recommendation that considers granular performance at the adset and ad level.
+
+CAMPAIGN OVERVIEW:
 Campaign: ${campaign.campaign_name}
 Objective: ${campaign.objective}
 Status: ${campaign.status}
@@ -338,7 +586,7 @@ Budget: $${campaign.budget} (${campaign.budget_type})
 Spent: $${campaign.spent}
 Budget Utilization: ${metrics.budgetUtilization.toFixed(1)}%
 
-Performance Metrics (Current):
+CAMPAIGN PERFORMANCE METRICS (Current):
 - Impressions: ${campaign.impressions?.toLocaleString() || 0}
 - Clicks: ${campaign.clicks?.toLocaleString() || 0}
 - CTR: ${campaign.ctr?.toFixed(2) || 0}%
@@ -347,49 +595,58 @@ Performance Metrics (Current):
 - Conversion Rate: ${metrics.conversionRate.toFixed(2)}%
 - ROAS: ${campaign.roas?.toFixed(2) || 0}x
 
-7-Day Historical Analysis:
+7-DAY CAMPAIGN TRENDS:
 - Spend Trend: ${metrics.trends.spendTrend} (${historicalData.trends.spendTrend > 0 ? '+' : ''}${historicalData.trends.spendTrend.toFixed(1)}% vs previous week)
 - CTR Trend: ${metrics.trends.ctrTrend}
 - ROAS Trend: ${metrics.trends.roasTrend}
 - Performance Consistency: ${metrics.consistency.isStable ? 'Stable' : 'Volatile'} (${metrics.consistency.volatilityScore.toFixed(1)}% volatility)
 - Week-over-Week Performance Change: ${historicalData.trends.performanceTrend > 0 ? '+' : ''}${historicalData.trends.performanceTrend.toFixed(1)}%
 
-Historical Averages (Last 7 Days):
-- Avg Daily Spend: $${historicalData.averages.spend.toFixed(2)}
-- Avg CTR: ${historicalData.averages.ctr.toFixed(2)}%
-- Avg CPC: $${historicalData.averages.cpc.toFixed(2)}
-- Avg ROAS: ${historicalData.averages.roas.toFixed(2)}x
-- Data Points Available: ${historicalData.last7Days.length} days
+DETAILED ADSET ANALYSIS (${adSetHistoricalData.length} adsets):
+${adSetAnalysis}
 
-Performance Assessment:
+DETAILED AD ANALYSIS (${adHistoricalData.length} ads):
+${adAnalysis}
+
+PERFORMANCE HIGHLIGHTS:
+Top Performing AdSets (${topAdSets.length}): ${topAdSets.map(as => as.adset_name).join(', ') || 'None'}
+Underperforming AdSets (${underperformingAdSets.length}): ${underperformingAdSets.map(as => as.adset_name).join(', ') || 'None'}
+Top Performing Ads (${topAds.length}): ${topAds.map(ad => ad.ad_name).join(', ') || 'None'}
+Underperforming Ads (${underperformingAds.length}): ${underperformingAds.map(ad => ad.ad_name).join(', ') || 'None'}
+
+CAMPAIGN ASSESSMENT:
 - Grade: ${metrics.performanceGrade}
 - Cost Efficiency: ${metrics.costEfficiency}
 - Audience Reach: ${metrics.audienceReach}
+- Key Issues: ${metrics.keyIssues.join(', ') || 'None'}
+- Strengths: ${metrics.strengths.join(', ') || 'None'}
 
-Key Issues: ${metrics.keyIssues.join(', ') || 'None'}
-Strengths: ${metrics.strengths.join(', ') || 'None'}
+CRITICAL ANALYSIS REQUIREMENTS:
+1. Examine individual adset and ad performance trends, not just campaign-level metrics
+2. Identify which specific adsets/ads are driving campaign performance (positive or negative)
+3. Consider budget allocation across adsets and their relative performance
+4. Analyze creative fatigue at the ad level (declining trends in high-impression ads)
+5. Evaluate targeting effectiveness at the adset level
+6. Provide specific recommendations for individual adsets and ads, not just campaign-level actions
 
-Campaign Structure:
-- Ad Sets: ${adSets.length} ad sets
-- Ads: ${ads.length} ads
-
-IMPORTANT: Base your recommendation primarily on the 7-day trends and patterns, not just current snapshot data. Consider:
-1. Is the campaign trending up or down?
-2. Is performance consistent or volatile?
-3. Are recent changes showing positive or negative impact?
-4. Is there sufficient data to make a confident recommendation?
-
-Provide a recommendation in the following JSON format:
+Provide a comprehensive recommendation in the following JSON format:
 {
-  "action": "One of: increase budget, reduce budget, increase cpc, reduce cpc, optimize targeting, pause campaign, leave as is",
-  "reasoning": "Brief explanation based on 7-day trends and patterns",
-  "impact": "Expected outcome based on historical patterns",
-  "confidence": "Confidence level from 1-10 (lower if insufficient historical data)",
-  "implementation": "Step-by-step guide on how to implement this recommendation",
-  "forecast": "Predicted performance changes based on observed trends"
+  "action": "One of: increase budget, reduce budget, increase cpc, reduce cpc, optimize targeting, pause campaign, leave as is, restructure adsets, pause underperforming ads, scale top performers",
+  "reasoning": "Detailed explanation based on adset and ad analysis, including specific performance patterns observed",
+  "impact": "Expected outcome considering individual adset/ad performance changes",
+  "confidence": "Confidence level from 1-10 (based on data quality and performance patterns)",
+  "implementation": "Step-by-step guide including specific adset/ad actions (e.g., 'Pause AdSet X', 'Increase budget for AdSet Y by 50%', 'Test new creative for underperforming Ad Z')",
+  "forecast": "Predicted performance changes based on observed adset/ad trends and proposed changes",
+  "specific_actions": {
+    "adsets_to_scale": ["List of adset names to increase budget/bids"],
+    "adsets_to_optimize": ["List of adset names needing targeting/bid optimization"],
+    "adsets_to_pause": ["List of adset names to pause"],
+    "ads_to_pause": ["List of ad names to pause due to fatigue/poor performance"],
+    "ads_to_duplicate": ["List of top-performing ad names to duplicate and test"]
+  }
 }
 
-Focus on the most impactful single action that would improve campaign performance based on trend analysis.
+Focus on the most impactful actions that address specific adset and ad performance patterns, not just general campaign-level adjustments.
 `
 
   try {
