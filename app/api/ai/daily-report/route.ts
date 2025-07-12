@@ -1,369 +1,376 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import OpenAI from 'openai';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
+import { createClient } from '@/lib/supabase/server'
+import OpenAI from 'openai'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+})
 
-interface PlatformMetrics {
-  platform: string;
-  spend: number;
-  impressions: number;
-  clicks: number;
-  conversions: number;
-  ctr: number;
-  cpc: number;
-  roas: number;
-  activeCampaigns: number;
-  totalCampaigns: number;
-}
-
-interface DailyReport {
-  date: string;
-  overallStatus: 'healthy' | 'attention' | 'critical';
-  summary: string;
-  platforms: Array<{
-    platform: string;
-    status: 'healthy' | 'attention' | 'critical';
-    summary: string;
-    keyMetrics: {
-      spend: string;
-      performance: string;
-      trend: 'up' | 'down' | 'stable';
-    };
-  }>;
-  actionItems: Array<{
-    platform: string;
-    priority: 'high' | 'medium' | 'low';
-    action: string;
-    reason: string;
-  }>;
-  keyInsights: string[];
-}
-
-async function fetchPlatformData(supabase: any): Promise<PlatformMetrics[]> {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  const todayStr = today.toISOString().split('T')[0];
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
+export async function POST(request: NextRequest) {
   try {
-    // Fetch Meta data
-    const { data: metaData, error: metaError } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select('*')
-      .gte('date', yesterdayStr)
-      .lte('date', todayStr);
-
-    if (metaError) {
-      console.error('Error fetching Meta data:', metaError);
+    const { userId } = auth()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Fetch campaign counts
-    const { data: metaCampaigns, error: metaCampaignError } = await supabase
-      .from('meta_campaigns')
-      .select('campaign_id, status');
-
-    if (metaCampaignError) {
-      console.error('Error fetching Meta campaigns:', metaCampaignError);
+    const { brandId } = await request.json()
+    
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Process Meta data
-    const metaMetrics: PlatformMetrics = {
-      platform: 'Meta',
-      spend: metaData?.reduce((sum: number, row: any) => sum + (parseFloat(row.spend) || 0), 0) || 0,
-      impressions: metaData?.reduce((sum: number, row: any) => sum + (parseInt(row.impressions) || 0), 0) || 0,
-      clicks: metaData?.reduce((sum: number, row: any) => sum + (parseInt(row.clicks) || 0), 0) || 0,
-      conversions: metaData?.reduce((sum: number, row: any) => sum + (parseInt(row.conversions) || 0), 0) || 0,
-      ctr: 0,
-      cpc: 0,
-      roas: 0,
-      activeCampaigns: metaCampaigns?.filter((c: any) => c.status === 'ACTIVE').length || 0,
-      totalCampaigns: metaCampaigns?.length || 0,
-    };
+    // Initialize Supabase client
+    const supabase = createClient()
 
-    // Calculate derived metrics
-    if (metaMetrics.impressions > 0) {
-      metaMetrics.ctr = (metaMetrics.clicks / metaMetrics.impressions) * 100;
-    }
-    if (metaMetrics.clicks > 0) {
-      metaMetrics.cpc = metaMetrics.spend / metaMetrics.clicks;
-    }
-    if (metaMetrics.spend > 0) {
-      metaMetrics.roas = metaMetrics.conversions / metaMetrics.spend;
-    }
+    // Gather data from all platforms
+    const platformData = await gatherPlatformData(supabase, brandId)
+    
+    // Generate AI analysis
+    const report = await generateDailyReport(platformData)
 
-    // Placeholder for other platforms
-    const tiktokMetrics: PlatformMetrics = {
-      platform: 'TikTok',
-      spend: 0,
-      impressions: 0,
-      clicks: 0,
-      conversions: 0,
-      ctr: 0,
-      cpc: 0,
-      roas: 0,
-      activeCampaigns: 0,
-      totalCampaigns: 0,
-    };
+    return NextResponse.json({
+      success: true,
+      report,
+      timestamp: new Date().toISOString()
+    })
 
-    const googleAdsMetrics: PlatformMetrics = {
-      platform: 'Google Ads',
-      spend: 0,
-      impressions: 0,
-      clicks: 0,
-      conversions: 0,
-      ctr: 0,
-      cpc: 0,
-      roas: 0,
-      activeCampaigns: 0,
-      totalCampaigns: 0,
-    };
-
-    return [metaMetrics, tiktokMetrics, googleAdsMetrics];
   } catch (error) {
-    console.error('Error fetching platform data:', error);
-    return [];
+    console.error('Error generating daily report:', error)
+    return NextResponse.json({ 
+      error: 'Failed to generate daily report',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-function generateRuleBasedReport(platformData: PlatformMetrics[]): DailyReport {
-  const today = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-
-  const metaData = platformData.find(p => p.platform === 'Meta');
-  const tiktokData = platformData.find(p => p.platform === 'TikTok');
-  const googleAdsData = platformData.find(p => p.platform === 'Google Ads');
-
-  const platforms = [];
-  const actionItems = [];
-  const keyInsights = [];
-
-  // Analyze Meta platform
-  if (metaData) {
-    let metaStatus: 'healthy' | 'attention' | 'critical' = 'healthy';
-    let metaSummary = '';
-    let metaTrend: 'up' | 'down' | 'stable' = 'stable';
-
-    if (metaData.spend === 0) {
-      metaStatus = 'critical';
-      metaSummary = 'No spend detected today. Campaigns may be paused or budgets exhausted.';
-      metaTrend = 'down';
-      actionItems.push({
-        platform: 'Meta',
-        priority: 'high' as const,
-        action: 'Check campaign status and budgets',
-        reason: 'Zero spend detected - campaigns may be paused or out of budget'
-      });
-    } else if (metaData.ctr < 1.0) {
-      metaStatus = 'attention';
-      metaSummary = `Low CTR (${metaData.ctr.toFixed(2)}%) indicates ads may need optimization.`;
-      actionItems.push({
-        platform: 'Meta',
-        priority: 'medium' as const,
-        action: 'Optimize ad creative and targeting',
-        reason: 'CTR below 1% suggests poor ad relevance'
-      });
-    } else if (metaData.cpc > 2.0) {
-      metaStatus = 'attention';
-      metaSummary = `High CPC ($${metaData.cpc.toFixed(2)}) may impact campaign efficiency.`;
-      actionItems.push({
-        platform: 'Meta',
-        priority: 'medium' as const,
-        action: 'Review bid strategy and audience targeting',
-        reason: 'CPC above $2 may indicate inefficient targeting'
-      });
-    } else {
-      metaSummary = `Campaigns performing well with ${metaData.activeCampaigns} active campaigns.`;
-      metaTrend = 'up';
+interface PlatformAnalysis {
+  meta: {
+    isConnected: boolean
+    totalSpend: number
+    totalROAS: number
+    campaignCount: number
+    activeCampaigns: number
+    issues: string[]
+    trends: {
+      spendTrend: number
+      roasTrend: number
     }
+    topCampaigns: any[]
+  }
+  tiktok: {
+    isConnected: boolean
+    status: string
+  }
+  googleAds: {
+    isConnected: boolean
+    status: string
+  }
+}
 
-    platforms.push({
-      platform: 'Meta',
-      status: metaStatus,
-      summary: metaSummary,
-      keyMetrics: {
-        spend: `$${metaData.spend.toFixed(2)}`,
-        performance: `${metaData.ctr.toFixed(2)}% CTR`,
-        trend: metaTrend
+async function gatherPlatformData(supabase: any, brandId: string): Promise<PlatformAnalysis> {
+  const today = new Date()
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+  // Check platform connections
+  const { data: connections } = await supabase
+    .from('platform_connections')
+    .select('platform_type, status')
+    .eq('brand_id', brandId)
+
+  const connectedPlatforms = connections?.reduce((acc: any, conn: any) => {
+    acc[conn.platform_type] = conn.status === 'active'
+    return acc
+  }, {}) || {}
+
+  // Analyze Meta data if connected
+  let metaAnalysis = {
+    isConnected: !!connectedPlatforms.meta,
+    totalSpend: 0,
+    totalROAS: 0,
+    campaignCount: 0,
+    activeCampaigns: 0,
+    issues: [] as string[],
+    trends: { spendTrend: 0, roasTrend: 0 },
+    topCampaigns: []
+  }
+
+  if (connectedPlatforms.meta) {
+    // Get campaign data
+    const { data: campaigns } = await supabase
+      .from('meta_campaigns')
+      .select('*')
+      .eq('brand_id', brandId)
+
+    if (campaigns) {
+      metaAnalysis.campaignCount = campaigns.length
+      metaAnalysis.activeCampaigns = campaigns.filter((c: any) => c.status === 'ACTIVE').length
+      metaAnalysis.totalSpend = campaigns.reduce((sum: number, c: any) => sum + (c.spent || 0), 0)
+      metaAnalysis.totalROAS = campaigns.length > 0 
+        ? campaigns.reduce((sum: number, c: any) => sum + (c.roas || 0), 0) / campaigns.length
+        : 0
+
+      // Get historical trends
+      const { data: last7Days } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select('*')
+        .eq('brand_id', brandId)
+        .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+        .lt('date', today.toISOString().split('T')[0])
+
+      const { data: previous7Days } = await supabase
+        .from('meta_campaign_daily_stats')
+        .select('*')
+        .eq('brand_id', brandId)
+        .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
+        .lt('date', sevenDaysAgo.toISOString().split('T')[0])
+
+      if (last7Days && previous7Days) {
+        const lastWeekSpend = last7Days.reduce((sum: number, day: any) => sum + (day.spend || 0), 0)
+        const prevWeekSpend = previous7Days.reduce((sum: number, day: any) => sum + (day.spend || 0), 0)
+        metaAnalysis.trends.spendTrend = prevWeekSpend > 0 ? ((lastWeekSpend - prevWeekSpend) / prevWeekSpend) * 100 : 0
+
+        const lastWeekROAS = last7Days.length > 0 
+          ? last7Days.reduce((sum: number, day: any) => sum + (day.roas || 0), 0) / last7Days.length
+          : 0
+        const prevWeekROAS = previous7Days.length > 0 
+          ? previous7Days.reduce((sum: number, day: any) => sum + (day.roas || 0), 0) / previous7Days.length
+          : 0
+        metaAnalysis.trends.roasTrend = prevWeekROAS > 0 ? ((lastWeekROAS - prevWeekROAS) / prevWeekROAS) * 100 : 0
       }
-    });
 
-    if (metaData.spend > 0) {
-      keyInsights.push(`Meta accounts for $${metaData.spend.toFixed(2)} in daily spend with ${metaData.conversions} conversions`);
+      // Identify issues
+      const poorPerformingCampaigns = campaigns.filter((c: any) => c.roas < 2.0 && c.spent > 100)
+      const highCostCampaigns = campaigns.filter((c: any) => c.cpc > 3.0)
+      const lowCTRCampaigns = campaigns.filter((c: any) => c.ctr < 1.0)
+
+      if (poorPerformingCampaigns.length > 0) {
+        metaAnalysis.issues.push(`${poorPerformingCampaigns.length} campaigns with ROAS below 2.0`)
+      }
+      if (highCostCampaigns.length > 0) {
+        metaAnalysis.issues.push(`${highCostCampaigns.length} campaigns with CPC above $3.00`)
+      }
+      if (lowCTRCampaigns.length > 0) {
+        metaAnalysis.issues.push(`${lowCTRCampaigns.length} campaigns with CTR below 1.0%`)
+      }
+
+      // Top performing campaigns
+      metaAnalysis.topCampaigns = campaigns
+        .filter((c: any) => c.roas > 0)
+        .sort((a: any, b: any) => b.roas - a.roas)
+        .slice(0, 3)
     }
-  }
-
-  // TikTok platform (placeholder)
-  platforms.push({
-    platform: 'TikTok',
-    status: 'healthy' as const,
-    summary: 'No campaigns currently active. Consider expanding to this platform.',
-    keyMetrics: {
-      spend: '$0.00',
-      performance: 'Not active',
-      trend: 'stable' as const
-    }
-  });
-
-  // Google Ads platform (placeholder)
-  platforms.push({
-    platform: 'Google Ads',
-    status: 'healthy' as const,
-    summary: 'No campaigns currently active. Consider expanding to this platform.',
-    keyMetrics: {
-      spend: '$0.00',
-      performance: 'Not active',
-      trend: 'stable' as const
-    }
-  });
-
-  // Overall status
-  const criticalCount = platforms.filter(p => p.status === 'critical').length;
-  const attentionCount = platforms.filter(p => p.status === 'attention').length;
-  
-  let overallStatus: 'healthy' | 'attention' | 'critical' = 'healthy';
-  let summary = '';
-
-  if (criticalCount > 0) {
-    overallStatus = 'critical';
-    summary = `${criticalCount} platform(s) need immediate attention. Review campaign statuses and budget allocations.`;
-  } else if (attentionCount > 0) {
-    overallStatus = 'attention';
-    summary = `${attentionCount} platform(s) need optimization. Performance can be improved with targeted adjustments.`;
-  } else {
-    summary = 'All platforms are performing within expected parameters. Continue monitoring for optimization opportunities.';
-  }
-
-  // Add general insights
-  const totalSpend = platformData.reduce((sum, p) => sum + p.spend, 0);
-  const totalConversions = platformData.reduce((sum, p) => sum + p.conversions, 0);
-  
-  if (totalSpend > 0) {
-    keyInsights.push(`Total daily spend: $${totalSpend.toFixed(2)} across all platforms`);
-  }
-  if (totalConversions > 0) {
-    keyInsights.push(`${totalConversions} total conversions with an average cost per conversion of $${(totalSpend / totalConversions).toFixed(2)}`);
-  }
-
-  if (actionItems.length === 0) {
-    actionItems.push({
-      platform: 'General',
-      priority: 'low' as const,
-      action: 'Monitor performance trends',
-      reason: 'All platforms stable - continue regular monitoring'
-    });
   }
 
   return {
-    date: today,
-    overallStatus,
-    summary,
-    platforms,
-    actionItems,
-    keyInsights: keyInsights.length > 0 ? keyInsights : ['No significant insights for today - continue monitoring performance']
-  };
-}
-
-async function generateAIReport(platformData: PlatformMetrics[]): Promise<DailyReport> {
-  try {
-    const prompt = `
-You are a marketing performance analyst. Based on the following platform data, generate a comprehensive daily report.
-
-Platform Data:
-${JSON.stringify(platformData, null, 2)}
-
-Please provide a JSON response with the following structure:
-{
-  "date": "Today's date in readable format",
-  "overallStatus": "healthy|attention|critical",
-  "summary": "Brief executive summary of overall performance",
-  "platforms": [
-    {
-      "platform": "Platform name",
-      "status": "healthy|attention|critical",
-      "summary": "Platform-specific summary",
-      "keyMetrics": {
-        "spend": "Formatted spend amount",
-        "performance": "Key performance indicator",
-        "trend": "up|down|stable"
-      }
+    meta: metaAnalysis,
+    tiktok: {
+      isConnected: !!connectedPlatforms.tiktok,
+      status: connectedPlatforms.tiktok ? 'active' : 'not_connected'
+    },
+    googleAds: {
+      isConnected: !!connectedPlatforms.google_ads,
+      status: connectedPlatforms.google_ads ? 'active' : 'not_connected'
     }
-  ],
-  "actionItems": [
-    {
-      "platform": "Platform name",
-      "priority": "high|medium|low",
-      "action": "Specific action to take",
-      "reason": "Why this action is needed"
-    }
-  ],
-  "keyInsights": ["List of key insights and observations"]
-}
-
-Guidelines:
-- healthy: CTR > 1%, CPC < $2, ROAS > 1, no major issues
-- attention: CTR 0.5-1%, CPC $2-3, ROAS 0.5-1, minor optimization needed
-- critical: CTR < 0.5%, CPC > $3, ROAS < 0.5, or zero spend
-- Focus on actionable insights
-- Be specific about numbers and metrics
-- Prioritize issues that need immediate attention
-`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a marketing performance analyst. Provide clear, actionable insights based on campaign data. Always respond with valid JSON."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
-
-    const aiResponse = response.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new Error('No response from AI');
-    }
-
-    // Parse AI response
-    const report = JSON.parse(aiResponse);
-    return report;
-  } catch (error) {
-    console.error('Error generating AI report:', error);
-    // Fallback to rule-based report
-    return generateRuleBasedReport(platformData);
   }
 }
 
-export async function GET(request: NextRequest) {
+async function generateDailyReport(platformData: PlatformAnalysis) {
+  const { meta, tiktok, googleAds } = platformData
+
+  // Determine overall health
+  let overallHealth: 'excellent' | 'good' | 'fair' | 'poor' = 'poor'
+  
+  if (meta.isConnected) {
+    if (meta.totalROAS >= 4.0 && meta.issues.length === 0) {
+      overallHealth = 'excellent'
+    } else if (meta.totalROAS >= 3.0 && meta.issues.length <= 1) {
+      overallHealth = 'good'
+    } else if (meta.totalROAS >= 2.0 && meta.issues.length <= 2) {
+      overallHealth = 'fair'
+    }
+  }
+
+  // Generate AI summary
+  const aiSummary = await generateAISummary(platformData)
+  
+  // Platform statuses
+  const platformStatuses = [
+    {
+      platform: 'Meta',
+      logo: 'https://i.imgur.com/6hyyRrs.png',
+      status: meta.isConnected 
+        ? (meta.issues.length === 0 ? 'healthy' : meta.issues.length <= 2 ? 'attention' : 'critical')
+        : 'inactive' as const,
+      summary: meta.isConnected 
+        ? `${meta.activeCampaigns} active campaigns, $${meta.totalSpend.toFixed(0)} spent, ${meta.totalROAS.toFixed(1)}x ROAS${meta.trends.roasTrend > 0 ? ' (trending up)' : meta.trends.roasTrend < -5 ? ' (trending down)' : ''}`
+        : 'Platform not connected. Connect to start tracking performance.',
+      keyMetrics: {
+        spend: meta.totalSpend,
+        performance: meta.trends.roasTrend,
+        issues: meta.issues.length
+      },
+      recommendations: meta.isConnected ? generateMetaRecommendations(meta) : ['Connect Meta account to get started'],
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      platform: 'TikTok',
+      logo: 'https://i.imgur.com/AXHa9UT.png',
+      status: 'inactive' as const,
+      summary: 'Platform not connected. TikTok integration coming soon.',
+      keyMetrics: { spend: 0, performance: 0, issues: 0 },
+      recommendations: ['Stay tuned for TikTok Ads integration'],
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      platform: 'Google Ads',
+      logo: 'https://i.imgur.com/TavV4UJ.png',
+      status: 'inactive' as const,
+      summary: 'Platform not connected. Google Ads integration coming soon.',
+      keyMetrics: { spend: 0, performance: 0, issues: 0 },
+      recommendations: ['Stay tuned for Google Ads integration'],
+      lastUpdated: new Date().toISOString()
+    }
+  ]
+
+  // Generate priorities and highlights
+  const topPriorities = generateTopPriorities(meta)
+  const successHighlights = generateSuccessHighlights(meta)
+
+  return {
+    overallHealth,
+    summary: aiSummary,
+    totalSpend: meta.totalSpend,
+    totalROAS: meta.totalROAS,
+    platformStatuses,
+    topPriorities,
+    successHighlights,
+    generatedAt: new Date().toISOString()
+  }
+}
+
+function generateMetaRecommendations(meta: any): string[] {
+  const recommendations = []
+  
+  if (meta.trends.roasTrend < -10) {
+    recommendations.push('Review declining campaigns and pause poor performers')
+  }
+  if (meta.issues.length > 0) {
+    recommendations.push('Address campaigns with performance issues')
+  }
+  if (meta.totalROAS > 4.0 && meta.trends.spendTrend < 0) {
+    recommendations.push('Consider increasing budgets on high-performing campaigns')
+  }
+  if (meta.activeCampaigns < meta.campaignCount * 0.5) {
+    recommendations.push('Reactivate paused campaigns with optimization')
+  }
+  
+  return recommendations.slice(0, 3)
+}
+
+function generateTopPriorities(meta: any): string[] {
+  const priorities = []
+  
+  if (!meta.isConnected) {
+    priorities.push('Connect Meta advertising account to begin tracking')
+    return priorities
+  }
+  
+  if (meta.trends.roasTrend < -15) {
+    priorities.push('Urgent: ROAS declining significantly - review campaign settings immediately')
+  }
+  if (meta.issues.includes('campaigns with ROAS below 2.0')) {
+    priorities.push('Optimize or pause underperforming campaigns to reduce budget waste')
+  }
+  if (meta.issues.includes('campaigns with CPC above $3.00')) {
+    priorities.push('Review bidding strategies for high-cost campaigns')
+  }
+  if (meta.activeCampaigns === 0) {
+    priorities.push('No active campaigns - activate campaigns to start advertising')
+  }
+  
+  return priorities.slice(0, 3)
+}
+
+function generateSuccessHighlights(meta: any): string[] {
+  const highlights: string[] = []
+  
+  if (!meta.isConnected) return highlights
+  
+  if (meta.totalROAS >= 4.0) {
+    highlights.push(`Excellent overall ROAS of ${meta.totalROAS.toFixed(1)}x across all campaigns`)
+  }
+  if (meta.trends.roasTrend > 10) {
+    highlights.push(`ROAS trending up ${meta.trends.roasTrend.toFixed(1)}% week-over-week`)
+  }
+  if (meta.topCampaigns.length > 0 && meta.topCampaigns[0].roas > 5.0) {
+    highlights.push(`Top campaign "${meta.topCampaigns[0].campaign_name}" achieving ${meta.topCampaigns[0].roas.toFixed(1)}x ROAS`)
+  }
+  if (meta.issues.length === 0 && meta.activeCampaigns > 0) {
+    highlights.push('All active campaigns performing within healthy parameters')
+  }
+  
+  return highlights.slice(0, 3)
+}
+
+async function generateAISummary(platformData: PlatformAnalysis): Promise<string> {
+  const { meta } = platformData
+  
+  if (!meta.isConnected) {
+    return "No advertising platforms connected. Connect Meta to start receiving AI-powered insights and recommendations for your campaigns."
+  }
+
+  const prompt = `
+Summarize the advertising performance in 1-2 sentences based on this data:
+
+Meta Advertising:
+- Total Spend: $${meta.totalSpend.toFixed(2)}
+- Average ROAS: ${meta.totalROAS.toFixed(2)}x
+- Active Campaigns: ${meta.activeCampaigns} of ${meta.campaignCount}
+- ROAS Trend: ${meta.trends.roasTrend > 0 ? '+' : ''}${meta.trends.roasTrend.toFixed(1)}%
+- Spend Trend: ${meta.trends.spendTrend > 0 ? '+' : ''}${meta.trends.spendTrend.toFixed(1)}%
+- Issues: ${meta.issues.join(', ') || 'None'}
+
+Provide a brief, actionable summary focusing on the most important insights.
+`
+
   try {
-    const supabase = createClient();
-    
-    // Fetch platform data
-    const platformData = await fetchPlatformData(supabase);
-    
-    // Generate AI report (with fallback to rule-based)
-    const report = await generateAIReport(platformData);
-    
-    return NextResponse.json(report);
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a marketing performance analyst. Provide clear, concise summaries focused on actionable insights.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 150,
+      temperature: 0.3
+    })
+
+    return response.choices[0].message.content || generateFallbackSummary(meta)
+
   } catch (error) {
-    console.error('Error in daily report API:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate daily report' },
-      { status: 500 }
-    );
+    console.error('Error generating AI summary:', error)
+    return generateFallbackSummary(meta)
+  }
+}
+
+function generateFallbackSummary(meta: any): string {
+  if (!meta.isConnected) {
+    return "No advertising platforms connected. Connect Meta to start receiving insights."
+  }
+  
+  if (meta.totalROAS >= 4.0) {
+    return `Strong performance with ${meta.totalROAS.toFixed(1)}x ROAS across ${meta.activeCampaigns} active campaigns. ${meta.issues.length > 0 ? 'Some optimization opportunities identified.' : 'All campaigns performing well.'}`
+  } else if (meta.totalROAS >= 2.0) {
+    return `Moderate performance with ${meta.totalROAS.toFixed(1)}x ROAS. ${meta.issues.length} areas need attention for improved efficiency.`
+  } else {
+    return `Performance below target with ${meta.totalROAS.toFixed(1)}x ROAS. Immediate optimization needed to improve campaign efficiency.`
   }
 } 

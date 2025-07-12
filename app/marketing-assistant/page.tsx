@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
 import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
-import DailyAIReportWidget from "@/components/marketing-assistant/DailyAIReportWidget"
+import AIDailyReport from "@/components/campaign-management/AIDailyReport"
 
 // Extend Window interface for global state management
 declare global {
@@ -1128,7 +1128,7 @@ export default function MarketingAssistantPage() {
 
             {/* Right Widget - 1/3 Width */}
             <div className="flex-1 p-8 bg-[#111] border border-[#333] rounded-lg" style={{ flexBasis: '33.333%' }}>
-              <DailyAIReportWidget />
+              <AIDailyReport />
             </div>
           </div>
         </>
