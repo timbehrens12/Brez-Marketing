@@ -147,31 +147,45 @@ export default function PlatformCampaignWidget() {
     return Math.max(0, diffDays)
   }
 
-  // Function to check campaign statuses - simple version like dashboard
-  const checkCampaignStatuses = useCallback(async (campaignsToCheck: Campaign[]) => {
+  // Function to check campaign statuses - robust version like dashboard
+  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
     if (!selectedBrandId || campaignsToCheck.length === 0) return
-
-    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns`)
-
+    
+    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`)
+    
     // Filter out campaigns with invalid campaign_id values
     const validCampaigns = campaignsToCheck.filter(campaign => 
       campaign && campaign.campaign_id && typeof campaign.campaign_id === 'string' && campaign.campaign_id.trim() !== ''
     )
-
+    
     if (validCampaigns.length === 0) {
       console.log('[CampaignWidget] No valid campaigns to check statuses for')
       return
     }
-
-    // Check a few campaigns at a time to avoid rate limits
-    const campaignsToProcess = validCampaigns.slice(0, 3)
+    
+    // Process more campaigns when forceRefresh is true, but limit to avoid rate limits
+    const batchSize = forceRefresh ? Math.min(5, validCampaigns.length) : Math.min(2, validCampaigns.length)
+    const campaignsToProcess = validCampaigns.slice(0, batchSize)
+    
+    console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`)
     
     let updatedCount = 0
+    let pendingRequests = campaignsToProcess.length
     
-    // Check each campaign's status
-    for (const campaign of campaignsToProcess) {
-      try {
-        const response = await fetch(`/api/meta/campaign-status-check`, {
+    // Check each campaign's status with a slight delay between requests
+    campaignsToProcess.forEach((campaign, index) => {
+      // Add a small delay between requests to avoid rate limiting
+      setTimeout(() => {
+        // Extra validation before API call
+        if (!campaign || !campaign.campaign_id) {
+          console.log('[CampaignWidget] Invalid campaign object or missing campaign_id')
+          pendingRequests--
+          return
+        }
+        
+        console.log(`[CampaignWidget] Checking status for campaign: ${campaign.campaign_id}`)
+        
+        fetch(`/api/meta/campaign-status-check`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -179,65 +193,94 @@ export default function PlatformCampaignWidget() {
           body: JSON.stringify({
             brandId: selectedBrandId,
             campaignId: campaign.campaign_id,
-            forceRefresh: true
+            forceRefresh: forceRefresh
           })
         })
-        
-        if (response.ok) {
-          const statusData = await response.json()
+        .then(response => {
+          if (response.ok) {
+            return response.json()
+          }
           
-          if (statusData.success && statusData.status && statusData.status.toUpperCase() !== campaign.status.toUpperCase()) {
-            console.log(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`)
-            updatedCount++
+          // Check for different types of errors
+          if (response.status === 400) {
+            // Bad request - likely invalid parameters
+            console.log(`[CampaignWidget] Bad request when checking campaign ${campaign.campaign_id} status`)
+            return { error: 'Invalid campaign parameters', status: campaign.status }
+          } else if (response.status === 429) {
+            // Rate limiting
+            console.log(`[CampaignWidget] Rate limited when checking campaign ${campaign.campaign_id} status`)
+            return { error: 'Rate limited', status: campaign.status }
+          } else if (response.status === 404) {
+            // Campaign not found
+            console.log(`[CampaignWidget] Campaign ${campaign.campaign_id} not found in Meta`)
+            return { error: 'Campaign not found', status: campaign.status }
+          }
+          
+          // For other errors, return a generic error with the current status
+          console.log(`[CampaignWidget] Error ${response.status} when checking campaign ${campaign.campaign_id} status`)
+          return { error: `API error (${response.status})`, status: campaign.status }
+        })
+        .then(statusData => {
+          pendingRequests--
+          
+          // Skip update if we have an error
+          if (statusData.error) {
+            return
+          }
+          
+          if (statusData.status) {
+            // Always update local state when force refreshing, otherwise only update if status changed
+            const shouldUpdate = forceRefresh || statusData.status.toUpperCase() !== campaign.status.toUpperCase()
             
-            // Update the local campaigns state immediately
-            setLocalCampaigns(currentCampaigns => 
-              currentCampaigns.map(c => 
-                c.campaign_id === campaign.campaign_id 
-                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                  : c
-              )
-            )
-            
-            // Also update the platforms state
-            setPlatforms(prev => ({
-              ...prev,
-              meta: {
-                ...prev.meta,
-                campaigns: prev.meta.campaigns.map(c => 
+            if (shouldUpdate) {
+              console.log(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`)
+              updatedCount++
+              
+              // Update the local campaigns state
+              setLocalCampaigns(currentCampaigns => 
+                currentCampaigns.map(c => 
                   c.campaign_id === campaign.campaign_id 
                     ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
                     : c
                 )
-              }
-            }))
+              )
+              
+              // Also update the platforms state
+              setPlatforms(prev => ({
+                ...prev,
+                meta: {
+                  ...prev.meta,
+                  campaigns: prev.meta.campaigns.map(c => 
+                    c.campaign_id === campaign.campaign_id 
+                      ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                      : c
+                  )
+                }
+              }))
+            }
           }
-        } else {
-          // Handle different error types
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-          console.log(`[CampaignWidget] API error for campaign ${campaign.campaign_id}:`, response.status, errorData.error)
           
-          if (response.status === 429) {
-            console.log('[CampaignWidget] Rate limit reached, skipping remaining checks')
-            break // Stop checking other campaigns if we hit rate limit
+          // If this is the last request and any statuses were updated, show success
+          if (pendingRequests === 0 && updatedCount > 0) {
+            console.log(`[CampaignWidget] ${updatedCount} campaign statuses were updated.`)
+            toast.success(`Updated ${updatedCount} campaign status${updatedCount > 1 ? 'es' : ''}`)
           }
-        }
-      } catch (error) {
-        console.log(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error)
-      }
-      
-      // Small delay between requests to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-    
-    if (updatedCount > 0) {
-      console.log(`[CampaignWidget] ${updatedCount} campaign statuses were updated.`)
-      toast.success(`Updated ${updatedCount} campaign status${updatedCount > 1 ? 'es' : ''}`)
-    }
+        })
+        .catch(error => {
+          pendingRequests--
+          console.log(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error)
+          
+          // If this is the last request and any statuses were updated, show success
+          if (pendingRequests === 0 && updatedCount > 0) {
+            toast.success(`Updated ${updatedCount} campaign status${updatedCount > 1 ? 'es' : ''}`)
+          }
+        })
+      }, index * (forceRefresh ? 500 : 2000)) // Increase delay between requests to reduce rate limiting
+    })
   }, [selectedBrandId])
 
   // Fetch Meta campaigns with status checking
-  const fetchMetaCampaigns = async (forceRefresh = false, checkStatuses = true) => {
+  const fetchMetaCampaigns = useCallback(async (forceRefresh = false, checkStatuses = true) => {
     if (!selectedBrandId) return
 
     // Prevent too frequent refreshes (unless forced)
@@ -315,7 +358,7 @@ export default function PlatformCampaignWidget() {
       // Check campaign statuses after fetching (like dashboard does)
       if (checkStatuses && campaignsWithRecommendations.length > 0) {
         console.log('[CampaignWidget] Checking statuses after fetch...')
-        await checkCampaignStatuses(campaignsWithRecommendations)
+        checkCampaignStatuses(campaignsWithRecommendations, true)
       }
 
     } catch (error) {
@@ -330,7 +373,7 @@ export default function PlatformCampaignWidget() {
       }))
       toast.error('Failed to load Meta campaigns')
     }
-  }
+  }, [selectedBrandId, checkCampaignStatuses])
 
   // Sync local campaigns with platform campaigns
   useEffect(() => {
@@ -345,7 +388,7 @@ export default function PlatformCampaignWidget() {
       console.log('[CampaignWidget] Brand changed, fetching campaigns...', selectedBrandId)
       fetchMetaCampaigns(true, true) // Force refresh with status check on brand change
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, fetchMetaCampaigns])
 
   const togglePlatform = (platformKey: string) => {
     setExpandedPlatforms(prev => {
