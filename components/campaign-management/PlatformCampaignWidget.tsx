@@ -338,21 +338,6 @@ export default function PlatformCampaignWidget() {
     }
   }, [selectedBrandId])
 
-  // Auto-refresh effect - matches home page widget pattern
-  useEffect(() => {
-    if (!selectedBrandId) return
-
-    // Set up auto-refresh interval
-    const intervalId = setInterval(() => {
-      console.log('[CampaignWidget] Auto-refreshing campaigns...')
-      fetchMetaCampaigns(false, false) // Don't force, don't check statuses on auto-refresh
-    }, 300000) // 5 minutes
-
-    return () => {
-      clearInterval(intervalId)
-    }
-  }, [selectedBrandId])
-
   const togglePlatform = (platformKey: string) => {
     setExpandedPlatforms(prev => {
       const newSet = new Set(prev)
