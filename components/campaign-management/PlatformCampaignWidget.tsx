@@ -200,7 +200,8 @@ export default function PlatformCampaignWidget() {
           body: JSON.stringify({
             brandId: selectedBrandId,
             campaignId: campaign.campaign_id,
-            forceRefresh: forceRefresh
+            forceRefresh: forceRefresh,
+            isManualCheck: forceRefresh // Manual checks are when forceRefresh is true
           })
         })
         .then(response => {

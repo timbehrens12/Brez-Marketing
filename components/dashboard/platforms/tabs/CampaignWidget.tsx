@@ -820,7 +820,8 @@ const CampaignWidget = ({
           body: JSON.stringify({
             brandId,
             campaignId: campaign.campaign_id,
-            forceRefresh: forceRefresh
+            forceRefresh: forceRefresh,
+            isManualCheck: forceRefresh // Manual checks are when forceRefresh is true
           })
         })
         .then(response => {
@@ -1638,7 +1639,8 @@ const CampaignWidget = ({
         body: JSON.stringify({
           brandId,
           campaignId,
-          forceRefresh: force
+          forceRefresh: force,
+          isManualCheck: force // Manual checks are when force is true
         })
       });
       

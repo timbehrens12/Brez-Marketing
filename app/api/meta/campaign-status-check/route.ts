@@ -6,6 +6,11 @@
  * 
  * FIXED: Campaign status display issue - Campaigns now properly reflect their current status
  * in the UI after implementing force refresh, status normalization, and periodic checks.
+ * 
+ * IMPROVED: Rate limiting now supports manual checks with higher limits:
+ * - Manual checks: 10 requests per account per 5 minutes
+ * - Automatic checks: 5 requests per account per 5 minutes
+ * - Campaign cooldown: 30 seconds (reduced from 120 seconds)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -157,11 +162,11 @@ class MetaService {
 
 export const dynamic = 'force-dynamic';
 
-// Rate limit configuration: Reduced limits to prevent overwhelming
-const RATE_LIMIT_MAX = 5;  // 5 requests per 5 minutes window (reduced from 8)
-const RATE_LIMIT_WINDOW = 5 * 60;  // 5 minutes in seconds (increased from 3 minutes)
-const ACCOUNT_RATE_LIMIT = 1;  // Max 1 request per account in the window (reduced from 2)
-const CAMPAIGN_COOLDOWN = 120; // 120 seconds cooldown per campaign (increased from 60)
+// Rate limit configuration: Reasonable limits for manual checks
+const RATE_LIMIT_MAX = 8;  // 8 requests per 5 minutes window 
+const RATE_LIMIT_WINDOW = 5 * 60;  // 5 minutes in seconds
+const ACCOUNT_RATE_LIMIT = 5;  // Max 5 requests per account in the window (increased for manual checks)
+const CAMPAIGN_COOLDOWN = 30; // 30 seconds cooldown per campaign (reduced for better UX)
 
 // Track pending campaign requests to avoid duplicate fetches
 const pendingCampaigns = new Map<string, Promise<any>>();
@@ -239,7 +244,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { brandId, campaignId, forceRefresh = false } = await req.json();
+    const { brandId, campaignId, forceRefresh = false, isManualCheck = false } = await req.json();
 
     if (!brandId || !campaignId) {
       return NextResponse.json(
@@ -330,15 +335,18 @@ export async function POST(req: NextRequest) {
       limit: RATE_LIMIT_MAX,
     });
 
-    // Check account-specific rate limit
+    // Check account-specific rate limit (more generous for manual checks)
     const accountRateLimit = await rateLimiter.limit(`${rateLimitKey}:account`, {
       uniqueTokenPerInterval: 500,
       interval: RATE_LIMIT_WINDOW,
-      limit: ACCOUNT_RATE_LIMIT,
+      limit: isManualCheck ? ACCOUNT_RATE_LIMIT * 2 : ACCOUNT_RATE_LIMIT, // Double the limit for manual checks
     });
 
     if (!generalRateLimit.success || !accountRateLimit.success) {
-      console.log(`[RATE LIMIT] General rate limit reached for ${accountId}:${brandId}`);
+      const limitType = !generalRateLimit.success ? 'general' : 'account';
+      const retryAfter = Math.max(generalRateLimit.retryAfter || 0, accountRateLimit.retryAfter || 0);
+      
+      console.log(`[RATE LIMIT] ${limitType} rate limit reached for ${accountId}:${brandId}${isManualCheck ? ' (manual check)' : ''}`);
       
       if (cachedResult) {
         return NextResponse.json({
@@ -352,9 +360,11 @@ export async function POST(req: NextRequest) {
       
       return NextResponse.json({
         success: false,
-        error: 'Rate limit exceeded',
-        retryAfter: Math.max(generalRateLimit.retryAfter || 0, accountRateLimit.retryAfter || 0),
+        error: isManualCheck ? 'Too many manual checks - please wait a moment before trying again' : 'Rate limit exceeded',
+        retryAfter: retryAfter,
         source: 'rate_limit',
+        limitType: limitType,
+        isManualCheck: isManualCheck,
       }, { status: 429 });
     }
 
