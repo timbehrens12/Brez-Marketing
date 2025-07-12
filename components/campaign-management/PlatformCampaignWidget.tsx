@@ -364,31 +364,53 @@ export default function PlatformCampaignWidget() {
     setShowRecommendationModal(true)
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      'ACTIVE': 'bg-green-950/30 text-green-400 border-green-800/50',
-      'PAUSED': 'bg-slate-800/50 text-slate-400 border-slate-700/50',
-      'DELETED': 'bg-red-950/30 text-red-400 border-red-800/50',
-      'DRAFT': 'bg-gray-950/30 text-gray-400 border-gray-800/50',
-      'ARCHIVED': 'bg-red-950/30 text-red-400 border-red-800/50'
-    }
+
+
+  // Add formatCampaignStatus function exactly like dashboard
+  const formatCampaignStatus = (status: string) => {
+    const normalizedStatus = status.toUpperCase();
     
-    const statusLabels = {
-      'ACTIVE': 'Active',
-      'PAUSED': 'Inactive',
-      'DELETED': 'Deleted',
-      'DRAFT': 'Draft',
-      'ARCHIVED': 'Archived'
+    if (normalizedStatus === 'ACTIVE') {
+      return {
+        displayText: 'Active',
+        bgColor: 'bg-green-950/30',
+        textColor: 'text-green-500',
+        borderColor: 'border-green-800/50',
+        dotColor: 'bg-green-500'
+      };
+    } else if (normalizedStatus === 'PAUSED') {
+      return {
+        displayText: 'Inactive',
+        bgColor: 'bg-slate-800/50',
+        textColor: 'text-slate-400',
+        borderColor: 'border-slate-700/50',
+        dotColor: 'bg-slate-400'
+      };
+    } else if (normalizedStatus === 'DELETED' || normalizedStatus === 'ARCHIVED') {
+      return {
+        displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+        bgColor: 'bg-red-950/30',
+        textColor: 'text-red-500',
+        borderColor: 'border-red-800/50',
+        dotColor: 'bg-red-500'
+      };
+    } else if (normalizedStatus === 'REFRESHING') {
+      return {
+        displayText: 'Refreshing',
+        bgColor: 'bg-blue-950/30',
+        textColor: 'text-blue-500',
+        borderColor: 'border-blue-800/50',
+        dotColor: 'bg-blue-500 animate-pulse'
+      };
+    } else {
+      return {
+        displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+        bgColor: 'bg-gray-950/30',
+        textColor: 'text-gray-500',
+        borderColor: 'border-gray-800/50',
+        dotColor: 'bg-gray-500'
+      };
     }
-    
-    return (
-      <Badge 
-        variant="outline" 
-        className={`${statusColors[status as keyof typeof statusColors] || 'bg-gray-950/30 text-gray-400 border-gray-800/50'}`}
-      >
-        {statusLabels[status as keyof typeof statusLabels] || status}
-      </Badge>
-    )
   }
 
   const getRecommendationBadge = (campaign: Campaign) => {
@@ -691,7 +713,16 @@ export default function PlatformCampaignWidget() {
                                     )}
                                   </div>
                                 </TableCell>
-                                <TableCell>{getStatusBadge(campaign.status)}</TableCell>
+                                                                <TableCell>
+                                  <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
+                                    formatCampaignStatus(campaign.status).bgColor} ${
+                                    formatCampaignStatus(campaign.status).textColor} border ${
+                                    formatCampaignStatus(campaign.status).borderColor}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                      formatCampaignStatus(campaign.status).dotColor}`}></div>
+                                    {formatCampaignStatus(campaign.status).displayText}
+                                  </Badge>
+                                </TableCell>
                                 <TableCell className="text-gray-300">{campaign.objective}</TableCell>
                                 <TableCell className="text-gray-300">
                                   {formatCurrency(campaign.budget)}
