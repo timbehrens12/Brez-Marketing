@@ -120,6 +120,7 @@ export default function PlatformCampaignWidget() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([])
+  const [campaignsBeingChecked, setCampaignsBeingChecked] = useState<Set<string>>(new Set())
 
   // Check if a campaign can get a new recommendation (weekly limit)
   const canRefreshRecommendation = (campaign: Campaign) => {
@@ -174,6 +175,13 @@ export default function PlatformCampaignWidget() {
     const campaignsToProcess = validCampaigns.slice(0, batchSize)
     
     console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`)
+    
+    // Mark campaigns as being checked
+    setCampaignsBeingChecked(prev => {
+      const newSet = new Set(prev)
+      campaignsToProcess.forEach(campaign => newSet.add(campaign.campaign_id))
+      return newSet
+    })
     
     let updatedCount = 0
     let pendingRequests = campaignsToProcess.length
@@ -238,6 +246,13 @@ export default function PlatformCampaignWidget() {
         .then(statusData => {
           pendingRequests--
           
+          // Remove campaign from being checked set
+          setCampaignsBeingChecked(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(campaign.campaign_id)
+            return newSet
+          })
+          
           // Skip update if we have an error
           if (statusData.error) {
             // For rate limiting errors, don't show as errors since they're expected
@@ -287,6 +302,14 @@ export default function PlatformCampaignWidget() {
         })
         .catch(error => {
           pendingRequests--
+          
+          // Remove campaign from being checked set
+          setCampaignsBeingChecked(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(campaign.campaign_id)
+            return newSet
+          })
+          
           console.log(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error)
           
           // If this is the last request and any statuses were updated, show success
@@ -820,14 +843,21 @@ export default function PlatformCampaignWidget() {
                                   </div>
                                 </TableCell>
                                                                 <TableCell>
-                                  <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
-                                    formatCampaignStatus(campaign.status).bgColor} ${
-                                    formatCampaignStatus(campaign.status).textColor} border ${
-                                    formatCampaignStatus(campaign.status).borderColor}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${
-                                      formatCampaignStatus(campaign.status).dotColor}`}></div>
-                                    {formatCampaignStatus(campaign.status).displayText}
-                                  </Badge>
+                                  {campaignsBeingChecked.has(campaign.campaign_id) ? (
+                                    <Badge className="text-xs px-1.5 py-0 h-5 flex items-center gap-1 bg-blue-950/30 text-blue-500 border border-blue-800/50">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                      Checking...
+                                    </Badge>
+                                  ) : (
+                                    <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
+                                      formatCampaignStatus(campaign.status).bgColor} ${
+                                      formatCampaignStatus(campaign.status).textColor} border ${
+                                      formatCampaignStatus(campaign.status).borderColor}`}>
+                                      <div className={`w-1.5 h-1.5 rounded-full ${
+                                        formatCampaignStatus(campaign.status).dotColor}`}></div>
+                                      {formatCampaignStatus(campaign.status).displayText}
+                                    </Badge>
+                                  )}
                                 </TableCell>
                                 <TableCell className="text-gray-300">{campaign.objective}</TableCell>
                                 <TableCell className="text-gray-300">
