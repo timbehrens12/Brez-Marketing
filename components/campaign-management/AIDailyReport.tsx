@@ -473,7 +473,20 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             </div>
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-white">Advertising Report</h2>
-              <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
+              <div className="flex items-center gap-3">
+                <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
+                {report?.generatedAt && (
+                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-3 py-1 rounded-full border border-[#2a2a2a]">
+                    Generated {new Date(report.generatedAt).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZoneName: 'short'
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           

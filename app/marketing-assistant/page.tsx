@@ -191,13 +191,35 @@ export default function MarketingAssistantPage() {
       const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
       const timeUntilMidnight = midnight.getTime() - now.getTime()
       
+      console.log('[MarketingAssistant] Setting up midnight timer:', {
+        currentTime: now.toLocaleTimeString(),
+        midnightTime: midnight.toLocaleTimeString(),
+        millisecondsUntilMidnight: timeUntilMidnight,
+        hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
+      })
+      
       const timeoutId = setTimeout(() => {
-        console.log('[MarketingAssistant] Midnight reached - updating date range to today')
+        console.log('[MarketingAssistant] 🌙 MIDNIGHT REACHED - Resetting to today and forcing data refresh')
         const today = new Date()
         setDateRange({
           from: today,
           to: today
         })
+        
+        // Clear any cached data and force refresh
+        hasInitialDataLoaded.current = false
+        
+        // Trigger full data reload for new day
+        loadAllData()
+        
+        // Dispatch event to notify other widgets about new day transition
+        window.dispatchEvent(new CustomEvent('newDayDetected', {
+          detail: { 
+            brandId: selectedBrandId, 
+            source: 'marketing-assistant-midnight-reset',
+            timestamp: Date.now()
+          }
+        }))
         
         // Set up next midnight update
         updateDateRangeAtMidnight()
@@ -224,6 +246,8 @@ export default function MarketingAssistantPage() {
     
     return cleanup
   }, [])
+
+
 
   // Refs for tracking state
   const hasFetchedMetaData = useRef(false)
@@ -727,6 +751,39 @@ export default function MarketingAssistantPage() {
       toast.error('Some data failed to load, but dashboard is still available')
     }
   }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase, metaMetrics])
+
+  // Debug function to test midnight reset manually - remove in production
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).debugMarketingAssistantMidnightReset = () => {
+        console.log('[MarketingAssistant] DEBUG: Manually triggering midnight reset')
+        
+        // Clear date range and force to today
+        const today = new Date()
+        setDateRange({
+          from: today,
+          to: today
+        })
+        
+        // Clear cached data
+        hasInitialDataLoaded.current = false
+        
+        // Force full reload
+        loadAllData()
+        
+        // Dispatch new day event
+        window.dispatchEvent(new CustomEvent('newDayDetected', {
+          detail: { 
+            brandId: selectedBrandId, 
+            source: 'debug-marketing-assistant-midnight-reset',
+            timestamp: Date.now()
+          }
+        }))
+        
+        console.log('[MarketingAssistant] DEBUG: Midnight reset simulation complete')
+      }
+    }
+  }, [selectedBrandId, loadAllData])
 
   // Initial data load and refresh logic
   useEffect(() => {

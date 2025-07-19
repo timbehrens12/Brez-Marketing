@@ -507,12 +507,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           
           console.log('[CampaignWidget] Fetching campaigns after midnight reset')
           
-      setPlatforms(prev => ({
-        ...prev,
-            meta: { ...prev.meta, isLoading: true }
-          }))
-          
-          try {
+                try {
             const today = new Date()
             const todayString = today.toISOString().split('T')[0]
             
@@ -537,8 +532,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             ...prev,
             meta: {
               ...prev.meta,
-                    campaigns: campaignsWithPlatform,
-                    isLoading: false
+                    campaigns: campaignsWithPlatform
             }
           }))
               }
@@ -660,14 +654,13 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 }))
                 
                 setLocalCampaigns(campaignsWithPlatform)
-        setPlatforms(prev => ({
-          ...prev,
-          meta: {
-            ...prev.meta,
-                    campaigns: campaignsWithPlatform,
-                    isLoading: false
-                  }
-                }))
+                          setPlatforms(prev => ({
+                    ...prev,
+                    meta: {
+                      ...prev.meta,
+                      campaigns: campaignsWithPlatform
+                    }
+                  }))
               }
       }
     } catch (error) {
