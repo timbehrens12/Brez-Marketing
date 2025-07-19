@@ -200,6 +200,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }, 1000)
       } else {
         console.log('[CampaignWidget] Preloaded data is the same as current data - no update needed')
+        // Still need to load recommendations even if campaign data is the same!
+        loadSavedRecommendations(preloadedCampaigns)
     }
     }
   }, [preloadedCampaigns, localCampaigns])
