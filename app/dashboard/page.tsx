@@ -36,7 +36,7 @@ import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 
 // Removed useSupabase import since we're using the singleton client
-import { Info, LayoutGrid, Loader2, BarChart3, Settings } from "lucide-react"
+import { Info, LayoutGrid, Loader2, BarChart3, Settings, Database, Zap, Globe, Users, TrendingUp, Shield } from "lucide-react"
 import { GlobalRefreshButton } from "@/components/dashboard/GlobalRefreshButton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
@@ -157,6 +157,8 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [isLoading, setIsLoading] = useState(true)
   const [initialDataLoad, setInitialDataLoad] = useState(true)
+  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Dashboard')
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -243,6 +245,45 @@ export default function DashboardPage() {
       }
     };
   }, [selectedBrandId]);
+
+  // Progressive loading phases for dashboard
+  useEffect(() => {
+    if (!initialDataLoad) return;
+
+    const runProgressiveLoading = async () => {
+      // Phase 1: Initialize Dashboard
+      setLoadingPhase('Initializing Dashboard')
+      setLoadingProgress(10)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Phase 2: Loading Brand Data
+      setLoadingPhase('Loading brand connections')
+      setLoadingProgress(25)
+      await new Promise(resolve => setTimeout(resolve, 600))
+
+      // Phase 3: Setting up Analytics
+      setLoadingPhase('Setting up analytics workspace')
+      setLoadingProgress(45)
+      await new Promise(resolve => setTimeout(resolve, 700))
+
+      // Phase 4: Loading Platform Data
+      setLoadingPhase('Syncing platform data')
+      setLoadingProgress(65)
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Phase 5: Preparing Widgets
+      setLoadingPhase('Preparing dashboard widgets')
+      setLoadingProgress(85)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Phase 6: Finalizing
+      setLoadingPhase('Dashboard ready!')
+      setLoadingProgress(100)
+      await new Promise(resolve => setTimeout(resolve, 400))
+    }
+
+    runProgressiveLoading()
+  }, [initialDataLoad])
 
   // Load initial connections when component mounts - but only after initial setup
   useEffect(() => {
@@ -1393,17 +1434,86 @@ export default function DashboardPage() {
 
   // Determine what to render based on auth state
   const renderContent = () => {
-  // Show loading state while auth is loading or brands are loading
+  // Show progressive loading state while auth is loading or brands are loading
   if (!isLoaded || (isLoaded && userId && brandsLoading)) {
     return (
-      <UnifiedLoading
-        size="lg"
-        variant="fullscreen"
-        message="Loading dashboard..."
-        subMessage="Setting up your workspace"
-        agencyLogo={agencySettings.agency_logo_url}
-        agencyName={agencySettings.agency_name}
-      />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A] flex items-center justify-center z-50">
+        <div className="text-center space-y-8 max-w-md mx-auto px-6">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            {agencySettings?.agency_logo_url ? (
+              <img 
+                src={agencySettings.agency_logo_url} 
+                alt={agencySettings.agency_name || 'Agency'}
+                className="h-12 w-auto"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+            )}
+          </div>
+
+          {/* Main Loading Animation */}
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto mb-6 relative">
+              <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
+              <div 
+                className="absolute inset-0 border-4 border-transparent border-t-white rounded-full animate-spin"
+                style={{ animationDuration: '1s' }}
+              ></div>
+              <div className="absolute inset-2 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-full flex items-center justify-center">
+                <Database className="w-8 h-8 text-white animate-pulse" />
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-white/10 rounded-full h-2 mb-4 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+            
+            {/* Loading Phase */}
+            <h2 className="text-xl font-semibold text-white mb-2 animate-pulse">
+              {loadingPhase}
+            </h2>
+            <p className="text-gray-400 text-sm mb-6">
+              {loadingProgress}% complete
+            </p>
+          </div>
+
+          {/* Loading Steps */}
+          <div className="text-left space-y-2 text-sm text-gray-400">
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 10 ? 'bg-green-400' : 'bg-white/20'}`}></div>
+              <Shield className="w-4 h-4" />
+              <span>Loading brand connections</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 25 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 25 ? 'bg-green-400' : 'bg-white/20'}`}></div>
+              <Globe className="w-4 h-4" />
+              <span>Setting up analytics workspace</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 45 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 45 ? 'bg-green-400' : 'bg-white/20'}`}></div>
+              <TrendingUp className="w-4 h-4" />
+              <span>Syncing platform data</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 65 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 65 ? 'bg-green-400' : 'bg-white/20'}`}></div>
+              <LayoutGrid className="w-4 h-4" />
+              <span>Preparing dashboard widgets</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : 'bg-white/20'}`}></div>
+              <Zap className="w-4 h-4" />
+              <span>Finalizing dashboard</span>
+            </div>
+          </div>
+        </div>
+      </div>
     )
   }
 
