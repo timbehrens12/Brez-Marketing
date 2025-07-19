@@ -285,12 +285,16 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         
         if (data.success && data.recommendations) {
           // Update campaigns with their saved recommendations
-          setLocalCampaigns(prev => prev.map(campaign => ({
+          // Fix: Use the campaigns passed in and update based on those, not just the current state
+          const campaignsWithRecommendations = campaigns.map(campaign => ({
             ...campaign,
             recommendation: data.recommendations[campaign.campaign_id] || campaign.recommendation
-          })))
+          }))
           
-          console.log(`[CampaignWidget] Loaded ${data.count} saved recommendations`)
+          // Update local campaigns state with the enriched data
+          setLocalCampaigns(campaignsWithRecommendations)
+          
+          console.log(`[CampaignWidget] Loaded ${data.count || Object.keys(data.recommendations).length} saved recommendations`)
         }
       }
     } catch (error) {
@@ -878,16 +882,19 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                                     </div>
                                   </div>
                                   <div>
-                                {!campaign.recommendation ? (
-                                  <Button
-                                    onClick={() => generateRecommendation(campaign)}
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={campaignsGeneratingRecommendations.has(campaign.campaign_id)}
-                                    className="text-sm px-4 py-2 bg-[#2a2a2a] text-gray-300 border-[#3a3a3a] 
-                                               hover:bg-white/10 hover:text-white hover:border-white/20 
-                                               transition-all duration-300 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
+                                                {!campaign.recommendation ? (
+                  <Button
+                    onClick={() => {
+                      console.log('[CampaignWidget] Generate Insights clicked for campaign:', campaign.campaign_id, 'Existing recommendation:', !!campaign.recommendation)
+                      generateRecommendation(campaign)
+                    }}
+                    variant="outline"
+                    size="sm"
+                    disabled={campaignsGeneratingRecommendations.has(campaign.campaign_id)}
+                    className="text-sm px-4 py-2 bg-[#2a2a2a] text-gray-300 border-[#3a3a3a] 
+                               hover:bg-white/10 hover:text-white hover:border-white/20 
+                               transition-all duration-300 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                                     {campaignsGeneratingRecommendations.has(campaign.campaign_id) ? (
                                       <div className="flex items-center gap-2">
                                         <Loader2 className="h-4 w-4 animate-spin" />
