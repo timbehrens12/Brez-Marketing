@@ -428,7 +428,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   // const showLoading = loading || isLoading
 
   return (
-    <Card className="bg-[#0a0a0a] border-[#1a1a1a] shadow-2xl overflow-hidden relative">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative">
       {/* Remove Loading Overlay */}
       {/* {isRefreshing && (
         <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center">

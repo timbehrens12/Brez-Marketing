@@ -1070,11 +1070,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </div>
 
           {/* Campaigns table */}
-          <div className="px-6 pb-6">
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-              {filteredCampaigns.map(renderCampaignCard)}
-            </div>
+                  <div className="px-6 pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredCampaigns.map(renderCampaignCard)}
           </div>
+        </div>
         </div>
       )
     }
@@ -1212,7 +1212,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
         {/* Campaigns table */}
         <div className="px-6 pb-6">
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {filteredCampaigns.map(renderCampaignCard)}
           </div>
         </div>

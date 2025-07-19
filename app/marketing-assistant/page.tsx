@@ -1048,16 +1048,16 @@ export default function MarketingAssistantPage() {
   }
 
   return (
-    <div className="w-full space-y-6 pt-8 mb-12">
+    <div className="w-full space-y-6 pt-4 mb-12">
       {!selectedBrandId ? (
         <div className="text-center py-12 px-6">
           <p className="text-gray-400 text-lg">Please select a brand to view marketing metrics</p>
         </div>
       ) : (
         <>
-          {/* Floating Header */}
-          <div className="px-6">
-            <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#333] rounded-lg p-4 shadow-lg">
+          {/* Page Header */}
+          <div className="px-6 -mt-2">
+            <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#333] rounded-lg p-5 shadow-xl border-b-2 border-b-[#444]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
