@@ -978,10 +978,10 @@ export default function MarketingAssistantPage() {
                 />
                   </div>
 
-                            {/* Right: Advertising Report - 50% width */}
+                                          {/* Right: Advertising Report - 50% width */}
               <div className="h-full">
-                <AIDailyReport />
-                  </div>
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              </div>
                 </div>
 
             {/* Middle Section - Campaign Management at 100% width */}

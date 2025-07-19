@@ -76,21 +76,35 @@ interface DailyReport {
   }
 }
 
-export default function AIDailyReport() {
+interface AIDailyReportProps {
+  preloadedReport?: DailyReport | null
+}
+
+export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = {}) {
   const { selectedBrandId } = useBrandContext()
-  const [report, setReport] = useState<DailyReport | null>(null)
+  const [report, setReport] = useState<DailyReport | null>(preloadedReport || null)
   // Remove loading states
   // const [isLoading, setIsLoading] = useState(true) // Start with true to show loading on initial load
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const [isFetching, setIsFetching] = useState(false) // Guard against multiple simultaneous calls
 
-  // Auto-load report when component mounts or brand changes
+  // Use preloaded report when it changes
   useEffect(() => {
-    if (selectedBrandId && !isFetching) {
+    if (preloadedReport) {
+      console.log('[AIDailyReport] Using preloaded report data')
+      setReport(preloadedReport)
+      setLastRefresh(new Date())
+    }
+  }, [preloadedReport])
+
+  // Auto-load report when component mounts or brand changes - only if no preloaded data
+  useEffect(() => {
+    if (selectedBrandId && !isFetching && !preloadedReport && !report) {
+      console.log('[AIDailyReport] No preloaded data available, fetching report...')
       // Force refresh on mount to ensure latest data
       fetchDailyReport(true)
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, preloadedReport])
 
   // Listen for refresh events with simplified handling
   useEffect(() => {
@@ -126,7 +140,7 @@ export default function AIDailyReport() {
       window.removeEventListener('global-refresh-all', handleRefreshEvent as EventListener)
       window.removeEventListener('newDayDetected', handleRefreshEvent as EventListener)
     }
-  }, [selectedBrandId]) // Removed isFetching dependency to prevent re-triggers
+  }, [selectedBrandId, preloadedReport]) // Removed isFetching dependency to prevent re-triggers
 
   const fetchDailyReport = async (forceRegenerate = false) => {
     if (!selectedBrandId || isFetching) {
