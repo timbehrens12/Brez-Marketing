@@ -371,47 +371,40 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     }
   }, [selectedBrandId, fetchAds])
 
+  // Helper function to get sort value based on metric
+  const getSortValue = (ad: Ad, metric: string) => {
+    switch (metric) {
+      case 'spent':
+        return ad.spent || 0
+      case 'impressions':
+        return ad.impressions || 0
+      case 'clicks':
+        return ad.clicks || 0
+      case 'ctr':
+        return ad.ctr || 0
+      case 'conversions':
+        return ad.conversions || 0
+      default:
+        return ad.spent || 0
+    }
+  }
+
   // Filter and sort ads
   const filteredAndSortedAds = ads
     .filter(ad => {
       const matchesSearch = searchQuery === '' || 
         ad.ad_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ad.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ad.headline?.toLowerCase().includes(searchQuery.toLowerCase())
+        ad.adset_name.toLowerCase().includes(searchQuery.toLowerCase())
       
+      // Only show active ads unless showInactive toggle is enabled
       const matchesStatus = showInactive || ad.status === 'ACTIVE'
       
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
-      let aValue: number, bValue: number
-
-      switch (sortBy) {
-        case 'spent':
-          aValue = a.spent
-          bValue = b.spent
-          break
-        case 'impressions':
-          aValue = a.impressions
-          bValue = b.impressions
-          break
-        case 'clicks':
-          aValue = a.clicks
-          bValue = b.clicks
-          break
-        case 'ctr':
-          aValue = a.ctr
-          bValue = b.ctr
-          break
-        case 'conversions':
-          aValue = a.conversions
-          bValue = b.conversions
-          break
-        default:
-          aValue = a.spent
-          bValue = b.spent
-      }
-
+      const aValue = getSortValue(a, sortBy)
+      const bValue = getSortValue(b, sortBy)
       return sortOrder === 'desc' ? bValue - aValue : aValue - bValue
     })
 
@@ -536,7 +529,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                           flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
               <ImageIcon className="h-8 w-8 text-gray-500" />
             </div>
-            <h3 className="text-xl font-medium text-white mb-2">No Ad Creatives Found</h3>
+            <h3 className="text-xl font-medium text-white truncate mb-2">No Ad Creatives Found</h3>
             <p className="text-gray-400 max-w-md mx-auto">
               {searchQuery ? 
                 `No ads match your search "${searchQuery}". Try adjusting your filters.` :
@@ -545,7 +538,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
@@ -620,7 +613,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                     {/* Ad Details */}
                     <div className="p-4 pt-0">
                       <div className="mb-4">
-                        <h4 className="font-semibold text-white text-sm line-clamp-2 mb-1 tracking-tight">
+                        <h4 className="font-semibold text-white text-sm truncate line-clamp-2 mb-1 tracking-tight">
                           {ad.ad_name}
                         </h4>
                         {ad.headline && (
