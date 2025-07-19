@@ -73,9 +73,6 @@ interface AdCreativeBreakdownProps {
 export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdownProps = {}) {
   const { selectedBrandId } = useBrandContext()
   const [ads, setAds] = useState<Ad[]>(preloadedAds || [])
-  // Remove loading states
-  // const [isLoading, setIsLoading] = useState(true)
-  // const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
   const [searchQuery, setSearchQuery] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null)
@@ -95,13 +92,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   const fetchAds = async (forceRefresh = false) => {
     if (!selectedBrandId) return
 
-    // Remove loading states
-    // setIsLoading(true)
-    // setIsRefreshing(true) // Set global refresh state
-
     try {
-      // First get all active campaigns with cache-busting for fresh data
-      const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&status=ACTIVE&t=${Date.now()}`, {
+      console.log('[AdCreativeBreakdown] Fetching ads for brand:', selectedBrandId)
+      
+      const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -109,124 +103,37 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
         }
       })
       const campaignsData = await campaignsResponse.json()
-      
-      if (!campaignsData.campaigns || campaignsData.campaigns.length === 0) {
-        console.log('[AdCreativeBreakdown] No active campaigns found')
-        setAds([])
-        // Remove loading state
-        // setIsLoading(false)
-        return
+
+      if (!campaignsData.success) {
+        throw new Error(campaignsData.error || 'Failed to fetch campaigns')
       }
 
-      console.log(`[AdCreativeBreakdown] Found ${campaignsData.campaigns.length} active campaigns`)
-
-      // Get optimal date range - use today's date like blended widgets do at midnight
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-      
-      const todayString = today.toISOString().split('T')[0]
-      const yesterdayString = yesterday.toISOString().split('T')[0]
-      
-      // Force today's data at midnight transition (like blended widgets)
-      const shouldForceToday = forceRefresh || (today.getHours() === 0 && today.getMinutes() < 30) // First 30 minutes of new day
-      
-      console.log(`[AdCreativeBreakdown] DEBUG: Using date range: ${todayString} (will ${shouldForceToday ? 'force today' : `try yesterday ${yesterdayString} if no data`})`)
-      
-      // Then get ad sets for each campaign
       const allAds: Ad[] = []
-      
-      for (const campaign of campaignsData.campaigns) {
+
+      for (const campaign of campaignsData.campaigns || []) {
         try {
-          // Get ad sets for this campaign with cache-busting
-          const adSetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}&t=${Date.now()}`, {
+          const adsetsResponse = await fetch(`/api/meta/campaigns/${campaign.campaign_id}/adsets?brandId=${selectedBrandId}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache'
             }
           })
-          const adSetsData = await adSetsResponse.json()
-          
-          if (adSetsData.adSets && adSetsData.adSets.length > 0) {
-            // Get ads for each ad set using the same endpoint as dashboard
-            for (const adSet of adSetsData.adSets) {
-              // Only include active ad sets unless showInactive is true
-              if (!showInactive && adSet.status !== 'ACTIVE') continue
-              
+          const adsetsData = await adsetsResponse.json()
+
+          if (adsetsData.success && adsetsData.adsets) {
+            for (const adSet of adsetsData.adsets) {
               try {
-                // Try today's data first with cache-busting
-                let adsResponse = await fetch('/api/meta/ads/direct-fetch', {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json',
+                const adsResponse = await fetch(`/api/meta/campaigns/${campaign.campaign_id}/adsets/${adSet.adset_id}/ads?brandId=${selectedBrandId}`, {
+                  cache: 'no-store',
+                  headers: {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache'
-                  },
-                  body: JSON.stringify({
-                    brandId: selectedBrandId,
-                    adsetId: adSet.adset_id,
-                    forceRefresh,
-                    dateRange: {
-                      from: todayString,
-                      to: todayString
-                    },
-                    timestamp: Date.now()
-                  })
-                })
-                
-                let adsData = await adsResponse.json()
-                
-                                // If today's data is empty (all zeros), try yesterday's data (unless forcing today)
-                if (adsData.success && adsData.ads?.length > 0 && !shouldForceToday) {
-                  const hasData = adsData.ads.some((ad: any) => 
-                    (ad.spent || 0) > 0 || (ad.impressions || 0) > 0 || (ad.clicks || 0) > 0
-                  )
-                  
-                  if (!hasData) {
-                    console.log(`[AdCreativeBreakdown] No data for today, trying yesterday for adset ${adSet.adset_id}`)
-                    adsResponse = await fetch('/api/meta/ads/direct-fetch', {
-                      method: 'POST',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                      },
-                      body: JSON.stringify({
-                        brandId: selectedBrandId,
-                        adsetId: adSet.adset_id,
-                        forceRefresh,
-                        dateRange: {
-                          from: yesterdayString,
-                          to: yesterdayString
-                        },
-                        timestamp: Date.now()
-                      })
-                    })
-                    adsData = await adsResponse.json()
                   }
-                } else if (shouldForceToday) {
-                  console.log(`[AdCreativeBreakdown] Forcing today's data (midnight transition) for adset ${adSet.adset_id}`)
-                }
-                
-                console.log(`[AdCreativeBreakdown] DEBUG: API Response for adset ${adSet.adset_id}:`, JSON.stringify({
-                  success: adsData.success,
-                  adsCount: adsData.ads?.length || 0,
-                  sampleAd: adsData.ads?.[0] ? {
-                    ad_id: adsData.ads[0].ad_id,
-                    spent: adsData.ads[0].spent,
-                    impressions: adsData.ads[0].impressions,
-                    clicks: adsData.ads[0].clicks,
-                    conversions: adsData.ads[0].conversions,
-                    ctr: adsData.ads[0].ctr,
-                    cpc: adsData.ads[0].cpc,
-                    status: adsData.ads[0].status
-                  } : null,
-                  error: adsData.error
-                }, null, 2))
+                })
+                const adsData = await adsResponse.json()
                 
                 if (adsData.success && adsData.ads) {
-                  // Add campaign and adset context to each ad
                   const enhancedAds = adsData.ads.map((ad: any) => ({
                     ...ad,
                     campaign_name: campaign.campaign_name,
@@ -249,21 +156,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       setAds(allAds)
       setLastRefreshTime(Date.now())
       
-      console.log(`[AdCreativeBreakdown] DEBUG: Final aggregated data:`, JSON.stringify({
-        totalAds: allAds.length,
-        totalSpent: allAds.reduce((sum, ad) => sum + (ad.spent || 0), 0),
-        totalImpressions: allAds.reduce((sum, ad) => sum + (ad.impressions || 0), 0),
-        totalClicks: allAds.reduce((sum, ad) => sum + (ad.clicks || 0), 0),
-        totalConversions: allAds.reduce((sum, ad) => sum + (ad.conversions || 0), 0),
-        sampleAds: allAds.slice(0, 3).map(ad => ({
-          ad_id: ad.ad_id,
-          spent: ad.spent,
-          impressions: ad.impressions,
-          clicks: ad.clicks,
-          conversions: ad.conversions
-        }))
-      }, null, 2))
-      
       if (forceRefresh) {
         toast.success(`Loaded ${allAds.length} ad creatives`, {
           description: "Today's ad creative data refreshed successfully"
@@ -275,7 +167,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     } catch (error: any) {
       console.error('[AdCreativeBreakdown] Error:', error)
       
-      // Check if this is a token expiration error and emit for global handling
       if (isTokenExpired(error)) {
         emitMetaApiError(error)
         toast.error("Meta Connection Expired", {
@@ -288,10 +179,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       }
       
       setAds([])
-    } finally {
-      // Remove loading states
-      // setIsLoading(false)
-      // setIsRefreshing(false) // Reset global refresh state
     }
   }
 
@@ -303,7 +190,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     }
   }, [selectedBrandId, preloadedAds])
 
-  // Listen for the same refresh events as other dashboard widgets
+  // Listen for refresh events
   useEffect(() => {
     if (!selectedBrandId) return
 
@@ -312,26 +199,22 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     const handleGlobalRefresh = (event: CustomEvent) => {
       const { brandId, source, forceRefresh } = event.detail
       
-      // Only refresh if it's for the current brand and not from this widget
       if (brandId === selectedBrandId && source !== 'AdCreativeBreakdown') {
         console.log('[AdCreativeBreakdown] Global refresh triggered from other widgets, updating ads...', { source, forceRefresh })
         
-        // Debounce multiple rapid refresh events
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {
           fetchAds(true)
-        }, 1500) // Longer delay for manual refreshes to prevent loops
+        }, 1500)
       }
     }
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
       const { brandId, platforms, currentTab } = event.detail
       
-      // Only refresh if it's for the current brand and includes meta platform
       if (brandId === selectedBrandId && (platforms?.meta || currentTab === 'meta')) {
         console.log('[AdCreativeBreakdown] Global refresh all triggered, updating ads...', { platforms, currentTab })
         
-        // Debounce multiple rapid refresh events
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {
           fetchAds(true)
@@ -342,11 +225,9 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     const handleNewDayDetected = (event: CustomEvent) => {
       const { brandId } = event.detail
       
-      // Only refresh if it's for the current brand
       if (brandId === selectedBrandId) {
         console.log('[AdCreativeBreakdown] New day detected, updating ads...')
         
-        // Debounce multiple rapid refresh events
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {
           fetchAds(true)
@@ -354,7 +235,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       }
     }
 
-    // Listen for the same events as other dashboard widgets
     window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener)
     window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
     window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener)
@@ -397,7 +277,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
         ad.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ad.adset_name.toLowerCase().includes(searchQuery.toLowerCase())
       
-      // Only show active ads unless showInactive toggle is enabled
       const matchesStatus = showInactive || ad.status === 'ACTIVE'
       
       return matchesSearch && matchesStatus
@@ -416,33 +295,16 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   // Format ROAS calculation
   const calculateROAS = (conversions: number, spent: number) => {
     if (conversions > 0 && spent > 0) {
-      // Assuming $25 average order value
       const estimatedOrderValue = conversions * 25
       return estimatedOrderValue / spent
     }
     return 0
   }
 
-  // Remove loading state calculations - always show content or empty state
-  // Component is loading if either external loading prop is true OR internal loading state is true
-  // const showLoading = loading || isLoading
-
   return (
     <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative">
-      {/* Remove Loading Overlay */}
-      {/* {isRefreshing && (
-        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-              <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
-            </div>
-            <p className="text-gray-400 text-lg font-medium">Refreshing ad creatives...</p>
-            <p className="text-gray-500 text-sm mt-2">Analyzing performance data</p>
-          </div>
-        </div>
-      )} */}
-      
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
+      {/* Header - matches other widgets style */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -450,10 +312,9 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
               <ImageIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl text-white font-bold tracking-tight">Ad Creative Performance</CardTitle>
+              <h2 className="text-2xl text-white font-bold tracking-tight">Ad Creative Performance</h2>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
-                  {/* Remove loading check */}
                   {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
@@ -519,10 +380,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20"
           />
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-6">
-        {/* Show empty state only if no data and not waiting for preloaded data */}
+      {/* Content */}
+      <div className="p-6">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -538,17 +399,17 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </p>
           </div>
         ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 lg:gap-4 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
                 <Card key={ad.ad_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
-                                              shadow-lg hover:shadow-2xl group overflow-hidden">
-                  <CardContent className="p-0">
-                    {/* Creative Image - Smaller with widget background */}
-                    <div className="p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a]">
-                      <div className="relative h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col">
+                  <CardContent className="p-0 flex-1 flex flex-col">
+                    {/* Creative Image - Responsive sizing */}
+                    <div className="p-3 lg:p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
+                      <div className="relative h-28 lg:h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
                                     flex items-center justify-center overflow-hidden group-hover:border-[#3a3a3a] transition-colors">
                         {ad.thumbnail_url || ad.image_url ? (
                           <Image 
@@ -558,25 +419,25 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                             className="object-cover rounded-xl"
                           />
                         ) : (
-                          <ImageIcon className="h-8 w-8 text-gray-500" />
+                          <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
                         )}
                         
                         {/* Platform Logo */}
-                        <div className="absolute top-2 left-2">
-                          <div className="w-6 h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
+                        <div className="absolute top-1.5 lg:top-2 left-1.5 lg:left-2">
+                          <div className="w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
                             <Image
                               src="https://i.imgur.com/6hyyRrs.png"
                               alt="Meta"
-                              width={14}
-                              height={14}
-                              className="object-contain"
+                              width={12}
+                              height={12}
+                              className="object-contain lg:w-[14px] lg:h-[14px]"
                             />
                           </div>
                         </div>
                         
                         {/* Status Badge */}
-                        <div className="absolute top-2 right-2">
-                          <Badge className={`text-xs px-2 py-1 ${
+                        <div className="absolute top-1.5 lg:top-2 right-1.5 lg:right-2">
+                          <Badge className={`text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 ${
                             ad.status === 'ACTIVE' 
                               ? 'bg-green-500/20 text-green-400 border-green-500/30' 
                               : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
@@ -585,19 +446,19 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                           </Badge>
                         </div>
                         
-                        {/* Preview Link */}
+                        {/* Preview Link - Hidden on smaller screens */}
                         {ad.preview_url && (
-                          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute bottom-1.5 lg:bottom-2 right-1.5 lg:right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
+                                    className="h-5 w-5 lg:h-6 lg:w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
                                     onClick={() => window.open(ad.preview_url!, '_blank')}
                                   >
-                                    <ExternalLink className="h-3 w-3" />
+                                    <ExternalLink className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#0a0a0a] border-[#2a2a2a]">
@@ -610,48 +471,91 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                       </div>
                     </div>
                     
-                    {/* Ad Details */}
-                    <div className="p-4 pt-0">
-                      <div className="mb-4">
-                                                  <h4 className="font-semibold text-white text-sm mb-1 tracking-tight line-clamp-2 overflow-hidden text-ellipsis">
+                    {/* Ad Details - Flexible container with proper overflow handling */}
+                    <div className="p-3 lg:p-4 pt-0 flex-1 flex flex-col min-h-0">
+                      <div className="mb-3 lg:mb-4 flex-shrink-0">
+                        {/* Ad name with responsive text sizing and proper line clamping */}
+                        <h4 className="font-semibold text-white text-xs lg:text-sm mb-1 tracking-tight 
+                                     break-words overflow-hidden text-ellipsis line-clamp-2">
                           {ad.ad_name}
                         </h4>
                         {ad.headline && (
-                          <p className="text-xs text-gray-400 line-clamp-2 mb-2">
+                          <p className="text-xs text-gray-400 mb-2 break-words overflow-hidden text-ellipsis line-clamp-2">
                             {ad.headline}
                           </p>
                         )}
-                                                  <div className="text-xs text-gray-500 space-y-1">
-                            <p className="text-gray-400 truncate">{ad.campaign_name}</p>
-                            <p className="text-gray-500 truncate">{ad.adset_name}</p>
-                          </div>
+                        {/* Campaign and adset names with responsive overflow handling */}
+                        <div className="text-xs text-gray-500 space-y-0.5 lg:space-y-1">
+                          <p className="text-gray-400 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.campaign_name}>
+                            {ad.campaign_name}
+                          </p>
+                          <p className="text-gray-500 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.adset_name}>
+                            {ad.adset_name}
+                          </p>
+                        </div>
                       </div>
                       
-                      {/* Performance Metrics */}
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">Spend</div>
-                          <div className="text-white font-bold">{formatCurrency(ad.spent)}</div>
+                      {/* Performance Metrics - Fully responsive grid */}
+                      <div className="grid grid-cols-2 gap-1.5 lg:gap-2 text-xs flex-1">
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Spend
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatCurrency(ad.spent)}
+                          </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">Impressions</div>
-                          <div className="text-white font-bold">{formatNumber(ad.impressions)}</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Impress.
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.impressions)}
+                          </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">Clicks</div>
-                          <div className="text-white font-bold">{formatNumber(ad.clicks)}</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Clicks
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.clicks)}
+                          </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">CTR</div>
-                          <div className="text-white font-bold">{formatPercentage(ad.ctr)}</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            CTR
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatPercentage(ad.ctr)}
+                          </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">Conversions</div>
-                          <div className="text-white font-bold">{formatNumber(ad.conversions)}</div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Conver.
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.conversions)}
+                          </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider">ROAS</div>
-                          <div className={`font-bold ${
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            ROAS
+                          </div>
+                          <div className={`font-bold text-xs lg:text-sm break-words flex-1 flex items-end ${
                             roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
                           }`}>
                             {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
@@ -665,7 +569,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             })}
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   )
 } 
