@@ -67,17 +67,12 @@ interface Ad {
 }
 
 interface AdCreativeBreakdownProps {
-  // Remove loading prop
-  // loading?: boolean
+  preloadedAds?: any[]
 }
 
-export default function AdCreativeBreakdown(
-  // Remove loading prop with default
-  // { loading = false }: AdCreativeBreakdownProps
-  {}: AdCreativeBreakdownProps = {}
-) {
+export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdownProps = {}) {
   const { selectedBrandId } = useBrandContext()
-  const [ads, setAds] = useState<Ad[]>([])
+  const [ads, setAds] = useState<Ad[]>(preloadedAds || [])
   // Remove loading states
   // const [isLoading, setIsLoading] = useState(true)
   // const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
@@ -87,6 +82,14 @@ export default function AdCreativeBreakdown(
   const [sortBy, setSortBy] = useState('spent')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
+
+  // Use preloaded ads when they change
+  useEffect(() => {
+    if (preloadedAds && preloadedAds.length > 0) {
+      console.log('[AdCreativeBreakdown] Using preloaded ads data:', preloadedAds.length)
+      setAds(preloadedAds)
+    }
+  }, [preloadedAds])
 
   // Fetch all ads using the same method as dashboard
   const fetchAds = async (forceRefresh = false) => {
@@ -292,12 +295,13 @@ export default function AdCreativeBreakdown(
     }
   }
 
-  // Initial load
+  // Initial load - only if no preloaded data
   useEffect(() => {
-    if (selectedBrandId) {
+    if (selectedBrandId && (!preloadedAds || preloadedAds.length === 0)) {
+      console.log('[AdCreativeBreakdown] No preloaded data, fetching ads...')
       fetchAds()
     }
-  }, [selectedBrandId])
+  }, [selectedBrandId, preloadedAds])
 
   // Listen for the same refresh events as other dashboard widgets
   useEffect(() => {

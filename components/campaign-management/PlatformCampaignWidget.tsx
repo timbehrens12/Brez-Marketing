@@ -110,14 +110,18 @@ interface PlatformData {
   error?: string
 }
 
-export default function PlatformCampaignWidget() {
+interface PlatformCampaignWidgetProps {
+  preloadedCampaigns?: any[]
+}
+
+export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformCampaignWidgetProps = {}) {
   const { selectedBrandId } = useBrandContext()
   const [platforms, setPlatforms] = useState<Record<string, PlatformData>>({
     meta: {
       name: "Meta",
       logo: "https://i.imgur.com/6hyyRrs.png",
       isActive: true,
-      campaigns: []
+      campaigns: preloadedCampaigns || []
       // Remove isLoading completely
     },
     tiktok: {
@@ -150,19 +154,44 @@ export default function PlatformCampaignWidget() {
   const [sortBy, setSortBy] = useState('spent')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(!!preloadedCampaigns?.length)
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Add refresh trigger state
   // Remove global refresh loading state
   // const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
   
   // Local state for campaigns
-  const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([])
+  const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>(preloadedCampaigns || [])
   const [campaignsBeingChecked, setCampaignsBeingChecked] = useState<Set<string>>(new Set())
   const [campaignsGeneratingRecommendations, setCampaignsGeneratingRecommendations] = useState<Set<string>>(new Set())
   const [recommendationDialogOpen, setRecommendationDialogOpen] = useState(false)
   const [selectedRecommendation, setSelectedRecommendation] = useState<Campaign | null>(null)
 
-  // Save showInactive preference when it changes
+  // Use preloaded campaigns when they change
+  useEffect(() => {
+    if (preloadedCampaigns && preloadedCampaigns.length > 0) {
+      console.log('[CampaignWidget] Using preloaded campaigns data:', preloadedCampaigns.length)
+      setLocalCampaigns(preloadedCampaigns)
+      setHasInitiallyLoaded(true)
+      
+      setPlatforms(prev => ({
+        ...prev,
+        meta: {
+          ...prev.meta,
+          campaigns: preloadedCampaigns
+        }
+      }))
+      
+      // Load saved recommendations for the preloaded campaigns
+      loadSavedRecommendations(preloadedCampaigns)
+      
+      // Check campaign statuses for preloaded data
+      setTimeout(() => {
+        checkCampaignStatuses(preloadedCampaigns, false, true)
+      }, 1000)
+    }
+  }, [preloadedCampaigns])
+
+  // Save preference to localStorage whenever showInactive changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('campaign-show-inactive', JSON.stringify(showInactive))
@@ -326,15 +355,20 @@ export default function PlatformCampaignWidget() {
     }
   }, [selectedBrandId, campaignsGeneratingRecommendations])
 
-  // Sync local campaigns with platform campaigns
+  // Sync local campaigns with platform campaigns - only if no preloaded data
   useEffect(() => {
     const fetchCampaigns = async () => {
       if (!selectedBrandId) {
         console.log('[CampaignWidget] No brand selected, skipping campaign fetch')
-      return
-    }
+        return
+      }
 
-      console.log('[CampaignWidget] Fetching campaigns for brand:', selectedBrandId)
+      if (preloadedCampaigns && preloadedCampaigns.length > 0) {
+        console.log('[CampaignWidget] Using preloaded campaigns, skipping fetch')
+        return
+      }
+
+      console.log('[CampaignWidget] No preloaded data, fetching campaigns for brand:', selectedBrandId)
       
       // Remove loading state during fetch
       // setIsRefreshing(true)
@@ -441,7 +475,7 @@ export default function PlatformCampaignWidget() {
     }
 
     fetchCampaigns()
-  }, [selectedBrandId, checkCampaignStatuses, loadSavedRecommendations, refreshTrigger])
+  }, [selectedBrandId, checkCampaignStatuses, loadSavedRecommendations, refreshTrigger, preloadedCampaigns])
 
   // Add midnight reset timer with debugging
   useEffect(() => {

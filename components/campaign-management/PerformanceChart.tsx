@@ -55,17 +55,12 @@ interface PerformanceData {
 }
 
 interface PerformanceChartProps {
-  // Remove loading prop
-  // loading?: boolean
+  preloadedPerformanceData?: any[]
 }
 
-export default function PerformanceChart(
-  // Remove loading prop with default
-  // { loading = false }: PerformanceChartProps
-  {}: PerformanceChartProps = {}
-) {
+export default function PerformanceChart({ preloadedPerformanceData }: PerformanceChartProps = {}) {
   const { selectedBrandId } = useBrandContext()
-  const [performanceData, setPerformanceData] = useState<PerformanceData[]>([])
+  const [performanceData, setPerformanceData] = useState<PerformanceData[]>(preloadedPerformanceData || [])
   const [selectedMetric, setSelectedMetric] = useState<'spend' | 'roas' | 'impressions' | 'clicks' | 'conversions'>('spend')
   const [enabledPlatforms, setEnabledPlatforms] = useState({
     meta: true,
@@ -75,11 +70,25 @@ export default function PerformanceChart(
   // Remove loading state
   // const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch performance data
+  // Use preloaded performance data when it changes
+  useEffect(() => {
+    if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
+      console.log('[PerformanceChart] Using preloaded performance data:', preloadedPerformanceData.length)
+      setPerformanceData(preloadedPerformanceData)
+    }
+  }, [preloadedPerformanceData])
+
+  // Fetch performance data - only if no preloaded data
   useEffect(() => {
     if (!selectedBrandId) return
 
+    if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
+      console.log('[PerformanceChart] Using preloaded data, skipping fetch')
+      return
+    }
+
     const fetchPerformanceData = async (forceRefresh = false) => {
+      console.log('[PerformanceChart] No preloaded data, fetching from API...')
       // Remove loading state
       // setIsLoading(true)
       try {
@@ -141,7 +150,7 @@ export default function PerformanceChart(
     }
 
     fetchPerformanceData(false)
-  }, [selectedBrandId])
+  }, [selectedBrandId, preloadedPerformanceData])
 
   // Listen for refresh events
   useEffect(() => {

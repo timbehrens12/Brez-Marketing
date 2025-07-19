@@ -177,10 +177,10 @@ export default function MarketingAssistantPage() {
   // Pre-loaded data for widgets
   const [preloadedData, setPreloadedData] = useState({
     metaMetrics: defaultMetrics,
-    dailyReport: null,
-    campaigns: [],
-    adCreatives: [],
-    performanceData: [],
+    dailyReport: null as any,
+    campaigns: [] as any[],
+    adCreatives: [] as any[],
+    performanceData: [] as any[],
     aiConsultantReady: false
   })
 
@@ -543,56 +543,118 @@ export default function MarketingAssistantPage() {
       
       await new Promise(resolve => setTimeout(resolve, 900))
       
-      // Phase 2: Load AI Daily Report
+      // Phase 2: Load AI Daily Report and Performance Data in parallel
       try {
-        const response = await fetch('/api/ai/daily-report', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId: selectedBrandId,
-            forceRegenerate: false
+        const [dailyReportResponse, campaignsResponse] = await Promise.all([
+          fetch('/api/ai/daily-report', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              brandId: selectedBrandId,
+              forceRegenerate: false
+            }),
           }),
-        })
+          fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${dateToLocalDateString(dateRange.from)}&to=${dateToLocalDateString(dateRange.to)}&forceRefresh=true&t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          })
+        ])
         
-        if (response.ok) {
-          const data = await response.json()
-          setPreloadedData(prev => ({
-            ...prev,
-            dailyReport: data.report
-          }))
-        }
-      } catch (error) {
-        console.error('[MarketingAssistant] Error loading daily report:', error)
-      }
-      
-      setLoadingProgress(70)
-      setLoadingPhase('Loading campaign insights...')
-      
-      await new Promise(resolve => setTimeout(resolve, 700))
-      
-      // Phase 3: Load campaign data
-      try {
-        const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
-        const response = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
+        let reportData = null
+        let campaignsData = []
+        let performanceData = []
+        
+        if (dailyReportResponse.ok) {
+          const data = await dailyReportResponse.json()
+          if (data.success && data.report) {
+            reportData = data.report
+            // Extract performance data from daily report
+            performanceData = data.report?.weeklyPerformance?.map((day: any) => ({
+              day: day.day,
+              date: day.date,
+              meta: {
+                spend: day.spend || 0,
+                roas: day.roas || 0,
+                impressions: day.impressions || 0,
+                clicks: day.clicks || 0,
+                conversions: day.conversions || 0
+              },
+              tiktok: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 },
+              google: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 }
+            })) || []
           }
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          setPreloadedData(prev => ({
-            ...prev,
-            campaigns: data.campaigns || []
-          }))
         }
+        
+        if (campaignsResponse.ok) {
+          const data = await campaignsResponse.json()
+          if (data.campaigns && Array.isArray(data.campaigns)) {
+            campaignsData = data.campaigns.map((campaign: any) => ({
+              ...campaign, 
+              platform: 'meta'
+            }))
+          }
+        }
+        
+        // Now load ad creative data using the campaigns we just fetched
+        let allAds: any[] = []
+        if (campaignsData.length > 0) {
+          setLoadingProgress(70)
+          setLoadingPhase('Loading ad creative insights...')
+          await new Promise(resolve => setTimeout(resolve, 700))
+          
+          console.log('[MarketingAssistant] Loading ad creatives for campaigns...')
+          
+          // For each campaign, get adsets and then ads
+          for (const campaign of campaignsData.slice(0, 5)) { // Limit to first 5 campaigns for performance
+            try {
+              const adsetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}`)
+              if (adsetsResponse.ok) {
+                const adsetsData = await adsetsResponse.json()
+                
+                for (const adset of adsetsData.adsets?.slice(0, 3) || []) { // Limit adsets per campaign
+                  const adsResponse = await fetch('/api/meta/ads/direct-fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      brandId: selectedBrandId,
+                      adsetId: adset.adset_id,
+                      forceRefresh: false,
+                      dateRange: {
+                        from: dateToLocalDateString(dateRange.from),
+                        to: dateToLocalDateString(dateRange.to)
+                      }
+                    })
+                  })
+                  
+                  if (adsResponse.ok) {
+                    const adsData = await adsResponse.json()
+                    if (adsData.success && adsData.ads) {
+                      allAds.push(...adsData.ads)
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('[MarketingAssistant] Error loading ads for campaign:', campaign.campaign_id, error)
+            }
+          }
+          console.log('[MarketingAssistant] Loaded ad creatives:', allAds.length)
+        }
+        
+        setPreloadedData(prev => ({
+          ...prev,
+          dailyReport: reportData,
+          campaigns: campaignsData,
+          performanceData: performanceData,
+          adCreatives: allAds
+        }))
       } catch (error) {
-        console.error('[MarketingAssistant] Error loading campaigns:', error)
+        console.error('[MarketingAssistant] Error loading AI reports and campaigns:', error)
       }
       
       setLoadingProgress(85)
@@ -861,32 +923,32 @@ export default function MarketingAssistantPage() {
           </div>
           
           {/* Loading phases checklist */}
-          <div className="text-left space-y-2 text-sm text-gray-400">
-                          <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
+                      <div className="text-left space-y-2 text-sm text-gray-400">
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
                 <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Loading Meta advertising data</span>
+                <span>Loading Meta advertising data</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <span>Syncing latest performance data</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <span>AI analyzing campaign performance</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <span>Loading ad creative insights</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <span>Preparing AI marketing consultant</span>
+              </div>
+              <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <span>Finalizing dashboard</span>
+              </div>
             </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Syncing latest performance data</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>AI analyzing campaign performance</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Loading campaign insights</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Preparing AI marketing consultant</span>
-            </div>
-            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 100 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Finalizing dashboard</span>
-            </div>
-          </div>
           
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
@@ -987,7 +1049,7 @@ export default function MarketingAssistantPage() {
             {/* Middle Section - Campaign Management at 100% width */}
             <div className="p-6 bg-[#111] border border-[#333] rounded-lg">
               <div style={{ minHeight: '600px', maxHeight: '800px', overflow: 'auto' }}>
-                <PlatformCampaignWidget />
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
               </div>
             </div>
 
@@ -995,8 +1057,9 @@ export default function MarketingAssistantPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - Ad Creative and Performance Chart */}
               <div className="space-y-6">
-                <AdCreativeBreakdown />
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                 <PerformanceChart 
+                  preloadedPerformanceData={preloadedData.performanceData}
                   // Remove loading prop
                   // loading={isLoadingMetrics || isRefreshingData} 
                 />
