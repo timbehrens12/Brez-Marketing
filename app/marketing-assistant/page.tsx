@@ -154,7 +154,15 @@ export default function MarketingAssistantPage() {
   const { selectedBrandId } = useBrandContext()
   const { agencySettings } = useAgency()
   const pathname = usePathname()
-  const [isLoadingPage, setIsLoadingPage] = useState(true)
+  
+  // Centralized loading state management
+  const [isDataLoading, setIsDataLoading] = useState(true)
+  const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Marketing Assistant')
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  
+  // Remove old loading state
+  // const [isLoadingPage, setIsLoadingPage] = useState(true)
+  
   const [metaMetrics, setMetaMetrics] = useState<MetaMetrics>(defaultMetrics)
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
@@ -165,6 +173,16 @@ export default function MarketingAssistantPage() {
   const [lastPageRefresh, setLastPageRefresh] = useState<Date | null>(null)
   const [isRefreshingAll, setIsRefreshingAll] = useState(false)
   const [refreshCooldown, setRefreshCooldown] = useState(false)
+
+  // Pre-loaded data for widgets
+  const [preloadedData, setPreloadedData] = useState({
+    metaMetrics: defaultMetrics,
+    dailyReport: null,
+    campaigns: [],
+    adCreatives: [],
+    performanceData: [],
+    aiConsultantReady: false
+  })
 
   // Auto-update date range at midnight to match blended widgets behavior
   useEffect(() => {
@@ -212,14 +230,6 @@ export default function MarketingAssistantPage() {
   const lastFetchedDateRange = useRef<{ from?: Date; to?: Date }>({})
   const hasInitialDataLoaded = useRef(false)
   const isInitialLoadInProgress = useRef(false)
-
-  // Page loading simulation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoadingPage(false)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
 
   // Helper function to calculate previous period date range - matches home page
   const getPreviousPeriodDates = useCallback((from: Date, to: Date): { prevFrom: string, prevTo: string } => {
@@ -457,7 +467,7 @@ export default function MarketingAssistantPage() {
       })
 
       // Update metaMetrics state with database data
-      setMetaMetrics({
+      const newMetrics = {
         adSpend: currentData.adSpend || 0,
         impressions: currentData.impressions || 0,
         clicks: currentData.clicks || 0,
@@ -485,20 +495,148 @@ export default function MarketingAssistantPage() {
         previousRoas: previousData.roas || 0,
         previousCtr: previousData.ctr || 0,
         previousCpc: previousData.cpc || 0
-      })
+      }
+      
+      setMetaMetrics(newMetrics)
       
       console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
+      
+      return newMetrics // Return the data for use in centralized loading
     } catch (error) {
       console.error(`[MarketingAssistant] Error fetching Meta data from database:`, error)
       setMetaMetrics(defaultMetrics)
+      return defaultMetrics
     }
   }, [selectedBrandId, dateRange, getPreviousPeriodDates, calculatePercentChange])
+
+  // Centralized data loading coordinator - moved here after helper functions are declared
+  const loadAllData = useCallback(async () => {
+    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MarketingAssistant] Missing required data for loading")
+      return
+    }
+
+    console.log('[MarketingAssistant] Starting centralized data loading...')
+    setIsDataLoading(true)
+    setLoadingProgress(0)
+
+    try {
+      // Phase 1: Loading Meta Data
+      setLoadingPhase('Loading Meta advertising data...')
+      setLoadingProgress(15)
+      
+      await new Promise(resolve => setTimeout(resolve, 800)) // Smooth UX
+      
+      // Load Meta metrics
+      const metaData = await fetchMetaDataFromDatabase('centralized-load')
+      
+      setLoadingProgress(30)
+      setLoadingPhase('Syncing latest performance data...')
+      
+      await new Promise(resolve => setTimeout(resolve, 600))
+      
+      // Sync fresh Meta data
+      await syncMetaInsights()
+      
+      setLoadingProgress(50)
+      setLoadingPhase('AI analyzing campaign performance...')
+      
+      await new Promise(resolve => setTimeout(resolve, 900))
+      
+      // Phase 2: Load AI Daily Report
+      try {
+        const response = await fetch('/api/ai/daily-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId: selectedBrandId,
+            forceRegenerate: false
+          }),
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setPreloadedData(prev => ({
+            ...prev,
+            dailyReport: data.report
+          }))
+        }
+      } catch (error) {
+        console.error('[MarketingAssistant] Error loading daily report:', error)
+      }
+      
+      setLoadingProgress(70)
+      setLoadingPhase('Loading campaign insights...')
+      
+      await new Promise(resolve => setTimeout(resolve, 700))
+      
+      // Phase 3: Load campaign data
+      try {
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        const response = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setPreloadedData(prev => ({
+            ...prev,
+            campaigns: data.campaigns || []
+          }))
+        }
+      } catch (error) {
+        console.error('[MarketingAssistant] Error loading campaigns:', error)
+      }
+      
+      setLoadingProgress(85)
+      setLoadingPhase('Preparing AI marketing consultant...')
+      
+      await new Promise(resolve => setTimeout(resolve, 600))
+      
+      // Phase 4: Finalize all data
+      setPreloadedData(prev => ({
+        ...prev,
+        metaMetrics: metaData || metaMetrics,
+        aiConsultantReady: true
+      }))
+      
+      setLoadingProgress(95)
+      setLoadingPhase('Finalizing dashboard...')
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      setLoadingProgress(100)
+      setLoadingPhase('Ready!')
+      
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // All data loaded - show the dashboard
+      setIsDataLoading(false)
+      hasInitialDataLoaded.current = true
+      setLastPageRefresh(new Date())
+      
+      console.log('[MarketingAssistant] ✅ All data loaded successfully!')
+      
+    } catch (error) {
+      console.error('[MarketingAssistant] Error during data loading:', error)
+      // Still show the dashboard even if some data failed
+      setIsDataLoading(false)
+      toast.error('Some data failed to load, but dashboard is still available')
+    }
+  }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase, metaMetrics])
 
   // Initial data load and refresh logic
   useEffect(() => {
     // Skip if we're still in the dashboard's initial setup phase
     if (typeof window !== 'undefined' && window._dashboardInitialSetup) {
-      console.log("[MarketingAssistant] Skipping data fetch - dashboard still in initial setup phase")
+      console.log("[MarketingAssistant] Skipping data load - dashboard still in initial setup phase")
       return
     }
     
@@ -513,37 +651,23 @@ export default function MarketingAssistantPage() {
         return
       }
       
-      console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Fetching Meta data.")
+      console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
       isInitialLoadInProgress.current = true
-      
-      // Set loading state immediately
-      setIsLoadingMetrics(true)
-      
-      // Set initial last refresh time
-      setLastPageRefresh(new Date())
       
       // Update the last fetched date range
       lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
       
-      // First try to load existing data from database quickly
-      fetchMetaDataFromDatabase(`initial-load-${Date.now()}`)
-        .then(() => {
-          // Then trigger sync for fresh data
-          return syncMetaInsights()
-        })
-        .finally(() => {
-          // Mark initial load as complete
-          hasInitialDataLoaded.current = true
-          
-          // Clear the in-progress flag after a delay
-          setTimeout(() => {
-            isInitialLoadInProgress.current = false
-          }, 2000)
-        })
+      // Start the centralized loading process
+      loadAllData().finally(() => {
+        // Clear the in-progress flag after completion
+        setTimeout(() => {
+          isInitialLoadInProgress.current = false
+        }, 2000)
+      })
     }
-  }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase])
+  }, [selectedBrandId, dateRange, loadAllData])
 
-  // Refresh all widgets function
+  // Refresh all widgets function - updated for centralized loading
   const refreshAllWidgets = useCallback(async () => {
     if (!selectedBrandId || isRefreshingAll || refreshCooldown) {
       if (refreshCooldown) {
@@ -565,15 +689,45 @@ export default function MarketingAssistantPage() {
     toast.loading("Refreshing all widgets...", { id: "refresh-all-toast" })
 
     try {
+      // Use centralized loading for refresh but don't show full loading screen
+      setLoadingPhase('Refreshing Meta data...')
+      
       // Trigger Meta sync first
       await syncMetaInsights()
+      
+      setLoadingPhase('Updating AI insights...')
+      
+      // Refresh AI Daily Report
+      try {
+        const response = await fetch('/api/ai/daily-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId: selectedBrandId,
+            forceRegenerate: true
+          }),
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setPreloadedData(prev => ({
+            ...prev,
+            dailyReport: data.report
+          }))
+        }
+      } catch (error) {
+        console.error('[MarketingAssistant] Error refreshing daily report:', error)
+      }
       
       // Dispatch event to refresh all widgets
       window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
         detail: {
           brandId: selectedBrandId,
           timestamp: Date.now(),
-          source: 'MarketingAssistantHeader'
+          source: 'MarketingAssistantHeader',
+          preloadedData: preloadedData
         }
       }))
       
@@ -585,16 +739,22 @@ export default function MarketingAssistantPage() {
     } finally {
       setIsRefreshingAll(false)
     }
-  }, [selectedBrandId, isRefreshingAll, refreshCooldown, syncMetaInsights])
+  }, [selectedBrandId, isRefreshingAll, refreshCooldown, syncMetaInsights, preloadedData])
 
-  // Listen for global refresh events
+  // Listen for global refresh events - updated for centralized system
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[MarketingAssistant] Received global refresh event:", event.detail)
       if (event.detail?.brandId === selectedBrandId) {
-        console.log("[MarketingAssistant] Global refresh event matches current brandId. Triggering Meta database sync.")
-        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" })
-        syncMetaInsights()
+        console.log("[MarketingAssistant] Global refresh event matches current brandId. Triggering refresh.")
+        
+        // For global refreshes, do a quick refresh without full loading screen
+        if (!isRefreshingAll) {
+          setLoadingPhase('Syncing latest data...')
+          syncMetaInsights().then(() => {
+            setLoadingPhase('Ready!')
+          })
+        }
       } else {
         console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
       }
@@ -603,12 +763,11 @@ export default function MarketingAssistantPage() {
     const handleNewDayDetected = (event: CustomEvent) => {
       console.log("[MarketingAssistant] 🌅 New day detected event received:", event.detail)
       if (event.detail?.brandId === selectedBrandId) {
-        console.log("[MarketingAssistant] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.")
-        toast.info("New day detected! Refreshing all Meta data...", { 
-          id: "meta-new-day-refresh",
-          duration: 8000 
-        })
-        syncMetaInsights()
+        console.log("[MarketingAssistant] 📅 New day transition detected for current brand. Triggering full reload.")
+        
+        // For new day, trigger full reload
+        hasInitialDataLoaded.current = false
+        loadAllData()
       } else {
         console.log("[MarketingAssistant] New day event not for this brand, skipping.")
       }
@@ -617,8 +776,10 @@ export default function MarketingAssistantPage() {
     const handleGlobalRefreshAll = (event: CustomEvent) => {
       console.log("[MarketingAssistant] Received global-refresh-all event:", event.detail)
       if (event.detail?.brandId === selectedBrandId && event.detail?.platforms?.meta) {
-        console.log("[MarketingAssistant] Global refresh all - triggering Meta widgets refresh")
-        syncMetaInsights()
+        console.log("[MarketingAssistant] Global refresh all - triggering refresh")
+        if (!isRefreshingAll) {
+          refreshAllWidgets()
+        }
       }
     }
 
@@ -639,21 +800,100 @@ export default function MarketingAssistantPage() {
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener)
       }
     }
-  }, [selectedBrandId, syncMetaInsights])
+  }, [selectedBrandId, syncMetaInsights, refreshAllWidgets, isRefreshingAll, loadAllData])
 
-  // Show loading state
-  if (isLoadingPage) {
-    const loadingConfig = getPageLoadingConfig(pathname)
-    
+  // Show loading state with enhanced progress display
+  if (isDataLoading) {
     return (
-      <UnifiedLoading
-        variant="page"
-        size="lg"
-        message="Loading Marketing Assistant"
-        subMessage="Preparing your marketing insights"
-        agencyLogo={agencySettings.agency_logo_url}
-        agencyName={agencySettings.agency_name}
-      />
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Agency/Brand Logo */}
+          {agencySettings.agency_logo_url && (
+            <div className="mb-8">
+              <img 
+                src={agencySettings.agency_logo_url} 
+                alt={agencySettings.agency_name || 'Agency'} 
+                className="w-16 h-16 mx-auto object-contain opacity-90"
+              />
+            </div>
+          )}
+          
+          {/* Main loading icon */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">[bm]</span>
+            </div>
+          </div>
+          
+          {/* Loading title */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Loading Marketing Assistant
+          </h1>
+          
+          {/* Dynamic loading phase */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            {loadingPhase}
+          </p>
+          
+          {/* Progress bar */}
+          <div className="w-full max-w-md mx-auto mb-6">
+            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+              <span>Progress</span>
+              <span>{loadingProgress}%</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          {/* Loading phases checklist */}
+          <div className="text-left space-y-2 text-sm text-gray-400">
+                          <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Loading Meta advertising data</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Syncing latest performance data</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>AI analyzing campaign performance</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Loading campaign insights</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Preparing AI marketing consultant</span>
+            </div>
+            <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 100 ? 'text-gray-300' : ''}`}>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <span>Finalizing dashboard</span>
+            </div>
+          </div>
+          
+          {/* Subtle loading tip */}
+          <div className="mt-8 text-xs text-gray-500 italic">
+            Loading all data behind the scenes for instant widget display...
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -724,7 +964,7 @@ export default function MarketingAssistantPage() {
             className="px-6" 
           />
 
-          {/* Main Content Grid */}
+          {/* Main Content Grid - All widgets now show with preloaded data */}
           <div className="px-6 space-y-6">
             {/* Top Section - Blended Widgets and Advertising Report */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
