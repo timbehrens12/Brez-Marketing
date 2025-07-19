@@ -1048,16 +1048,16 @@ export default function MarketingAssistantPage() {
   }
 
   return (
-    <div className="w-full space-y-6 pt-4 mb-12">
+    <div className="w-full space-y-6 mb-12">
       {!selectedBrandId ? (
         <div className="text-center py-12 px-6">
           <p className="text-gray-400 text-lg">Please select a brand to view marketing metrics</p>
         </div>
       ) : (
         <>
-          {/* Page Header */}
-          <div className="px-6 -mt-2">
-            <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#333] rounded-lg p-5 shadow-xl border-b-2 border-b-[#444]">
+          {/* Page Header - Full Width */}
+          <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
+            <div className="px-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -1065,8 +1065,8 @@ export default function MarketingAssistantPage() {
                     <Brain className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-white">Marketing Assistant</h1>
-                    <p className="text-gray-400 text-sm">
+                    <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
+                    <p className="text-gray-400 text-base">
                       {lastPageRefresh ? (
                         <>
                           Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

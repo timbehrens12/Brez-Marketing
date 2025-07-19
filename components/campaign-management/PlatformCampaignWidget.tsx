@@ -180,27 +180,27 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       
       if (isDataDifferent) {
         console.log('[CampaignWidget] Preloaded data is different from current data - updating')
-        setLocalCampaigns(preloadedCampaigns)
-        setHasInitiallyLoaded(true)
-        
-        setPlatforms(prev => ({
-          ...prev,
-          meta: {
-            ...prev.meta,
-            campaigns: preloadedCampaigns
-          }
-        }))
-        
-        // Load saved recommendations for the preloaded campaigns
-        loadSavedRecommendations(preloadedCampaigns)
-        
-        // Check campaign statuses for preloaded data
-        setTimeout(() => {
-          checkCampaignStatuses(preloadedCampaigns, false, true)
-        }, 1000)
+      setLocalCampaigns(preloadedCampaigns)
+      setHasInitiallyLoaded(true)
+      
+      setPlatforms(prev => ({
+        ...prev,
+        meta: {
+          ...prev.meta,
+          campaigns: preloadedCampaigns
+        }
+      }))
+      
+      // Load saved recommendations for the preloaded campaigns
+      loadSavedRecommendations(preloadedCampaigns)
+      
+      // Check campaign statuses for preloaded data
+      setTimeout(() => {
+        checkCampaignStatuses(preloadedCampaigns, false, true)
+      }, 1000)
       } else {
         console.log('[CampaignWidget] Preloaded data is the same as current data - no update needed')
-      }
+    }
     }
   }, [preloadedCampaigns, localCampaigns])
 
@@ -515,8 +515,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         
         // Clear local campaigns to force a fresh fetch
         setLocalCampaigns([])
-        setPlatforms(prev => ({
-          ...prev,
+      setPlatforms(prev => ({
+        ...prev,
           meta: { ...prev.meta, campaigns: [] }
         }))
         
@@ -802,7 +802,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                               
                               {/* Performance Metrics Grid */}
                               <div className="p-6 pt-4">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                   <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
                                     <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Budget</div>
                                     <div className="text-xl font-bold text-white">{formatCurrency(campaign.budget)}</div>
@@ -1070,11 +1070,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </div>
 
           {/* Campaigns table */}
-                  <div className="px-6 pb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {filteredCampaigns.map(renderCampaignCard)}
+          <div className="px-6 pb-6">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              {filteredCampaigns.map(renderCampaignCard)}
+            </div>
           </div>
-        </div>
         </div>
       )
     }
@@ -1212,7 +1212,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
         {/* Campaigns table */}
         <div className="px-6 pb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {filteredCampaigns.map(renderCampaignCard)}
           </div>
         </div>
