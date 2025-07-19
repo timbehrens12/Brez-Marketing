@@ -1138,13 +1138,13 @@ export default function MarketingAssistantPage() {
                   // isLoadingMetrics={isLoadingMetrics}
                   // isRefreshingData={isRefreshingData}
                 />
-              </div>
+                  </div>
 
-              {/* Right: Advertising Report - 50% width */}
+                                          {/* Right: Advertising Report - 50% width */}
               <div className="h-full">
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
-            </div>
+                </div>
 
             {/* Middle Section - Campaign Management at 100% width */}
             <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
