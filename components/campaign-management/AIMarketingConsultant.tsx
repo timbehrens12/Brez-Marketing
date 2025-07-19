@@ -526,7 +526,7 @@ export default function AIMarketingConsultant(
 
   if (!selectedBrandId) {
     return (
-      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1380px] flex flex-col">
+      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1390px] flex flex-col">
         <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -555,7 +555,7 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1380px] flex flex-col">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1390px] flex flex-col">
       <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
