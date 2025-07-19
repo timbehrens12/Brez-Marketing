@@ -613,7 +613,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                     {/* Ad Details */}
                     <div className="p-4 pt-0">
                       <div className="mb-4">
-                        <h4 className="font-semibold text-white text-sm truncate line-clamp-2 mb-1 tracking-tight">
+                                                  <h4 className="font-semibold text-white text-sm mb-1 tracking-tight line-clamp-2 overflow-hidden text-ellipsis">
                           {ad.ad_name}
                         </h4>
                         {ad.headline && (
@@ -621,11 +621,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                             {ad.headline}
                           </p>
                         )}
-                        <div className="text-xs text-gray-500">
-                          <span className="font-medium">{ad.campaign_name}</span>
-                          <span className="mx-1 text-gray-600">•</span>
-                          <span>{ad.adset_name}</span>
-                        </div>
+                                                  <div className="text-xs text-gray-500 space-y-1">
+                            <p className="text-gray-400 truncate">{ad.campaign_name}</p>
+                            <p className="text-gray-500 truncate">{ad.adset_name}</p>
+                          </div>
                       </div>
                       
                       {/* Performance Metrics */}

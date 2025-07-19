@@ -245,9 +245,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   const generateBudgetData = () => {
     const dailyBudget = report?.dailyBudget || 0
     
-    // Force today's data at midnight transition (like blended widgets)
+    // Force today's data at midnight transition (like blended widgets) - use local time
     const now = new Date()
-    const shouldForceToday = (now.getHours() === 0 && now.getMinutes() < 30) // First 30 minutes of new day
+    const localHour = now.getHours() // This is already in local time
+    const shouldForceToday = (localHour === 0 && now.getMinutes() < 30) // First 30 minutes of new day in local time
     
     // Check if today has meaningful data
     const todayHasData = report?.todayStats && (
@@ -310,9 +311,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   // Get the most relevant stats to display
   const getRelevantStats = () => {
-    // Force today's data at midnight transition (like blended widgets)
+    // Force today's data at midnight transition (like blended widgets) - use local time
     const now = new Date()
-    const shouldForceToday = (now.getHours() === 0 && now.getMinutes() < 30) // First 30 minutes of new day
+    const localHour = now.getHours() // This is already in local time
+    const shouldForceToday = (localHour === 0 && now.getMinutes() < 30) // First 30 minutes of new day in local time
     
     // Check if today has meaningful data
     const todayHasData = report?.todayStats && (
@@ -335,6 +337,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   // Get percentage changes for key metrics
   const getPercentageChanges = () => {
     if (!report?.todayStats || !report?.yesterdayStats) {
+      console.log('[AIDailyReport] Missing stats data:', {
+        todayStats: report?.todayStats,
+        yesterdayStats: report?.yesterdayStats
+      })
       return {
         spendChange: 0,
         conversionsChange: 0,
@@ -345,10 +351,18 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       }
     }
 
+    console.log('[AIDailyReport] Calculating percentage changes:', {
+      todayStats: report.todayStats,
+      yesterdayStats: report.yesterdayStats
+    })
+
     return {
       spendChange: calculatePercentageChange(report.todayStats.spend, report.yesterdayStats.spend),
       conversionsChange: calculatePercentageChange(report.todayStats.conversions, report.yesterdayStats.conversions),
-      roasChange: calculatePercentageChange(report.totalROAS, report.totalROAS), // This might need adjustment based on yesterday's ROAS
+      roasChange: calculatePercentageChange(
+        report.todayStats.revenue > 0 && report.todayStats.spend > 0 ? report.todayStats.revenue / report.todayStats.spend : 0,
+        report.yesterdayStats.revenue > 0 && report.yesterdayStats.spend > 0 ? report.yesterdayStats.revenue / report.yesterdayStats.spend : 0
+      ),
       impressionsChange: calculatePercentageChange(report.todayStats.impressions, report.yesterdayStats.impressions),
       clicksChange: calculatePercentageChange(report.todayStats.clicks, report.yesterdayStats.clicks),
       revenueChange: calculatePercentageChange(report.todayStats.revenue, report.yesterdayStats.revenue)

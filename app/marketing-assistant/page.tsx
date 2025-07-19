@@ -912,17 +912,6 @@ export default function MarketingAssistantPage() {
         </div>
         
         <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Agency/Brand Logo */}
-          {agencySettings.agency_logo_url && (
-            <div className="mb-8">
-              <img 
-                src={agencySettings.agency_logo_url} 
-                alt={agencySettings.agency_name || 'Agency'} 
-                className="w-16 h-16 mx-auto object-contain opacity-90"
-              />
-            </div>
-          )}
-          
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
