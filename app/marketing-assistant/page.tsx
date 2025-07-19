@@ -155,6 +155,11 @@ export default function MarketingAssistantPage() {
   const { agencySettings } = useAgency()
   const pathname = usePathname()
   
+  // Ensure page starts at top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+  
   // Centralized loading state management
   const [isDataLoading, setIsDataLoading] = useState(true)
   const [loadingPhase, setLoadingPhase] = useState<string>('Initializing Marketing Assistant')
@@ -749,6 +754,11 @@ export default function MarketingAssistantPage() {
       hasInitialDataLoaded.current = true
       setLastPageRefresh(new Date())
       
+      // Scroll to top when data is loaded to ensure proper positioning
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 100)
+      
       console.log('[MarketingAssistant] ✅ All data loaded successfully!')
       
     } catch (error) {
@@ -963,17 +973,10 @@ export default function MarketingAssistantPage() {
     }
   }, [selectedBrandId, syncMetaInsights, refreshAllWidgets, isRefreshingAll, loadAllData])
 
-  // Ensure we start at the top when loading state changes
-  useEffect(() => {
-    if (isDataLoading) {
-      window.scrollTo(0, 0)
-    }
-  }, [isDataLoading])
-
   // Show loading state with enhanced progress display
   if (isDataLoading) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#0A0A0A] flex flex-col items-center justify-center overflow-hidden">
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
