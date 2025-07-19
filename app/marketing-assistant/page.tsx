@@ -858,18 +858,24 @@ export default function MarketingAssistantPage() {
       setRefreshCooldown(false)
     }, 30000) // 30 second cooldown
 
-    toast.loading("Refreshing all widgets...", { id: "refresh-all-toast" })
+    // Use the same progressive loading system as initial page load
+    setIsDataLoading(true)
+    setLoadingProgress(0)
+    setLoadingPhase('Starting refresh...')
 
     try {
-      // Use centralized loading for refresh but don't show full loading screen
-      setLoadingPhase('Refreshing Meta data...')
+      // Phase 1: Meta Data Refresh
+      setLoadingPhase('Refreshing Meta advertising data...')
+      setLoadingProgress(20)
+      await new Promise(resolve => setTimeout(resolve, 600))
       
-      // Trigger Meta sync first
       await syncMetaInsights()
       
-      setLoadingPhase('Updating AI insights...')
-      
-      // Refresh AI Daily Report
+      setLoadingProgress(40)
+      setLoadingPhase('Regenerating AI insights...')
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Phase 2: AI Daily Report
       try {
         const response = await fetch('/api/ai/daily-report', {
           method: 'POST',
@@ -894,7 +900,60 @@ export default function MarketingAssistantPage() {
         console.error('[MarketingAssistant] Error refreshing daily report:', error)
       }
       
-      // Dispatch event to refresh all widgets
+      setLoadingProgress(65)
+      setLoadingPhase('Refreshing campaign data...')
+      await new Promise(resolve => setTimeout(resolve, 400))
+
+      // Phase 3: Campaign Data
+      try {
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        
+        const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
+        
+        if (campaignsResponse.ok) {
+          const campaignsData = await campaignsResponse.json()
+          setPreloadedData(prev => ({
+            ...prev,
+            campaigns: campaignsData.campaigns || []
+          }))
+        }
+      } catch (error) {
+        console.error('[MarketingAssistant] Error refreshing campaigns:', error)
+      }
+
+      setLoadingProgress(85)
+      setLoadingPhase('Loading ad creatives...')
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Phase 4: Ad Creatives
+      try {
+        const response = await fetch(`/api/meta/ad-creatives?brandId=${selectedBrandId}&limit=50&t=${Date.now()}`, {
+          cache: 'no-store'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setPreloadedData(prev => ({
+            ...prev,
+            adCreatives: data.adCreatives || []
+          }))
+        }
+      } catch (error) {
+        console.error('[MarketingAssistant] Error refreshing ad creatives:', error)
+      }
+
+      setLoadingProgress(95)
+      setLoadingPhase('Finalizing refresh...')
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      // Dispatch event to refresh all widgets with new data
       window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
         detail: {
           brandId: selectedBrandId,
@@ -904,13 +963,22 @@ export default function MarketingAssistantPage() {
         }
       }))
       
+      setLoadingProgress(100)
+      setLoadingPhase('Refresh complete!')
+      
       setLastPageRefresh(new Date())
-      toast.success("All widgets refreshed!", { id: "refresh-all-toast" })
+      toast.success("All widgets refreshed successfully!", { duration: 3000 })
     } catch (error) {
       console.error('[MarketingAssistant] Error refreshing widgets:', error)
-      toast.error("Failed to refresh some widgets", { id: "refresh-all-toast" })
+      toast.error("Failed to refresh some widgets")
     } finally {
-      setIsRefreshingAll(false)
+      // Keep loading screen visible briefly to show completion
+      setTimeout(() => {
+        setIsDataLoading(false)
+        setIsRefreshingAll(false)
+        setLoadingPhase('Ready!')
+        setLoadingProgress(0)
+      }, 800)
     }
   }, [selectedBrandId, isRefreshingAll, refreshCooldown, syncMetaInsights, preloadedData])
 
@@ -1025,27 +1093,27 @@ export default function MarketingAssistantPage() {
           {/* Loading phases checklist */}
                       <div className="text-left space-y-2 text-sm text-gray-400">
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 15 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Loading Meta advertising data</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Syncing latest performance data</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>AI analyzing campaign performance</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Loading ad creative insights</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Preparing AI marketing consultant</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Finalizing dashboard</span>
               </div>
             </div>

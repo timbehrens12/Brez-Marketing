@@ -166,6 +166,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   const [recommendationDialogOpen, setRecommendationDialogOpen] = useState(false)
   const [selectedRecommendation, setSelectedRecommendation] = useState<Campaign | null>(null)
 
+  // Add ref to track last recommendation load to prevent infinite loops
+  const lastRecommendationLoad = useRef<{ campaignKey: string; timestamp: number }>({ 
+    campaignKey: '', 
+    timestamp: 0 
+  })
+
   // Use preloaded campaigns when they change - but allow for fresh data refreshes
   useEffect(() => {
     if (preloadedCampaigns && preloadedCampaigns.length > 0) {
@@ -272,11 +278,18 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   // Load saved recommendations for campaigns
   const loadSavedRecommendations = useCallback(async (campaigns: Campaign[]) => {
     if (!selectedBrandId || campaigns.length === 0) {
-      console.log('[CampaignWidget] Skipping loadSavedRecommendations:', { brandId: !!selectedBrandId, campaignsLength: campaigns.length })
       return
     }
 
-    console.log('[CampaignWidget] Loading saved recommendations for', campaigns.length, 'campaigns')
+    // Add debounce to prevent infinite loops
+    const campaignKey = campaigns.map(c => c.campaign_id).sort().join(',')
+    const currentTime = Date.now()
+    
+    // Check if we've already loaded recommendations for these exact campaigns recently
+    if (lastRecommendationLoad.current.campaignKey === campaignKey && 
+        currentTime - lastRecommendationLoad.current.timestamp < 5000) { // 5 second debounce
+      return
+    }
 
     try {
       const campaignIds = campaigns.map(c => c.campaign_id)
@@ -285,34 +298,29 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         campaignIds: campaignIds.join(',')
       })
 
-      console.log('[CampaignWidget] Fetching recommendations from API:', params.toString())
-
       const response = await fetch(`/api/ai/campaign-recommendations?${params}`)
       
       if (response.ok) {
         const data = await response.json()
         
-        console.log('[CampaignWidget] Recommendations API response:', data)
-        
         if (data.success && data.recommendations) {
           // Update campaigns with their saved recommendations
-          // Fix: Use the campaigns passed in and update based on those, not just the current state
-          const campaignsWithRecommendations = campaigns.map(campaign => ({
-            ...campaign,
-            recommendation: data.recommendations[campaign.campaign_id] || campaign.recommendation
-          }))
+          const campaignsWithRecommendations = campaigns.map(campaign => {
+            const recommendation = data.recommendations[campaign.campaign_id]
+            return recommendation ? { ...campaign, recommendation } : campaign
+          })
           
-          console.log('[CampaignWidget] Campaigns with recommendations loaded:', campaignsWithRecommendations.map(c => ({ id: c.campaign_id, hasRec: !!c.recommendation })))
-          
-          // Update local campaigns state with the enriched data
+          // Update local state only if we have new data
           setLocalCampaigns(campaignsWithRecommendations)
           
-          console.log(`[CampaignWidget] ✅ Loaded ${data.count || Object.keys(data.recommendations).length} saved recommendations`)
-        } else {
-          console.log('[CampaignWidget] No recommendations found in API response')
+          // Update the debounce tracker
+          lastRecommendationLoad.current = {
+            campaignKey,
+            timestamp: currentTime
+          }
+          
+          console.log(`[CampaignWidget] ✅ Loaded ${Object.keys(data.recommendations).length} saved recommendations`)
         }
-      } else {
-        console.error('[CampaignWidget] Failed to fetch recommendations:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('[CampaignWidget] Error loading saved recommendations:', error)

@@ -340,8 +340,6 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const campaignIds = searchParams.get('campaignIds')?.split(',').filter(Boolean)
 
-    console.log('[Campaign Recommendations API] GET request:', { brandId, campaignIds, userId })
-
     if (!brandId || !campaignIds || campaignIds.length === 0) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
@@ -349,47 +347,40 @@ export async function GET(request: NextRequest) {
     // Initialize Supabase client
     const supabase = createClient()
 
-    // Fetch saved recommendations for the campaigns
+    // Fetch saved recommendations for the specified campaigns
     const { data: recommendations, error } = await supabase
-      .from('ai_campaign_recommendations')
-      .select('*')
+      .from('campaign_recommendations')
+      .select('campaign_id, recommendation, created_at')
+      .eq('user_id', userId)
       .eq('brand_id', brandId)
       .in('campaign_id', campaignIds)
-      .gt('expires_at', new Date().toISOString())
-
-    console.log('[Campaign Recommendations API] Database query result:', { 
-      recommendationsCount: recommendations?.length || 0, 
-      error: error?.message,
-      campaignIds,
-      brandId 
-    })
+      .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching recommendations:', error)
-      return NextResponse.json({ error: 'Failed to fetch recommendations' }, { status: 500 })
+      console.error('[Campaign Recommendations API] Database error:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // Create a map of campaign_id to recommendation
-    const recommendationsMap = recommendations?.reduce((acc: any, rec: any) => {
-      console.log('[Campaign Recommendations API] Adding recommendation for campaign:', rec.campaign_id)
-      acc[rec.campaign_id] = rec.recommendation
-      return acc
-    }, {}) || {}
+    // Format recommendations as a map for easy lookup
+    const recommendationsMap: Record<string, any> = {}
+    
+    if (recommendations) {
+      recommendations.forEach(rec => {
+        recommendationsMap[rec.campaign_id] = rec.recommendation
+      })
+    }
 
-    console.log('[Campaign Recommendations API] Final recommendations map:', Object.keys(recommendationsMap))
+    console.log(`[Campaign Recommendations API] ✅ Found ${recommendations?.length || 0} saved recommendations`)
 
     return NextResponse.json({
       success: true,
       recommendations: recommendationsMap,
-      count: Object.keys(recommendationsMap).length
+      count: recommendations?.length || 0
     })
 
   } catch (error) {
-    console.error('Error fetching campaign recommendations:', error)
-    return NextResponse.json({ 
-      error: 'Failed to fetch recommendations',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('[Campaign Recommendations API] Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
