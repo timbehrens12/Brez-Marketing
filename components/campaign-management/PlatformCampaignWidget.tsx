@@ -802,7 +802,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                               
                               {/* Performance Metrics Grid */}
                               <div className="p-6 pt-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                   <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
                                     <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Budget</div>
                                     <div className="text-xl font-bold text-white">{formatCurrency(campaign.budget)}</div>
