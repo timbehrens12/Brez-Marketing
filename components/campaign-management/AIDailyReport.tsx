@@ -481,9 +481,8 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                       month: 'short',
                       day: 'numeric',
                       hour: 'numeric',
-                      minute: '2-digit',
-                      timeZoneName: 'short'
-                    })}
+                      minute: '2-digit'
+                    })} local time
                   </div>
                 )}
               </div>

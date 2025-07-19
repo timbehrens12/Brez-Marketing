@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   AreaChart,
@@ -299,16 +299,18 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <Card className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg h-[680px]">
-      <CardHeader className="pb-3">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-[680px]">
+      {/* Header - matches other widgets style */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-              <BarChart3 className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-base font-semibold text-white">Performance Trends</CardTitle>
-              <p className="text-sm text-gray-400">{getMetricLabel()} across platforms</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Performance Trends</h2>
+              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
             </div>
           </div>
           
@@ -402,8 +404,10 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
             </DropdownMenu>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
+      </div>
+      
+      {/* Content */}
+      <CardContent className="p-6">
         {/* Remove loading state check - always show chart or empty state */}
         {chartData.length > 0 ? (
           <div className="h-80">

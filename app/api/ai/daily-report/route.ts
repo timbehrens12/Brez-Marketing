@@ -1135,11 +1135,11 @@ function generateFactualSummary(platformData: PlatformAnalysis): string {
   // Generate comprehensive factual summary with time-aware context
   const summaryParts = []
   
-  // Add time-specific opening
+  // Add time-specific opening (no emoji, better formatting)
   if (isEarlyDay) {
-    summaryParts.push(`🌅 Early ${timeOfDay} campaign review (${reportTimestamp}): While today's data is still developing, yesterday's performance and overall trends provide valuable insights for optimization planning.`)
+    summaryParts.push(`Early ${timeOfDay} campaign review: While today's data is still developing, yesterday's performance and overall trends provide valuable insights for optimization planning.`)
   } else {
-    summaryParts.push(`📊 ${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} performance analysis (${reportTimestamp}): Current campaign data shows active advertising operations with measurable results.`)
+    summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} performance analysis: Current campaign data shows active advertising operations with measurable results.`)
   }
   
   // Campaign Overview with Context - Add variability based on time
