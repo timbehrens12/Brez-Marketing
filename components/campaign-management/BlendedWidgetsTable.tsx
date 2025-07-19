@@ -227,7 +227,7 @@ export default function BlendedWidgetsTable({
   // const loading = isLoadingMetrics || isRefreshingData
 
   return (
-    <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+    <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
       <div className="relative">
         {/* Header - matches AIDailyReport style */}
         <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
@@ -244,7 +244,7 @@ export default function BlendedWidgetsTable({
         </div>
         
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 p-6 overflow-auto">
           {/* 2-column, 4-row grid with modern cards */}
           <div className="grid grid-cols-2 gap-3">
           {/* Row 1 - Spend & ROAS */}

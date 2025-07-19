@@ -1125,36 +1125,36 @@ export default function MarketingAssistantPage() {
           />
 
           {/* Main Content Grid - All widgets now show with preloaded data */}
-          <div className="px-6 space-y-6">
+          <div className="px-6 space-y-8">
             {/* Top Section - Blended Widgets and Advertising Report */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
               {/* Left: Blended Widgets Table - 50% width */}
-              <div>
+              <div className="h-full">
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                   // Remove loading props
                   // isLoadingMetrics={isLoadingMetrics}
                   // isRefreshingData={isRefreshingData}
                 />
-                  </div>
+              </div>
 
-                                          {/* Right: Advertising Report - 50% width */}
+              {/* Right: Advertising Report - 50% width */}
               <div className="h-full">
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
-                </div>
+            </div>
 
             {/* Middle Section - Campaign Management at 100% width */}
-            <div className="p-6 bg-[#111] border border-[#333] rounded-lg">
-              <div style={{ minHeight: '600px', maxHeight: '800px', overflow: 'auto' }}>
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+              <div className="p-6" style={{ minHeight: '600px', maxHeight: '800px', overflow: 'auto' }}>
                 <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
               </div>
             </div>
 
             {/* Bottom Section - Ad Creative and AI Consultant */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
               {/* Left Column - Ad Creative and Performance Chart */}
-              <div className="space-y-6">
+              <div className="space-y-6 h-full">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
@@ -1164,7 +1164,7 @@ export default function MarketingAssistantPage() {
               </div>
 
               {/* Right Column - AI Marketing Consultant */}
-              <div>
+              <div className="h-full">
                 <AIMarketingConsultant 
                   // Remove loading prop
                   // loading={isLoadingMetrics || isRefreshingData} 
