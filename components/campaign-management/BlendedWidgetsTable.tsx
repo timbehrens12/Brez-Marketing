@@ -37,8 +37,9 @@ interface MetaMetrics {
 
 interface BlendedWidgetsTableProps {
   metaMetrics: MetaMetrics
-  isLoadingMetrics: boolean
-  isRefreshingData: boolean
+  // Remove loading props
+  // isLoadingMetrics: boolean
+  // isRefreshingData: boolean
 }
 
 // Custom metric card component for blended metrics
@@ -52,7 +53,8 @@ function BlendedMetricCard({
   suffix,
   decimals = 0,
   isPercentage = false,
-  loading,
+  // Remove loading prop
+  // loading,
   platforms
 }: {
   icon: any
@@ -64,7 +66,8 @@ function BlendedMetricCard({
   suffix?: string
   decimals?: number
   isPercentage?: boolean
-  loading: boolean
+  // Remove loading prop
+  // loading: boolean
   platforms: { name: string; icon: string; value: string | number; active: boolean }[]
 }) {
   const formatValue = (val: number) => {
@@ -186,29 +189,24 @@ function BlendedMetricCard({
       {/* Value and Change */}
       <div className="space-y-1">
         <div className="flex items-baseline gap-2">
-          {loading ? (
-            <div className="h-7 w-24 bg-[#222] animate-pulse rounded" />
-          ) : (
-            <>
-              <span className="text-2xl font-semibold text-white">
-                {formatValue(value)}
-              </span>
-              {change !== null && change !== undefined && (
-                <div className={cn(
-                  "flex items-center gap-0.5 text-xs font-medium",
-                  change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400"
-                )}>
-                  {change > 0 ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : change < 0 ? (
-                    <TrendingDown className="w-3 h-3" />
-                  ) : (
-                    <div className="w-3 h-3" /> /* Empty space for 0% change */
-                  )}
-                  <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
-                </div>
+          {/* Remove loading skeleton, always show actual content */}
+          <span className="text-2xl font-semibold text-white">
+            {formatValue(value)}
+          </span>
+          {change !== null && change !== undefined && (
+            <div className={cn(
+              "flex items-center gap-0.5 text-xs font-medium",
+              change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400"
+            )}>
+              {change > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : change < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <div className="w-3 h-3" /> /* Empty space for 0% change */
               )}
-            </>
+              <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
+            </div>
           )}
         </div>
         
@@ -220,11 +218,13 @@ function BlendedMetricCard({
 }
 
 export default function BlendedWidgetsTable({ 
-  metaMetrics, 
-  isLoadingMetrics, 
-  isRefreshingData 
+  metaMetrics
+  // Remove loading props
+  // isLoadingMetrics, 
+  // isRefreshingData 
 }: BlendedWidgetsTableProps) {
-  const loading = isLoadingMetrics || isRefreshingData
+  // Remove loading state calculation
+  // const loading = isLoadingMetrics || isRefreshingData
 
   return (
     <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
@@ -256,7 +256,8 @@ export default function BlendedWidgetsTable({
             change={metaMetrics.adSpendGrowth}
             prefix="$"
             decimals={2}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -287,7 +288,8 @@ export default function BlendedWidgetsTable({
             change={metaMetrics.roasGrowth}
             suffix="x"
             decimals={2}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -319,7 +321,8 @@ export default function BlendedWidgetsTable({
             change={metaMetrics.roasGrowth}
             prefix="$"
             decimals={2}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -349,7 +352,8 @@ export default function BlendedWidgetsTable({
             value={metaMetrics.conversions}
             change={metaMetrics.conversionGrowth}
             decimals={0}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -380,7 +384,8 @@ export default function BlendedWidgetsTable({
             value={metaMetrics.impressions}
             change={metaMetrics.impressionGrowth}
             decimals={0}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -410,7 +415,8 @@ export default function BlendedWidgetsTable({
             value={metaMetrics.clicks}
             change={metaMetrics.clickGrowth}
             decimals={0}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -442,7 +448,8 @@ export default function BlendedWidgetsTable({
             change={metaMetrics.ctrGrowth}
             isPercentage={true}
             decimals={2}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 
@@ -473,7 +480,8 @@ export default function BlendedWidgetsTable({
             change={metaMetrics.cpcGrowth}
             prefix="$"
             decimals={2}
-            loading={loading}
+            // Remove loading prop
+            // loading={loading}
             platforms={[
               { 
                 name: "Meta", 

@@ -105,7 +105,8 @@ interface PlatformData {
   logo: string
   isActive: boolean
   campaigns: Campaign[]
-  isLoading: boolean
+  // Remove isLoading completely
+  // isLoading: boolean
   error?: string
 }
 
@@ -116,22 +117,22 @@ export default function PlatformCampaignWidget() {
       name: "Meta",
       logo: "https://i.imgur.com/6hyyRrs.png",
       isActive: true,
-      campaigns: [],
-      isLoading: true // Start with true to show loading on initial load
+      campaigns: []
+      // Remove isLoading completely
     },
     tiktok: {
       name: "TikTok",
       logo: "https://i.imgur.com/AXHa9UT.png",
       isActive: false,
-      campaigns: [],
-      isLoading: false
+      campaigns: []
+      // Remove isLoading completely
     },
     google: {
       name: "Google Ads",
       logo: "https://i.imgur.com/TavV4UJ.png",
       isActive: false,
-      campaigns: [],
-      isLoading: false
+      campaigns: []
+      // Remove isLoading completely
     }
   })
   
@@ -151,7 +152,8 @@ export default function PlatformCampaignWidget() {
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Add refresh trigger state
-  const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
+  // Remove global refresh loading state
+  // const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
   
   // Local state for campaigns
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([])
@@ -334,16 +336,16 @@ export default function PlatformCampaignWidget() {
 
       console.log('[CampaignWidget] Fetching campaigns for brand:', selectedBrandId)
       
-      // Show loading state during any fetch
-      setIsRefreshing(true)
-      setPlatforms(prev => ({
-        ...prev,
-        meta: { 
-          ...prev.meta, 
-          isLoading: true, 
-          error: undefined
-        }
-      }))
+      // Remove loading state during fetch
+      // setIsRefreshing(true)
+      // setPlatforms(prev => ({
+      //   ...prev,
+      //   meta: { 
+      //     ...prev.meta, 
+      //     isLoading: true, 
+      //     error: undefined
+      //   }
+      // }))
 
       try {
         // Get today's date for campaign data - ALWAYS use today for campaigns
@@ -389,7 +391,8 @@ export default function PlatformCampaignWidget() {
         meta: {
           ...prev.meta,
               campaigns: campaignsWithPlatform,
-              isLoading: false,
+              // Remove loading state
+              // isLoading: false,
               error: undefined
             }
           }))
@@ -404,13 +407,16 @@ export default function PlatformCampaignWidget() {
         }, 1000)
       }
           
-          setIsRefreshing(false)
+          // Remove loading state
+          // setIsRefreshing(false)
         } else {
           console.warn('[CampaignWidget] No campaigns array in response:', data)
           setLocalCampaigns([])
         setPlatforms(prev => ({
           ...prev,
-            meta: { ...prev.meta, campaigns: [], isLoading: false }
+            // Remove loading state
+            // meta: { ...prev.meta, campaigns: [], isLoading: false }
+            meta: { ...prev.meta, campaigns: [] }
           }))
       }
 
@@ -421,14 +427,16 @@ export default function PlatformCampaignWidget() {
         ...prev,
         meta: {
           ...prev.meta,
-          isLoading: false,
+          // Remove loading state
+          // isLoading: false,
             error: error instanceof Error ? error.message : 'Unknown error' 
         }
       }))
         
         setLocalCampaigns([])
     } finally {
-      setIsRefreshing(false)
+      // Remove loading state
+      // setIsRefreshing(false)
     }
     }
 
@@ -1119,34 +1127,35 @@ export default function PlatformCampaignWidget() {
       )
     }
 
-    if (platform.isLoading) {
-      return (
-        <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-          <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <img src={platform.logo} alt={platform.name} className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-white">Campaign Management</h3>
-                <p className="text-gray-400">Loading campaigns...</p>
-              </div>
-            </div>
-          </div>
+    // Remove loading state check - always show campaigns or empty state
+    // if (platform.isLoading) {
+    //   return (
+    //     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+    //       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
+    //         <div className="flex items-center gap-4">
+    //           <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+    //                         flex items-center justify-center border border-white/10 shadow-lg">
+    //             <img src={platform.logo} alt={platform.name} className="w-8 h-8" />
+    //           </div>
+    //           <div>
+    //             <h3 className="text-2xl font-bold text-white">Campaign Management</h3>
+    //             <p className="text-gray-400">Loading campaigns...</p>
+    //           </div>
+    //         </div>
+    //       </div>
           
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-                <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
-              </div>
-              <p className="text-gray-400 text-lg font-medium">Loading campaign data...</p>
-              <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-            </div>
-          </div>
-        </div>
-      )
-    }
+    //       <div className="flex-1 flex items-center justify-center p-6">
+    //         <div className="text-center">
+    //           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
+    //             <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+    //           </div>
+    //           <p className="text-gray-400 text-lg font-medium">Loading campaign data...</p>
+    //           <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   )
+    // }
 
     const platformCampaigns = localCampaigns.filter(c => c.platform === platformKey)
     const filteredCampaigns = getFilteredAndSortedCampaigns(platformCampaigns)
@@ -1227,7 +1236,8 @@ export default function PlatformCampaignWidget() {
 
   return (
     <div className="space-y-6 relative" style={{ minHeight: '600px' }}>
-      {/* Loading Overlay */}
+      {/* Remove Loading Overlay - completely commented out */}
+      {/* 
       {isRefreshing && (
         <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
           <div className="text-center">
@@ -1239,6 +1249,7 @@ export default function PlatformCampaignWidget() {
           </div>
         </div>
       )}
+      */}
       
       {/* Header */}
       <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">

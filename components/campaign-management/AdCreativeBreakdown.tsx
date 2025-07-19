@@ -67,14 +67,20 @@ interface Ad {
 }
 
 interface AdCreativeBreakdownProps {
-  loading?: boolean
+  // Remove loading prop
+  // loading?: boolean
 }
 
-export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreakdownProps) {
+export default function AdCreativeBreakdown(
+  // Remove loading prop with default
+  // { loading = false }: AdCreativeBreakdownProps
+  {}: AdCreativeBreakdownProps = {}
+) {
   const { selectedBrandId } = useBrandContext()
   const [ads, setAds] = useState<Ad[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
+  // Remove loading states
+  // const [isLoading, setIsLoading] = useState(true)
+  // const [isRefreshing, setIsRefreshing] = useState(false) // Global refresh state
   const [searchQuery, setSearchQuery] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null)
@@ -86,8 +92,9 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
   const fetchAds = async (forceRefresh = false) => {
     if (!selectedBrandId) return
 
-    setIsLoading(true)
-    setIsRefreshing(true) // Set global refresh state
+    // Remove loading states
+    // setIsLoading(true)
+    // setIsRefreshing(true) // Set global refresh state
 
     try {
       // First get all active campaigns with cache-busting for fresh data
@@ -103,7 +110,8 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
       if (!campaignsData.campaigns || campaignsData.campaigns.length === 0) {
         console.log('[AdCreativeBreakdown] No active campaigns found')
         setAds([])
-        setIsLoading(false)
+        // Remove loading state
+        // setIsLoading(false)
         return
       }
 
@@ -278,8 +286,9 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
       
       setAds([])
     } finally {
-      setIsLoading(false)
-      setIsRefreshing(false) // Reset global refresh state
+      // Remove loading states
+      // setIsLoading(false)
+      // setIsRefreshing(false) // Reset global refresh state
     }
   }
 
@@ -417,13 +426,14 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
     return 0
   }
 
+  // Remove loading state calculations - always show content or empty state
   // Component is loading if either external loading prop is true OR internal loading state is true
-  const showLoading = loading || isLoading
+  // const showLoading = loading || isLoading
 
   return (
     <Card className="bg-[#0a0a0a] border-[#1a1a1a] shadow-2xl overflow-hidden relative">
-      {/* Loading Overlay */}
-      {isRefreshing && (
+      {/* Remove Loading Overlay */}
+      {/* {isRefreshing && (
         <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
@@ -433,7 +443,7 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
             <p className="text-gray-500 text-sm mt-2">Analyzing performance data</p>
           </div>
         </div>
-      )}
+      )} */}
       
       <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
         <div className="flex items-center justify-between">
@@ -446,7 +456,8 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
               <CardTitle className="text-2xl text-white font-bold tracking-tight">Ad Creative Performance</CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
-                  {!showLoading && filteredAndSortedAds.length} Creative{!showLoading && filteredAndSortedAds.length !== 1 ? 's' : ''}
+                  {/* Remove loading check */}
+                  {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
             </div>
@@ -514,17 +525,8 @@ export default function AdCreativeBreakdown({ loading = false }: AdCreativeBreak
       </CardHeader>
 
       <CardContent className="p-6">
-        {showLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-                <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
-              </div>
-              <p className="text-gray-400 text-lg font-medium">Loading ad creatives...</p>
-              <p className="text-gray-500 text-sm mt-2">Analyzing performance data</p>
-            </div>
-          </div>
-        ) : filteredAndSortedAds.length === 0 ? (
+        {/* Remove loading state check - always show content or empty state */}
+        {filteredAndSortedAds.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                           flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">

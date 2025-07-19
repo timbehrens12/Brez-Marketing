@@ -55,10 +55,15 @@ interface PerformanceData {
 }
 
 interface PerformanceChartProps {
-  loading?: boolean
+  // Remove loading prop
+  // loading?: boolean
 }
 
-export default function PerformanceChart({ loading = false }: PerformanceChartProps) {
+export default function PerformanceChart(
+  // Remove loading prop with default
+  // { loading = false }: PerformanceChartProps
+  {}: PerformanceChartProps = {}
+) {
   const { selectedBrandId } = useBrandContext()
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([])
   const [selectedMetric, setSelectedMetric] = useState<'spend' | 'roas' | 'impressions' | 'clicks' | 'conversions'>('spend')
@@ -67,14 +72,16 @@ export default function PerformanceChart({ loading = false }: PerformanceChartPr
     tiktok: false,
     google: false
   })
-  const [isLoading, setIsLoading] = useState(true)
+  // Remove loading state
+  // const [isLoading, setIsLoading] = useState(true)
 
   // Fetch performance data
   useEffect(() => {
     if (!selectedBrandId) return
 
     const fetchPerformanceData = async (forceRefresh = false) => {
-      setIsLoading(true)
+      // Remove loading state
+      // setIsLoading(true)
       try {
         const response = await fetch('/api/ai/daily-report', {
           method: 'POST',
@@ -128,7 +135,8 @@ export default function PerformanceChart({ loading = false }: PerformanceChartPr
       } catch (error) {
         console.error('Error fetching performance data:', error)
       } finally {
-        setIsLoading(false)
+        // Remove loading state
+        // setIsLoading(false)
       }
     }
 
@@ -273,7 +281,7 @@ export default function PerformanceChart({ loading = false }: PerformanceChartPr
   
   console.log('[PerformanceChart] Performance Data:', performanceData)
   console.log('[PerformanceChart] Chart Data:', chartData)
-  console.log('[PerformanceChart] Loading states:', { loading, isLoading })
+  // Remove loading log - removed problematic console.log
 
   const platformColors = {
     Meta: '#6b7280',  // Gray instead of blue
@@ -387,14 +395,8 @@ export default function PerformanceChart({ loading = false }: PerformanceChartPr
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {(loading || isLoading) ? (
-          <div className="h-80 bg-[#1a1a1a] rounded-lg animate-pulse flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-[#2a2a2a] rounded-full animate-pulse mx-auto mb-3"></div>
-              <div className="h-4 w-32 bg-[#2a2a2a] rounded animate-pulse"></div>
-            </div>
-          </div>
-        ) : chartData.length > 0 ? (
+        {/* Remove loading state check - always show chart or empty state */}
+        {chartData.length > 0 ? (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -620,8 +622,6 @@ export default function PerformanceChart({ loading = false }: PerformanceChartPr
               </div>
             </button>
           </div>
-          
-
         </div>
       </CardContent>
     </Card>

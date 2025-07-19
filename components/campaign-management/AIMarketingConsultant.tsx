@@ -208,10 +208,15 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
 ]
 
 interface AIMarketingConsultantProps {
-  loading?: boolean
+  // Remove loading prop
+  // loading?: boolean
 }
 
-export default function AIMarketingConsultant({ loading = false }: AIMarketingConsultantProps) {
+export default function AIMarketingConsultant(
+  // Remove loading prop with default
+  // { loading = false }: AIMarketingConsultantProps
+  {}: AIMarketingConsultantProps = {}
+) {
   const { selectedBrandId } = useBrandContext()
   const { user } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -448,76 +453,76 @@ export default function AIMarketingConsultant({ loading = false }: AIMarketingCo
     { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting').length }
   ]
 
-  // Show loading skeleton ONLY for initial loading, not during message generation
-  if (loading) {
-    return (
-      <Card className="bg-[#0a0a0a] border-[#1a1a1a] shadow-2xl overflow-hidden h-[1380px] flex flex-col">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl text-white font-bold tracking-tight">AI Marketing Consultant</CardTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-gray-400 font-medium">Personalized campaign optimization insights</p>
-                  <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
-                    Beta
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
-          {/* Goal Selection Skeleton */}
-          <div className="border-b border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
-            <Skeleton className="h-4 w-32 bg-[#1a1a1a] mb-3" />
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-20 w-full bg-[#1a1a1a] rounded-xl" />
-              ))}
-            </div>
-          </div>
+  // Remove loading skeleton check - always show content
+  // if (loading) {
+  //   return (
+  //     <Card className="bg-[#0a0a0a] border-[#1a1a1a] shadow-2xl overflow-hidden h-[1380px] flex flex-col">
+  //       <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
+  //         <div className="flex items-center justify-between">
+  //           <div className="flex items-center gap-4">
+  //             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+  //                           flex items-center justify-center border border-white/10 shadow-lg">
+  //               <Brain className="w-6 h-6 text-white" />
+  //             </div>
+  //             <div>
+  //               <CardTitle className="text-2xl text-white font-bold tracking-tight">AI Marketing Consultant</CardTitle>
+  //               <div className="flex items-center gap-2 mt-1">
+  //                 <p className="text-gray-400 font-medium">Personalized campaign optimization insights</p>
+  //                 <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
+  //                   Beta
+  //                 </Badge>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </CardHeader>
+  //       <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
+  //         {/* Goal Selection Skeleton */}
+  //         <div className="border-b border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
+  //           <Skeleton className="h-4 w-32 bg-[#1a1a1a] mb-3" />
+  //           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+  //             {[1, 2, 3, 4, 5, 6].map((i) => (
+  //               <Skeleton key={i} className="h-20 w-full bg-[#1a1a1a] rounded-xl" />
+  //             ))}
+  //           </div>
+  //         </div>
           
-          {/* Chat Area Skeleton - matches real chat area */}
-          <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto' }}>
-            <ScrollArea className="h-full p-6">
-              <div className="space-y-4">
-                <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-4 max-w-[80%]">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4 bg-[#1a1a1a] rounded" />
-                    <Skeleton className="h-4 w-full bg-[#1a1a1a] rounded" />
-                    <Skeleton className="h-4 w-1/2 bg-[#1a1a1a] rounded" />
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </div>
+  //         {/* Chat Area Skeleton - matches real chat area */}
+  //         <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto' }}>
+  //           <ScrollArea className="h-full p-6">
+  //             <div className="space-y-4">
+  //               <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl p-4 max-w-[80%]">
+  //                 <div className="space-y-2">
+  //                   <Skeleton className="h-4 w-3/4 bg-[#1a1a1a] rounded" />
+  //                   <Skeleton className="h-4 w-full bg-[#1a1a1a] rounded" />
+  //                   <Skeleton className="h-4 w-1/2 bg-[#1a1a1a] rounded" />
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </ScrollArea>
+  //         </div>
           
-          {/* Quick Prompts Skeleton */}
-          <div className="border-t border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
-            <div className="mb-4">
-              <Skeleton className="h-4 w-28 bg-[#1a1a1a] mb-3" />
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Skeleton className="h-8 w-20 bg-[#1a1a1a] rounded-xl" />
-                <Skeleton className="h-8 w-24 bg-[#1a1a1a] rounded-xl" />
-                <Skeleton className="h-8 w-18 bg-[#1a1a1a] rounded-xl" />
-                <Skeleton className="h-8 w-16 bg-[#1a1a1a] rounded-xl" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-14 w-full bg-[#1a1a1a] rounded-xl" />
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  //         {/* Quick Prompts Skeleton */}
+  //         <div className="border-t border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
+  //           <div className="mb-4">
+  //             <Skeleton className="h-4 w-28 bg-[#1a1a1a] mb-3" />
+  //             <div className="flex flex-wrap gap-2 mb-4">
+  //               <Skeleton className="h-8 w-20 bg-[#1a1a1a] rounded-xl" />
+  //               <Skeleton className="h-8 w-24 bg-[#1a1a1a] rounded-xl" />
+  //               <Skeleton className="h-8 w-18 bg-[#1a1a1a] rounded-xl" />
+  //               <Skeleton className="h-8 w-16 bg-[#1a1a1a] rounded-xl" />
+  //             </div>
+  //           </div>
+  //           <div className="space-y-3">
+  //             {[1, 2, 3, 4].map((i) => (
+  //               <Skeleton key={i} className="h-14 w-full bg-[#1a1a1a] rounded-xl" />
+  //             ))}
+  //           </div>
+  //         </div>
+  //       </CardContent>
+  //     </Card>
+  //   )
+  // }
 
   if (!selectedBrandId) {
     return (

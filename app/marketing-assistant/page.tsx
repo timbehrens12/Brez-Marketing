@@ -732,8 +732,9 @@ export default function MarketingAssistantPage() {
               <div>
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
-                  isLoadingMetrics={isLoadingMetrics}
-                  isRefreshingData={isRefreshingData}
+                  // Remove loading props
+                  // isLoadingMetrics={isLoadingMetrics}
+                  // isRefreshingData={isRefreshingData}
                 />
                   </div>
 
@@ -755,12 +756,18 @@ export default function MarketingAssistantPage() {
               {/* Left Column - Ad Creative and Performance Chart */}
               <div className="space-y-6">
                 <AdCreativeBreakdown />
-                <PerformanceChart loading={isLoadingMetrics || isRefreshingData} />
+                <PerformanceChart 
+                  // Remove loading prop
+                  // loading={isLoadingMetrics || isRefreshingData} 
+                />
               </div>
 
               {/* Right Column - AI Marketing Consultant */}
               <div>
-                <AIMarketingConsultant loading={isLoadingMetrics || isRefreshingData} />
+                <AIMarketingConsultant 
+                  // Remove loading prop
+                  // loading={isLoadingMetrics || isRefreshingData} 
+                />
               </div>
             </div>
           </div>

@@ -79,7 +79,8 @@ interface DailyReport {
 export default function AIDailyReport() {
   const { selectedBrandId } = useBrandContext()
   const [report, setReport] = useState<DailyReport | null>(null)
-  const [isLoading, setIsLoading] = useState(true) // Start with true to show loading on initial load
+  // Remove loading states
+  // const [isLoading, setIsLoading] = useState(true) // Start with true to show loading on initial load
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const [isFetching, setIsFetching] = useState(false) // Guard against multiple simultaneous calls
 
@@ -134,7 +135,8 @@ export default function AIDailyReport() {
     }
 
     setIsFetching(true)
-    setIsLoading(true)
+    // Remove loading state
+    // setIsLoading(true)
     // Clear the report to prevent showing old data while loading
     if (forceRegenerate) {
       setReport(null)
@@ -176,7 +178,8 @@ export default function AIDailyReport() {
       console.error('[AIDailyReport] Error fetching daily report:', error)
       toast.error('Error generating advertising report')
     } finally {
-      setIsLoading(false)
+      // Remove loading state
+      // setIsLoading(false)
       setIsFetching(false)
     }
   }
@@ -338,37 +341,37 @@ export default function AIDailyReport() {
     }
   }
 
-  // Show loading state during refresh
-  if (isLoading) {
-    return (
-      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-3xl text-white font-bold tracking-tight">Advertising Report</CardTitle>
-                <p className="text-gray-400 font-medium text-base">Loading fresh insights...</p>
-              </div>
-            </div>
-          </div>
-        </div>
+  // Remove loading state check - always show content
+  // if (isLoading) {
+  //   return (
+  //     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+  //       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
+  //         <div className="flex items-center justify-between">
+  //           <div className="flex items-center gap-4">
+  //             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+  //                           flex items-center justify-center border border-white/10 shadow-lg">
+  //               <Brain className="w-6 h-6 text-white" />
+  //             </div>
+  //             <div>
+  //               <CardTitle className="text-3xl text-white font-bold tracking-tight">Advertising Report</CardTitle>
+  //               <p className="text-gray-400 font-medium text-base">Loading fresh insights...</p>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
         
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-              <Brain className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-400 text-lg font-medium">Analyzing performance data...</p>
-            <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  //       <div className="flex-1 p-6 flex items-center justify-center">
+  //         <div className="text-center">
+  //           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
+  //             <Brain className="w-8 h-8 text-gray-400" />
+  //           </div>
+  //           <p className="text-gray-400 text-lg font-medium">Analyzing performance data...</p>
+  //           <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   if (!report) {
     return (
