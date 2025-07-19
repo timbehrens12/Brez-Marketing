@@ -734,15 +734,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     
                       return (
       <Card key={campaign.campaign_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
-                   shadow-lg hover:shadow-2xl group overflow-hidden">
+                   shadow-lg hover:shadow-2xl group overflow-hidden min-w-0">
                             <CardContent className="p-0">
                               {/* Campaign Header */}
                               <div className="p-6 pb-4 bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a]">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-4 min-w-0 flex-1">
                 {/* Platform logo for "All Platforms" tab */}
                 {selectedTab === "all" && (
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <Image 
                       src={platformData.logo} 
                       alt={platformData.name} 
@@ -762,35 +762,35 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                                       </span>
                                     </div>
                 
-                                    <div className="flex flex-col gap-1">
-                                      <h3 className="text-xl font-bold text-white tracking-tight">
+                                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                      <h3 className="text-xl font-bold text-white tracking-tight truncate">
                                         {campaign.campaign_name}
                                       </h3>
                                       <div className="flex items-center gap-3 text-sm">
-                                        <span className="text-gray-500 font-medium">{campaign.objective}</span>
+                                        <span className="text-gray-500 font-medium truncate">{campaign.objective}</span>
                                         {campaign.account_name && (
                                           <>
-                                            <span className="text-gray-600">•</span>
-                                            <span className="text-gray-500">{campaign.account_name}</span>
+                                            <span className="text-gray-600 flex-shrink-0">•</span>
+                                            <span className="text-gray-500 truncate">{campaign.account_name}</span>
                                           </>
                                     )}
                                   </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-3 flex-shrink-0">
                 {isBeingChecked ? (
-                                      <Badge className="px-4 py-2 bg-[#1a1a1a] text-gray-400 border border-[#2a2a2a] rounded-full">
-                                        <div className="w-2 h-2 rounded-full bg-gray-500 mr-2 animate-pulse"></div>
+                                      <Badge className="px-3 py-1.5 bg-[#1a1a1a] text-gray-400 border border-[#2a2a2a] rounded-full text-sm whitespace-nowrap">
+                                        <div className="w-2 h-2 rounded-full bg-gray-500 mr-2 animate-pulse flex-shrink-0"></div>
                                       Checking...
                                     </Badge>
                                   ) : (
-                                      <Badge className={`px-4 py-2 rounded-full font-semibold ${
+                                      <Badge className={`px-3 py-1.5 rounded-full font-semibold text-sm whitespace-nowrap ${
                                         campaign.status === 'ACTIVE' 
                                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' 
                                           : 'bg-[#1a1a1a] text-gray-500 border border-[#2a2a2a]'
                                       }`}>
-                                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                                        <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${
                                           campaign.status === 'ACTIVE' ? 'bg-emerald-400' : 'bg-gray-500'
                                         }`}></div>
                     {campaign.status}
