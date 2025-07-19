@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { brandId, forceRegenerate = false } = await request.json()
+    const { brandId, forceRegenerate = false, userTimezone } = await request.json()
     
-    console.log(`[AIDailyReport] Request received:`, { brandId: brandId ? 'present' : 'missing', forceRegenerate, userId })
+    console.log(`[AIDailyReport] Request received:`, { brandId: brandId ? 'present' : 'missing', forceRegenerate, userId, userTimezone })
     
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     })
     
     // Generate daily report
-    const report = await generateDailyReport(platformData)
+    const report = await generateDailyReport(platformData, userTimezone)
     
     console.log(`[AIDailyReport] Report generated successfully`, {
       reportSize: JSON.stringify(report).length,
@@ -619,7 +619,7 @@ async function gatherPlatformData(supabase: any, brandId: string): Promise<Platf
   }
 }
 
-async function generateDailyReport(platformData: PlatformAnalysis) {
+async function generateDailyReport(platformData: PlatformAnalysis, userTimezone: string) {
   const { meta, tiktok, googleAds } = platformData
 
   // Calculate consistent daily values for the report
@@ -642,7 +642,7 @@ async function generateDailyReport(platformData: PlatformAnalysis) {
   }
 
   // Generate factual summary (no AI recommendations)
-  const factualSummary = generateFactualSummary(platformData)
+  const factualSummary = generateFactualSummary(platformData, userTimezone)
   
   // Platform statuses
   const platformStatuses = [
@@ -1102,10 +1102,22 @@ function generateSuccessHighlights(meta: any): string[] {
   return highlights.slice(0, 4)
 }
 
-function generateFactualSummary(platformData: PlatformAnalysis): string {
+function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: string): string {
   const { meta } = platformData
   const now = new Date()
-  const currentHour = now.getHours()
+  
+  // Calculate current hour in user's timezone
+  let currentHour: number
+  try {
+    const userTime = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }))
+    currentHour = userTime.getHours()
+  } catch (error) {
+    // Fallback to server time if timezone is invalid
+    console.warn('[Daily Report] Invalid timezone provided, falling back to server time:', userTimezone)
+    currentHour = now.getHours()
+  }
+  
+  // Determine time of day based on user's local time
   const timeOfDay = currentHour < 6 ? 'early morning' : 
                    currentHour < 12 ? 'morning' : 
                    currentHour < 17 ? 'afternoon' : 
@@ -1126,7 +1138,6 @@ function generateFactualSummary(platformData: PlatformAnalysis): string {
   }
 
   // Calculate consistent daily values for the report - be aware of early day scenario
-  const isEarlyDay = currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)
   const dailySpend = meta.todayStats.spend > 0 ? meta.todayStats.spend : meta.totalSpend
   const dailyROAS = meta.todayStats.spend > 0 && meta.todayStats.revenue > 0 
     ? meta.todayStats.revenue / meta.todayStats.spend 
@@ -1136,7 +1147,7 @@ function generateFactualSummary(platformData: PlatformAnalysis): string {
   const summaryParts = []
   
   // Add time-specific opening (no emoji, better formatting)
-  if (isEarlyDay) {
+  if (currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)) {
     summaryParts.push(`Early ${timeOfDay} campaign review: While today's data is still developing, yesterday's performance and overall trends provide valuable insights for optimization planning.`)
   } else {
     summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} performance analysis: Current campaign data shows active advertising operations with measurable results.`)
@@ -1172,11 +1183,11 @@ function generateFactualSummary(platformData: PlatformAnalysis): string {
   }
   
   // Financial Performance Analysis - Use today's data with time-aware context
-  const spendAnalysis = isEarlyDay && meta.todayStats.spend === 0 
+  const spendAnalysis = currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)
     ? `Yesterday's advertising investment of $${meta.yesterdayStats.spend.toFixed(2)} generated a return on ad spend (ROAS) of ${(meta.yesterdayStats.revenue / (meta.yesterdayStats.spend || 1)).toFixed(2)}x, while today's campaigns are just beginning. `
     : `Total advertising investment of $${dailySpend.toFixed(2)} is generating an average return on ad spend (ROAS) of ${dailyROAS.toFixed(2)}x. `
     
-  const roasVariationSeed = (currentMinute + currentHour) % 2 // 2 different approaches
+  const roasVariationSeed = (now.getMinutes() + currentHour) % 2 // 2 different approaches
   
   if (dailyROAS >= 4.0) {
     const excellentROASVariations = [

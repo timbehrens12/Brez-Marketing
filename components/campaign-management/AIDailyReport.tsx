@@ -165,7 +165,8 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         },
         body: JSON.stringify({
           brandId: selectedBrandId,
-          forceRegenerate
+          forceRegenerate,
+          userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }),
       })
 

@@ -589,7 +589,8 @@ export default function MarketingAssistantPage() {
             },
             body: JSON.stringify({
               brandId: selectedBrandId,
-              forceRegenerate: false
+              forceRegenerate: false,
+              userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
             }),
           }),
           fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
@@ -877,7 +878,8 @@ export default function MarketingAssistantPage() {
           },
           body: JSON.stringify({
             brandId: selectedBrandId,
-            forceRegenerate: true
+            forceRegenerate: true,
+            userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }),
         })
         
