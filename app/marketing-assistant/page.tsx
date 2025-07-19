@@ -209,7 +209,8 @@ export default function MarketingAssistantPage() {
         // Clear any cached data and force refresh
         hasInitialDataLoaded.current = false
         
-        // Trigger full data reload for new day
+        // Trigger full data reload for new day with today's date
+        console.log('[MarketingAssistant] 🔄 Midnight transition: Forcing fresh data load for today')
         loadAllData()
         
         // Dispatch event to notify other widgets about new day transition
@@ -569,6 +570,12 @@ export default function MarketingAssistantPage() {
       
       // Phase 2: Load AI Daily Report and Performance Data in parallel
       try {
+        // Always use today's date for campaigns (like other widgets) to ensure fresh daily data
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        
+        console.log(`[MarketingAssistant] Fetching campaigns for TODAY: ${todayStr} (ignoring dateRange to ensure fresh daily data)`)
+        
         const [dailyReportResponse, campaignsResponse] = await Promise.all([
           fetch('/api/ai/daily-report', {
             method: 'POST',
@@ -580,7 +587,7 @@ export default function MarketingAssistantPage() {
               forceRegenerate: false
             }),
           }),
-          fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${dateToLocalDateString(dateRange.from)}&to=${dateToLocalDateString(dateRange.to)}&forceRefresh=true&t=${Date.now()}`, {
+          fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}&forceRefresh=true&t=${Date.now()}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -768,7 +775,8 @@ export default function MarketingAssistantPage() {
         // Clear cached data
         hasInitialDataLoaded.current = false
         
-        // Force full reload
+        // Force full reload with today's date
+        console.log('[MarketingAssistant] 🔄 Debug reset: Forcing fresh data load for today')
         loadAllData()
         
         // Dispatch new day event

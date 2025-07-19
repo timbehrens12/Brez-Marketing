@@ -360,41 +360,47 @@ export async function GET(request: NextRequest) {
       if (dailyAdStats && dailyAdStats.length > 0) {
         console.log(`[Meta Campaigns API] Sample daily stat:`, dailyAdStats[0])
       } else {
-        console.log(`[Meta Campaigns API] ⚠️  NO DAILY STATS FOUND - This is why campaigns show 0s!`)
+        console.log(`[Meta Campaigns API] ⚠️  NO DAILY STATS FOUND for date range ${normalizedFromDate} to ${normalizedToDate}`)
         
-        // If no data for today, let's try yesterday's data
-        console.log(`[Meta Campaigns API] Attempting to use yesterday's data as fallback...`)
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
-        
-        const { data: yesterdayStats, error: yesterdayError } = await supabase
-          .from('meta_campaign_daily_stats')
-          .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
-          .eq('brand_id', brandId)
-          .eq('date', yesterdayStr)
-          
-        if (!yesterdayError && yesterdayStats && yesterdayStats.length > 0) {
-          console.log(`[Meta Campaigns API] ✅ Found ${yesterdayStats.length} records for yesterday (${yesterdayStr}), using as fallback`)
-          dailyAdStats = yesterdayStats
+        // CRITICAL FIX: If specifically requesting TODAY's data and no data exists, 
+        // do NOT fall back to yesterday - return zeros to ensure midnight reset behavior
+        if (isRequestingToday) {
+          console.log(`[Meta Campaigns API] 🌙 MIDNIGHT BOUNDARY: Requesting today's data (${today}) with no data available. Skipping fallback to preserve daily reset behavior.`)
         } else {
-          console.log(`[Meta Campaigns API] ❌ No data found for yesterday either (${yesterdayStr})`)
+          // Only use fallback logic when NOT requesting today's data specifically
+          console.log(`[Meta Campaigns API] Not requesting today specifically, attempting fallback data...`)
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          const yesterdayStr = yesterday.toISOString().split('T')[0]
           
-          // Last resort: get the most recent data available
-          console.log(`[Meta Campaigns API] Attempting to get most recent data available...`)
-          const { data: recentStats, error: recentError } = await supabase
+          const { data: yesterdayStats, error: yesterdayError } = await supabase
             .from('meta_campaign_daily_stats')
             .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
             .eq('brand_id', brandId)
-            .order('date', { ascending: false })
-            .limit(100)
+            .eq('date', yesterdayStr)
             
-          if (!recentError && recentStats && recentStats.length > 0) {
-            const mostRecentDate = recentStats[0].date
-            console.log(`[Meta Campaigns API] ✅ Found ${recentStats.length} records for most recent date (${mostRecentDate}), using as fallback`)
-            dailyAdStats = recentStats
+          if (!yesterdayError && yesterdayStats && yesterdayStats.length > 0) {
+            console.log(`[Meta Campaigns API] ✅ Found ${yesterdayStats.length} records for yesterday (${yesterdayStr}), using as fallback`)
+            dailyAdStats = yesterdayStats
           } else {
-            console.log(`[Meta Campaigns API] ❌ No data found in database at all for brand ${brandId}`)
+            console.log(`[Meta Campaigns API] ❌ No data found for yesterday either (${yesterdayStr})`)
+            
+            // Last resort: get the most recent data available
+            console.log(`[Meta Campaigns API] Attempting to get most recent data available...`)
+            const { data: recentStats, error: recentError } = await supabase
+              .from('meta_campaign_daily_stats')
+              .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
+              .eq('brand_id', brandId)
+              .order('date', { ascending: false })
+              .limit(100)
+              
+            if (!recentError && recentStats && recentStats.length > 0) {
+              const mostRecentDate = recentStats[0].date
+              console.log(`[Meta Campaigns API] ✅ Found ${recentStats.length} records for most recent date (${mostRecentDate}), using as fallback`)
+              dailyAdStats = recentStats
+            } else {
+              console.log(`[Meta Campaigns API] ❌ No data found in database at all for brand ${brandId}`)
+            }
           }
         }
       }
