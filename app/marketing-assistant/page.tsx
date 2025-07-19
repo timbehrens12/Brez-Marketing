@@ -609,20 +609,31 @@ export default function MarketingAssistantPage() {
           
           console.log('[MarketingAssistant] Loading ad creatives for campaigns...')
           
-          // For each campaign, get adsets and then ads
+          // Use the same logic as AdCreativeBreakdown component
           for (const campaign of campaignsData.slice(0, 5)) { // Limit to first 5 campaigns for performance
             try {
-              const adsetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}`)
-              if (adsetsResponse.ok) {
-                const adsetsData = await adsetsResponse.json()
-                
-                for (const adset of adsetsData.adsets?.slice(0, 3) || []) { // Limit adsets per campaign
-                  const adsResponse = await fetch('/api/meta/ads/direct-fetch', {
+              const adSetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}&t=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                  'Cache-Control': 'no-cache',
+                  'Pragma': 'no-cache'
+                }
+              })
+              
+              if (!adSetsResponse.ok) continue
+              
+              const adSetsData = await adSetsResponse.json()
+              if (!adSetsData.success || !adSetsData.adSets) continue
+              
+              for (const adSet of adSetsData.adSets.slice(0, 3)) { // Limit adsets per campaign
+                try {
+                  // Try current date first
+                  let adsResponse = await fetch('/api/meta/ads/direct-fetch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       brandId: selectedBrandId,
-                      adsetId: adset.adset_id,
+                      adsetId: adSet.adset_id,
                       forceRefresh: false,
                       dateRange: {
                         from: dateToLocalDateString(dateRange.from),
@@ -630,17 +641,40 @@ export default function MarketingAssistantPage() {
                       }
                     })
                   })
+
+                  let adsData = await adsResponse.json()
                   
-                  if (adsResponse.ok) {
-                    const adsData = await adsResponse.json()
-                    if (adsData.success && adsData.ads) {
-                      allAds.push(...adsData.ads)
-                    }
+                  // If no data for current date range, try yesterday (same logic as AdCreativeBreakdown)
+                  if (!adsData.success || !adsData.ads || adsData.ads.length === 0) {
+                    const yesterday = new Date(dateRange.to)
+                    yesterday.setDate(yesterday.getDate() - 1)
+                    
+                    adsResponse = await fetch('/api/meta/ads/direct-fetch', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        brandId: selectedBrandId,
+                        adsetId: adSet.adset_id,
+                        forceRefresh: false,
+                        dateRange: {
+                          from: dateToLocalDateString(yesterday),
+                          to: dateToLocalDateString(yesterday)
+                        }
+                      })
+                    })
+                    
+                    adsData = await adsResponse.json()
                   }
+
+                  if (adsData.success && adsData.ads && adsData.ads.length > 0) {
+                    allAds.push(...adsData.ads)
+                  }
+                } catch (error) {
+                  console.error('[MarketingAssistant] Error loading ads for adset:', adSet.adset_id, error)
                 }
               }
             } catch (error) {
-              console.error('[MarketingAssistant] Error loading ads for campaign:', campaign.campaign_id, error)
+              console.error('[MarketingAssistant] Error loading adsets for campaign:', campaign.campaign_id, error)
             }
           }
           console.log('[MarketingAssistant] Loaded ad creatives:', allAds.length)
