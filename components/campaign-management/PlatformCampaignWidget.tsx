@@ -269,7 +269,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
   // Load saved recommendations for campaigns
   const loadSavedRecommendations = useCallback(async (campaigns: Campaign[]) => {
-    if (!selectedBrandId || campaigns.length === 0) return
+    if (!selectedBrandId || campaigns.length === 0) {
+      console.log('[CampaignWidget] Skipping loadSavedRecommendations:', { brandId: !!selectedBrandId, campaignsLength: campaigns.length })
+      return
+    }
+
+    console.log('[CampaignWidget] Loading saved recommendations for', campaigns.length, 'campaigns')
 
     try {
       const campaignIds = campaigns.map(c => c.campaign_id)
@@ -278,10 +283,14 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         campaignIds: campaignIds.join(',')
       })
 
+      console.log('[CampaignWidget] Fetching recommendations from API:', params.toString())
+
       const response = await fetch(`/api/ai/campaign-recommendations?${params}`)
       
       if (response.ok) {
         const data = await response.json()
+        
+        console.log('[CampaignWidget] Recommendations API response:', data)
         
         if (data.success && data.recommendations) {
           // Update campaigns with their saved recommendations
@@ -291,11 +300,17 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             recommendation: data.recommendations[campaign.campaign_id] || campaign.recommendation
           }))
           
+          console.log('[CampaignWidget] Campaigns with recommendations loaded:', campaignsWithRecommendations.map(c => ({ id: c.campaign_id, hasRec: !!c.recommendation })))
+          
           // Update local campaigns state with the enriched data
           setLocalCampaigns(campaignsWithRecommendations)
           
-          console.log(`[CampaignWidget] Loaded ${data.count || Object.keys(data.recommendations).length} saved recommendations`)
+          console.log(`[CampaignWidget] ✅ Loaded ${data.count || Object.keys(data.recommendations).length} saved recommendations`)
+        } else {
+          console.log('[CampaignWidget] No recommendations found in API response')
         }
+      } else {
+        console.error('[CampaignWidget] Failed to fetch recommendations:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('[CampaignWidget] Error loading saved recommendations:', error)

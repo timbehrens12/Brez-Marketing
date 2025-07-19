@@ -340,6 +340,8 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const campaignIds = searchParams.get('campaignIds')?.split(',').filter(Boolean)
 
+    console.log('[Campaign Recommendations API] GET request:', { brandId, campaignIds, userId })
+
     if (!brandId || !campaignIds || campaignIds.length === 0) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
@@ -355,6 +357,13 @@ export async function GET(request: NextRequest) {
       .in('campaign_id', campaignIds)
       .gt('expires_at', new Date().toISOString())
 
+    console.log('[Campaign Recommendations API] Database query result:', { 
+      recommendationsCount: recommendations?.length || 0, 
+      error: error?.message,
+      campaignIds,
+      brandId 
+    })
+
     if (error) {
       console.error('Error fetching recommendations:', error)
       return NextResponse.json({ error: 'Failed to fetch recommendations' }, { status: 500 })
@@ -362,9 +371,12 @@ export async function GET(request: NextRequest) {
 
     // Create a map of campaign_id to recommendation
     const recommendationsMap = recommendations?.reduce((acc: any, rec: any) => {
+      console.log('[Campaign Recommendations API] Adding recommendation for campaign:', rec.campaign_id)
       acc[rec.campaign_id] = rec.recommendation
       return acc
     }, {}) || {}
+
+    console.log('[Campaign Recommendations API] Final recommendations map:', Object.keys(recommendationsMap))
 
     return NextResponse.json({
       success: true,
