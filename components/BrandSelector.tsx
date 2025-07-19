@@ -1,0 +1,274 @@
+'use client'
+
+import { useState, useEffect, useRef } from "react"
+import { Check, ChevronDown, Building2, Store, Briefcase, Tag, Search } from "lucide-react"
+import { useBrandContext } from "@/lib/context/BrandContext"
+import { useUser } from "@clerk/nextjs"
+import { useSupabase } from "@/lib/hooks/useSupabase"
+import { cn } from "@/lib/utils"
+import { PlatformConnection } from "@/types/platformConnection"
+
+interface BrandSelectorProps {
+  onSelect: (brandId: string) => void
+  selectedBrandId?: string | null
+  className?: string
+  isVisible?: boolean // Add prop to control visibility/closing
+}
+
+export default function BrandSelector({ onSelect, selectedBrandId, className, isVisible = true }: BrandSelectorProps) {
+  const { brands } = useBrandContext()
+  const { user } = useUser()
+  const supabase = useSupabase()
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<any>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Use all brands from context (includes both owned and shared)
+  const allBrands = brands
+
+  // Filter brands based on search query
+  const filteredBrands = allBrands.filter((brand: any) => 
+    brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Load platform connections for all brands (not filtered by user_id)
+  useEffect(() => {
+    const loadConnections = async () => {
+      if (!user || allBrands.length === 0) return
+      
+      // Get all brand IDs from both owned and shared brands
+      const brandIds = allBrands.map(brand => brand.id)
+      
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .in('brand_id', brandIds)
+        .eq('status', 'active')
+
+      if (!error && data) {
+        setConnections(data as PlatformConnection[])
+      }
+    }
+
+    loadConnections()
+  }, [user, supabase, allBrands])
+
+  // Find the selected brand when selectedBrandId changes
+  useEffect(() => {
+    if (selectedBrandId) {
+      const brand = allBrands.find((b: any) => b.id === selectedBrandId)
+      setSelectedBrand(brand || null)
+    } else {
+      setSelectedBrand(null)
+    }
+  }, [selectedBrandId, allBrands])
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100)
+    } else {
+      setSearchQuery("")
+    }
+  }, [isOpen])
+
+  // Close dropdown when component becomes invisible (sidebar minimized)
+  useEffect(() => {
+    if (!isVisible && isOpen) {
+      setIsOpen(false)
+    }
+  }, [isVisible, isOpen])
+
+  const handleSelect = (brand: any) => {
+    setSelectedBrand(brand)
+    onSelect(brand.id)
+    setIsOpen(false)
+  }
+
+  // Get connected platforms for a brand
+  const getBrandConnections = (brandId: string) => {
+    return connections.filter(conn => conn.brand_id === brandId)
+  }
+
+  // Render brand avatar
+  const renderBrandAvatar = (brand: any, size: 'sm' | 'md' = 'sm') => {
+    const sizeClasses = size === 'sm' ? 'w-5 h-5' : 'w-6 h-6'
+    
+    if (brand.image_url) {
+      return (
+        <img 
+          src={brand.image_url} 
+          alt={brand.name} 
+          className={cn(sizeClasses, "rounded-full object-cover border border-[#444]")}
+        />
+      )
+    }
+    
+    return (
+      <div className={cn(
+        sizeClasses,
+        "flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444]"
+      )}>
+        {brand.name.charAt(0).toUpperCase()}
+      </div>
+    )
+  }
+
+  // Render platform connection icons with real logos
+  const renderConnectionIcons = (brandId: string) => {
+    const brandConnections = getBrandConnections(brandId)
+    
+    // Remove duplicates by platform_type
+    const uniqueConnections = brandConnections.filter((connection, index, arr) => 
+      arr.findIndex(c => c.platform_type === connection.platform_type) === index
+    )
+    
+    return (
+      <div className="flex items-center gap-1">
+        {uniqueConnections.map((connection) => (
+          <div
+            key={`${connection.platform_type}-${brandId}`}
+            className="w-4 h-4 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+            title={`${connection.platform_type.charAt(0).toUpperCase() + connection.platform_type.slice(1)} connected`}
+          >
+            {connection.platform_type === 'shopify' && (
+              <img 
+                src="/shopify-icon.png" 
+                alt="Shopify" 
+                className="w-full h-full object-contain"
+              />
+            )}
+            {connection.platform_type === 'meta' && (
+              <img 
+                src="/meta-icon.png" 
+                alt="Meta" 
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn("relative w-full min-w-0", className)}>
+      <button
+        type="button"
+        className={cn(
+          "flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium rounded-xl overflow-hidden",
+          "bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] text-white hover:from-[#252525] hover:to-[#1a1a1a]",
+          "focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 shadow-lg",
+          "transition-all duration-300 ease-out will-change-transform",
+          isOpen && "ring-2 ring-white/20 border-white/30 shadow-xl"
+        )}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {selectedBrand ? (
+            <>
+              <div className="flex-shrink-0 transition-opacity duration-300 ease-out">
+                {renderBrandAvatar(selectedBrand, 'md')}
+              </div>
+              <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                <div className="w-full overflow-hidden">
+                  <span className="block truncate font-medium transition-opacity duration-300 ease-out whitespace-nowrap">{selectedBrand.name}</span>
+                </div>
+                {(selectedBrand as any).niche && (
+                  <div className="w-full overflow-hidden">
+                    <span className="block text-xs text-gray-400 truncate transition-opacity duration-300 ease-out whitespace-nowrap">{(selectedBrand as any).niche}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-shrink-0 ml-2 transition-opacity duration-300 ease-out">
+                {renderConnectionIcons(selectedBrand.id)}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center flex-shrink-0 transition-opacity duration-300 ease-out">
+                <Tag className="w-3 h-3 text-gray-300" />
+              </div>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <span className="block text-gray-400 transition-opacity duration-300 ease-out whitespace-nowrap">Select a brand</span>
+              </div>
+            </>
+          )}
+        </div>
+        <ChevronDown 
+          className={cn(
+            "ml-2 h-4 w-4 text-gray-400 transition-transform duration-300",
+            isOpen && "transform rotate-180"
+          )} 
+        />
+      </button>
+
+      {isOpen && (
+        <div 
+          className="absolute z-50 w-full mt-2 origin-top-right rounded-xl shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200"
+        >
+          <div className="py-2 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl shadow-2xl max-h-64 overflow-hidden">
+            {/* Search input */}
+            <div className="sticky top-0 p-3 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-b border-[#333]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search brands..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 text-sm bg-[#252525] border border-[#333] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-all duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto">
+              {filteredBrands.length > 0 ? (
+                filteredBrands.map((brand: any) => (
+                  <button
+                    key={brand.id}
+                    className={cn(
+                      "flex items-center w-full px-3 py-3 text-sm text-left transition-all duration-200 group",
+                      brand.id === selectedBrandId 
+                        ? "bg-gradient-to-r from-white/10 to-white/5 text-white border-l-2 border-white/30" 
+                        : "text-gray-300 hover:bg-gradient-to-r hover:from-white/5 hover:to-white/2 hover:text-white"
+                    )}
+                    onClick={() => handleSelect(brand)}
+                  >
+                    <div className="flex items-center gap-3 w-full min-w-0">
+                      {renderBrandAvatar(brand, 'md')}
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <span className="truncate font-medium max-w-full">{brand.name}</span>
+                        {brand.niche && (
+                          <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {renderConnectionIcons(brand.id)}
+                        {brand.id === selectedBrandId && (
+                          <Check className="w-4 h-4 text-blue-400 ml-1" />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : searchQuery ? (
+                <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                  No brands found matching "{searchQuery}"
+                </div>
+              ) : (
+                <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                  No brands available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
