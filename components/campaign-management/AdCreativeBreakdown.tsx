@@ -529,8 +529,8 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       </CardHeader>
 
       <CardContent className="p-6">
-        {/* Remove loading state check - always show content or empty state */}
-        {filteredAndSortedAds.length === 0 ? (
+        {/* Show empty state only if no data and not waiting for preloaded data */}
+        {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                           flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
