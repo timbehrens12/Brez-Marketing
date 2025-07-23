@@ -18,15 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-interface NavItem {
-  name: string
-  href: string
-  icon: any
-  description: string
-  comingSoon?: boolean
-}
-
-const navItems: NavItem[] = [
+const navItems = [
   { 
     name: "Dashboard", 
     href: "/dashboard", 
@@ -61,9 +53,15 @@ const navItems: NavItem[] = [
     name: "Ad Creative Studio", 
     href: "/ad-creative-studio", 
     icon: Palette,
-    description: "Create ad content"
+    description: "Create ad content",
+    comingSoon: true
   },
-
+  { 
+    name: "Action Center", 
+    href: "/action-center", 
+    icon: ClipboardList,
+    description: "Track tasks and priorities"
+  },
   { 
     name: "Settings", 
     href: "/settings", 
