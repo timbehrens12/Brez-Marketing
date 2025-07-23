@@ -9,7 +9,6 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Edit2, Trash2, ChevronDown, ChevronUp, Save, X, Camera, Info, AlertTriangle, CheckCircle, Shield } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { SelfServiceConnectButton } from "./SelfServiceConnectButton"
 
 // Brand niches for the select dropdown
 const FLAT_NICHES = [
@@ -375,12 +374,8 @@ export function BrandManagementDropdown({
                           </Tooltip>
                         </TooltipProvider>
                         
-                        <SelfServiceConnectButton
-                          brandId={brand.id}
-                          brandName={brand.name}
-                          platformType="shopify"
-                          disabled={!canManagePlatforms}
-                        />
+
+                          
                       </div>
                     </>
                   )}
@@ -486,12 +481,7 @@ export function BrandManagementDropdown({
                             </Tooltip>
                           </TooltipProvider>
                           
-                          <SelfServiceConnectButton
-                            brandId={brand.id}
-                            brandName={brand.name}
-                            platformType="meta"
-                            disabled={!canManagePlatforms}
-                          />
+
                         </div>
                       </>
                     )}
