@@ -56,13 +56,7 @@ const navItems = [
     description: "Create ad content",
     comingSoon: true
   },
-  { 
-    name: "Site Optimizer", 
-    href: "/site-optimizer", 
-    icon: Globe,
-    description: "Optimize website",
-    comingSoon: true
-  },
+
   { 
     name: "Settings", 
     href: "/settings", 

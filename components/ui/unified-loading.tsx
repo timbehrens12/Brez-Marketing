@@ -58,10 +58,7 @@ export const pageLoadingConfig = {
     message: "Loading Ad Creative Studio",
     subMessage: "Setting up your creative workspace"
   },
-  "site-optimizer": {
-    message: "Loading Site Optimizer",
-    subMessage: "Setting up optimization tools"
-  },
+
   orders: {
     message: "Loading Orders",
     subMessage: "Preparing your order data"
