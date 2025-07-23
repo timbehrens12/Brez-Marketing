@@ -1,0 +1,17 @@
+ALTER TABLE public.meta_ad_insights
+ADD COLUMN IF NOT EXISTS frequency float8,
+ADD COLUMN IF NOT EXISTS cpm float8,
+ADD COLUMN IF NOT EXISTS cpc float8,
+ADD COLUMN IF NOT EXISTS cpp float8,
+ADD COLUMN IF NOT EXISTS ctr float8,
+ADD COLUMN IF NOT EXISTS cost_per_action_type jsonb,
+ADD COLUMN IF NOT EXISTS cost_per_conversion jsonb,
+ADD COLUMN IF NOT EXISTS cost_per_unique_click float8,
+ADD COLUMN IF NOT EXISTS video_p25_watched_actions jsonb,
+ADD COLUMN IF NOT EXISTS video_p50_watched_actions jsonb,
+ADD COLUMN IF NOT EXISTS video_p75_watched_actions jsonb,
+ADD COLUMN IF NOT EXISTS video_p100_watched_actions jsonb,
+ADD COLUMN IF NOT EXISTS quality_ranking TEXT,
+ADD COLUMN IF NOT EXISTS engagement_rate_ranking TEXT,
+ADD COLUMN IF NOT EXISTS conversion_rate_ranking TEXT,
+ADD COLUMN IF NOT EXISTS objective TEXT; 
