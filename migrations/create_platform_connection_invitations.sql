@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS platform_connection_invitations (
   token TEXT UNIQUE NOT NULL,
   brand_id UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   platform_type TEXT NOT NULL CHECK (platform_type IN ('shopify', 'meta')),
-  created_by UUID NOT NULL, -- The operator who created the invitation
+  created_by TEXT NOT NULL, -- The operator who created the invitation (Clerk user ID)
   brand_owner_email TEXT, -- Optional: email of the brand owner
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
   max_uses INTEGER DEFAULT 1,
@@ -34,25 +34,25 @@ ALTER TABLE platform_connection_invitations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view invitations they created"
   ON platform_connection_invitations
   FOR SELECT
-  USING (created_by = auth.uid());
+  USING (created_by = auth.uid()::text);
 
 CREATE POLICY "Users can create invitations for their brands"
   ON platform_connection_invitations
   FOR INSERT
   WITH CHECK (
-    created_by = auth.uid() AND 
+    created_by = auth.uid()::text AND 
     brand_id IN (
-      SELECT id FROM brands WHERE user_id = auth.uid()
+      SELECT id FROM brands WHERE user_id = auth.uid()::text
       UNION
       SELECT brand_id FROM brand_access 
-      WHERE user_id = auth.uid() AND can_manage_platforms = true AND revoked_at IS NULL
+      WHERE user_id = auth.uid()::text AND can_manage_platforms = true AND revoked_at IS NULL
     )
   );
 
 CREATE POLICY "Users can update invitations they created"
   ON platform_connection_invitations
   FOR UPDATE
-  USING (created_by = auth.uid());
+  USING (created_by = auth.uid()::text);
 
 -- Allow public access to active invitations by token (for brand owners to use)
 CREATE POLICY "Public can view active invitations by token"
