@@ -157,39 +157,40 @@ export default function AdCreativeStudioPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Palette className="h-8 w-8 text-purple-400" />
-          <div>
-            <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
-            <p className="text-gray-400">AI-powered creative generation for your campaigns</p>
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a]">
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Palette className="h-8 w-8 text-white" />
+            <div>
+              <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
+              <p className="text-gray-400">AI-powered creative generation for your campaigns</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Save className="h-4 w-4 mr-2" />
+              Save Project
+            </Button>
+            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-            <Save className="h-4 w-4 mr-2" />
-            Save Project
-          </Button>
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-        </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-[#1A1A1A] border border-gray-700">
-          <TabsTrigger value="create" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger value="create" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-white data-[state=active]:to-gray-200 data-[state=active]:text-black">
             <Wand2 className="h-4 w-4 mr-2" />
             Create
           </TabsTrigger>
-          <TabsTrigger value="inspiration" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger value="inspiration" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-white data-[state=active]:to-gray-200 data-[state=active]:text-black">
             <Lightbulb className="h-4 w-4 mr-2" />
             Inspiration
           </TabsTrigger>
-          <TabsTrigger value="results" className="data-[state=active]:bg-purple-600">
+          <TabsTrigger value="results" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-white data-[state=active]:to-gray-200 data-[state=active]:text-black">
             <ImageIcon className="h-4 w-4 mr-2" />
             Results
           </TabsTrigger>
@@ -202,11 +203,11 @@ export default function AdCreativeStudioPage() {
             <div className="lg:col-span-2 space-y-6">
               {/* Prompt Section */}
               <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-400" />
-                    Creative Prompt
-                  </CardTitle>
+                                 <CardHeader>
+                   <CardTitle className="text-white flex items-center gap-2">
+                     <Sparkles className="h-5 w-5 text-gray-400" />
+                     Creative Prompt
+                   </CardTitle>
                   <CardDescription className="text-gray-400">
                     Describe your vision in detail for the best results
                   </CardDescription>
@@ -268,11 +269,11 @@ export default function AdCreativeStudioPage() {
 
               {/* Upload Section */}
               <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Upload className="h-5 w-5 text-blue-400" />
-                    Reference Images
-                  </CardTitle>
+                                 <CardHeader>
+                   <CardTitle className="text-white flex items-center gap-2">
+                     <Upload className="h-5 w-5 text-gray-400" />
+                     Reference Images
+                   </CardTitle>
                   <CardDescription className="text-gray-400">
                     Upload product images or reference materials
                   </CardDescription>
@@ -394,13 +395,13 @@ export default function AdCreativeStudioPage() {
             {/* Right Column - Controls & Preview */}
             <div className="space-y-6">
               {/* Templates */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-green-400" />
-                    Ad Templates
-                  </CardTitle>
-                </CardHeader>
+                             <Card className="bg-[#1A1A1A] border-[#333]">
+                 <CardHeader>
+                   <CardTitle className="text-white flex items-center gap-2">
+                     <Layers className="h-5 w-5 text-gray-400" />
+                     Ad Templates
+                   </CardTitle>
+                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 gap-2">
                     {AD_TEMPLATES.map((template) => {
@@ -409,14 +410,14 @@ export default function AdCreativeStudioPage() {
                         <button
                           key={template.id}
                           onClick={() => setSelectedTemplate(template.id)}
-                          className={`p-3 rounded-lg border text-left transition-all ${
-                            selectedTemplate === template.id
-                              ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-gray-600 hover:border-gray-500'
-                          }`}
+                                                     className={`p-3 rounded-lg border text-left transition-all ${
+                             selectedTemplate === template.id
+                               ? 'border-white bg-white/10'
+                               : 'border-gray-600 hover:border-gray-500'
+                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4 text-purple-400" />
+                                                     <div className="flex items-center gap-2">
+                             <IconComponent className="h-4 w-4 text-gray-400" />
                             <div>
                               <div className="text-white text-sm font-medium">
                                 {template.name}
@@ -434,13 +435,13 @@ export default function AdCreativeStudioPage() {
               </Card>
 
               {/* Style Presets */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Palette className="h-5 w-5 text-pink-400" />
-                    Style Presets
-                  </CardTitle>
-                </CardHeader>
+                             <Card className="bg-[#1A1A1A] border-[#333]">
+                 <CardHeader>
+                   <CardTitle className="text-white flex items-center gap-2">
+                     <Palette className="h-5 w-5 text-gray-400" />
+                     Style Presets
+                   </CardTitle>
+                 </CardHeader>
                 <CardContent>
                   <Select value={selectedStyle} onValueChange={setSelectedStyle}>
                     <SelectTrigger className="bg-[#0F0F0F] border-gray-700 text-white">
@@ -464,7 +465,7 @@ export default function AdCreativeStudioPage() {
                              <Card className="bg-[#1A1A1A] border-[#333]">
                  <CardHeader>
                    <CardTitle className="text-white flex items-center gap-2">
-                     <Crop className="h-5 w-5 text-orange-400" />
+                     <Crop className="h-5 w-5 text-gray-400" />
                      Aspect Ratio
                    </CardTitle>
                  </CardHeader>
@@ -474,11 +475,11 @@ export default function AdCreativeStudioPage() {
                       <button
                         key={ratio.id}
                         onClick={() => setSelectedRatio(ratio.id)}
-                        className={`w-full p-2 rounded text-left transition-all ${
-                          selectedRatio === ratio.id
-                            ? 'bg-orange-500/20 border border-orange-500'
-                            : 'hover:bg-gray-800 border border-transparent'
-                        }`}
+                                                 className={`w-full p-2 rounded text-left transition-all ${
+                           selectedRatio === ratio.id
+                             ? 'bg-white/20 border border-white'
+                             : 'hover:bg-gray-800 border border-transparent'
+                         }`}
                       >
                         <div className="text-white text-sm font-medium">{ratio.name}</div>
                         <div className="text-gray-400 text-xs">{ratio.description}</div>
@@ -489,11 +490,11 @@ export default function AdCreativeStudioPage() {
               </Card>
 
               {/* Generation Button */}
-              <Button 
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 text-lg"
-              >
+                             <Button 
+                 onClick={handleGenerate}
+                 disabled={!prompt.trim() || isGenerating}
+                 className="w-full bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black py-3 text-lg font-semibold"
+               >
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
@@ -512,12 +513,12 @@ export default function AdCreativeStudioPage() {
 
         {/* Inspiration Tab */}
         <TabsContent value="inspiration" className="space-y-6">
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-400" />
-                Inspiration Gallery
-              </CardTitle>
+                     <Card className="bg-[#1A1A1A] border-[#333]">
+             <CardHeader>
+               <CardTitle className="text-white flex items-center gap-2">
+                 <Lightbulb className="h-5 w-5 text-gray-400" />
+                 Inspiration Gallery
+               </CardTitle>
               <CardDescription className="text-gray-400">
                 Browse and select inspiration images to guide your creative generation
               </CardDescription>
@@ -533,11 +534,11 @@ export default function AdCreativeStudioPage() {
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          onClick={() => addInspirationImage(item.url)}
-                          size="sm"
-                          className="bg-purple-600 hover:bg-purple-700"
-                        >
+                                                 <Button
+                           onClick={() => addInspirationImage(item.url)}
+                           size="sm"
+                           className="bg-white hover:bg-gray-100 text-black"
+                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add to References
                         </Button>
@@ -559,11 +560,11 @@ export default function AdCreativeStudioPage() {
                   <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
                     {inspirationImages.map((imageUrl, index) => (
                       <div key={index} className="relative group">
-                        <img
-                          src={imageUrl}
-                          alt={`Reference ${index + 1}`}
-                          className="w-full aspect-square object-cover rounded border border-purple-500"
-                        />
+                                                 <img
+                           src={imageUrl}
+                           alt={`Reference ${index + 1}`}
+                           className="w-full aspect-square object-cover rounded border border-white"
+                         />
                         <button
                           onClick={() => removeInspirationImage(imageUrl)}
                           className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -581,12 +582,12 @@ export default function AdCreativeStudioPage() {
 
         {/* Results Tab */}
         <TabsContent value="results" className="space-y-6">
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-blue-400" />
-                Generated Creatives
-              </CardTitle>
+                     <Card className="bg-[#1A1A1A] border-[#333]">
+             <CardHeader>
+               <CardTitle className="text-white flex items-center gap-2">
+                 <ImageIcon className="h-5 w-5 text-gray-400" />
+                 Generated Creatives
+               </CardTitle>
               <CardDescription className="text-gray-400">
                 Your AI-generated ad creatives are ready for download and use
               </CardDescription>
@@ -597,10 +598,10 @@ export default function AdCreativeStudioPage() {
                   <ImageIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                   <h3 className="text-white text-lg font-medium mb-2">No creatives yet</h3>
                   <p className="text-gray-400 mb-4">Generate your first creative to see results here</p>
-                  <Button onClick={() => setActiveTab('create')} className="bg-purple-600 hover:bg-purple-700">
-                    <Wand2 className="h-4 w-4 mr-2" />
-                    Start Creating
-                  </Button>
+                                     <Button onClick={() => setActiveTab('create')} className="bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black">
+                     <Wand2 className="h-4 w-4 mr-2" />
+                     Start Creating
+                   </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -614,7 +615,7 @@ export default function AdCreativeStudioPage() {
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
+                        <Button size="sm" className="flex-1 bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black">
                           <Download className="h-4 w-4 mr-2" />
                           Download
                         </Button>
@@ -634,8 +635,9 @@ export default function AdCreativeStudioPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+                 </TabsContent>
+       </Tabs>
+      </div>
     </div>
   )
 } 
