@@ -43,6 +43,8 @@ import {
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { useAgency } from "@/contexts/AgencyContext"
 import { usePathname } from "next/navigation"
+import { useBrandContext } from "@/lib/context/BrandContext"
+import BrandSelector from "@/components/BrandSelector"
 
 const STYLE_PRESETS = [
   { id: 'photorealistic', name: 'Photorealistic', description: 'Natural, photo-like images' },
@@ -102,6 +104,7 @@ export default function AdCreativeStudioPage() {
   const [colorScheme, setColorScheme] = useState('')
 
   const { agencySettings } = useAgency()
+  const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -130,8 +133,35 @@ export default function AdCreativeStudioPage() {
     setInspirationImages(prev => prev.filter(img => img !== imageUrl))
   }
 
+  const handleBrandSelect = (brandId: string) => {
+    setSelectedBrandId(brandId)
+  }
+
   const handleGenerate = async () => {
+    if (!selectedBrandId) {
+      return
+    }
+    
     setIsGenerating(true)
+    // TODO: Replace with actual API call that includes brandId
+    // const response = await fetch('/api/ai/generate-creative', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     brandId: selectedBrandId,
+    //     prompt,
+    //     style: selectedStyle,
+    //     template: selectedTemplate,
+    //     aspectRatio: selectedRatio,
+    //     creativity: creativity[0],
+    //     quality: quality[0],
+    //     includeText,
+    //     adCopy,
+    //     targetAudience,
+    //     colorScheme
+    //   })
+    // })
+    
     // Simulate generation for now
     setTimeout(() => {
       const mockImages = Array.from({ length: 4 }, (_, i) => 
@@ -143,16 +173,69 @@ export default function AdCreativeStudioPage() {
   }
 
   if (isLoadingPage) {
-    const loadingConfig = getPageLoadingConfig(pathname)
     return (
-      <UnifiedLoading
-        variant="page"
-        size="lg"
-        message="Loading Ad Creative Studio"
-        subMessage="Setting up your creative workspace"
-        agencyLogo={agencySettings.agency_logo_url}
-        agencyName={agencySettings.agency_name}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center mx-auto mb-6">
+            <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
+            {agencySettings.agency_logo_url ? (
+              <img 
+                src={agencySettings.agency_logo_url} 
+                alt={`${agencySettings.agency_name} Logo`} 
+                className="w-12 h-12 object-contain rounded" 
+              />
+            ) : (
+              <Palette className="h-12 w-12 text-white" />
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Ad Creative Studio</h1>
+          <p className="text-gray-400 mb-4">Setting up your creative workspace</p>
+          <div className="text-xs text-gray-500 italic">
+            Building your personalized creative generation dashboard...
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No brand selected state
+  if (!selectedBrandId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a]">
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Palette className="h-8 w-8 text-white" />
+              <div>
+                <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
+                <p className="text-gray-400">AI-powered creative generation for your campaigns</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Brand Selection Required */}
+          <Card className="bg-[#1A1A1A] border-[#333] max-w-2xl mx-auto">
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center mx-auto mb-6">
+                <Palette className="h-10 w-10 text-gray-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">Select a Brand</h2>
+              <p className="text-gray-400 mb-8 leading-relaxed">
+                Choose a brand to start creating AI-powered ad creatives. All generated content will be saved to your selected brand's profile for easy organization and access.
+              </p>
+              <div className="max-w-sm mx-auto">
+                <BrandSelector 
+                  onSelect={handleBrandSelect}
+                  selectedBrandId={selectedBrandId}
+                  className="w-full"
+                  isVisible={true}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     )
   }
 
@@ -168,15 +251,25 @@ export default function AdCreativeStudioPage() {
               <p className="text-gray-400">AI-powered creative generation for your campaigns</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-              <Save className="h-4 w-4 mr-2" />
-              Save Project
-            </Button>
-            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="max-w-xs">
+              <BrandSelector 
+                onSelect={handleBrandSelect}
+                selectedBrandId={selectedBrandId}
+                className="w-full"
+                isVisible={true}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+                <Save className="h-4 w-4 mr-2" />
+                Save Project
+              </Button>
+              <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -492,8 +585,8 @@ export default function AdCreativeStudioPage() {
               {/* Generation Button */}
                              <Button 
                  onClick={handleGenerate}
-                 disabled={!prompt.trim() || isGenerating}
-                 className="w-full bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black py-3 text-lg font-semibold"
+                 disabled={!prompt.trim() || isGenerating || !selectedBrandId}
+                 className="w-full bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                >
                 {isGenerating ? (
                   <>
