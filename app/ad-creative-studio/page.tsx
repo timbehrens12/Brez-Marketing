@@ -108,8 +108,13 @@ export default function AdCreativeStudioPage() {
       const response = await fetch(`/api/ai/generate-creative?brandId=${selectedBrandId}`)
       const data = await response.json()
       
-      if (data.success) {
-        setCreativeAssets(data.data)
+      if (data.creatives) {
+        setCreativeAssets(data.creatives.filter((asset: any) => asset != null))
+      } else if (data.success && data.data) {
+        // Fallback for old API format
+        setCreativeAssets(data.data.filter((asset: any) => asset != null))
+      } else {
+        setCreativeAssets([])
       }
     } catch (error) {
       console.error('Error loading creative assets:', error)
@@ -316,7 +321,7 @@ export default function AdCreativeStudioPage() {
                   <p className="text-sm text-gray-400">This Month</p>
                   <p className="text-xl font-bold text-white">
                     {creativeAssets.filter(a => 
-                      new Date(a.created_at).getMonth() === new Date().getMonth()
+                      a && a.created_at && new Date(a.created_at).getMonth() === new Date().getMonth()
                     ).length}
                   </p>
                 </div>
@@ -332,7 +337,7 @@ export default function AdCreativeStudioPage() {
                   <p className="text-sm text-gray-400">Success Rate</p>
                   <p className="text-xl font-bold text-white">
                     {creativeAssets.length > 0 
-                      ? Math.round((creativeAssets.filter(a => a.status === 'completed').length / creativeAssets.length) * 100)
+                      ? Math.round((creativeAssets.filter(a => a && a.status === 'completed').length / creativeAssets.length) * 100)
                       : 100}%
                   </p>
                 </div>
@@ -691,7 +696,7 @@ export default function AdCreativeStudioPage() {
                       <div className="p-3 space-y-2">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-400">
-                            {new Date(asset.created_at).toLocaleDateString()}
+                            {asset.created_at ? new Date(asset.created_at).toLocaleDateString() : 'Unknown date'}
                           </span>
                           <span className="text-gray-400">
                             ${asset.generation_cost?.toFixed(3) || '0.030'}
@@ -756,7 +761,7 @@ export default function AdCreativeStudioPage() {
                   <div>
                     <Label className="text-gray-400">Generated</Label>
                     <p className="text-white mt-1">
-                      {new Date(selectedAsset.created_at).toLocaleString()}
+                      {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleString() : 'Unknown date'}
                     </p>
                   </div>
                   <div>
