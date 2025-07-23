@@ -12,8 +12,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!
 })
 
-// Helper function to analyze product image with GPT-4 Vision
-async function analyzeProductImage(imageUrl: string): Promise<string> {
+// Enhanced product analysis that mimics ChatGPT's approach
+async function analyzeProductWithVision(imageUrl: string, userPrompt: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -23,25 +23,36 @@ async function analyzeProductImage(imageUrl: string): Promise<string> {
           content: [
             {
               type: "text",
-              text: "Analyze this product image in detail for advertising creative generation. Describe the product's style, colors, materials, branding, shape, key features, and any text visible on the product. Focus on visual elements that would be important for creating marketing visuals. Be specific about colors (exact shades), textures, and design elements. Keep the description concise but comprehensive for AI image generation."
+              text: `You are an expert product photographer and creative director. Analyze this product image in extreme detail and create a comprehensive prompt for DALL-E 3 that will generate a professional ad creative.
+
+The user wants: "${userPrompt}"
+
+Please provide a detailed DALL-E prompt that includes:
+1. EXACT product description (colors, text, logos, design elements, materials, fit, style)
+2. The specific styling/scene requested by the user
+3. Professional photography techniques (lighting, angles, composition)
+4. High-end commercial photography specifications
+
+Make the prompt incredibly specific so DALL-E can recreate this EXACT product with the requested styling. Focus on preserving all brand elements, text, logos, and design details while applying the new creative direction.
+
+Respond with ONLY the enhanced DALL-E prompt - no explanations or additional text.`
             },
             {
               type: "image_url",
               image_url: {
-                url: imageUrl,
-                detail: "high"
+                url: imageUrl
               }
             }
           ]
         }
       ],
-      max_tokens: 300
+      max_tokens: 1000,
     })
 
-    return response.choices[0]?.message?.content || ""
+    return response.choices[0]?.message?.content || ''
   } catch (error) {
-    console.error('Error analyzing product image:', error)
-    return ""
+    console.error('Vision analysis error:', error)
+    throw new Error('Failed to analyze product image')
   }
 }
 
@@ -63,151 +74,89 @@ export async function POST(req: Request) {
 
     if (!prompt || !brandId) {
       return NextResponse.json(
-        { error: 'Prompt and brandId are required' }, 
+        { error: 'Prompt and brandId are required' },
         { status: 400 }
       )
     }
 
-    // Analyze product image if provided
-    let productAnalysis = ""
     let enhancedPrompt = prompt
 
+    // If product image is provided, use GPT-4 Vision to analyze and enhance the prompt
     if (productImageUrl) {
       console.log('Analyzing product image with GPT-4 Vision...')
-      productAnalysis = await analyzeProductImage(productImageUrl)
-      
-      if (productAnalysis) {
-        // Enhance the original prompt with product analysis
-        enhancedPrompt = `Create an advertising creative featuring this specific product: ${productAnalysis}
-
-Original creative brief: ${prompt}
-
-Make sure to accurately represent the product's colors, style, and branding while incorporating the creative direction provided.`
-      }
+      enhancedPrompt = await analyzeProductWithVision(productImageUrl, prompt)
+      console.log('Enhanced prompt:', enhancedPrompt)
     }
 
-    // Further enhance the prompt with style preferences and context
-    if (stylePreferences) {
-      const { colorScheme, style, format, audience, includeText } = stylePreferences
-      
-      let styleEnhancement = ""
-      if (colorScheme && colorScheme !== 'vibrant') styleEnhancement += ` Color palette: ${colorScheme}.`
-      if (style && style !== 'modern') styleEnhancement += ` Visual style: ${style}.`
-      if (format && format !== 'square') styleEnhancement += ` Format: ${format} aspect ratio.`
-      if (audience && audience !== 'general') styleEnhancement += ` Target audience: ${audience}.`
-      if (!includeText) styleEnhancement += ` No text overlay required.`
-      
-      if (styleEnhancement) {
-        enhancedPrompt += styleEnhancement
-      }
+    // Generate image with DALL-E 3 using the enhanced prompt
+    console.log('Generating image with DALL-E 3...')
+    const imageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: enhancedPrompt,
+      size: "1024x1024",
+      quality: "hd",
+      n: 1,
+    })
+
+    const imageUrl = imageResponse.data[0]?.url
+    if (!imageUrl) {
+      throw new Error('Failed to generate image')
     }
 
-    // Add professional photography direction
-    enhancedPrompt += " Professional advertising photography, high quality, studio lighting, commercial grade."
+    // Calculate cost (approximate)
+    const totalCost = 0.040 // DALL-E 3 HD cost
+    const tokensUsed = Math.ceil(enhancedPrompt.length / 4) // Rough token estimate
 
-    console.log('Enhanced prompt:', enhancedPrompt)
-
-    // First, create a pending record in the database
-    const { data: creativeAsset, error: dbError } = await supabase
+    // Save to database
+    const { data: creative, error: dbError } = await supabase
       .from('creative_assets')
       .insert({
-        brand_id: brandId,
         user_id: user.id,
-        prompt: prompt, // Store original prompt
-        image_url: '', // Will be updated after generation
-        status: 'generating',
+        brand_id: brandId,
+        prompt: prompt, // Original prompt
+        enhanced_prompt: enhancedPrompt, // Store the enhanced version too
+        image_url: imageUrl,
         product_image_url: productImageUrl,
         inspiration_images: inspirationImages || [],
         style_preferences: stylePreferences || {},
-        model_used: 'gpt-4o'
+        model_used: 'dall-e-3-hd',
+        generation_cost: totalCost,
+        tokens_used: tokensUsed,
+        session_id: sessionId,
+        status: 'completed'
       })
       .select()
       .single()
 
     if (dbError) {
-      throw dbError
+      console.error('Database error:', dbError)
+      throw new Error('Failed to save creative asset')
     }
 
-    try {
-      // Generate the image using DALL-E 3 with enhanced prompt
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: enhancedPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
-        response_format: "url"
-      })
-
-      const imageUrl = response.data[0].url
-      if (!imageUrl) {
-        throw new Error('No image URL returned from OpenAI')
+    return NextResponse.json({
+      success: true,
+      creative: {
+        id: creative.id,
+        imageUrl: imageUrl,
+        prompt: prompt,
+        enhancedPrompt: enhancedPrompt,
+        cost: totalCost,
+        tokensUsed: tokensUsed
       }
+    })
 
-      // Calculate approximate cost
-      const visionTokens = productAnalysis ? 85 : 0 // Approximate tokens for vision analysis
-      const inputTokens = Math.ceil(enhancedPrompt.length / 4) + visionTokens
-      const tokenCost = (inputTokens * 5) / 1_000_000 // $5 per million input tokens
-      const imageCost = 0.03 // $0.03 per image
-      const totalCost = tokenCost + imageCost
-
-      // Update the database with the generated image
-      const { data: updatedAsset, error: updateError } = await supabase
-        .from('creative_assets')
-        .update({
-          image_url: imageUrl,
-          thumbnail_url: imageUrl, // Same as image_url for now
-          status: 'completed',
-          generation_cost: totalCost,
-          tokens_used: inputTokens,
-          // Store the enhanced prompt and analysis for reference
-          style_preferences: {
-            ...stylePreferences,
-            enhanced_prompt: enhancedPrompt,
-            product_analysis: productAnalysis
-          }
-        })
-        .eq('id', creativeAsset.id)
-        .select()
-        .single()
-
-      if (updateError) {
-        throw updateError
-      }
-
-      return NextResponse.json({
-        success: true,
-        data: updatedAsset,
-        debug: {
-          originalPrompt: prompt,
-          enhancedPrompt: enhancedPrompt,
-          productAnalysis: productAnalysis,
-          tokensUsed: inputTokens,
-          cost: totalCost
-        }
-      })
-    } catch (generationError: any) {
-      // Update the database with error status
-      await supabase
-        .from('creative_assets')
-        .update({
-          status: 'failed',
-          error_message: generationError.message || 'Failed to generate image'
-        })
-        .eq('id', creativeAsset.id)
-
-      throw generationError
-    }
   } catch (error: any) {
     console.error('Creative generation error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to generate creative' },
+      { 
+        error: 'Failed to generate creative',
+        details: error.message 
+      },
       { status: 500 }
     )
   }
 }
 
-// GET endpoint to fetch creative assets (unchanged)
 export async function GET(req: Request) {
   try {
     const user = await currentUser()
@@ -217,8 +166,6 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const brandId = searchParams.get('brandId')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = parseInt(searchParams.get('offset') || '0')
 
     if (!brandId) {
       return NextResponse.json(
@@ -227,27 +174,28 @@ export async function GET(req: Request) {
       )
     }
 
-    const { data: assets, error, count } = await supabase
+    const { data: creatives, error } = await supabase
       .from('creative_assets')
-      .select('*', { count: 'exact' })
-      .eq('brand_id', brandId)
+      .select('*')
       .eq('user_id', user.id)
+      .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .limit(50)
 
     if (error) {
+      console.error('Fetch creatives error:', error)
       throw error
     }
 
-    return NextResponse.json({
-      success: true,
-      data: assets,
-      count: count || 0
-    })
+    return NextResponse.json({ creatives })
+
   } catch (error: any) {
     console.error('Fetch creative assets error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch creative assets' },
+      { 
+        error: 'Failed to fetch creative assets',
+        details: error.message 
+      },
       { status: 500 }
     )
   }
