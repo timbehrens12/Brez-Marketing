@@ -18,15 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-interface NavItem {
-  name: string;
-  href: string;
-  icon: any;
-  description: string;
-  comingSoon?: boolean;
-}
-
-const navItems: NavItem[] = [
+const navItems = [
   { 
     name: "Dashboard", 
     href: "/dashboard", 
@@ -61,7 +53,8 @@ const navItems: NavItem[] = [
     name: "Ad Creative Studio", 
     href: "/ad-creative-studio", 
     icon: Palette,
-    description: "AI-powered creative generation"
+    description: "Create ad content",
+    comingSoon: true
   },
 
   { 
@@ -294,7 +287,7 @@ export function Sidebar({ className }: SidebarProps) {
           <nav className="space-y-3">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
-              const isComingSoon = item.comingSoon || false;
+              const isComingSoon = item.comingSoon;
               
               const linkElement = (
                 <Link
