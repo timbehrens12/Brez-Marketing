@@ -84,7 +84,7 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
-  const { counts: actionCenterCounts } = useActionCenter()
+  const { actionCenterCounts } = useActionCenter()
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
   const [isPinned, setIsPinned] = useState(false)
