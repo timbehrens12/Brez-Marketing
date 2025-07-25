@@ -104,8 +104,10 @@ export default function ActionCenterPage() {
       const supabase = await getSupabaseClient()
       const newTodos: TodoItem[] = []
 
+      console.log('[Action Center] Loading outreach campaigns for user:', user.id)
+
       // Load ONLY Outreach Items (same as outreach page simple-todos.tsx)
-      const { data: outreachCampaigns } = await supabase
+      const { data: outreachCampaigns, error } = await supabase
         .from('outreach_campaigns')
         .select(`
           *,
@@ -121,9 +123,21 @@ export default function ActionCenterPage() {
         `)
         .eq('user_id', user.id)
 
+      if (error) {
+        console.error('[Action Center] Error loading outreach campaigns:', error)
+        return
+      }
+
+      console.log('[Action Center] Found outreach campaigns:', outreachCampaigns?.length || 0)
+      if (outreachCampaigns) {
+        console.log('[Action Center] Campaigns data:', outreachCampaigns)
+      }
+
       if (outreachCampaigns) {
         for (const campaign of outreachCampaigns) {
           const campaignLeads = campaign.outreach_campaign_leads || []
+          
+          console.log(`[Action Center] Campaign "${campaign.name}" has ${campaignLeads.length} leads`)
           
           if (campaignLeads.length === 0) continue
 
@@ -132,6 +146,13 @@ export default function ActionCenterPage() {
           const contactedLeads = campaignLeads.filter((cl: any) => cl.status === 'contacted')
           const respondedLeads = campaignLeads.filter((cl: any) => cl.status === 'responded')
           const qualifiedLeads = campaignLeads.filter((cl: any) => cl.status === 'qualified')
+          
+          console.log(`[Action Center] Campaign "${campaign.name}" lead counts:`, {
+            pending: pendingLeads.length,
+            contacted: contactedLeads.length,
+            responded: respondedLeads.length,
+            qualified: qualifiedLeads.length
+          })
           
           // Get leads contacted more than 3 days ago (need follow-up)
           const threeDaysAgo = new Date()
@@ -149,8 +170,14 @@ export default function ActionCenterPage() {
             return new Date(cl.last_contacted_at) < sevenDaysAgo
           })
 
+          console.log(`[Action Center] Campaign "${campaign.name}" follow-up counts:`, {
+            needsFollowUp: needsFollowUp.length,
+            goingCold: goingCold.length
+          })
+
           // Generate todos based on lead status (exact same logic as simple-todos.tsx)
           if (pendingLeads.length > 0) {
+            console.log(`[Action Center] Adding pending leads todo: ${pendingLeads.length} leads`)
             newTodos.push({
               id: `new_leads_${campaign.id}`,
               type: 'new_leads',
@@ -164,6 +191,7 @@ export default function ActionCenterPage() {
           }
 
           if (respondedLeads.length > 0) {
+            console.log(`[Action Center] Adding responded leads todo: ${respondedLeads.length} leads`)
             newTodos.push({
               id: `responded_${campaign.id}`,
               type: 'responded',
@@ -177,6 +205,7 @@ export default function ActionCenterPage() {
           }
 
           if (qualifiedLeads.length > 0) {
+            console.log(`[Action Center] Adding qualified leads todo: ${qualifiedLeads.length} leads`)
             newTodos.push({
               id: `qualified_${campaign.id}`,
               type: 'hot_leads',
@@ -190,6 +219,7 @@ export default function ActionCenterPage() {
           }
 
           if (needsFollowUp.length > 0) {
+            console.log(`[Action Center] Adding follow-up todo: ${needsFollowUp.length} leads`)
             newTodos.push({
               id: `follow_up_${campaign.id}`,
               type: 'follow_up',
@@ -203,6 +233,7 @@ export default function ActionCenterPage() {
           }
 
           if (goingCold.length > 0) {
+            console.log(`[Action Center] Adding going cold todo: ${goingCold.length} leads`)
             newTodos.push({
               id: `going_cold_${campaign.id}`,
               type: 'follow_up',
@@ -217,9 +248,10 @@ export default function ActionCenterPage() {
         }
       }
 
+      console.log(`[Action Center] Generated ${newTodos.length} todos:`, newTodos)
       setTodos(newTodos)
     } catch (error) {
-      console.error('Error generating todos:', error)
+      console.error('[Action Center] Error generating todos:', error)
     }
   }, [user?.id])
 
