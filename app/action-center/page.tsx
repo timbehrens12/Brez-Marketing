@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useUser } from '@clerk/nextjs'
+import { useAuth } from '@clerk/nextjs'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { 
@@ -78,7 +78,7 @@ interface CampaignLead {
 }
 
 export default function ActionCenterPage() {
-  const { user } = useUser()
+  const { userId } = useAuth()
   const { selectedBrandId } = useBrandContext()
   const router = useRouter()
   
@@ -90,16 +90,16 @@ export default function ActionCenterPage() {
 
   // Load campaign leads
   const loadCampaignLeads = useCallback(async () => {
-    if (!user?.id) return
+    if (!userId) return
 
     try {
-      console.log('Loading campaign leads for user:', user.id)
+      console.log('Loading campaign leads for user:', userId)
       const supabase = await getSupabaseClient()
       
       const { data: userCampaigns, error: campaignsError } = await supabase
         .from('outreach_campaigns')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
 
       if (campaignsError) throw campaignsError
 
@@ -129,7 +129,7 @@ export default function ActionCenterPage() {
       console.error('Error loading campaign leads:', error)
       setCampaignLeads([])
     }
-  }, [user?.id])
+  }, [userId])
 
   // Generate todos based on campaign leads
   const generateTodos = useCallback(() => {
@@ -252,7 +252,7 @@ export default function ActionCenterPage() {
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      if (!user?.id) return
+      if (!userId) return
       setIsLoading(true)
       try {
         await loadCampaignLeads()
@@ -264,20 +264,20 @@ export default function ActionCenterPage() {
     }
 
     loadData()
-  }, [user?.id, loadCampaignLeads, refreshKey])
+  }, [userId, loadCampaignLeads, refreshKey])
 
   // Generate todos when data changes
   useEffect(() => {
-    if (user?.id && campaignLeads.length >= 0) {
+    if (userId && campaignLeads.length >= 0) {
       generateTodos()
     }
-  }, [user?.id, campaignLeads, generateTodos])
+  }, [userId, campaignLeads, generateTodos])
 
   // Load completed todos from localStorage
   useEffect(() => {
-    if (!user?.id) return
+    if (!userId) return
 
-    const stored = localStorage.getItem(`completed-todos-${user.id}`)
+    const stored = localStorage.getItem(`completed-todos-${userId}`)
     if (stored) {
       try {
         const completed = JSON.parse(stored)
@@ -286,7 +286,7 @@ export default function ActionCenterPage() {
         console.error('Error loading completed todos:', error)
       }
     }
-  }, [user?.id])
+  }, [userId])
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1)
@@ -299,7 +299,7 @@ export default function ActionCenterPage() {
       // Store in localStorage for persistence
       const completed = Array.from(completedTodos)
       completed.push(todoId)
-      localStorage.setItem(`completed-todos-${user?.id}`, JSON.stringify(completed))
+      localStorage.setItem(`completed-todos-${userId}`, JSON.stringify(completed))
       
     } catch (error) {
       console.error('Error completing todo:', error)
