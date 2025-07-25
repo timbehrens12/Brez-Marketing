@@ -642,8 +642,8 @@ export default function DashboardPage() {
       }, MAX_LOADING_TIME);
       
       try {
-        // Always check for data gaps and backfill if necessary (not just on initial load)
-        if (selectedBrandId && (activePlatforms.meta || activePlatforms.shopify)) {
+        // Always check for data gaps and backfill if necessary (same as Marketing Assistant)
+        if (selectedBrandId) {
           console.log('[Dashboard] Validating data coverage...');
           await checkForGaps(selectedBrandId);
           
