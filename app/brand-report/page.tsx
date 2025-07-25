@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths } from "date-fns"
+import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths, subDays } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2, BarChart4, RefreshCw, Zap, Download } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -520,13 +520,252 @@ export default function BrandReportPage() {
       const shopifyData = await shopifyResponse.json()
       const metaData = await metaResponse.json()
 
-      // Fetch previous reports for comparison and improvement tracking
+      // Fetch extended historical data for trend analysis
+      const last30Days = subDays(new Date(), 30)
+      const last90Days = subDays(new Date(), 90)
+      
+      const [shopify30Response, meta30Response, shopify90Response, meta90Response] = await Promise.all([
+        fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(last30Days, 'yyyy-MM-dd')}&to=${format(new Date(), 'yyyy-MM-dd')}`),
+        fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(last30Days, 'yyyy-MM-dd')}&to=${format(new Date(), 'yyyy-MM-dd')}`),
+        fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(last90Days, 'yyyy-MM-dd')}&to=${format(new Date(), 'yyyy-MM-dd')}`),
+        fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(last90Days, 'yyyy-MM-dd')}&to=${format(new Date(), 'yyyy-MM-dd')}`)
+      ])
+
+      let shopify30Data = null, meta30Data = null, shopify90Data = null, meta90Data = null
+      
+      if (shopify30Response.ok && meta30Response.ok) {
+        shopify30Data = await shopify30Response.json()
+        meta30Data = await meta30Response.json()
+      }
+      
+      if (shopify90Response.ok && meta90Response.ok) {
+        shopify90Data = await shopify90Response.json()
+        meta90Data = await meta90Response.json()
+      }
+
+      // Calculate key performance indicators and trends
+      const currentMetrics = {
+        revenue: shopifyData.total_revenue || 0,
+        orders: shopifyData.total_orders || 0,
+        aov: shopifyData.total_orders > 0 ? shopifyData.total_revenue / shopifyData.total_orders : 0,
+        adSpend: metaData.total_spend || 0,
+        roas: (metaData.total_spend > 0 && shopifyData.total_revenue > 0) ? shopifyData.total_revenue / metaData.total_spend : 0,
+        impressions: metaData.total_impressions || 0,
+        clicks: metaData.total_clicks || 0,
+        cpm: (metaData.total_impressions > 0 && metaData.total_spend > 0) ? (metaData.total_spend / metaData.total_impressions) * 1000 : 0,
+        cpc: (metaData.total_clicks > 0 && metaData.total_spend > 0) ? metaData.total_spend / metaData.total_clicks : 0,
+        ctr: (metaData.total_impressions > 0 && metaData.total_clicks > 0) ? (metaData.total_clicks / metaData.total_impressions) * 100 : 0
+      }
+
+      // Calculate previous period metrics for comparison
+      let previousMetrics = null
+      let changeMetrics = null
+      let trendAnalysis = null
+      
+      if (selectedPeriod === "today") {
+        // Compare today vs yesterday
+        const yesterday = subDays(dateRange.from!, 1)
+        const [yesterdayShopifyResponse, yesterdayMetaResponse] = await Promise.all([
+          fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(yesterday, 'yyyy-MM-dd')}&to=${format(yesterday, 'yyyy-MM-dd')}`),
+          fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(yesterday, 'yyyy-MM-dd')}&to=${format(yesterday, 'yyyy-MM-dd')}`)
+        ])
+        
+        if (yesterdayShopifyResponse.ok && yesterdayMetaResponse.ok) {
+          const yesterdayShopify = await yesterdayShopifyResponse.json()
+          const yesterdayMeta = await yesterdayMetaResponse.json()
+          
+          previousMetrics = {
+            revenue: yesterdayShopify.total_revenue || 0,
+            orders: yesterdayShopify.total_orders || 0,
+            aov: yesterdayShopify.total_orders > 0 ? yesterdayShopify.total_revenue / yesterdayShopify.total_orders : 0,
+            adSpend: yesterdayMeta.total_spend || 0,
+            roas: (yesterdayMeta.total_spend > 0 && yesterdayShopify.total_revenue > 0) ? yesterdayShopify.total_revenue / yesterdayMeta.total_spend : 0,
+            impressions: yesterdayMeta.total_impressions || 0,
+            clicks: yesterdayMeta.total_clicks || 0,
+            cpm: (yesterdayMeta.total_impressions > 0 && yesterdayMeta.total_spend > 0) ? (yesterdayMeta.total_spend / yesterdayMeta.total_impressions) * 1000 : 0,
+            cpc: (yesterdayMeta.total_clicks > 0 && yesterdayMeta.total_spend > 0) ? yesterdayMeta.total_spend / yesterdayMeta.total_clicks : 0,
+            ctr: (yesterdayMeta.total_impressions > 0 && yesterdayMeta.total_clicks > 0) ? (yesterdayMeta.total_clicks / yesterdayMeta.total_impressions) * 100 : 0
+          }
+        }
+        
+        // Calculate 7-day trend for today's report
+        if (shopify30Data && meta30Data) {
+          const weeklyRevenue = shopify30Data.total_revenue || 0
+          const weeklySpend = meta30Data.total_spend || 0
+          const weeklyRoas = weeklySpend > 0 ? (shopify30Data.total_revenue || 0) / weeklySpend : 0
+          
+          trendAnalysis = {
+            period: "7-day trend",
+            revenue_trend: weeklyRevenue,
+            spend_trend: weeklySpend,
+            roas_trend: weeklyRoas,
+            performance_direction: weeklyRoas > currentMetrics.roas ? "improving" : weeklyRoas < currentMetrics.roas ? "declining" : "stable"
+          }
+        }
+      } else if (selectedPeriod === "last-month") {
+        // Compare last month vs previous month
+        const previousMonth = subMonths(dateRange.from!, 1)
+        const previousMonthEnd = endOfMonth(previousMonth)
+        const previousMonthStart = startOfMonth(previousMonth)
+        
+        const [prevMonthShopifyResponse, prevMonthMetaResponse] = await Promise.all([
+          fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(previousMonthStart, 'yyyy-MM-dd')}&to=${format(previousMonthEnd, 'yyyy-MM-dd')}`),
+          fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(previousMonthStart, 'yyyy-MM-dd')}&to=${format(previousMonthEnd, 'yyyy-MM-dd')}`)
+        ])
+        
+        if (prevMonthShopifyResponse.ok && prevMonthMetaResponse.ok) {
+          const prevMonthShopify = await prevMonthShopifyResponse.json()
+          const prevMonthMeta = await prevMonthMetaResponse.json()
+          
+          previousMetrics = {
+            revenue: prevMonthShopify.total_revenue || 0,
+            orders: prevMonthShopify.total_orders || 0,
+            aov: prevMonthShopify.total_orders > 0 ? prevMonthShopify.total_revenue / prevMonthShopify.total_orders : 0,
+            adSpend: prevMonthMeta.total_spend || 0,
+            roas: (prevMonthMeta.total_spend > 0 && prevMonthShopify.total_revenue > 0) ? prevMonthShopify.total_revenue / prevMonthMeta.total_spend : 0,
+            impressions: prevMonthMeta.total_impressions || 0,
+            clicks: prevMonthMeta.total_clicks || 0,
+            cpm: (prevMonthMeta.total_impressions > 0 && prevMonthMeta.total_spend > 0) ? (prevMonthMeta.total_spend / prevMonthMeta.total_impressions) * 1000 : 0,
+            cpc: (prevMonthMeta.total_clicks > 0 && prevMonthMeta.total_spend > 0) ? prevMonthMeta.total_spend / prevMonthMeta.total_clicks : 0,
+            ctr: (prevMonthMeta.total_impressions > 0 && prevMonthMeta.total_clicks > 0) ? (prevMonthMeta.total_clicks / prevMonthMeta.total_impressions) * 100 : 0
+          }
+        }
+        
+        // Calculate quarterly trend for monthly report
+        if (shopify90Data && meta90Data) {
+          const quarterlyRevenue = shopify90Data.total_revenue || 0
+          const quarterlySpend = meta90Data.total_spend || 0
+          const quarterlyRoas = quarterlySpend > 0 ? quarterlyRevenue / quarterlySpend : 0
+          
+          trendAnalysis = {
+            period: "90-day trend",
+            revenue_trend: quarterlyRevenue,
+            spend_trend: quarterlySpend,
+            roas_trend: quarterlyRoas,
+            performance_direction: quarterlyRoas > currentMetrics.roas ? "improving" : quarterlyRoas < currentMetrics.roas ? "declining" : "stable"
+          }
+        }
+      }
+
+      // Calculate percentage changes
+      if (previousMetrics) {
+        changeMetrics = {
+          revenue_change: previousMetrics.revenue > 0 ? ((currentMetrics.revenue - previousMetrics.revenue) / previousMetrics.revenue) * 100 : 0,
+          orders_change: previousMetrics.orders > 0 ? ((currentMetrics.orders - previousMetrics.orders) / previousMetrics.orders) * 100 : 0,
+          aov_change: previousMetrics.aov > 0 ? ((currentMetrics.aov - previousMetrics.aov) / previousMetrics.aov) * 100 : 0,
+          spend_change: previousMetrics.adSpend > 0 ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 : 0,
+          roas_change: previousMetrics.roas > 0 ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 : 0,
+          cpm_change: previousMetrics.cpm > 0 ? ((currentMetrics.cpm - previousMetrics.cpm) / previousMetrics.cpm) * 100 : 0,
+          cpc_change: previousMetrics.cpc > 0 ? ((currentMetrics.cpc - previousMetrics.cpc) / previousMetrics.cpc) * 100 : 0,
+          ctr_change: previousMetrics.ctr > 0 ? ((currentMetrics.ctr - previousMetrics.ctr) / previousMetrics.ctr) * 100 : 0
+        }
+      }
+
+      // Identify attention-required items
+      const attentionRequired = []
+      
+      if (changeMetrics) {
+        // Critical issues (🚨)
+        if (changeMetrics.revenue_change < -15) {
+          attentionRequired.push({
+            priority: "critical",
+            type: "revenue_drop",
+            message: `Revenue dropped ${Math.abs(changeMetrics.revenue_change).toFixed(1)}% vs ${selectedPeriod === "today" ? "yesterday" : "previous month"}`,
+            impact: "High",
+            timeline: "Immediate action required"
+          })
+        }
+        
+        if (currentMetrics.roas < 1.5) {
+          attentionRequired.push({
+            priority: "critical",
+            type: "low_roas",
+            message: `ROAS at ${currentMetrics.roas.toFixed(2)}x - below profitable threshold`,
+            impact: "Very High",
+            timeline: "Review campaigns today"
+          })
+        }
+        
+        if (changeMetrics.orders_change < -20) {
+          attentionRequired.push({
+            priority: "critical",
+            type: "orders_drop",
+            message: `Orders dropped ${Math.abs(changeMetrics.orders_change).toFixed(1)}% vs ${selectedPeriod === "today" ? "yesterday" : "previous month"}`,
+            impact: "High",
+            timeline: "Investigate conversion issues immediately"
+          })
+        }
+        
+        // Warnings (⚠️)
+        if (changeMetrics.revenue_change >= -15 && changeMetrics.revenue_change < -5) {
+          attentionRequired.push({
+            priority: "warning",
+            type: "revenue_decline",
+            message: `Revenue declining ${Math.abs(changeMetrics.revenue_change).toFixed(1)}% - monitor closely`,
+            impact: "Medium",
+            timeline: "Review within 24 hours"
+          })
+        }
+        
+        if (currentMetrics.roas >= 1.5 && currentMetrics.roas < 2.5) {
+          attentionRequired.push({
+            priority: "warning",
+            type: "low_efficiency",
+            message: `ROAS at ${currentMetrics.roas.toFixed(2)}x - room for improvement`,
+            impact: "Medium",
+            timeline: "Optimize campaigns this week"
+          })
+        }
+        
+        if (changeMetrics.cpm_change > 25) {
+          attentionRequired.push({
+            priority: "warning",
+            type: "rising_costs",
+            message: `CPM increased ${changeMetrics.cpm_change.toFixed(1)}% - ad costs rising`,
+            impact: "Medium",
+            timeline: "Review targeting and creative"
+          })
+        }
+        
+        // Opportunities (🎯)
+        if (changeMetrics.revenue_change > 20) {
+          attentionRequired.push({
+            priority: "opportunity",
+            type: "revenue_growth",
+            message: `Revenue up ${changeMetrics.revenue_change.toFixed(1)}% - consider scaling successful campaigns`,
+            impact: "High",
+            timeline: "Scale within 48 hours"
+          })
+        }
+        
+        if (currentMetrics.roas > 4) {
+          attentionRequired.push({
+            priority: "opportunity",
+            type: "high_roas",
+            message: `ROAS at ${currentMetrics.roas.toFixed(2)}x - increase ad spend to scale`,
+            impact: "Very High",
+            timeline: "Increase budgets today"
+          })
+        }
+        
+        if (changeMetrics.ctr_change > 15) {
+          attentionRequired.push({
+            priority: "opportunity",
+            type: "improved_engagement",
+            message: `CTR improved ${changeMetrics.ctr_change.toFixed(1)}% - winning creative angle identified`,
+            impact: "Medium",
+            timeline: "Scale winning creatives"
+          })
+        }
+      }
+
+      // Fetch previous reports for recommendation tracking
       let historicalReports = []
       try {
         const historicalParams = new URLSearchParams({
           brandId: selectedBrandId,
           userId: user.id,
-          limit: '3', // Get last 3 reports for context
+          limit: '5', // Get last 5 reports for better context
           exclude_current: 'true'
         })
         
@@ -535,7 +774,7 @@ export default function BrandReportPage() {
           const historicalResult = await historicalResponse.json()
           if (historicalResult.success && historicalResult.reports) {
             historicalReports = historicalResult.reports
-            console.log(`📚 Found ${historicalReports.length} historical reports for comparison`)
+            console.log(`📚 Found ${historicalReports.length} historical reports for comprehensive analysis`)
           }
         }
       } catch (historicalError) {
@@ -603,10 +842,30 @@ export default function BrandReportPage() {
           name: selectedBrand?.name || "Unknown Brand",
           industry: "E-commerce"
         },
-        platforms: {
-          shopify: shopifyData,
-          meta: metaData
+        current_performance: {
+          metrics: currentMetrics,
+          raw_data: {
+            shopify: shopifyData,
+            meta: metaData
+          }
         },
+        comparison_analysis: {
+          previous_period: previousMetrics,
+          changes: changeMetrics,
+          comparison_period: selectedPeriod === "today" ? "yesterday" : "previous month"
+        },
+        trend_analysis: trendAnalysis,
+        extended_historical_data: {
+          last_30_days: {
+            shopify: shopify30Data,
+            meta: meta30Data
+          },
+          last_90_days: {
+            shopify: shopify90Data,
+            meta: meta90Data
+          }
+        },
+        attention_required: attentionRequired,
         detailed_breakdown: detailedData,
         user: {
           greeting
@@ -616,8 +875,18 @@ export default function BrandReportPage() {
           count: historicalReports.length,
           note: "Use this historical data to identify trends, track improvements, evaluate recommendation effectiveness, and provide comparative analysis."
         },
+        analysis_requirements: {
+          priority_focus: "ATTENTION REQUIRED ITEMS - Identify critical issues, declining performance, opportunities, and specific actions needed immediately",
+          comparison_depth: "Provide detailed week-over-week, month-over-month comparisons with specific percentage changes and impact analysis",
+          trend_analysis: "Analyze performance trends over time, identify patterns, seasonality, and predict future performance",
+          actionable_insights: "Every insight must include specific, actionable recommendations with expected impact and timeline",
+          risk_assessment: "Identify performance risks, declining metrics, and potential threats to business growth",
+          opportunity_identification: "Highlight growth opportunities, underperforming segments, and scaling possibilities"
+        },
         formatting_instructions: {
-          style: "Create a comprehensive, detailed marketing report with HISTORICAL COMPARISON and IMPROVEMENT TRACKING. Be verbose and educational - even with limited data, provide thorough analysis and context. Structure: 1. Executive Summary (detailed overview with context and period-over-period changes), 2. Performance Overview (analyze all available metrics with explanations and historical comparison), 3. Historical Performance Analysis (compare current metrics to previous periods, identify trends, track improvement/decline), 4. Shopify E-commerce Analysis (detailed store performance, customer behavior, conversion insights with historical context), 5. Meta/Facebook Ads Analysis (campaign performance, targeting effectiveness, creative analysis with trend analysis), 6. Performance Trends Analysis (analyze patterns from detailed breakdown data and historical reports), 7. Recommendation Effectiveness Review (evaluate previous recommendations and their outcomes), 8. Customer & Market Insights (demographic analysis, behavioral patterns, changes over time), 9. Competitive Positioning & Opportunities, 10. Technical & Strategic Issues Identified, 11. Detailed Actionable Recommendations (specific, step-by-step strategies based on what has/hasn't worked historically). For each section: provide context, explain metrics significance, include industry benchmarks when relevant, compare to historical performance, track recommendation implementation success, suggest improvements based on historical data, and educate on best practices. Use professional marketing terminology and make recommendations specific and actionable. When historical data is available, always compare current performance to previous periods and explain what changes mean for the business."
+          style: "Create an EXECUTIVE-LEVEL marketing intelligence report with CRITICAL ATTENTION REQUIRED section at the top. Structure: 1. 🚨 ATTENTION REQUIRED (critical issues, declining performance, immediate actions needed with deadlines), 2. 📊 Executive Summary (key insights, major changes, strategic overview), 3. 📈 Performance Analysis (detailed metrics with historical comparison, trend analysis, and impact assessment), 4. 🎯 Historical Trend Analysis (identify patterns, growth/decline trends, seasonal impacts, performance trajectories), 5. 🛒 E-commerce Performance (customer behavior changes, conversion optimization opportunities, revenue drivers), 6. 📱 Advertising Performance (campaign effectiveness, audience insights, creative analysis, budget optimization), 7. 🔍 Deep Dive Analytics (granular insights from hourly/daily breakdowns, peak performance times, optimization opportunities), 8. 📋 Recommendation Effectiveness Review (track previous recommendations, measure outcomes, adjust strategies), 9. 🎯 Customer & Market Intelligence (demographic shifts, behavioral changes, competitive positioning), 10. ⚠️ Risk Assessment & Mitigation (identify threats, declining metrics, potential issues), 11. 🚀 Growth Opportunities (scaling possibilities, underperforming segments, new market opportunities), 12. 📝 Action Plan (prioritized list of specific actions with timelines, expected impact, and success metrics). Use data-driven insights, include specific numbers and percentages, provide context for all metrics, explain what changes mean for business growth, and always compare to historical performance. Make every recommendation specific with clear expected outcomes and implementation timelines. Focus heavily on actionable intelligence that drives business decisions.",
+          attention_required_format: "For ATTENTION REQUIRED section: Use 🚨 for critical issues (revenue drops >15%, ROAS <1.5, significant traffic drops), ⚠️ for warnings (declining trends 5-15%, performance below targets), and 🎯 for immediate opportunities (high-performing segments to scale, underutilized channels). Each item must include specific metrics, timeline for action, and expected impact.",
+          executive_focus: "Write for marketing executives who need actionable intelligence. Include specific ROI impacts, budget recommendations, resource allocation suggestions, and strategic pivots. Quantify all insights with financial impact estimates."
         }
       }
 

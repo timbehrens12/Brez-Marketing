@@ -11,200 +11,125 @@ import {
   AlertTriangle, 
   Clock, 
   MessageSquare, 
-  Star, 
-  Zap, 
   Users, 
   TrendingDown, 
   TrendingUp, 
   CheckCircle,
   RefreshCw,
-  Bell,
   Activity,
   BarChart3,
   Send,
   FileBarChart,
-  Sparkles,
-  ArrowRight,
-  Flame,
-  AlertCircle,
   Brain,
-  ChevronRight,
   Plus,
-  Filter,
-  Search,
-  MoreVertical,
-  X,
-  Clock as ClockSnooze,
-  Check,
-  Archive,
-  Eye,
-  EyeOff,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Dot,
-  Timer,
-  Target,
-  TrendingUp as TrendUp,
+  ExternalLink,
   DollarSign,
   ShoppingCart,
-  MousePointer,
-  ExternalLink,
-  Megaphone
+  Target,
+  Zap,
+  Timer,
+  Flame
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { formatDistanceToNow, format, addHours, addDays, addWeeks } from 'date-fns'
+import { formatDistanceToNow, format, subDays, subHours } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu'
 
-interface OutreachItem {
+interface OutreachTask {
   id: string
-  type: 'pending' | 'followup' | 'responded'
+  type: 'pending' | 'followup' | 'responded' | 'qualified'
   title: string
   description: string
   count: number
   campaignName: string
   href: string
-}
-
-interface ReportReminder {
-  id: string
-  brandId: string
-  brandName: string
-  type: 'daily' | 'monthly'
-  title: string
-  description: string
-  href: string
-}
-
-interface BrandStatus {
-  id: string
-  brandId: string
-  brandName: string
-  status: 'critical' | 'warning' | 'good' | 'excellent'
-  issues: string[]
-  metrics: {
-    roas: number
-    roasChange: number
-    sales: number
-    salesChange: number
-    cpm: number
-    cpmChange: number
-    conversions: number
-    conversionsChange: number
-  }
+  urgency: 'low' | 'medium' | 'high' | 'critical'
   lastUpdated: Date
 }
 
-interface LeadGenStatus {
-  available: boolean
-  remaining: number
-  weeklyUsed: number
-  weeklyLimit: number
-  resetsAt: Date
+interface BrandAlert {
+  id: string
+  brandId: string
+  brandName: string
+  type: 'critical' | 'warning' | 'opportunity'
+  title: string
+  description: string
+  metrics: {
+    current: number
+    previous: number
+    change: number
+    unit: string
+  }
+  action: string
+  href: string
 }
 
-interface TaskState {
-  [key: string]: {
-    status: 'pending' | 'snoozed' | 'completed' | 'dismissed'
-    snoozeUntil?: Date
-    completedAt?: Date
-    dismissedAt?: Date
-  }
+interface PerformanceMetric {
+  name: string
+  current: number
+  previous: number
+  change: number
+  unit: string
+  trend: 'up' | 'down' | 'stable'
+  status: 'good' | 'warning' | 'critical'
 }
 
 export default function ActionCenterPage() {
   const { user } = useUser()
-  const { selectedBrandId } = useBrandContext()
+  const { selectedBrandId, brands } = useBrandContext()
   const router = useRouter()
   
-  const [outreachItems, setOutreachItems] = useState<OutreachItem[]>([])
-  const [reportReminders, setReportReminders] = useState<ReportReminder[]>([])
-  const [brandStatuses, setBrandStatuses] = useState<BrandStatus[]>([])
-  const [leadGenStatus, setLeadGenStatus] = useState<LeadGenStatus | null>(null)
-  const [aiRecommendations, setAiRecommendations] = useState(0)
+  const [outreachTasks, setOutreachTasks] = useState<OutreachTask[]>([])
+  const [brandAlerts, setBrandAlerts] = useState<BrandAlert[]>([])
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetric[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [taskStates, setTaskStates] = useState<TaskState>({})
 
-  // Load task states from localStorage
-  useEffect(() => {
-    if (user?.id) {
-      const saved = localStorage.getItem(`actionCenter_taskStates_${user.id}`)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Convert date strings back to Date objects
-        Object.keys(parsed).forEach(key => {
-          if (parsed[key].snoozeUntil) {
-            parsed[key].snoozeUntil = new Date(parsed[key].snoozeUntil)
-          }
-          if (parsed[key].completedAt) {
-            parsed[key].completedAt = new Date(parsed[key].completedAt)
-          }
-          if (parsed[key].dismissedAt) {
-            parsed[key].dismissedAt = new Date(parsed[key].dismissedAt)
-          }
-        })
-        setTaskStates(parsed)
-      }
-    }
-  }, [user?.id])
-
-  // Save task states to localStorage
-  const saveTaskStates = useCallback((newStates: TaskState) => {
-    if (user?.id) {
-      localStorage.setItem(`actionCenter_taskStates_${user.id}`, JSON.stringify(newStates))
-      setTaskStates(newStates)
-    }
-  }, [user?.id])
-
-  // Load all data
+  // Load real data from databases
   const loadData = useCallback(async () => {
     if (!user?.id) return
 
     try {
       const supabase = await getSupabaseClient()
 
-      // 1. Load Outreach Items
-      const { data: outreachCampaigns } = await supabase
+      // 1. Load Real Outreach Tasks
+      const { data: campaigns } = await supabase
         .from('outreach_campaigns')
         .select(`
           *,
           outreach_campaign_leads(
             id,
             status,
-            last_contacted_at
+            last_contacted_at,
+            leads(business_name)
           )
         `)
         .eq('user_id', user.id)
+        .eq('status', 'active')
 
-      const outreach: OutreachItem[] = []
-      if (outreachCampaigns) {
-        for (const campaign of outreachCampaigns) {
+      const tasks: OutreachTask[] = []
+      
+      if (campaigns && campaigns.length > 0) {
+        for (const campaign of campaigns) {
           const leads = campaign.outreach_campaign_leads || []
           
+          // Pending leads (never contacted)
           const pendingLeads = leads.filter((cl: any) => cl.status === 'pending')
           if (pendingLeads.length > 0) {
-            outreach.push({
-              id: `outreach-pending-${campaign.id}`,
+            tasks.push({
+              id: `pending-${campaign.id}`,
               type: 'pending',
-              title: `${pendingLeads.length} leads ready for outreach`,
-              description: `Start contacting new leads in ${campaign.name}`,
+              title: `${pendingLeads.length} leads awaiting first contact`,
+              description: `Start outreach in "${campaign.name}" campaign`,
               count: pendingLeads.length,
               campaignName: campaign.name,
-              href: '/outreach-tool'
+              href: '/outreach-tool',
+              urgency: pendingLeads.length > 10 ? 'high' : pendingLeads.length > 5 ? 'medium' : 'low',
+              lastUpdated: new Date(campaign.updated_at)
             })
           }
 
-          const threeDaysAgo = new Date()
-          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+          // Follow-up needed (contacted but no recent activity)
+          const threeDaysAgo = subDays(new Date(), 3)
           const needsFollowUp = leads.filter((cl: any) => 
             cl.status === 'contacted' && 
             cl.last_contacted_at && 
@@ -212,280 +137,204 @@ export default function ActionCenterPage() {
           )
           
           if (needsFollowUp.length > 0) {
-            outreach.push({
-              id: `outreach-followup-${campaign.id}`,
+            tasks.push({
+              id: `followup-${campaign.id}`,
               type: 'followup',
               title: `${needsFollowUp.length} leads need follow-up`,
-              description: `Haven't been contacted in 3+ days`,
+              description: `No contact in 3+ days - "${campaign.name}"`,
               count: needsFollowUp.length,
               campaignName: campaign.name,
-              href: '/outreach-tool'
+              href: '/outreach-tool',
+              urgency: 'medium',
+              lastUpdated: new Date(Math.max(...needsFollowUp.map((l: any) => new Date(l.last_contacted_at).getTime())))
             })
           }
 
+          // Hot responses (leads that responded)
           const respondedLeads = leads.filter((cl: any) => cl.status === 'responded')
           if (respondedLeads.length > 0) {
-            outreach.push({
-              id: `outreach-responded-${campaign.id}`,
+            tasks.push({
+              id: `responded-${campaign.id}`,
               type: 'responded',
-              title: `${respondedLeads.length} hot leads responded`,
-              description: `Leads are waiting for your response`,
+              title: `${respondedLeads.length} leads responded!`,
+              description: `Hot leads waiting for your reply - "${campaign.name}"`,
               count: respondedLeads.length,
               campaignName: campaign.name,
-              href: '/outreach-tool'
+              href: '/outreach-tool',
+              urgency: 'critical',
+              lastUpdated: new Date()
+            })
+          }
+
+          // Qualified leads (ready for proposals/contracts)
+          const qualifiedLeads = leads.filter((cl: any) => cl.status === 'qualified')
+          if (qualifiedLeads.length > 0) {
+            tasks.push({
+              id: `qualified-${campaign.id}`,
+              type: 'qualified',
+              title: `${qualifiedLeads.length} qualified leads ready`,
+              description: `Send proposals/contracts - "${campaign.name}"`,
+              count: qualifiedLeads.length,
+              campaignName: campaign.name,
+              href: '/outreach-tool',
+              urgency: 'high',
+              lastUpdated: new Date()
             })
           }
         }
       }
-      setOutreachItems(outreach)
 
-      // 2. Load Lead Generation Status
-      const now = new Date()
-      const startOfWeek = new Date(now)
-      const dayOfWeek = now.getDay()
-      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-      startOfWeek.setDate(now.getDate() - daysToSubtract)
-      startOfWeek.setHours(0, 0, 0, 0)
+      setOutreachTasks(tasks)
 
-      const startOfNextWeek = new Date(startOfWeek)
-      startOfNextWeek.setDate(startOfWeek.getDate() + 7)
+      // 2. Load Brand Performance Alerts
+      const alerts: BrandAlert[] = []
+      const metrics: PerformanceMetric[] = []
 
-      const { data: usageData } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', startOfWeek.toISOString().split('T')[0])
-        .lt('date', startOfNextWeek.toISOString().split('T')[0])
+      if (selectedBrandId) {
+        const today = new Date()
+        const yesterday = subDays(today, 1)
+        const weekAgo = subDays(today, 7)
 
-      const WEEKLY_LIMIT = 5
-      const currentWeeklyUsage = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
-      const remaining = WEEKLY_LIMIT - currentWeeklyUsage
+        // Get recent performance data
+        const [shopifyResponse, metaResponse] = await Promise.all([
+          fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(weekAgo, 'yyyy-MM-dd')}&to=${format(today, 'yyyy-MM-dd')}`),
+          fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(weekAgo, 'yyyy-MM-dd')}&to=${format(today, 'yyyy-MM-dd')}`)
+        ])
 
-      setLeadGenStatus({
-        available: remaining > 0,
-        remaining,
-        weeklyUsed: currentWeeklyUsage,
-        weeklyLimit: WEEKLY_LIMIT,
-        resetsAt: startOfNextWeek
-      })
+        if (shopifyResponse.ok && metaResponse.ok) {
+          const shopifyData = await shopifyResponse.json()
+          const metaData = await metaResponse.json()
 
-      // 3. Load Brand Data and Statuses
-      const { data: brands } = await supabase
-        .from('brands')
-        .select('id, name, user_id')
-        .eq('user_id', user.id)
+          // Calculate current vs previous periods
+          const currentRevenue = shopifyData.total_revenue || 0
+          const currentOrders = shopifyData.total_orders || 0
+          const currentSpend = metaData.total_spend || 0
+          const currentRoas = currentSpend > 0 ? currentRevenue / currentSpend : 0
 
-      const reports: ReportReminder[] = []
-      const statuses: BrandStatus[] = []
+          // Get previous week data for comparison
+          const twoWeeksAgo = subDays(today, 14)
+          const [prevShopifyResponse, prevMetaResponse] = await Promise.all([
+            fetch(`/api/metrics?brandId=${selectedBrandId}&from=${format(twoWeeksAgo, 'yyyy-MM-dd')}&to=${format(weekAgo, 'yyyy-MM-dd')}`),
+            fetch(`/api/metrics/meta?brandId=${selectedBrandId}&from=${format(twoWeeksAgo, 'yyyy-MM-dd')}&to=${format(weekAgo, 'yyyy-MM-dd')}`)
+          ])
 
-      if (brands) {
-        for (const brand of brands) {
-          // Check for missing reports
-          const { data: dailyReports } = await supabase
-            .from('brand_reports')
-            .select('*')
-            .eq('brand_id', brand.id)
-            .eq('period', 'daily')
+          if (prevShopifyResponse.ok && prevMetaResponse.ok) {
+            const prevShopifyData = await prevShopifyResponse.json()
+            const prevMetaData = await prevMetaResponse.json()
 
-          if (!dailyReports?.length && now.getHours() >= 6) {
-            reports.push({
-              id: `brand-report-${brand.id}`,
-              brandId: brand.id,
-              brandName: brand.name,
-              type: 'daily',
-              title: `Daily report for ${brand.name}`,
-              description: 'Generate today\'s performance report',
-              href: '/brand-report'
-            })
-          }
+            const prevRevenue = prevShopifyData.total_revenue || 0
+            const prevOrders = prevShopifyData.total_orders || 0
+            const prevSpend = prevMetaData.total_spend || 0
+            const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0
 
-          if (now.getDate() === 1) {
-            const { data: monthlyReports } = await supabase
-              .from('brand_reports')
-              .select('*')
-              .eq('brand_id', brand.id)
-              .eq('period', 'monthly')
+            // Calculate changes
+            const revenueChange = prevRevenue > 0 ? ((currentRevenue - prevRevenue) / prevRevenue) * 100 : 0
+            const ordersChange = prevOrders > 0 ? ((currentOrders - prevOrders) / prevOrders) * 100 : 0
+            const roasChange = prevRoas > 0 ? ((currentRoas - prevRoas) / prevRoas) * 100 : 0
 
-            if (!monthlyReports?.length) {
-              reports.push({
-                id: `brand-monthly-report-${brand.id}`,
-                brandId: brand.id,
-                brandName: brand.name,
-                type: 'monthly',
-                title: `Monthly report for ${brand.name}`,
-                description: 'Generate last month\'s performance report',
-                href: '/brand-report'
+            const brandName = brands.find(b => b.id === selectedBrandId)?.name || 'Brand'
+
+            // Create performance metrics
+            metrics.push(
+              {
+                name: 'Revenue',
+                current: currentRevenue,
+                previous: prevRevenue,
+                change: revenueChange,
+                unit: '$',
+                trend: revenueChange > 0 ? 'up' : revenueChange < 0 ? 'down' : 'stable',
+                status: revenueChange < -20 ? 'critical' : revenueChange < -10 ? 'warning' : 'good'
+              },
+              {
+                name: 'Orders',
+                current: currentOrders,
+                previous: prevOrders,
+                change: ordersChange,
+                unit: '',
+                trend: ordersChange > 0 ? 'up' : ordersChange < 0 ? 'down' : 'stable',
+                status: ordersChange < -25 ? 'critical' : ordersChange < -15 ? 'warning' : 'good'
+              },
+              {
+                name: 'ROAS',
+                current: currentRoas,
+                previous: prevRoas,
+                change: roasChange,
+                unit: 'x',
+                trend: roasChange > 0 ? 'up' : roasChange < 0 ? 'down' : 'stable',
+                status: currentRoas < 1 ? 'critical' : currentRoas < 2 ? 'warning' : 'good'
+              }
+            )
+
+            // Generate alerts based on performance
+            if (revenueChange < -20 || currentRoas < 1) {
+              alerts.push({
+                id: `revenue-alert-${selectedBrandId}`,
+                brandId: selectedBrandId,
+                brandName,
+                type: 'critical',
+                title: revenueChange < -20 ? 'Revenue Down 20%+' : 'ROAS Below Breakeven',
+                description: revenueChange < -20 ? 
+                  `Revenue dropped ${Math.abs(revenueChange).toFixed(1)}% vs last week` :
+                  `Current ROAS: ${currentRoas.toFixed(2)}x - losing money on ads`,
+                metrics: {
+                  current: revenueChange < -20 ? currentRevenue : currentRoas,
+                  previous: revenueChange < -20 ? prevRevenue : prevRoas,
+                  change: revenueChange < -20 ? revenueChange : roasChange,
+                  unit: revenueChange < -20 ? '$' : 'x'
+                },
+                action: 'Review campaigns immediately',
+                href: '/marketing-assistant'
+              })
+            } else if (revenueChange < -10 || currentRoas < 2) {
+              alerts.push({
+                id: `performance-warning-${selectedBrandId}`,
+                brandId: selectedBrandId,
+                brandName,
+                type: 'warning',
+                title: revenueChange < -10 ? 'Revenue Declining' : 'Low ROAS',
+                description: revenueChange < -10 ? 
+                  `Revenue down ${Math.abs(revenueChange).toFixed(1)}% vs last week` :
+                  `ROAS at ${currentRoas.toFixed(2)}x - room for improvement`,
+                metrics: {
+                  current: revenueChange < -10 ? currentRevenue : currentRoas,
+                  previous: revenueChange < -10 ? prevRevenue : prevRoas,
+                  change: revenueChange < -10 ? revenueChange : roasChange,
+                  unit: revenueChange < -10 ? '$' : 'x'
+                },
+                action: 'Optimize campaigns',
+                href: '/marketing-assistant'
+              })
+            } else if (revenueChange > 20 || currentRoas > 4) {
+              alerts.push({
+                id: `opportunity-${selectedBrandId}`,
+                brandId: selectedBrandId,
+                brandName,
+                type: 'opportunity',
+                title: 'Strong Performance',
+                description: revenueChange > 20 ? 
+                  `Revenue up ${revenueChange.toFixed(1)}% - consider scaling` :
+                  `ROAS at ${currentRoas.toFixed(2)}x - increase ad spend`,
+                metrics: {
+                  current: revenueChange > 20 ? currentRevenue : currentRoas,
+                  previous: revenueChange > 20 ? prevRevenue : prevRoas,
+                  change: revenueChange > 20 ? revenueChange : roasChange,
+                  unit: revenueChange > 20 ? '$' : 'x'
+                },
+                action: 'Scale campaigns',
+                href: '/marketing-assistant'
               })
             }
           }
-
-          // Get brand performance data
-          const yesterday = new Date()
-          yesterday.setDate(yesterday.getDate() - 1)
-          const lastWeek = new Date()
-          lastWeek.setDate(lastWeek.getDate() - 7)
-
-          const { data: metaData } = await supabase
-            .from('meta_campaign_daily_insights')
-            .select('*')
-            .eq('brand_id', brand.id)
-            .gte('date_start', format(lastWeek, 'yyyy-MM-dd'))
-            .order('date_start', { ascending: false })
-
-          const { data: shopifyOrders } = await supabase
-            .from('shopify_orders')
-            .select('*')
-            .eq('brand_id', brand.id)
-            .gte('created_at', lastWeek.toISOString())
-
-          // Calculate metrics
-          const recentMetaData = metaData?.slice(0, 3) || []
-          const olderMetaData = metaData?.slice(3, 6) || []
-
-          let roas = 0, roasChange = 0, cpm = 0, cpmChange = 0, conversions = 0, conversionsChange = 0
-          
-          if (recentMetaData.length > 0) {
-            const recentSpend = recentMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.spend) || 0), 0)
-            const recentRevenue = recentMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.purchase_value) || 0), 0)
-            const recentImpressions = recentMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.impressions) || 0), 0)
-            const recentConversions = recentMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.purchases) || 0), 0)
-            
-            roas = recentSpend > 0 ? recentRevenue / recentSpend : 0
-            cpm = recentImpressions > 0 ? (recentSpend / recentImpressions) * 1000 : 0
-            conversions = recentConversions
-
-            if (olderMetaData.length > 0) {
-              const olderSpend = olderMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.spend) || 0), 0)
-              const olderRevenue = olderMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.purchase_value) || 0), 0)
-              const olderImpressions = olderMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.impressions) || 0), 0)
-              const olderConversions = olderMetaData.reduce((sum: number, d: any) => sum + (parseFloat(d.purchases) || 0), 0)
-              
-              const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
-              const oldCpm = olderImpressions > 0 ? (olderSpend / olderImpressions) * 1000 : 0
-              
-              roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
-              cpmChange = oldCpm > 0 ? ((cpm - oldCpm) / oldCpm) * 100 : 0
-              conversionsChange = olderConversions > 0 ? ((conversions - olderConversions) / olderConversions) * 100 : 0
-            }
-          }
-
-          // Calculate sales metrics
-          const recentOrders = shopifyOrders?.filter((order: any) => 
-            new Date(order.created_at) >= yesterday
-          ) || []
-          const oldOrders = shopifyOrders?.filter((order: any) => {
-            const orderDate = new Date(order.created_at)
-            return orderDate < yesterday && orderDate >= lastWeek
-          }) || []
-
-          const recentSales = recentOrders.reduce((sum: number, order: any) => sum + (parseFloat(order.total_price) || 0), 0)
-          const oldSales = oldOrders.reduce((sum: number, order: any) => sum + (parseFloat(order.total_price) || 0), 0)
-          const salesChange = oldSales > 0 ? ((recentSales - oldSales) / oldSales) * 100 : 0
-
-          // Determine status and issues
-          const issues: string[] = []
-          let isCritical = false
-          let isWarning = false
-
-          if (roas < 1 && recentMetaData.length > 0) {
-            issues.push(`ROAS below breakeven (${roas.toFixed(2)})`)
-            isCritical = true
-          } else if (roas < 2 && recentMetaData.length > 0) {
-            issues.push(`Low ROAS (${roas.toFixed(2)})`)
-            isWarning = true
-          }
-
-          if (roasChange < -20) {
-            issues.push(`ROAS dropped ${Math.abs(roasChange).toFixed(1)}%`)
-            isCritical = true
-          } else if (roasChange < -10) {
-            issues.push(`ROAS down ${Math.abs(roasChange).toFixed(1)}%`)
-            isWarning = true
-          }
-
-          if (salesChange < -30) {
-            issues.push(`Sales dropped ${Math.abs(salesChange).toFixed(1)}%`)
-            isCritical = true
-          } else if (salesChange < -15) {
-            issues.push(`Sales down ${Math.abs(salesChange).toFixed(1)}%`)
-            isWarning = true
-          }
-
-          if (cpmChange > 50) {
-            issues.push(`CPM increased ${cpmChange.toFixed(1)}%`)
-            isWarning = true
-          }
-
-          if (conversionsChange < -40) {
-            issues.push(`Conversions dropped ${Math.abs(conversionsChange).toFixed(1)}%`)
-            isCritical = true
-          }
-
-          // Determine final status based on flags
-          let status: 'critical' | 'warning' | 'good' | 'excellent' = 'good'
-          if (isCritical) {
-            status = 'critical'
-          } else if (isWarning) {
-            status = 'warning'
-          }
-
-          // Positive indicators
-          if (issues.length === 0) {
-            if (roas > 4 && roasChange > 10) {
-              status = 'excellent'
-              issues.push(`Excellent performance: ROAS ${roas.toFixed(2)} (+${roasChange.toFixed(1)}%)`)
-            } else if (roas > 2.5 && salesChange > 10) {
-              status = 'excellent'
-              issues.push(`Strong growth: Sales up ${salesChange.toFixed(1)}%`)
-            } else if (roas > 2) {
-              issues.push(`Healthy ROAS: ${roas.toFixed(2)}`)
-            }
-          }
-
-          if (issues.length === 0) {
-            issues.push('All metrics stable')
-          }
-
-          statuses.push({
-            id: brand.id,
-            brandId: brand.id,
-            brandName: brand.name,
-            status,
-            issues,
-            metrics: {
-              roas,
-              roasChange,
-              sales: recentSales,
-              salesChange,
-              cpm,
-              cpmChange,
-              conversions,
-              conversionsChange
-            },
-            lastUpdated: new Date()
-          })
-        }
-
-        // 4. AI Recommendations
-        if (brands.length > 0) {
-          const brandIds = brands.map(b => b.id)
-          const { data: recommendations } = await supabase
-            .from('ai_campaign_recommendations')
-            .select('*')
-            .in('brand_id', brandIds)
-            .gt('expires_at', new Date().toISOString())
-
-          setAiRecommendations(recommendations?.length || 0)
         }
       }
 
-      setReportReminders(reports)
-      setBrandStatuses(statuses)
+      setBrandAlerts(alerts)
+      setPerformanceMetrics(metrics)
 
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading action center data:', error)
     }
-  }, [user?.id])
+  }, [user?.id, selectedBrandId, brands])
 
   useEffect(() => {
     const loadDataWithLoading = async () => {
@@ -503,121 +352,33 @@ export default function ActionCenterPage() {
     setRefreshKey(prev => prev + 1)
   }
 
-  // Task actions
-  const snoozeTask = (taskId: string, duration: 'hour' | '4hours' | 'tomorrow' | 'week') => {
-    const now = new Date()
-    let snoozeUntil: Date
-
-    switch (duration) {
-      case 'hour':
-        snoozeUntil = addHours(now, 1)
-        break
-      case '4hours':
-        snoozeUntil = addHours(now, 4)
-        break
-      case 'tomorrow':
-        snoozeUntil = addDays(now, 1)
-        break
-      case 'week':
-        snoozeUntil = addWeeks(now, 1)
-        break
-    }
-
-    const newStates = {
-      ...taskStates,
-      [taskId]: {
-        ...taskStates[taskId],
-        status: 'snoozed' as const,
-        snoozeUntil
-      }
-    }
-    saveTaskStates(newStates)
-  }
-
-  const dismissTask = (taskId: string) => {
-    const newStates = {
-      ...taskStates,
-      [taskId]: {
-        ...taskStates[taskId],
-        status: 'dismissed' as const,
-        dismissedAt: new Date()
-      }
-    }
-    saveTaskStates(newStates)
-  }
-
-  const markCompleted = (taskId: string) => {
-    const newStates = {
-      ...taskStates,
-      [taskId]: {
-        ...taskStates[taskId],
-        status: 'completed' as const,
-        completedAt: new Date()
-      }
-    }
-    saveTaskStates(newStates)
-  }
-
-  const getTaskState = (taskId: string) => {
-    const state = taskStates[taskId]
-    if (!state) return { status: 'pending' }
-    
-    // Check if snoozed task should be reactivated
-    if (state.status === 'snoozed' && state.snoozeUntil && state.snoozeUntil < new Date()) {
-      return { status: 'pending' }
-    }
-    
-    return state
-  }
-
-  const isTaskActive = (taskId: string) => {
-    const state = getTaskState(taskId)
-    return state.status === 'pending'
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'critical': return 'border-red-200 bg-red-50'
-      case 'warning': return 'border-orange-200 bg-orange-50'
-      case 'excellent': return 'border-green-200 bg-green-50'
-      default: return 'border-gray-200 bg-white'
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'critical': return 'border-red-500 bg-red-950/50'
+      case 'high': return 'border-orange-500 bg-orange-950/50'
+      case 'medium': return 'border-yellow-500 bg-yellow-950/50'
+      default: return 'border-blue-500 bg-blue-950/50'
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'critical': return <AlertTriangle className="h-4 w-4 text-red-600" />
-      case 'warning': return <AlertCircle className="h-4 w-4 text-orange-600" />
-      case 'excellent': return <CheckCircle className="h-4 w-4 text-green-600" />
-      default: return <Activity className="h-4 w-4 text-gray-600" />
-    }
-  }
-
-  const getOutreachTypeColor = (type: string) => {
+  const getAlertColor = (type: string) => {
     switch (type) {
-      case 'responded': return 'border-green-200 bg-green-50'
-      case 'followup': return 'border-orange-200 bg-orange-50'
-      default: return 'border-blue-200 bg-blue-50'
-    }
-  }
-
-  const getOutreachTypeIcon = (type: string) => {
-    switch (type) {
-      case 'responded': return <MessageSquare className="h-4 w-4 text-green-600" />
-      case 'followup': return <Clock className="h-4 w-4 text-orange-600" />
-      default: return <Send className="h-4 w-4 text-blue-600" />
+      case 'critical': return 'border-red-500 bg-red-950/30'
+      case 'warning': return 'border-orange-500 bg-orange-950/30'
+      case 'opportunity': return 'border-green-500 bg-green-950/30'
+      default: return 'border-gray-500 bg-gray-950/30'
     }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-[#0A0A0A] p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-24 bg-white rounded-xl border border-gray-200"></div>
+            <div className="h-32 bg-gray-800 rounded-xl border border-gray-700"></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {[1,2,3,4].map(i => (
-                <div key={i} className="h-48 bg-white rounded-xl border border-gray-200"></div>
+                <div key={i} className="h-64 bg-gray-800 rounded-xl border border-gray-700"></div>
               ))}
             </div>
           </div>
@@ -627,20 +388,33 @@ export default function ActionCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#0A0A0A] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Action Center</h1>
-              <p className="text-gray-600">
-                Monitor your brands, manage outreach, and stay on top of key metrics
+              <h1 className="text-3xl font-bold text-white mb-2">Action Center</h1>
+              <p className="text-gray-300">
+                Your command center for outreach, alerts, and performance monitoring
               </p>
+              {selectedBrandId ? (
+                <div className="mt-3">
+                  <Badge className="bg-blue-600 text-white">
+                    {brands.find(b => b.id === selectedBrandId)?.name || 'Selected Brand'}
+                  </Badge>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <Badge variant="outline" className="border-gray-500 text-gray-400">
+                    No brand selected
+                  </Badge>
+                </div>
+              )}
             </div>
             <Button
               onClick={handleRefresh}
-              className="bg-gray-900 hover:bg-gray-800 text-white"
+              className="bg-white hover:bg-gray-100 text-black font-medium"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -648,337 +422,284 @@ export default function ActionCenterPage() {
           </div>
         </div>
 
-        {/* Main Content Grid */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Brand Status Monitoring */}
+          {/* Outreach Tasks */}
           <div className="space-y-6">
-            <Card className="bg-white border border-gray-200">
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900">
-                  <Activity className="h-5 w-5" />
-                  Brand Performance ({brandStatuses.length})
-                </CardTitle>
-                <CardDescription>
-                  Real-time status of all connected brands
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {brandStatuses.length > 0 ? (
-                  brandStatuses.map((brand) => (
-                    <div
-                      key={brand.id}
-                      className={cn(
-                        "p-4 rounded-lg border cursor-pointer hover:shadow-sm transition-shadow",
-                        getStatusColor(brand.status)
-                      )}
-                      onClick={() => router.push(`/dashboard?brand=${brand.brandId}`)}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(brand.status)}
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{brand.brandName}</h4>
-                            <p className="text-sm text-gray-600 capitalize">{brand.status} status</p>
-                          </div>
-                        </div>
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {brand.issues.map((issue, idx) => (
-                          <p key={idx} className="text-sm text-gray-700">• {issue}</p>
-                        ))}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-gray-200">
-                        <div>
-                          <p className="text-xs text-gray-500">ROAS</p>
-                          <p className="font-semibold text-gray-900">
-                            {brand.metrics.roas.toFixed(2)}
-                            <span className={cn("ml-1 text-xs", 
-                              brand.metrics.roasChange > 0 ? "text-green-600" : 
-                              brand.metrics.roasChange < 0 ? "text-red-600" : "text-gray-500"
-                            )}>
-                              {brand.metrics.roasChange > 0 ? '+' : ''}{brand.metrics.roasChange.toFixed(1)}%
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Sales</p>
-                          <p className="font-semibold text-gray-900">
-                            ${brand.metrics.sales.toFixed(0)}
-                            <span className={cn("ml-1 text-xs", 
-                              brand.metrics.salesChange > 0 ? "text-green-600" : 
-                              brand.metrics.salesChange < 0 ? "text-red-600" : "text-gray-500"
-                            )}>
-                              {brand.metrics.salesChange > 0 ? '+' : ''}{brand.metrics.salesChange.toFixed(1)}%
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p>No brands connected yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Outreach & Lead Management */}
-          <div className="space-y-6">
-            <Card className="bg-white border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900">
+                <CardTitle className="flex items-center gap-3 text-white">
                   <Send className="h-5 w-5" />
-                  Outreach Actions ({outreachItems.filter(item => isTaskActive(item.id)).length})
+                  Outreach Queue ({outreachTasks.length})
                 </CardTitle>
-                <CardDescription>
-                  Pending outreach tasks and lead responses
+                <CardDescription className="text-gray-400">
+                  Active outreach tasks requiring attention
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {outreachItems.filter(item => isTaskActive(item.id)).length > 0 ? (
-                  outreachItems.filter(item => isTaskActive(item.id)).map((item) => (
+                {outreachTasks.length > 0 ? (
+                  outreachTasks.map((task) => (
                     <div
-                      key={item.id}
+                      key={task.id}
                       className={cn(
-                        "p-4 rounded-lg border cursor-pointer hover:shadow-sm transition-shadow",
-                        getOutreachTypeColor(item.type)
+                        "p-4 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition-all",
+                        getUrgencyColor(task.urgency)
                       )}
-                      onClick={() => router.push(item.href)}
+                      onClick={() => router.push(task.href)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          {getOutreachTypeIcon(item.type)}
+                          <div className="p-2 rounded-lg bg-gray-800 border border-gray-600">
+                            {task.type === 'responded' ? (
+                              <MessageSquare className="h-4 w-4 text-green-400" />
+                            ) : task.type === 'qualified' ? (
+                              <Target className="h-4 w-4 text-purple-400" />
+                            ) : task.type === 'followup' ? (
+                              <Clock className="h-4 w-4 text-orange-400" />
+                            ) : (
+                              <Send className="h-4 w-4 text-blue-400" />
+                            )}
+                          </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                            <p className="text-sm text-gray-600">{item.description}</p>
-                            <p className="text-xs text-gray-500 mt-1">Campaign: {item.campaignName}</p>
+                            <h4 className="font-semibold text-white">{task.title}</h4>
+                            <p className="text-sm text-gray-300 mt-1">{task.description}</p>
+                            <div className="flex items-center gap-3 mt-2">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  task.urgency === 'critical' ? "border-red-500 text-red-400" :
+                                  task.urgency === 'high' ? "border-orange-500 text-orange-400" :
+                                  task.urgency === 'medium' ? "border-yellow-500 text-yellow-400" :
+                                  "border-blue-500 text-blue-400"
+                                )}
+                              >
+                                {task.urgency.toUpperCase()}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                Updated {formatDistanceToNow(task.lastUpdated, { addSuffix: true })}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-gray-100 text-gray-900">
-                            {item.count}
+                          <Badge className="bg-gray-700 text-white">
+                            {task.count}
                           </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="bg-white border border-gray-200">
-                              <DropdownMenuItem onClick={() => markCompleted(item.id)} className="text-gray-700 hover:bg-gray-50">
-                                <Check className="h-4 w-4 mr-2" />
-                                Mark Complete
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-200" />
-                              <DropdownMenuItem onClick={() => snoozeTask(item.id, 'hour')} className="text-gray-700 hover:bg-gray-50">
-                                <ClockSnooze className="h-4 w-4 mr-2" />
-                                Snooze 1 hour
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => snoozeTask(item.id, 'tomorrow')} className="text-gray-700 hover:bg-gray-50">
-                                <ClockSnooze className="h-4 w-4 mr-2" />
-                                Snooze until tomorrow
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-200" />
-                              <DropdownMenuItem onClick={() => dismissTask(item.id)} className="text-red-600 hover:bg-red-50">
-                                <X className="h-4 w-4 mr-2" />
-                                Dismiss
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <ExternalLink className="h-4 w-4 text-gray-400" />
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Send className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p>No pending outreach tasks</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Lead Generation */}
-            <Card className="bg-white border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900">
-                  <Users className="h-5 w-5" />
-                  Lead Generation
-                </CardTitle>
-                <CardDescription>
-                  Weekly lead generation status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {leadGenStatus ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {leadGenStatus.remaining} credits remaining
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {leadGenStatus.weeklyUsed} of {leadGenStatus.weeklyLimit} used this week
-                        </p>
-                      </div>
-                      {leadGenStatus.available && (
-                        <Button
-                          onClick={() => router.push('/lead-generator')}
-                          className="bg-gray-900 hover:bg-gray-800 text-white"
-                        >
-                          Generate Leads
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="h-full bg-gray-400 transition-all duration-300"
-                        style={{ width: `${(leadGenStatus.weeklyUsed / leadGenStatus.weeklyLimit) * 100}%` }}
-                      />
-                    </div>
-                    
-                    {!leadGenStatus.available && (
-                      <p className="text-sm text-gray-500">
-                        Resets {formatDistanceToNow(leadGenStatus.resetsAt, { addSuffix: true })}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p>Loading lead generation status...</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <Send className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <h3 className="text-lg font-medium text-gray-400 mb-2">No Active Outreach</h3>
+                    <p className="text-gray-500 mb-4">
+                      Create campaigns and add leads to start outreach
+                    </p>
+                    <Button
+                      onClick={() => router.push('/lead-generator')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Generate Leads
+                    </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
-        </div>
 
-        {/* Report Reminders & AI Recommendations */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Report Reminders */}
-          <Card className="bg-white border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-gray-900">
-                <FileBarChart className="h-5 w-5" />
-                Report Reminders ({reportReminders.filter(item => isTaskActive(item.id)).length})
-              </CardTitle>
-              <CardDescription>
-                Pending brand reports to generate
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {reportReminders.filter(item => isTaskActive(item.id)).length > 0 ? (
-                reportReminders.filter(item => isTaskActive(item.id)).map((report) => (
-                  <div
-                    key={report.id}
-                    className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:shadow-sm transition-shadow cursor-pointer"
-                    onClick={() => router.push(report.href)}
+          {/* Performance Alerts & Metrics */}
+          <div className="space-y-6">
+            {/* Brand Alerts */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-white">
+                  <AlertTriangle className="h-5 w-5" />
+                  Performance Alerts ({brandAlerts.length})
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Critical brand performance issues and opportunities
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {brandAlerts.length > 0 ? (
+                  brandAlerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={cn(
+                        "p-4 rounded-lg border cursor-pointer hover:bg-gray-800/50 transition-all",
+                        getAlertColor(alert.type)
+                      )}
+                      onClick={() => router.push(alert.href)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-gray-800 border border-gray-600">
+                            {alert.type === 'critical' ? (
+                              <AlertTriangle className="h-4 w-4 text-red-400" />
+                            ) : alert.type === 'warning' ? (
+                              <TrendingDown className="h-4 w-4 text-orange-400" />
+                            ) : (
+                              <TrendingUp className="h-4 w-4 text-green-400" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-white">{alert.title}</h4>
+                            <p className="text-sm text-gray-300 mt-1">{alert.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  alert.type === 'critical' ? "border-red-500 text-red-400" :
+                                  alert.type === 'warning' ? "border-orange-500 text-orange-400" :
+                                  "border-green-500 text-green-400"
+                                )}
+                              >
+                                {alert.action}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {alert.brandName}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-white">
+                            {alert.metrics.unit === '$' ? '$' : ''}{alert.metrics.current.toFixed(alert.metrics.unit === '$' ? 0 : 2)}{alert.metrics.unit === 'x' ? 'x' : ''}
+                          </div>
+                          <div className={cn(
+                            "text-sm font-medium",
+                            alert.metrics.change > 0 ? "text-green-400" : "text-red-400"
+                          )}>
+                            {alert.metrics.change > 0 ? '+' : ''}{alert.metrics.change.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : selectedBrandId ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500" />
+                    <h3 className="text-lg font-medium text-gray-400 mb-2">All Good!</h3>
+                    <p className="text-gray-500">
+                      No performance alerts for your selected brand
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <h3 className="text-lg font-medium text-gray-400 mb-2">Select a Brand</h3>
+                    <p className="text-gray-500">
+                      Choose a brand to monitor performance alerts
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-white">
+                  <Zap className="h-5 w-5" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Common tasks and tools
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => router.push('/lead-generator')}
+                    variant="outline"
+                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 h-20 flex-col gap-2"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FileBarChart className="h-4 w-4 text-gray-600" />
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{report.title}</h4>
-                          <p className="text-sm text-gray-600">{report.description}</p>
-                          <Badge className="mt-1 bg-gray-200 text-gray-700 text-xs">
-                            {report.type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-white border border-gray-200">
-                          <DropdownMenuItem onClick={() => markCompleted(report.id)} className="text-gray-700 hover:bg-gray-50">
-                            <Check className="h-4 w-4 mr-2" />
-                            Mark Complete
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-gray-200" />
-                          <DropdownMenuItem onClick={() => snoozeTask(report.id, 'tomorrow')} className="text-gray-700 hover:bg-gray-50">
-                            <ClockSnooze className="h-4 w-4 mr-2" />
-                            Snooze until tomorrow
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => dismissTask(report.id)} className="text-red-600 hover:bg-red-50">
-                            <X className="h-4 w-4 mr-2" />
-                            Dismiss
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <FileBarChart className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                  <p>All reports up to date</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI Recommendations */}
-          <Card className="bg-white border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-gray-900">
-                <Brain className="h-5 w-5" />
-                AI Recommendations ({aiRecommendations})
-              </CardTitle>
-              <CardDescription>
-                AI-powered campaign optimization suggestions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {aiRecommendations > 0 ? (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg border border-purple-200 bg-purple-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {aiRecommendations} new recommendations available
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            AI analysis has found optimization opportunities
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => router.push('/marketing-assistant')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                      >
-                        View All
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Brain className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                  <p>No new recommendations</p>
+                    <Users className="h-5 w-5" />
+                    <span className="text-sm">Generate Leads</span>
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/brand-report')}
+                    variant="outline"
+                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 h-20 flex-col gap-2"
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <span className="text-sm">Brand Report</span>
+                  </Button>
                   <Button
                     onClick={() => router.push('/marketing-assistant')}
                     variant="outline"
-                    className="mt-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 h-20 flex-col gap-2"
                   >
-                    Request Analysis
+                    <Brain className="h-5 w-5" />
+                    <span className="text-sm">AI Assistant</span>
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/outreach-tool')}
+                    variant="outline"
+                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 h-20 flex-col gap-2"
+                  >
+                    <Send className="h-5 w-5" />
+                    <span className="text-sm">Outreach Tool</span>
                   </Button>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Performance Overview */}
+        {performanceMetrics.length > 0 && (
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-white">
+                <BarChart3 className="h-5 w-5" />
+                Performance Overview - Last 7 Days
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                Key metrics vs previous period
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {performanceMetrics.map((metric) => (
+                  <div key={metric.name} className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-300">{metric.name}</h4>
+                      <div className={cn(
+                        "p-1 rounded",
+                        metric.status === 'critical' ? "bg-red-950 text-red-400" :
+                        metric.status === 'warning' ? "bg-orange-950 text-orange-400" :
+                        "bg-green-950 text-green-400"
+                      )}>
+                        {metric.trend === 'up' ? (
+                          <TrendingUp className="h-4 w-4" />
+                        ) : metric.trend === 'down' ? (
+                          <TrendingDown className="h-4 w-4" />
+                        ) : (
+                          <Activity className="h-4 w-4" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">
+                      {metric.unit === '$' ? '$' : ''}{metric.current.toFixed(metric.unit === '$' ? 0 : 2)}{metric.unit === 'x' ? 'x' : ''}
+                    </div>
+                    <div className={cn(
+                      "text-sm font-medium",
+                      metric.change > 0 ? "text-green-400" : metric.change < 0 ? "text-red-400" : "text-gray-400"
+                    )}>
+                      {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}% vs last week
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </div>
+        )}
       </div>
     </div>
   )
