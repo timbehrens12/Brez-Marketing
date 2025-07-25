@@ -219,16 +219,16 @@ export function shouldTriggerBackfill(gapResults: Record<string, GapDetectionRes
   Object.values(gapResults).forEach(result => {
     totalMissingDays += result.totalMissingDays
     
-    // Consider gaps of 2+ days as critical (worth backfilling)
+    // Consider gaps of 1+ days as critical (worth backfilling) - more aggressive detection
     result.gaps.forEach(gap => {
-      if (gap.dayCount >= 2) {
+      if (gap.dayCount >= 1) {
         criticalGaps.push(gap)
       }
     })
   })
 
   return {
-    shouldBackfill: criticalGaps.length > 0 || totalMissingDays >= 3,
+    shouldBackfill: criticalGaps.length > 0 || totalMissingDays >= 1,
     criticalGaps,
     totalMissingDays
   }

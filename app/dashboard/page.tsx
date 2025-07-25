@@ -642,14 +642,14 @@ export default function DashboardPage() {
       }, MAX_LOADING_TIME);
       
       try {
-        // First, check for data gaps and backfill if necessary (integrated into loading process)
-        if (initialDataLoad && selectedBrandId && (activePlatforms.meta || activePlatforms.shopify)) {
+        // Always check for data gaps and backfill if necessary (not just on initial load)
+        if (selectedBrandId && (activePlatforms.meta || activePlatforms.shopify)) {
           console.log('[Dashboard] Validating data coverage...');
           await checkForGaps(selectedBrandId);
           
-          // If gaps are found, automatically backfill during the loading process
+          // If gaps are found, automatically backfill
           if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
-            console.log(`[Dashboard] Backfilling ${backfillStatus.totalMissingDays} missing days during initial load...`);
+            console.log(`[Dashboard] Backfilling ${backfillStatus.totalMissingDays} missing days...`);
             await performBackfill(selectedBrandId);
           }
         }

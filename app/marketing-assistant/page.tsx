@@ -16,6 +16,7 @@ import {
   isDateRangeYesterday,
   formatDateRangeForAPI 
 } from '@/lib/utils/timezone'
+import { useDataBackfill } from "@/lib/hooks/useDataBackfill"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
 import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
@@ -178,6 +179,9 @@ export default function MarketingAssistantPage() {
   const [lastPageRefresh, setLastPageRefresh] = useState<Date | null>(null)
   const [isRefreshingAll, setIsRefreshingAll] = useState(false)
   const [refreshCooldown, setRefreshCooldown] = useState(false)
+
+  // Data backfill hook for gap detection
+  const { status: backfillStatus, checkForGaps, performBackfill } = useDataBackfill()
 
   // Pre-loaded data for widgets
   const [preloadedData, setPreloadedData] = useState({
@@ -551,6 +555,21 @@ export default function MarketingAssistantPage() {
     setLoadingProgress(0)
 
     try {
+      // Phase 0: Check for data gaps and backfill if necessary
+      setLoadingPhase('Checking for missing data...')
+      setLoadingProgress(5)
+      
+      console.log('[MarketingAssistant] Validating data coverage...')
+      await checkForGaps(selectedBrandId)
+      
+      // If gaps are found, automatically backfill
+      if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
+        setLoadingPhase(`Backfilling ${backfillStatus.totalMissingDays} missing days...`)
+        setLoadingProgress(10)
+        console.log(`[MarketingAssistant] Backfilling ${backfillStatus.totalMissingDays} missing days...`)
+        await performBackfill(selectedBrandId)
+      }
+
       // Phase 1: Loading Advertising Data
       setLoadingPhase('Loading advertising data...')
       setLoadingProgress(15)
