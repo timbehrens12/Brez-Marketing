@@ -321,9 +321,11 @@ export function Sidebar({ className }: SidebarProps) {
                                                   {/* Notification dot for collapsed sidebar */}
                         {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
                           <div className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-xs flex items-center justify-center ${
-                            actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-blue-600'
+                            actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-white'
                           }`}>
-                            <span className="text-white text-[10px] font-bold leading-none px-1">
+                            <span className={`text-[10px] font-bold leading-none px-1 ${
+                              actionCenterCounts.urgentItems > 0 ? 'text-white' : 'text-black'
+                            }`}>
                               {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
                             </span>
                           </div>
@@ -338,7 +340,7 @@ export function Sidebar({ className }: SidebarProps) {
                                     className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${
                                       actionCenterCounts.urgentItems > 0 
                                         ? 'bg-red-600 text-white' 
-                                        : 'bg-blue-600 text-white'
+                                        : 'bg-white text-black'
                                     }`}
                                   >
                                     {actionCenterCounts.totalItems}
