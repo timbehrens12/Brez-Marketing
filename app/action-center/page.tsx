@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { useUser } from '@clerk/nextjs'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { getSupabaseClient } from '@/lib/supabase/client'
@@ -31,7 +30,15 @@ import {
   FileBarChart,
   Sparkles,
   ArrowRight,
-  Palette
+  Palette,
+  Play,
+  Eye,
+  Timer,
+  Flame,
+  AlertCircle,
+  TrendingUp as TrendUp,
+  Brain,
+  Megaphone
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -371,35 +378,44 @@ export default function ActionCenterPage() {
           // Determine status based on metrics
           const issues: string[] = []
           const opportunities: string[] = []
-          let status: 'critical' | 'warning' | 'healthy' | 'excellent' = 'healthy'
+          let isCritical = false
+          let isWarning = false
 
           if (roas < 1) {
             issues.push('ROAS below breakeven')
-            status = 'critical'
+            isCritical = true
           } else if (roas < 2) {
             issues.push('Low ROAS performance')
-            status = status === 'critical' ? 'critical' : 'warning'
+            isWarning = true
           }
 
           if (roasChange < -20) {
             issues.push('ROAS declining significantly')
-            status = 'critical'
+            isCritical = true
           } else if (roasChange < -10) {
             issues.push('ROAS trending down')
-            status = status === 'critical' ? 'critical' : 'warning'
+            isWarning = true
           }
 
           if (cpmChange > 20) {
             issues.push('CPM costs increasing')
-            status = status === 'critical' ? 'critical' : 'warning'
+            isWarning = true
           }
 
           if (salesChange < -30) {
             issues.push('Sales down significantly')
-            status = 'critical'
+            isCritical = true
           } else if (salesChange < -15) {
             issues.push('Sales declining')
-            status = status === 'critical' ? 'critical' : 'warning'
+            isWarning = true
+          }
+
+          // Determine final status
+          let status: 'critical' | 'warning' | 'healthy' | 'excellent' = 'healthy'
+          if (isCritical) {
+            status = 'critical'
+          } else if (isWarning) {
+            status = 'warning'
           }
 
           // Identify opportunities
@@ -461,45 +477,59 @@ export default function ActionCenterPage() {
     setRefreshKey(prev => prev + 1)
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusGradient = (status: string) => {
     switch (status) {
-      case 'critical': return 'text-red-400 bg-red-900/20'
-      case 'warning': return 'text-yellow-400 bg-yellow-900/20'
-      case 'excellent': return 'text-green-400 bg-green-900/20'
-      default: return 'text-blue-400 bg-blue-900/20'
+      case 'critical': 
+        return 'bg-gradient-to-br from-red-900/40 via-red-800/30 to-red-900/20 border-red-500/30'
+      case 'warning': 
+        return 'bg-gradient-to-br from-amber-900/40 via-amber-800/30 to-orange-900/20 border-amber-500/30'
+      case 'excellent': 
+        return 'bg-gradient-to-br from-emerald-900/40 via-green-800/30 to-emerald-900/20 border-emerald-500/30'
+      default: 
+        return 'bg-gradient-to-br from-blue-900/40 via-blue-800/30 to-blue-900/20 border-blue-500/30'
     }
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityGradient = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-red-500 bg-red-900/10'
-      case 'medium': return 'border-yellow-500 bg-yellow-900/10'
-      default: return 'border-blue-500 bg-blue-900/10'
+      case 'high': 
+        return 'bg-gradient-to-br from-red-900/20 via-red-800/10 to-red-900/5 border-l-red-500'
+      case 'medium': 
+        return 'bg-gradient-to-br from-amber-900/20 via-amber-800/10 to-amber-900/5 border-l-amber-500'
+      default: 
+        return 'bg-gradient-to-br from-blue-900/20 via-blue-800/10 to-blue-900/5 border-l-blue-500'
     }
   }
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'urgent': return <AlertTriangle className="h-4 w-4" />
-      case 'opportunity': return <Star className="h-4 w-4" />
-      case 'task': return <CheckCircle className="h-4 w-4" />
-      case 'recommendation': return <Sparkles className="h-4 w-4" />
-      default: return <Bell className="h-4 w-4" />
+      case 'urgent': return <Flame className="h-5 w-5 text-red-400" />
+      case 'opportunity': return <Star className="h-5 w-5 text-amber-400" />
+      case 'task': return <CheckCircle className="h-5 w-5 text-blue-400" />
+      case 'recommendation': return <Brain className="h-5 w-5 text-purple-400" />
+      default: return <Bell className="h-5 w-5 text-gray-400" />
     }
   }
 
   const urgentItems = actionItems.filter(item => item.priority === 'high')
   const totalActionItems = actionItems.length
+  const criticalBrands = brandStatuses.filter(b => b.status === 'critical').length
+  const warningBrands = brandStatuses.filter(b => b.status === 'warning').length
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-[#1A1A1A] rounded-lg w-64"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-32 bg-[#1A1A1A] rounded-lg"></div>
+          <div className="animate-pulse space-y-8">
+            <div className="h-12 bg-gradient-to-r from-[#2A2A2A] to-[#1A1A1A] rounded-xl w-96"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-32 bg-gradient-to-br from-[#2A2A2A] to-[#1A1A1A] rounded-xl"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {[1,2,3,4,5,6].map(i => (
+                <div key={i} className="h-48 bg-gradient-to-br from-[#2A2A2A] to-[#1A1A1A] rounded-xl"></div>
               ))}
             </div>
           </div>
@@ -509,41 +539,77 @@ export default function ActionCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Action Center</h1>
-            <p className="text-gray-400">
-              {totalActionItems > 0 
-                ? `${totalActionItems} items need your attention${urgentItems.length > 0 ? `, ${urgentItems.length} urgent` : ''}`
-                : 'All caught up! No action items at this time.'
-              }
-            </p>
+        {/* Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/30 via-purple-900/20 to-pink-900/30 border border-indigo-500/20 p-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 blur-3xl"></div>
+          <div className="relative flex items-center justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-400/30">
+                  <Activity className="h-8 w-8 text-indigo-400" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                    Action Center
+                  </h1>
+                  <p className="text-gray-400 text-lg">
+                    {totalActionItems > 0 
+                      ? `${totalActionItems} items need attention${urgentItems.length > 0 ? ` • ${urgentItems.length} urgent` : ''}`
+                      : 'All systems operational'
+                    }
+                  </p>
+                </div>
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="flex items-center gap-6">
+                {criticalBrands > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-500/30">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <span className="text-red-300 text-sm font-medium">{criticalBrands} Critical</span>
+                  </div>
+                )}
+                {warningBrands > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-900/30 border border-amber-500/30">
+                    <AlertCircle className="h-4 w-4 text-amber-400" />
+                    <span className="text-amber-300 text-sm font-medium">{warningBrands} Warning</span>
+                  </div>
+                )}
+                {brandStatuses.length > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-900/30 border border-blue-500/30">
+                    <BarChart3 className="h-4 w-4 text-blue-400" />
+                    <span className="text-blue-300 text-sm font-medium">{brandStatuses.length} Brands</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <Button
+              onClick={handleRefresh}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border-0 text-white shadow-lg shadow-indigo-500/25 transition-all duration-300"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
         </div>
 
-        {/* Action Items Grid */}
+        {/* Action Items */}
         {actionItems.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-white" />
-              <h2 className="text-xl font-semibold text-white">Action Items</h2>
-              <Badge variant="secondary" className="bg-[#2A2A2A] text-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-400/30">
+                <Timer className="h-5 w-5 text-amber-400" />
+              </div>
+              <h2 className="text-2xl font-semibold text-white">Priority Actions</h2>
+              <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-white border-0">
                 {totalActionItems}
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {actionItems
                 .sort((a, b) => {
                   const priorityOrder = { high: 3, medium: 2, low: 1 }
@@ -553,45 +619,59 @@ export default function ActionCenterPage() {
                   <Card 
                     key={item.id} 
                     className={cn(
-                      "bg-[#1A1A1A] border-l-4 hover:bg-[#2A2A2A] transition-colors cursor-pointer",
-                      getPriorityColor(item.priority)
+                      "relative overflow-hidden border-l-4 hover:scale-[1.02] transition-all duration-300 cursor-pointer group",
+                      getPriorityGradient(item.priority),
+                      "backdrop-blur-sm"
                     )}
                     onClick={() => item.href && router.push(item.href)}
                   >
-                    <CardHeader className="pb-3">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    <CardHeader className="pb-3 relative">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {getTypeIcon(item.type)}
-                          <Badge variant="outline" className="text-xs">
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs border-0",
+                              item.priority === 'high' && "bg-red-500/20 text-red-300",
+                              item.priority === 'medium' && "bg-amber-500/20 text-amber-300",
+                              item.priority === 'low' && "bg-blue-500/20 text-blue-300"
+                            )}
+                          >
                             {item.priority}
                           </Badge>
                         </div>
                         {item.count && (
-                          <Badge className="bg-[#333] text-white">
-                            {item.count}
-                          </Badge>
+                          <div className="px-3 py-1 rounded-full bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600">
+                            <span className="text-white font-semibold text-sm">{item.count}</span>
+                          </div>
                         )}
                       </div>
-                      <CardTitle className="text-white text-base leading-tight">
+                      <CardTitle className="text-white text-lg leading-tight group-hover:text-gray-100 transition-colors">
                         {item.title}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <CardDescription className="text-gray-400 text-sm mb-3">
+                    
+                    <CardContent className="pt-0 relative">
+                      <CardDescription className="text-gray-400 text-sm mb-4 leading-relaxed">
                         {item.description}
                       </CardDescription>
+                      
                       <div className="flex items-center justify-between">
                         <Button 
                           size="sm" 
-                          className="bg-white text-black hover:bg-gray-200"
+                          className="bg-gradient-to-r from-white to-gray-100 text-black hover:from-gray-100 hover:to-gray-200 border-0 shadow-lg transition-all duration-300"
                         >
                           {item.action}
-                          <ArrowRight className="h-3 w-3 ml-1" />
+                          <ArrowRight className="h-3 w-3 ml-2" />
                         </Button>
                         {item.dueDate && (
-                          <span className="text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <Clock className="h-3 w-3" />
                             {formatDistanceToNow(item.dueDate, { addSuffix: true })}
-                          </span>
+                          </div>
                         )}
                       </div>
                     </CardContent>
@@ -601,24 +681,37 @@ export default function ActionCenterPage() {
           </div>
         )}
 
-        {/* Brand Status Overview */}
+        {/* Brand Performance Grid */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-white" />
-            <h2 className="text-xl font-semibold text-white">Brand Performance Overview</h2>
-            <Badge variant="secondary" className="bg-[#2A2A2A] text-white">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-400/30">
+              <BarChart3 className="h-5 w-5 text-blue-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Brand Performance</h2>
+            <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
               {brandStatuses.length}
             </Badge>
           </div>
 
           {brandStatuses.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {brandStatuses.map((brand) => (
-                <Card key={brand.brandId} className="bg-[#1A1A1A] border-[#333]">
-                  <CardHeader>
+                <Card key={brand.brandId} className={cn(
+                  "relative overflow-hidden border backdrop-blur-sm hover:scale-[1.01] transition-all duration-300",
+                  getStatusGradient(brand.status)
+                )}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl"></div>
+                  
+                  <CardHeader className="relative">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-white">{brand.brandName}</CardTitle>
-                      <Badge className={cn("text-xs", getStatusColor(brand.status))}>
+                      <CardTitle className="text-white text-xl">{brand.brandName}</CardTitle>
+                      <Badge className={cn(
+                        "text-xs font-semibold border-0",
+                        brand.status === 'critical' && "bg-red-500 text-white",
+                        brand.status === 'warning' && "bg-amber-500 text-black",
+                        brand.status === 'excellent' && "bg-emerald-500 text-white",
+                        brand.status === 'healthy' && "bg-blue-500 text-white"
+                      )}>
                         {brand.status.toUpperCase()}
                       </Badge>
                     </div>
@@ -626,122 +719,130 @@ export default function ActionCenterPage() {
                       Last updated {formatDistanceToNow(brand.lastUpdated, { addSuffix: true })}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  
+                  <CardContent className="space-y-6 relative">
                     {/* Metrics Grid */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       {brand.metrics.roas !== undefined && (
-                        <div className="bg-[#2A2A2A] p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-400">ROAS</span>
-                            <span className={cn(
-                              "text-xs flex items-center gap-1",
-                              brand.metrics.roasChange! > 0 ? "text-green-400" : "text-red-400"
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-gray-800/50 to-gray-900/30 border border-gray-700/50 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-400 font-medium">ROAS</span>
+                            <div className={cn(
+                              "flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+                              brand.metrics.roasChange! > 0 
+                                ? "bg-emerald-500/20 text-emerald-400" 
+                                : "bg-red-500/20 text-red-400"
                             )}>
-                              {brand.metrics.roasChange! > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {brand.metrics.roasChange! > 0 ? <TrendUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                               {Math.abs(brand.metrics.roasChange!).toFixed(1)}%
-                            </span>
+                            </div>
                           </div>
-                          <div className="text-lg font-semibold text-white">
+                          <div className="text-2xl font-bold text-white">
                             {brand.metrics.roas.toFixed(2)}x
                           </div>
                         </div>
                       )}
 
                       {brand.metrics.cpm !== undefined && (
-                        <div className="bg-[#2A2A2A] p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-400">CPM</span>
-                            <span className={cn(
-                              "text-xs flex items-center gap-1",
-                              brand.metrics.cpmChange! < 0 ? "text-green-400" : "text-red-400"
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-gray-800/50 to-gray-900/30 border border-gray-700/50 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-400 font-medium">CPM</span>
+                            <div className={cn(
+                              "flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+                              brand.metrics.cpmChange! < 0 
+                                ? "bg-emerald-500/20 text-emerald-400" 
+                                : "bg-red-500/20 text-red-400"
                             )}>
-                              {brand.metrics.cpmChange! < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                              {brand.metrics.cpmChange! < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendUp className="h-3 w-3" />}
                               {Math.abs(brand.metrics.cpmChange!).toFixed(1)}%
-                            </span>
+                            </div>
                           </div>
-                          <div className="text-lg font-semibold text-white">
+                          <div className="text-2xl font-bold text-white">
                             ${brand.metrics.cpm.toFixed(2)}
                           </div>
                         </div>
                       )}
 
                       {brand.metrics.sales !== undefined && (
-                        <div className="bg-[#2A2A2A] p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-400">Sales</span>
-                            <span className={cn(
-                              "text-xs flex items-center gap-1",
-                              brand.metrics.salesChange! > 0 ? "text-green-400" : "text-red-400"
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-gray-800/50 to-gray-900/30 border border-gray-700/50 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-400 font-medium">Sales</span>
+                            <div className={cn(
+                              "flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+                              brand.metrics.salesChange! > 0 
+                                ? "bg-emerald-500/20 text-emerald-400" 
+                                : "bg-red-500/20 text-red-400"
                             )}>
-                              {brand.metrics.salesChange! > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {brand.metrics.salesChange! > 0 ? <TrendUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                               {Math.abs(brand.metrics.salesChange!).toFixed(1)}%
-                            </span>
+                            </div>
                           </div>
-                          <div className="text-lg font-semibold text-white">
+                          <div className="text-2xl font-bold text-white">
                             ${brand.metrics.sales.toFixed(0)}
-                          </div>
-                        </div>
-                      )}
-
-                      {brand.metrics.newInsights && brand.metrics.newInsights > 0 && (
-                        <div className="bg-[#2A2A2A] p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-400">New Insights</span>
-                          </div>
-                          <div className="text-lg font-semibold text-blue-400">
-                            {brand.metrics.newInsights}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Issues */}
-                    {brand.issues.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-red-400 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Issues Detected
-                        </h4>
-                        {brand.issues.map((issue, idx) => (
-                          <div key={idx} className="text-xs text-gray-300 bg-red-900/20 p-2 rounded">
-                            {issue}
+                    {/* Issues & Opportunities */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {brand.issues.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-red-300 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            Issues ({brand.issues.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {brand.issues.slice(0, 2).map((issue, idx) => (
+                              <div key={idx} className="text-xs text-gray-300 bg-red-900/30 p-3 rounded-lg border border-red-800/30">
+                                {issue}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    {/* Opportunities */}
-                    {brand.opportunities.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-green-400 flex items-center gap-1">
-                          <Star className="h-3 w-3" />
-                          Opportunities
-                        </h4>
-                        {brand.opportunities.map((opportunity, idx) => (
-                          <div key={idx} className="text-xs text-gray-300 bg-green-900/20 p-2 rounded">
-                            {opportunity}
+                      {brand.opportunities.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-emerald-300 flex items-center gap-2">
+                            <Star className="h-4 w-4" />
+                            Opportunities ({brand.opportunities.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {brand.opportunities.slice(0, 2).map((opportunity, idx) => (
+                              <div key={idx} className="text-xs text-gray-300 bg-emerald-900/30 p-3 rounded-lg border border-emerald-800/30">
+                                {opportunity}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-3 pt-2">
                       <Button 
                         size="sm" 
-                        variant="outline"
-                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333]"
-                        onClick={() => router.push(`/dashboard?brand=${brand.brandId}`)}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-lg"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/dashboard?brand=${brand.brandId}`)
+                        }}
                       >
-                        View Dashboard
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Dashboard
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333]"
-                        onClick={() => router.push(`/brand-report?brand=${brand.brandId}`)}
+                        className="flex-1 bg-gradient-to-r from-gray-800/50 to-gray-900/30 border-gray-600/50 text-white hover:bg-gray-700/50"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/brand-report?brand=${brand.brandId}`)
+                        }}
                       >
-                        Generate Report
+                        <FileBarChart className="h-4 w-4 mr-2" />
+                        Report
                       </Button>
                     </div>
                   </CardContent>
@@ -749,22 +850,26 @@ export default function ActionCenterPage() {
               ))}
             </div>
           ) : (
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardContent className="py-8 text-center">
-                <div className="text-gray-400 mb-4">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  No brand data available
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="py-12 text-center">
+                <div className="space-y-4">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-gray-700/50 to-gray-800/30 w-20 h-20 mx-auto flex items-center justify-center">
+                    <BarChart3 className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">No brands connected</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+                      Connect your advertising platforms to see comprehensive brand performance insights and get actionable recommendations.
+                    </p>
+                    <Button 
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-lg"
+                      onClick={() => router.push('/settings')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connect Platforms
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-gray-500 text-sm">
-                  Connect your advertising platforms to see brand performance insights
-                </p>
-                <Button 
-                  className="mt-4" 
-                  variant="outline"
-                  onClick={() => router.push('/settings')}
-                >
-                  Connect Platforms
-                </Button>
               </CardContent>
             </Card>
           )}
@@ -772,47 +877,34 @@ export default function ActionCenterPage() {
 
         {/* Quick Actions */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-white" />
-            <h2 className="text-xl font-semibold text-white">Quick Actions</h2>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+              <Zap className="h-5 w-5 text-purple-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-white">Quick Actions</h2>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button
-              variant="outline"
-              className="h-24 bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A] flex flex-col gap-2"
-              onClick={() => router.push('/lead-generator')}
-            >
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Generate Leads</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-24 bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A] flex flex-col gap-2"
-              onClick={() => router.push('/outreach-tool')}
-            >
-              <Send className="h-6 w-6" />
-              <span className="text-sm">Start Outreach</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-24 bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A] flex flex-col gap-2"
-              onClick={() => router.push('/brand-report')}
-            >
-              <FileBarChart className="h-6 w-6" />
-              <span className="text-sm">Brand Report</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-24 bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A] flex flex-col gap-2"
-              onClick={() => router.push('/marketing-assistant')}
-            >
-              <Sparkles className="h-6 w-6" />
-              <span className="text-sm">AI Assistant</span>
-            </Button>
+            {[
+              { icon: Users, label: 'Generate Leads', href: '/lead-generator', gradient: 'from-emerald-600 to-teal-600' },
+              { icon: Send, label: 'Start Outreach', href: '/outreach-tool', gradient: 'from-blue-600 to-indigo-600' },
+              { icon: FileBarChart, label: 'Brand Report', href: '/brand-report', gradient: 'from-amber-600 to-orange-600' },
+              { icon: Brain, label: 'AI Assistant', href: '/marketing-assistant', gradient: 'from-purple-600 to-pink-600' }
+            ].map((action, idx) => (
+              <Button
+                key={idx}
+                variant="outline"
+                className={cn(
+                  "h-24 bg-gradient-to-br border-0 text-white hover:scale-105 transition-all duration-300 shadow-lg",
+                  `from-gray-900/50 to-gray-800/30 hover:bg-gradient-to-r hover:${action.gradient}`,
+                  "flex flex-col gap-3 backdrop-blur-sm"
+                )}
+                onClick={() => router.push(action.href)}
+              >
+                <action.icon className="h-6 w-6" />
+                <span className="text-sm font-medium">{action.label}</span>
+              </Button>
+            ))}
           </div>
         </div>
       </div>
