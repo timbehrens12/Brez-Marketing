@@ -318,16 +318,16 @@ export function Sidebar({ className }: SidebarProps) {
                     <div className="flex items-center w-full">
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
                         <item.icon className="h-6 w-6 flex-shrink-0" />
-                          {/* Notification dot for collapsed sidebar */}
-                          {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
-                            <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full text-xs flex items-center justify-center ${
-                              actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-blue-600'
-                            }`}>
-                              <span className="text-white text-xs font-bold leading-none">
-                                {actionCenterCounts.totalItems > 9 ? '9+' : actionCenterCounts.totalItems}
-                              </span>
-                            </div>
-                          )}
+                                                  {/* Notification dot for collapsed sidebar */}
+                        {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                          <div className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-xs flex items-center justify-center ${
+                            actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-blue-600'
+                          }`}>
+                            <span className="text-white text-[10px] font-bold leading-none px-1">
+                              {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
+                            </span>
+                          </div>
+                        )}
                         {showExpanded && (
                           <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
                             <div className="flex items-center justify-between">

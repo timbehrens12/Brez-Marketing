@@ -41,10 +41,14 @@ import {
   EyeOff,
   Calendar,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Dot,
+  Timer,
+  Target,
+  TrendingUp as TrendUp
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { formatDistanceToNow, format, addHours, addDays, addWeeks, isBefore } from 'date-fns'
+import { formatDistanceToNow, format, addHours, addDays, addWeeks } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { 
@@ -589,26 +593,36 @@ export default function ActionCenterPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'urgent': return <Flame className="h-4 w-4 text-red-500" />
-      case 'opportunity': return <Star className="h-4 w-4 text-yellow-500" />
-      case 'task': return <CheckCircle className="h-4 w-4 text-blue-500" />
-      case 'recommendation': return <Brain className="h-4 w-4 text-purple-500" />
-      default: return <Bell className="h-4 w-4 text-gray-500" />
+      case 'urgent': return <Flame className="h-5 w-5 text-red-500" />
+      case 'opportunity': return <Star className="h-5 w-5 text-amber-500" />
+      case 'task': return <CheckCircle className="h-5 w-5 text-blue-500" />
+      case 'recommendation': return <Brain className="h-5 w-5 text-purple-500" />
+      default: return <Bell className="h-5 w-5 text-gray-500" />
+    }
+  }
+
+  const getTypeGradient = (type: string) => {
+    switch (type) {
+      case 'urgent': return 'from-red-600/20 via-red-500/10 to-red-600/5 border-l-red-500'
+      case 'opportunity': return 'from-amber-600/20 via-amber-500/10 to-amber-600/5 border-l-amber-500'
+      case 'task': return 'from-blue-600/20 via-blue-500/10 to-blue-600/5 border-l-blue-500'
+      case 'recommendation': return 'from-purple-600/20 via-purple-500/10 to-purple-600/5 border-l-purple-500'
+      default: return 'from-gray-600/20 via-gray-500/10 to-gray-600/5 border-l-gray-500'
     }
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-50 border-red-200 text-red-800'
-      case 'medium': return 'bg-yellow-50 border-yellow-200 text-yellow-800'
-      default: return 'bg-blue-50 border-blue-200 text-blue-800'
+      case 'high': return 'bg-red-100 border-red-300 text-red-800'
+      case 'medium': return 'bg-amber-100 border-amber-300 text-amber-800'
+      default: return 'bg-blue-100 border-blue-300 text-blue-800'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-400'
-      case 'snoozed': return 'text-orange-400'
+      case 'completed': return 'text-emerald-400'
+      case 'snoozed': return 'text-amber-400'
       case 'dismissed': return 'text-gray-500'
       default: return 'text-white'
     }
@@ -644,13 +658,13 @@ export default function ActionCenterPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-[#1A1A1A] rounded w-64"></div>
-            <div className="h-12 bg-[#1A1A1A] rounded"></div>
+      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-16 bg-gradient-to-r from-[#2A2A2A] to-[#1A1A1A] rounded-2xl"></div>
+            <div className="h-20 bg-gradient-to-r from-[#2A2A2A] to-[#1A1A1A] rounded-2xl"></div>
             {[1,2,3,4,5].map(i => (
-              <div key={i} className="h-16 bg-[#1A1A1A] rounded"></div>
+              <div key={i} className="h-24 bg-gradient-to-r from-[#2A2A2A] to-[#1A1A1A] rounded-2xl"></div>
             ))}
           </div>
         </div>
@@ -659,283 +673,365 @@ export default function ActionCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Action Center</h1>
-            <p className="text-gray-400 mt-1">
-              {activeItems.length > 0 
-                ? `${activeItems.length} active tasks • ${totalActionItems} total`
-                : 'All caught up! No active tasks.'
-              }
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={clearAllCompleted}
-              variant="outline"
-              size="sm"
-              className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#2A2A2A] hover:text-white"
-              disabled={!filteredItems.some(item => item.status === 'completed')}
-            >
-              <Archive className="h-4 w-4 mr-2" />
-              Clear Completed
-            </Button>
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] p-6">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Modern Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900/90 via-purple-900/20 to-slate-900/90 border border-slate-800/50 backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          
+          <div className="relative p-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-sm border border-indigo-400/20">
+                    <Activity className="h-8 w-8 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+                      Action Center
+                    </h1>
+                    <p className="text-slate-400 text-lg mt-1">
+                      {activeItems.length > 0 
+                        ? `${activeItems.length} active tasks • ${totalActionItems} total`
+                        : 'All caught up! No active tasks.'
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Status Pills */}
+                {totalActionItems > 0 && (
+                  <div className="flex items-center gap-3">
+                    {activeItems.length > 0 && (
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 backdrop-blur-sm">
+                        <Target className="h-4 w-4 text-blue-400" />
+                        <span className="text-blue-300 text-sm font-medium">{activeItems.length} Active</span>
+                      </div>
+                    )}
+                    {groupedItems.urgent.length > 0 && (
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 backdrop-blur-sm">
+                        <Flame className="h-4 w-4 text-red-400" />
+                        <span className="text-red-300 text-sm font-medium">{groupedItems.urgent.length} Urgent</span>
+                      </div>
+                    )}
+                    {groupedItems.high.length > 0 && (
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-600/20 to-amber-600/20 border border-orange-500/30 backdrop-blur-sm">
+                        <AlertTriangle className="h-4 w-4 text-orange-400" />
+                        <span className="text-orange-300 text-sm font-medium">{groupedItems.high.length} High</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={clearAllCompleted}
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-sm"
+                  disabled={!filteredItems.some(item => item.status === 'completed')}
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  Clear Completed
+                </Button>
+                <Button
+                  onClick={handleRefresh}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 backdrop-blur-sm"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-4 p-4 bg-[#1A1A1A] rounded-lg border border-[#333]">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-400">Status:</span>
-              <select 
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-[#2A2A2A] border border-[#444] rounded px-3 py-1 text-white text-sm"
-              >
-                <option value="active">Active Only</option>
-                <option value="all">All Tasks</option>
-                <option value="snoozed">Snoozed</option>
-                <option value="completed">Completed</option>
-                <option value="dismissed">Dismissed</option>
-              </select>
+        {/* Enhanced Filters */}
+        <Card className="bg-gradient-to-r from-slate-900/50 to-slate-800/50 border-slate-700/50 backdrop-blur-xl">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-slate-800/50">
+                    <Filter className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-300">Status:</span>
+                  <select 
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-slate-800/80 border border-slate-600/50 rounded-lg px-4 py-2 text-white text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 backdrop-blur-sm"
+                  >
+                    <option value="active">Active Only</option>
+                    <option value="all">All Tasks</option>
+                    <option value="snoozed">Snoozed</option>
+                    <option value="completed">Completed</option>
+                    <option value="dismissed">Dismissed</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-slate-300">Priority:</span>
+                  <select 
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    className="bg-slate-800/80 border border-slate-600/50 rounded-lg px-4 py-2 text-white text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 backdrop-blur-sm"
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 flex-1">
+                <div className="p-2 rounded-lg bg-slate-800/50">
+                  <Search className="h-4 w-4 text-slate-400" />
+                </div>
+                <Input
+                  placeholder="Search tasks..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-800/80 border-slate-600/50 text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 backdrop-blur-sm"
+                />
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Priority:</span>
-              <select 
-                value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
-                className="bg-[#2A2A2A] border border-[#444] rounded px-3 py-1 text-white text-sm"
-              >
-                <option value="all">All Priorities</option>
-                <option value="high">High Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="low">Low Priority</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-1">
-            <Search className="h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#2A2A2A] border-[#444] text-white placeholder-gray-500"
-            />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Task Groups */}
         {totalActionItems > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {Object.entries(groupedItems).map(([priority, items]) => {
               if (items.length === 0) return null
               
               const isExpanded = expandedSections[priority]
               const priorityLabel = priority === 'urgent' ? 'Urgent' : priority.charAt(0).toUpperCase() + priority.slice(1)
-              const priorityColor = priority === 'urgent' ? 'text-red-400' : 
-                                  priority === 'high' ? 'text-orange-400' : 
-                                  priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'
+              const priorityColors = {
+                urgent: 'text-red-400 bg-gradient-to-r from-red-600/20 to-red-500/10',
+                high: 'text-orange-400 bg-gradient-to-r from-orange-600/20 to-orange-500/10',
+                medium: 'text-amber-400 bg-gradient-to-r from-amber-600/20 to-amber-500/10',
+                low: 'text-blue-400 bg-gradient-to-r from-blue-600/20 to-blue-500/10'
+              }
 
               return (
-                <div key={priority} className="space-y-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-3 h-auto text-left hover:bg-[#1A1A1A]"
-                    onClick={() => setExpandedSections(prev => ({ ...prev, [priority]: !isExpanded }))}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={cn("font-semibold", priorityColor)}>
-                        {priorityLabel} ({items.length})
-                      </span>
-                      {priority === 'urgent' && <Flame className="h-4 w-4 text-red-400" />}
-                    </div>
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-
-                  {isExpanded && (
-                    <div className="space-y-2 ml-4">
-                      {items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={cn(
-                            "group flex items-center justify-between p-4 bg-[#1A1A1A] hover:bg-[#2A2A2A] border border-[#333] rounded-lg transition-all duration-200",
-                            item.status === 'completed' && "opacity-60",
-                            item.status === 'dismissed' && "opacity-40"
-                          )}
-                        >
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            {getTypeIcon(item.type)}
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-1">
-                                <h3 className={cn(
-                                  "font-medium transition-colors cursor-pointer",
-                                  getStatusColor(item.status || 'pending'),
-                                  item.status === 'completed' && "line-through"
-                                )}
-                                onClick={() => item.href && router.push(item.href)}
-                                >
-                                  {item.title}
-                                </h3>
-                                
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn("text-xs", getPriorityColor(item.priority))}
-                                >
-                                  {item.priority}
-                                </Badge>
-                                
-                                                                 {item.status === 'snoozed' && item.snoozeUntil && (
-                                   <Badge className="bg-orange-500/20 text-orange-400 text-xs">
-                                     <ClockSnooze className="h-3 w-3 mr-1" />
-                                     {formatDistanceToNow(item.snoozeUntil, { addSuffix: true })}
-                                   </Badge>
-                                 )}
-                                
-                                {item.status === 'completed' && (
-                                  <Badge className="bg-green-500/20 text-green-400 text-xs">
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Completed
-                                  </Badge>
-                                )}
-                                
-                                {item.count && (
-                                  <Badge className="bg-[#333] text-white text-xs">
-                                    {item.count}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-400 leading-relaxed">
-                                {item.description}
-                              </p>
-                            </div>
+                <div key={priority} className="space-y-4">
+                  <Card className="bg-gradient-to-r from-slate-900/50 to-slate-800/50 border-slate-700/50 backdrop-blur-xl overflow-hidden">
+                    <CardHeader className="pb-4">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-4 h-auto text-left hover:bg-slate-800/30 rounded-xl"
+                        onClick={() => setExpandedSections(prev => ({ ...prev, [priority]: !isExpanded }))}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn("px-4 py-2 rounded-full border backdrop-blur-sm", priorityColors[priority as keyof typeof priorityColors])}>
+                            <span className="font-semibold text-sm">
+                              {priorityLabel} ({items.length})
+                            </span>
                           </div>
-                          
-                          <div className="flex items-center gap-3">
-                            {item.dueDate && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                {formatDistanceToNow(item.dueDate, { addSuffix: true })}
-                              </div>
-                            )}
-                            
-                            {(item.status === 'pending' || !item.status) && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  className="bg-white text-black hover:bg-gray-200"
-                                  onClick={() => item.href && router.push(item.href)}
-                                >
-                                  {item.action}
-                                </Button>
-                                
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent className="bg-[#2A2A2A] border-[#444]">
-                                    <DropdownMenuItem onClick={() => markCompleted(item.id)}>
-                                      <Check className="h-4 w-4 mr-2" />
-                                      Mark Complete
-                                    </DropdownMenuItem>
-                                                                         <DropdownMenuSeparator />
-                                     <DropdownMenuItem onClick={() => snoozeTask(item.id, 'hour')}>
-                                       <ClockSnooze className="h-4 w-4 mr-2" />
-                                       Snooze 1 hour
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => snoozeTask(item.id, '4hours')}>
-                                       <ClockSnooze className="h-4 w-4 mr-2" />
-                                       Snooze 4 hours
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => snoozeTask(item.id, 'tomorrow')}>
-                                       <ClockSnooze className="h-4 w-4 mr-2" />
-                                       Snooze until tomorrow
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => snoozeTask(item.id, 'week')}>
-                                       <ClockSnooze className="h-4 w-4 mr-2" />
-                                       Snooze 1 week
-                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => dismissTask(item.id)} className="text-red-400">
-                                      <X className="h-4 w-4 mr-2" />
-                                      Dismiss
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </>
-                            )}
-                            
-                            {(item.status === 'snoozed' || item.status === 'completed' || item.status === 'dismissed') && (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-                                onClick={() => reactivateTask(item.id)}
-                              >
-                                Reactivate
-                              </Button>
-                            )}
-                          </div>
+                          {priority === 'urgent' && <Flame className="h-5 w-5 text-red-400" />}
+                          {priority === 'high' && <AlertTriangle className="h-5 w-5 text-orange-400" />}
+                          {priority === 'medium' && <Timer className="h-5 w-5 text-amber-400" />}
+                          {priority === 'low' && <Dot className="h-5 w-5 text-blue-400" />}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-slate-800/50 border-slate-600/50 text-slate-300">
+                            {items.filter(item => item.status === 'pending' || !item.status).length} active
+                          </Badge>
+                          {isExpanded ? <ChevronUp className="h-5 w-5 text-slate-400" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
+                        </div>
+                      </Button>
+                    </CardHeader>
+
+                    {isExpanded && (
+                      <CardContent className="pt-0">
+                        <div className="space-y-3">
+                          {items.map((item) => (
+                            <Card
+                              key={item.id}
+                              className={cn(
+                                "group relative overflow-hidden border-l-4 bg-gradient-to-r backdrop-blur-sm transition-all duration-300 hover:scale-[1.01]",
+                                getTypeGradient(item.type),
+                                item.status === 'completed' && "opacity-60",
+                                item.status === 'dismissed' && "opacity-40"
+                              )}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              
+                              <CardContent className="p-6 relative">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    {getTypeIcon(item.type)}
+                                    
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <h3 className={cn(
+                                          "font-semibold text-lg leading-tight cursor-pointer transition-colors",
+                                          getStatusColor(item.status || 'pending'),
+                                          item.status === 'completed' && "line-through"
+                                        )}
+                                        onClick={() => item.href && router.push(item.href)}
+                                        >
+                                          {item.title}
+                                        </h3>
+                                        
+                                        <Badge 
+                                          variant="outline" 
+                                          className={cn("text-xs font-medium", getPriorityColor(item.priority))}
+                                        >
+                                          {item.priority}
+                                        </Badge>
+                                        
+                                        {item.status === 'snoozed' && item.snoozeUntil && (
+                                          <Badge className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-amber-300 text-xs border border-amber-500/30">
+                                            <ClockSnooze className="h-3 w-3 mr-1" />
+                                            {formatDistanceToNow(item.snoozeUntil, { addSuffix: true })}
+                                          </Badge>
+                                        )}
+                                        
+                                        {item.status === 'completed' && (
+                                          <Badge className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-emerald-300 text-xs border border-emerald-500/30">
+                                            <Check className="h-3 w-3 mr-1" />
+                                            Completed
+                                          </Badge>
+                                        )}
+                                        
+                                        {item.count && (
+                                          <Badge className="bg-gradient-to-r from-slate-700 to-slate-800 text-white text-xs border border-slate-600">
+                                            {item.count}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-slate-400 leading-relaxed">
+                                        {item.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-4 ml-4">
+                                    {item.dueDate && (
+                                      <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-800/50 px-3 py-1 rounded-full">
+                                        <Clock className="h-3 w-3" />
+                                        {formatDistanceToNow(item.dueDate, { addSuffix: true })}
+                                      </div>
+                                    )}
+                                    
+                                    {(item.status === 'pending' || !item.status) && (
+                                      <>
+                                        <Button 
+                                          size="sm" 
+                                          className="bg-gradient-to-r from-white to-gray-100 text-black hover:from-gray-100 hover:to-gray-200 shadow-lg"
+                                          onClick={() => item.href && router.push(item.href)}
+                                        >
+                                          {item.action}
+                                          <ArrowRight className="h-3 w-3 ml-2" />
+                                        </Button>
+                                        
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
+                                              <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent className="bg-slate-800/95 border-slate-700/50 backdrop-blur-xl">
+                                            <DropdownMenuItem onClick={() => markCompleted(item.id)} className="text-slate-300 hover:bg-slate-700/50 hover:text-white">
+                                              <Check className="h-4 w-4 mr-2" />
+                                              Mark Complete
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator className="bg-slate-700/50" />
+                                            <DropdownMenuItem onClick={() => snoozeTask(item.id, 'hour')} className="text-slate-300 hover:bg-slate-700/50 hover:text-white">
+                                              <ClockSnooze className="h-4 w-4 mr-2" />
+                                              Snooze 1 hour
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => snoozeTask(item.id, '4hours')} className="text-slate-300 hover:bg-slate-700/50 hover:text-white">
+                                              <ClockSnooze className="h-4 w-4 mr-2" />
+                                              Snooze 4 hours
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => snoozeTask(item.id, 'tomorrow')} className="text-slate-300 hover:bg-slate-700/50 hover:text-white">
+                                              <ClockSnooze className="h-4 w-4 mr-2" />
+                                              Snooze until tomorrow
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => snoozeTask(item.id, 'week')} className="text-slate-300 hover:bg-slate-700/50 hover:text-white">
+                                              <ClockSnooze className="h-4 w-4 mr-2" />
+                                              Snooze 1 week
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator className="bg-slate-700/50" />
+                                            <DropdownMenuItem onClick={() => dismissTask(item.id)} className="text-red-400 hover:bg-red-900/30 hover:text-red-300">
+                                              <X className="h-4 w-4 mr-2" />
+                                              Dismiss
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </>
+                                    )}
+                                    
+                                    {(item.status === 'snoozed' || item.status === 'completed' || item.status === 'dismissed') && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        className="bg-slate-800/50 border-slate-600/50 text-white hover:bg-slate-700/50"
+                                        onClick={() => reactivateTask(item.id)}
+                                      >
+                                        Reactivate
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
                 </div>
               )
             })}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">All caught up!</h3>
-              <p className="text-gray-400">No action items at this time.</p>
-            </div>
-            
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <Button 
-                variant="outline"
-                className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-                onClick={() => router.push('/lead-generator')}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Generate Leads
-              </Button>
-              <Button 
-                variant="outline"
-                className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-                onClick={() => router.push('/outreach-tool')}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Start Outreach
-              </Button>
-              <Button 
-                variant="outline"
-                className="bg-[#1A1A1A] border-[#333] text-white hover:bg-[#2A2A2A]"
-                onClick={() => router.push('/brand-report')}
-              >
-                <FileBarChart className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-            </div>
-          </div>
+          <Card className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-900/20 border-emerald-800/30 backdrop-blur-xl">
+            <CardContent className="py-16 text-center">
+              <div className="space-y-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-green-600/20 blur-3xl rounded-full"></div>
+                  <CheckCircle className="relative h-20 w-20 text-emerald-400 mx-auto" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-3">All caught up!</h3>
+                  <p className="text-slate-400 text-lg">No action items at this time. Great work!</p>
+                </div>
+                
+                <div className="flex items-center justify-center gap-4 mt-12">
+                  <Button 
+                    variant="outline"
+                    className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50 backdrop-blur-sm"
+                    onClick={() => router.push('/lead-generator')}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Generate Leads
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50 backdrop-blur-sm"
+                    onClick={() => router.push('/outreach-tool')}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Start Outreach
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="bg-slate-800/50 border-slate-700/50 text-white hover:bg-slate-700/50 backdrop-blur-sm"
+                    onClick={() => router.push('/brand-report')}
+                  >
+                    <FileBarChart className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
