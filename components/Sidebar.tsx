@@ -10,6 +10,7 @@ import { Button } from "./ui/button"
 import BrandSelector from "@/components/BrandSelector"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useAgency } from "@/contexts/AgencyContext"
+import { useActionCenter } from "@/hooks/useActionCenter"
 import { useState, useEffect } from "react"
 import {
   Tooltip,
@@ -17,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge"
 
 const navItems = [
   { 
@@ -82,6 +84,7 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
+  const { counts: actionCenterCounts } = useActionCenter()
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
   const [isPinned, setIsPinned] = useState(false)
@@ -312,18 +315,41 @@ export function Sidebar({ className }: SidebarProps) {
                     {isActive && (
                       <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
                     )}
-                    <div className="flex items-center w-full">
-                      <div className={cn("flex items-center", showExpanded ? "w-full" : "justify-center w-full")}>
-                        <item.icon className="h-6 w-6 flex-shrink-0" />
+                                          <div className="flex items-center w-full">
+                        <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
+                          <item.icon className="h-6 w-6 flex-shrink-0" />
+                          {/* Notification dot for collapsed sidebar */}
+                          {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                            <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full text-xs flex items-center justify-center ${
+                              actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-blue-600'
+                            }`}>
+                              <span className="text-white text-xs font-bold leading-none">
+                                {actionCenterCounts.totalItems > 9 ? '9+' : actionCenterCounts.totalItems}
+                              </span>
+                            </div>
+                          )}
                         {showExpanded && (
                           <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
                             <div className="flex items-center justify-between">
                               <p className="text-sm font-medium truncate">{item.name}</p>
-                              {isComingSoon && (
-                                <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
-                                  Soon
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                                  <Badge 
+                                    className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${
+                                      actionCenterCounts.urgentItems > 0 
+                                        ? 'bg-red-600 text-white' 
+                                        : 'bg-blue-600 text-white'
+                                    }`}
+                                  >
+                                    {actionCenterCounts.totalItems}
+                                  </Badge>
+                                )}
+                                {isComingSoon && (
+                                  <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
+                                    Soon
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <p className="text-xs text-gray-500 truncate">{item.description}</p>
                           </div>
@@ -342,8 +368,27 @@ export function Sidebar({ className }: SidebarProps) {
                     </TooltipTrigger>
                     <TooltipContent side="right">
                       <div>
-                        <p className="font-medium">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{item.name}</p>
+                          {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                            <Badge 
+                              className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${
+                                actionCenterCounts.urgentItems > 0 
+                                  ? 'bg-red-600 text-white' 
+                                  : 'bg-blue-600 text-white'
+                              }`}
+                            >
+                              {actionCenterCounts.totalItems}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-400">{item.description}</p>
+                        {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                          <p className="text-xs text-gray-300 mt-1">
+                            {actionCenterCounts.urgentItems > 0 && `${actionCenterCounts.urgentItems} urgent • `}
+                            {actionCenterCounts.totalItems} total items
+                          </p>
+                        )}
                       </div>
                     </TooltipContent>
                   </Tooltip>
