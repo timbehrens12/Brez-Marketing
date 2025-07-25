@@ -89,15 +89,19 @@ export async function POST(request: NextRequest) {
 
         if (gap.platform === 'meta') {
           // Backfill Meta data
+          console.log(`[Backfill] Calling fetchMetaAdInsights for ${gap.dayCount} days...`)
           result = await fetchMetaAdInsights(
             brandId,
             gap.startDate,
             gap.endDate,
             false // Not a dry run, actually store the data
           )
+          console.log(`[Backfill] fetchMetaAdInsights result:`, result)
         } else if (gap.platform === 'shopify') {
           // Backfill Shopify data
+          console.log(`[Backfill] Calling backfillShopifyData for ${gap.dayCount} days...`)
           result = await backfillShopifyData(brandId, gap.startDate, gap.endDate)
+          console.log(`[Backfill] backfillShopifyData result:`, result)
         }
 
         if (result?.success) {
