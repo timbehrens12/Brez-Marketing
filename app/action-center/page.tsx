@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@clerk/nextjs'
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { 
   CheckSquare, 
   AlertTriangle, 
@@ -49,12 +49,30 @@ interface TaskState {
 }
 
 export default function ActionCenterPage() {
-  const { userId } = useAuth()
+  const { userId, getToken } = useAuth()
   const router = useRouter()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
   const [selectedTodo, setSelectedTodo] = useState<TodoItem | null>(null)
+
+  // Unified Supabase client function (same as outreach page)
+  const getSupabaseClient = async () => {
+    try {
+      console.log('[Action Center] 🔗 Getting Supabase client...')
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        console.log('[Action Center] ✅ Using authenticated client')
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        console.log('[Action Center] ⚠️ Using standard client (no token)')
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('[Action Center] ❌ Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
 
   // Load task states from localStorage
   useEffect(() => {
@@ -253,7 +271,7 @@ export default function ActionCenterPage() {
     } catch (error) {
       console.error('[Action Center] Error generating todos:', error)
     }
-  }, [userId])
+  }, [userId, getToken])
 
   useEffect(() => {
     const loadData = async () => {
