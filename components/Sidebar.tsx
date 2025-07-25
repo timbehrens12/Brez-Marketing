@@ -315,9 +315,9 @@ export function Sidebar({ className }: SidebarProps) {
                     {isActive && (
                       <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
                     )}
-                                          <div className="flex items-center w-full">
+                    <div className="flex items-center w-full">
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
-                          <item.icon className="h-6 w-6 flex-shrink-0" />
+                        <item.icon className="h-6 w-6 flex-shrink-0" />
                           {/* Notification dot for collapsed sidebar */}
                           {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
                             <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full text-xs flex items-center justify-center ${
@@ -344,11 +344,11 @@ export function Sidebar({ className }: SidebarProps) {
                                     {actionCenterCounts.totalItems}
                                   </Badge>
                                 )}
-                                {isComingSoon && (
+                              {isComingSoon && (
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
-                                    Soon
-                                  </span>
-                                )}
+                                  Soon
+                                </span>
+                              )}
                               </div>
                             </div>
                             <p className="text-xs text-gray-500 truncate">{item.description}</p>
@@ -369,7 +369,7 @@ export function Sidebar({ className }: SidebarProps) {
                     <TooltipContent side="right">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{item.name}</p>
+                        <p className="font-medium">{item.name}</p>
                           {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
                             <Badge 
                               className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${

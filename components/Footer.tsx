@@ -39,19 +39,19 @@ export function Footer() {
     <footer className="w-full bg-[#1A1A1A] border-t border-[#333] pt-4 pb-4 px-6">
       <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="text-white">
-              <img 
-                src="https://i.imgur.com/PZCtbwG.png" 
-                alt="[bm] dashboard" 
-                className="h-8 w-auto"
-              />
-            </div>
-            <span className="text-sm text-zinc-400">
-              © {currentYear} Brez Marketing. All rights reserved.
-            </span>
+        <div className="flex items-center gap-2">
+          <div className="text-white">
+            <img 
+              src="https://i.imgur.com/PZCtbwG.png" 
+              alt="[bm] dashboard" 
+              className="h-8 w-auto"
+            />
           </div>
-          
+          <span className="text-sm text-zinc-400">
+            © {currentYear} Brez Marketing. All rights reserved.
+          </span>
+        </div>
+        
           {/* Version indicator */}
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
