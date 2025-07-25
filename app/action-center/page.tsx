@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useUser } from '@clerk/nextjs'
+import { useAuth } from '@clerk/nextjs'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { 
   CheckSquare, 
@@ -49,7 +49,7 @@ interface TaskState {
 }
 
 export default function ActionCenterPage() {
-  const { user } = useUser()
+  const { userId } = useAuth()
   const router = useRouter()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -58,8 +58,8 @@ export default function ActionCenterPage() {
 
   // Load task states from localStorage
   useEffect(() => {
-    if (user?.id) {
-      const saved = localStorage.getItem(`actionCenter_taskStates_${user.id}`)
+    if (userId) {
+      const saved = localStorage.getItem(`actionCenter_taskStates_${userId}`)
       if (saved) {
         const parsed = JSON.parse(saved)
         // Convert date strings back to Date objects
@@ -77,7 +77,7 @@ export default function ActionCenterPage() {
         setTaskStates(parsed)
       }
     }
-  }, [user?.id])
+  }, [userId])
 
   const getTaskState = (taskId: string) => {
     const state = taskStates[taskId]
@@ -98,13 +98,13 @@ export default function ActionCenterPage() {
 
   // Generate todos from outreach data and other sources
   const generateTodos = useCallback(async () => {
-    if (!user?.id) return
+    if (!userId) return
 
     try {
       const supabase = await getSupabaseClient()
       const newTodos: TodoItem[] = []
 
-      console.log('[Action Center] Loading outreach campaigns for user:', user.id)
+      console.log('[Action Center] Loading outreach campaigns for user:', userId)
 
       // Load ONLY Outreach Items (same as outreach page simple-todos.tsx)
       const { data: outreachCampaigns, error } = await supabase
@@ -121,7 +121,7 @@ export default function ActionCenterPage() {
             )
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
 
       if (error) {
         console.error('[Action Center] Error loading outreach campaigns:', error)
@@ -253,7 +253,7 @@ export default function ActionCenterPage() {
     } catch (error) {
       console.error('[Action Center] Error generating todos:', error)
     }
-  }, [user?.id])
+  }, [userId])
 
   useEffect(() => {
     const loadData = async () => {
@@ -262,10 +262,10 @@ export default function ActionCenterPage() {
       setIsLoading(false)
     }
 
-    if (user?.id) {
+    if (userId) {
       loadData()
     }
-  }, [user?.id, generateTodos])
+  }, [userId, generateTodos])
 
   const getPriorityInfo = (priority: string) => {
     switch (priority) {
