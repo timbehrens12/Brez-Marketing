@@ -48,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { PlatformConnection } from '@/types/platformConnection'
+import { useBrandContext } from '@/lib/context/BrandContext'
 
 interface TodoItem {
   id: string
@@ -193,15 +194,18 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
 export default function ActionCenterPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
+  const { brands: contextBrands } = useBrandContext()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
   const [selectedTodo, setSelectedTodo] = useState<TodoItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [brands, setBrands] = useState<Brand[]>([])
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
-  const [isLoadingBrands, setIsLoadingBrands] = useState(true)
+  const [isLoadingConnections, setIsLoadingConnections] = useState(true)
+
+  // Use brands from context
+  const brands = contextBrands || []
 
   // Unified Supabase client function (same as outreach page)
   const getSupabaseClient = async () => {
@@ -221,76 +225,36 @@ export default function ActionCenterPage() {
     }
   }
 
-  // Load brands and their connections
-  const loadBrandsAndConnections = useCallback(async () => {
-    if (!userId) return
+  // Load platform connections for brands from context
+  const loadConnections = useCallback(async () => {
+    if (!userId || brands.length === 0) return
 
     try {
-      setIsLoadingBrands(true)
+      setIsLoadingConnections(true)
       const supabase = await getSupabaseClient()
 
-      // Load brands (both owned and shared)
-      const { data: brandsData, error: brandsError } = await supabase
-        .from('brands')
-        .select(`
-          *,
-          agency_brand_access!left(
-            brand_id,
-            agency_id,
-            can_view_reports,
-            can_manage_campaigns,
-            can_manage_platforms,
-            agencies!inner(
-              id,
-              name,
-              logo_url,
-              owner_id
-            )
-          )
-        `)
-        .or(`user_id.eq.${userId},agency_brand_access.agency_id.in.(select id from agencies where owner_id='${userId}')`)
+      // Load platform connections for all brands from context
+      const brandIds = brands.map((brand: any) => brand.id)
+      console.log('[Action Center] Loading connections for brands:', brandIds)
+      
+      const { data: connectionsData, error: connectionsError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .in('brand_id', brandIds)
+        .eq('status', 'active')
 
-      if (brandsError) {
-        console.error('[Action Center] Error loading brands:', brandsError)
-        return
-      }
-
-      // Transform brands data to include shared access info
-      const transformedBrands = (brandsData || []).map((brand: any) => {
-        const agencyAccess = brand.agency_brand_access?.[0]
-        if (agencyAccess && brand.user_id !== userId) {
-          return {
-            ...brand,
-            shared_access: agencyAccess,
-            agency_info: agencyAccess.agencies
-          }
-        }
-        return brand
-      })
-
-      setBrands(transformedBrands)
-
-      // Load platform connections for all brands
-      if (transformedBrands.length > 0) {
-        const brandIds = transformedBrands.map((brand: Brand) => brand.id)
-        const { data: connectionsData, error: connectionsError } = await supabase
-          .from('platform_connections')
-          .select('*')
-          .in('brand_id', brandIds)
-          .eq('status', 'active')
-
-        if (connectionsError) {
-          console.error('[Action Center] Error loading connections:', connectionsError)
-        } else {
-          setConnections(connectionsData as PlatformConnection[] || [])
-        }
+      if (connectionsError) {
+        console.error('[Action Center] Error loading connections:', connectionsError)
+      } else {
+        console.log('[Action Center] Loaded connections:', connectionsData?.length || 0)
+        setConnections(connectionsData as PlatformConnection[] || [])
       }
     } catch (error) {
-      console.error('[Action Center] Error loading brands and connections:', error)
+      console.error('[Action Center] Error loading connections:', error)
     } finally {
-      setIsLoadingBrands(false)
+      setIsLoadingConnections(false)
     }
-  }, [userId, getToken])
+  }, [userId, brands, getToken])
 
   // Get tool availability for a specific brand
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
@@ -306,7 +270,7 @@ export default function ActionCenterPage() {
 
     // If no specific brand selected, check if ANY brand has the required platforms
     if (!brandId || brandId === 'all') {
-      const hasAnyBrandWithPlatforms = brands.some(brand => {
+      const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
         const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
         return tool.requiresPlatforms!.every(platform => 
           brandConnections.some(conn => conn.platform_type === platform)
@@ -342,7 +306,7 @@ export default function ActionCenterPage() {
   }
 
   // Render brand avatar
-  const renderBrandAvatar = (brand: Brand, size: 'sm' | 'md' = 'sm') => {
+  const renderBrandAvatar = (brand: any, size: 'sm' | 'md' = 'sm') => {
     const sizeClasses = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
     
     if (brand.image_url) {
@@ -465,12 +429,12 @@ export default function ActionCenterPage() {
     }
   }, [userId])
 
-  // Load brands and connections
+  // Load connections when brands are available
   useEffect(() => {
-    if (userId) {
-      loadBrandsAndConnections()
+    if (userId && brands.length > 0) {
+      loadConnections()
     }
-  }, [userId, loadBrandsAndConnections])
+  }, [userId, brands.length, loadConnections])
 
   const getTaskState = (taskId: string) => {
     const state = taskStates[taskId]
@@ -699,7 +663,7 @@ export default function ActionCenterPage() {
     }
   }
 
-  const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
+  const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
   const availableToolsCount = filteredTools.filter(t => t.status === 'available').length
 
   return (
@@ -840,15 +804,15 @@ export default function ActionCenterPage() {
                         size="sm"
                         className={cn(
                           "h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white",
-                          isLoadingBrands && "opacity-50 cursor-not-allowed"
+                          isLoadingConnections && "opacity-50 cursor-not-allowed"
                         )}
-                        disabled={isLoadingBrands}
+                        disabled={isLoadingConnections}
                       >
                         <Filter className="h-3 w-3 mr-1" />
-                        {isLoadingBrands ? (
+                        {isLoadingConnections ? (
                           "Loading..."
                         ) : selectedBrandId === 'all' ? (
-                          "All Brands"
+                          `All Brands (${brands.length})`
                         ) : (
                           <div className="flex items-center gap-1">
                             {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
@@ -869,7 +833,7 @@ export default function ActionCenterPage() {
                         <Tag className="h-4 w-4 mr-2" />
                         All Brands ({brands.length})
                       </DropdownMenuItem>
-                      {brands.map((brand) => (
+                      {brands.map((brand: any) => (
                         <DropdownMenuItem
                           key={brand.id}
                           onClick={() => setSelectedBrandId(brand.id)}
