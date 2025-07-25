@@ -15,7 +15,21 @@ import {
   Send,
   ExternalLink,
   CheckCircle,
-  Loader2
+  Loader2,
+  // New icons for tools
+  Brain,
+  Zap,
+  Target,
+  FileBarChart,
+  Palette,
+  BarChart3,
+  Calendar,
+  RefreshCw,
+  Settings,
+  TrendingUp,
+  ChevronDown,
+  Filter,
+  Tag
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -27,6 +41,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { PlatformConnection } from '@/types/platformConnection'
 
 interface TodoItem {
   id: string
@@ -48,6 +69,127 @@ interface TaskState {
   }
 }
 
+interface Brand {
+  id: string
+  name: string
+  niche?: string
+  image_url?: string
+  user_id: string
+  shared_access?: any
+  agency_info?: any
+}
+
+interface ReusableTool {
+  id: string
+  name: string
+  description: string
+  icon: any
+  category: 'automation' | 'ai-powered' | 'analytics' | 'tools'
+  status: 'available' | 'scheduled' | 'coming-soon' | 'unavailable'
+  href: string
+  features: string[]
+  frequency?: string
+  requiresPlatforms?: ('meta' | 'shopify')[]
+  requiresData?: boolean
+}
+
+const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
+  {
+    id: 'campaign-optimizer',
+    name: 'Campaign Optimizer',
+    description: 'AI-powered campaign optimization and performance insights',
+    icon: Target,
+    category: 'ai-powered',
+    href: '/dashboard',
+    features: ['Performance Analysis', 'Budget Optimization', 'Ad Set Recommendations'],
+    requiresPlatforms: ['meta'],
+    requiresData: true
+  },
+  {
+    id: 'lead-generator',
+    name: 'Lead Generator',
+    description: 'Find and qualify leads using real business data',
+    icon: Zap,
+    category: 'tools',
+    href: '/lead-generator',
+    features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence']
+  },
+  {
+    id: 'outreach-tool',
+    name: 'Outreach Tool',
+    description: 'Manage lead outreach campaigns and follow-ups',
+    icon: Send,
+    category: 'tools',
+    href: '/outreach-tool',
+    features: ['Campaign Management', 'Lead Tracking', 'Response Management']
+  },
+  {
+    id: 'marketing-assistant',
+    name: 'Marketing Assistant',
+    description: 'AI marketing insights and strategic recommendations',
+    icon: Brain,
+    category: 'ai-powered',
+    href: '/marketing-assistant',
+    features: ['Performance Analytics', 'Campaign Insights', 'AI Recommendations'],
+    requiresPlatforms: ['meta'],
+    requiresData: true
+  },
+  {
+    id: 'brand-reports',
+    name: 'Brand Reports',
+    description: 'Automated daily and monthly performance reports',
+    icon: FileBarChart,
+    category: 'automation',
+    href: '/brand-report',
+    features: ['Daily Reports', 'Monthly Reports', 'AI-Generated Insights'],
+    frequency: 'Daily/Monthly',
+    requiresPlatforms: ['meta', 'shopify'],
+    requiresData: true
+  },
+  {
+    id: 'ai-consultant',
+    name: 'AI Marketing Consultant',
+    description: 'Chat with AI for personalized marketing advice',
+    icon: MessageSquare,
+    category: 'ai-powered',
+    href: '/marketing-assistant',
+    features: ['Personal Advice', 'Goal-Oriented', 'Industry-Specific'],
+    requiresPlatforms: ['meta'],
+    requiresData: true
+  },
+  {
+    id: 'data-sync',
+    name: 'Daily Data Sync',
+    description: 'Automatic daily synchronization of all platform data',
+    icon: RefreshCw,
+    category: 'automation',
+    href: '/settings',
+    features: ['Meta Data Sync', 'Shopify Sync', 'Automated Updates'],
+    frequency: 'Daily at 11:59 PM',
+    requiresPlatforms: ['meta', 'shopify']
+  },
+  {
+    id: 'analytics',
+    name: 'Analytics Dashboard',
+    description: 'Comprehensive performance analytics and metrics',
+    icon: BarChart3,
+    category: 'analytics',
+    href: '/analytics',
+    features: ['Campaign Performance', 'Spend Trends', 'ROI Analysis'],
+    requiresPlatforms: ['meta', 'shopify'],
+    requiresData: true
+  },
+  {
+    id: 'ad-creative-studio',
+    name: 'Ad Creative Studio',
+    description: 'AI-powered ad creative generation and optimization',
+    icon: Palette,
+    category: 'ai-powered',
+    href: '/ad-creative-studio',
+    features: ['Creative Generation', 'A/B Testing', 'Performance Optimization']
+  }
+]
+
 export default function ActionCenterPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
@@ -55,6 +197,11 @@ export default function ActionCenterPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
   const [selectedTodo, setSelectedTodo] = useState<TodoItem | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true)
 
   // Unified Supabase client function (same as outreach page)
   const getSupabaseClient = async () => {
@@ -73,6 +220,227 @@ export default function ActionCenterPage() {
       return getStandardSupabaseClient()
     }
   }
+
+  // Load brands and their connections
+  const loadBrandsAndConnections = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      setIsLoadingBrands(true)
+      const supabase = await getSupabaseClient()
+
+      // Load brands (both owned and shared)
+      const { data: brandsData, error: brandsError } = await supabase
+        .from('brands')
+        .select(`
+          *,
+          agency_brand_access!left(
+            brand_id,
+            agency_id,
+            can_view_reports,
+            can_manage_campaigns,
+            can_manage_platforms,
+            agencies!inner(
+              id,
+              name,
+              logo_url,
+              owner_id
+            )
+          )
+        `)
+        .or(`user_id.eq.${userId},agency_brand_access.agency_id.in.(select id from agencies where owner_id='${userId}')`)
+
+      if (brandsError) {
+        console.error('[Action Center] Error loading brands:', brandsError)
+        return
+      }
+
+      // Transform brands data to include shared access info
+      const transformedBrands = (brandsData || []).map((brand: any) => {
+        const agencyAccess = brand.agency_brand_access?.[0]
+        if (agencyAccess && brand.user_id !== userId) {
+          return {
+            ...brand,
+            shared_access: agencyAccess,
+            agency_info: agencyAccess.agencies
+          }
+        }
+        return brand
+      })
+
+      setBrands(transformedBrands)
+
+      // Load platform connections for all brands
+      if (transformedBrands.length > 0) {
+        const brandIds = transformedBrands.map((brand: Brand) => brand.id)
+        const { data: connectionsData, error: connectionsError } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .in('brand_id', brandIds)
+          .eq('status', 'active')
+
+        if (connectionsError) {
+          console.error('[Action Center] Error loading connections:', connectionsError)
+        } else {
+          setConnections(connectionsData as PlatformConnection[] || [])
+        }
+      }
+    } catch (error) {
+      console.error('[Action Center] Error loading brands and connections:', error)
+    } finally {
+      setIsLoadingBrands(false)
+    }
+  }, [userId, getToken])
+
+  // Get tool availability for a specific brand
+  const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
+    // Coming soon tools are always coming soon
+    if (tool.id === 'ad-creative-studio') {
+      return { ...tool, status: 'coming-soon' }
+    }
+
+    // Tools that don't require platforms are always available
+    if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
+      return { ...tool, status: 'available' }
+    }
+
+    // If no specific brand selected, check if ANY brand has the required platforms
+    if (!brandId || brandId === 'all') {
+      const hasAnyBrandWithPlatforms = brands.some(brand => {
+        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        return tool.requiresPlatforms!.every(platform => 
+          brandConnections.some(conn => conn.platform_type === platform)
+        )
+      })
+      return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
+    }
+
+    // Check specific brand
+    const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+    const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
+      brandConnections.some(conn => conn.platform_type === platform)
+    )
+
+    // For scheduled tools (data sync), they're scheduled if platforms are connected
+    if (tool.id === 'data-sync' && hasRequiredPlatforms) {
+      return { ...tool, status: 'scheduled' }
+    }
+
+    return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
+  }
+
+  // Get tools with availability status
+  const getToolsWithAvailability = (): ReusableTool[] => {
+    return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
+  }
+
+  const reusableTools = getToolsWithAvailability()
+
+  // Get brand connections for display
+  const getBrandConnections = (brandId: string) => {
+    return connections.filter(conn => conn.brand_id === brandId)
+  }
+
+  // Render brand avatar
+  const renderBrandAvatar = (brand: Brand, size: 'sm' | 'md' = 'sm') => {
+    const sizeClasses = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
+    
+    if (brand.image_url) {
+      return (
+        <img 
+          src={brand.image_url} 
+          alt={brand.name} 
+          className={cn(sizeClasses, "rounded-full object-cover border border-[#444]")}
+        />
+      )
+    }
+    
+    return (
+      <div className={cn(
+        sizeClasses,
+        "flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444]"
+      )}>
+        {brand.name.charAt(0).toUpperCase()}
+      </div>
+    )
+  }
+
+  // Render platform connection icons
+  const renderConnectionIcons = (brandId: string) => {
+    const brandConnections = getBrandConnections(brandId)
+    const uniqueConnections = brandConnections.filter((connection, index, arr) => 
+      arr.findIndex(c => c.platform_type === connection.platform_type) === index
+    )
+    
+    return (
+      <div className="flex items-center gap-1">
+        {uniqueConnections.map((connection) => (
+          <div
+            key={`${connection.platform_type}-${brandId}`}
+            className="w-3 h-3 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+            title={`${connection.platform_type.charAt(0).toUpperCase() + connection.platform_type.slice(1)} connected`}
+          >
+            {connection.platform_type === 'shopify' && (
+              <img 
+                src="/shopify-icon.png" 
+                alt="Shopify" 
+                className="w-full h-full object-contain"
+              />
+            )}
+            {connection.platform_type === 'meta' && (
+              <img 
+                src="/meta-icon.png" 
+                alt="Meta" 
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'automation': return <Calendar className="h-4 w-4" />
+      case 'ai-powered': return <Brain className="h-4 w-4" />
+      case 'analytics': return <TrendingUp className="h-4 w-4" />
+      case 'tools': return <Settings className="h-4 w-4" />
+      default: return <CheckSquare className="h-4 w-4" />
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'automation': return 'bg-blue-900/20 border-blue-500/50 text-blue-300'
+      case 'ai-powered': return 'bg-purple-900/20 border-purple-500/50 text-purple-300'
+      case 'analytics': return 'bg-green-900/20 border-green-500/50 text-green-300'
+      case 'tools': return 'bg-orange-900/20 border-orange-500/50 text-orange-300'
+      default: return 'bg-gray-900/20 border-gray-500/50 text-gray-300'
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'available': return <Badge className="bg-green-600 text-white text-xs">Available</Badge>
+      case 'scheduled': return <Badge className="bg-blue-600 text-white text-xs">Scheduled</Badge>
+      case 'coming-soon': return <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+      case 'unavailable': return <Badge className="bg-red-600 text-white text-xs">Missing Platform</Badge>
+      default: return <Badge variant="outline" className="text-xs">Unknown</Badge>
+    }
+  }
+
+  const filteredTools = selectedCategory === 'all' 
+    ? reusableTools 
+    : reusableTools.filter(tool => tool.category === selectedCategory)
+
+  const categories = [
+    { id: 'all', name: 'All Tools', count: reusableTools.length },
+    { id: 'automation', name: 'Automation', count: reusableTools.filter(t => t.category === 'automation').length },
+    { id: 'ai-powered', name: 'AI-Powered', count: reusableTools.filter(t => t.category === 'ai-powered').length },
+    { id: 'analytics', name: 'Analytics', count: reusableTools.filter(t => t.category === 'analytics').length },
+    { id: 'tools', name: 'Tools', count: reusableTools.filter(t => t.category === 'tools').length }
+  ]
 
   // Load task states from localStorage
   useEffect(() => {
@@ -96,6 +464,13 @@ export default function ActionCenterPage() {
       }
     }
   }, [userId])
+
+  // Load brands and connections
+  useEffect(() => {
+    if (userId) {
+      loadBrandsAndConnections()
+    }
+  }, [userId, loadBrandsAndConnections])
 
   const getTaskState = (taskId: string) => {
     const state = taskStates[taskId]
@@ -324,6 +699,9 @@ export default function ActionCenterPage() {
     }
   }
 
+  const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
+  const availableToolsCount = filteredTools.filter(t => t.status === 'available').length
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -435,17 +813,176 @@ export default function ActionCenterPage() {
             </Card>
           </div>
 
-          {/* Placeholder for other widgets */}
+          {/* Reusable Tools Widget - Wide Column */}
           <div className="md:col-span-2 lg:col-span-3">
-            <Card className="bg-[#1a1a1a] border border-[#333] h-64">
-              <CardHeader>
-                <CardTitle className="text-white">More Widgets Coming Soon</CardTitle>
-                <CardDescription className="text-[#9ca3af]">
-                  Additional action center widgets will be added here
+            <Card className="bg-[#1a1a1a] border border-[#333]">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-green-400" />
+                    <CardTitle className="text-white text-lg">Reusable Tools & Automation</CardTitle>
+                  </div>
+                  <Badge className="bg-green-600 text-white text-xs">
+                    {availableToolsCount} Available
+                  </Badge>
+                </div>
+                <CardDescription className="text-[#9ca3af] text-sm">
+                  Marketing tools and automation features available for your brands
                 </CardDescription>
+                
+                {/* Filters */}
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {/* Brand Filter */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white",
+                          isLoadingBrands && "opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={isLoadingBrands}
+                      >
+                        <Filter className="h-3 w-3 mr-1" />
+                        {isLoadingBrands ? (
+                          "Loading..."
+                        ) : selectedBrandId === 'all' ? (
+                          "All Brands"
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
+                            <span className="max-w-20 truncate">{selectedBrand?.name || 'Unknown'}</span>
+                          </div>
+                        )}
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
+                      <DropdownMenuItem
+                        onClick={() => setSelectedBrandId('all')}
+                        className={cn(
+                          "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                          selectedBrandId === 'all' && "bg-[#333] text-white"
+                        )}
+                      >
+                        <Tag className="h-4 w-4 mr-2" />
+                        All Brands ({brands.length})
+                      </DropdownMenuItem>
+                      {brands.map((brand) => (
+                        <DropdownMenuItem
+                          key={brand.id}
+                          onClick={() => setSelectedBrandId(brand.id)}
+                          className={cn(
+                            "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                            selectedBrandId === brand.id && "bg-[#333] text-white"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            {renderBrandAvatar(brand, 'sm')}
+                            <span className="truncate flex-1">{brand.name}</span>
+                            {renderConnectionIcons(brand.id)}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Category Filter */}
+                  {categories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={cn(
+                        "h-8 text-xs",
+                        selectedCategory === category.id 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
+                      )}
+                    >
+                      {getCategoryIcon(category.id)}
+                      <span className="ml-1">{category.name}</span>
+                      <Badge variant="secondary" className="ml-2 h-4 text-xs px-1">
+                        {category.count}
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
               </CardHeader>
-              <CardContent className="flex items-center justify-center h-32">
-                <p className="text-[#9ca3af]">Widget space available</p>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTools.map((tool) => {
+                    const IconComponent = tool.icon
+                    const isDisabled = tool.status === 'coming-soon' || tool.status === 'unavailable'
+                    
+                    return (
+                      <div
+                        key={tool.id}
+                        className={cn(
+                          "rounded-lg border p-4 transition-all hover:shadow-md",
+                          getCategoryColor(tool.category),
+                          isDisabled && "opacity-60"
+                        )}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="mt-0.5">
+                            <IconComponent className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium text-white text-sm leading-tight">
+                                {tool.name}
+                              </h4>
+                              {getStatusBadge(tool.status)}
+                            </div>
+                            {tool.frequency && (
+                              <p className="text-xs text-blue-300 mb-1">
+                                {tool.frequency}
+                              </p>
+                            )}
+                            <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
+                              {tool.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {tool.features.slice(0, 3).map((feature, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant="outline" 
+                                  className="text-xs px-2 py-0.5 text-[#9ca3af] border-[#333]"
+                                >
+                                  {feature}
+                                </Badge>
+                              ))}
+                            </div>
+                            {tool.status === 'unavailable' && tool.requiresPlatforms && (
+                              <p className="text-xs text-red-400 mb-2">
+                                Requires: {tool.requiresPlatforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => router.push(tool.href)}
+                          disabled={isDisabled}
+                          className={cn(
+                            "w-full text-xs h-8",
+                            isDisabled
+                              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700 text-white"
+                          )}
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          {tool.status === 'coming-soon' ? 'Coming Soon' : 
+                           tool.status === 'unavailable' ? 'Connect Platform' :
+                           tool.status === 'scheduled' ? 'View Settings' : 'Launch Tool'}
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
               </CardContent>
             </Card>
           </div>
