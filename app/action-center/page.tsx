@@ -147,12 +147,13 @@ export default function ActionCenterPage() {
 
       // Check brand reports
       if (item.id.includes('brand-report') && item.brandId) {
+        const period = item.id.includes('monthly') ? 'monthly' : 'daily'
+        
         const { data: reports } = await supabase
           .from('brand_reports')
           .select('*')
           .eq('brand_id', item.brandId)
-          .eq('report_date', format(new Date(), 'yyyy-MM-dd'))
-          .eq('report_type', item.id.includes('monthly') ? 'last-month' : 'today')
+          .eq('period', period)
 
         return Boolean(reports && reports.length > 0)
       }
@@ -248,16 +249,27 @@ export default function ActionCenterPage() {
       }
 
       // 2. Lead Generation Status
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      const dayOfWeek = now.getDay()
+      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      startOfWeek.setDate(now.getDate() - daysToSubtract)
+      startOfWeek.setHours(0, 0, 0, 0)
+
+      const startOfNextWeek = new Date(startOfWeek)
+      startOfNextWeek.setDate(startOfWeek.getDate() + 7)
+
       const { data: usageData } = await supabase
         .from('user_usage')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .gte('date', startOfWeek.toISOString().split('T')[0])
+        .lt('date', startOfNextWeek.toISOString().split('T')[0])
 
-      if (usageData?.[0]) {
-        const usage = usageData[0]
-        const remaining = usage.weekly_limit - usage.weekly_used
+      if (usageData) {
+        const WEEKLY_LIMIT = 5 // Weekly generation limit
+        const currentWeeklyUsage = usageData.reduce((sum, record) => sum + (record.generation_count || 0), 0)
+        const remaining = WEEKLY_LIMIT - currentWeeklyUsage
         
         if (remaining > 0) {
           items.push({
@@ -276,19 +288,19 @@ export default function ActionCenterPage() {
       // 3. Brand Report Status
       const { data: brands } = await supabase
         .from('brands')
-        .select('*')
+        .select('id, name, user_id')
         .eq('user_id', user.id)
 
       if (brands) {
         for (const brand of brands) {
-          const { data: todayReports } = await supabase
+          // Check for daily reports using 'daily' period
+          const { data: dailyReports } = await supabase
             .from('brand_reports')
             .select('*')
             .eq('brand_id', brand.id)
-            .eq('report_date', format(new Date(), 'yyyy-MM-dd'))
-            .eq('report_type', 'today')
+            .eq('period', 'daily')
 
-          if (!todayReports?.length) {
+          if (!dailyReports?.length) {
             const now = new Date()
             const isAfter6AM = now.getHours() >= 6
             
@@ -297,63 +309,65 @@ export default function ActionCenterPage() {
                 id: `brand-report-${brand.id}`,
                 type: 'task',
                 priority: 'medium',
-                title: `Generate daily report for ${brand.brand_name}`,
+                title: `Generate daily report for ${brand.name}`,
                 description: 'Daily performance report is ready to generate',
                 action: 'Generate Report',
                 href: '/brand-report',
                 brandId: brand.id,
-                brandName: brand.brand_name
+                brandName: brand.name
               })
             }
           }
 
+          // Check for monthly reports using 'monthly' period
           const now = new Date()
           const isFirstOfMonth = now.getDate() === 1
           if (isFirstOfMonth) {
-            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
             const { data: monthlyReports } = await supabase
               .from('brand_reports')
               .select('*')
               .eq('brand_id', brand.id)
-              .eq('report_date', format(lastMonth, 'yyyy-MM-dd'))
-              .eq('report_type', 'last-month')
+              .eq('period', 'monthly')
 
             if (!monthlyReports?.length) {
               items.push({
                 id: `brand-monthly-report-${brand.id}`,
                 type: 'task',
                 priority: 'high',
-                title: `Generate monthly report for ${brand.brand_name}`,
+                title: `Generate monthly report for ${brand.name}`,
                 description: 'Monthly performance report is due',
                 action: 'Generate Monthly Report',
                 href: '/brand-report',
                 brandId: brand.id,
-                brandName: brand.brand_name
+                brandName: brand.name
               })
             }
           }
         }
       }
 
-      // 4. AI Campaign Recommendations
-      const { data: recommendations } = await supabase
-        .from('ai_campaign_recommendations')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
+      // 4. AI Campaign Recommendations - Query through brands that user owns
+      if (brands && brands.length > 0) {
+        const brandIds = brands.map(b => b.id)
+        const { data: recommendations } = await supabase
+          .from('ai_campaign_recommendations')
+          .select('*')
+          .in('brand_id', brandIds)
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
 
-      if (recommendations?.length) {
-        items.push({
-          id: 'ai-recommendations',
-          type: 'recommendation',
-          priority: 'medium',
-          title: `Review ${recommendations.length} AI recommendations`,
-          description: 'New campaign optimization suggestions available',
-          action: 'View Recommendations',
-          href: '/marketing-assistant',
-          count: recommendations.length
-        })
+        if (recommendations?.length) {
+          items.push({
+            id: 'ai-recommendations',
+            type: 'recommendation',
+            priority: 'medium',
+            title: `Review ${recommendations.length} AI recommendations`,
+            description: 'New campaign optimization suggestions available',
+            action: 'View Recommendations',
+            href: '/marketing-assistant',
+            count: recommendations.length
+          })
+        }
       }
 
       // 5. Check for critical brand issues
@@ -430,12 +444,12 @@ export default function ActionCenterPage() {
               id: `brand-critical-${brand.id}`,
               type: 'urgent',
               priority: 'high',
-              title: `${brand.brand_name} needs immediate attention`,
+              title: `${brand.name} needs immediate attention`,
               description: issues.join(', '),
               action: 'View Dashboard',
               href: `/dashboard?brand=${brand.id}`,
               brandId: brand.id,
-              brandName: brand.brand_name
+              brandName: brand.name
             })
           }
         }
