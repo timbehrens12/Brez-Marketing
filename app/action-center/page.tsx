@@ -104,7 +104,7 @@ export default function ActionCenterPage() {
       const supabase = await getSupabaseClient()
       const newTodos: TodoItem[] = []
 
-      // Load ONLY Outreach Items (same as outreach page)
+      // Load ONLY Outreach Items (same as outreach page simple-todos.tsx)
       const { data: outreachCampaigns } = await supabase
         .from('outreach_campaigns')
         .select(`
@@ -113,7 +113,6 @@ export default function ActionCenterPage() {
             id,
             status,
             last_contacted_at,
-            next_follow_up_date,
             lead:leads(
               id,
               business_name
@@ -124,153 +123,94 @@ export default function ActionCenterPage() {
 
       if (outreachCampaigns) {
         for (const campaign of outreachCampaigns) {
-          const leads = campaign.outreach_campaign_leads || []
+          const campaignLeads = campaign.outreach_campaign_leads || []
           
-          // Get current date for comparisons
-          const now = new Date()
+          if (campaignLeads.length === 0) continue
+
+          // Count leads by status (exact same logic as simple-todos.tsx)
+          const pendingLeads = campaignLeads.filter((cl: any) => cl.status === 'pending')
+          const contactedLeads = campaignLeads.filter((cl: any) => cl.status === 'contacted')
+          const respondedLeads = campaignLeads.filter((cl: any) => cl.status === 'responded')
+          const qualifiedLeads = campaignLeads.filter((cl: any) => cl.status === 'qualified')
+          
+          // Get leads contacted more than 3 days ago (need follow-up)
           const threeDaysAgo = new Date()
-          threeDaysAgo.setDate(now.getDate() - 3)
-          const fiveDaysAgo = new Date()
-          fiveDaysAgo.setDate(now.getDate() - 5)
-          const sevenDaysAgo = new Date()
-          sevenDaysAgo.setDate(now.getDate() - 7)
+          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+          const needsFollowUp = contactedLeads.filter((cl: any) => {
+            if (!cl.last_contacted_at) return false
+            return new Date(cl.last_contacted_at) < threeDaysAgo
+          })
           
-          // 1. High priority - Responded leads (need immediate attention)
-          const respondedLeads = leads.filter((cl: any) => cl.status === 'responded')
-          if (respondedLeads.length > 1) {
-            // Bulk responded leads
-            newTodos.push({
-              id: `bulk_responded_many_${campaign.id}`,
-              type: 'responded',
-              priority: 'high',
-              title: `${respondedLeads.length} leads have responded and need immediate attention`,
-              description: 'Use the bulk smart response tool to efficiently process all responded leads in sequence',
-              count: respondedLeads.length,
-              action: 'Start Bulk Smart Response',
-              targetPage: '/outreach-tool'
-            })
-          } else if (respondedLeads.length === 1) {
-            // Individual responded lead
-            const lead = respondedLeads[0]
-            newTodos.push({
-              id: `respond_${lead.id}`,
-              type: 'responded',
-              priority: 'high',
-              title: `Respond to ${lead.lead?.business_name || 'lead'}`,
-              description: `${lead.lead?.business_name || 'Lead'} responded to your outreach - follow up now!`,
-              count: 1,
-              action: 'Smart Response',
-              targetPage: '/outreach-tool'
-            })
-          }
+          // Get leads contacted more than 7 days ago (going cold)
+          const sevenDaysAgo = new Date()
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          const goingCold = contactedLeads.filter((cl: any) => {
+            if (!cl.last_contacted_at) return false
+            return new Date(cl.last_contacted_at) < sevenDaysAgo
+          })
 
-          // 2. High priority - Qualified leads (ready to close)
-          const qualifiedLeads = leads.filter((cl: any) => cl.status === 'qualified')
-          if (qualifiedLeads.length > 1) {
-            // Bulk qualified leads
+          // Generate todos based on lead status (exact same logic as simple-todos.tsx)
+          if (pendingLeads.length > 0) {
             newTodos.push({
-              id: `bulk_contracts_many_${campaign.id}`,
-              type: 'hot_leads',
-              priority: 'high',
-              title: `${qualifiedLeads.length} qualified leads are ready for contracts`,
-              description: 'Use the bulk contract generator to efficiently create contracts for all qualified leads in sequence',
-              count: qualifiedLeads.length,
-              action: 'Generate Contracts',
-              targetPage: '/outreach-tool'
-            })
-          } else if (qualifiedLeads.length === 1) {
-            // Individual qualified lead
-            const lead = qualifiedLeads[0]
-            newTodos.push({
-              id: `close_${lead.id}`,
-              type: 'hot_leads',
-              priority: 'high',
-              title: `Send proposal to ${lead.lead?.business_name || 'lead'}`,
-              description: `${lead.lead?.business_name || 'Lead'} is qualified and ready for your proposal`,
-              count: 1,
-              action: 'Send Proposal',
-              targetPage: '/outreach-tool'
-            })
-          }
-
-          // 3. Medium priority - Pending leads (need initial outreach)
-          const pendingLeads = leads.filter((cl: any) => cl.status === 'pending')
-          if (pendingLeads.length > 1) {
-            newTodos.push({
-              id: `bulk_pending_many_${campaign.id}`,
+              id: `new_leads_${campaign.id}`,
               type: 'new_leads',
-              priority: 'medium',
-              title: `${pendingLeads.length} leads are pending and awaiting outreach`,
-              description: 'Use the bulk outreach tool to efficiently process all pending leads in sequence',
+              priority: 'high',
+              title: `Start outreach for ${pendingLeads.length} new leads`,
+              description: 'These leads are ready for initial outreach',
               count: pendingLeads.length,
-              action: 'Start Bulk Outreach',
-              targetPage: '/outreach-tool'
-            })
-          } else if (pendingLeads.length === 1) {
-            const lead = pendingLeads[0]
-            newTodos.push({
-              id: `contact_${lead.id}`,
-              type: 'new_leads',
-              priority: 'medium',
-              title: `Contact ${lead.lead?.business_name || 'new lead'}`,
-              description: `Start outreach to ${lead.lead?.business_name || 'this lead'}`,
-              count: 1,
               action: 'Start Outreach',
               targetPage: '/outreach-tool'
             })
           }
 
-          // 4. Medium priority - Follow-up needed (5+ days old, not snoozed)
-          const contactedLeads = leads.filter((cl: any) => cl.status === 'contacted')
-          const needsFollowUp = contactedLeads.filter((cl: any) => {
-            if (!cl.last_contacted_at) return false
-            // Exclude snoozed leads (those with future next_follow_up_date)
-            if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
-            return new Date(cl.last_contacted_at) < fiveDaysAgo
-          })
-          
-          if (needsFollowUp.length > 1) {
+          if (respondedLeads.length > 0) {
             newTodos.push({
-              id: `bulk_followup_many_${campaign.id}`,
-              type: 'follow_up',
-              priority: 'medium',
-              title: `${needsFollowUp.length} leads need follow-up (5+ days old)`,
-              description: 'Use the bulk follow-up tool to efficiently follow up with all stale leads in sequence',
-              count: needsFollowUp.length,
-              action: 'Start Bulk Follow-up',
-              targetPage: '/outreach-tool'
-            })
-          } else if (needsFollowUp.length === 1) {
-            const lead = needsFollowUp[0]
-            newTodos.push({
-              id: `followup_${lead.id}`,
-              type: 'follow_up',
-              priority: 'medium',
-              title: `Follow up with ${lead.lead?.business_name || 'lead'}`,
-              description: `No contact in 5+ days - time to follow up`,
-              count: 1,
-              action: 'Follow Up',
+              id: `responded_${campaign.id}`,
+              type: 'responded',
+              priority: 'high',
+              title: `${respondedLeads.length} leads responded - follow up now!`,
+              description: 'These leads showed interest and need immediate attention',
+              count: respondedLeads.length,
+              action: 'View Responses',
               targetPage: '/outreach-tool'
             })
           }
 
-          // 5. High priority - Going cold (7+ days old)
-          const goingCold = contactedLeads.filter((cl: any) => {
-            if (!cl.last_contacted_at) return false
-            // Exclude snoozed leads (those with future next_follow_up_date)
-            if (cl.next_follow_up_date && new Date(cl.next_follow_up_date) > now) return false
-            return new Date(cl.last_contacted_at) < sevenDaysAgo
-          })
-          
+          if (qualifiedLeads.length > 0) {
+            newTodos.push({
+              id: `qualified_${campaign.id}`,
+              type: 'hot_leads',
+              priority: 'high',
+              title: `${qualifiedLeads.length} qualified leads ready for proposals`,
+              description: 'These leads are qualified and ready for the next step',
+              count: qualifiedLeads.length,
+              action: 'Send Proposals',
+              targetPage: '/outreach-tool'
+            })
+          }
+
+          if (needsFollowUp.length > 0) {
+            newTodos.push({
+              id: `follow_up_${campaign.id}`,
+              type: 'follow_up',
+              priority: 'medium',
+              title: `Follow up with ${needsFollowUp.length} leads (3+ days)`,
+              description: 'These leads were contacted but haven\'t responded yet',
+              count: needsFollowUp.length,
+              action: 'Send Follow-up',
+              targetPage: '/outreach-tool'
+            })
+          }
+
           if (goingCold.length > 0) {
             newTodos.push({
               id: `going_cold_${campaign.id}`,
               type: 'follow_up',
-              priority: 'high',
-              title: `${goingCold.length} leads are going cold (7+ days)`,
-              description: 'These leads need immediate attention to prevent them from going cold',
+              priority: 'low',
+              title: `${goingCold.length} leads going cold (7+ days)`,
+              description: 'These leads need urgent follow-up or should be marked as rejected',
               count: goingCold.length,
-              action: 'Re-engage Now',
+              action: 'Urgent Follow-up',
               targetPage: '/outreach-tool'
             })
           }
