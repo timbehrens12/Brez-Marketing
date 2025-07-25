@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { useAuth } from '@clerk/nextjs'
+import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 import { format } from 'date-fns'
 
 interface ActionCenterCounts {
@@ -18,14 +18,29 @@ interface TaskState {
 }
 
 export function useActionCenter() {
-  const { user } = useUser()
+  const { userId, getToken } = useAuth()
   const [counts, setCounts] = useState<ActionCenterCounts>({ totalItems: 0, urgentItems: 0 })
+
+  // Unified Supabase client function (same as Action Center page)
+  const getSupabaseClient = async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }
 
   // Get task states from localStorage (same logic as Action Center page)
   const getTaskStates = useCallback((): { [key: string]: TaskState } => {
-    if (!user?.id) return {}
+    if (!userId) return {}
     try {
-      const saved = localStorage.getItem(`actionCenter_taskStates_${user.id}`)
+      const saved = localStorage.getItem(`actionCenter_taskStates_${userId}`)
       if (saved) {
         const parsed = JSON.parse(saved)
         // Convert date strings back to Date objects
@@ -46,7 +61,7 @@ export function useActionCenter() {
       console.error('Error loading task states:', error)
     }
     return {}
-  }, [user?.id])
+  }, [userId])
 
   // Check if a task should be counted (not snoozed, completed, or dismissed)
   const isTaskActive = useCallback((taskId: string, taskStates: { [key: string]: TaskState }): boolean => {
@@ -67,7 +82,7 @@ export function useActionCenter() {
   }, [])
 
   const loadActionCenterCounts = useCallback(async () => {
-    if (!user?.id) return
+    if (!userId) return
 
     try {
       const supabase = await getSupabaseClient()
@@ -75,58 +90,74 @@ export function useActionCenter() {
       let totalItems = 0
       let urgentItems = 0
 
-      // 1. Check outreach campaigns
-      const { data: outreachCampaigns } = await supabase
+      // 1. Check outreach campaigns (EXACT same logic as Action Center page)
+      // Load campaign leads exactly like the Action Center page does - as a flat array
+      const { data: userCampaigns, error: campaignsError } = await supabase
         .from('outreach_campaigns')
-        .select(`
-          *,
-          outreach_campaign_leads(
-            id,
-            status,
-            last_contacted_at
-          )
-        `)
-        .eq('user_id', user.id)
+        .select('id')
+        .eq('user_id', userId)
 
-      if (outreachCampaigns) {
-        for (const campaign of outreachCampaigns) {
-          const leads = campaign.outreach_campaign_leads || []
+      if (!campaignsError && userCampaigns && userCampaigns.length > 0) {
+        const campaignIds = userCampaigns.map(c => c.id)
+
+        // Get ALL campaign leads as a flat array (same as Action Center page)
+        const { data: campaignLeads, error } = await supabase
+          .from('outreach_campaign_leads')
+          .select(`
+            *,
+            lead:leads(*)
+          `)
+          .in('campaign_id', campaignIds)
+          .order('added_at', { ascending: false })
+
+        if (!error && campaignLeads && campaignLeads.length > 0) {
+          // Use EXACT same logic as Action Center page
+          // Count leads by status
+          const pendingLeads = campaignLeads.filter(cl => cl.status === 'pending')
+          const contactedLeads = campaignLeads.filter(cl => cl.status === 'contacted')
+          const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
+          const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
           
-          // Pending leads
-          const pendingLeads = leads.filter((cl: any) => cl.status === 'pending')
-          if (pendingLeads.length > 0) {
-            const taskId = `outreach-pending-${campaign.id}`
-            if (isTaskActive(taskId, taskStates)) {
-              totalItems++
-              if (pendingLeads.length > 5) urgentItems++
-            }
-          }
-
-          // Follow-up needed
+          // Get leads contacted more than 3 days ago (need follow-up)
           const threeDaysAgo = new Date()
           threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-          const needsFollowUp = leads.filter((cl: any) => 
-            cl.status === 'contacted' && 
-            cl.last_contacted_at && 
-            new Date(cl.last_contacted_at) < threeDaysAgo
-          )
+          const needsFollowUp = contactedLeads.filter(cl => {
+            if (!cl.last_contacted_at) return false
+            return new Date(cl.last_contacted_at) < threeDaysAgo
+          })
           
-          if (needsFollowUp.length > 0) {
-            const taskId = `outreach-followup-${campaign.id}`
-            if (isTaskActive(taskId, taskStates)) {
-              totalItems++
-              urgentItems++ // Follow-ups are always urgent
-            }
+          // Get leads contacted more than 7 days ago (going cold)
+          const sevenDaysAgo = new Date()
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          const goingCold = contactedLeads.filter(cl => {
+            if (!cl.last_contacted_at) return false
+            return new Date(cl.last_contacted_at) < sevenDaysAgo
+          })
+
+          // Count todos using EXACT same IDs as Action Center page
+          if (pendingLeads.length > 0 && isTaskActive('new_leads', taskStates)) {
+            totalItems++
+            urgentItems++ // High priority
           }
 
-          // Responded leads
-          const respondedLeads = leads.filter((cl: any) => cl.status === 'responded')
-          if (respondedLeads.length > 0) {
-            const taskId = `outreach-responded-${campaign.id}`
-            if (isTaskActive(taskId, taskStates)) {
-              totalItems++
-              urgentItems++ // Responses are urgent
-            }
+          if (respondedLeads.length > 0 && isTaskActive('responded', taskStates)) {
+            totalItems++
+            urgentItems++ // High priority
+          }
+
+          if (qualifiedLeads.length > 0 && isTaskActive('qualified', taskStates)) {
+            totalItems++
+            urgentItems++ // High priority
+          }
+
+          if (needsFollowUp.length > 0 && isTaskActive('follow_up', taskStates)) {
+            totalItems++
+            // Medium priority - not urgent
+          }
+
+          if (goingCold.length > 0 && isTaskActive('going_cold', taskStates)) {
+            totalItems++
+            // Low priority - not urgent
           }
         }
       }
@@ -145,7 +176,7 @@ export function useActionCenter() {
       const { data: usageData } = await supabase
         .from('user_usage')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .gte('date', startOfWeek.toISOString().split('T')[0])
         .lt('date', startOfNextWeek.toISOString().split('T')[0])
 
@@ -166,7 +197,7 @@ export function useActionCenter() {
       const { data: brands } = await supabase
         .from('brands')
         .select('id, name, user_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
 
       if (brands) {
         for (const brand of brands) {
@@ -306,11 +337,11 @@ export function useActionCenter() {
     } catch (error) {
       console.error('Error loading action center counts:', error)
     }
-  }, [user?.id, getTaskStates, isTaskActive])
+  }, [userId, getToken, getTaskStates, isTaskActive])
 
   // Load counts on mount and set up refresh interval
   useEffect(() => {
-    if (user?.id) {
+    if (userId) {
       loadActionCenterCounts()
       
       // Refresh every 2 minutes
@@ -318,19 +349,19 @@ export function useActionCenter() {
       
       return () => clearInterval(interval)
     }
-  }, [user?.id, loadActionCenterCounts])
+  }, [userId, loadActionCenterCounts])
 
   // Listen for localStorage changes (when tasks are completed/snoozed from Action Center)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `actionCenter_taskStates_${user?.id}`) {
+      if (e.key === `actionCenter_taskStates_${userId}`) {
         loadActionCenterCounts()
       }
     }
 
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [user?.id, loadActionCenterCounts])
+  }, [userId, loadActionCenterCounts])
 
   return {
     actionCenterCounts: counts,
