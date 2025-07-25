@@ -237,14 +237,23 @@ export function useActionCenter() {
             .from('meta_campaign_daily_insights')
             .select('*')
             .eq('brand_id', brand.id)
-            .gte('date_start', format(lastWeek, 'yyyy-MM-dd'))
-            .order('date_start', { ascending: false })
+            .gte('date', format(lastWeek, 'yyyy-MM-dd'))
+            .order('date', { ascending: false })
 
-          const { data: shopifyOrders } = await supabase
+          // Get platform connections for this brand first
+          const { data: connections } = await supabase
+            .from('platform_connections')
+            .select('id')
+            .eq('brand_id', brand.id)
+            .eq('platform_type', 'shopify')
+
+          const connectionIds = connections?.map(c => c.id) || []
+
+          const { data: shopifyOrders } = connectionIds.length > 0 ? await supabase
             .from('shopify_orders')
             .select('*')
-            .eq('brand_id', brand.id)
-            .gte('created_at', lastWeek.toISOString())
+            .in('connection_id', connectionIds)
+            .gte('created_at', lastWeek.toISOString()) : { data: [] }
 
           // Check for critical issues
           const recentMetaData = metaData?.slice(0, 2) || []
