@@ -86,7 +86,7 @@ interface ReusableTool {
   description: string
   icon: any
   category: 'automation' | 'ai-powered' | 'analytics' | 'tools'
-  status: 'available' | 'scheduled' | 'coming-soon' | 'unavailable'
+  status: 'available' | 'coming-soon' | 'unavailable'
   href: string
   features: string[]
   frequency?: string
@@ -108,26 +108,28 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   },
   {
     id: 'lead-generator',
-    name: 'Lead Generator',
+    name: 'Lead Generator', 
     description: 'Find and qualify leads using real business data',
     icon: Zap,
     category: 'tools',
     href: '/lead-generator',
     features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence']
+    // No platform requirements - works independently
   },
   {
     id: 'outreach-tool',
     name: 'Outreach Tool',
     description: 'Manage lead outreach campaigns and follow-ups',
     icon: Send,
-    category: 'tools',
+    category: 'tools', 
     href: '/outreach-tool',
     features: ['Campaign Management', 'Lead Tracking', 'Response Management']
+    // No platform requirements - works independently
   },
   {
     id: 'marketing-assistant',
     name: 'Marketing Assistant',
-    description: 'AI marketing insights and strategic recommendations',
+    description: 'AI marketing insights and strategic recommendations', 
     icon: Brain,
     category: 'ai-powered',
     href: '/marketing-assistant',
@@ -138,36 +140,13 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
     id: 'brand-reports',
     name: 'Brand Reports',
-    description: 'Automated daily and monthly performance reports',
+    description: 'Generate comprehensive performance reports',
     icon: FileBarChart,
-    category: 'automation',
+    category: 'analytics',
     href: '/brand-report',
-    features: ['Daily Reports', 'Monthly Reports', 'AI-Generated Insights'],
-    frequency: 'Daily/Monthly',
-    requiresPlatforms: ['meta', 'shopify'],
-    requiresData: true
-  },
-  {
-    id: 'ai-consultant',
-    name: 'AI Marketing Consultant',
-    description: 'Chat with AI for personalized marketing advice',
-    icon: MessageSquare,
-    category: 'ai-powered',
-    href: '/marketing-assistant',
-    features: ['Personal Advice', 'Goal-Oriented', 'Industry-Specific'],
+    features: ['Performance Reports', 'AI-Generated Insights', 'Export Options'],
     requiresPlatforms: ['meta'],
     requiresData: true
-  },
-  {
-    id: 'data-sync',
-    name: 'Daily Data Sync',
-    description: 'Automatic daily synchronization of all platform data',
-    icon: RefreshCw,
-    category: 'automation',
-    href: '/settings',
-    features: ['Meta Data Sync', 'Shopify Sync', 'Automated Updates'],
-    frequency: 'Daily at 11:59 PM',
-    requiresPlatforms: ['meta', 'shopify']
   },
   {
     id: 'analytics',
@@ -177,7 +156,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     category: 'analytics',
     href: '/analytics',
     features: ['Campaign Performance', 'Spend Trends', 'ROI Analysis'],
-    requiresPlatforms: ['meta', 'shopify'],
+    requiresPlatforms: ['meta'],
     requiresData: true
   },
   {
@@ -263,7 +242,7 @@ export default function ActionCenterPage() {
       return { ...tool, status: 'coming-soon' }
     }
 
-    // Tools that don't require platforms are always available
+    // Tools that don't require platforms are always available (lead-generator, outreach-tool)
     if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
       return { ...tool, status: 'available' }
     }
@@ -284,11 +263,6 @@ export default function ActionCenterPage() {
     const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
       brandConnections.some(conn => conn.platform_type === platform)
     )
-
-    // For scheduled tools (data sync), they're scheduled if platforms are connected
-    if (tool.id === 'data-sync' && hasRequiredPlatforms) {
-      return { ...tool, status: 'scheduled' }
-    }
 
     return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
   }
@@ -387,7 +361,6 @@ export default function ActionCenterPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'available': return <Badge className="bg-green-600 text-white text-xs">Available</Badge>
-      case 'scheduled': return <Badge className="bg-blue-600 text-white text-xs">Scheduled</Badge>
       case 'coming-soon': return <Badge variant="outline" className="text-xs">Coming Soon</Badge>
       case 'unavailable': return <Badge className="bg-red-600 text-white text-xs">Missing Platform</Badge>
       default: return <Badge variant="outline" className="text-xs">Unknown</Badge>
@@ -941,7 +914,7 @@ export default function ActionCenterPage() {
                           <ExternalLink className="h-3 w-3 mr-1" />
                           {tool.status === 'coming-soon' ? 'Coming Soon' : 
                            tool.status === 'unavailable' ? 'Connect Platform' :
-                           tool.status === 'scheduled' ? 'View Settings' : 'Launch Tool'}
+                           'Launch Tool'}
                         </Button>
                       </div>
                     )

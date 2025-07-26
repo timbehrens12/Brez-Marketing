@@ -1,21 +1,19 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Singleton pattern for Supabase clients with better caching
+// Global singleton instances
 let standardClient: SupabaseClient | null = null
-let authenticatedClients = new Map<string, SupabaseClient>()
-let clientInstances = 0
+let currentAuthenticatedClient: SupabaseClient | null = null
+let currentTokenHash: string | null = null
 
-// Cleanup function to remove old authenticated clients
-const cleanupAuthenticatedClients = () => {
-  if (authenticatedClients.size > 10) {
-    // Keep only the 5 most recent clients
-    const entries = Array.from(authenticatedClients.entries())
-    const toKeep = entries.slice(-5)
-    authenticatedClients.clear()
-    toKeep.forEach(([key, client]) => {
-      authenticatedClients.set(key, client)
-    })
+// Simple hash function for tokens
+const hashToken = (token: string): string => {
+  let hash = 0
+  for (let i = 0; i < token.length; i++) {
+    const char = token.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
   }
+  return hash.toString()
 }
 
 /**
@@ -31,18 +29,14 @@ export function getStandardSupabaseClient(): SupabaseClient {
       throw new Error('Missing Supabase environment variables')
     }
     
-    clientInstances++
-    console.log(`📦 Creating standard Supabase client (instance #${clientInstances})`)
-    
+    console.log('📦 Creating standard Supabase client')
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
-        persistSession: false, // Don't persist sessions for standard client
-        autoRefreshToken: false,
-        detectSessionInUrl: false
+        persistSession: false,
+        autoRefreshToken: false
       }
     })
-    
-    console.log('📦 Using unified Supabase client system')
+    console.log('📦 Standard Supabase client ready')
   }
   
   return standardClient
@@ -53,12 +47,11 @@ export function getStandardSupabaseClient(): SupabaseClient {
  * This replaces useAuthenticatedSupabase usage
  */
 export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
-  // Create a short hash of the token for caching (use first 16 chars)
-  const tokenHash = token.substring(0, 16)
+  const tokenHash = hashToken(token)
   
-  // Reuse client if we have the same token hash
-  if (authenticatedClients.has(tokenHash)) {
-    return authenticatedClients.get(tokenHash)!
+  // Reuse client if we have the same token
+  if (currentAuthenticatedClient && currentTokenHash === tokenHash) {
+    return currentAuthenticatedClient
   }
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -68,42 +61,38 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
     throw new Error('Missing Supabase environment variables')
   }
   
-  clientInstances++
+  console.log('📦 Creating authenticated Supabase client')
   
-  const client = createClient(supabaseUrl as string, supabaseKey as string, {
+  // Clean up previous client
+  if (currentAuthenticatedClient) {
+    currentAuthenticatedClient = null
+  }
+  
+  currentAuthenticatedClient = createClient(supabaseUrl as string, supabaseKey as string, {
     global: {
       headers: {
         Authorization: `Bearer ${token}`
       }
     },
     auth: {
-      persistSession: false, // Don't persist sessions to avoid conflicts
-      autoRefreshToken: false,
-      detectSessionInUrl: false
+      persistSession: false,
+      autoRefreshToken: false
     }
   })
   
-  // Cache the client
-  authenticatedClients.set(tokenHash, client)
+  currentTokenHash = tokenHash
+  console.log('📦 Authenticated Supabase client ready')
   
-  // Cleanup old clients if needed
-  cleanupAuthenticatedClients()
-  
-  // Only log on first creation or every 5th instance to reduce noise
-  if (clientInstances === 1 || clientInstances % 5 === 0) {
-    console.log(`📦 Creating authenticated Supabase client (instance #${clientInstances})`)
-  }
-  
-  return client
+  return currentAuthenticatedClient
 }
 
 /**
- * Clear all cached clients (useful for cleanup)
+ * Clear all cached clients (useful for logout)
  */
 export function clearSupabaseClients() {
   standardClient = null
-  authenticatedClients.clear()
-  clientInstances = 0
+  currentAuthenticatedClient = null
+  currentTokenHash = null
   console.log('📦 Cleared all Supabase clients')
 }
 
@@ -147,9 +136,9 @@ export function getServerSupabaseClient(): SupabaseClient {
 
 // Add debug function to check client instances
 export function debugClientInstances() {
-  console.log(`📦 Total Supabase client instances created: ${clientInstances}`)
   console.log(`📦 Standard client exists: ${!!standardClient}`)
-  console.log(`📦 Authenticated clients in cache: ${authenticatedClients.size}`)
+  console.log(`📦 Authenticated client exists: ${!!currentAuthenticatedClient}`)
+  console.log(`📦 Current token hash: ${currentTokenHash ? 'Set' : 'None'}`)
 }
 
 // Legacy exports for backward compatibility
