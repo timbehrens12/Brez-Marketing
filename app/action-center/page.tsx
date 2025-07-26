@@ -1189,10 +1189,10 @@ export default function ActionCenterPage() {
           hoursOfDataToday: currentHour
         })
 
-        // Get Meta performance data - today + yesterday for comparison
+        // Get Meta performance data from same table as Marketing Assistant
         const { data: metaData } = await supabase
-          .from('meta_ad_insights')
-          .select('*')
+          .from('meta_campaign_daily_stats')
+          .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
           .eq('brand_id', brand.id)
           .gte('date', yesterdayMidnight.toISOString().split('T')[0])
           .order('date', { ascending: false })
@@ -1249,8 +1249,8 @@ export default function ActionCenterPage() {
         }) || []
 
         console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
-        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend, amount_spent: d.amount_spent, cost: d.cost })))
-        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend, amount_spent: d.amount_spent, cost: d.cost })))
+        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend })))
+        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend })))
 
         let roas = 0, roasChange = 0, spend = 0, revenue = 0
         let usingTodayData = true
@@ -1259,13 +1259,14 @@ export default function ActionCenterPage() {
         // This ensures we always show the most recent available data
         const shouldFallbackToYesterday = todayMetaData.length === 0 && yesterdayMetaData.length > 0
         
-        // Helper function to get spend value from different possible field names
+        // Helper function to get spend value from meta_campaign_daily_stats
         const getSpendValue = (d: any) => {
-          return parseFloat(d.spend) || parseFloat(d.amount_spent) || parseFloat(d.cost) || 0
+          return parseFloat(d.spend) || 0
         }
         
         const getRevenueValue = (d: any) => {
-          return parseFloat(d.purchase_value) || parseFloat(d.revenue) || parseFloat(d.conversions_value) || 0
+          // meta_campaign_daily_stats doesn't have revenue fields, we'll use conversions as proxy
+          return parseFloat(d.conversions) || 0
         }
         
         if (shouldFallbackToYesterday) {
@@ -1276,7 +1277,7 @@ export default function ActionCenterPage() {
           usingTodayData = false
           
           console.log(`[Brand Health] ${brand.name} - Yesterday's spend (fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
-          console.log(`[Brand Health] ${brand.name} - Yesterday's individual spends:`, yesterdayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (fields: spend=${d.spend}, amount_spent=${d.amount_spent}, cost=${d.cost})`))
+          console.log(`[Brand Health] ${brand.name} - Yesterday's individual spends:`, yesterdayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (spend=${d.spend})`))
         } else {
           // Use today's data (even if it's 0) - this is the primary path
           spend = todayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
@@ -1285,7 +1286,7 @@ export default function ActionCenterPage() {
           
           console.log(`[Brand Health] ${brand.name} - Today's spend: $${spend.toFixed(2)} from ${todayMetaData.length} records (hour: ${currentHour})`)
           if (todayMetaData.length > 0) {
-            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (fields: spend=${d.spend}, amount_spent=${d.amount_spent}, cost=${d.cost})`))
+            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (spend=${d.spend})`))
           }
           console.log(`[Brand Health] ${brand.name} - Today's revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
