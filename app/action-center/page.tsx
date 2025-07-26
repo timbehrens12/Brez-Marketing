@@ -74,6 +74,7 @@ interface TodoItem {
   count: number
   action: string
   targetPage: string
+  actionItems?: string[]
 }
 
 interface TaskState {
@@ -1118,51 +1119,20 @@ export default function ActionCenterPage() {
         const last30Days = new Date()
         last30Days.setDate(last30Days.getDate() - 30)
 
-        // Get Meta performance data - expand date range to last 30 days
+        // Get Meta performance data from the correct table - meta_ad_insights
         const { data: metaData } = await supabase
-          .from('meta_campaign_daily_insights')
+          .from('meta_ad_insights')
           .select('*')
           .eq('brand_id', brand.id)
           .gte('date', last30Days.toISOString().split('T')[0])
           .order('date', { ascending: false })
 
         console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
-        if (metaData?.length > 0) {
+        if (metaData && metaData.length > 0) {
           console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
         }
 
-        // DEBUG: Let's check if data exists with different queries
-        const { data: allMetaData } = await supabase
-          .from('meta_campaign_daily_insights')
-          .select('*')
-          .eq('brand_id', brand.id)
-          .limit(5)
 
-        console.log(`[Brand Health] ${brand.name} - Total Meta records (any date):`, allMetaData?.length || 0)
-        
-        // Let's also check alternative table names
-        const { data: altMetaData1, error: altError1 } = await supabase
-          .from('meta_ad_insights')
-          .select('*')
-          .eq('brand_id', brand.id)
-          .limit(5)
-        
-        if (!altError1) {
-          console.log(`[Brand Health] ${brand.name} - meta_ad_insights records:`, altMetaData1?.length || 0)
-        }
-
-        const { data: altMetaData2, error: altError2 } = await supabase
-          .from('meta_campaign_insights')
-          .select('*')
-          .eq('brand_id', brand.id)
-          .limit(5)
-        
-        if (!altError2) {
-          console.log(`[Brand Health] ${brand.name} - meta_campaign_insights records:`, altMetaData2?.length || 0)
-        }
-
-        // Check what brand_id we're actually using
-        console.log(`[Brand Health] ${brand.name} - Searching for brand_id:`, brand.id)
 
         // Get platform connections
         const { data: connections } = await supabase
@@ -1715,7 +1685,7 @@ export default function ActionCenterPage() {
           
           {/* Outreach Tasks Widget - 25% width, tall height */}
           <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[656px] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col">
               <CardHeader className="pb-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1838,7 +1808,7 @@ export default function ActionCenterPage() {
 
           {/* Reusable Tools Widget - 75% width, tall height */}
           <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[656px] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col">
               <CardHeader className="pb-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
