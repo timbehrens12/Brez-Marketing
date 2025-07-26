@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // Singleton pattern for Supabase clients
 let standardClient: SupabaseClient | null = null
 let authenticatedClients = new Map<string, SupabaseClient>()
+let clientInstances = 0
 
 /**
  * Get a standard Supabase client (no authentication)
@@ -16,6 +17,9 @@ export function getStandardSupabaseClient(): SupabaseClient {
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase environment variables')
     }
+    
+    clientInstances++
+    console.log(`📦 Creating standard Supabase client (instance #${clientInstances})`)
     
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
@@ -33,9 +37,12 @@ export function getStandardSupabaseClient(): SupabaseClient {
  * This replaces useAuthenticatedSupabase usage
  */
 export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
-  // Reuse client if we have the same token
-  if (authenticatedClients.has(token)) {
-    return authenticatedClients.get(token)!
+  // Create a hash of the token to use as key (avoid storing full token)
+  const tokenHash = btoa(token.substring(0, 20) + token.substring(token.length - 20))
+  
+  // Reuse client if we have the same token hash
+  if (authenticatedClients.has(tokenHash)) {
+    return authenticatedClients.get(tokenHash)!
   }
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -44,6 +51,9 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables')
   }
+  
+  clientInstances++
+  console.log(`📦 Creating authenticated Supabase client (instance #${clientInstances})`)
   
   const client = createClient(supabaseUrl as string, supabaseKey as string, {
     global: {
@@ -59,13 +69,14 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
   })
   
   // Store client (but limit cache size to prevent memory leaks)
-  if (authenticatedClients.size > 10) {
+  if (authenticatedClients.size > 5) {
     const firstKey = authenticatedClients.keys().next().value
     if (firstKey) {
+      console.log('📦 Removing old authenticated client from cache')
       authenticatedClients.delete(firstKey)
     }
   }
-  authenticatedClients.set(token, client)
+  authenticatedClients.set(tokenHash, client)
   
   return client
 }
@@ -106,6 +117,13 @@ export function getServerSupabaseClient(): SupabaseClient {
       persistSession: false
     }
   })
+}
+
+// Add debug function to check client instances
+export function debugClientInstances() {
+  console.log(`📦 Total Supabase client instances created: ${clientInstances}`)
+  console.log(`📦 Standard client exists: ${!!standardClient}`)
+  console.log(`📦 Authenticated clients in cache: ${authenticatedClients.size}`)
 }
 
 // Legacy exports for backward compatibility
