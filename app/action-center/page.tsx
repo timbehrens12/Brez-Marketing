@@ -29,7 +29,8 @@ import {
   TrendingUp,
   ChevronDown,
   Filter,
-  Tag
+  Tag,
+  User
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -512,26 +513,114 @@ export default function ActionCenterPage() {
   }
 
   const getStatusBadge = (tool: ReusableTool) => {
-    switch (tool.status) {
-      case 'available':
-        return <Badge variant="outline" className="text-green-600 border-green-600">Available</Badge>
-      case 'coming-soon':
-        return <Badge variant="outline" className="text-blue-600 border-blue-600">Coming Soon</Badge>
-      case 'unavailable':
-        // Show specific reason based on tool type
-        if (tool.id === 'lead-generator') {
-          return <Badge variant="outline" className="text-red-600 border-red-600">Weekly Limit Reached</Badge>
-        }
-        if (tool.id === 'outreach-tool') {
-          return <Badge variant="outline" className="text-red-600 border-red-600">No Leads</Badge>
-        }
-        if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
-          return <Badge variant="outline" className="text-red-600 border-red-600">Missing Platform</Badge>
-        }
-        return <Badge variant="outline" className="text-red-600 border-red-600">Unavailable</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
+    if (tool.dependencyType === 'user') {
+      // User-dependent tools - show user icon with status
+      return (
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+              <User className="w-3 h-3 text-white" />
+            </div>
+            {tool.status === 'available' && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-600">User Dependent</span>
+            <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-600' : 'text-red-600'}`}>
+              {tool.status === 'available' ? 'Available' : 
+               tool.id === 'lead-generator' ? 'Weekly Limit Reached' :
+               tool.id === 'outreach-tool' ? 'No Leads' : 'Unavailable'}
+            </span>
+          </div>
+        </div>
+      )
     }
+
+    if (tool.dependencyType === 'brand') {
+      // Brand-dependent tools - show brand profile pictures with green dots for available brands
+      const relevantBrands = brands.filter((brand: any) => {
+        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
+        
+        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        return tool.requiresPlatforms.some(platform => 
+          brandConnections.some(conn => conn.platform_type === platform)
+        )
+      })
+
+      const availableBrands = brands.filter((brand: any) => {
+        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
+        
+        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        return tool.requiresPlatforms.every(platform => 
+          brandConnections.some(conn => conn.platform_type === platform)
+        )
+      })
+
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {brands.slice(0, 3).map((brand: any) => {
+              const isAvailable = availableBrands.some(b => b.id === brand.id)
+              const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
+              
+              return (
+                <div key={brand.id} className="relative group">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-white ${
+                    isAvailable ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
+                  }`}>
+                    {brandInitials}
+                  </div>
+                  {isAvailable && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    {brand.name}: {isAvailable ? 'Connected' : 'Missing Platform'}
+                  </div>
+                </div>
+              )
+            })}
+            {brands.length > 3 && (
+              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold border-2 border-white">
+                +{brands.length - 3}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-600">Brand Dependent</span>
+            <span className={`text-xs font-medium ${availableBrands.length > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {availableBrands.length > 0 ? `${availableBrands.length} Available` : 'Missing Platforms'}
+            </span>
+          </div>
+        </div>
+      )
+    }
+
+    if (tool.dependencyType === 'none') {
+      // No dependencies - show generic icon
+      return (
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
+              <CheckCircle className="w-3 h-3 text-white" />
+            </div>
+            {tool.status === 'available' && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-600">Always Available</span>
+            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-blue-600' : 'text-green-600'}`}>
+              {tool.status === 'coming-soon' ? 'Coming Soon' : 'Available'}
+            </span>
+          </div>
+        </div>
+      )
+    }
+
+    // Fallback
+    return <Badge variant="outline">Unknown</Badge>
   }
 
   const filteredTools = selectedCategory === 'all' 
