@@ -40,13 +40,13 @@ export default function OverlaidBrandLogos({
   const remainingCount = Math.max(0, ownedBrands.length - maxVisibleBrands)
 
   const renderBrandAvatar = (brand: any, size: 'xs' | 'sm' = 'xs') => {
-    const sizeClasses = size === 'xs' ? 'w-5 h-5' : 'w-6 h-6'
+    const sizeClasses = size === 'xs' ? 'w-4 h-4' : 'w-5 h-5'
     
     if (brand.image_url) {
       return (
         <div className={cn(
           sizeClasses, 
-          "rounded-full overflow-hidden border-2 border-white bg-white flex items-center justify-center flex-shrink-0 shadow-sm"
+          "rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0"
         )}>
           <img 
             src={brand.image_url} 
@@ -60,7 +60,7 @@ export default function OverlaidBrandLogos({
     return (
       <div className={cn(
         sizeClasses,
-        "flex items-center justify-center rounded-full bg-[#4A5568] text-white font-bold text-[10px] border-2 border-white flex-shrink-0 shadow-sm"
+        "flex items-center justify-center rounded-full bg-[#4A5568] text-white font-bold text-[8px] border border-[#444] flex-shrink-0"
       )}>
         {brand.name.charAt(0).toUpperCase()}
       </div>
@@ -111,7 +111,7 @@ export default function OverlaidBrandLogos({
       <div className="relative">
         {renderAgencyLogo()}
         {ownedBrands.length > 0 && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full border-2 border-[#1A1A1A] flex items-center justify-center">
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#2A2A2A] border border-[#444] rounded-full flex items-center justify-center">
             <span className="text-white font-bold text-[10px]">
               {ownedBrands.length}
             </span>
@@ -132,13 +132,13 @@ export default function OverlaidBrandLogos({
 
         {/* Overlaid brand logos */}
         {ownedBrands.length > 0 && (
-          <div className="absolute left-6 top-0 flex -space-x-2">
+          <div className="absolute left-7 top-1 flex -space-x-1">
             {visibleBrands.map((brand: any, index: number) => (
               <TooltipProvider key={brand.id}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className="relative transition-transform hover:scale-125 hover:z-50"
+                      className="relative transition-transform hover:scale-110 hover:z-50"
                       style={{ zIndex: 20 + visibleBrands.length - index }}
                     >
                       {renderBrandAvatar(brand)}
@@ -156,7 +156,7 @@ export default function OverlaidBrandLogos({
               <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                 <PopoverTrigger asChild>
                   <button
-                    className="w-5 h-5 rounded-full bg-[#4A5568] border-2 border-white flex items-center justify-center text-white font-bold text-[10px] hover:scale-125 transition-transform flex-shrink-0 shadow-sm"
+                    className="w-4 h-4 rounded-full bg-[#4A5568] border border-[#444] flex items-center justify-center text-white font-bold text-[8px] hover:scale-110 transition-transform flex-shrink-0"
                     style={{ zIndex: 10 }}
                   >
                     +{remainingCount}

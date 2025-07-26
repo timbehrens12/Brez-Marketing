@@ -533,23 +533,25 @@ export default function ActionCenterPage() {
         <div className="flex items-center gap-2">
           <div className="relative">
             {agencySettings?.agency_logo_url ? (
-              <img 
-                src={agencySettings.agency_logo_url} 
-                alt="Agency Logo"
-                className="w-6 h-6 rounded-full object-cover border-2 border-white"
-              />
+              <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center">
+                <img 
+                  src={agencySettings.agency_logo_url} 
+                  alt="Agency Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
             ) : (
-              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-                <User className="w-3 h-3 text-white" />
+              <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
+                <User className="w-2.5 h-2.5 text-white" />
               </div>
             )}
             {tool.status === 'available' && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-600">User Dependent</span>
-            <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-600' : 'text-red-600'}`}>
+            <span className="text-xs text-gray-400">User Dependent</span>
+            <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
               {tool.status === 'available' ? 'Available' : 
                tool.id === 'lead-generator' ? 'Weekly Limit Reached' :
                tool.id === 'outreach-tool' ? 'No Leads' : 'Unavailable'}
@@ -561,16 +563,11 @@ export default function ActionCenterPage() {
 
     if (tool.dependencyType === 'brand') {
       // Brand-dependent tools - show brand profile pictures with green dots for available brands
-      const relevantBrands = brands.filter((brand: any) => {
-        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
-        
-        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-        return tool.requiresPlatforms.some(platform => 
-          brandConnections.some(conn => conn.platform_type === platform)
-        )
-      })
-
-      const availableBrands = brands.filter((brand: any) => {
+      // Filter brands based on selectedBrandId
+      const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
+      const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
+      
+      const availableBrands = brandsToShow.filter((brand: any) => {
         if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
         
         const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
@@ -581,8 +578,8 @@ export default function ActionCenterPage() {
 
       return (
         <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            {brands.slice(0, 3).map((brand: any) => {
+          <div className="flex -space-x-1">
+            {brandsToShow.slice(0, 3).map((brand: any) => {
               const isAvailable = availableBrands.some(b => b.id === brand.id)
               const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
               
@@ -592,36 +589,36 @@ export default function ActionCenterPage() {
                     <img 
                       src={brand.image_url} 
                       alt={brand.name}
-                      className={`w-6 h-6 rounded-full object-cover border-2 border-white ${
+                      className={`w-5 h-5 rounded-full object-cover border border-[#444] bg-[#2A2A2A] ${
                         isAvailable ? 'opacity-100' : 'opacity-50 grayscale'
                       }`}
                     />
                   ) : (
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-white ${
-                      isAvailable ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-semibold border border-[#444] ${
+                      isAvailable ? 'bg-[#4A5568] text-white' : 'bg-gray-400 text-white'
                     }`}>
                       {brandInitials}
                     </div>
                   )}
                   {isAvailable && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
                   )}
                   {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    {brand.name}: {isAvailable ? 'Connected' : 'Missing Platform'}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
+                    {brand.name}: {isAvailable ? 'Available' : 'Missing Platform'}
                   </div>
                 </div>
               )
             })}
-            {brands.length > 3 && (
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold border-2 border-white">
-                +{brands.length - 3}
+            {brandsToShow.length > 3 && (
+              <div className="w-5 h-5 rounded-full bg-[#2A2A2A] flex items-center justify-center text-[8px] font-semibold border border-[#444] text-white">
+                +{brandsToShow.length - 3}
               </div>
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-600">Brand Dependent</span>
-            <span className={`text-xs font-medium ${availableBrands.length > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <span className="text-xs text-gray-400">Brand Dependent</span>
+            <span className={`text-xs font-medium ${availableBrands.length > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {availableBrands.length > 0 ? `${availableBrands.length} Available` : 'Missing Platforms'}
             </span>
           </div>
@@ -634,16 +631,16 @@ export default function ActionCenterPage() {
       return (
         <div className="flex items-center gap-2">
           <div className="relative">
-            <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
-              <CheckCircle className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
+              <CheckCircle className="w-2.5 h-2.5 text-white" />
             </div>
             {tool.status === 'available' && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-600">Always Available</span>
-            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-blue-600' : 'text-green-600'}`}>
+            <span className="text-xs text-gray-400">Always Available</span>
+            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-blue-400' : 'text-green-400'}`}>
               {tool.status === 'coming-soon' ? 'Coming Soon' : 'Available'}
             </span>
           </div>
@@ -902,9 +899,9 @@ export default function ActionCenterPage() {
   // Get icons and colors (same as simple-todos)
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-red-500/50 bg-red-900/20'
-      case 'medium': return 'border-yellow-500/50 bg-yellow-900/20'
-      case 'low': return 'border-gray-500/50 bg-gray-900/20'
+          case 'high': return 'border-[#333] bg-[#1a1a1a]'
+    case 'medium': return 'border-[#333] bg-[#1a1a1a]'
+    case 'low': return 'border-[#333] bg-[#1a1a1a]'
       default: return 'border-gray-500/50 bg-gray-900/20'
     }
   }
@@ -921,9 +918,9 @@ export default function ActionCenterPage() {
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'high': return <Badge variant="destructive" className="text-xs">High</Badge>
-      case 'medium': return <Badge variant="secondary" className="text-xs bg-yellow-900 text-yellow-200">Medium</Badge>
-      case 'low': return <Badge variant="outline" className="text-xs">Low</Badge>
+          case 'high': return <Badge className="text-xs bg-red-600 text-white">High</Badge>
+    case 'medium': return <Badge className="text-xs bg-orange-600 text-white">Medium</Badge>
+    case 'low': return <Badge className="text-xs bg-gray-600 text-white">Low</Badge>
       default: return <Badge variant="outline" className="text-xs">Normal</Badge>
     }
   }
@@ -1115,7 +1112,7 @@ export default function ActionCenterPage() {
                         onClick={() => setSelectedBrandId('all')}
                         className={cn(
                           "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                          selectedBrandId === 'all' && "bg-[#333] text-white"
+                          selectedBrandId === 'all' && "bg-white text-black"
                         )}
                       >
                         <Tag className="h-4 w-4 mr-2" />
@@ -1127,7 +1124,7 @@ export default function ActionCenterPage() {
                           onClick={() => setSelectedBrandId(brand.id)}
                           className={cn(
                             "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                            selectedBrandId === brand.id && "bg-[#333] text-white"
+                            selectedBrandId === brand.id && "bg-white text-black"
                           )}
                         >
                           <div className="flex items-center gap-2 w-full">
@@ -1150,7 +1147,7 @@ export default function ActionCenterPage() {
                       className={cn(
                         "h-8 text-xs",
                         selectedCategory === category.id 
-                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          ? "bg-white hover:bg-gray-200 text-black" 
                           : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
                       )}
                     >
