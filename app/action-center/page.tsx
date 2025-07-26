@@ -534,11 +534,11 @@ export default function ActionCenterPage() {
           <div className="relative">
             {agencySettings?.agency_logo_url ? (
               <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center">
-                <img 
-                  src={agencySettings.agency_logo_url} 
-                  alt="Agency Logo"
+              <img 
+                src={agencySettings.agency_logo_url} 
+                alt="Agency Logo"
                   className="w-full h-full object-contain"
-                />
+              />
               </div>
             ) : (
               <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
@@ -566,7 +566,7 @@ export default function ActionCenterPage() {
       // Filter brands based on selectedBrandId
       const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
       const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
-      
+
       const availableBrands = brandsToShow.filter((brand: any) => {
         if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
         
@@ -586,22 +586,24 @@ export default function ActionCenterPage() {
               return (
                 <div key={brand.id} className="relative group">
                   {brand.image_url ? (
-                    <img 
-                      src={brand.image_url} 
-                      alt={brand.name}
-                      className={`w-5 h-5 rounded-full object-cover border border-[#444] bg-[#2A2A2A] ${
-                        isAvailable ? 'opacity-100' : 'opacity-50 grayscale'
-                      }`}
-                    />
+                    <div className={`w-6 h-6 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0 ${
+                      isAvailable ? 'opacity-100' : 'opacity-50 grayscale'
+                    }`}>
+                      <img 
+                        src={brand.image_url} 
+                        alt={brand.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   ) : (
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-semibold border border-[#444] ${
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold border border-[#444] flex-shrink-0 ${
                       isAvailable ? 'bg-[#4A5568] text-white' : 'bg-gray-400 text-white'
                     }`}>
                       {brandInitials}
                     </div>
                   )}
                   {isAvailable && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1A1A1A]"></div>
                   )}
                   {/* Tooltip */}
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
@@ -611,7 +613,7 @@ export default function ActionCenterPage() {
               )
             })}
             {brandsToShow.length > 3 && (
-              <div className="w-5 h-5 rounded-full bg-[#2A2A2A] flex items-center justify-center text-[8px] font-semibold border border-[#444] text-white">
+              <div className="w-6 h-6 rounded-full bg-[#2A2A2A] flex items-center justify-center text-[9px] font-semibold border border-[#444] text-white flex-shrink-0">
                 +{brandsToShow.length - 3}
               </div>
             )}
@@ -1002,7 +1004,7 @@ export default function ActionCenterPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5">
+                            <Badge className="bg-white text-black text-xs px-2 py-0.5">
                               {todo.count}
                             </Badge>
                             {getPriorityBadge(todo.priority)}
@@ -1017,7 +1019,7 @@ export default function ActionCenterPage() {
                             <DialogTrigger asChild>
                               <Button 
                                 size="sm" 
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+                                className="w-full bg-white hover:bg-gray-200 text-black text-xs h-8"
                                 onClick={() => setSelectedTodo(todo)}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -1039,7 +1041,7 @@ export default function ActionCenterPage() {
                                   onClick={() => {
                                     router.push(todo.targetPage)
                                   }}
-                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                  className="w-full bg-white hover:bg-gray-200 text-black"
                                 >
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   Go to Outreach Tool
@@ -1220,7 +1222,7 @@ export default function ActionCenterPage() {
                             "w-full text-xs h-8",
                             isDisabled
                               ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700 text-white"
+                              : "bg-white hover:bg-gray-200 text-black"
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
