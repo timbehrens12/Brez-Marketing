@@ -1023,18 +1023,36 @@ export default function ActionCenterPage() {
 
   // Functions for muting/unmuting notifications
   const toggleMuteNotification = (notificationKey: string) => {
-    setMutedNotifications(prev => ({
-      ...prev,
-      [notificationKey]: !prev[notificationKey]
-    }))
+    setMutedNotifications(prev => {
+      const newMutedState = {
+        ...prev,
+        [notificationKey]: !prev[notificationKey]
+      }
+      
+      // Save to localStorage immediately
+      if (userId) {
+        localStorage.setItem(`mutedNotifications_${userId}`, JSON.stringify(newMutedState))
+      }
+      
+      return newMutedState
+    })
   }
 
   // Mark brand report as read
   const markBrandAsRead = (brandId: string) => {
-    setReadBrandReports(prev => ({
-      ...prev,
-      [brandId]: true
-    }))
+    setReadBrandReports(prev => {
+      const newReadState = {
+        ...prev,
+        [brandId]: true
+      }
+      
+      // Save to localStorage immediately
+      if (userId) {
+        localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newReadState))
+      }
+      
+      return newReadState
+    })
   }
 
   // Mark all brand reports as read
@@ -1044,13 +1062,22 @@ export default function ActionCenterPage() {
       newReadStates[brand.id] = true
     })
     setReadBrandReports(newReadStates)
+    
+    // Save to localStorage immediately
+    if (userId) {
+      localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newReadStates))
+    }
   }
 
   // Generate AI synopsis for each brand using AI API
   const generateBrandSynopsis = async (brand: any): Promise<string> => {
     try {
       if (!brand.hasData && brand.connections.length === 0) {
-        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin 7-day rolling analysis.`
+        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin today's performance analysis.`
+      }
+      
+      if (brand.isTooEarly) {
+        return `${brand.name} analysis will be available after 6 AM when sufficient data is collected for today's performance.`
       }
 
       // Prepare brand data for AI analysis
@@ -1075,7 +1102,8 @@ export default function ActionCenterPage() {
         body: JSON.stringify({
           type: 'brand_synopsis',
           data: brandData,
-          timeframe: 'last_7_days_vs_previous_7_days'
+          timeframe: 'today_midnight_to_current_time',
+          currentTime: new Date().toLocaleTimeString()
         })
       })
 
@@ -1114,33 +1142,45 @@ export default function ActionCenterPage() {
 
       const brandHealthPromises = brands.map(async (brand) => {
         const now = new Date()
-        const yesterday = new Date(now)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const lastWeek = new Date(now)
-        lastWeek.setDate(lastWeek.getDate() - 7)
+        
+        // Check if it's too early (before 6 AM) for reliable data analysis
+        const currentHour = now.getHours()
+        const isTooEarly = currentHour < 6
+        
+        // Today's analysis: from midnight to current time
+        const todayMidnight = new Date(now)
+        todayMidnight.setHours(0, 0, 0, 0)
+        
+        // Yesterday for comparison
+        const yesterdayMidnight = new Date(todayMidnight)
+        yesterdayMidnight.setDate(yesterdayMidnight.getDate() - 1)
+        const yesterdayEnd = new Date(todayMidnight)
+        yesterdayEnd.setTime(yesterdayEnd.getTime() - 1) // End of yesterday
+        
+        // For broader context (last 30 days)
         const last30Days = new Date(now)
         last30Days.setDate(last30Days.getDate() - 30)
         
-        console.log(`[Brand Health] ${brand.name} - Date calculation check:`, {
-          now: now.toISOString().split('T')[0],
-          yesterday: yesterday.toISOString().split('T')[0],
-          lastWeek: lastWeek.toISOString().split('T')[0],
-          last30Days: last30Days.toISOString().split('T')[0]
+        console.log(`[Brand Health] ${brand.name} - Today analysis (${currentHour}:00):`, {
+          todayMidnight: todayMidnight.toISOString(),
+          now: now.toISOString(),
+          yesterdayRange: `${yesterdayMidnight.toISOString()} to ${yesterdayEnd.toISOString()}`,
+          isTooEarly,
+          hoursOfDataToday: currentHour
         })
 
-        // Get Meta performance data from the correct table - meta_ad_insights
+        // Get Meta performance data - today + yesterday for comparison
         const { data: metaData } = await supabase
           .from('meta_ad_insights')
           .select('*')
           .eq('brand_id', brand.id)
-          .gte('date', last30Days.toISOString().split('T')[0])
+          .gte('date', yesterdayMidnight.toISOString().split('T')[0])
           .order('date', { ascending: false })
 
         console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
         if (metaData && metaData.length > 0) {
           console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
-          console.log(`[Brand Health] ${brand.name} - Date range: ${last30Days.toISOString().split('T')[0]} to today`)
-          console.log(`[Brand Health] ${brand.name} - Last 7 days filter: >= ${lastWeek.toISOString().split('T')[0]}`)
+          console.log(`[Brand Health] ${brand.name} - Today's data range: ${todayMidnight.toISOString()} to ${now.toISOString()}`)
         }
 
 
@@ -1153,7 +1193,7 @@ export default function ActionCenterPage() {
 
         console.log(`[Brand Health] ${brand.name} - Connections:`, connections?.length || 0)
 
-        // Get Shopify data if connected - expand date range to last 30 days
+        // Get Shopify data if connected - today + yesterday for comparison
         const shopifyConnection = connections?.find(c => c.platform_type === 'shopify')
         let shopifyData = null
         if (shopifyConnection) {
@@ -1161,92 +1201,103 @@ export default function ActionCenterPage() {
             .from('shopify_orders')
             .select('*')
             .eq('connection_id', shopifyConnection.id)
-            .gte('created_at', last30Days.toISOString())
+            .gte('created_at', yesterdayMidnight.toISOString())
             .order('created_at', { ascending: false })
           shopifyData = orders
           console.log(`[Brand Health] ${brand.name} - Shopify data found:`, shopifyData?.length || 0, 'orders')
         }
 
-        // Calculate performance metrics using 7-day rolling analysis
-        // This provides a good balance between recent insights and smoothing daily volatility
-        // Recent data: Last 7 days for current metrics display
-        const recentMetaData = metaData?.filter(d => {
+        // Calculate performance metrics for TODAY (midnight to current time)
+        // This gives real-time insights for the current day
+        const todayMetaData = metaData?.filter(d => {
           const recordDate = new Date(d.date)
-          return recordDate >= lastWeek
+          return recordDate >= todayMidnight
         }) || []
         
-        // Previous period: Previous 7 days for week-over-week growth comparison
-        const olderMetaData = metaData?.filter(d => {
+        // Yesterday's data for comparison
+        const yesterdayMetaData = metaData?.filter(d => {
           const recordDate = new Date(d.date)
-          return recordDate < lastWeek && recordDate >= last30Days
-        }).slice(0, 7) || []
+          return recordDate >= yesterdayMidnight && recordDate < todayMidnight
+        }) || []
 
-        console.log(`[Brand Health] ${brand.name} - Recent data:`, recentMetaData.length, 'Older data:', olderMetaData.length)
+        console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
 
         let roas = 0, roasChange = 0, spend = 0, revenue = 0
-        if (recentMetaData.length > 0) {
-          spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-          revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+        
+        // If it's too early (before 6 AM), show limited data message
+        if (isTooEarly) {
+          console.log(`[Brand Health] ${brand.name} - Too early for analysis (${currentHour}:00 < 6:00 AM)`)
+        } else if (todayMetaData.length > 0) {
+          spend = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+          revenue = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
           roas = spend > 0 ? revenue / spend : 0
           
-          console.log(`[Brand Health] ${brand.name} - Calculated spend: $${spend.toFixed(2)} from ${recentMetaData.length} records`)
-          console.log(`[Brand Health] ${brand.name} - Individual spends:`, recentMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
-          console.log(`[Brand Health] ${brand.name} - Raw spend data:`, recentMetaData.map(d => ({ date: d.date, spend: d.spend, parsed: parseFloat(d.spend) || 0 })))
-          console.log(`[Brand Health] ${brand.name} - Revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
+          console.log(`[Brand Health] ${brand.name} - Today's calculated spend: $${spend.toFixed(2)} from ${todayMetaData.length} records`)
+          console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+          console.log(`[Brand Health] ${brand.name} - Today's revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
-          if (olderMetaData.length > 0) {
-            const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-            const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-            const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
-            roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
+          // Compare with yesterday
+          if (yesterdayMetaData.length > 0) {
+            const yesterdaySpend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+            const yesterdayRevenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+            const yesterdayRoas = yesterdaySpend > 0 ? yesterdayRevenue / yesterdaySpend : 0
+            roasChange = yesterdayRoas > 0 ? ((roas - yesterdayRoas) / yesterdayRoas) * 100 : 0
+            
+            console.log(`[Brand Health] ${brand.name} - Yesterday comparison: ROAS ${yesterdayRoas.toFixed(2)} -> ${roas.toFixed(2)} (${roasChange.toFixed(1)}% change)`)
           }
         }
 
         console.log(`[Brand Health] ${brand.name} - Calculated metrics:`, { spend, revenue, roas, roasChange })
 
-        // Calculate sales metrics
-        const recentOrders = shopifyData?.filter(order => 
-          new Date(order.created_at) >= lastWeek
+        // Calculate sales metrics - today vs yesterday
+        const todayOrders = shopifyData?.filter(order => 
+          new Date(order.created_at) >= todayMidnight
         ) || []
-        const olderOrders = shopifyData?.filter(order => {
+        const yesterdayOrders = shopifyData?.filter(order => {
           const orderDate = new Date(order.created_at)
-          return orderDate < lastWeek && orderDate >= last30Days
+          return orderDate >= yesterdayMidnight && orderDate < todayMidnight
         }) || []
 
-        const recentSales = recentOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
-        const olderSales = olderOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
-        const salesChange = olderSales > 0 ? ((recentSales - olderSales) / olderSales) * 100 : 0
+        const todaySales = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
+        const yesterdaySales = yesterdayOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
+        const salesChange = yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : 0
 
         // Determine status and alerts
         const alerts = []
         let status = 'healthy'
 
-        // Check for critical issues first
-        if (roas < 1 && recentMetaData.length > 0 && spend > 0) {
-          alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
-          status = 'critical'
-        }
-        if (salesChange < -30 && shopifyData?.length) {
-          alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
-          status = 'critical'
-        }
-        
-        // Check for warning issues
-        if (roasChange < -20 && recentMetaData.length > 0 && spend > 0) {
-          alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
-          if (status !== 'critical') status = 'warning'
-        }
-        
-        // Check for setup issues
-        if (!connections?.length) {
-          alerts.push({ type: 'info', message: 'No platforms connected' })
+        // Check if too early for reliable analysis
+        if (isTooEarly) {
+          alerts.push({ type: 'info', message: `Too early for today's analysis (check after 6 AM)` })
           status = 'info'
-        } else if ((!metaData || metaData.length === 0) && (!shopifyData || shopifyData.length === 0)) {
-          alerts.push({ type: 'info', message: 'No performance data found' })
-          if (status === 'healthy') status = 'info'
-        } else if (recentMetaData.length === 0 && (!recentOrders || recentOrders.length === 0)) {
-          alerts.push({ type: 'info', message: 'No recent activity (last 7 days)' })
-          if (status === 'healthy') status = 'info'
+        } else {
+          // Check for critical issues first
+          if (roas < 1 && todayMetaData.length > 0 && spend > 0) {
+            alerts.push({ type: 'critical', message: `Today's ROAS below 1.0 (${roas.toFixed(2)})` })
+            status = 'critical'
+          }
+          if (salesChange < -30 && shopifyData?.length) {
+            alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}% vs yesterday` })
+            status = 'critical'
+          }
+          
+          // Check for warning issues
+          if (roasChange < -20 && todayMetaData.length > 0 && spend > 0) {
+            alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}% vs yesterday` })
+            if (status !== 'critical') status = 'warning'
+          }
+          
+          // Check for setup issues
+          if (!connections?.length) {
+            alerts.push({ type: 'info', message: 'No platforms connected' })
+            status = 'info'
+          } else if ((!metaData || metaData.length === 0) && (!shopifyData || shopifyData.length === 0)) {
+            alerts.push({ type: 'info', message: 'No performance data found' })
+            if (status === 'healthy') status = 'info'
+          } else if (todayMetaData.length === 0 && (!todayOrders || todayOrders.length === 0)) {
+            alerts.push({ type: 'info', message: 'No activity today yet' })
+            if (status === 'healthy') status = 'info'
+          }
         }
 
         // Remove duplicate connections by platform_type
@@ -1265,12 +1316,13 @@ export default function ActionCenterPage() {
           roasChange,
           spend,
           revenue,
-          recentSales,
+          recentSales: todaySales,
           salesChange,
           alerts,
           status,
           connections: uniqueConnections,
           hasData,
+          isTooEarly,
           lastActivity: (metaData && metaData[0]?.date) || (shopifyData && shopifyData[0]?.created_at) || null
         }
       })
@@ -1429,9 +1481,9 @@ export default function ActionCenterPage() {
                 </div>
               </div>
               <CardDescription className="text-[#9ca3af] text-sm">
-                Last 7 days performance overview and alerts for all connected brands
+                Today's performance overview from midnight to current time
                 <span className="text-xs text-gray-500 block mt-1">
-                  Refreshed daily • Growth vs. previous 7 days
+                  Real-time today • Growth vs. yesterday • Available after 6 AM
                 </span>
               </CardDescription>
               
@@ -1629,7 +1681,9 @@ export default function ActionCenterPage() {
                         {/* AI Synopsis */}
                         <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-gray-500 font-medium">AI Analysis (7d)</span>
+                            <span className="text-xs text-gray-500 font-medium">
+                              AI Analysis (Today {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
+                            </span>
                             <Brain className="w-3 h-3 text-gray-500" />
                           </div>
                           <p className="text-xs text-[#9ca3af] leading-relaxed">
@@ -1641,29 +1695,30 @@ export default function ActionCenterPage() {
                         {brand.hasData && (
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">ROAS (7d)</p>
+                              <p className="text-xs text-[#9ca3af]">ROAS (Today)</p>
                               <p className={cn(
                                 "text-sm font-medium",
+                                brand.isTooEarly ? "text-gray-500" :
                                 brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
                               )}>
-                                {brand.roas.toFixed(2)}
+                                {brand.isTooEarly ? 'Too Early' : brand.roas.toFixed(2)}
                               </p>
-                              {brand.roasChange !== 0 && (
+                              {!brand.isTooEarly && brand.roasChange !== 0 && (
                                 <p className={cn(
                                   "text-xs",
                                   brand.roasChange > 0 ? "text-green-400" : "text-red-400"
                                 )}>
-                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}% vs prev 7d
+                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}% vs yesterday
                                 </p>
                               )}
                             </div>
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">Spend (7d)</p>
+                              <p className="text-xs text-[#9ca3af]">Spend (Today)</p>
                               <p className="text-sm font-medium text-white">
-                                ${brand.spend.toLocaleString()}
+                                {brand.isTooEarly ? 'Too Early' : `$${brand.spend.toLocaleString()}`}
                               </p>
                               <p className="text-xs text-[#9ca3af]">
-                                Rev: ${brand.revenue.toLocaleString()}
+                                Rev: {brand.isTooEarly ? 'N/A' : `$${brand.revenue.toLocaleString()}`}
                               </p>
                             </div>
                           </div>
