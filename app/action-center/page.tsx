@@ -1607,9 +1607,9 @@ export default function ActionCenterPage() {
         </div>
 
         {/* Main Content - Grid Layout for Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           
-          {/* Outreach Tasks Widget - 1/3 width */}
+          {/* Outreach Tasks Widget - 25% width */}
           <div className="md:col-span-1">
             <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-fit shadow-xl">
               <CardHeader className="pb-3">
@@ -1736,9 +1736,9 @@ export default function ActionCenterPage() {
             </Card>
           </div>
 
-          {/* Reusable Tools Widget - 2/3 width */}
-          <div className="md:col-span-2">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
+          {/* Reusable Tools Widget - 75% width */}
+          <div className="md:col-span-3">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl min-h-[110%]">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
