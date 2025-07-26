@@ -199,13 +199,21 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         const currentWeeklyUsage = usageData.reduce((sum, record) => sum + (record.generation_count || 0), 0)
         const remaining = WEEKLY_LIMIT - currentWeeklyUsage
         
-        // Lead generation availability is shown in tools widget, not counted as notification
-        // if (remaining > 0) {
-        //   const taskId = 'lead-generation-available'
-        //   if (isTaskActive(taskId, taskStates)) {
-        //     totalItems++
-        //   }
-        // }
+        console.log('[useActionCenter] Lead generation usage check:', {
+          weeklyLimit: WEEKLY_LIMIT,
+          currentUsage: currentWeeklyUsage,
+          remaining: remaining,
+          usageData: usageData
+        })
+        
+        // Count available generations as notifications
+        if (remaining > 0) {
+          const taskId = 'lead-generation-available'
+          if (isTaskActive(taskId, taskStates)) {
+            totalItems++
+            console.log('[useActionCenter] Added lead generation availability to notifications')
+          }
+        }
       }
 
       // 3. Brand reports
@@ -397,14 +405,29 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         brandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
       }
 
-      // Calculate outreach todos as remaining items after subtracting brand reports
-      const outreachTodos = Math.max(0, totalItems - brandReports)
+      // Calculate available tools count (lead generation availability)
+      let availableTools = 0
+      if (usageData) {
+        const WEEKLY_LIMIT = 5
+        const currentWeeklyUsage = usageData.reduce((sum, record) => sum + (record.generation_count || 0), 0)
+        const remaining = WEEKLY_LIMIT - currentWeeklyUsage
+        
+        if (remaining > 0) {
+          const taskId = 'lead-generation-available'
+          if (isTaskActive(taskId, taskStates)) {
+            availableTools = 1 // One notification for lead generation availability
+          }
+        }
+      }
+      
+      // Calculate outreach todos as remaining items after subtracting brand reports and available tools
+      const outreachTodos = Math.max(0, totalItems - brandReports - availableTools)
       const urgentOutreach = urgentItems // Most urgent items are outreach-related
       
       console.log('[useActionCenter] Final counts for sidebar (accurate calculation):', {
         totalItems,
         urgentItems,
-        breakdown: { outreachTodos, urgentOutreach, brandReports },
+        breakdown: { outreachTodos, urgentOutreach, brandReports, availableTools },
         note: 'Based on actual counting logic above'
       })
         
@@ -415,7 +438,7 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
           outreachTodos, 
           urgentOutreach,
           brandReports,
-          availableTools: 0
+          availableTools
         }
       })
 

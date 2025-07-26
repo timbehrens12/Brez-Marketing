@@ -1249,40 +1249,50 @@ export default function ActionCenterPage() {
         }) || []
 
         console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
-        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend })))
-        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend })))
+        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend, amount_spent: d.amount_spent, cost: d.cost })))
+        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend, amount_spent: d.amount_spent, cost: d.cost })))
 
         let roas = 0, roasChange = 0, spend = 0, revenue = 0
         let usingTodayData = true
         
-        // Always try to use today's data first (even if it's 0)
-        // Only fall back to yesterday if it's very early (before 6 AM) AND no today data exists
-        const shouldFallbackToYesterday = isTooEarly && todayMetaData.length === 0 && yesterdayMetaData.length > 0
+        // Use yesterday's data if today has no data, regardless of time
+        // This ensures we always show the most recent available data
+        const shouldFallbackToYesterday = todayMetaData.length === 0 && yesterdayMetaData.length > 0
+        
+        // Helper function to get spend value from different possible field names
+        const getSpendValue = (d: any) => {
+          return parseFloat(d.spend) || parseFloat(d.amount_spent) || parseFloat(d.cost) || 0
+        }
+        
+        const getRevenueValue = (d: any) => {
+          return parseFloat(d.purchase_value) || parseFloat(d.revenue) || parseFloat(d.conversions_value) || 0
+        }
         
         if (shouldFallbackToYesterday) {
-          console.log(`[Brand Health] ${brand.name} - Too early (${currentHour}:00) and no today data, using yesterday as fallback`)
-          spend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-          revenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          console.log(`[Brand Health] ${brand.name} - No today data, using yesterday as fallback`)
+          spend = yesterdayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
+          revenue = yesterdayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
           roas = spend > 0 ? revenue / spend : 0
           usingTodayData = false
           
           console.log(`[Brand Health] ${brand.name} - Yesterday's spend (fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
+          console.log(`[Brand Health] ${brand.name} - Yesterday's individual spends:`, yesterdayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (fields: spend=${d.spend}, amount_spent=${d.amount_spent}, cost=${d.cost})`))
         } else {
           // Use today's data (even if it's 0) - this is the primary path
-          spend = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-          revenue = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          spend = todayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
+          revenue = todayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
           roas = spend > 0 ? revenue / spend : 0
           
           console.log(`[Brand Health] ${brand.name} - Today's spend: $${spend.toFixed(2)} from ${todayMetaData.length} records (hour: ${currentHour})`)
           if (todayMetaData.length > 0) {
-            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (fields: spend=${d.spend}, amount_spent=${d.amount_spent}, cost=${d.cost})`))
           }
           console.log(`[Brand Health] ${brand.name} - Today's revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
           // Compare with yesterday for change calculation
           if (yesterdayMetaData.length > 0) {
-            const yesterdaySpend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-            const yesterdayRevenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+            const yesterdaySpend = yesterdayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
+            const yesterdayRevenue = yesterdayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
             const yesterdayRoas = yesterdaySpend > 0 ? yesterdayRevenue / yesterdaySpend : 0
             roasChange = yesterdayRoas > 0 ? ((roas - yesterdayRoas) / yesterdayRoas) * 100 : 0
             
