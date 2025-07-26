@@ -44,18 +44,23 @@ export default function OverlaidBrandLogos({
     
     if (brand.image_url) {
       return (
-        <img 
-          src={brand.image_url} 
-          alt={brand.name} 
-          className={cn(sizeClasses, "rounded-full object-cover border-2 border-[#1A1A1A] bg-[#0A0A0A]")}
-        />
+        <div className={cn(
+          sizeClasses, 
+          "rounded-full overflow-hidden border-2 border-white bg-white flex items-center justify-center flex-shrink-0 shadow-sm"
+        )}>
+          <img 
+            src={brand.image_url} 
+            alt={brand.name} 
+            className="w-full h-full object-cover"
+          />
+        </div>
       )
     }
     
     return (
       <div className={cn(
         sizeClasses,
-        "flex items-center justify-center rounded-full bg-[#2A2A2A] text-white font-medium text-[10px] border-2 border-[#1A1A1A]"
+        "flex items-center justify-center rounded-full bg-[#4A5568] text-white font-bold text-[10px] border-2 border-white flex-shrink-0 shadow-sm"
       )}>
         {brand.name.charAt(0).toUpperCase()}
       </div>
@@ -127,14 +132,14 @@ export default function OverlaidBrandLogos({
 
         {/* Overlaid brand logos */}
         {ownedBrands.length > 0 && (
-          <div className="absolute left-7 top-0 flex -space-x-1.5">
+          <div className="absolute left-6 top-0 flex -space-x-2">
             {visibleBrands.map((brand: any, index: number) => (
               <TooltipProvider key={brand.id}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className="relative transition-transform hover:scale-110 hover:z-50"
-                      style={{ zIndex: visibleBrands.length - index }}
+                      className="relative transition-transform hover:scale-125 hover:z-50"
+                      style={{ zIndex: 20 + visibleBrands.length - index }}
                     >
                       {renderBrandAvatar(brand)}
                     </div>
@@ -151,8 +156,8 @@ export default function OverlaidBrandLogos({
               <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                 <PopoverTrigger asChild>
                   <button
-                    className="w-5 h-5 rounded-full bg-[#2A2A2A] border-2 border-[#1A1A1A] flex items-center justify-center text-white font-bold text-[10px] hover:scale-110 transition-transform"
-                    style={{ zIndex: 0 }}
+                    className="w-5 h-5 rounded-full bg-[#4A5568] border-2 border-white flex items-center justify-center text-white font-bold text-[10px] hover:scale-125 transition-transform flex-shrink-0 shadow-sm"
+                    style={{ zIndex: 10 }}
                   >
                     +{remainingCount}
                   </button>
