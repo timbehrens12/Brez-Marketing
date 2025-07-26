@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { UnifiedLoading, pageLoadingConfig } from '@/components/ui/unified-loading'
+import { useAgency } from '@/contexts/AgencyContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -182,7 +184,7 @@ export default function ActionCenterPage() {
   const router = useRouter()
   const { brands: contextBrands } = useBrandContext()
   const [todos, setTodos] = useState<TodoItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isDataLoading, setIsDataLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
   const [selectedTodo, setSelectedTodo] = useState<TodoItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -203,7 +205,8 @@ export default function ActionCenterPage() {
   const [userCampaignsCount, setUserCampaignsCount] = useState(0)
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(false)
-  const [agencySettings, setAgencySettings] = useState<{
+  const { agencySettings: agencyContext } = useAgency()
+  const [agencySettingsState, setAgencySettingsState] = useState<{
     agency_name?: string
     agency_logo_url?: string | null
   } | null>(null)
@@ -296,7 +299,7 @@ export default function ActionCenterPage() {
       if (agencyResponse.error && agencyResponse.error.code !== 'PGRST116') {
         console.error('[Action Center] Error loading agency settings:', agencyResponse.error)
       } else {
-        setAgencySettings(agencyResponse.data)
+        setAgencySettingsState(agencyResponse.data)
         console.log('[Action Center] Agency settings:', agencyResponse.data)
       }
 
@@ -552,10 +555,10 @@ export default function ActionCenterPage() {
       return (
         <div className="flex items-center gap-2">
           <div className="relative">
-            {agencySettings?.agency_logo_url ? (
+                          {agencyContext?.agency_logo_url ? (
               <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center">
               <img 
-                src={agencySettings.agency_logo_url} 
+                                  src={agencyContext?.agency_logo_url} 
                 alt="Agency Logo"
                   className="w-full h-full object-contain"
               />
@@ -898,16 +901,17 @@ export default function ActionCenterPage() {
   // Load data
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true)
+      setIsDataLoading(true)
       try {
         // Load both todos and user data in parallel
         await Promise.all([
           generateTodos(),
           loadUserData()
         ])
-      } finally {
-        setIsLoading(false)
-      }
+              } finally {
+          // Main data loading is complete
+          setIsDataLoading(false)
+        }
     }
 
     if (userId) {
@@ -1248,9 +1252,9 @@ export default function ActionCenterPage() {
       setBrandSynopsisCache(newSynopsisCache)
     } catch (error) {
       console.error('Error loading brand health data:', error)
-         } finally {
-       setIsLoadingBrandHealth(false)
-     }
+               } finally {
+        setIsLoadingBrandHealth(false)
+      }
    }, [userId, getSupabaseClient])
 
    // Load brand health data on mount
@@ -1260,6 +1264,57 @@ export default function ActionCenterPage() {
      }
    }, [userId, loadBrandHealthData])
 
+  // Show loading screen until all data is loaded
+  if (isDataLoading) {
+    return (
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Main loading icon */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              {agencyContext?.agency_logo_url && (
+                <img 
+                  src={agencyContext.agency_logo_url} 
+                  alt="Agency Logo"
+                  className="w-8 h-8 object-contain rounded"
+                />
+              )}
+            </div>
+          </div>
+          
+          {/* Loading text */}
+          <h2 className="text-2xl font-bold text-white mb-4">Loading Action Center</h2>
+          <p className="text-gray-400 text-lg mb-8">Gathering your priorities and insights</p>
+          
+          {/* Progress dots */}
+          <div className="flex justify-center space-x-2">
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                className="w-2 h-2 bg-white/30 rounded-full animate-pulse"
+                style={{
+                  animationDelay: `${index * 0.2}s`,
+                  animationDuration: '1s'
+                }}
+              ></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <TooltipProvider>
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4">
@@ -1267,7 +1322,7 @@ export default function ActionCenterPage() {
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-white">Action Center</h1>
-          <p className="text-gray-300 mt-2">Stay on top of all priorities and account need</p>
+                          <p className="text-gray-300 mt-2">Stay on top of all priorities and account needs</p>
         </div>
 
         {/* Brand Health Overview Widget - Full Width */}
@@ -1611,7 +1666,7 @@ export default function ActionCenterPage() {
           
           {/* Outreach Tasks Widget - 25% width */}
           <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-fit shadow-xl">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-[700px] shadow-xl">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1657,7 +1712,7 @@ export default function ActionCenterPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {isLoading ? (
+                {isDataLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                   </div>
