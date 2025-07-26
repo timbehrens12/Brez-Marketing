@@ -29,6 +29,12 @@ const navItems = [
     description: "Marketing overview"
   },
   { 
+    name: "Action Center", 
+    href: "/action-center", 
+    icon: ClipboardList,
+    description: "Track tasks and priorities"
+  },
+  { 
     name: "Marketing Assistant", 
     href: "/marketing-assistant", 
     icon: BrainCircuit,
@@ -58,12 +64,6 @@ const navItems = [
     icon: Palette,
     description: "Create ad content",
     comingSoon: true
-  },
-  { 
-    name: "Action Center", 
-    href: "/action-center", 
-    icon: ClipboardList,
-    description: "Track tasks and priorities"
   },
   { 
     name: "Settings", 
@@ -320,12 +320,8 @@ export function Sidebar({ className }: SidebarProps) {
                         <item.icon className="h-6 w-6 flex-shrink-0" />
                                                   {/* Notification dot for collapsed sidebar */}
                         {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
-                          <div className={`absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full text-xs flex items-center justify-center ${
-                            actionCenterCounts.urgentItems > 0 ? 'bg-red-600' : 'bg-[#2A2A2A] border border-[#444]'
-                          }`}>
-                            <span className={`text-[11px] font-bold leading-none px-1 ${
-                              actionCenterCounts.urgentItems > 0 ? 'text-white' : 'text-white'
-                            }`}>
+                          <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full text-xs flex items-center justify-center bg-white border border-[#444]">
+                            <span className="text-[11px] font-bold leading-none px-1 text-black">
                               {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
                             </span>
                           </div>
@@ -336,13 +332,7 @@ export function Sidebar({ className }: SidebarProps) {
                               <p className="text-sm font-medium truncate">{item.name}</p>
                               <div className="flex items-center gap-2">
                                 {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
-                                  <Badge 
-                                    className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${
-                                      actionCenterCounts.urgentItems > 0 
-                                        ? 'bg-red-600 text-white' 
-                                        : 'bg-[#2A2A2A] text-white border border-[#444]'
-                                    }`}
-                                  >
+                                  <Badge className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white text-black border border-[#444]">
                                     {actionCenterCounts.totalItems}
                                   </Badge>
                                 )}
@@ -373,13 +363,7 @@ export function Sidebar({ className }: SidebarProps) {
                         <div className="flex items-center gap-2">
                         <p className="font-medium">{item.name}</p>
                           {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
-                            <Badge 
-                              className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${
-                                actionCenterCounts.urgentItems > 0 
-                                  ? 'bg-red-600 text-white' 
-                                  : 'bg-blue-600 text-white'
-                              }`}
-                            >
+                            <Badge className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white text-black border border-[#444]">
                               {actionCenterCounts.totalItems}
                             </Badge>
                           )}
