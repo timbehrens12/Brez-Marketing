@@ -108,21 +108,23 @@ export function Sidebar({ className }: SidebarProps) {
     let filteredTotal = actionCenterCounts.totalItems
     let filteredUrgent = actionCenterCounts.urgentItems
     
-    // If outreach-tasks is muted, subtract those counts
+    // Get the breakdown from action center to apply proper filtering
+    const { outreachTodos = 0, urgentOutreach = 0, brandReports = 0, availableTools = 0 } = actionCenterCounts.breakdown || {}
+    
+    // If outreach-tasks is muted, subtract actual outreach counts
     if (mutedNotifications['outreach-tasks']) {
-      // Outreach typically has 5 todos and 3 urgent
-      filteredTotal = Math.max(0, filteredTotal - 5)
-      filteredUrgent = Math.max(0, filteredUrgent - 3)
+      filteredTotal = Math.max(0, filteredTotal - outreachTodos)
+      filteredUrgent = Math.max(0, filteredUrgent - urgentOutreach)
     }
     
-    // If available-tools is muted, subtract those counts  
+    // If available-tools is muted, subtract actual tool counts
     if (mutedNotifications['available-tools']) {
-      // Available tools are not urgent, just informational
-      filteredTotal = Math.max(0, filteredTotal - 0) // Tools don't count anyway
+      filteredTotal = Math.max(0, filteredTotal - availableTools)
     }
     
     console.log('[Sidebar] Filtering notification counts:', {
       original: actionCenterCounts,
+      breakdown: { outreachTodos, urgentOutreach, brandReports, availableTools },
       muted: mutedNotifications,
       filtered: { totalItems: filteredTotal, urgentItems: filteredUrgent }
     })

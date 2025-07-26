@@ -1184,8 +1184,16 @@ export default function ActionCenterPage() {
 
         console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
         if (metaData && metaData.length > 0) {
-          console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
-          console.log(`[Brand Health] ${brand.name} - Today's data range: ${todayMidnight.toISOString()} to ${now.toISOString()}`)
+                  console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
+        console.log(`[Brand Health] ${brand.name} - Today's data range: ${todayMidnight.toISOString()} to ${now.toISOString()}`)
+        
+        // Debug all data dates
+        console.log(`[Brand Health] ${brand.name} - All Meta data dates:`, metaData.map(d => ({
+          date: d.date,
+          parsedDate: new Date(d.date).toISOString(),
+          spend: d.spend,
+          isToday: new Date(d.date) >= todayMidnight && new Date(d.date) <= now
+        })))
         }
 
 
@@ -1226,6 +1234,8 @@ export default function ActionCenterPage() {
         }) || []
 
         console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
+        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend })))
+        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend })))
 
         let roas = 0, roasChange = 0, spend = 0, revenue = 0
         
