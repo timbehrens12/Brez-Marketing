@@ -47,7 +47,7 @@ export default function OverlaidBrandLogos({
         <img 
           src={brand.image_url} 
           alt={brand.name} 
-          className={cn(sizeClasses, "rounded-full object-cover border-2 border-[#1A1A1A] bg-[#1A1A1A]")}
+          className={cn(sizeClasses, "rounded-full object-cover border-2 border-[#1A1A1A] bg-[#0A0A0A]")}
         />
       )
     }
@@ -55,7 +55,7 @@ export default function OverlaidBrandLogos({
     return (
       <div className={cn(
         sizeClasses,
-        "flex items-center justify-center rounded-full bg-gradient-to-br from-[#333] to-[#444] text-white font-medium text-[10px] border-2 border-[#1A1A1A]"
+        "flex items-center justify-center rounded-full bg-[#2A2A2A] text-white font-medium text-[10px] border-2 border-[#1A1A1A]"
       )}>
         {brand.name.charAt(0).toUpperCase()}
       </div>
@@ -66,7 +66,7 @@ export default function OverlaidBrandLogos({
     if (agencyLoading) {
       return (
         <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
-          <div className="w-5 h-5 animate-pulse bg-[#444] rounded"></div>
+          <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
         </div>
       )
     }
@@ -86,7 +86,7 @@ export default function OverlaidBrandLogos({
     if (agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant') {
       return (
         <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">
+          <span className="text-white font-bold text-xl">
             {agencySettings.agency_name.slice(0, 2).toUpperCase()}
           </span>
         </div>
@@ -94,7 +94,7 @@ export default function OverlaidBrandLogos({
     }
 
     return (
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#3a3a3a]">
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
         <Building2 className="w-5 h-5 text-gray-400" />
       </div>
     )
@@ -127,19 +127,19 @@ export default function OverlaidBrandLogos({
 
         {/* Overlaid brand logos */}
         {ownedBrands.length > 0 && (
-          <div className="absolute left-7 top-0 flex -space-x-2 z-10">
+          <div className="absolute left-7 top-0 flex -space-x-1.5">
             {visibleBrands.map((brand: any, index: number) => (
               <TooltipProvider key={brand.id}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className="relative transition-transform hover:scale-110 hover:z-30"
-                      style={{ zIndex: 10 + index }}
+                      className="relative transition-transform hover:scale-110 hover:z-50"
+                      style={{ zIndex: visibleBrands.length - index }}
                     >
                       {renderBrandAvatar(brand)}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-[#1A1A1A] border border-[#333] text-white text-xs">
+                  <TooltipContent side="top" className="bg-[#1A1A1A] text-white text-xs border border-[#333]">
                     <p>{brand.name} - Available</p>
                   </TooltipContent>
                 </Tooltip>
@@ -151,10 +151,10 @@ export default function OverlaidBrandLogos({
               <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                 <PopoverTrigger asChild>
                   <button
-                    className="w-5 h-5 rounded-full bg-gradient-to-br from-[#333] to-[#444] border-2 border-[#1A1A1A] flex items-center justify-center text-white font-bold text-[8px] hover:scale-110 transition-transform z-20"
-                    style={{ zIndex: 10 + maxVisibleBrands }}
+                    className="w-5 h-5 rounded-full bg-[#2A2A2A] border-2 border-[#1A1A1A] flex items-center justify-center text-white font-bold text-[10px] hover:scale-110 transition-transform"
+                    style={{ zIndex: 0 }}
                   >
-                    <Plus className="w-2.5 h-2.5" />
+                    +{remainingCount}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent 

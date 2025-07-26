@@ -153,7 +153,6 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     requiresData: true,
     dependencyType: 'brand' // Depends on brand having Meta connection
   },
-
   {
     id: 'ad-creative-studio',
     name: 'Ad Creative Studio',
@@ -519,11 +518,11 @@ export default function ActionCenterPage() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'automation': return 'bg-[#333]/20 border-[#444]/50 text-gray-300'
-      case 'ai-powered': return 'bg-[#333]/20 border-[#444]/50 text-gray-300'
-      case 'analytics': return 'bg-[#333]/20 border-[#444]/50 text-gray-300'
-      case 'tools': return 'bg-orange-900/20 border-orange-500/50 text-orange-300'
-      default: return 'bg-gray-900/20 border-gray-500/50 text-gray-300'
+      case 'automation': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
+      case 'ai-powered': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
+      case 'analytics': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
+      case 'tools': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
+      default: return 'bg-[#1a1a1a] border-[#333] text-gray-300'
     }
   }
 
@@ -540,12 +539,12 @@ export default function ActionCenterPage() {
                 className="w-6 h-6 rounded-full object-cover border-2 border-white"
               />
             ) : (
-                                  <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
                 <User className="w-3 h-3 text-white" />
               </div>
             )}
             {tool.status === 'available' && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-500 rounded-full border-2 border-white"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             )}
           </div>
           <div className="flex flex-col">
@@ -599,14 +598,14 @@ export default function ActionCenterPage() {
                     />
                   ) : (
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-white ${
-                      isAvailable ? 'bg-[#333] text-white' : 'bg-gray-400 text-white'
+                      isAvailable ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
                     }`}>
                       {brandInitials}
                     </div>
-                                      )}
-                    {isAvailable && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-500 rounded-full border-2 border-white"></div>
-                    )}
+                  )}
+                  {isAvailable && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
                   {/* Tooltip */}
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     {brand.name}: {isAvailable ? 'Connected' : 'Missing Platform'}
@@ -638,13 +637,13 @@ export default function ActionCenterPage() {
             <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
               <CheckCircle className="w-3 h-3 text-white" />
             </div>
-                      {tool.status === 'available' && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-500 rounded-full border-2 border-white"></div>
-          )}
-        </div>
+            {tool.status === 'available' && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+          </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-600">Always Available</span>
-                            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-gray-400' : 'text-green-600'}`}>
+            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-blue-600' : 'text-green-600'}`}>
               {tool.status === 'coming-soon' ? 'Coming Soon' : 'Available'}
             </span>
           </div>
@@ -904,7 +903,7 @@ export default function ActionCenterPage() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'border-red-500/50 bg-red-900/20'
-      case 'medium': return 'border-gray-500/50 bg-[#333]/20'
+      case 'medium': return 'border-yellow-500/50 bg-yellow-900/20'
       case 'low': return 'border-gray-500/50 bg-gray-900/20'
       default: return 'border-gray-500/50 bg-gray-900/20'
     }
@@ -912,9 +911,9 @@ export default function ActionCenterPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'new_leads': return <Send className="h-4 w-4 text-gray-400" />
-      case 'responded': return <MessageSquare className="h-4 w-4 text-gray-400" />
-      case 'hot_leads': return <Star className="h-4 w-4 text-gray-400" />
+      case 'new_leads': return <Send className="h-4 w-4 text-blue-400" />
+      case 'responded': return <MessageSquare className="h-4 w-4 text-green-400" />
+      case 'hot_leads': return <Star className="h-4 w-4 text-yellow-400" />
       case 'follow_up': return <Clock className="h-4 w-4 text-orange-400" />
       default: return <CheckSquare className="h-4 w-4 text-gray-400" />
     }
@@ -923,7 +922,7 @@ export default function ActionCenterPage() {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high': return <Badge variant="destructive" className="text-xs">High</Badge>
-      case 'medium': return <Badge variant="secondary" className="text-xs bg-[#333] text-gray-200">Medium</Badge>
+      case 'medium': return <Badge variant="secondary" className="text-xs bg-yellow-900 text-yellow-200">Medium</Badge>
       case 'low': return <Badge variant="outline" className="text-xs">Low</Badge>
       default: return <Badge variant="outline" className="text-xs">Normal</Badge>
     }
@@ -973,7 +972,7 @@ export default function ActionCenterPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-gray-400" />
+                    <CheckSquare className="h-5 w-5 text-blue-400" />
                     <CardTitle className="text-white text-lg">Outreach Tasks</CardTitle>
                   </div>
                   {activeTodos.length > 0 && (
@@ -989,7 +988,7 @@ export default function ActionCenterPage() {
               <CardContent className="space-y-3">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
                   </div>
                 ) : activeTodos.length > 0 ? (
                   activeTodos.map((todo) => (
@@ -1006,7 +1005,7 @@ export default function ActionCenterPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-[#333] text-white text-xs px-2 py-0.5">
+                            <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5">
                               {todo.count}
                             </Badge>
                             {getPriorityBadge(todo.priority)}
@@ -1021,7 +1020,7 @@ export default function ActionCenterPage() {
                             <DialogTrigger asChild>
                               <Button 
                                 size="sm" 
-                                className="w-full bg-[#333] hover:bg-[#444] text-white text-xs h-8"
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
                                 onClick={() => setSelectedTodo(todo)}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -1043,7 +1042,7 @@ export default function ActionCenterPage() {
                                   onClick={() => {
                                     router.push(todo.targetPage)
                                   }}
-                                  className="w-full bg-[#333] hover:bg-[#444] text-white"
+                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   Go to Outreach Tool
@@ -1057,7 +1056,7 @@ export default function ActionCenterPage() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
                     <h3 className="font-medium text-white mb-1">All caught up!</h3>
                     <p className="text-[#9ca3af] text-sm">No outreach tasks need attention right now.</p>
                   </div>
@@ -1072,10 +1071,10 @@ export default function ActionCenterPage() {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                                          <Settings className="h-5 w-5 text-gray-400" />
+                    <Settings className="h-5 w-5 text-green-400" />
                     <CardTitle className="text-white text-lg">Reusable Tools & Automation</CardTitle>
                   </div>
-                                      <Badge className="bg-[#333] text-white text-xs">
+                  <Badge className="bg-green-600 text-white text-xs">
                     {availableToolsCount} Available
                   </Badge>
                 </div>
@@ -1151,7 +1150,7 @@ export default function ActionCenterPage() {
                       className={cn(
                         "h-8 text-xs",
                         selectedCategory === category.id 
-                          ? "bg-[#333] hover:bg-[#444] text-white" 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
                           : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
                       )}
                     >
@@ -1191,7 +1190,7 @@ export default function ActionCenterPage() {
                               {getStatusBadge(tool)}
                             </div>
                             {tool.frequency && (
-                              <p className="text-xs text-gray-300 mb-1">
+                              <p className="text-xs text-blue-300 mb-1">
                                 {tool.frequency}
                               </p>
                             )}
@@ -1224,7 +1223,7 @@ export default function ActionCenterPage() {
                             "w-full text-xs h-8",
                             isDisabled
                               ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                              : "bg-[#333] hover:bg-[#444] text-white"
+                              : "bg-blue-600 hover:bg-blue-700 text-white"
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
