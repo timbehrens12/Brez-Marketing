@@ -1131,6 +1131,39 @@ export default function ActionCenterPage() {
           console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
         }
 
+        // DEBUG: Let's check if data exists with different queries
+        const { data: allMetaData } = await supabase
+          .from('meta_campaign_daily_insights')
+          .select('*')
+          .eq('brand_id', brand.id)
+          .limit(5)
+
+        console.log(`[Brand Health] ${brand.name} - Total Meta records (any date):`, allMetaData?.length || 0)
+        
+        // Let's also check alternative table names
+        const { data: altMetaData1, error: altError1 } = await supabase
+          .from('meta_ad_insights')
+          .select('*')
+          .eq('brand_id', brand.id)
+          .limit(5)
+        
+        if (!altError1) {
+          console.log(`[Brand Health] ${brand.name} - meta_ad_insights records:`, altMetaData1?.length || 0)
+        }
+
+        const { data: altMetaData2, error: altError2 } = await supabase
+          .from('meta_campaign_insights')
+          .select('*')
+          .eq('brand_id', brand.id)
+          .limit(5)
+        
+        if (!altError2) {
+          console.log(`[Brand Health] ${brand.name} - meta_campaign_insights records:`, altMetaData2?.length || 0)
+        }
+
+        // Check what brand_id we're actually using
+        console.log(`[Brand Health] ${brand.name} - Searching for brand_id:`, brand.id)
+
         // Get platform connections
         const { data: connections } = await supabase
           .from('platform_connections')
