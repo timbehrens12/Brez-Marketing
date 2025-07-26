@@ -665,6 +665,20 @@ export default function DashboardPage() {
           bypass_cache: 'true'
         });
         
+        // 🔥 SMART CACHE BUSTING: If we're viewing yesterday's data or a date range that includes yesterday,
+        // force bypass cache to ensure we get the complete day's data (not just what was cached at 6pm)
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+        const isViewingYesterday = fromDateStr === yesterday || toDateStr === yesterday || 
+                                   (fromDateStr <= yesterday && toDateStr >= yesterday);
+        
+        if (isViewingYesterday) {
+          params.set('force_refresh', 'true');
+          params.set('bypass_cache', 'true');
+          params.set('reason', 'viewing-yesterday-data');
+          console.log(`[Dashboard] 🔥 Forcing fresh data for yesterday (${yesterday}) to avoid stale cache`);
+        }
+        
         // console.log(`[Dashboard] Loading metrics with params:`, Object.fromEntries(params));
         
         const response = await fetch(`/api/metrics?${params.toString()}`);
@@ -817,44 +831,6 @@ export default function DashboardPage() {
         const thirtyDaysAgo = subDays(now, 30); // Use subDays for consistency
         startDateStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
         endDateStr = format(now, 'yyyy-MM-dd');
-      }
-      
-      // **NEW: Check if we need to refresh yesterday's data for accurate comparisons**
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const isViewingToday = startDateStr === today && endDateStr === today;
-      const shouldRefreshYesterday = isViewingToday && initialLoad;
-      
-      if (shouldRefreshYesterday) {
-        console.log('[Dashboard] 🔄 New day detected - ensuring yesterday data is complete for accurate comparisons');
-        
-        // Force refresh yesterday's data first to ensure comparison accuracy
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-        
-        try {
-          const yesterdayParams = new URLSearchParams({
-            brandId: selectedBrandId.toString(),
-            from: yesterdayStr,
-            to: yesterdayStr,
-            preset: 'yesterday',
-            force_refresh: 'true',
-            bypass_cache: 'true',
-            refresh_for_comparison: 'true', // Flag to indicate this is for comparison accuracy
-            t: new Date().getTime().toString()
-          });
-          
-          console.log('[Dashboard] 📊 Refreshing yesterday data for comparison accuracy...');
-          const yesterdayResponse = await fetch(`/api/metrics/meta?${yesterdayParams.toString()}`);
-          
-          if (yesterdayResponse.ok) {
-            console.log('[Dashboard] ✅ Yesterday data refreshed for accurate comparisons');
-          } else {
-            console.warn('[Dashboard] ⚠️ Failed to refresh yesterday data:', yesterdayResponse.status);
-          }
-        } catch (error) {
-          console.warn('[Dashboard] ⚠️ Error refreshing yesterday data:', error);
-        }
       }
       
       // Use consistent format with URLSearchParams

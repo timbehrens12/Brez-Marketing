@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check if this is an automated call (from cron job)
     const userAgent = request.headers.get('user-agent')
-    const isAutomated = userAgent === 'Brez-Daily-Sync'
+    const isAutomated = userAgent === 'Brez-Daily-Sync' || userAgent === 'Brez-Midday-Refresh'
     
     // For automated calls, skip user authentication
     if (!isAutomated) {

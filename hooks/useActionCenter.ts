@@ -8,6 +8,12 @@ import { format } from 'date-fns'
 interface ActionCenterCounts {
   totalItems: number
   urgentItems: number
+  categoryCounts?: {
+    'outreach-tasks': number
+    'lead-generation-available': number
+    'brand-health': number
+    'ai-tools': number
+  }
 }
 
 interface TaskState {
@@ -19,7 +25,16 @@ interface TaskState {
 
 export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {}) {
   const { userId, getToken } = useAuth()
-  const [counts, setCounts] = useState<ActionCenterCounts>({ totalItems: 0, urgentItems: 0 })
+  const [counts, setCounts] = useState<ActionCenterCounts>({ 
+    totalItems: 0, 
+    urgentItems: 0,
+    categoryCounts: {
+      'outreach-tasks': 0,
+      'lead-generation-available': 0,
+      'brand-health': 0,
+      'ai-tools': 0
+    }
+  })
 
   // Unified Supabase client function (same as Action Center page)
   const getSupabaseClient = async () => {
@@ -89,6 +104,14 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       const taskStates = getTaskStates()
       let totalItems = 0
       let urgentItems = 0
+      
+      // Track counts by category for proper muting
+      let categoryCountsTracker = {
+        'outreach-tasks': 0,
+        'lead-generation-available': 0,
+        'brand-health': 0,
+        'ai-tools': 0
+      }
 
       // 1. Check outreach campaigns (EXACT same logic as Action Center page)
       // Load campaign leads exactly like the Action Center page does - as a flat array
@@ -138,25 +161,30 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
           if (pendingLeads.length > 0 && isTaskActive('new_leads', taskStates)) {
             totalItems++
             urgentItems++ // High priority
+            categoryCountsTracker['outreach-tasks']++
           }
 
           if (respondedLeads.length > 0 && isTaskActive('responded', taskStates)) {
             totalItems++
             urgentItems++ // High priority
+            categoryCountsTracker['outreach-tasks']++
           }
 
           if (qualifiedLeads.length > 0 && isTaskActive('qualified', taskStates)) {
             totalItems++
             urgentItems++ // High priority
+            categoryCountsTracker['outreach-tasks']++
           }
 
           if (needsFollowUp.length > 0 && isTaskActive('follow_up', taskStates)) {
             totalItems++
+            categoryCountsTracker['outreach-tasks']++
             // Medium priority - not urgent
           }
 
           if (goingCold.length > 0 && isTaskActive('going_cold', taskStates)) {
             totalItems++
+            categoryCountsTracker['outreach-tasks']++
             // Low priority - not urgent
           }
         }
@@ -189,6 +217,7 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
           const taskId = 'lead-generation-available'
           if (isTaskActive(taskId, taskStates)) {
             totalItems++
+            categoryCountsTracker['lead-generation-available']++
           }
         }
       }
@@ -353,9 +382,10 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         // Count unread brand reports
         const unreadBrandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
         totalItems += unreadBrandReports
+        categoryCountsTracker['brand-health'] += unreadBrandReports
       }
 
-      setCounts({ totalItems, urgentItems })
+      setCounts({ totalItems, urgentItems, categoryCounts: categoryCountsTracker })
 
     } catch (error) {
       console.error('Error loading action center counts:', error)
@@ -391,18 +421,25 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
     let filteredTotal = counts.totalItems
     let filteredUrgent = counts.urgentItems
     
-    // For now, we'll use a simple approach and subtract estimated counts
-    // This could be improved by tracking counts by category
-    if (mutedNotifications['outreach-tasks']) {
-      // Rough estimate: outreach tasks typically account for 3-5 items
-      filteredTotal = Math.max(0, filteredTotal - 5)
-      filteredUrgent = Math.max(0, filteredUrgent - 3)
-    }
-    
-    if (mutedNotifications['brand-health']) {
-      // Subtract brand health reports if muted
-      // We'll estimate based on typical brand count
-      filteredTotal = Math.max(0, filteredTotal - 3)
+    // Use actual category counts for precise muting
+    if (counts.categoryCounts) {
+      if (mutedNotifications['outreach-tasks']) {
+        filteredTotal = Math.max(0, filteredTotal - counts.categoryCounts['outreach-tasks'])
+        // Outreach tasks are typically urgent, so subtract from urgent count too
+        filteredUrgent = Math.max(0, filteredUrgent - Math.min(counts.categoryCounts['outreach-tasks'], 3))
+      }
+      
+      if (mutedNotifications['lead-generation-available']) {
+        filteredTotal = Math.max(0, filteredTotal - counts.categoryCounts['lead-generation-available'])
+      }
+      
+      if (mutedNotifications['brand-health']) {
+        filteredTotal = Math.max(0, filteredTotal - counts.categoryCounts['brand-health'])
+      }
+      
+      if (mutedNotifications['ai-tools']) {
+        filteredTotal = Math.max(0, filteredTotal - counts.categoryCounts['ai-tools'])
+      }
     }
     
     return { totalItems: filteredTotal, urgentItems: filteredUrgent }

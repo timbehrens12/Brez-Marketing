@@ -85,6 +85,28 @@ export async function GET(request: NextRequest) {
                 records: metaData.count || 0
               })
               console.log(`  ✅ Meta sync completed: ${metaData.count || 0} records`)
+              
+              // 🔥 CACHE INVALIDATION: Clear cache for this brand to ensure fresh data
+              console.log(`  🧹 Invalidating cache for brand ${brand.name}`)
+              try {
+                await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cache/invalidate`, {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Brez-Daily-Sync'
+                  },
+                  body: JSON.stringify({ 
+                    brandId: brand.id,
+                    type: 'meta',
+                    reason: 'daily-sync-completed'
+                  })
+                })
+                console.log(`  ✅ Cache invalidation completed for brand ${brand.name}`)
+              } catch (cacheError) {
+                console.error(`  ⚠️ Cache invalidation failed for brand ${brand.name}:`, cacheError)
+                // Don't fail the sync if cache invalidation fails
+              }
+              
             } else {
               const errorText = await metaResponse.text()
               console.error(`  ❌ Meta sync failed: ${metaResponse.status} - ${errorText}`)

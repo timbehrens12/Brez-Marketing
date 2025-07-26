@@ -183,7 +183,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
 export default function ActionCenterPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
-  const { brands: contextBrands } = useBrandContext()
+  const { brands: contextBrands, setSelectedBrandId: setGlobalSelectedBrandId } = useBrandContext()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [isDataLoading, setIsDataLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
@@ -1672,6 +1672,24 @@ export default function ActionCenterPage() {
                             </p>
                           </div>
                         )}
+
+                        {/* Call to Action - Marketing Assistant */}
+                        <div className="mt-3 pt-3 border-t border-[#333]">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30 text-purple-300 hover:from-purple-600/30 hover:to-blue-600/30 hover:border-purple-400 hover:text-purple-200 transition-all"
+                                                        onClick={() => {
+                               // Set the selected brand in global context
+                               setGlobalSelectedBrandId(brand.id)
+                               // Navigate to marketing assistant
+                               router.push('/marketing-assistant')
+                             }}
+                          >
+                            <Brain className="w-3 h-3 mr-2" />
+                            View Marketing Insights
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
