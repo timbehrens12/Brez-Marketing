@@ -1,9 +1,22 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Singleton pattern for Supabase clients
+// Singleton pattern for Supabase clients with better caching
 let standardClient: SupabaseClient | null = null
 let authenticatedClients = new Map<string, SupabaseClient>()
 let clientInstances = 0
+
+// Cleanup function to remove old authenticated clients
+const cleanupAuthenticatedClients = () => {
+  if (authenticatedClients.size > 10) {
+    // Keep only the 5 most recent clients
+    const entries = Array.from(authenticatedClients.entries())
+    const toKeep = entries.slice(-5)
+    authenticatedClients.clear()
+    toKeep.forEach(([key, client]) => {
+      authenticatedClients.set(key, client)
+    })
+  }
+}
 
 /**
  * Get a standard Supabase client (no authentication)
@@ -23,12 +36,15 @@ export function getStandardSupabaseClient(): SupabaseClient {
     
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false, // Prevent conflicts
-      },
+        persistSession: false, // Don't persist sessions for standard client
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
     })
+    
+    console.log('📦 Using unified Supabase client system')
   }
+  
   return standardClient
 }
 
@@ -37,8 +53,8 @@ export function getStandardSupabaseClient(): SupabaseClient {
  * This replaces useAuthenticatedSupabase usage
  */
 export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
-  // Create a hash of the token to use as key (avoid storing full token)
-  const tokenHash = btoa(token.substring(0, 20) + token.substring(token.length - 20))
+  // Create a short hash of the token for caching (use first 16 chars)
+  const tokenHash = token.substring(0, 16)
   
   // Reuse client if we have the same token hash
   if (authenticatedClients.has(tokenHash)) {
@@ -53,7 +69,6 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
   }
   
   clientInstances++
-  console.log(`📦 Creating authenticated Supabase client (instance #${clientInstances})`)
   
   const client = createClient(supabaseUrl as string, supabaseKey as string, {
     global: {
@@ -62,23 +77,34 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
       }
     },
     auth: {
-      persistSession: false, // Don't persist for authenticated clients
+      persistSession: false, // Don't persist sessions to avoid conflicts
       autoRefreshToken: false,
-      detectSessionInUrl: false, // Prevent conflicts
+      detectSessionInUrl: false
     }
   })
   
-  // Store client (but limit cache size to prevent memory leaks)
-  if (authenticatedClients.size > 5) {
-    const firstKey = authenticatedClients.keys().next().value
-    if (firstKey) {
-      console.log('📦 Removing old authenticated client from cache')
-      authenticatedClients.delete(firstKey)
-    }
-  }
+  // Cache the client
   authenticatedClients.set(tokenHash, client)
   
+  // Cleanup old clients if needed
+  cleanupAuthenticatedClients()
+  
+  // Only log on first creation or every 5th instance to reduce noise
+  if (clientInstances === 1 || clientInstances % 5 === 0) {
+    console.log(`📦 Creating authenticated Supabase client (instance #${clientInstances})`)
+  }
+  
   return client
+}
+
+/**
+ * Clear all cached clients (useful for cleanup)
+ */
+export function clearSupabaseClients() {
+  standardClient = null
+  authenticatedClients.clear()
+  clientInstances = 0
+  console.log('📦 Cleared all Supabase clients')
 }
 
 /**
