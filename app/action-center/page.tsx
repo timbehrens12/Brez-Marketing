@@ -1079,6 +1079,10 @@ export default function ActionCenterPage() {
       if (brand.isTooEarly) {
         return `${brand.name} analysis will be available after 6 AM when sufficient data is collected for today's performance.`
       }
+      
+      if (brand.isUsingYesterdayData) {
+        return `${brand.name} is showing yesterday's performance data ($${brand.spend.toFixed(2)} spend, ${brand.roas.toFixed(2)} ROAS) as today's data isn't available yet.`
+      }
 
       // Prepare brand data for AI analysis
       const brandData = {
@@ -1102,8 +1106,9 @@ export default function ActionCenterPage() {
         body: JSON.stringify({
           type: 'brand_synopsis',
           data: brandData,
-          timeframe: 'today_midnight_to_current_time',
-          currentTime: new Date().toLocaleTimeString()
+          timeframe: brand.isUsingYesterdayData ? 'yesterday_as_fallback_data' : 'today_midnight_to_current_time',
+          currentTime: new Date().toLocaleTimeString(),
+          dataSource: brand.isUsingYesterdayData ? 'yesterday' : 'today'
         })
       })
 
@@ -1245,6 +1250,14 @@ export default function ActionCenterPage() {
             
             console.log(`[Brand Health] ${brand.name} - Yesterday comparison: ROAS ${yesterdayRoas.toFixed(2)} -> ${roas.toFixed(2)} (${roasChange.toFixed(1)}% change)`)
           }
+        } else if (yesterdayMetaData.length > 0) {
+          // No today data but we have yesterday data - show yesterday's data for now
+          console.log(`[Brand Health] ${brand.name} - No today data, using yesterday's data as fallback`)
+          spend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+          revenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          roas = spend > 0 ? revenue / spend : 0
+          
+          console.log(`[Brand Health] ${brand.name} - Yesterday's spend (as fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
         }
 
         console.log(`[Brand Health] ${brand.name} - Calculated metrics:`, { spend, revenue, roas, roasChange })
@@ -1323,6 +1336,7 @@ export default function ActionCenterPage() {
           connections: uniqueConnections,
           hasData,
           isTooEarly,
+          isUsingYesterdayData: todayMetaData.length === 0 && yesterdayMetaData.length > 0,
           lastActivity: (metaData && metaData[0]?.date) || (shopifyData && shopifyData[0]?.created_at) || null
         }
       })
@@ -1682,7 +1696,7 @@ export default function ActionCenterPage() {
                         <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-gray-500 font-medium">
-                              AI Analysis (Today {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
+                              AI Analysis ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday Data' : `Today ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`})
                             </span>
                             <Brain className="w-3 h-3 text-gray-500" />
                           </div>
@@ -1695,7 +1709,9 @@ export default function ActionCenterPage() {
                         {brand.hasData && (
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">ROAS (Today)</p>
+                              <p className="text-xs text-[#9ca3af]">
+                                ROAS ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday' : 'Today'})
+                              </p>
                               <p className={cn(
                                 "text-sm font-medium",
                                 brand.isTooEarly ? "text-gray-500" :
@@ -1713,7 +1729,9 @@ export default function ActionCenterPage() {
                               )}
                             </div>
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">Spend (Today)</p>
+                              <p className="text-xs text-[#9ca3af]">
+                                Spend ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday' : 'Today'})
+                              </p>
                               <p className="text-sm font-medium text-white">
                                 {brand.isTooEarly ? 'Too Early' : `$${brand.spend.toLocaleString()}`}
                               </p>

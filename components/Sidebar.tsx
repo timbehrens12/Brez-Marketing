@@ -103,6 +103,35 @@ export function Sidebar({ className }: SidebarProps) {
 
   const { actionCenterCounts } = useActionCenter(mutedNotifications)
   
+  // Apply muting filter to the counts for display
+  const getFilteredCounts = () => {
+    let filteredTotal = actionCenterCounts.totalItems
+    let filteredUrgent = actionCenterCounts.urgentItems
+    
+    // If outreach-tasks is muted, subtract those counts
+    if (mutedNotifications['outreach-tasks']) {
+      // Outreach typically has 5 todos and 3 urgent
+      filteredTotal = Math.max(0, filteredTotal - 5)
+      filteredUrgent = Math.max(0, filteredUrgent - 3)
+    }
+    
+    // If available-tools is muted, subtract those counts  
+    if (mutedNotifications['available-tools']) {
+      // Available tools are not urgent, just informational
+      filteredTotal = Math.max(0, filteredTotal - 0) // Tools don't count anyway
+    }
+    
+    console.log('[Sidebar] Filtering notification counts:', {
+      original: actionCenterCounts,
+      muted: mutedNotifications,
+      filtered: { totalItems: filteredTotal, urgentItems: filteredUrgent }
+    })
+    
+    return { totalItems: filteredTotal, urgentItems: filteredUrgent }
+  }
+  
+  const filteredCounts = getFilteredCounts()
+  
   // Sidebar state - always collapsed by default, expand on hover or when pinned
   const [isPinned, setIsPinned] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -319,10 +348,10 @@ export function Sidebar({ className }: SidebarProps) {
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
                         <item.icon className="h-6 w-6 flex-shrink-0" />
                                                   {/* Notification dot for collapsed sidebar */}
-                        {!showExpanded && item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                        {!showExpanded && item.name === "Action Center" && filteredCounts.totalItems > 0 && (
                           <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full text-xs flex items-center justify-center bg-white border border-[#444]">
                             <span className="text-[11px] font-bold leading-none px-1 text-black">
-                              {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
+                              {filteredCounts.totalItems > 99 ? '99+' : filteredCounts.totalItems}
                             </span>
                           </div>
                         )}
@@ -362,17 +391,17 @@ export function Sidebar({ className }: SidebarProps) {
                       <div>
                         <div className="flex items-center gap-2">
                         <p className="font-medium">{item.name}</p>
-                          {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                          {item.name === "Action Center" && filteredCounts.totalItems > 0 && (
                             <Badge className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white text-black border border-[#444]">
-                              {actionCenterCounts.totalItems}
+                              {filteredCounts.totalItems}
                             </Badge>
                           )}
                         </div>
                         <p className="text-xs text-gray-400">{item.description}</p>
-                        {item.name === "Action Center" && actionCenterCounts.totalItems > 0 && (
+                        {item.name === "Action Center" && filteredCounts.totalItems > 0 && (
                           <p className="text-xs text-gray-300 mt-1">
-                            {actionCenterCounts.urgentItems > 0 && `${actionCenterCounts.urgentItems} urgent • `}
-                            {actionCenterCounts.totalItems} total items
+                            {filteredCounts.urgentItems > 0 && `${filteredCounts.urgentItems} urgent • `}
+                            {filteredCounts.totalItems} total items
                           </p>
                         )}
                       </div>

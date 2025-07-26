@@ -364,10 +364,11 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
 
               // Count unread brand reports
       const unreadBrandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
-      console.log('[useActionCenter] Brand reports count:', {
+      console.log('[useActionCenter] Brand reports count breakdown:', {
         totalBrands: brandsList.length,
         unreadBrandReports,
-        readBrandReports
+        readBrandReports,
+        brandsList: brandsList.map(b => ({ id: b.id, isRead: readBrandReports[b.id] || false }))
       })
       totalItems += unreadBrandReports
       }
@@ -377,10 +378,10 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       // - Brand health reports (unread reports that need review)
       // Available tools are informational only and don't need urgent attention
 
-      console.log('[useActionCenter] Final counts for sidebar:', {
+      console.log('[useActionCenter] Final counts for sidebar (RAW - before muting):', {
         totalItems,
         urgentItems,
-        note: 'FIXED: Only counting core notifications - outreach todos + brand reports',
+        note: 'RAW counts before any muting applied',
         currentValues: { totalItems, urgentItems },
         expectedBreakdown: 'Should now be 2 reports + 5 todos = 7 total, seeing ' + totalItems
       })
