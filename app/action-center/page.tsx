@@ -1139,23 +1139,25 @@ export default function ActionCenterPage() {
           shopifyData = orders
         }
 
-        // Calculate performance metrics
-        const recentMetaData = metaData?.slice(0, 3) || []
-        const olderMetaData = metaData?.slice(3, 6) || []
+                 // Calculate performance metrics
+         const recentMetaData = metaData?.slice(0, 3) || []
+         const olderMetaData = metaData?.slice(3, 6) || []
 
-        let roas = 0, roasChange = 0, spend = 0, revenue = 0
-        if (recentMetaData.length > 0) {
-          spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-          revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-          roas = spend > 0 ? revenue / spend : 0
+         let roas = 0, roasChange = 0, spend = 0, revenue = 0
+         if (recentMetaData.length > 0) {
+           spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+           revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+           roas = spend > 0 ? revenue / spend : 0
 
-          if (olderMetaData.length > 0) {
-            const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-            const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-            const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
-            roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
-          }
-        }
+           if (olderMetaData.length > 0) {
+             const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+             const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+             const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
+             roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
+           }
+         }
+
+         console.log(`Brand ${brand.name} metrics:`, { spend, revenue, roas, metaDataLength: metaData?.length })
 
         // Calculate sales metrics
         const recentOrders = shopifyData?.filter(order => 
@@ -1170,41 +1172,62 @@ export default function ActionCenterPage() {
         const olderSales = olderOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
         const salesChange = olderSales > 0 ? ((recentSales - olderSales) / olderSales) * 100 : 0
 
-        // Determine status and alerts
-        const alerts = []
-        let status = 'healthy'
+                 // Determine status and alerts
+         const alerts = []
+         let status = 'healthy'
 
-        if (roas < 1 && recentMetaData.length > 0) {
-          alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
-          status = 'critical'
-        }
-        if (roasChange < -20 && recentMetaData.length > 0) {
-          alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
-          if (status !== 'critical') status = 'warning'
-        }
-        if (salesChange < -30 && shopifyData?.length) {
-          alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
-          status = 'critical'
-        }
-        if (!connections?.length) {
-          alerts.push({ type: 'info', message: 'No platforms connected' })
-          if (status === 'healthy') status = 'info'
-        }
+         // Check for critical issues first
+         if (roas < 1 && recentMetaData.length > 0 && spend > 0) {
+           alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
+           status = 'critical'
+         }
+         if (salesChange < -30 && shopifyData?.length) {
+           alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
+           status = 'critical'
+         }
+         
+         // Check for warning issues
+         if (roasChange < -20 && recentMetaData.length > 0 && spend > 0) {
+           alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
+           if (status !== 'critical') status = 'warning'
+         }
+         
+         // Check for setup issues
+         if (!connections?.length) {
+           alerts.push({ type: 'info', message: 'No platforms connected' })
+           status = 'info'
+         } else if (recentMetaData.length === 0 && (!shopifyData || shopifyData.length === 0)) {
+           alerts.push({ type: 'info', message: 'No recent performance data' })
+           if (status === 'healthy') status = 'info'
+         }
+         
+         // If no data but has connections, mark as info
+         if (spend === 0 && revenue === 0 && connections && connections.length > 0) {
+           if (status === 'healthy') status = 'info'
+           if (!alerts.some(a => a.message.includes('No recent performance data'))) {
+             alerts.push({ type: 'info', message: 'No recent performance data' })
+           }
+         }
 
-        return {
-          ...brand,
-          roas,
-          roasChange,
-          spend,
-          revenue,
-          recentSales,
-          salesChange,
-          alerts,
-          status,
-          connections: connections || [],
-          hasData: (metaData?.length || 0) > 0 || (shopifyData?.length || 0) > 0,
-          lastActivity: metaData?.[0]?.date || shopifyData?.[0]?.created_at || null
-        }
+                 // Remove duplicate connections by platform_type
+         const uniqueConnections = connections?.filter((connection, index, arr) => 
+           arr.findIndex(c => c.platform_type === connection.platform_type) === index
+         ) || []
+
+         return {
+           ...brand,
+           roas,
+           roasChange,
+           spend,
+           revenue,
+           recentSales,
+           salesChange,
+           alerts,
+           status,
+           connections: uniqueConnections,
+           hasData: (metaData?.length || 0) > 0 || (shopifyData?.length || 0) > 0,
+           lastActivity: metaData?.[0]?.date || shopifyData?.[0]?.created_at || null
+         }
       })
 
       const results = await Promise.all(brandHealthPromises)
@@ -1247,10 +1270,346 @@ export default function ActionCenterPage() {
           <p className="text-gray-300 mt-2">Stay on top of all priorities and account need</p>
         </div>
 
+        {/* Brand Health Overview Widget - Full Width */}
+        <div className="mb-6">
+          <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-purple-400" />
+                  <CardTitle className="text-white text-lg">Brand Health Overview</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
+                    <Badge className="bg-[#2A2A2A] text-white text-xs">
+                      {!mutedNotifications['brand-health'] ? (
+                        `${brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports`
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <Slash className="w-3 h-3" />
+                          <span className="line-through opacity-60">{brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports</span>
+                        </div>
+                      )}
+                    </Badge>
+                  )}
+                  {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                          onClick={markAllBrandsAsRead}
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Mark All Read
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mark all brand reports as read</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                        onClick={() => toggleMuteNotification('brand-health')}
+                      >
+                        {mutedNotifications['brand-health'] ? (
+                          <BellOff className="w-4 h-4" />
+                        ) : (
+                          <Volume className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{mutedNotifications['brand-health'] ? 'Unmute notifications' : 'Mute notifications'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+              <CardDescription className="text-[#9ca3af] text-sm">
+                Real-time performance overview and alerts for all connected brands
+              </CardDescription>
+              
+              {/* Brand Filter */}
+              <div className="flex gap-3 pt-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
+                    >
+                      <Filter className="h-3 w-3 mr-1" />
+                      {selectedBrandFilter === 'all' ? (
+                        `All Brands (${brandHealthData.length})`
+                      ) : (
+                        brandHealthData.find(b => b.id === selectedBrandFilter)?.name || 'Unknown'
+                      )}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
+                    <DropdownMenuItem
+                      onClick={() => setSelectedBrandFilter('all')}
+                      className={cn(
+                        "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                        selectedBrandFilter === 'all' && "bg-[#2A2A2A] text-white"
+                      )}
+                    >
+                      <Tag className="h-4 w-4 mr-2" />
+                      All Brands ({brandHealthData.length})
+                    </DropdownMenuItem>
+                    {brandHealthData.map((brand) => (
+                      <DropdownMenuItem
+                        key={brand.id}
+                        onClick={() => setSelectedBrandFilter(brand.id)}
+                        className={cn(
+                          "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                          selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 w-full min-w-0">
+                          {/* Brand Avatar - matching BrandSelector style */}
+                          {brand.image_url || brand.logo_url ? (
+                            <img 
+                              src={brand.image_url || brand.logo_url} 
+                              alt={brand.name} 
+                              className="w-5 h-5 rounded-full object-cover border border-[#444] flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
+                              {brand.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          
+                          <div className="flex flex-col items-start min-w-0 flex-1">
+                            <span className="truncate font-medium max-w-full">{brand.name}</span>
+                            {brand.niche && (
+                              <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                            )}
+                          </div>
+                          
+                          {/* Platform logos */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {brand.connections.map((conn: any, idx: number) => (
+                              <div
+                                key={`${conn.platform_type}-${brand.id}`}
+                                className="w-3 h-3 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+                                title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
+                              >
+                                {conn.platform_type === 'shopify' && (
+                                  <img 
+                                    src="/shopify-icon.png" 
+                                    alt="Shopify" 
+                                    className="w-full h-full object-contain"
+                                  />
+                                )}
+                                {conn.platform_type === 'meta' && (
+                                  <img 
+                                    src="/meta-icon.png" 
+                                    alt="Meta" 
+                                    className="w-full h-full object-contain"
+                                  />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingBrandHealth ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                </div>
+              ) : brandHealthData.length === 0 ? (
+                <div className="text-center py-12">
+                  <BarChart3 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="font-medium text-white mb-2">No Brand Data Available</h3>
+                  <p className="text-[#9ca3af] text-sm">Connect your brands to see performance insights and alerts.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {brandHealthData
+                    .filter(brand => selectedBrandFilter === 'all' || brand.id === selectedBrandFilter)
+                    .map((brand) => (
+                      <div
+                        key={brand.id}
+                        className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
+                      >
+                        {/* Brand Header - Match BrandSelector style */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Brand Avatar - matching BrandSelector renderBrandAvatar */}
+                            {brand.image_url || brand.logo_url ? (
+                              <img 
+                                src={brand.image_url || brand.logo_url} 
+                                alt={brand.name} 
+                                className="w-6 h-6 rounded-full object-cover border border-[#444] flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
+                                {brand.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <div className="flex items-center gap-2 w-full">
+                                <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
+                                {/* Platform logos - matching BrandSelector renderConnectionIcons */}
+                                <div className="flex items-center gap-1">
+                                  {brand.connections.map((conn: any, idx: number) => (
+                                    <div
+                                      key={`${conn.platform_type}-${brand.id}`}
+                                      className="w-4 h-4 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+                                      title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
+                                    >
+                                      {conn.platform_type === 'shopify' && (
+                                        <img 
+                                          src="/shopify-icon.png" 
+                                          alt="Shopify" 
+                                          className="w-full h-full object-contain"
+                                        />
+                                      )}
+                                      {conn.platform_type === 'meta' && (
+                                        <img 
+                                          src="/meta-icon.png" 
+                                          alt="Meta" 
+                                          className="w-full h-full object-contain"
+                                        />
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              {brand.niche && (
+                                <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "text-xs font-medium",
+                              brand.status === 'critical' && "text-red-400",
+                              brand.status === 'warning' && "text-orange-400",
+                              brand.status === 'info' && "text-blue-400",
+                              brand.status === 'healthy' && "text-green-400"
+                            )}>
+                              {brand.status === 'critical' && "Critical"}
+                              {brand.status === 'warning' && "Warning"}
+                              {brand.status === 'info' && "Setup Needed"}
+                              {brand.status === 'healthy' && "Healthy"}
+                            </span>
+                            {!readBrandReports[brand.id] && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                                    onClick={() => markBrandAsRead(brand.id)}
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Mark as read</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* AI Synopsis */}
+                        <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
+                          <p className="text-xs text-[#9ca3af] leading-relaxed">
+                            {brandSynopsisCache[brand.id] || 'Generating AI analysis...'}
+                          </p>
+                        </div>
+
+                        {/* Key Metrics */}
+                        {brand.hasData && (
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="text-center">
+                              <p className="text-xs text-[#9ca3af]">ROAS</p>
+                              <p className={cn(
+                                "text-sm font-medium",
+                                brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
+                              )}>
+                                {brand.roas.toFixed(2)}
+                              </p>
+                              {brand.roasChange !== 0 && (
+                                <p className={cn(
+                                  "text-xs",
+                                  brand.roasChange > 0 ? "text-green-400" : "text-red-400"
+                                )}>
+                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}%
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs text-[#9ca3af]">Spend</p>
+                              <p className="text-sm font-medium text-white">
+                                ${brand.spend.toLocaleString()}
+                              </p>
+                              <p className="text-xs text-[#9ca3af]">
+                                Rev: ${brand.revenue.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Alerts */}
+                        {brand.alerts.length > 0 && (
+                          <div className="space-y-1">
+                            {brand.alerts.slice(0, 2).map((alert: any, idx: number) => (
+                              <div key={idx} className={cn(
+                                "text-xs p-2 rounded border-l-2",
+                                alert.type === 'critical' && "bg-red-950/30 border-red-500 text-red-300",
+                                alert.type === 'warning' && "bg-orange-950/30 border-orange-500 text-orange-300",
+                                alert.type === 'info' && "bg-blue-950/30 border-blue-500 text-blue-300"
+                              )}>
+                                {alert.message}
+                              </div>
+                            ))}
+                            {brand.alerts.length > 2 && (
+                              <p className="text-xs text-[#9ca3af]">
+                                +{brand.alerts.length - 2} more alerts
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Last Activity */}
+                        {brand.lastActivity && (
+                          <div className="mt-3 pt-2 border-t border-[#333]">
+                            <p className="text-xs text-[#9ca3af]">
+                              Last activity: {new Date(brand.lastActivity).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Main Content - Grid Layout for Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Outreach Tasks Widget - Thin Column */}
+          {/* Outreach Tasks Widget */}
           <div className="md:col-span-1">
             <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-fit shadow-xl">
               <CardHeader className="pb-3">
@@ -1377,8 +1736,8 @@ export default function ActionCenterPage() {
             </Card>
           </div>
 
-          {/* Reusable Tools Widget - Wide Column */}
-          <div className="md:col-span-2 lg:col-span-3">
+          {/* Reusable Tools Widget */}
+          <div className="md:col-span-1">
             <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">

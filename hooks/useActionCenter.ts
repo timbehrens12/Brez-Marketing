@@ -332,6 +332,29 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         }
       }
 
+      // 6. Brand health reports (count unread brand reports)
+      const { data: brandsList } = await supabase
+        .from('brands')
+        .select('id')
+        .eq('user_id', userId)
+
+      if (brandsList?.length) {
+        // Get read brand reports from localStorage
+        let readBrandReports: {[key: string]: boolean} = {}
+        try {
+          const saved = localStorage.getItem(`readBrandReports_${userId}`)
+          if (saved) {
+            readBrandReports = JSON.parse(saved)
+          }
+        } catch (error) {
+          console.error('Error loading read brand reports:', error)
+        }
+
+        // Count unread brand reports
+        const unreadBrandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
+        totalItems += unreadBrandReports
+      }
+
       setCounts({ totalItems, urgentItems })
 
     } catch (error) {
@@ -374,6 +397,12 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       // Rough estimate: outreach tasks typically account for 3-5 items
       filteredTotal = Math.max(0, filteredTotal - 5)
       filteredUrgent = Math.max(0, filteredUrgent - 3)
+    }
+    
+    if (mutedNotifications['brand-health']) {
+      // Subtract brand health reports if muted
+      // We'll estimate based on typical brand count
+      filteredTotal = Math.max(0, filteredTotal - 3)
     }
     
     return { totalItems: filteredTotal, urgentItems: filteredUrgent }
