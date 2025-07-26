@@ -193,12 +193,13 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         const currentWeeklyUsage = usageData.reduce((sum, record) => sum + (record.generation_count || 0), 0)
         const remaining = WEEKLY_LIMIT - currentWeeklyUsage
         
-        if (remaining > 0) {
-          const taskId = 'lead-generation-available'
-          if (isTaskActive(taskId, taskStates)) {
-            totalItems++
-          }
-        }
+        // Lead generation availability is shown in tools widget, not counted as notification
+        // if (remaining > 0) {
+        //   const taskId = 'lead-generation-available'
+        //   if (isTaskActive(taskId, taskStates)) {
+        //     totalItems++
+        //   }
+        // }
       }
 
       // 3. Brand reports
@@ -220,12 +221,13 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
             const now = new Date()
             const isAfter6AM = now.getHours() >= 6
             
-            if (isAfter6AM) {
-              const taskId = `brand-report-${brand.id}`
-              if (isTaskActive(taskId, taskStates)) {
-                totalItems++
-              }
-            }
+            // Daily brand reports are shown in brand health widget, not counted separately
+            // if (isAfter6AM) {
+            //   const taskId = `brand-report-${brand.id}`
+            //   if (isTaskActive(taskId, taskStates)) {
+            //     totalItems++
+            //   }
+            // }
           }
 
           // Monthly reports
@@ -238,13 +240,14 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
               .eq('brand_id', brand.id)
               .eq('period', 'monthly')
 
-            if (!monthlyReports?.length) {
-              const taskId = `brand-monthly-report-${brand.id}`
-              if (isTaskActive(taskId, taskStates)) {
-                totalItems++
-                urgentItems++ // Monthly reports are high priority
-              }
-            }
+            // Monthly reports are not part of main notification flow
+            // if (!monthlyReports?.length) {
+            //   const taskId = `brand-monthly-report-${brand.id}`
+            //   if (isTaskActive(taskId, taskStates)) {
+            //     totalItems++
+            //     urgentItems++ // Monthly reports are high priority
+            //   }
+            // }
           }
         }
 
@@ -257,12 +260,13 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
             .in('brand_id', brandIds)
             .gt('expires_at', new Date().toISOString())
 
-          if (recommendations?.length) {
-            const taskId = 'ai-recommendations'
-            if (isTaskActive(taskId, taskStates)) {
-              totalItems++
-            }
-          }
+          // AI recommendations are shown in tools widget, not counted as notifications
+          // if (recommendations?.length) {
+          //   const taskId = 'ai-recommendations'
+          //   if (isTaskActive(taskId, taskStates)) {
+          //     totalItems++
+          //   }
+          // }
         }
 
         // 5. Critical brand issues
@@ -376,9 +380,9 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       console.log('[useActionCenter] Final counts for sidebar:', {
         totalItems,
         urgentItems,
-        note: 'Should be 2 reports + 5 todos = 7 total (not counting muted available tools)',
+        note: 'FIXED: Only counting core notifications - outreach todos + brand reports',
         currentValues: { totalItems, urgentItems },
-        expectedBreakdown: '2 reports + 5 todos = 7, but seeing ' + totalItems
+        expectedBreakdown: 'Should now be 2 reports + 5 todos = 7 total, seeing ' + totalItems
       })
       
       setCounts({ totalItems, urgentItems })
