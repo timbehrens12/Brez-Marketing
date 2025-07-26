@@ -1656,13 +1656,13 @@ export default function ActionCenterPage() {
           </Card>
         </div>
 
-        {/* Main Content - Fixed Height Grid Layout for Bottom Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[350px] mb-24">
+        {/* Main Content - Flexible Grid Layout for Bottom Widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-24">
           
-          {/* Outreach Tasks Widget - 25% width, fixed height */}
-          <div className="md:col-span-1 h-full">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-full shadow-xl flex flex-col">
-              <CardHeader className="pb-3 flex-shrink-0">
+          {/* Outreach Tasks Widget - 25% width, flexible height */}
+          <div className="md:col-span-1">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CheckSquare className="h-5 w-5 text-blue-400" />
@@ -1706,7 +1706,7 @@ export default function ActionCenterPage() {
                   Tasks that need your attention
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 flex-1 overflow-y-auto">
+              <CardContent className="space-y-3">
                 {activeTodos.length > 0 ? (
                   activeTodos.map((todo) => (
                     <div
@@ -1782,10 +1782,10 @@ export default function ActionCenterPage() {
             </Card>
           </div>
 
-          {/* Reusable Tools Widget - 75% width, fixed height */}
-          <div className="md:col-span-3 h-full">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-full flex flex-col">
-              <CardHeader className="pb-4 flex-shrink-0">
+          {/* Reusable Tools Widget - 75% width, flexible height */}
+          <div className="md:col-span-3">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-5 w-5 text-green-400" />
@@ -1902,7 +1902,7 @@ export default function ActionCenterPage() {
                   ))}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredTools.map((tool) => {
                     const IconComponent = tool.icon
