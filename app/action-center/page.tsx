@@ -959,7 +959,7 @@ export default function ActionCenterPage() {
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-white">Action Center</h1>
-          <p className="text-gray-300 mt-2">Stay on top of all your personal priorities and account needs</p>
+          <p className="text-gray-300 mt-2">Stay on top of all priorities and account need</p>
         </div>
 
         {/* Main Content - Grid Layout for Widgets */}
@@ -975,7 +975,7 @@ export default function ActionCenterPage() {
                     <CardTitle className="text-white text-lg">Outreach Tasks</CardTitle>
                   </div>
                   {activeTodos.length > 0 && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge className="bg-[#2A2A2A] text-white text-xs">
                       {activeTodos.length}
                     </Badge>
                   )}
@@ -1073,7 +1073,7 @@ export default function ActionCenterPage() {
                     <Settings className="h-5 w-5 text-green-400" />
                     <CardTitle className="text-white text-lg">Reusable Tools & Automation</CardTitle>
                   </div>
-                  <Badge className="bg-green-600 text-white text-xs">
+                  <Badge className="bg-[#2A2A2A] text-white text-xs">
                     {availableToolsCount} Available
                   </Badge>
                 </div>
