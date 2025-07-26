@@ -1050,7 +1050,7 @@ export default function ActionCenterPage() {
   const generateBrandSynopsis = async (brand: any): Promise<string> => {
     try {
       if (!brand.hasData && brand.connections.length === 0) {
-        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin analysis.`
+        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin 7-day rolling analysis.`
       }
 
       // Prepare brand data for AI analysis
@@ -1074,7 +1074,8 @@ export default function ActionCenterPage() {
         },
         body: JSON.stringify({
           type: 'brand_synopsis',
-          data: brandData
+          data: brandData,
+          timeframe: 'last_7_days_vs_previous_7_days'
         })
       })
 
@@ -1156,12 +1157,15 @@ export default function ActionCenterPage() {
           console.log(`[Brand Health] ${brand.name} - Shopify data found:`, shopifyData?.length || 0, 'orders')
         }
 
-        // Calculate performance metrics from recent data (last 7 days for display)
+        // Calculate performance metrics using 7-day rolling analysis
+        // This provides a good balance between recent insights and smoothing daily volatility
+        // Recent data: Last 7 days for current metrics display
         const recentMetaData = metaData?.filter(d => {
           const recordDate = new Date(d.date)
           return recordDate >= lastWeek
         }) || []
         
+        // Previous period: Previous 7 days for week-over-week growth comparison
         const olderMetaData = metaData?.filter(d => {
           const recordDate = new Date(d.date)
           return recordDate < lastWeek && recordDate >= last30Days
@@ -1410,7 +1414,10 @@ export default function ActionCenterPage() {
                 </div>
               </div>
               <CardDescription className="text-[#9ca3af] text-sm">
-                Real-time performance overview and alerts for all connected brands
+                Last 7 days performance overview and alerts for all connected brands
+                <span className="text-xs text-gray-500 block mt-1">
+                  Refreshed daily • Growth vs. previous 7 days
+                </span>
               </CardDescription>
               
               {/* Brand Filter */}
@@ -1606,6 +1613,10 @@ export default function ActionCenterPage() {
 
                         {/* AI Synopsis */}
                         <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-500 font-medium">AI Analysis (7d)</span>
+                            <Brain className="w-3 h-3 text-gray-500" />
+                          </div>
                           <p className="text-xs text-[#9ca3af] leading-relaxed">
                             {brandSynopsisCache[brand.id] || 'Generating AI analysis...'}
                           </p>
@@ -1615,7 +1626,7 @@ export default function ActionCenterPage() {
                         {brand.hasData && (
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">ROAS</p>
+                              <p className="text-xs text-[#9ca3af]">ROAS (7d)</p>
                               <p className={cn(
                                 "text-sm font-medium",
                                 brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
@@ -1627,12 +1638,12 @@ export default function ActionCenterPage() {
                                   "text-xs",
                                   brand.roasChange > 0 ? "text-green-400" : "text-red-400"
                                 )}>
-                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}%
+                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}% vs prev 7d
                                 </p>
                               )}
                             </div>
                             <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">Spend</p>
+                              <p className="text-xs text-[#9ca3af]">Spend (7d)</p>
                               <p className="text-sm font-medium text-white">
                                 ${brand.spend.toLocaleString()}
                               </p>
@@ -1668,7 +1679,7 @@ export default function ActionCenterPage() {
                         {brand.lastActivity && (
                           <div className="mt-3 pt-2 border-t border-[#333]">
                             <p className="text-xs text-[#9ca3af]">
-                              Last activity: {new Date(brand.lastActivity).toLocaleDateString()}
+                              Last data: {new Date(brand.lastActivity).toLocaleDateString()}
                             </p>
                           </div>
                         )}
