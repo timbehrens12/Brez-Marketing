@@ -196,6 +196,7 @@ export default function ActionCenterPage() {
   const [brandHealthData, setBrandHealthData] = useState<any[]>([])
   const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(false)
   const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
+  const [brandSynopsisCache, setBrandSynopsisCache] = useState<{[key: string]: string}>({})
 
   // User-dependent data for tool availability
   const [userLeadsCount, setUserLeadsCount] = useState(0)
@@ -1038,58 +1039,51 @@ export default function ActionCenterPage() {
     setReadBrandReports(newReadStates)
   }
 
-  // Generate AI synopsis for each brand
-  const generateBrandSynopsis = (brand: any): string => {
-    const synopsisElements = []
-    
-    if (brand.status === 'healthy' && brand.hasData) {
-      synopsisElements.push(`${brand.name} is performing well`)
-      if (brand.roas >= 2) {
-        synopsisElements.push(`with strong ROAS of ${brand.roas.toFixed(2)}`)
+  // Generate AI synopsis for each brand using AI API
+  const generateBrandSynopsis = async (brand: any): Promise<string> => {
+    try {
+      if (!brand.hasData && brand.connections.length === 0) {
+        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin analysis.`
       }
-    } else if (brand.status === 'critical') {
-      synopsisElements.push(`${brand.name} needs immediate attention`)
-    } else if (brand.status === 'warning') {
-      synopsisElements.push(`${brand.name} shows concerning trends`)
-    } else if (brand.status === 'info') {
-      synopsisElements.push(`${brand.name} requires platform setup`)
-    }
 
-    if (brand.roasChange !== 0 && Math.abs(brand.roasChange) > 10) {
-      const direction = brand.roasChange > 0 ? 'up' : 'down'
-      synopsisElements.push(`ROAS is ${direction} ${Math.abs(brand.roasChange).toFixed(1)}% this week`)
-    }
+      // Prepare brand data for AI analysis
+      const brandData = {
+        name: brand.name,
+        roas: brand.roas,
+        roasChange: brand.roasChange,
+        spend: brand.spend,
+        revenue: brand.revenue,
+        salesChange: brand.salesChange,
+        status: brand.status,
+        alerts: brand.alerts,
+        connections: brand.connections.map((c: any) => c.platform_type),
+        hasData: brand.hasData
+      }
 
-    if (brand.salesChange !== 0 && Math.abs(brand.salesChange) > 15) {
-      const direction = brand.salesChange > 0 ? 'increased' : 'decreased'
-      synopsisElements.push(`sales ${direction} ${Math.abs(brand.salesChange).toFixed(1)}%`)
-    }
+      const response = await fetch('/api/ai/generate-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'brand_synopsis',
+          data: brandData
+        })
+      })
 
-    if (brand.alerts.length > 0) {
-      synopsisElements.push(`Review Marketing Assistant for optimization recommendations`)
-    } else if (brand.hasData) {
-      synopsisElements.push(`Continue current strategy`)
-    } else {
-      synopsisElements.push(`Connect platforms to start tracking performance`)
-    }
+      if (!response.ok) {
+        throw new Error('Failed to generate AI synopsis')
+      }
 
-    return synopsisElements.join(', ') + '.'
-  }
-
-  // Get platform logo URL
-  const getPlatformLogo = (platformType: string): string => {
-    switch (platformType.toLowerCase()) {
-      case 'meta':
-      case 'facebook':
-        return '/meta-icon.png'
-      case 'shopify':
-        return 'https://cdn.shopify.com/s/files/1/0088/4031/8710/files/shopify_icon.png'
-      case 'google':
-        return 'https://developers.google.com/identity/images/g-logo.png'
-      default:
-        return ''
+      const result = await response.json()
+      return result.analysis || `${brand.name} data analysis unavailable. Check platform connections and try again.`
+    } catch (error) {
+      console.error('Error generating AI synopsis:', error)
+      return `${brand.name} analysis temporarily unavailable. Check platform connections and data sync status.`
     }
   }
+
+
 
   // Load brand health data
   const loadBrandHealthData = useCallback(async () => {
@@ -1214,7 +1208,21 @@ export default function ActionCenterPage() {
       })
 
       const results = await Promise.all(brandHealthPromises)
-      setBrandHealthData(results.filter(brand => brand.hasData || brand.connections.length > 0))
+      const filteredResults = results.filter(brand => brand.hasData || brand.connections.length > 0)
+      setBrandHealthData(filteredResults)
+
+      // Generate AI synopsis for each brand
+      const synopsisPromises = filteredResults.map(async (brand) => {
+        const synopsis = await generateBrandSynopsis(brand)
+        return { brandId: brand.id, synopsis }
+      })
+
+      const synopsisResults = await Promise.all(synopsisPromises)
+      const newSynopsisCache: {[key: string]: string} = {}
+      synopsisResults.forEach(({ brandId, synopsis }) => {
+        newSynopsisCache[brandId] = synopsis
+      })
+      setBrandSynopsisCache(newSynopsisCache)
     } catch (error) {
       console.error('Error loading brand health data:', error)
          } finally {
@@ -1664,27 +1672,62 @@ export default function ActionCenterPage() {
                         All Brands ({brandHealthData.length})
                       </DropdownMenuItem>
                       {brandHealthData.map((brand) => (
-                        <DropdownMenuItem
-                          key={brand.id}
-                          onClick={() => setSelectedBrandFilter(brand.id)}
-                          className={cn(
-                            "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                            selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            {brand.logo_url ? (
-                              <img src={brand.logo_url} alt={brand.name} className="w-4 h-4 rounded object-cover" />
-                            ) : (
-                              <div className="w-4 h-4 rounded bg-[#444] flex items-center justify-center">
-                                <span className="text-xs font-medium text-white">
-                                  {brand.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            {brand.name}
-                          </div>
-                        </DropdownMenuItem>
+                                                 <DropdownMenuItem
+                           key={brand.id}
+                           onClick={() => setSelectedBrandFilter(brand.id)}
+                           className={cn(
+                             "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                             selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
+                           )}
+                         >
+                           <div className="flex items-center gap-3 w-full min-w-0">
+                             {/* Brand Avatar - matching BrandSelector style */}
+                             {brand.image_url || brand.logo_url ? (
+                               <img 
+                                 src={brand.image_url || brand.logo_url} 
+                                 alt={brand.name} 
+                                 className="w-5 h-5 rounded-full object-cover border border-[#444] flex-shrink-0"
+                               />
+                             ) : (
+                               <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
+                                 {brand.name.charAt(0).toUpperCase()}
+                               </div>
+                             )}
+                             
+                             <div className="flex flex-col items-start min-w-0 flex-1">
+                               <span className="truncate font-medium max-w-full">{brand.name}</span>
+                               {brand.niche && (
+                                 <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                               )}
+                             </div>
+                             
+                             {/* Platform logos */}
+                             <div className="flex items-center gap-1 flex-shrink-0">
+                               {brand.connections.map((conn: any, idx: number) => (
+                                 <div
+                                   key={`${conn.platform_type}-${brand.id}`}
+                                   className="w-3 h-3 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+                                   title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
+                                 >
+                                   {conn.platform_type === 'shopify' && (
+                                     <img 
+                                       src="/shopify-icon.png" 
+                                       alt="Shopify" 
+                                       className="w-full h-full object-contain"
+                                     />
+                                   )}
+                                   {conn.platform_type === 'meta' && (
+                                     <img 
+                                       src="/meta-icon.png" 
+                                       alt="Meta" 
+                                       className="w-full h-full object-contain"
+                                     />
+                                   )}
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1706,63 +1749,62 @@ export default function ActionCenterPage() {
                     {brandHealthData
                       .filter(brand => selectedBrandFilter === 'all' || brand.id === selectedBrandFilter)
                       .map((brand) => (
-                        <div
-                          key={brand.id}
-                          className={cn(
-                            "rounded-lg border p-4 transition-all hover:shadow-md",
-                            brand.status === 'critical' && "border-red-500/50 bg-red-950/20",
-                            brand.status === 'warning' && "border-orange-500/50 bg-orange-950/20", 
-                            brand.status === 'info' && "border-blue-500/50 bg-blue-950/20",
-                            brand.status === 'healthy' && "border-green-500/50 bg-green-950/20"
-                          )}
-                        >
-                                                     {/* Brand Header */}
+                                                 <div
+                           key={brand.id}
+                           className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
+                         >
+                                                     {/* Brand Header - Match BrandSelector style */}
                            <div className="flex items-center justify-between mb-3">
-                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                               {brand.logo_url ? (
-                                 <img src={brand.logo_url} alt={brand.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                             <div className="flex items-center gap-3 flex-1 min-w-0">
+                               {/* Brand Avatar - matching BrandSelector renderBrandAvatar */}
+                               {brand.image_url || brand.logo_url ? (
+                                 <img 
+                                   src={brand.image_url || brand.logo_url} 
+                                   alt={brand.name} 
+                                   className="w-6 h-6 rounded-full object-cover border border-[#444] flex-shrink-0"
+                                 />
                                ) : (
-                                 <div className="w-8 h-8 rounded bg-[#444] flex items-center justify-center flex-shrink-0">
-                                   <span className="text-sm font-medium text-white">
-                                     {brand.name.charAt(0).toUpperCase()}
-                                   </span>
+                                 <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
+                                   {brand.name.charAt(0).toUpperCase()}
                                  </div>
                                )}
-                               <div className="flex-1 min-w-0">
-                                 <div className="flex items-center gap-2">
+                               
+                               <div className="flex flex-col items-start min-w-0 flex-1">
+                                 <div className="flex items-center gap-2 w-full">
                                    <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
-                                   {/* Platform logos */}
+                                   {/* Platform logos - matching BrandSelector renderConnectionIcons */}
                                    <div className="flex items-center gap-1">
-                                     {brand.connections.map((conn: any, idx: number) => {
-                                       const logoUrl = getPlatformLogo(conn.platform_type)
-                                       return logoUrl ? (
-                                         <img 
-                                           key={idx}
-                                           src={logoUrl} 
-                                           alt={conn.platform_type}
-                                           className="w-4 h-4 rounded object-contain"
-                                           title={conn.platform_type}
-                                         />
-                                       ) : (
-                                         <div key={idx} className="w-4 h-4 rounded bg-[#555] flex items-center justify-center">
-                                           <span className="text-[10px] text-white font-medium">
-                                             {conn.platform_type.charAt(0).toUpperCase()}
-                                           </span>
-                                         </div>
-                                       )
-                                     })}
+                                     {brand.connections.map((conn: any, idx: number) => (
+                                       <div
+                                         key={`${conn.platform_type}-${brand.id}`}
+                                         className="w-4 h-4 rounded-sm overflow-hidden border border-white/30 bg-white/10"
+                                         title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
+                                       >
+                                         {conn.platform_type === 'shopify' && (
+                                           <img 
+                                             src="/shopify-icon.png" 
+                                             alt="Shopify" 
+                                             className="w-full h-full object-contain"
+                                           />
+                                         )}
+                                         {conn.platform_type === 'meta' && (
+                                           <img 
+                                             src="/meta-icon.png" 
+                                             alt="Meta" 
+                                             className="w-full h-full object-contain"
+                                           />
+                                         )}
+                                       </div>
+                                     ))}
                                    </div>
                                  </div>
+                                 {brand.niche && (
+                                   <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                                 )}
                                </div>
                              </div>
+                             
                              <div className="flex items-center gap-2">
-                               <div className={cn(
-                                 "w-2 h-2 rounded-full",
-                                 brand.status === 'critical' && "bg-red-500",
-                                 brand.status === 'warning' && "bg-orange-500",
-                                 brand.status === 'info' && "bg-blue-500", 
-                                 brand.status === 'healthy' && "bg-green-500"
-                               )} />
                                <span className={cn(
                                  "text-xs font-medium",
                                  brand.status === 'critical' && "text-red-400",
@@ -1798,7 +1840,7 @@ export default function ActionCenterPage() {
                            {/* AI Synopsis */}
                            <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
                              <p className="text-xs text-[#9ca3af] leading-relaxed">
-                               {generateBrandSynopsis(brand)}
+                               {brandSynopsisCache[brand.id] || 'Generating AI analysis...'}
                              </p>
                            </div>
 
