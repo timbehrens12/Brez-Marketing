@@ -1118,13 +1118,18 @@ export default function ActionCenterPage() {
         const last30Days = new Date()
         last30Days.setDate(last30Days.getDate() - 30)
 
-        // Get Meta performance data
+        // Get Meta performance data - expand date range to last 30 days
         const { data: metaData } = await supabase
           .from('meta_campaign_daily_insights')
           .select('*')
           .eq('brand_id', brand.id)
-          .gte('date', lastWeek.toISOString().split('T')[0])
+          .gte('date', last30Days.toISOString().split('T')[0])
           .order('date', { ascending: false })
+
+        console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
+        if (metaData?.length > 0) {
+          console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
+        }
 
         // Get platform connections
         const { data: connections } = await supabase
@@ -1132,7 +1137,9 @@ export default function ActionCenterPage() {
           .select('*')
           .eq('brand_id', brand.id)
 
-        // Get Shopify data if connected
+        console.log(`[Brand Health] ${brand.name} - Connections:`, connections?.length || 0)
+
+        // Get Shopify data if connected - expand date range to last 30 days
         const shopifyConnection = connections?.find(c => c.platform_type === 'shopify')
         let shopifyData = null
         if (shopifyConnection) {
@@ -1140,104 +1147,118 @@ export default function ActionCenterPage() {
             .from('shopify_orders')
             .select('*')
             .eq('connection_id', shopifyConnection.id)
-            .gte('created_at', lastWeek.toISOString())
+            .gte('created_at', last30Days.toISOString())
             .order('created_at', { ascending: false })
           shopifyData = orders
+          console.log(`[Brand Health] ${brand.name} - Shopify data found:`, shopifyData?.length || 0, 'orders')
         }
 
-                 // Calculate performance metrics
-         const recentMetaData = metaData?.slice(0, 3) || []
-         const olderMetaData = metaData?.slice(3, 6) || []
+        // Calculate performance metrics from recent data (last 7 days for display)
+        const recentMetaData = metaData?.filter(d => {
+          const recordDate = new Date(d.date)
+          return recordDate >= lastWeek
+        }) || []
+        
+        const olderMetaData = metaData?.filter(d => {
+          const recordDate = new Date(d.date)
+          return recordDate < lastWeek && recordDate >= last30Days
+        }).slice(0, 7) || []
 
-         let roas = 0, roasChange = 0, spend = 0, revenue = 0
-         if (recentMetaData.length > 0) {
-           spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-           revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-           roas = spend > 0 ? revenue / spend : 0
+        console.log(`[Brand Health] ${brand.name} - Recent data:`, recentMetaData.length, 'Older data:', olderMetaData.length)
 
-           if (olderMetaData.length > 0) {
-             const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-             const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-             const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
-             roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
-           }
-         }
+        let roas = 0, roasChange = 0, spend = 0, revenue = 0
+        if (recentMetaData.length > 0) {
+          spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+          revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          roas = spend > 0 ? revenue / spend : 0
 
-         console.log(`Brand ${brand.name} metrics:`, { spend, revenue, roas, metaDataLength: metaData?.length })
+          if (olderMetaData.length > 0) {
+            const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+            const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+            const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
+            roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
+          }
+        }
+
+        console.log(`[Brand Health] ${brand.name} - Calculated metrics:`, { spend, revenue, roas, roasChange })
 
         // Calculate sales metrics
         const recentOrders = shopifyData?.filter(order => 
-          new Date(order.created_at) >= yesterday
+          new Date(order.created_at) >= lastWeek
         ) || []
         const olderOrders = shopifyData?.filter(order => {
           const orderDate = new Date(order.created_at)
-          return orderDate < yesterday && orderDate >= lastWeek
+          return orderDate < lastWeek && orderDate >= last30Days
         }) || []
 
         const recentSales = recentOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
         const olderSales = olderOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
         const salesChange = olderSales > 0 ? ((recentSales - olderSales) / olderSales) * 100 : 0
 
-                 // Determine status and alerts
-         const alerts = []
-         let status = 'healthy'
+        // Determine status and alerts
+        const alerts = []
+        let status = 'healthy'
 
-         // Check for critical issues first
-         if (roas < 1 && recentMetaData.length > 0 && spend > 0) {
-           alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
-           status = 'critical'
-         }
-         if (salesChange < -30 && shopifyData?.length) {
-           alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
-           status = 'critical'
-         }
-         
-         // Check for warning issues
-         if (roasChange < -20 && recentMetaData.length > 0 && spend > 0) {
-           alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
-           if (status !== 'critical') status = 'warning'
-         }
-         
-         // Check for setup issues
-         if (!connections?.length) {
-           alerts.push({ type: 'info', message: 'No platforms connected' })
-           status = 'info'
-         } else if (recentMetaData.length === 0 && (!shopifyData || shopifyData.length === 0)) {
-           alerts.push({ type: 'info', message: 'No recent performance data' })
-           if (status === 'healthy') status = 'info'
-         }
-         
-         // If no data but has connections, mark as info
-         if (spend === 0 && revenue === 0 && connections && connections.length > 0) {
-           if (status === 'healthy') status = 'info'
-           if (!alerts.some(a => a.message.includes('No recent performance data'))) {
-             alerts.push({ type: 'info', message: 'No recent performance data' })
-           }
-         }
+        // Check for critical issues first
+        if (roas < 1 && recentMetaData.length > 0 && spend > 0) {
+          alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
+          status = 'critical'
+        }
+        if (salesChange < -30 && shopifyData?.length) {
+          alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
+          status = 'critical'
+        }
+        
+        // Check for warning issues
+        if (roasChange < -20 && recentMetaData.length > 0 && spend > 0) {
+          alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
+          if (status !== 'critical') status = 'warning'
+        }
+        
+        // Check for setup issues
+        if (!connections?.length) {
+          alerts.push({ type: 'info', message: 'No platforms connected' })
+          status = 'info'
+        } else if ((!metaData || metaData.length === 0) && (!shopifyData || shopifyData.length === 0)) {
+          alerts.push({ type: 'info', message: 'No performance data found' })
+          if (status === 'healthy') status = 'info'
+        } else if (recentMetaData.length === 0 && (!recentOrders || recentOrders.length === 0)) {
+          alerts.push({ type: 'info', message: 'No recent activity (last 7 days)' })
+          if (status === 'healthy') status = 'info'
+        }
 
-                 // Remove duplicate connections by platform_type
-         const uniqueConnections = connections?.filter((connection, index, arr) => 
-           arr.findIndex(c => c.platform_type === connection.platform_type) === index
-         ) || []
+        // Remove duplicate connections by platform_type
+        const uniqueConnections = connections?.filter((connection, index, arr) => 
+          arr.findIndex(c => c.platform_type === connection.platform_type) === index
+        ) || []
 
-         return {
-           ...brand,
-           roas,
-           roasChange,
-           spend,
-           revenue,
-           recentSales,
-           salesChange,
-           alerts,
-           status,
-           connections: uniqueConnections,
-           hasData: (metaData?.length || 0) > 0 || (shopifyData?.length || 0) > 0,
-           lastActivity: metaData?.[0]?.date || shopifyData?.[0]?.created_at || null
-         }
+        const hasMetaData = Boolean(metaData?.length)
+        const hasShopifyData = Boolean(shopifyData?.length)
+        const hasData = hasMetaData || hasShopifyData
+        console.log(`[Brand Health] ${brand.name} - Final hasData:`, hasData, 'Status:', status)
+
+        return {
+          ...brand,
+          roas,
+          roasChange,
+          spend,
+          revenue,
+          recentSales,
+          salesChange,
+          alerts,
+          status,
+          connections: uniqueConnections,
+          hasData,
+          lastActivity: (metaData && metaData[0]?.date) || (shopifyData && shopifyData[0]?.created_at) || null
+        }
       })
 
       const results = await Promise.all(brandHealthPromises)
+      
+      // Show all brands that have connections or data, not just those with data
       const filteredResults = results.filter(brand => brand.hasData || brand.connections.length > 0)
+      console.log(`[Brand Health] Final results:`, filteredResults.length, 'brands with data or connections')
+      
       setBrandHealthData(filteredResults)
 
       // Generate AI synopsis for each brand
@@ -1253,18 +1274,18 @@ export default function ActionCenterPage() {
       })
       setBrandSynopsisCache(newSynopsisCache)
     } catch (error) {
-      console.error('Error loading brand health data:', error)
-               } finally {
-        setIsLoadingBrandHealth(false)
-      }
-   }, [userId, getSupabaseClient])
+      console.error('[Brand Health] Error loading brand health data:', error)
+    } finally {
+      setIsLoadingBrandHealth(false)
+    }
+  }, [userId, getSupabaseClient])
 
-   // Load brand health data on mount
-   useEffect(() => {
-     if (userId) {
-       loadBrandHealthData()
-     }
-   }, [userId, loadBrandHealthData])
+  // Load brand health data on mount
+  useEffect(() => {
+    if (userId) {
+      loadBrandHealthData()
+    }
+  }, [userId, loadBrandHealthData])
 
   // Show loading screen until all data is loaded
   if (isDataLoading) {
@@ -1661,7 +1682,7 @@ export default function ActionCenterPage() {
           
           {/* Outreach Tasks Widget - 25% width, tall height */}
           <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[875px] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[656px] flex flex-col">
               <CardHeader className="pb-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1784,7 +1805,7 @@ export default function ActionCenterPage() {
 
           {/* Reusable Tools Widget - 75% width, tall height */}
           <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[875px] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[656px] flex flex-col">
               <CardHeader className="pb-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
