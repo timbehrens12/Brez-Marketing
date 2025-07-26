@@ -1316,8 +1316,8 @@ export default function ActionCenterPage() {
 
   return (
     <TooltipProvider>
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-[120px]">
-      <div className="max-w-[1400px] mx-auto space-y-6 mb-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-[200px]">
+      <div className="max-w-[1400px] mx-auto space-y-6 mb-32">
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-white">Action Center</h1>
@@ -1657,7 +1657,7 @@ export default function ActionCenterPage() {
         </div>
 
         {/* Main Content - Fixed Height Grid Layout for Bottom Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[400px] mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[350px] mb-24">
           
           {/* Outreach Tasks Widget - 25% width, fixed height */}
           <div className="md:col-span-1 h-full">
