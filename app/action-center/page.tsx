@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 import {
   Dialog,
   DialogContent,
@@ -190,6 +191,9 @@ export default function ActionCenterPage() {
   
   // Muted notifications state
   const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
+  const [brandHealthData, setBrandHealthData] = useState<any[]>([])
+  const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(false)
 
   // User-dependent data for tool availability
   const [userLeadsCount, setUserLeadsCount] = useState(0)
@@ -995,6 +999,144 @@ export default function ActionCenterPage() {
     }))
   }
 
+  // Load brand health data
+  const loadBrandHealthData = useCallback(async () => {
+    if (!userId) return
+    
+    setIsLoadingBrandHealth(true)
+    try {
+      const supabase = await getSupabaseClient()
+      
+      // Get all brands
+      const { data: brands } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (!brands?.length) {
+        setBrandHealthData([])
+        return
+      }
+
+      const brandHealthPromises = brands.map(async (brand) => {
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const lastWeek = new Date()
+        lastWeek.setDate(lastWeek.getDate() - 7)
+        const last30Days = new Date()
+        last30Days.setDate(last30Days.getDate() - 30)
+
+        // Get Meta performance data
+        const { data: metaData } = await supabase
+          .from('meta_campaign_daily_insights')
+          .select('*')
+          .eq('brand_id', brand.id)
+          .gte('date', lastWeek.toISOString().split('T')[0])
+          .order('date', { ascending: false })
+
+        // Get platform connections
+        const { data: connections } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('brand_id', brand.id)
+
+        // Get Shopify data if connected
+        const shopifyConnection = connections?.find(c => c.platform_type === 'shopify')
+        let shopifyData = null
+        if (shopifyConnection) {
+          const { data: orders } = await supabase
+            .from('shopify_orders')
+            .select('*')
+            .eq('connection_id', shopifyConnection.id)
+            .gte('created_at', lastWeek.toISOString())
+            .order('created_at', { ascending: false })
+          shopifyData = orders
+        }
+
+        // Calculate performance metrics
+        const recentMetaData = metaData?.slice(0, 3) || []
+        const olderMetaData = metaData?.slice(3, 6) || []
+
+        let roas = 0, roasChange = 0, spend = 0, revenue = 0
+        if (recentMetaData.length > 0) {
+          spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+          revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          roas = spend > 0 ? revenue / spend : 0
+
+          if (olderMetaData.length > 0) {
+            const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+            const olderRevenue = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+            const oldRoas = olderSpend > 0 ? olderRevenue / olderSpend : 0
+            roasChange = oldRoas > 0 ? ((roas - oldRoas) / oldRoas) * 100 : 0
+          }
+        }
+
+        // Calculate sales metrics
+        const recentOrders = shopifyData?.filter(order => 
+          new Date(order.created_at) >= yesterday
+        ) || []
+        const olderOrders = shopifyData?.filter(order => {
+          const orderDate = new Date(order.created_at)
+          return orderDate < yesterday && orderDate >= lastWeek
+        }) || []
+
+        const recentSales = recentOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
+        const olderSales = olderOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
+        const salesChange = olderSales > 0 ? ((recentSales - olderSales) / olderSales) * 100 : 0
+
+        // Determine status and alerts
+        const alerts = []
+        let status = 'healthy'
+
+        if (roas < 1 && recentMetaData.length > 0) {
+          alerts.push({ type: 'critical', message: `ROAS below 1.0 (${roas.toFixed(2)})` })
+          status = 'critical'
+        }
+        if (roasChange < -20 && recentMetaData.length > 0) {
+          alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}%` })
+          if (status !== 'critical') status = 'warning'
+        }
+        if (salesChange < -30 && shopifyData?.length) {
+          alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}%` })
+          status = 'critical'
+        }
+        if (!connections?.length) {
+          alerts.push({ type: 'info', message: 'No platforms connected' })
+          if (status === 'healthy') status = 'info'
+        }
+
+        return {
+          ...brand,
+          roas,
+          roasChange,
+          spend,
+          revenue,
+          recentSales,
+          salesChange,
+          alerts,
+          status,
+          connections: connections || [],
+          hasData: (metaData?.length || 0) > 0 || (shopifyData?.length || 0) > 0,
+          lastActivity: metaData?.[0]?.date || shopifyData?.[0]?.created_at || null
+        }
+      })
+
+      const results = await Promise.all(brandHealthPromises)
+      setBrandHealthData(results.filter(brand => brand.hasData || brand.connections.length > 0))
+    } catch (error) {
+      console.error('Error loading brand health data:', error)
+         } finally {
+       setIsLoadingBrandHealth(false)
+     }
+   }, [userId, getSupabaseClient])
+
+   // Load brand health data on mount
+   useEffect(() => {
+     if (userId) {
+       loadBrandHealthData()
+     }
+   }, [userId, loadBrandHealthData])
+
   return (
     <TooltipProvider>
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-6">
@@ -1331,6 +1473,241 @@ export default function ActionCenterPage() {
                     )
                   })}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Brand Health Overview Widget - Full Width */}
+          <div className="md:col-span-3 lg:col-span-4">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-purple-400" />
+                    <CardTitle className="text-white text-lg">Brand Health Overview</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {brandHealthData.filter(brand => brand.alerts.length > 0).length > 0 && (
+                      <Badge className="bg-[#2A2A2A] text-white text-xs">
+                        {!mutedNotifications['brand-health'] ? (
+                          `${brandHealthData.filter(brand => brand.alerts.length > 0).length} Alerts`
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Slash className="w-3 h-3" />
+                            <span className="line-through opacity-60">{brandHealthData.filter(brand => brand.alerts.length > 0).length} Alerts</span>
+                          </div>
+                        )}
+                      </Badge>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                          onClick={() => toggleMuteNotification('brand-health')}
+                        >
+                          {mutedNotifications['brand-health'] ? (
+                            <BellOff className="w-4 h-4" />
+                          ) : (
+                            <Volume className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{mutedNotifications['brand-health'] ? 'Unmute notifications' : 'Mute notifications'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+                <CardDescription className="text-[#9ca3af] text-sm">
+                  Real-time performance overview and alerts for all connected brands
+                </CardDescription>
+                
+                {/* Brand Filter */}
+                <div className="flex gap-3 pt-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
+                      >
+                        <Filter className="h-3 w-3 mr-1" />
+                        {selectedBrandFilter === 'all' ? (
+                          `All Brands (${brandHealthData.length})`
+                        ) : (
+                          brandHealthData.find(b => b.id === selectedBrandFilter)?.name || 'Unknown'
+                        )}
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
+                      <DropdownMenuItem
+                        onClick={() => setSelectedBrandFilter('all')}
+                        className={cn(
+                          "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                          selectedBrandFilter === 'all' && "bg-[#2A2A2A] text-white"
+                        )}
+                      >
+                        <Tag className="h-4 w-4 mr-2" />
+                        All Brands ({brandHealthData.length})
+                      </DropdownMenuItem>
+                      {brandHealthData.map((brand) => (
+                        <DropdownMenuItem
+                          key={brand.id}
+                          onClick={() => setSelectedBrandFilter(brand.id)}
+                          className={cn(
+                            "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                            selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            {brand.logo_url ? (
+                              <img src={brand.logo_url} alt={brand.name} className="w-4 h-4 rounded object-cover" />
+                            ) : (
+                              <div className="w-4 h-4 rounded bg-[#444] flex items-center justify-center">
+                                <span className="text-xs font-medium text-white">
+                                  {brand.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            {brand.name}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingBrandHealth ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                  </div>
+                ) : brandHealthData.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BarChart3 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                    <h3 className="font-medium text-white mb-2">No Brand Data Available</h3>
+                    <p className="text-[#9ca3af] text-sm">Connect your brands to see performance insights and alerts.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {brandHealthData
+                      .filter(brand => selectedBrandFilter === 'all' || brand.id === selectedBrandFilter)
+                      .map((brand) => (
+                        <div
+                          key={brand.id}
+                          className={cn(
+                            "rounded-lg border p-4 transition-all hover:shadow-md",
+                            brand.status === 'critical' && "border-red-500/50 bg-red-950/20",
+                            brand.status === 'warning' && "border-orange-500/50 bg-orange-950/20", 
+                            brand.status === 'info' && "border-blue-500/50 bg-blue-950/20",
+                            brand.status === 'healthy' && "border-green-500/50 bg-green-950/20"
+                          )}
+                        >
+                          {/* Brand Header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              {brand.logo_url ? (
+                                <img src={brand.logo_url} alt={brand.name} className="w-6 h-6 rounded object-cover" />
+                              ) : (
+                                <div className="w-6 h-6 rounded bg-[#444] flex items-center justify-center">
+                                  <span className="text-xs font-medium text-white">
+                                    {brand.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
+                            </div>
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              brand.status === 'critical' && "bg-red-500",
+                              brand.status === 'warning' && "bg-orange-500",
+                              brand.status === 'info' && "bg-blue-500", 
+                              brand.status === 'healthy' && "bg-green-500"
+                            )} />
+                          </div>
+
+                          {/* Key Metrics */}
+                          {brand.hasData && (
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div className="text-center">
+                                <p className="text-xs text-[#9ca3af]">ROAS</p>
+                                <p className={cn(
+                                  "text-sm font-medium",
+                                  brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
+                                )}>
+                                  {brand.roas.toFixed(2)}
+                                </p>
+                                {brand.roasChange !== 0 && (
+                                  <p className={cn(
+                                    "text-xs",
+                                    brand.roasChange > 0 ? "text-green-400" : "text-red-400"
+                                  )}>
+                                    {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}%
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-[#9ca3af]">Spend</p>
+                                <p className="text-sm font-medium text-white">
+                                  ${brand.spend.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-[#9ca3af]">
+                                  Rev: ${brand.revenue.toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                                                     {/* Platform Connections */}
+                           <div className="flex items-center gap-1 mb-3">
+                             {brand.connections.map((conn: any, idx: number) => (
+                               <Badge key={idx} variant="outline" className="text-xs">
+                                 {conn.platform_type}
+                               </Badge>
+                             ))}
+                            {brand.connections.length === 0 && (
+                              <Badge variant="outline" className="text-xs text-gray-500">
+                                No connections
+                              </Badge>
+                            )}
+                          </div>
+
+                                                     {/* Alerts */}
+                           {brand.alerts.length > 0 && (
+                             <div className="space-y-1">
+                               {brand.alerts.slice(0, 2).map((alert: any, idx: number) => (
+                                 <div key={idx} className={cn(
+                                   "text-xs p-2 rounded border-l-2",
+                                   alert.type === 'critical' && "bg-red-950/30 border-red-500 text-red-300",
+                                   alert.type === 'warning' && "bg-orange-950/30 border-orange-500 text-orange-300",
+                                   alert.type === 'info' && "bg-blue-950/30 border-blue-500 text-blue-300"
+                                 )}>
+                                   {alert.message}
+                                 </div>
+                               ))}
+                              {brand.alerts.length > 2 && (
+                                <p className="text-xs text-[#9ca3af]">
+                                  +{brand.alerts.length - 2} more alerts
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Last Activity */}
+                          {brand.lastActivity && (
+                            <div className="mt-3 pt-2 border-t border-[#333]">
+                              <p className="text-xs text-[#9ca3af]">
+                                Last activity: {new Date(brand.lastActivity).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
