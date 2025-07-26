@@ -903,15 +903,17 @@ export default function ActionCenterPage() {
     const loadData = async () => {
       setIsDataLoading(true)
       try {
-        // Load both todos and user data in parallel
+        // Load ALL data in parallel and wait for everything to complete
         await Promise.all([
           generateTodos(),
-          loadUserData()
+          loadUserData(),
+          loadConnections(),
+          loadBrandHealthData()
         ])
-              } finally {
-          // Main data loading is complete
-          setIsDataLoading(false)
-        }
+      } finally {
+        // Only set loading to false after ALL data is loaded
+        setIsDataLoading(false)
+      }
     }
 
     if (userId) {
@@ -1278,7 +1280,7 @@ export default function ActionCenterPage() {
         </div>
         
         <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Main loading icon */}
+          {/* Main loading icon - consistent with other pages */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
@@ -1286,29 +1288,26 @@ export default function ActionCenterPage() {
               {agencyContext?.agency_logo_url && (
                 <img 
                   src={agencyContext.agency_logo_url} 
-                  alt="Agency Logo"
-                  className="w-8 h-8 object-contain rounded"
+                  alt={`${agencyContext?.agency_name || 'Agency'} Logo`}
+                  className="w-12 h-12 object-contain rounded"
                 />
               )}
             </div>
           </div>
           
-          {/* Loading text */}
-          <h2 className="text-2xl font-bold text-white mb-4">Loading Action Center</h2>
-          <p className="text-gray-400 text-lg mb-8">Gathering your priorities and insights</p>
+          {/* Loading title - consistent with other pages */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Action Center
+          </h1>
           
-          {/* Progress dots */}
-          <div className="flex justify-center space-x-2">
-            {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                className="w-2 h-2 bg-white/30 rounded-full animate-pulse"
-                style={{
-                  animationDelay: `${index * 0.2}s`,
-                  animationDuration: '1s'
-                }}
-              ></div>
-            ))}
+          {/* Loading message */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            Gathering your priorities and insights
+          </p>
+          
+          {/* Subtle loading tip */}
+          <div className="mt-8 text-xs text-gray-500 italic">
+            Building your personalized action dashboard...
           </div>
         </div>
       </div>
@@ -1317,12 +1316,12 @@ export default function ActionCenterPage() {
 
   return (
     <TooltipProvider>
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-20">
       <div className="max-w-[1400px] mx-auto space-y-8">
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-white">Action Center</h1>
-                          <p className="text-gray-300 mt-2">Stay on top of all priorities and account needs</p>
+          <p className="text-gray-300 mt-2">Stay on top of all priorities and account needs</p>
         </div>
 
         {/* Brand Health Overview Widget - Full Width */}
@@ -1482,11 +1481,7 @@ export default function ActionCenterPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {isLoadingBrandHealth ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
-                </div>
-              ) : brandHealthData.length === 0 ? (
+              {brandHealthData.length === 0 ? (
                 <div className="text-center py-12">
                   <BarChart3 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                   <h3 className="font-medium text-white mb-2">No Brand Data Available</h3>
@@ -1661,13 +1656,13 @@ export default function ActionCenterPage() {
           </Card>
         </div>
 
-        {/* Main Content - Grid Layout for Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Main Content - Fixed Height Grid Layout for Bottom Widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[600px]">
           
-          {/* Outreach Tasks Widget - 25% width */}
-          <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-[700px] shadow-xl">
-              <CardHeader className="pb-3">
+          {/* Outreach Tasks Widget - 25% width, fixed height */}
+          <div className="md:col-span-1 h-full">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-full shadow-xl flex flex-col">
+              <CardHeader className="pb-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CheckSquare className="h-5 w-5 text-blue-400" />
@@ -1711,12 +1706,8 @@ export default function ActionCenterPage() {
                   Tasks that need your attention
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {isDataLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
-                  </div>
-                ) : activeTodos.length > 0 ? (
+              <CardContent className="space-y-3 flex-1 overflow-y-auto">
+                {activeTodos.length > 0 ? (
                   activeTodos.map((todo) => (
                     <div
                       key={todo.id}
@@ -1791,10 +1782,10 @@ export default function ActionCenterPage() {
             </Card>
           </div>
 
-          {/* Reusable Tools Widget - 75% width */}
-          <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[700px]">
-              <CardHeader className="pb-4">
+          {/* Reusable Tools Widget - 75% width, fixed height */}
+          <div className="md:col-span-3 h-full">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-full flex flex-col">
+              <CardHeader className="pb-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-5 w-5 text-green-400" />
@@ -1844,16 +1835,10 @@ export default function ActionCenterPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className={cn(
-                          "h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white",
-                          isLoadingConnections && "opacity-50 cursor-not-allowed"
-                        )}
-                        disabled={isLoadingConnections}
+                        className="h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
                       >
                         <Filter className="h-3 w-3 mr-1" />
-                        {isLoadingConnections ? (
-                          "Loading..."
-                        ) : selectedBrandId === 'all' ? (
+                        {selectedBrandId === 'all' ? (
                           `All Brands (${brands.length})`
                         ) : (
                           <div className="flex items-center gap-1">
@@ -1917,7 +1902,7 @@ export default function ActionCenterPage() {
                   ))}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredTools.map((tool) => {
                     const IconComponent = tool.icon
@@ -1990,8 +1975,6 @@ export default function ActionCenterPage() {
               </CardContent>
             </Card>
           </div>
-
-
         </div>
       </div>
     </div>
