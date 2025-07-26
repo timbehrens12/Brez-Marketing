@@ -30,7 +30,9 @@ import {
   ChevronDown,
   Filter,
   Tag,
-  User
+  User,
+  Volume,
+  VolumeX
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -177,6 +179,10 @@ export default function ActionCenterPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
+  
+  // Muted notifications state
+  const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
+  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null)
 
   // User-dependent data for tool availability
   const [userLeadsCount, setUserLeadsCount] = useState(0)
@@ -953,6 +959,35 @@ export default function ActionCenterPage() {
     }
   }
 
+  // Load muted notifications from localStorage
+  useEffect(() => {
+    if (userId) {
+      const saved = localStorage.getItem(`mutedNotifications_${userId}`)
+      if (saved) {
+        try {
+          setMutedNotifications(JSON.parse(saved))
+        } catch (error) {
+          console.error('Error loading muted notifications:', error)
+        }
+      }
+    }
+  }, [userId])
+
+  // Save muted notifications to localStorage
+  useEffect(() => {
+    if (userId && Object.keys(mutedNotifications).length > 0) {
+      localStorage.setItem(`mutedNotifications_${userId}`, JSON.stringify(mutedNotifications))
+    }
+  }, [userId, mutedNotifications])
+
+  // Functions for muting/unmuting notifications
+  const toggleMuteNotification = (notificationKey: string) => {
+    setMutedNotifications(prev => ({
+      ...prev,
+      [notificationKey]: !prev[notificationKey]
+    }))
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -975,9 +1010,27 @@ export default function ActionCenterPage() {
                     <CardTitle className="text-white text-lg">Outreach Tasks</CardTitle>
                   </div>
                   {activeTodos.length > 0 && (
-                    <Badge className="bg-[#2A2A2A] text-white text-xs">
-                      {activeTodos.length}
-                    </Badge>
+                    <div 
+                      className="relative group"
+                      onMouseEnter={() => setHoveredBadge('outreach-tasks')}
+                      onMouseLeave={() => setHoveredBadge(null)}
+                    >
+                      <Badge className="bg-[#2A2A2A] text-white text-xs cursor-pointer transition-all duration-200 hover:bg-[#333]">
+                        {!mutedNotifications['outreach-tasks'] ? activeTodos.length : 0}
+                      </Badge>
+                      {hoveredBadge === 'outreach-tasks' && (
+                        <div 
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-[#444] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#555] transition-colors"
+                          onClick={() => toggleMuteNotification('outreach-tasks')}
+                        >
+                          {mutedNotifications['outreach-tasks'] ? (
+                            <VolumeX className="w-2 h-2 text-white" />
+                          ) : (
+                            <Volume className="w-2 h-2 text-white" />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 <CardDescription className="text-[#9ca3af] text-sm">
@@ -1073,9 +1126,27 @@ export default function ActionCenterPage() {
                     <Settings className="h-5 w-5 text-green-400" />
                     <CardTitle className="text-white text-lg">Reusable Tools & Automation</CardTitle>
                   </div>
-                  <Badge className="bg-[#2A2A2A] text-white text-xs">
-                    {availableToolsCount} Available
-                  </Badge>
+                  <div 
+                    className="relative group"
+                    onMouseEnter={() => setHoveredBadge('available-tools')}
+                    onMouseLeave={() => setHoveredBadge(null)}
+                  >
+                    <Badge className="bg-[#2A2A2A] text-white text-xs cursor-pointer transition-all duration-200 hover:bg-[#333]">
+                      {!mutedNotifications['available-tools'] ? `${availableToolsCount} Available` : '0 Available'}
+                    </Badge>
+                    {hoveredBadge === 'available-tools' && (
+                      <div 
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-[#444] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#555] transition-colors"
+                        onClick={() => toggleMuteNotification('available-tools')}
+                      >
+                        {mutedNotifications['available-tools'] ? (
+                          <VolumeX className="w-2 h-2 text-white" />
+                        ) : (
+                          <Volume className="w-2 h-2 text-white" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <CardDescription className="text-[#9ca3af] text-sm">
                   Marketing tools and automation features available for your brands

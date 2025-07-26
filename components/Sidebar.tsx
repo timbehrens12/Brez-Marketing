@@ -85,7 +85,23 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
-  const { actionCenterCounts } = useActionCenter()
+  // Load muted notifications for action center
+  const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
+  
+  useEffect(() => {
+    if (userId) {
+      const saved = localStorage.getItem(`mutedNotifications_${userId}`)
+      if (saved) {
+        try {
+          setMutedNotifications(JSON.parse(saved))
+        } catch (error) {
+          console.error('Error loading muted notifications:', error)
+        }
+      }
+    }
+  }, [userId])
+
+  const { actionCenterCounts } = useActionCenter(mutedNotifications)
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
   const [isPinned, setIsPinned] = useState(false)

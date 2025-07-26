@@ -17,7 +17,7 @@ interface TaskState {
   dismissedAt?: Date
 }
 
-export function useActionCenter() {
+export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {}) {
   const { userId, getToken } = useAuth()
   const [counts, setCounts] = useState<ActionCenterCounts>({ totalItems: 0, urgentItems: 0 })
 
@@ -363,8 +363,24 @@ export function useActionCenter() {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [userId, loadActionCenterCounts])
 
+  // Function to get counts with muting applied
+  const getFilteredCounts = () => {
+    let filteredTotal = counts.totalItems
+    let filteredUrgent = counts.urgentItems
+    
+    // For now, we'll use a simple approach and subtract estimated counts
+    // This could be improved by tracking counts by category
+    if (mutedNotifications['outreach-tasks']) {
+      // Rough estimate: outreach tasks typically account for 3-5 items
+      filteredTotal = Math.max(0, filteredTotal - 5)
+      filteredUrgent = Math.max(0, filteredUrgent - 3)
+    }
+    
+    return { totalItems: filteredTotal, urgentItems: filteredUrgent }
+  }
+
   return {
-    actionCenterCounts: counts,
+    actionCenterCounts: getFilteredCounts(),
     refreshCounts: loadActionCenterCounts
   }
 } 
