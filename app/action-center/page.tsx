@@ -331,10 +331,33 @@ export default function ActionCenterPage() {
       case 'user':
         // User-dependent tools - check user data regardless of selected brand
         if (tool.id === 'lead-generator') {
-          // Lead generator needs the user to have access (not necessarily existing leads)
-          // For now, assume all users can use lead generator (it creates leads)
-          console.log(`[Action Center] ${tool.name}: Available (lead generator always available)`)
-          return { ...tool, status: 'available' }
+          // Lead generator has weekly usage limits
+          const now = new Date()
+          const startOfWeek = new Date(now)
+          const dayOfWeek = now.getDay()
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+          startOfWeek.setDate(now.getDate() - daysToSubtract)
+          startOfWeek.setHours(0, 0, 0, 0)
+
+          const startOfNextWeek = new Date(startOfWeek)
+          startOfNextWeek.setDate(startOfWeek.getDate() + 7)
+
+          // Check weekly usage from user data we already loaded
+          const WEEKLY_LIMIT = 1 // 1 generation per week
+          const currentWeeklyUsage = userUsageData?.reduce((sum: number, record: any) => {
+            const recordDate = new Date(record.date)
+            if (recordDate >= startOfWeek && recordDate < startOfNextWeek) {
+              return sum + (record.generation_count || 0)
+            }
+            return sum
+          }, 0) || 0
+
+          const hasGenerationsLeft = currentWeeklyUsage < WEEKLY_LIMIT
+          console.log(`[Action Center] ${tool.name}: ${hasGenerationsLeft ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
+          return { 
+            ...tool, 
+            status: hasGenerationsLeft ? 'available' : 'unavailable'
+          }
         }
         
         if (tool.id === 'outreach-tool') {
@@ -488,31 +511,26 @@ export default function ActionCenterPage() {
     }
   }
 
-  const getUnavailableReason = (tool: ReusableTool) => {
-    if (tool.dependencyType === 'user') {
-      if (tool.id === 'outreach-tool') {
-        return 'No Leads'
-      }
-      return 'Not Available'
-    }
-    
-    if (tool.dependencyType === 'brand') {
-      return 'Missing Platform'
-    }
-    
-    return 'Not Available'
-  }
-
   const getStatusBadge = (tool: ReusableTool) => {
     switch (tool.status) {
-      case 'available': 
-        return <Badge className="bg-green-600 text-white text-xs">Available</Badge>
-      case 'coming-soon': 
-        return <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-      case 'unavailable': 
-        return <Badge className="bg-red-600 text-white text-xs">{getUnavailableReason(tool)}</Badge>
-      default: 
-        return <Badge variant="outline" className="text-xs">Unknown</Badge>
+      case 'available':
+        return <Badge variant="outline" className="text-green-600 border-green-600">Available</Badge>
+      case 'coming-soon':
+        return <Badge variant="outline" className="text-blue-600 border-blue-600">Coming Soon</Badge>
+      case 'unavailable':
+        // Show specific reason based on tool type
+        if (tool.id === 'lead-generator') {
+          return <Badge variant="outline" className="text-red-600 border-red-600">Weekly Limit Reached</Badge>
+        }
+        if (tool.id === 'outreach-tool') {
+          return <Badge variant="outline" className="text-red-600 border-red-600">No Leads</Badge>
+        }
+        if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
+          return <Badge variant="outline" className="text-red-600 border-red-600">Missing Platform</Badge>
+        }
+        return <Badge variant="outline" className="text-red-600 border-red-600">Unavailable</Badge>
+      default:
+        return <Badge variant="outline">Unknown</Badge>
     }
   }
 
@@ -792,6 +810,29 @@ export default function ActionCenterPage() {
   const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
   const availableToolsCount = filteredTools.filter(t => t.status === 'available').length
 
+  const getButtonText = (tool: ReusableTool) => {
+    switch (tool.status) {
+      case 'available':
+        return 'Open Tool'
+      case 'coming-soon':
+        return 'Coming Soon'
+      case 'unavailable':
+        // Show specific action based on tool type
+        if (tool.id === 'lead-generator') {
+          return 'Weekly Limit Reached'
+        }
+        if (tool.id === 'outreach-tool') {
+          return 'Generate Leads First'
+        }
+        if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
+          return 'Connect Platform'
+        }
+        return 'Unavailable'
+      default:
+        return 'Unknown'
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -1065,12 +1106,7 @@ export default function ActionCenterPage() {
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
-                          {tool.status === 'coming-soon' ? 'Coming Soon' : 
-                           tool.status === 'unavailable' ? 
-                             (tool.dependencyType === 'user' && tool.id === 'outreach-tool' ? 'Generate Leads First' :
-                              tool.dependencyType === 'brand' ? 'Connect Platform' : 
-                              'Not Available') :
-                           'Open Tool'}
+                          {getButtonText(tool)}
                         </Button>
                       </div>
                     )
