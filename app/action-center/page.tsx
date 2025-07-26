@@ -1606,28 +1606,42 @@ export default function ActionCenterPage() {
                             brand.status === 'healthy' && "border-green-500/50 bg-green-950/20"
                           )}
                         >
-                          {/* Brand Header */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              {brand.logo_url ? (
-                                <img src={brand.logo_url} alt={brand.name} className="w-6 h-6 rounded object-cover" />
-                              ) : (
-                                <div className="w-6 h-6 rounded bg-[#444] flex items-center justify-center">
-                                  <span className="text-xs font-medium text-white">
-                                    {brand.name.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                              )}
-                              <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
-                            </div>
-                            <div className={cn(
-                              "w-2 h-2 rounded-full",
-                              brand.status === 'critical' && "bg-red-500",
-                              brand.status === 'warning' && "bg-orange-500",
-                              brand.status === 'info' && "bg-blue-500", 
-                              brand.status === 'healthy' && "bg-green-500"
-                            )} />
-                          </div>
+                                                     {/* Brand Header */}
+                           <div className="flex items-center justify-between mb-3">
+                             <div className="flex items-center gap-2">
+                               {brand.logo_url ? (
+                                 <img src={brand.logo_url} alt={brand.name} className="w-6 h-6 rounded object-cover" />
+                               ) : (
+                                 <div className="w-6 h-6 rounded bg-[#444] flex items-center justify-center">
+                                   <span className="text-xs font-medium text-white">
+                                     {brand.name.charAt(0).toUpperCase()}
+                                   </span>
+                                 </div>
+                               )}
+                               <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <div className={cn(
+                                 "w-2 h-2 rounded-full",
+                                 brand.status === 'critical' && "bg-red-500",
+                                 brand.status === 'warning' && "bg-orange-500",
+                                 brand.status === 'info' && "bg-blue-500", 
+                                 brand.status === 'healthy' && "bg-green-500"
+                               )} />
+                               <span className={cn(
+                                 "text-xs font-medium",
+                                 brand.status === 'critical' && "text-red-400",
+                                 brand.status === 'warning' && "text-orange-400",
+                                 brand.status === 'info' && "text-blue-400",
+                                 brand.status === 'healthy' && "text-green-400"
+                               )}>
+                                 {brand.status === 'critical' && "Critical"}
+                                 {brand.status === 'warning' && "Warning"}
+                                 {brand.status === 'info' && "Setup Needed"}
+                                 {brand.status === 'healthy' && "Healthy"}
+                               </span>
+                             </div>
+                           </div>
 
                           {/* Key Metrics */}
                           {brand.hasData && (
