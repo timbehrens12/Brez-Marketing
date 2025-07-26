@@ -135,6 +135,14 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
           })
 
           // Count todos using EXACT same IDs as Action Center page
+          console.log('[useActionCenter] Outreach todos breakdown:', {
+            pendingLeads: pendingLeads.length,
+            respondedLeads: respondedLeads.length,
+            qualifiedLeads: qualifiedLeads.length,
+            needsFollowUp: needsFollowUp.length,
+            goingCold: goingCold.length
+          })
+          
           if (pendingLeads.length > 0 && isTaskActive('new_leads', taskStates)) {
             totalItems++
             urgentItems++ // High priority
@@ -350,9 +358,14 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
           console.error('Error loading read brand reports:', error)
         }
 
-        // Count unread brand reports
-        const unreadBrandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
-        totalItems += unreadBrandReports
+              // Count unread brand reports
+      const unreadBrandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
+      console.log('[useActionCenter] Brand reports count:', {
+        totalBrands: brandsList.length,
+        unreadBrandReports,
+        readBrandReports
+      })
+      totalItems += unreadBrandReports
       }
 
             // Only count actionable notifications for sidebar:
@@ -363,7 +376,9 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       console.log('[useActionCenter] Final counts for sidebar:', {
         totalItems,
         urgentItems,
-        note: 'Should be 2 reports + 5 todos = 7 total (not counting muted available tools)'
+        note: 'Should be 2 reports + 5 todos = 7 total (not counting muted available tools)',
+        currentValues: { totalItems, urgentItems },
+        expectedBreakdown: '2 reports + 5 todos = 7, but seeing ' + totalItems
       })
       
       setCounts({ totalItems, urgentItems })

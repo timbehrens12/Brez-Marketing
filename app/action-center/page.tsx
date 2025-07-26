@@ -1113,12 +1113,20 @@ export default function ActionCenterPage() {
       }
 
       const brandHealthPromises = brands.map(async (brand) => {
-        const yesterday = new Date()
+        const now = new Date()
+        const yesterday = new Date(now)
         yesterday.setDate(yesterday.getDate() - 1)
-        const lastWeek = new Date()
+        const lastWeek = new Date(now)
         lastWeek.setDate(lastWeek.getDate() - 7)
-        const last30Days = new Date()
+        const last30Days = new Date(now)
         last30Days.setDate(last30Days.getDate() - 30)
+        
+        console.log(`[Brand Health] ${brand.name} - Date calculation check:`, {
+          now: now.toISOString().split('T')[0],
+          yesterday: yesterday.toISOString().split('T')[0],
+          lastWeek: lastWeek.toISOString().split('T')[0],
+          last30Days: last30Days.toISOString().split('T')[0]
+        })
 
         // Get Meta performance data from the correct table - meta_ad_insights
         const { data: metaData } = await supabase
@@ -1183,6 +1191,7 @@ export default function ActionCenterPage() {
           
           console.log(`[Brand Health] ${brand.name} - Calculated spend: $${spend.toFixed(2)} from ${recentMetaData.length} records`)
           console.log(`[Brand Health] ${brand.name} - Individual spends:`, recentMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+          console.log(`[Brand Health] ${brand.name} - Raw spend data:`, recentMetaData.map(d => ({ date: d.date, spend: d.spend, parsed: parseFloat(d.spend) || 0 })))
           console.log(`[Brand Health] ${brand.name} - Revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
           if (olderMetaData.length > 0) {
