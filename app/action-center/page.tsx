@@ -1622,11 +1622,11 @@ export default function ActionCenterPage() {
                     <div className="flex items-center gap-2">
                       <Badge className="bg-[#2A2A2A] text-white text-xs">
                         {!mutedNotifications['outreach-tasks'] ? (
-                          activeTodos.length
+                          `${activeTodos.length} to-do's`
                         ) : (
                           <div className="flex items-center gap-1">
                             <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{activeTodos.length}</span>
+                            <span className="line-through opacity-60">{activeTodos.length} to-do's</span>
                           </div>
                         )}
                       </Badge>
@@ -1738,7 +1738,7 @@ export default function ActionCenterPage() {
 
           {/* Reusable Tools Widget - 75% width */}
           <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl min-h-[110%]">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
