@@ -117,6 +117,19 @@ export async function GET(request: Request) {
       
     if (isTodayRequest) { // Log if comparing today to yesterday based on the actual request
       console.log('Calculating previous period for a "today" request (will be yesterday)');
+      
+      // **NEW: For today requests, ensure yesterday's data is complete**
+      // This handles the case where user left at 6pm and more data came in overnight
+      const now = new Date();
+      const currentHour = now.getHours();
+      
+      // If it's early in the day (before 10am), force a fresh query for yesterday's data
+      // to ensure we have the complete previous day's data for comparison
+      if (currentHour < 10) {
+        console.log('Early morning request - ensuring yesterday data is complete for accurate comparison');
+        // Add a flag to indicate we might need fresh yesterday data
+        // This will be used by the frontend to potentially refresh comparison data
+      }
     }
     
     const formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");

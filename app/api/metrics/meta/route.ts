@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
     const bypassCache = url.searchParams.get('bypass_cache') === 'true'
     const forceLoad = url.searchParams.get('force_load') === 'true'
     const forceRefresh = url.searchParams.get('force_refresh') === 'true'
+    const refreshForComparison = url.searchParams.get('refresh_for_comparison') === 'true' // NEW: Flag for comparison data refresh
     const debug = url.searchParams.get('debug') === 'true'
     const dateDebug = url.searchParams.get('date_debug') === 'true'
     const strictDateRange = url.searchParams.get('strict_date_range') === 'true'
@@ -117,6 +118,7 @@ export async function GET(request: NextRequest) {
       bypassCache,
       forceLoad,
       forceRefresh,
+      refreshForComparison, // NEW: Log the comparison refresh flag
       refresh,
       debug,
       preset,
@@ -131,11 +133,25 @@ export async function GET(request: NextRequest) {
     const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}-${currentDate}`;
     
     // Add detailed logging to troubleshoot date filtering issues
-    console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}, bypassCache: ${bypassCache}, forceRefresh: ${forceRefresh}, strictDateRange: ${strictDateRange}`)
+    console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}, bypassCache: ${bypassCache}, forceRefresh: ${forceRefresh}, refreshForComparison: ${refreshForComparison}, strictDateRange: ${strictDateRange}`)
     
     // Validate brandId
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    }
+    
+    // **NEW: Always bypass cache for comparison refreshes to ensure fresh data**
+    const shouldBypassCache = bypassCache || forceRefresh || refreshForComparison;
+    
+    // Check cache only if not bypassing
+    if (!shouldBypassCache) {
+      const cachedEntry = apiCache.get(cacheKey);
+      if (cachedEntry && isCacheValidForToday(cachedEntry)) {
+        console.log(`[CACHE] Returning cached data for key: ${cacheKey}`);
+        return NextResponse.json(cachedEntry.data);
+      }
+    } else {
+      console.log(`[CACHE] Bypassing cache${refreshForComparison ? ' (comparison refresh)' : ''} for key: ${cacheKey}`);
     }
 
     // Validate date range for strict mode
@@ -145,21 +161,6 @@ export async function GET(request: NextRequest) {
         error: 'Date range parameters required',
         _dateRange: { missing: true } 
       }, { status: 400 })
-    }
-    
-    // Check if this exact request is in our cache and not expired (unless bypass requested)
-    if (!bypassCache && !refresh) {
-      const cachedResponse = apiCache.get(cacheKey);
-      if (cachedResponse && isCacheValidForToday(cachedResponse)) {
-        console.log(`🔥🔥🔥 [META API] RETURNING CACHED DATA for ${cacheKey} (cached on ${cachedResponse.cacheDate})`);
-        return NextResponse.json(cachedResponse.data);
-      } else if (cachedResponse) {
-        // Cache expired or invalid, remove it
-          apiCache.delete(cacheKey);
-        console.log(`🔥🔥🔥 [META API] CACHE EXPIRED/INVALID for ${cacheKey}, will fetch fresh data`);
-      }
-    } else {
-      console.log(`🔥🔥🔥 [META API] BYPASSING CACHE for ${cacheKey} because bypassCache=${bypassCache}, refresh=${refresh}`);
     }
     
     // Initialize Supabase client

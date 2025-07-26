@@ -1424,8 +1424,48 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     initialLoad();
     
     // Function to refresh daily data
-    const refreshDailyData = () => {
+    const refreshDailyData = async () => {
       console.log('Performing hourly refresh of daily data');
+      
+      // **NEW: Ensure yesterday's data is complete for accurate comparisons**
+      const currentHour = new Date().getHours();
+      
+      // If it's early in the day (before 10am), refresh yesterday's data first
+      if (currentHour < 10) {
+        console.log('[GreetingWidget] 🔄 Early morning - ensuring yesterday data is complete for daily comparison');
+        
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        
+        // Refresh Meta yesterday data if Meta connection exists
+        const metaConnection = connections.find((c: any) => c.platform_type === 'meta' && c.status === 'active');
+        if (metaConnection) {
+          try {
+            const yesterdayParams = new URLSearchParams({
+              brandId: brandId.toString(),
+              from: yesterdayStr,
+              to: yesterdayStr,
+              preset: 'yesterday',
+              force_refresh: 'true',
+              bypass_cache: 'true',
+              refresh_for_comparison: 'true',
+              t: new Date().getTime().toString()
+            });
+            
+            console.log('[GreetingWidget] 📊 Refreshing yesterday Meta data for comparison accuracy...');
+            const yesterdayResponse = await fetch(`/api/metrics/meta?${yesterdayParams.toString()}`);
+            
+            if (yesterdayResponse.ok) {
+              console.log('[GreetingWidget] ✅ Yesterday Meta data refreshed for accurate comparisons');
+            } else {
+              console.warn('[GreetingWidget] ⚠️ Failed to refresh yesterday Meta data:', yesterdayResponse.status);
+            }
+          } catch (error) {
+            console.warn('[GreetingWidget] ⚠️ Error refreshing yesterday Meta data:', error);
+          }
+        }
+      }
       
       // Only fetch daily data since that's all that changes hourly
       const refreshDailyOnly = async () => {

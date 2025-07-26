@@ -317,6 +317,42 @@ export default function MarketingAssistantPage() {
     
     console.log("[MarketingAssistant] Syncing Meta insights data through database...")
     
+    // **NEW: Check if we need to refresh yesterday's data for accurate comparisons**
+    const currentHour = new Date().getHours();
+    
+    // If it's early in the day (before 10am), refresh yesterday's data first
+    if (currentHour < 10) {
+      console.log('[MarketingAssistant] 🔄 Early morning - ensuring yesterday data is complete for accurate comparisons');
+      
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+      
+      try {
+        const yesterdayParams = new URLSearchParams({
+          brandId: selectedBrandId.toString(),
+          from: yesterdayStr,
+          to: yesterdayStr,
+          preset: 'yesterday',
+          force_refresh: 'true',
+          bypass_cache: 'true',
+          refresh_for_comparison: 'true',
+          t: new Date().getTime().toString()
+        });
+        
+        console.log('[MarketingAssistant] 📊 Refreshing yesterday data for comparison accuracy...');
+        const yesterdayResponse = await fetch(`/api/metrics/meta?${yesterdayParams.toString()}`);
+        
+        if (yesterdayResponse.ok) {
+          console.log('[MarketingAssistant] ✅ Yesterday data refreshed for accurate comparisons');
+        } else {
+          console.warn('[MarketingAssistant] ⚠️ Failed to refresh yesterday data:', yesterdayResponse.status);
+        }
+      } catch (error) {
+        console.warn('[MarketingAssistant] ⚠️ Error refreshing yesterday data:', error);
+      }
+    }
+    
     // Set loading states
     setIsLoadingMetrics(true)
     setIsRefreshingData(true)
