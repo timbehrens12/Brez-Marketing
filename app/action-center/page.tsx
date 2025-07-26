@@ -19,7 +19,6 @@ import {
   Check,
   CheckCircle,
   Loader2,
-  // New icons for tools
   Brain,
   Zap,
   Target,
@@ -78,127 +77,89 @@ interface TodoItem {
   actionItems?: string[]
 }
 
-interface TaskState {
-  [key: string]: {
-    status: 'pending' | 'snoozed' | 'completed' | 'dismissed'
-    snoozeUntil?: Date
-    completedAt?: Date
-    dismissedAt?: Date
-  }
-}
-
-interface Brand {
-  id: string
-  name: string
-  niche?: string
-  image_url?: string
-  user_id: string
-  shared_access?: any
-  agency_info?: any
-}
-
 interface ReusableTool {
   id: string
   name: string
   description: string
-  icon: any
-  category: 'automation' | 'ai-powered' | 'analytics' | 'tools'
-  status: 'available' | 'coming-soon' | 'unavailable'
-  href: string
-  features: string[]
-  frequency?: string
-  requiresPlatforms?: ('meta' | 'shopify')[]
-  requiresData?: boolean
-  dependencyType: 'user' | 'brand' | 'none' // New field to distinguish dependency types
+  icon: React.ComponentType<any>
+  targetPage: string
+  dependencyType: 'user' | 'brand' | 'none'
+  requiresPlatforms?: string[]
+  status: 'available' | 'unavailable' | 'coming-soon'
 }
 
 const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
     id: 'campaign-optimizer',
     name: 'Campaign Optimizer',
-    description: 'AI-powered campaign optimization and performance insights',
-    icon: Target,
-    category: 'ai-powered',
-    href: '/dashboard',
-    features: ['Performance Analysis', 'Budget Optimization', 'Ad Set Recommendations'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand' // Depends on brand having Meta connection
+    description: 'AI-powered campaign optimization and budget recommendations',
+    icon: TrendingUp,
+    targetPage: '/analytics',
+    dependencyType: 'brand',
+    requiresPlatforms: ['meta']
   },
   {
     id: 'lead-generator',
     name: 'Lead Generator',
-    description: 'Find and qualify leads using real business data',
-    icon: Zap,
-    category: 'tools',
-    href: '/lead-generator',
-    features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
-    dependencyType: 'user' // Depends on user having access/usage limits
+    description: 'Generate high-quality leads with AI-powered prospecting',
+    icon: Target,
+    targetPage: '/lead-generator',
+    dependencyType: 'user'
   },
   {
     id: 'outreach-tool',
     name: 'Outreach Tool',
-    description: 'Manage lead outreach campaigns and follow-ups',
+    description: 'Manage and automate your lead outreach campaigns',
     icon: Send,
-    category: 'tools',
-    href: '/outreach-tool',
-    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
-    dependencyType: 'user' // Depends on user having leads/campaigns
+    targetPage: '/outreach-tool',
+    dependencyType: 'user'
   },
   {
     id: 'marketing-assistant',
     name: 'Marketing Assistant',
-    description: 'AI marketing insights and strategic recommendations',
+    description: 'AI-powered marketing insights and recommendations',
     icon: Brain,
-    category: 'ai-powered',
-    href: '/marketing-assistant',
-    features: ['Performance Analytics', 'Campaign Insights', 'AI Recommendations'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand' // Depends on brand having Meta connection
+    targetPage: '/marketing-assistant',
+    dependencyType: 'brand',
+    requiresPlatforms: ['meta']
   },
   {
     id: 'brand-reports',
     name: 'Brand Reports',
-    description: 'Generate comprehensive performance reports',
+    description: 'Comprehensive performance reports and analytics',
     icon: FileBarChart,
-    category: 'analytics',
-    href: '/brand-report',
-    features: ['Performance Reports', 'AI-Generated Insights', 'Export Options'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand' // Depends on brand having Meta connection
+    targetPage: '/brand-report',
+    dependencyType: 'brand',
+    requiresPlatforms: ['meta', 'shopify']
   },
   {
     id: 'ad-creative-studio',
     name: 'Ad Creative Studio',
-    description: 'AI-powered ad creative generation and optimization',
+    description: 'AI-powered ad creative generation and testing',
     icon: Palette,
-    category: 'ai-powered',
-    href: '/ad-creative-studio',
-    features: ['Creative Generation', 'A/B Testing', 'Performance Optimization'],
-    dependencyType: 'none' // Coming soon, no dependencies yet
+    targetPage: '/ad-creative-studio',
+    dependencyType: 'none'
   }
 ]
+
+interface TaskState {
+  snoozed: boolean
+  snoozeUntil?: Date
+  completed: boolean
+  completedAt?: Date
+  dismissed: boolean
+  dismissedAt?: Date
+}
 
 export default function ActionCenterPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
-  const { brands: contextBrands, setSelectedBrandId: setBrandContext } = useBrandContext()
-  const [todos, setTodos] = useState<TodoItem[]>([])
+  const { brands: contextBrands, loading: brandsLoading } = useBrandContext()
   const [isDataLoading, setIsDataLoading] = useState(true)
-  const [taskStates, setTaskStates] = useState<TaskState>({})
-  const [selectedTodo, setSelectedTodo] = useState<TodoItem | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [connections, setConnections] = useState<PlatformConnection[]>([])
-  const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
-  const [isLoadingConnections, setIsLoadingConnections] = useState(true)
-  
-  // Muted notifications state
+  const [taskStates, setTaskStates] = useState<{ [key: string]: TaskState }>({})
+  const [todos, setTodos] = useState<TodoItem[]>([])
   const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
-  const [brandHealthData, setBrandHealthData] = useState<any[]>([])
-  const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(false)
   const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
   const [brandSynopsisCache, setBrandSynopsisCache] = useState<{[key: string]: string}>({})
 
@@ -218,6 +179,11 @@ export default function ActionCenterPage() {
 
   // Use brands from context
   const brands = contextBrands || []
+
+  // Platform connections state
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false)
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
 
   // Stable Supabase client function - memoize with minimal dependencies
   const getSupabaseClient = useCallback(async () => {
@@ -347,74 +313,35 @@ export default function ActionCenterPage() {
   }, [userId, brands, getSupabaseClient])
 
   // Get tool availability for a specific brand
-  const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
+  const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId: string): ReusableTool => {
     console.log(`[Action Center] Checking availability for ${tool.name}:`, {
       toolId: tool.id,
       dependencyType: tool.dependencyType,
       selectedBrandId: brandId,
       userLeadsCount,
       userCampaignsCount,
-      availableBrands: brands.length,
-      connections: connections.length
+      userUsageData: userUsageData.length,
+      connectionsLength: connections.length
     })
 
-    // Coming soon tools are always coming soon
-    if (tool.id === 'ad-creative-studio') {
-      console.log(`[Action Center] ${tool.name}: Coming soon`)
-      return { ...tool, status: 'coming-soon' }
-    }
-
-    // Handle different dependency types
     switch (tool.dependencyType) {
-      case 'none':
-        // No dependencies, always available (or coming soon as handled above)
-        console.log(`[Action Center] ${tool.name}: Available (no dependencies)`)
-        return { ...tool, status: 'available' }
-
       case 'user':
-        // User-dependent tools - check user data regardless of selected brand
+        // User-dependent tools
         if (tool.id === 'lead-generator') {
-          // Lead generator has weekly usage limits
-          const now = new Date()
-          const startOfWeek = new Date(now)
-          const dayOfWeek = now.getDay()
-          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-          startOfWeek.setDate(now.getDate() - daysToSubtract)
-          startOfWeek.setHours(0, 0, 0, 0)
-
-          const startOfNextWeek = new Date(startOfWeek)
-          startOfNextWeek.setDate(startOfWeek.getDate() + 7)
-
-          // Check weekly usage from user data we already loaded
-          const WEEKLY_LIMIT = 1 // 1 generation per week
-          const currentWeeklyUsage = userUsageData?.reduce((sum: number, record: any) => {
-            const recordDate = new Date(record.date)
-            if (recordDate >= startOfWeek && recordDate < startOfNextWeek) {
-              return sum + (record.generation_count || 0)
-            }
-            return sum
-          }, 0) || 0
-
-          const hasGenerationsLeft = currentWeeklyUsage < WEEKLY_LIMIT
-          console.log(`[Action Center] ${tool.name}: ${hasGenerationsLeft ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
-          return { 
-            ...tool, 
-            status: hasGenerationsLeft ? 'available' : 'unavailable'
-          }
+          // Check weekly usage limit
+          const WEEKLY_LIMIT = 5
+          const currentWeeklyUsage = userUsageData.reduce((sum, record) => sum + (record.generation_count || 0), 0)
+          const isAvailable = currentWeeklyUsage < WEEKLY_LIMIT
+          console.log(`[Action Center] Lead Generator: ${isAvailable ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
+          return { ...tool, status: isAvailable ? 'available' : 'unavailable' }
         }
         
         if (tool.id === 'outreach-tool') {
-          // Outreach tool needs user to have leads to manage
-          const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
-          console.log(`[Action Center] ${tool.name}: ${hasLeads ? 'Available' : 'Unavailable'} (hasLeads: ${hasLeads})`)
-          return { 
-            ...tool, 
-            status: hasLeads ? 'available' : 'unavailable'
-          }
+          const hasLeads = userLeadsCount > 0
+          console.log(`[Action Center] Outreach Tool: ${hasLeads ? 'Available' : 'Unavailable'} (hasLeads: ${hasLeads})`)
+          return { ...tool, status: hasLeads ? 'available' : 'unavailable' }
         }
-        
-        // Default for user-dependent tools
-        console.log(`[Action Center] ${tool.name}: Available (default user-dependent)`)
+
         return { ...tool, status: 'available' }
 
       case 'brand':
@@ -450,6 +377,14 @@ export default function ActionCenterPage() {
 
         return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
 
+      case 'none':
+        // Tools with no dependencies
+        if (tool.id === 'ad-creative-studio') {
+          console.log(`[Action Center] ${tool.name}: Coming soon`)
+          return { ...tool, status: 'coming-soon' }
+        }
+        return { ...tool, status: 'available' }
+
       default:
         console.log(`[Action Center] ${tool.name}: Unavailable (unknown dependency type)`)
         return { ...tool, status: 'unavailable' }
@@ -473,146 +408,392 @@ export default function ActionCenterPage() {
     return connections.filter(conn => conn.brand_id === brandId)
   }
 
-  // Render brand avatar
-  const renderBrandAvatar = (brand: any, size: 'sm' | 'md' = 'sm') => {
-    const sizeClasses = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
-    
-    if (brand.image_url) {
-      return (
-        <img 
-          src={brand.image_url} 
-          alt={brand.name} 
-          className={cn(sizeClasses, "rounded-full object-cover border border-[#444]")}
-        />
-      )
+  // Load task states from localStorage
+  const loadTaskStates = useCallback(() => {
+    if (!userId) return
+    try {
+      const saved = localStorage.getItem(`actionCenter_taskStates_${userId}`)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Convert date strings back to Date objects
+        Object.keys(parsed).forEach(key => {
+          if (parsed[key].snoozeUntil) {
+            parsed[key].snoozeUntil = new Date(parsed[key].snoozeUntil)
+          }
+          if (parsed[key].completedAt) {
+            parsed[key].completedAt = new Date(parsed[key].completedAt)
+          }
+          if (parsed[key].dismissedAt) {
+            parsed[key].dismissedAt = new Date(parsed[key].dismissedAt)
+          }
+        })
+        setTaskStates(parsed)
+      }
+    } catch (error) {
+      console.error('Error loading task states:', error)
     }
-    
-    return (
-      <div className={cn(
-        sizeClasses,
-        "flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444]"
-      )}>
-        {brand.name.charAt(0).toUpperCase()}
-      </div>
-    )
-  }
+  }, [userId])
 
-  // Render platform connection icons
-  const renderConnectionIcons = (brandId: string) => {
-    const brandConnections = getBrandConnections(brandId)
-    const uniqueConnections = brandConnections.filter((connection, index, arr) => 
-      arr.findIndex(c => c.platform_type === connection.platform_type) === index
-    )
-    
-    return (
-      <div className="flex items-center gap-1">
-        {uniqueConnections.map((connection) => (
-          <div
-            key={`${connection.platform_type}-${brandId}`}
-            className="w-3 h-3 rounded-sm overflow-hidden border border-white/30 bg-white/10"
-            title={`${connection.platform_type.charAt(0).toUpperCase() + connection.platform_type.slice(1)} connected`}
-          >
-            {connection.platform_type === 'shopify' && (
-              <img 
-                src="/shopify-icon.png" 
-                alt="Shopify" 
-                className="w-full h-full object-contain"
-              />
-            )}
-            {connection.platform_type === 'meta' && (
-              <img 
-                src="/meta-icon.png" 
-                alt="Meta" 
-                className="w-full h-full object-contain"
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    )
-  }
+  // Save task states to localStorage
+  const saveTaskStates = useCallback((states: { [key: string]: TaskState }) => {
+    if (!userId) return
+    try {
+      localStorage.setItem(`actionCenter_taskStates_${userId}`, JSON.stringify(states))
+      setTaskStates(states)
+    } catch (error) {
+      console.error('Error saving task states:', error)
+    }
+  }, [userId])
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'automation': return <Calendar className="h-4 w-4" />
-      case 'ai-powered': return <Brain className="h-4 w-4" />
-      case 'analytics': return <TrendingUp className="h-4 w-4" />
-      case 'tools': return <Settings className="h-4 w-4" />
-      default: return <CheckSquare className="h-4 w-4" />
+  // Check if a task is active (not completed, dismissed, or snoozed)
+  const isTaskActive = useCallback((taskId: string): boolean => {
+    const state = taskStates[taskId]
+    if (!state) return true
+
+    // Check if completed
+    if (state.completed) return false
+
+    // Check if dismissed
+    if (state.dismissed) return false
+
+    // Check if snoozed
+    if (state.snoozed && state.snoozeUntil && new Date() < state.snoozeUntil) return false
+
+    return true
+  }, [taskStates])
+
+  // Generate todos from outreach data
+  const generateTodos = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      const supabase = await getSupabaseClient()
+      console.log('[Action Center] Loading outreach data for user:', userId)
+
+      // Get campaigns for this user
+      const { data: campaigns, error: campaignsError } = await supabase
+        .from('outreach_campaigns')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (campaignsError) {
+        console.error('[Action Center] Error loading campaigns:', campaignsError)
+        return
+      }
+
+      // Get leads for all campaigns
+      const campaignIds = campaigns?.map(c => c.id) || []
+      if (campaignIds.length === 0) {
+        setTodos([])
+        return
+      }
+
+      const { data: leads, error: leadsError } = await supabase
+        .from('outreach_campaign_leads')
+        .select('*')
+        .in('campaign_id', campaignIds)
+
+      if (leadsError) {
+        console.error('[Action Center] Error loading leads:', leadsError)
+        return
+      }
+
+      console.log('[Action Center] Found campaign leads:', leads?.length || 0)
+
+      // Categorize leads
+      const pendingLeads = leads?.filter(l => l.status === 'pending') || []
+      const contactedLeads = leads?.filter(l => l.status === 'contacted') || []
+      const respondedLeads = leads?.filter(l => l.status === 'responded') || []
+      const qualifiedLeads = leads?.filter(l => l.status === 'qualified') || []
+
+      console.log('[Action Center] Lead counts:', {
+        pending: pendingLeads.length,
+        contacted: contactedLeads.length,
+        responded: respondedLeads.length,
+        qualified: qualifiedLeads.length,
+        total: leads?.length || 0
+      })
+
+      // Get leads that need follow-up (contacted > 3 days ago)
+      const threeDaysAgo = new Date()
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+      
+      const needsFollowUp = contactedLeads.filter(cl => {
+        if (!cl.last_contacted_at) return false
+        return new Date(cl.last_contacted_at) < threeDaysAgo
+      })
+      
+      // Get leads going cold (contacted > 7 days ago)
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const goingCold = contactedLeads.filter(cl => {
+        if (!cl.last_contacted_at) return false
+        return new Date(cl.last_contacted_at) < sevenDaysAgo
+      })
+
+      console.log('[Action Center] Follow-up counts:', {
+        needsFollowUp: needsFollowUp.length,
+        goingCold: goingCold.length
+      })
+
+      // Generate todos
+      const newTodos: TodoItem[] = []
+
+      if (pendingLeads.length > 0) {
+        newTodos.push({
+          id: 'new_leads',
+          type: 'new_leads',
+          priority: 'high',
+          title: 'Contact New Leads',
+          description: `You have ${pendingLeads.length} new leads waiting for initial contact`,
+          count: pendingLeads.length,
+          action: 'Start Outreach',
+          targetPage: '/outreach-tool',
+          actionItems: pendingLeads.slice(0, 3).map(lead => `${lead.company_name || 'Lead'} - ${lead.contact_email}`)
+        })
+      }
+
+      if (respondedLeads.length > 0) {
+        newTodos.push({
+          id: 'responded',
+          type: 'responded',
+          priority: 'high',
+          title: 'Follow Up on Responses',
+          description: `${respondedLeads.length} leads have responded and need follow-up`,
+          count: respondedLeads.length,
+          action: 'Review Responses',
+          targetPage: '/outreach-tool',
+          actionItems: respondedLeads.slice(0, 3).map(lead => `${lead.company_name || 'Lead'} responded`)
+        })
+      }
+
+      if (qualifiedLeads.length > 0) {
+        newTodos.push({
+          id: 'qualified',
+          type: 'hot_leads',
+          priority: 'high',
+          title: 'Close Qualified Leads',
+          description: `${qualifiedLeads.length} qualified leads ready for closing`,
+          count: qualifiedLeads.length,
+          action: 'Close Deals',
+          targetPage: '/outreach-tool',
+          actionItems: qualifiedLeads.slice(0, 3).map(lead => `${lead.company_name || 'Lead'} - Qualified`)
+        })
+      }
+
+      if (needsFollowUp.length > 0) {
+        newTodos.push({
+          id: 'follow_up',
+          type: 'follow_up',
+          priority: 'medium',
+          title: 'Follow Up Needed',
+          description: `${needsFollowUp.length} leads need follow-up (contacted 3+ days ago)`,
+          count: needsFollowUp.length,
+          action: 'Send Follow-up',
+          targetPage: '/outreach-tool',
+          actionItems: needsFollowUp.slice(0, 3).map(lead => `${lead.company_name || 'Lead'} - Follow up needed`)
+        })
+      }
+
+      if (goingCold.length > 0) {
+        newTodos.push({
+          id: 'going_cold',
+          type: 'follow_up',
+          priority: 'high',
+          title: 'Leads Going Cold',
+          description: `${goingCold.length} leads haven't been contacted in 7+ days`,
+          count: goingCold.length,
+          action: 'Re-engage',
+          targetPage: '/outreach-tool',
+          actionItems: goingCold.slice(0, 3).map(lead => `${lead.company_name || 'Lead'} - Going cold`)
+        })
+      }
+
+      console.log('[Action Center] Generated todos:', newTodos.length)
+      console.log('[Action Center] Todos:', newTodos)
+      setTodos(newTodos)
+
+    } catch (error) {
+      console.error('[Action Center] Error generating todos:', error)
+    }
+  }, [userId, getSupabaseClient])
+
+  // Load data - using refs to avoid dependency loops
+  const loadingRef = useRef(false)
+  
+  useEffect(() => {
+    const loadData = async () => {
+      if (loadingRef.current) return // Prevent concurrent loads
+      
+      loadingRef.current = true
+      setIsDataLoading(true)
+      
+      try {
+        // Load ALL data in parallel and wait for everything to complete
+        await Promise.all([
+          generateTodos(),
+          loadUserData(),
+          loadConnections()
+        ])
+        
+        // Trigger notification refresh after data is loaded to update sidebar immediately
+        if (refreshCounts) {
+          refreshCounts()
+        }
+        
+      } finally {
+        // Only set loading to false after ALL data is loaded
+        setIsDataLoading(false)
+        loadingRef.current = false
+      }
+    }
+
+    if (userId && !loadingRef.current) {
+      loadData()
+    }
+  }, [userId, brands.length, refreshCounts]) // Include refreshCounts in dependencies
+
+  // Filter active todos (same logic as simple-todos)
+  const activeTodos = todos.filter(todo => isTaskActive(todo.id))
+
+  // Load task states on mount
+  useEffect(() => {
+    loadTaskStates()
+  }, [loadTaskStates])
+
+  // Get icons and colors (same as simple-todos)
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+          case 'high': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'medium': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'low': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+      default: return 'border-gray-500/50 bg-gray-900/20'
     }
   }
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'automation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'ai-powered': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'analytics': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'tools': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      default: return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'new_leads': return <Send className="h-4 w-4 text-blue-400" />
+      case 'responded': return <MessageSquare className="h-4 w-4 text-green-400" />
+      case 'hot_leads': return <Star className="h-4 w-4 text-yellow-400" />
+      case 'follow_up': return <Clock className="h-4 w-4 text-orange-400" />
+      default: return <CheckSquare className="h-4 w-4 text-gray-400" />
     }
   }
 
-  const getStatusBadge = (tool: ReusableTool) => {
+  // Task actions (same as simple-todos)
+  const completeTask = (taskId: string) => {
+    const newStates = {
+      ...taskStates,
+      [taskId]: {
+        ...taskStates[taskId],
+        completed: true,
+        completedAt: new Date(),
+        snoozed: false,
+        dismissed: false
+      }
+    }
+    saveTaskStates(newStates)
+  }
+
+  const snoozeTask = (taskId: string, duration: 'hour' | 'day' | 'week') => {
+    const snoozeUntil = new Date()
+    switch (duration) {
+      case 'hour':
+        snoozeUntil.setHours(snoozeUntil.getHours() + 1)
+        break
+      case 'day':
+        snoozeUntil.setDate(snoozeUntil.getDate() + 1)
+        break
+      case 'week':
+        snoozeUntil.setDate(snoozeUntil.getDate() + 7)
+        break
+    }
+
+    const newStates = {
+      ...taskStates,
+      [taskId]: {
+        ...taskStates[taskId],
+        snoozed: true,
+        snoozeUntil,
+        completed: false,
+        dismissed: false
+      }
+    }
+    saveTaskStates(newStates)
+  }
+
+  const dismissTask = (taskId: string) => {
+    const newStates = {
+      ...taskStates,
+      [taskId]: {
+        ...taskStates[taskId],
+        dismissed: true,
+        dismissedAt: new Date(),
+        snoozed: false,
+        completed: false
+      }
+    }
+    saveTaskStates(newStates)
+  }
+
+  // Handle tool click
+  const handleToolClick = (tool: ReusableTool) => {
+    if (tool.status === 'available') {
+      router.push(tool.targetPage)
+    }
+  }
+
+  const getStatusBadge = (status: ReusableTool['status']) => {
+    switch (status) {
+      case 'available':
+        return <Badge className="bg-green-600 hover:bg-green-700 text-white">Available</Badge>
+      case 'unavailable':
+        return <Badge variant="destructive">Unavailable</Badge>
+      case 'coming-soon':
+        return <Badge variant="secondary">Coming Soon</Badge>
+      default:
+        return <Badge variant="outline">Unknown</Badge>
+    }
+  }
+
+  const renderBrandIcons = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
-      // User-dependent tools - show agency logo with status
+      // User-dependent tools - show user icon
       return (
         <div className="flex items-center gap-2">
-          <div className="relative">
-                          {agencyContext?.agency_logo_url ? (
-              <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center">
-              <img 
-                                  src={agencyContext?.agency_logo_url} 
-                alt="Agency Logo"
-                  className="w-full h-full object-contain"
-              />
-              </div>
-            ) : (
-              <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
-                <User className="w-2.5 h-2.5 text-white" />
-              </div>
-            )}
-            {tool.status === 'available' && (
-              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
-            )}
+          <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
+            <User className="h-3 w-3 text-white" />
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-400">User Dependent</span>
-            <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
-              {tool.status === 'available' ? 'Available' : 
-               tool.id === 'lead-generator' ? 'Weekly Limit Reached' :
-               tool.id === 'outreach-tool' ? 'No Leads' : 'Unavailable'}
-            </span>
+            <span className="text-xs font-medium text-blue-400">Personal Tool</span>
           </div>
         </div>
       )
     }
 
-    if (tool.dependencyType === 'brand') {
-      // Brand-dependent tools - show brand profile pictures with green dots for available brands
-      // Filter brands based on selectedBrandId
-      const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
-      const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
-
+    if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
+      // Brand-dependent tools - show brand avatars for available brands
+      const brandsToShow = brands.slice(0, 4) // Limit to 4 brands for display
       const availableBrands = brandsToShow.filter((brand: any) => {
-        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) return true
-        
         const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-        return tool.requiresPlatforms.every(platform => 
+        return tool.requiresPlatforms!.every(platform => 
           brandConnections.some(conn => conn.platform_type === platform)
         )
       })
 
       return (
         <div className="flex items-center gap-2">
-          <div className="flex -space-x-1">
-            {brandsToShow.slice(0, 3).map((brand: any) => {
-              const isAvailable = availableBrands.some(b => b.id === brand.id)
-              const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
+          <div className="flex items-center -space-x-1">
+            {brandsToShow.map((brand: any) => {
+              const isAvailable = availableBrands.some(ab => ab.id === brand.id)
+              const brandInitials = brand.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
               
               return (
                 <div key={brand.id} className="relative group">
                   {brand.image_url ? (
-                    <div className={`w-6 h-6 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-6 h-6 rounded-full border-2 border-[#1A1A1A] overflow-hidden flex-shrink-0 ${
                       isAvailable ? 'opacity-100' : 'opacity-50 grayscale'
                     }`}>
                       <img 
@@ -660,1500 +841,190 @@ export default function ActionCenterPage() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <div className="w-5 h-5 rounded-full bg-[#4A5568] flex items-center justify-center border border-[#444]">
-              <CheckCircle className="w-2.5 h-2.5 text-white" />
+              <tool.icon className="h-3 w-3 text-white" />
             </div>
-            {tool.status === 'available' && (
-              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#1A1A1A]"></div>
-            )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">Always Available</span>
-            <span className={`text-xs font-medium ${tool.status === 'coming-soon' ? 'text-blue-400' : 'text-green-400'}`}>
-              {tool.status === 'coming-soon' ? 'Coming Soon' : 'Available'}
-            </span>
+            <span className="text-xs text-gray-400">No Dependencies</span>
+            <span className="text-xs font-medium text-gray-300">Universal Access</span>
           </div>
         </div>
       )
     }
 
-    // Fallback
-    return <Badge variant="outline">Unknown</Badge>
+    return null
   }
 
-  const filteredTools = selectedCategory === 'all' 
-    ? reusableTools 
-    : reusableTools.filter(tool => tool.category === selectedCategory)
-
-  const categories = [
-    { id: 'all', name: 'All Tools', count: reusableTools.length },
-    { id: 'automation', name: 'Automation', count: reusableTools.filter(t => t.category === 'automation').length },
-    { id: 'ai-powered', name: 'AI-Powered', count: reusableTools.filter(t => t.category === 'ai-powered').length },
-    { id: 'analytics', name: 'Analytics', count: reusableTools.filter(t => t.category === 'analytics').length },
-    { id: 'tools', name: 'Tools', count: reusableTools.filter(t => t.category === 'tools').length }
-  ]
-
-  // Load task states from localStorage
-  useEffect(() => {
-    if (userId) {
-      const saved = localStorage.getItem(`actionCenter_taskStates_${userId}`)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Convert date strings back to Date objects
-        Object.keys(parsed).forEach(key => {
-          if (parsed[key].snoozeUntil) {
-            parsed[key].snoozeUntil = new Date(parsed[key].snoozeUntil)
-          }
-          if (parsed[key].completedAt) {
-            parsed[key].completedAt = new Date(parsed[key].completedAt)
-          }
-          if (parsed[key].dismissedAt) {
-            parsed[key].dismissedAt = new Date(parsed[key].dismissedAt)
-          }
-        })
-        setTaskStates(parsed)
-      }
-    }
-  }, [userId])
-
-  // Load connections when brands are available
-  useEffect(() => {
-    if (userId && brands.length > 0) {
-      loadConnections()
-    }
-  }, [userId, brands.length, loadConnections])
-
-  const getTaskState = (taskId: string) => {
-    const state = taskStates[taskId]
-    if (!state) return { status: 'pending' }
-    
-    // Check if snoozed task should be reactivated
-    if (state.status === 'snoozed' && state.snoozeUntil && state.snoozeUntil < new Date()) {
-      return { status: 'pending' }
-    }
-    
-    return state
-  }
-
-  const isTaskActive = (taskId: string) => {
-    const state = getTaskState(taskId)
-    return state.status === 'pending'
-  }
-
-  // Generate todos from outreach data and other sources
-  const generateTodos = useCallback(async () => {
-    if (!userId) return
-
-    try {
-      const supabase = await getSupabaseClient() // Use the new local function
-      const newTodos: TodoItem[] = []
-
-      console.log('[Action Center] Loading outreach data for user:', userId)
-
-      // Load campaign leads exactly like the outreach page does - as a flat array
-      const { data: userCampaigns, error: campaignsError } = await supabase
-        .from('outreach_campaigns')
-        .select('id')
-        .eq('user_id', userId)
-
-      if (campaignsError) {
-        console.error('[Action Center] Error loading campaigns:', campaignsError)
-        return
-      }
-
-      if (!userCampaigns || userCampaigns.length === 0) {
-        console.log('[Action Center] No campaigns found')
-        setTodos([])
-        return
-      }
-
-      const campaignIds = userCampaigns.map(c => c.id)
-
-      // Get ALL campaign leads as a flat array (same as outreach page)
-      const { data: campaignLeads, error } = await supabase
-        .from('outreach_campaign_leads')
-        .select(`
-          *,
-          lead:leads(*)
-        `)
-        .in('campaign_id', campaignIds)
-        .order('added_at', { ascending: false })
-
-      if (error) {
-        console.error('[Action Center] Error loading campaign leads:', error)
-        return
-      }
-
-      console.log('[Action Center] Found campaign leads:', campaignLeads?.length || 0)
-
-      if (!campaignLeads || campaignLeads.length === 0) {
-        console.log('[Action Center] No campaign leads found')
-        setTodos([])
-        return
-      }
-
-      // Use EXACT same logic as SimpleTodos component
-      // Count leads by status
-      const pendingLeads = campaignLeads.filter(cl => cl.status === 'pending')
-      const contactedLeads = campaignLeads.filter(cl => cl.status === 'contacted')
-      const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
-      const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
-      
-      console.log('[Action Center] Lead counts:', {
-        pending: pendingLeads.length,
-        contacted: contactedLeads.length,
-        responded: respondedLeads.length,
-        qualified: qualifiedLeads.length,
-        total: campaignLeads.length
-      })
-      
-      // Get leads contacted more than 3 days ago (need follow-up)
-      const threeDaysAgo = new Date()
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-      const needsFollowUp = contactedLeads.filter(cl => {
-        if (!cl.last_contacted_at) return false
-        return new Date(cl.last_contacted_at) < threeDaysAgo
-      })
-      
-      // Get leads contacted more than 7 days ago (going cold)
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      const goingCold = contactedLeads.filter(cl => {
-        if (!cl.last_contacted_at) return false
-        return new Date(cl.last_contacted_at) < sevenDaysAgo
-      })
-
-      console.log('[Action Center] Follow-up counts:', {
-        needsFollowUp: needsFollowUp.length,
-        goingCold: goingCold.length
-      })
-
-      // Generate todos based on lead status (EXACT same logic as simple-todos.tsx)
-      if (pendingLeads.length > 0) {
-        newTodos.push({
-          id: 'new_leads',
-          type: 'new_leads',
-          priority: 'high',
-          title: `Start outreach for ${pendingLeads.length} new leads`,
-          description: 'These leads are ready for initial outreach',
-          count: pendingLeads.length,
-          action: 'Start Outreach',
-          targetPage: '/outreach-tool'
-        })
-      }
-
-      if (respondedLeads.length > 0) {
-        newTodos.push({
-          id: 'responded',
-          type: 'responded',
-          priority: 'high',
-          title: `${respondedLeads.length} leads responded - follow up now!`,
-          description: 'These leads showed interest and need immediate attention',
-          count: respondedLeads.length,
-          action: 'View Responses',
-          targetPage: '/outreach-tool'
-        })
-      }
-
-      if (qualifiedLeads.length > 0) {
-        newTodos.push({
-          id: 'qualified',
-          type: 'hot_leads',
-          priority: 'high',
-          title: `${qualifiedLeads.length} qualified leads ready for proposals`,
-          description: 'These leads are qualified and ready for the next step',
-          count: qualifiedLeads.length,
-          action: 'Send Proposals',
-          targetPage: '/outreach-tool'
-        })
-      }
-
-      if (needsFollowUp.length > 0) {
-        newTodos.push({
-          id: 'follow_up',
-          type: 'follow_up',
-          priority: 'medium',
-          title: `Follow up with ${needsFollowUp.length} leads (3+ days)`,
-          description: 'These leads were contacted but haven\'t responded yet',
-          count: needsFollowUp.length,
-          action: 'Send Follow-up',
-          targetPage: '/outreach-tool'
-        })
-      }
-
-      if (goingCold.length > 0) {
-        newTodos.push({
-          id: 'going_cold',
-          type: 'follow_up',
-          priority: 'low',
-          title: `${goingCold.length} leads going cold (7+ days)`,
-          description: 'These leads need urgent follow-up or should be marked as rejected',
-          count: goingCold.length,
-          action: 'Urgent Follow-up',
-          targetPage: '/outreach-tool'
-        })
-      }
-
-      console.log('[Action Center] Generated todos:', newTodos.length)
-      console.log('[Action Center] Todos:', newTodos)
-      setTodos(newTodos)
-    } catch (error) {
-      console.error('[Action Center] Error generating todos:', error)
-    }
-  }, [userId, getSupabaseClient])
-
-  // Load data - using refs to avoid dependency loops
-  const loadingRef = useRef(false)
-  
-  useEffect(() => {
-    const loadData = async () => {
-      if (loadingRef.current) return // Prevent concurrent loads
-      
-      loadingRef.current = true
-      setIsDataLoading(true)
-      
-      try {
-        // Load ALL data in parallel and wait for everything to complete
-        await Promise.all([
-          generateTodos(),
-          loadUserData(),
-          loadConnections(),
-          loadBrandHealthData()
-        ])
-        
-        // Trigger notification refresh after data is loaded to update sidebar immediately
-        if (refreshCounts) {
-          refreshCounts()
-        }
-        
-      } finally {
-        // Only set loading to false after ALL data is loaded
-        setIsDataLoading(false)
-        loadingRef.current = false
-      }
-    }
-
-    if (userId && !loadingRef.current) {
-      loadData()
-    }
-  }, [userId, brands.length, refreshCounts]) // Include refreshCounts in dependencies
-
-  // Filter active todos (same logic as simple-todos)
-  const activeTodos = todos.filter(todo => isTaskActive(todo.id))
-
-  // Get icons and colors (same as simple-todos)
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-          case 'high': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
-    case 'medium': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
-    case 'low': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
-      default: return 'border-gray-500/50 bg-gray-900/20'
-    }
-  }
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'new_leads': return <Send className="h-4 w-4 text-blue-400" />
-      case 'responded': return <MessageSquare className="h-4 w-4 text-green-400" />
-      case 'hot_leads': return <Star className="h-4 w-4 text-yellow-400" />
-      case 'follow_up': return <Clock className="h-4 w-4 text-orange-400" />
-      default: return <CheckSquare className="h-4 w-4 text-gray-400" />
-    }
-  }
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-          case 'high': return <Badge className="text-xs bg-red-600 text-white">High</Badge>
-    case 'medium': return <Badge className="text-xs bg-orange-600 text-white">Medium</Badge>
-    case 'low': return <Badge className="text-xs bg-gray-600 text-white">Low</Badge>
-      default: return <Badge variant="outline" className="text-xs">Normal</Badge>
-    }
-  }
-
-  const selectedBrand = brands.find((brand: any) => brand.id === selectedBrandId)
-  const availableToolsCount = filteredTools.filter(t => t.status === 'available').length
-
-  const getButtonText = (tool: ReusableTool) => {
-    switch (tool.status) {
-      case 'available':
-        return 'Open Tool'
-      case 'coming-soon':
-        return 'Coming Soon'
-      case 'unavailable':
-        // Show specific action based on tool type
-        if (tool.id === 'lead-generator') {
-          return 'Weekly Limit Reached'
-        }
-        if (tool.id === 'outreach-tool') {
-          return 'Generate Leads First'
-        }
-        if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
-          return 'Connect Platform'
-        }
-        return 'Unavailable'
-      default:
-        return 'Unknown'
-    }
-  }
-
-  // Load muted notifications from localStorage
-  useEffect(() => {
-    if (userId) {
-      const saved = localStorage.getItem(`mutedNotifications_${userId}`)
-      if (saved) {
-        try {
-          setMutedNotifications(JSON.parse(saved))
-        } catch (error) {
-          console.error('Error loading muted notifications:', error)
-        }
-      }
-    }
-  }, [userId])
-
-  // Save muted notifications to localStorage
-  useEffect(() => {
-    if (userId && Object.keys(mutedNotifications).length > 0) {
-      localStorage.setItem(`mutedNotifications_${userId}`, JSON.stringify(mutedNotifications))
-    }
-  }, [userId, mutedNotifications])
-
-  // Load and save read brand reports
-  useEffect(() => {
-    if (userId) {
-      const saved = localStorage.getItem(`readBrandReports_${userId}`)
-      if (saved) {
-        try {
-          setReadBrandReports(JSON.parse(saved))
-        } catch (error) {
-          console.error('Error loading read brand reports:', error)
-        }
-      }
-    }
-  }, [userId])
-
-  useEffect(() => {
-    if (userId && Object.keys(readBrandReports).length > 0) {
-      localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(readBrandReports))
-    }
-  }, [userId, readBrandReports])
-
-  // Functions for muting/unmuting notifications
-  const toggleMuteNotification = (notificationKey: string) => {
-    setMutedNotifications(prev => {
-      const newMutedState = {
-        ...prev,
-        [notificationKey]: !prev[notificationKey]
-      }
-      
-      // Save to localStorage immediately
-      if (userId) {
-        localStorage.setItem(`mutedNotifications_${userId}`, JSON.stringify(newMutedState))
-      }
-      
-      return newMutedState
-    })
-  }
-
-  // Mark brand report as read
-  const markBrandAsRead = (brandId: string) => {
-    setReadBrandReports(prev => {
-      const newReadState = {
-        ...prev,
-        [brandId]: true
-      }
-      
-      // Save to localStorage immediately
-      if (userId) {
-        localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newReadState))
-      }
-      
-      return newReadState
-    })
-  }
-
-  // Mark all brand reports as read
-  const markAllBrandsAsRead = () => {
-    const newReadStates: {[key: string]: boolean} = {}
-    brandHealthData.forEach(brand => {
-      newReadStates[brand.id] = true
-    })
-    setReadBrandReports(newReadStates)
-    
-    // Save to localStorage immediately
-    if (userId) {
-      localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(newReadStates))
-    }
-  }
-
-  // Generate AI synopsis for each brand using AI API
-  const generateBrandSynopsis = async (brand: any): Promise<string> => {
-    try {
-      if (!brand.hasData && brand.connections.length === 0) {
-        return `${brand.name} requires platform connections to start tracking performance. Connect Meta, Shopify, or other platforms to begin today's performance analysis.`
-      }
-      
-      if (brand.isTooEarly) {
-        return `${brand.name} analysis will be available after 6 AM when sufficient data is collected for today's performance.`
-      }
-      
-      if (brand.isUsingYesterdayData) {
-        return `${brand.name} is showing yesterday's performance data ($${brand.spend.toFixed(2)} spend, ${brand.roas.toFixed(2)} ROAS) as today's data isn't available yet.`
-      }
-
-      // Prepare brand data for AI analysis
-      const brandData = {
-        name: brand.name,
-        roas: brand.roas,
-        roasChange: brand.roasChange,
-        spend: brand.spend,
-        revenue: brand.revenue,
-        salesChange: brand.salesChange,
-        status: brand.status,
-        alerts: brand.alerts,
-        connections: brand.connections.map((c: any) => c.platform_type),
-        hasData: brand.hasData
-      }
-
-      const response = await fetch('/api/ai/generate-analysis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'brand_synopsis',
-          data: brandData,
-          timeframe: brand.isUsingYesterdayData ? 'yesterday_as_fallback_data' : 'today_midnight_to_current_time',
-          currentTime: new Date().toLocaleTimeString(),
-          dataSource: brand.isUsingYesterdayData ? 'yesterday' : 'today'
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate AI synopsis')
-      }
-
-      const result = await response.json()
-      return result.analysis || `${brand.name} data analysis unavailable. Check platform connections and try again.`
-    } catch (error) {
-      console.error('Error generating AI synopsis:', error)
-      return `${brand.name} analysis temporarily unavailable. Check platform connections and data sync status.`
-    }
-  }
-
-
-
-  // Load brand health data - memoized to prevent duplicate calls
-  const loadBrandHealthData = useCallback(async () => {
-    if (!userId || isLoadingBrandHealth) return
-    
-    setIsLoadingBrandHealth(true)
-    try {
-      const supabase = await getSupabaseClient()
-      
-      // Get all brands
-      const { data: brands } = await supabase
-        .from('brands')
-        .select('*')
-        .eq('user_id', userId)
-
-      if (!brands?.length) {
-        setBrandHealthData([])
-        return
-      }
-
-      const brandHealthPromises = brands.map(async (brand) => {
-        const now = new Date()
-        
-        // Check if it's too early (before 6 AM) for reliable data analysis
-        const currentHour = now.getHours()
-        const isTooEarly = currentHour < 6
-        
-        // Today's analysis: from midnight to current time
-        const todayMidnight = new Date(now)
-        todayMidnight.setHours(0, 0, 0, 0)
-        
-        // Yesterday for comparison
-        const yesterdayMidnight = new Date(todayMidnight)
-        yesterdayMidnight.setDate(yesterdayMidnight.getDate() - 1)
-        const yesterdayEnd = new Date(todayMidnight)
-        yesterdayEnd.setTime(yesterdayEnd.getTime() - 1) // End of yesterday
-        
-        // For broader context (last 30 days)
-        const last30Days = new Date(now)
-        last30Days.setDate(last30Days.getDate() - 30)
-        
-        console.log(`[Brand Health] ${brand.name} - Today analysis (${currentHour}:00):`, {
-          todayMidnight: todayMidnight.toISOString(),
-          now: now.toISOString(),
-          yesterdayRange: `${yesterdayMidnight.toISOString()} to ${yesterdayEnd.toISOString()}`,
-          isTooEarly,
-          hoursOfDataToday: currentHour
-        })
-
-        // Get Meta performance data from same table as Marketing Assistant
-        const { data: metaData } = await supabase
-          .from('meta_campaign_daily_stats')
-          .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
-          .eq('brand_id', brand.id)
-          .gte('date', yesterdayMidnight.toISOString().split('T')[0])
-          .order('date', { ascending: false })
-
-        console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
-        if (metaData && metaData.length > 0) {
-                  console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
-        console.log(`[Brand Health] ${brand.name} - Today's data range: ${todayMidnight.toISOString()} to ${now.toISOString()}`)
-        
-        // Debug all data dates
-        console.log(`[Brand Health] ${brand.name} - All Meta data dates:`, metaData.map(d => ({
-          date: d.date,
-          parsedDate: new Date(d.date).toISOString(),
-          spend: d.spend,
-          isToday: new Date(d.date) >= todayMidnight && new Date(d.date) <= now
-        })))
-        }
-
-
-
-        // Get platform connections
-        const { data: connections } = await supabase
-          .from('platform_connections')
-          .select('*')
-          .eq('brand_id', brand.id)
-
-        console.log(`[Brand Health] ${brand.name} - Connections:`, connections?.length || 0)
-
-        // Get Shopify data if connected - today + yesterday for comparison
-        const shopifyConnection = connections?.find(c => c.platform_type === 'shopify')
-        let shopifyData = null
-        if (shopifyConnection) {
-          const { data: orders } = await supabase
-            .from('shopify_orders')
-            .select('*')
-            .eq('connection_id', shopifyConnection.id)
-            .gte('created_at', yesterdayMidnight.toISOString())
-            .order('created_at', { ascending: false })
-          shopifyData = orders
-          console.log(`[Brand Health] ${brand.name} - Shopify data found:`, shopifyData?.length || 0, 'orders')
-        }
-
-        // Calculate performance metrics for TODAY using date strings (more reliable)
-        const todayDateStr = now.toISOString().split('T')[0] // '2025-07-26'
-        const yesterdayDateStr = yesterdayMidnight.toISOString().split('T')[0] // '2025-07-25'
-        
-        console.log(`[Brand Health] ${brand.name} - Date comparison: today=${todayDateStr}, yesterday=${yesterdayDateStr}`)
-        console.log(`[Brand Health] ${brand.name} - Raw data dates:`, metaData?.map(d => d.date))
-        
-        const todayMetaData = metaData?.filter(d => d.date === todayDateStr) || []
-        const yesterdayMetaData = metaData?.filter(d => d.date === yesterdayDateStr) || []
-
-        console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
-        console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend })))
-        console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend })))
-
-        let roas = 0, roasChange = 0, spend = 0, revenue = 0
-        let usingTodayData = true
-        
-        // Use yesterday's data if today has no data, regardless of time
-        // This ensures we always show the most recent available data
-        const shouldFallbackToYesterday = todayMetaData.length === 0 && yesterdayMetaData.length > 0
-        
-        // Helper function to get spend value from meta_campaign_daily_stats
-        const getSpendValue = (d: any) => {
-          return parseFloat(d.spend) || 0
-        }
-        
-        const getRevenueValue = (d: any) => {
-          // meta_campaign_daily_stats doesn't have revenue fields, we'll use conversions as proxy
-          return parseFloat(d.conversions) || 0
-        }
-        
-        if (shouldFallbackToYesterday) {
-          console.log(`[Brand Health] ${brand.name} - No today data, using yesterday as fallback`)
-          spend = yesterdayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
-          revenue = yesterdayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
-          roas = spend > 0 ? revenue / spend : 0
-          usingTodayData = false
-          
-          console.log(`[Brand Health] ${brand.name} - Yesterday's spend (fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
-          console.log(`[Brand Health] ${brand.name} - Yesterday's individual spends:`, yesterdayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (spend=${d.spend})`))
-        } else {
-          // Use today's data (even if it's 0) - this is the primary path
-          spend = todayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
-          revenue = todayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
-          roas = spend > 0 ? revenue / spend : 0
-          
-          console.log(`[Brand Health] ${brand.name} - Today's spend: $${spend.toFixed(2)} from ${todayMetaData.length} records (hour: ${currentHour})`)
-          if (todayMetaData.length > 0) {
-            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${getSpendValue(d)} (spend=${d.spend})`))
-          }
-          console.log(`[Brand Health] ${brand.name} - Today's revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
-
-          // Compare with yesterday for change calculation
-          if (yesterdayMetaData.length > 0) {
-            const yesterdaySpend = yesterdayMetaData.reduce((sum, d) => sum + getSpendValue(d), 0)
-            const yesterdayRevenue = yesterdayMetaData.reduce((sum, d) => sum + getRevenueValue(d), 0)
-            const yesterdayRoas = yesterdaySpend > 0 ? yesterdayRevenue / yesterdaySpend : 0
-            roasChange = yesterdayRoas > 0 ? ((roas - yesterdayRoas) / yesterdayRoas) * 100 : 0
-            
-            console.log(`[Brand Health] ${brand.name} - Yesterday comparison: ROAS ${yesterdayRoas.toFixed(2)} -> ${roas.toFixed(2)} (${roasChange.toFixed(1)}% change)`)
-          }
-        }
-
-        console.log(`[Brand Health] ${brand.name} - Calculated metrics:`, { spend, revenue, roas, roasChange })
-
-        // Calculate sales metrics - today vs yesterday
-        const todayOrders = shopifyData?.filter(order => 
-          new Date(order.created_at) >= todayMidnight
-        ) || []
-        const yesterdayOrders = shopifyData?.filter(order => {
-          const orderDate = new Date(order.created_at)
-          return orderDate >= yesterdayMidnight && orderDate < todayMidnight
-        }) || []
-
-        const todaySales = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
-        const yesterdaySales = yesterdayOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0)
-        const salesChange = yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : 0
-
-        // Determine status and alerts
-        const alerts = []
-        let status = 'healthy'
-
-        // Check if too early for reliable analysis
-        if (isTooEarly) {
-          alerts.push({ type: 'info', message: `Too early for today's analysis (check after 6 AM)` })
-          status = 'info'
-        } else {
-          // Check for critical issues first
-          if (roas < 1 && todayMetaData.length > 0 && spend > 0) {
-            alerts.push({ type: 'critical', message: `Today's ROAS below 1.0 (${roas.toFixed(2)})` })
-            status = 'critical'
-          }
-          if (salesChange < -30 && shopifyData?.length) {
-            alerts.push({ type: 'critical', message: `Sales dropped ${Math.abs(salesChange).toFixed(1)}% vs yesterday` })
-            status = 'critical'
-          }
-          
-          // Check for warning issues
-          if (roasChange < -20 && todayMetaData.length > 0 && spend > 0) {
-            alerts.push({ type: 'warning', message: `ROAS dropped ${Math.abs(roasChange).toFixed(1)}% vs yesterday` })
-            if (status !== 'critical') status = 'warning'
-          }
-          
-          // Check for setup issues
-          if (!connections?.length) {
-            alerts.push({ type: 'info', message: 'No platforms connected' })
-            status = 'info'
-          } else if ((!metaData || metaData.length === 0) && (!shopifyData || shopifyData.length === 0)) {
-            alerts.push({ type: 'info', message: 'No performance data found' })
-            if (status === 'healthy') status = 'info'
-          } else if (todayMetaData.length === 0 && (!todayOrders || todayOrders.length === 0)) {
-            alerts.push({ type: 'info', message: 'No activity today yet' })
-            if (status === 'healthy') status = 'info'
-          }
-        }
-
-        // Remove duplicate connections by platform_type
-        const uniqueConnections = connections?.filter((connection, index, arr) => 
-          arr.findIndex(c => c.platform_type === connection.platform_type) === index
-        ) || []
-
-        const hasMetaData = Boolean(metaData?.length)
-        const hasShopifyData = Boolean(shopifyData?.length)
-        const hasData = hasMetaData || hasShopifyData
-        console.log(`[Brand Health] ${brand.name} - Final hasData:`, hasData, 'Status:', status)
-
-        return {
-          ...brand,
-          roas,
-          roasChange,
-          spend,
-          revenue,
-          recentSales: todaySales,
-          salesChange,
-          alerts,
-          status,
-          connections: uniqueConnections,
-          hasData,
-          isTooEarly,
-          isUsingYesterdayData: todayMetaData.length === 0 && yesterdayMetaData.length > 0,
-          lastActivity: (metaData && metaData[0]?.date) || (shopifyData && shopifyData[0]?.created_at) || null
-        }
-      })
-
-      const results = await Promise.all(brandHealthPromises)
-      
-      // Show all brands that have connections or data, not just those with data
-      const filteredResults = results.filter(brand => brand.hasData || brand.connections.length > 0)
-      console.log(`[Brand Health] Final results:`, filteredResults.length, 'brands with data or connections')
-      
-      setBrandHealthData(filteredResults)
-
-      // Generate AI synopsis for each brand
-      const synopsisPromises = filteredResults.map(async (brand) => {
-        const synopsis = await generateBrandSynopsis(brand)
-        return { brandId: brand.id, synopsis }
-      })
-
-      const synopsisResults = await Promise.all(synopsisPromises)
-      const newSynopsisCache: {[key: string]: string} = {}
-      synopsisResults.forEach(({ brandId, synopsis }) => {
-        newSynopsisCache[brandId] = synopsis
-      })
-      setBrandSynopsisCache(newSynopsisCache)
-    } catch (error) {
-      console.error('[Brand Health] Error loading brand health data:', error)
-    } finally {
-      setIsLoadingBrandHealth(false)
-    }
-  }, [userId, getSupabaseClient])
-
-  // Load brand health data on mount
-  useEffect(() => {
-    if (userId) {
-      loadBrandHealthData()
-    }
-  }, [userId, loadBrandHealthData])
-
-  // Show loading screen until all data is loaded
   if (isDataLoading) {
     return (
-      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
-        </div>
-        
-        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Main loading icon - consistent with other pages */}
-          <div className="w-20 h-20 mx-auto mb-8 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencyContext?.agency_logo_url && (
-                <img 
-                  src={agencyContext.agency_logo_url} 
-                  alt={`${agencyContext?.agency_name || 'Agency'} Logo`}
-                  className="w-12 h-12 object-contain rounded"
-                />
-              )}
-            </div>
-          </div>
-          
-          {/* Loading title - consistent with other pages */}
-          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Action Center
-          </h1>
-          
-          {/* Loading message */}
-          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            Gathering your priorities and insights
-          </p>
-          
-          {/* Subtle loading tip */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Building your personalized action dashboard...
-          </div>
-        </div>
-      </div>
+      <UnifiedLoading 
+        isLoading={true} 
+        config={pageLoadingConfig}
+        loadingText="Loading Action Center..."
+      />
     )
   }
 
   return (
-    <TooltipProvider>
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
-      <div className="max-w-[1400px] mx-auto space-y-6">
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
-          <h1 className="text-3xl font-bold text-white">Action Center</h1>
-          <p className="text-gray-300 mt-2">Stay on top of all priorities and account needs</p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333]">
+              <Zap className="h-8 w-8 text-blue-400" />
+            </div>
+            Action Center
+          </h1>
+          <p className="text-gray-400">Your personalized dashboard for marketing tasks and tools</p>
         </div>
 
-        {/* Brand Health Overview Widget - Full Width */}
-        <div>
-          <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-purple-400" />
-                  <CardTitle className="text-white text-lg">Brand Health Overview</CardTitle>
-                </div>
-                <div className="flex items-center gap-2">
-                  {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
-                    <Badge className="bg-[#2A2A2A] text-white text-xs">
-                      {!mutedNotifications['brand-health'] ? (
-                        `${brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports`
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Slash className="w-3 h-3" />
-                          <span className="line-through opacity-60">{brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports</span>
-                        </div>
-                      )}
-                    </Badge>
-                  )}
-                  {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                          onClick={markAllBrandsAsRead}
-                        >
-                          <Check className="w-3 h-3 mr-1" />
-                          Mark All Read
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mark all brand reports as read</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                        onClick={() => toggleMuteNotification('brand-health')}
-                      >
-                        {mutedNotifications['brand-health'] ? (
-                          <BellOff className="w-4 h-4" />
-                        ) : (
-                          <Volume className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{mutedNotifications['brand-health'] ? 'Unmute notifications' : 'Mute notifications'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-              <CardDescription className="text-[#9ca3af] text-sm">
-                Today's performance overview from midnight to current time
-                <span className="text-xs text-gray-500 block mt-1">
-                  Real-time today • Growth vs. yesterday • Available after 6 AM
-                </span>
+        {/* Action Items (Todos) */}
+        {activeTodos.length > 0 && (
+          <Card className="mb-6 border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CheckSquare className="h-5 w-5" />
+                Action Items ({activeTodos.length})
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                Tasks requiring your immediate attention
               </CardDescription>
-              
-              {/* Brand Filter */}
-              <div className="flex gap-3 pt-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
-                    >
-                      <Filter className="h-3 w-3 mr-1" />
-                      {selectedBrandFilter === 'all' ? (
-                        `All Brands (${brandHealthData.length})`
-                      ) : (
-                        brandHealthData.find(b => b.id === selectedBrandFilter)?.name || 'Unknown'
-                      )}
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
-                    <DropdownMenuItem
-                      onClick={() => setSelectedBrandFilter('all')}
-                      className={cn(
-                        "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                        selectedBrandFilter === 'all' && "bg-[#2A2A2A] text-white"
-                      )}
-                    >
-                      <Tag className="h-4 w-4 mr-2" />
-                      All Brands ({brandHealthData.length})
-                    </DropdownMenuItem>
-                    {brandHealthData.map((brand) => (
-                      <DropdownMenuItem
-                        key={brand.id}
-                        onClick={() => setSelectedBrandFilter(brand.id)}
-                        className={cn(
-                          "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                          selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
-                        )}
-                      >
-                        <div className="flex items-center gap-3 w-full min-w-0">
-                          {/* Brand Avatar - matching BrandSelector style */}
-                          {brand.image_url || brand.logo_url ? (
-                            <img 
-                              src={brand.image_url || brand.logo_url} 
-                              alt={brand.name} 
-                              className="w-5 h-5 rounded-full object-cover border border-[#444] flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
-                              {brand.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          
-                          <div className="flex flex-col items-start min-w-0 flex-1">
-                            <span className="truncate font-medium max-w-full">{brand.name}</span>
-                            {brand.niche && (
-                              <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
-                            )}
-                          </div>
-                          
-                          {/* Platform logos */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {brand.connections.map((conn: any, idx: number) => (
-                              <div
-                                key={`${conn.platform_type}-${brand.id}`}
-                                className="w-3 h-3 rounded-sm overflow-hidden border border-white/30 bg-white/10"
-                                title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
-                              >
-                                {conn.platform_type === 'shopify' && (
-                                  <img 
-                                    src="/shopify-icon.png" 
-                                    alt="Shopify" 
-                                    className="w-full h-full object-contain"
-                                  />
-                                )}
-                                {conn.platform_type === 'meta' && (
-                                  <img 
-                                    src="/meta-icon.png" 
-                                    alt="Meta" 
-                                    className="w-full h-full object-contain"
-                                  />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </CardHeader>
             <CardContent>
-              {brandHealthData.length === 0 ? (
-                <div className="text-center py-12">
-                  <BarChart3 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="font-medium text-white mb-2">No Brand Data Available</h3>
-                  <p className="text-[#9ca3af] text-sm">Connect your brands to see performance insights and alerts.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {brandHealthData
-                    .filter(brand => selectedBrandFilter === 'all' || brand.id === selectedBrandFilter)
-                    .map((brand) => (
-                      <div
-                        key={brand.id}
-                        className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
-                      >
-                        {/* Brand Header - Match BrandSelector style */}
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {/* Brand Avatar - matching BrandSelector renderBrandAvatar */}
-                            {brand.image_url || brand.logo_url ? (
-                              <img 
-                                src={brand.image_url || brand.logo_url} 
-                                alt={brand.name} 
-                                className="w-6 h-6 rounded-full object-cover border border-[#444] flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] flex-shrink-0">
-                                {brand.name.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                              <div className="flex items-center gap-2 w-full">
-                                <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
-                                {/* Platform logos - matching BrandSelector renderConnectionIcons */}
-                                <div className="flex items-center gap-1">
-                                  {brand.connections.map((conn: any, idx: number) => (
-                                    <div
-                                      key={`${conn.platform_type}-${brand.id}`}
-                                      className="w-4 h-4 rounded-sm overflow-hidden border border-white/30 bg-white/10"
-                                      title={`${conn.platform_type.charAt(0).toUpperCase() + conn.platform_type.slice(1)} connected`}
-                                    >
-                                      {conn.platform_type === 'shopify' && (
-                                        <img 
-                                          src="/shopify-icon.png" 
-                                          alt="Shopify" 
-                                          className="w-full h-full object-contain"
-                                        />
-                                      )}
-                                      {conn.platform_type === 'meta' && (
-                                        <img 
-                                          src="/meta-icon.png" 
-                                          alt="Meta" 
-                                          className="w-full h-full object-contain"
-                                        />
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              {brand.niche && (
-                                <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
-                              )}
-                            </div>
+              <div className="space-y-4">
+                {activeTodos.map((todo) => (
+                  <div
+                    key={todo.id}
+                    className={cn(
+                      "p-4 rounded-lg border transition-all hover:shadow-md",
+                      getPriorityColor(todo.priority)
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="flex-shrink-0 mt-1">
+                          {getTypeIcon(todo.type)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-white">{todo.title}</h3>
+                            <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                              {todo.count}
+                            </Badge>
                           </div>
+                          <p className="text-sm text-gray-400 mb-2">{todo.description}</p>
                           
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "text-xs font-medium",
-                              brand.status === 'critical' && "text-red-400",
-                              brand.status === 'warning' && "text-orange-400",
-                              brand.status === 'info' && "text-blue-400",
-                              brand.status === 'healthy' && "text-green-400"
-                            )}>
-                              {brand.status === 'critical' && "Critical"}
-                              {brand.status === 'warning' && "Warning"}
-                              {brand.status === 'info' && "Setup Needed"}
-                              {brand.status === 'healthy' && "Healthy"}
-                            </span>
-                            {!readBrandReports[brand.id] && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-5 w-5 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                                    onClick={() => markBrandAsRead(brand.id)}
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Mark as read</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* AI Synopsis */}
-                        <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-gray-500 font-medium">
-                              AI Analysis ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday Data' : `Today ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`})
-                            </span>
-                            <Brain className="w-3 h-3 text-gray-500" />
-                          </div>
-                          <p className="text-xs text-[#9ca3af] leading-relaxed">
-                            {brandSynopsisCache[brand.id] || 'Generating AI analysis...'}
-                          </p>
-                        </div>
-
-                        {/* Key Metrics */}
-                        {brand.hasData && (
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">
-                                ROAS ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday' : 'Today'})
-                              </p>
-                              <p className={cn(
-                                "text-sm font-medium",
-                                brand.isTooEarly ? "text-gray-500" :
-                                brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
-                              )}>
-                                {brand.isTooEarly ? 'Too Early' : brand.roas.toFixed(2)}
-                              </p>
-                              {!brand.isTooEarly && brand.roasChange !== 0 && (
-                                <p className={cn(
-                                  "text-xs",
-                                  brand.roasChange > 0 ? "text-green-400" : "text-red-400"
-                                )}>
-                                  {brand.roasChange > 0 ? '+' : ''}{brand.roasChange.toFixed(1)}% vs yesterday
-                                </p>
-                              )}
+                          {todo.actionItems && todo.actionItems.length > 0 && (
+                            <div className="space-y-1">
+                              {todo.actionItems.map((item, index) => (
+                                <div key={index} className="text-xs text-gray-500 flex items-center gap-1">
+                                  <div className="w-1 h-1 bg-gray-500 rounded-full" />
+                                  {item}
+                                </div>
+                              ))}
                             </div>
-                            <div className="text-center">
-                              <p className="text-xs text-[#9ca3af]">
-                                Spend ({brand.isTooEarly ? 'Too Early' : brand.isUsingYesterdayData ? 'Yesterday' : 'Today'})
-                              </p>
-                              <p className="text-sm font-medium text-white">
-                                {brand.isTooEarly ? 'Too Early' : `$${brand.spend.toLocaleString()}`}
-                              </p>
-                              <p className="text-xs text-[#9ca3af]">
-                                Rev: {brand.isTooEarly ? 'N/A' : `$${brand.revenue.toLocaleString()}`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Alerts */}
-                        {brand.alerts.length > 0 && (
-                          <div className="space-y-1">
-                            {brand.alerts.slice(0, 2).map((alert: any, idx: number) => (
-                              <div key={idx} className={cn(
-                                "text-xs p-2 rounded border-l-2",
-                                alert.type === 'critical' && "bg-red-950/30 border-red-500 text-red-300",
-                                alert.type === 'warning' && "bg-orange-950/30 border-orange-500 text-orange-300",
-                                alert.type === 'info' && "bg-blue-950/30 border-blue-500 text-blue-300"
-                              )}>
-                                {alert.message}
-                              </div>
-                            ))}
-                            {brand.alerts.length > 2 && (
-                              <p className="text-xs text-[#9ca3af]">
-                                +{brand.alerts.length - 2} more alerts
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Last Activity */}
-                        {brand.lastActivity && (
-                          <div className="mt-3 pt-2 border-t border-[#333]">
-                            <p className="text-xs text-[#9ca3af]">
-                              Last data: {new Date(brand.lastActivity).toLocaleDateString()}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Marketing Assistant CTA */}
-                        <div className="mt-3 pt-2 border-t border-[#333]">
-                          <Button
-                            onClick={() => {
-                              setBrandContext(brand.id)
-                              router.push('/marketing-assistant')
-                            }}
-                            size="sm"
-                            className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-7 transition-all duration-200 border border-[#444] hover:border-[#555]"
-                          >
-                            <Brain className="w-3 h-3 mr-1" />
-                            Open Marketing Assistant
-                          </Button>
+                          )}
                         </div>
                       </div>
-                    ))}
-                </div>
-              )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          size="sm"
+                          onClick={() => router.push(todo.targetPage)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {todo.action}
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => completeTask(todo.id)}>
+                              <Check className="h-4 w-4 mr-2" />
+                              Mark Complete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => snoozeTask(todo.id, 'hour')}>
+                              <Clock className="h-4 w-4 mr-2" />
+                              Snooze 1 Hour
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => snoozeTask(todo.id, 'day')}>
+                              <Clock className="h-4 w-4 mr-2" />
+                              Snooze 1 Day
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => dismissTask(todo.id)}>
+                              <Slash className="h-4 w-4 mr-2" />
+                              Dismiss
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {/* Main Content - Tall Grid Layout for Bottom Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-          
-          {/* Outreach Tasks Widget - 25% width, tall height */}
-          <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col">
-              <CardHeader className="pb-3 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-blue-400" />
-                    <CardTitle className="text-white text-lg">Outreach Tasks</CardTitle>
+        {/* Reusable Tools Grid */}
+        <Card className="border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Available Tools
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Marketing tools and features available to you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reusableTools.map((tool) => (
+                <div
+                  key={tool.id}
+                  onClick={() => handleToolClick(tool)}
+                  className={cn(
+                    "p-4 rounded-lg border transition-all",
+                    "border-[#333] bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]",
+                    tool.status === 'available' 
+                      ? "hover:shadow-lg hover:border-blue-500/50 cursor-pointer" 
+                      : "opacity-60 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <tool.icon className={cn(
+                      "h-6 w-6",
+                      tool.status === 'available' ? "text-blue-400" : "text-gray-500"
+                    )} />
+                    {getStatusBadge(tool.status)}
                   </div>
-                  {activeTodos.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {!mutedNotifications['outreach-tasks'] ? (
-                          `${activeTodos.length} to-do's`
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{activeTodos.length} to-do's</span>
-                          </div>
-                        )}
-                      </Badge>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                            onClick={() => toggleMuteNotification('outreach-tasks')}
-                          >
-                            {mutedNotifications['outreach-tasks'] ? (
-                              <BellOff className="w-4 h-4" />
-                            ) : (
-                              <Volume className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{mutedNotifications['outreach-tasks'] ? 'Unmute notifications' : 'Mute notifications'}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                  
+                  <h3 className="font-medium text-white mb-2">{tool.name}</h3>
+                  <p className="text-sm text-gray-400 mb-3">{tool.description}</p>
+                  
+                  {/* Brand/User Dependencies */}
+                  {renderBrandIcons(tool)}
+                  
+                  {tool.status === 'available' && (
+                    <div className="mt-3 pt-3 border-t border-[#333]">
+                      <div className="flex items-center gap-1 text-xs text-blue-400">
+                        <ExternalLink className="h-3 w-3" />
+                        Click to open
+                      </div>
                     </div>
                   )}
                 </div>
-                <CardDescription className="text-[#9ca3af] text-sm">
-                  Tasks that need your attention
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 flex-1 overflow-y-auto">
-                {activeTodos.length > 0 ? (
-                  activeTodos.map((todo) => (
-                    <div
-                      key={todo.id}
-                      className={cn(
-                        "rounded-lg border p-3 transition-all hover:shadow-md",
-                        getPriorityColor(todo.priority)
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
-                          {getTypeIcon(todo.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-[#2A2A2A] text-white text-xs px-2 py-0.5">
-                              {todo.count}
-                            </Badge>
-                            {getPriorityBadge(todo.priority)}
-                          </div>
-                          <h4 className="font-medium text-white text-sm leading-tight mb-1">
-                            {todo.title}
-                          </h4>
-                          <p className="text-[#9ca3af] text-xs leading-relaxed mb-3">
-                            {todo.description}
-                          </p>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-8"
-                                onClick={() => setSelectedTodo(todo)}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                {todo.action}
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-[#1a1a1a] border border-[#333]">
-                              <DialogHeader>
-                                <DialogTitle className="text-white flex items-center gap-2">
-                                  {getTypeIcon(todo.type)}
-                                  {todo.title}
-                                </DialogTitle>
-                                <DialogDescription className="text-[#9ca3af]">
-                                  {todo.description}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="flex flex-col gap-4 pt-4">
-                                <Button
-                                  onClick={() => {
-                                    router.push(todo.targetPage)
-                                  }}
-                                  className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white"
-                                >
-                                  <ExternalLink className="h-4 w-4 mr-2" />
-                                  Go to Outreach Tool
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
-                    <h3 className="font-medium text-white mb-1">All caught up!</h3>
-                    <p className="text-[#9ca3af] text-sm">No outreach tasks need attention right now.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Reusable Tools Widget - 75% width, tall height */}
-          <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col">
-              <CardHeader className="pb-4 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-5 w-5 text-green-400" />
-                    <CardTitle className="text-white text-lg">Reusable Tools & Automation</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-[#2A2A2A] text-white text-xs">
-                      {!mutedNotifications['available-tools'] ? (
-                        `${availableToolsCount} Available`
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Slash className="w-3 h-3" />
-                          <span className="line-through opacity-60">{availableToolsCount} Available</span>
-                        </div>
-                      )}
-                    </Badge>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                          onClick={() => toggleMuteNotification('available-tools')}
-                        >
-                          {mutedNotifications['available-tools'] ? (
-                            <BellOff className="w-4 h-4" />
-                          ) : (
-                            <Volume className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{mutedNotifications['available-tools'] ? 'Unmute notifications' : 'Mute notifications'}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-                <CardDescription className="text-[#9ca3af] text-sm">
-                  Marketing tools and automation features available for your brands
-                </CardDescription>
-                
-                {/* Filters */}
-                <div className="flex flex-wrap gap-3 pt-2">
-                  {/* Brand Filter */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
-                      >
-                        <Filter className="h-3 w-3 mr-1" />
-                        {selectedBrandId === 'all' ? (
-                          `All Brands (${brands.length})`
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
-                            <span className="max-w-20 truncate">{selectedBrand?.name || 'Unknown'}</span>
-                          </div>
-                        )}
-                        <ChevronDown className="h-3 w-3 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
-                      <DropdownMenuItem
-                        onClick={() => setSelectedBrandId('all')}
-                        className={cn(
-                          "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                          selectedBrandId === 'all' && "bg-[#2A2A2A] text-white"
-                        )}
-                      >
-                        <Tag className="h-4 w-4 mr-2" />
-                        All Brands ({brands.length})
-                      </DropdownMenuItem>
-                      {brands.map((brand: any) => (
-                        <DropdownMenuItem
-                          key={brand.id}
-                          onClick={() => setSelectedBrandId(brand.id)}
-                          className={cn(
-                            "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                            selectedBrandId === brand.id && "bg-[#2A2A2A] text-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            {renderBrandAvatar(brand, 'sm')}
-                            <span className="truncate flex-1">{brand.name}</span>
-                            {renderConnectionIcons(brand.id)}
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  {/* Category Filter */}
-                  {categories.map((category) => (
-                    <Button
-                      key={category.id}
-                      variant={selectedCategory === category.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={cn(
-                        "h-8 text-xs",
-                        selectedCategory === category.id 
-                          ? "bg-[#2A2A2A] hover:bg-[#333] text-white" 
-                          : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
-                      )}
-                    >
-                      {getCategoryIcon(category.id)}
-                      <span className="ml-1">{category.name}</span>
-                      <Badge variant="secondary" className="ml-2 h-4 text-xs px-1">
-                        {category.count}
-                      </Badge>
-                    </Button>
-                  ))}
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredTools.map((tool) => {
-                    const IconComponent = tool.icon
-                    const isDisabled = tool.status === 'coming-soon' || tool.status === 'unavailable'
-                    
-                    return (
-                      <div
-                        key={tool.id}
-                        className={cn(
-                          "rounded-lg border p-4 transition-all hover:shadow-md",
-                          getCategoryColor(tool.category),
-                          isDisabled && "opacity-60"
-                        )}
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="mt-0.5">
-                            <IconComponent className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium text-white text-sm leading-tight">
-                                {tool.name}
-                              </h4>
-                              {getStatusBadge(tool)}
-                            </div>
-                            {tool.frequency && (
-                              <p className="text-xs text-blue-300 mb-1">
-                                {tool.frequency}
-                              </p>
-                            )}
-                            <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
-                              {tool.description}
-                            </p>
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {tool.features.slice(0, 3).map((feature, index) => (
-                                <Badge 
-                                  key={index} 
-                                  variant="outline" 
-                                  className="text-xs px-2 py-0.5 text-[#9ca3af] border-[#333]"
-                                >
-                                  {feature}
-                                </Badge>
-                              ))}
-                            </div>
-                            {tool.status === 'unavailable' && tool.requiresPlatforms && (
-                              <p className="text-xs text-red-400 mb-2">
-                                Requires: {tool.requiresPlatforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => router.push(tool.href)}
-                          disabled={isDisabled}
-                          className={cn(
-                            "w-full text-xs h-8",
-                            isDisabled
-                              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                              : "bg-[#2A2A2A] hover:bg-[#333] text-white"
-                          )}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          {getButtonText(tool)}
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-    </TooltipProvider>
   )
 } 
