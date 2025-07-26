@@ -92,6 +92,7 @@ interface ReusableTool {
   frequency?: string
   requiresPlatforms?: ('meta' | 'shopify')[]
   requiresData?: boolean
+  dependencyType: 'user' | 'brand' | 'none' // New field to distinguish dependency types
 }
 
 const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
@@ -104,38 +105,40 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     href: '/dashboard',
     features: ['Performance Analysis', 'Budget Optimization', 'Ad Set Recommendations'],
     requiresPlatforms: ['meta'],
-    requiresData: true
+    requiresData: true,
+    dependencyType: 'brand' // Depends on brand having Meta connection
   },
   {
     id: 'lead-generator',
-    name: 'Lead Generator', 
+    name: 'Lead Generator',
     description: 'Find and qualify leads using real business data',
     icon: Zap,
     category: 'tools',
     href: '/lead-generator',
-    features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence']
-    // No platform requirements - works independently
+    features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
+    dependencyType: 'user' // Depends on user having access/usage limits
   },
   {
     id: 'outreach-tool',
     name: 'Outreach Tool',
     description: 'Manage lead outreach campaigns and follow-ups',
     icon: Send,
-    category: 'tools', 
+    category: 'tools',
     href: '/outreach-tool',
-    features: ['Campaign Management', 'Lead Tracking', 'Response Management']
-    // No platform requirements - works independently
+    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
+    dependencyType: 'user' // Depends on user having leads/campaigns
   },
   {
     id: 'marketing-assistant',
     name: 'Marketing Assistant',
-    description: 'AI marketing insights and strategic recommendations', 
+    description: 'AI marketing insights and strategic recommendations',
     icon: Brain,
     category: 'ai-powered',
     href: '/marketing-assistant',
     features: ['Performance Analytics', 'Campaign Insights', 'AI Recommendations'],
     requiresPlatforms: ['meta'],
-    requiresData: true
+    requiresData: true,
+    dependencyType: 'brand' // Depends on brand having Meta connection
   },
   {
     id: 'brand-reports',
@@ -146,7 +149,8 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     href: '/brand-report',
     features: ['Performance Reports', 'AI-Generated Insights', 'Export Options'],
     requiresPlatforms: ['meta'],
-    requiresData: true
+    requiresData: true,
+    dependencyType: 'brand' // Depends on brand having Meta connection
   },
   {
     id: 'analytics',
@@ -157,7 +161,8 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     href: '/analytics',
     features: ['Campaign Performance', 'Spend Trends', 'ROI Analysis'],
     requiresPlatforms: ['meta'],
-    requiresData: true
+    requiresData: true,
+    dependencyType: 'brand' // Depends on brand having Meta connection
   },
   {
     id: 'ad-creative-studio',
@@ -166,7 +171,8 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     icon: Palette,
     category: 'ai-powered',
     href: '/ad-creative-studio',
-    features: ['Creative Generation', 'A/B Testing', 'Performance Optimization']
+    features: ['Creative Generation', 'A/B Testing', 'Performance Optimization'],
+    dependencyType: 'none' // Coming soon, no dependencies yet
   }
 ]
 
@@ -182,6 +188,12 @@ export default function ActionCenterPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
+
+  // User-dependent data for tool availability
+  const [userLeadsCount, setUserLeadsCount] = useState<number>(0)
+  const [userCampaignsCount, setUserCampaignsCount] = useState<number>(0)
+  const [userUsageData, setUserUsageData] = useState<any>(null)
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true)
 
   // Use brands from context
   const brands = contextBrands || []
@@ -203,6 +215,61 @@ export default function ActionCenterPage() {
       return getStandardSupabaseClient()
     }
   }
+
+  // Load user-dependent data for tool availability
+  const loadUserData = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      const supabase = await getSupabaseClient()
+      console.log('[Action Center] Loading user data for availability checks...')
+
+      // Load user leads count
+      const { data: leadsData, error: leadsError } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact' })
+        .eq('user_id', userId)
+
+      if (leadsError) {
+        console.error('[Action Center] Error loading leads:', leadsError)
+      } else {
+        setUserLeadsCount(leadsData?.length || 0)
+        console.log(`[Action Center] User has ${leadsData?.length || 0} leads`)
+      }
+
+      // Load user outreach campaigns count
+      const { data: campaignsData, error: campaignsError } = await supabase
+        .from('outreach_campaigns')
+        .select('id', { count: 'exact' })
+        .eq('user_id', userId)
+
+      if (campaignsError) {
+        console.error('[Action Center] Error loading campaigns:', campaignsError)
+      } else {
+        setUserCampaignsCount(campaignsData?.length || 0)
+        console.log(`[Action Center] User has ${campaignsData?.length || 0} campaigns`)
+      }
+
+      // Load user usage data (for usage limits)
+      const { data: usageData, error: usageError } = await supabase
+        .from('user_usage')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+
+      if (usageError) {
+        console.error('[Action Center] Error loading usage:', usageError)
+      } else {
+        setUserUsageData(usageData)
+        console.log(`[Action Center] User usage data:`, usageData)
+      }
+
+    } catch (error) {
+      console.error('[Action Center] Error loading user data:', error)
+    } finally {
+      setIsLoadingUserData(false)
+    }
+  }, [userId, getSupabaseClient])
 
   // Load platform connections for brands from context
   const loadConnections = useCallback(async () => {
@@ -242,29 +309,60 @@ export default function ActionCenterPage() {
       return { ...tool, status: 'coming-soon' }
     }
 
-    // Tools that don't require platforms are always available (lead-generator, outreach-tool)
-    if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
-      return { ...tool, status: 'available' }
-    }
+    // Handle different dependency types
+    switch (tool.dependencyType) {
+      case 'none':
+        // No dependencies, always available (or coming soon as handled above)
+        return { ...tool, status: 'available' }
 
-    // If no specific brand selected, check if ANY brand has the required platforms
-    if (!brandId || brandId === 'all') {
-      const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
-        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-        return tool.requiresPlatforms!.every(platform => 
+      case 'user':
+        // User-dependent tools - check user data regardless of selected brand
+        if (tool.id === 'lead-generator') {
+          // Lead generator needs the user to have access (not necessarily existing leads)
+          // For now, assume all users can use lead generator (it creates leads)
+          return { ...tool, status: 'available' }
+        }
+        
+        if (tool.id === 'outreach-tool') {
+          // Outreach tool needs user to have leads to manage
+          const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
+          return { 
+            ...tool, 
+            status: hasLeads ? 'available' : 'unavailable'
+          }
+        }
+        
+        // Default for user-dependent tools
+        return { ...tool, status: 'available' }
+
+      case 'brand':
+        // Brand-dependent tools - check platform connections for the brand
+        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
+          return { ...tool, status: 'available' }
+        }
+
+        // If no specific brand selected, check if ANY brand has the required platforms
+        if (!brandId || brandId === 'all') {
+          const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
+            const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+            return tool.requiresPlatforms!.every(platform => 
+              brandConnections.some(conn => conn.platform_type === platform)
+            )
+          })
+          return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
+        }
+
+        // Check specific brand
+        const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+        const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
           brandConnections.some(conn => conn.platform_type === platform)
         )
-      })
-      return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
+
+        return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
+
+      default:
+        return { ...tool, status: 'unavailable' }
     }
-
-    // Check specific brand
-    const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-    const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
-      brandConnections.some(conn => conn.platform_type === platform)
-    )
-
-    return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
   }
 
   // Get tools with availability status
@@ -358,12 +456,31 @@ export default function ActionCenterPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'available': return <Badge className="bg-green-600 text-white text-xs">Available</Badge>
-      case 'coming-soon': return <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-      case 'unavailable': return <Badge className="bg-red-600 text-white text-xs">Missing Platform</Badge>
-      default: return <Badge variant="outline" className="text-xs">Unknown</Badge>
+  const getUnavailableReason = (tool: ReusableTool) => {
+    if (tool.dependencyType === 'user') {
+      if (tool.id === 'outreach-tool') {
+        return 'No Leads'
+      }
+      return 'Not Available'
+    }
+    
+    if (tool.dependencyType === 'brand') {
+      return 'Missing Platform'
+    }
+    
+    return 'Not Available'
+  }
+
+  const getStatusBadge = (tool: ReusableTool) => {
+    switch (tool.status) {
+      case 'available': 
+        return <Badge className="bg-green-600 text-white text-xs">Available</Badge>
+      case 'coming-soon': 
+        return <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+      case 'unavailable': 
+        return <Badge className="bg-red-600 text-white text-xs">{getUnavailableReason(tool)}</Badge>
+      default: 
+        return <Badge variant="outline" className="text-xs">Unknown</Badge>
     }
   }
 
@@ -593,7 +710,11 @@ export default function ActionCenterPage() {
     const loadData = async () => {
       setIsLoading(true)
       try {
-        await generateTodos()
+        // Load both todos and user data in parallel
+        await Promise.all([
+          generateTodos(),
+          loadUserData()
+        ])
       } finally {
         setIsLoading(false)
       }
@@ -602,7 +723,7 @@ export default function ActionCenterPage() {
     if (userId) {
       loadData()
     }
-  }, [userId, generateTodos])
+  }, [userId, generateTodos, loadUserData])
 
   // Filter active todos (same logic as simple-todos)
   const activeTodos = todos.filter(todo => isTaskActive(todo.id))
@@ -872,7 +993,7 @@ export default function ActionCenterPage() {
                               <h4 className="font-medium text-white text-sm leading-tight">
                                 {tool.name}
                               </h4>
-                              {getStatusBadge(tool.status)}
+                              {getStatusBadge(tool)}
                             </div>
                             {tool.frequency && (
                               <p className="text-xs text-blue-300 mb-1">
@@ -913,8 +1034,11 @@ export default function ActionCenterPage() {
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
                           {tool.status === 'coming-soon' ? 'Coming Soon' : 
-                           tool.status === 'unavailable' ? 'Connect Platform' :
-                           'Launch Tool'}
+                           tool.status === 'unavailable' ? 
+                             (tool.dependencyType === 'user' && tool.id === 'outreach-tool' ? 'Generate Leads First' :
+                              tool.dependencyType === 'brand' ? 'Connect Platform' : 
+                              'Not Available') :
+                           'Open Tool'}
                         </Button>
                       </div>
                     )
