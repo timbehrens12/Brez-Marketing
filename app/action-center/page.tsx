@@ -518,11 +518,11 @@ export default function ActionCenterPage() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'automation': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
-      case 'ai-powered': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
-      case 'analytics': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
-      case 'tools': return 'bg-[#1a1a1a] border-[#333] text-gray-300'
-      default: return 'bg-[#1a1a1a] border-[#333] text-gray-300'
+      case 'automation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'ai-powered': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'analytics': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'tools': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      default: return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
     }
   }
 
@@ -901,9 +901,9 @@ export default function ActionCenterPage() {
   // Get icons and colors (same as simple-todos)
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-          case 'high': return 'border-[#333] bg-[#1a1a1a]'
-    case 'medium': return 'border-[#333] bg-[#1a1a1a]'
-    case 'low': return 'border-[#333] bg-[#1a1a1a]'
+          case 'high': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'medium': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'low': return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
       default: return 'border-gray-500/50 bg-gray-900/20'
     }
   }
@@ -954,12 +954,12 @@ export default function ActionCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-6">
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <h1 className="text-3xl font-bold text-white">Action Center</h1>
-          <p className="text-[#9ca3af] mt-2">Stay on top of your outreach and business priorities</p>
+          <p className="text-gray-300 mt-2">Stay on top of all your personal priorities and account needs</p>
         </div>
 
         {/* Main Content - Grid Layout for Widgets */}
@@ -967,7 +967,7 @@ export default function ActionCenterPage() {
           
           {/* Outreach Tasks Widget - Thin Column */}
           <div className="md:col-span-1">
-            <Card className="bg-[#1a1a1a] border border-[#333] h-fit">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] h-fit shadow-xl">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1004,7 +1004,7 @@ export default function ActionCenterPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-white text-black text-xs px-2 py-0.5">
+                            <Badge className="bg-[#2A2A2A] text-white text-xs px-2 py-0.5">
                               {todo.count}
                             </Badge>
                             {getPriorityBadge(todo.priority)}
@@ -1019,7 +1019,7 @@ export default function ActionCenterPage() {
                             <DialogTrigger asChild>
                               <Button 
                                 size="sm" 
-                                className="w-full bg-white hover:bg-gray-200 text-black text-xs h-8"
+                                className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-8"
                                 onClick={() => setSelectedTodo(todo)}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -1041,7 +1041,7 @@ export default function ActionCenterPage() {
                                   onClick={() => {
                                     router.push(todo.targetPage)
                                   }}
-                                  className="w-full bg-white hover:bg-gray-200 text-black"
+                                  className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white"
                                 >
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   Go to Outreach Tool
@@ -1066,7 +1066,7 @@ export default function ActionCenterPage() {
 
           {/* Reusable Tools Widget - Wide Column */}
           <div className="md:col-span-2 lg:col-span-3">
-            <Card className="bg-[#1a1a1a] border border-[#333]">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1114,7 +1114,7 @@ export default function ActionCenterPage() {
                         onClick={() => setSelectedBrandId('all')}
                         className={cn(
                           "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                          selectedBrandId === 'all' && "bg-white text-black"
+                          selectedBrandId === 'all' && "bg-[#2A2A2A] text-white"
                         )}
                       >
                         <Tag className="h-4 w-4 mr-2" />
@@ -1126,7 +1126,7 @@ export default function ActionCenterPage() {
                           onClick={() => setSelectedBrandId(brand.id)}
                           className={cn(
                             "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                            selectedBrandId === brand.id && "bg-white text-black"
+                            selectedBrandId === brand.id && "bg-[#2A2A2A] text-white"
                           )}
                         >
                           <div className="flex items-center gap-2 w-full">
@@ -1149,7 +1149,7 @@ export default function ActionCenterPage() {
                       className={cn(
                         "h-8 text-xs",
                         selectedCategory === category.id 
-                          ? "bg-white hover:bg-gray-200 text-black" 
+                          ? "bg-[#2A2A2A] hover:bg-[#333] text-white" 
                           : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
                       )}
                     >
@@ -1222,7 +1222,7 @@ export default function ActionCenterPage() {
                             "w-full text-xs h-8",
                             isDisabled
                               ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                              : "bg-white hover:bg-gray-200 text-black"
+                              : "bg-[#2A2A2A] hover:bg-[#333] text-white"
                           )}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
