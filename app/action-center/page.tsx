@@ -199,22 +199,23 @@ export default function ActionCenterPage() {
   const brands = contextBrands || []
 
   // Unified Supabase client function (same as outreach page)
-  const getSupabaseClient = async () => {
+  const getSupabaseClient = useCallback(async () => {
     try {
-      console.log('[Action Center] 🔗 Getting Supabase client...')
       const token = await getToken({ template: 'supabase' })
+      console.log('[Action Center] 🔗 Getting Supabase client...')
+
       if (token) {
         console.log('[Action Center] ✅ Using authenticated client')
         return getAuthenticatedSupabaseClient(token)
       } else {
-        console.log('[Action Center] ⚠️ Using standard client (no token)')
+        console.log('[Action Center] ⚠️ No token, using standard client')
         return getStandardSupabaseClient()
       }
     } catch (error) {
-      console.error('[Action Center] ❌ Error getting Supabase client:', error)
+      console.error('[Action Center] ❌ Error getting client:', error)
       return getStandardSupabaseClient()
     }
-  }
+  }, [getToken])
 
   // Load user-dependent data for tool availability
   const loadUserData = useCallback(async () => {
@@ -300,12 +301,23 @@ export default function ActionCenterPage() {
     } finally {
       setIsLoadingConnections(false)
     }
-  }, [userId, brands, getToken])
+  }, [userId, brands, getSupabaseClient])
 
   // Get tool availability for a specific brand
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
+    console.log(`[Action Center] Checking availability for ${tool.name}:`, {
+      toolId: tool.id,
+      dependencyType: tool.dependencyType,
+      selectedBrandId: brandId,
+      userLeadsCount,
+      userCampaignsCount,
+      availableBrands: brands.length,
+      connections: connections.length
+    })
+
     // Coming soon tools are always coming soon
     if (tool.id === 'ad-creative-studio') {
+      console.log(`[Action Center] ${tool.name}: Coming soon`)
       return { ...tool, status: 'coming-soon' }
     }
 
@@ -313,6 +325,7 @@ export default function ActionCenterPage() {
     switch (tool.dependencyType) {
       case 'none':
         // No dependencies, always available (or coming soon as handled above)
+        console.log(`[Action Center] ${tool.name}: Available (no dependencies)`)
         return { ...tool, status: 'available' }
 
       case 'user':
@@ -320,12 +333,14 @@ export default function ActionCenterPage() {
         if (tool.id === 'lead-generator') {
           // Lead generator needs the user to have access (not necessarily existing leads)
           // For now, assume all users can use lead generator (it creates leads)
+          console.log(`[Action Center] ${tool.name}: Available (lead generator always available)`)
           return { ...tool, status: 'available' }
         }
         
         if (tool.id === 'outreach-tool') {
           // Outreach tool needs user to have leads to manage
           const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
+          console.log(`[Action Center] ${tool.name}: ${hasLeads ? 'Available' : 'Unavailable'} (hasLeads: ${hasLeads})`)
           return { 
             ...tool, 
             status: hasLeads ? 'available' : 'unavailable'
@@ -333,11 +348,13 @@ export default function ActionCenterPage() {
         }
         
         // Default for user-dependent tools
+        console.log(`[Action Center] ${tool.name}: Available (default user-dependent)`)
         return { ...tool, status: 'available' }
 
       case 'brand':
         // Brand-dependent tools - check platform connections for the brand
         if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
+          console.log(`[Action Center] ${tool.name}: Available (no platform requirements)`)
           return { ...tool, status: 'available' }
         }
 
@@ -349,6 +366,7 @@ export default function ActionCenterPage() {
               brandConnections.some(conn => conn.platform_type === platform)
             )
           })
+          console.log(`[Action Center] ${tool.name}: ${hasAnyBrandWithPlatforms ? 'Available' : 'Unavailable'} (any brand has platforms)`)
           return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
         }
 
@@ -358,15 +376,29 @@ export default function ActionCenterPage() {
           brandConnections.some(conn => conn.platform_type === platform)
         )
 
+        console.log(`[Action Center] ${tool.name}: ${hasRequiredPlatforms ? 'Available' : 'Unavailable'} (specific brand has platforms)`, {
+          brandConnections: brandConnections.length,
+          requiredPlatforms: tool.requiresPlatforms,
+          hasRequiredPlatforms
+        })
+
         return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
 
       default:
+        console.log(`[Action Center] ${tool.name}: Unavailable (unknown dependency type)`)
         return { ...tool, status: 'unavailable' }
     }
   }
 
   // Get tools with availability status
   const getToolsWithAvailability = (): ReusableTool[] => {
+    // Don't calculate availability if still loading critical data
+    if (isLoadingConnections || isLoadingUserData) {
+      console.log('[Action Center] Still loading data, showing all tools as unavailable temporarily')
+      return BASE_REUSABLE_TOOLS.map(tool => ({ ...tool, status: 'unavailable' as const }))
+    }
+
+    console.log('[Action Center] All data loaded, calculating real availability...')
     return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
   }
 
@@ -703,7 +735,7 @@ export default function ActionCenterPage() {
     } catch (error) {
       console.error('[Action Center] Error generating todos:', error)
     }
-  }, [userId, getToken])
+  }, [userId, getSupabaseClient])
 
   // Load data
   useEffect(() => {
@@ -723,7 +755,7 @@ export default function ActionCenterPage() {
     if (userId) {
       loadData()
     }
-  }, [userId, generateTodos, loadUserData])
+  }, [userId]) // Remove the function dependencies to prevent infinite loops
 
   // Filter active todos (same logic as simple-todos)
   const activeTodos = todos.filter(todo => isTaskActive(todo.id))
