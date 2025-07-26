@@ -1235,18 +1235,15 @@ export default function ActionCenterPage() {
           console.log(`[Brand Health] ${brand.name} - Shopify data found:`, shopifyData?.length || 0, 'orders')
         }
 
-        // Calculate performance metrics for TODAY (midnight to current time)
-        // This gives real-time insights for the current day
-        const todayMetaData = metaData?.filter(d => {
-          const recordDate = new Date(d.date)
-          return recordDate >= todayMidnight
-        }) || []
+        // Calculate performance metrics for TODAY using date strings (more reliable)
+        const todayDateStr = now.toISOString().split('T')[0] // '2025-07-26'
+        const yesterdayDateStr = yesterdayMidnight.toISOString().split('T')[0] // '2025-07-25'
         
-        // Yesterday's data for comparison
-        const yesterdayMetaData = metaData?.filter(d => {
-          const recordDate = new Date(d.date)
-          return recordDate >= yesterdayMidnight && recordDate < todayMidnight
-        }) || []
+        console.log(`[Brand Health] ${brand.name} - Date comparison: today=${todayDateStr}, yesterday=${yesterdayDateStr}`)
+        console.log(`[Brand Health] ${brand.name} - Raw data dates:`, metaData?.map(d => d.date))
+        
+        const todayMetaData = metaData?.filter(d => d.date === todayDateStr) || []
+        const yesterdayMetaData = metaData?.filter(d => d.date === yesterdayDateStr) || []
 
         console.log(`[Brand Health] ${brand.name} - Today's data:`, todayMetaData.length, 'Yesterday data:', yesterdayMetaData.length)
         console.log(`[Brand Health] ${brand.name} - Today filtered data:`, todayMetaData.map(d => ({ date: d.date, spend: d.spend })))
