@@ -391,21 +391,38 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
     let filteredTotal = counts.totalItems
     let filteredUrgent = counts.urgentItems
     
-    // For now, we'll use a simple approach and subtract estimated counts
-    // This could be improved by tracking counts by category
+    // Get more precise counts by recalculating with muted notifications excluded
+    let mutedTotal = 0
+    let mutedUrgent = 0
+    
+    // Handle outreach-tasks muting
     if (mutedNotifications['outreach-tasks']) {
-      // Rough estimate: outreach tasks typically account for 3-5 items
-      filteredTotal = Math.max(0, filteredTotal - 5)
-      filteredUrgent = Math.max(0, filteredUrgent - 3)
+      // Estimate outreach items (these are typically urgent)
+      // In practice, most outreach todos are urgent, so we reduce both counts
+      const estimatedOutreachItems = Math.min(filteredTotal, 5) // Conservative estimate
+      const estimatedOutreachUrgent = Math.min(filteredUrgent, estimatedOutreachItems)
+      mutedTotal += estimatedOutreachItems
+      mutedUrgent += estimatedOutreachUrgent
     }
     
+    // Handle brand-health muting
     if (mutedNotifications['brand-health']) {
-      // Subtract brand health reports if muted
-      // We'll estimate based on typical brand count
-      filteredTotal = Math.max(0, filteredTotal - 3)
+      // Brand health reports are typically not urgent, just informational
+      const estimatedBrandHealthItems = Math.min(filteredTotal - mutedTotal, 3)
+      mutedTotal += estimatedBrandHealthItems
     }
     
-    return { totalItems: filteredTotal, urgentItems: filteredUrgent }
+    // Handle available-tools muting (these aren't urgent)
+    if (mutedNotifications['available-tools']) {
+      // Available tools notifications are informational only
+      const estimatedToolsItems = Math.min(filteredTotal - mutedTotal, 1)
+      mutedTotal += estimatedToolsItems
+    }
+    
+    return { 
+      totalItems: Math.max(0, filteredTotal - mutedTotal), 
+      urgentItems: Math.max(0, filteredUrgent - mutedUrgent) 
+    }
   }
 
   return {

@@ -183,7 +183,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
 export default function ActionCenterPage() {
   const { userId, getToken } = useAuth()
   const router = useRouter()
-  const { brands: contextBrands } = useBrandContext()
+  const { brands: contextBrands, setSelectedBrandId: setBrandContext } = useBrandContext()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [isDataLoading, setIsDataLoading] = useState(true)
   const [taskStates, setTaskStates] = useState<TaskState>({})
@@ -1672,6 +1672,21 @@ export default function ActionCenterPage() {
                             </p>
                           </div>
                         )}
+
+                        {/* Marketing Assistant CTA */}
+                        <div className="mt-3 pt-2 border-t border-[#333]">
+                          <Button
+                            onClick={() => {
+                              setBrandContext(brand.id)
+                              router.push('/marketing-assistant')
+                            }}
+                            size="sm"
+                            className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-7 transition-all duration-200 border border-[#444] hover:border-[#555]"
+                          >
+                            <Brain className="w-3 h-3 mr-1" />
+                            Open Marketing Assistant
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
