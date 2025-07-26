@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { UnifiedLoading, pageLoadingConfig } from '@/components/ui/unified-loading'
 import { useAgency } from '@/contexts/AgencyContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -64,6 +64,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { PlatformConnection } from '@/types/platformConnection'
 import { useBrandContext } from '@/lib/context/BrandContext'
+import { useActionCenter } from '@/hooks/useActionCenter'
 
 interface TodoItem {
   id: string
@@ -212,10 +213,13 @@ export default function ActionCenterPage() {
     agency_logo_url?: string | null
   } | null>(null)
 
+  // Add action center hook to trigger notification refresh when page loads
+  const { refreshCounts } = useActionCenter()
+
   // Use brands from context
   const brands = contextBrands || []
 
-  // Unified Supabase client function (same as outreach page)
+  // Stable Supabase client function - memoize with minimal dependencies
   const getSupabaseClient = useCallback(async () => {
     try {
       const token = await getToken({ template: 'supabase' })
@@ -234,7 +238,7 @@ export default function ActionCenterPage() {
     }
   }, [getToken])
 
-  // Load user-dependent data for tool availability
+  // Load user-dependent data for tool availability - stable version
   const loadUserData = useCallback(async () => {
     if (!userId) return
     
@@ -297,7 +301,7 @@ export default function ActionCenterPage() {
       }
 
       // Handle agency settings
-      if (agencyResponse.error && agencyResponse.error.code !== 'PGRST116') {
+      if (agencyResponse.error) {
         console.error('[Action Center] Error loading agency settings:', agencyResponse.error)
       } else {
         setAgencySettingsState(agencyResponse.data)
@@ -311,7 +315,7 @@ export default function ActionCenterPage() {
     }
   }, [userId, getSupabaseClient])
 
-  // Load platform connections for brands from context
+  // Load platform connections for brands from context - stable version
   const loadConnections = useCallback(async () => {
     if (!userId || brands.length === 0) return
 
@@ -452,8 +456,8 @@ export default function ActionCenterPage() {
     }
   }
 
-  // Get tools with availability status
-  const getToolsWithAvailability = (): ReusableTool[] => {
+  // Memoize tools with availability status to prevent recalculation on every render
+  const reusableTools = useMemo((): ReusableTool[] => {
     // Don't calculate availability if still loading critical data
     if (isLoadingConnections || isLoadingUserData) {
       console.log('[Action Center] Still loading data, showing all tools as unavailable temporarily')
@@ -462,9 +466,7 @@ export default function ActionCenterPage() {
 
     console.log('[Action Center] All data loaded, calculating real availability...')
     return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
-  }
-
-  const reusableTools = getToolsWithAvailability()
+  }, [isLoadingConnections, isLoadingUserData, selectedBrandId, userLeadsCount, userCampaignsCount, userUsageData, connections, brands])
 
   // Get brand connections for display
   const getBrandConnections = (brandId: string) => {
@@ -899,10 +901,16 @@ export default function ActionCenterPage() {
     }
   }, [userId, getSupabaseClient])
 
-  // Load data
+  // Load data - using refs to avoid dependency loops
+  const loadingRef = useRef(false)
+  
   useEffect(() => {
     const loadData = async () => {
+      if (loadingRef.current) return // Prevent concurrent loads
+      
+      loadingRef.current = true
       setIsDataLoading(true)
+      
       try {
         // Load ALL data in parallel and wait for everything to complete
         await Promise.all([
@@ -911,16 +919,23 @@ export default function ActionCenterPage() {
           loadConnections(),
           loadBrandHealthData()
         ])
+        
+        // Trigger notification refresh after data is loaded to update sidebar immediately
+        if (refreshCounts) {
+          refreshCounts()
+        }
+        
       } finally {
         // Only set loading to false after ALL data is loaded
         setIsDataLoading(false)
+        loadingRef.current = false
       }
     }
 
-    if (userId) {
+    if (userId && !loadingRef.current) {
       loadData()
     }
-  }, [userId]) // Remove the function dependencies to prevent infinite loops
+  }, [userId, brands.length, refreshCounts]) // Include refreshCounts in dependencies
 
   // Filter active todos (same logic as simple-todos)
   const activeTodos = todos.filter(todo => isTaskActive(todo.id))
@@ -1238,20 +1253,33 @@ export default function ActionCenterPage() {
         console.log(`[Brand Health] ${brand.name} - Yesterday filtered data:`, yesterdayMetaData.map(d => ({ date: d.date, spend: d.spend })))
 
         let roas = 0, roasChange = 0, spend = 0, revenue = 0
+        let usingTodayData = true
         
-        // If it's too early (before 6 AM), show limited data message
-        if (isTooEarly) {
-          console.log(`[Brand Health] ${brand.name} - Too early for analysis (${currentHour}:00 < 6:00 AM)`)
-        } else if (todayMetaData.length > 0) {
+        // Always try to use today's data first (even if it's 0)
+        // Only fall back to yesterday if it's very early (before 6 AM) AND no today data exists
+        const shouldFallbackToYesterday = isTooEarly && todayMetaData.length === 0 && yesterdayMetaData.length > 0
+        
+        if (shouldFallbackToYesterday) {
+          console.log(`[Brand Health] ${brand.name} - Too early (${currentHour}:00) and no today data, using yesterday as fallback`)
+          spend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
+          revenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
+          roas = spend > 0 ? revenue / spend : 0
+          usingTodayData = false
+          
+          console.log(`[Brand Health] ${brand.name} - Yesterday's spend (fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
+        } else {
+          // Use today's data (even if it's 0) - this is the primary path
           spend = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
           revenue = todayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
           roas = spend > 0 ? revenue / spend : 0
           
-          console.log(`[Brand Health] ${brand.name} - Today's calculated spend: $${spend.toFixed(2)} from ${todayMetaData.length} records`)
-          console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+          console.log(`[Brand Health] ${brand.name} - Today's spend: $${spend.toFixed(2)} from ${todayMetaData.length} records (hour: ${currentHour})`)
+          if (todayMetaData.length > 0) {
+            console.log(`[Brand Health] ${brand.name} - Today's individual spends:`, todayMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+          }
           console.log(`[Brand Health] ${brand.name} - Today's revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
-          // Compare with yesterday
+          // Compare with yesterday for change calculation
           if (yesterdayMetaData.length > 0) {
             const yesterdaySpend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
             const yesterdayRevenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
@@ -1260,14 +1288,6 @@ export default function ActionCenterPage() {
             
             console.log(`[Brand Health] ${brand.name} - Yesterday comparison: ROAS ${yesterdayRoas.toFixed(2)} -> ${roas.toFixed(2)} (${roasChange.toFixed(1)}% change)`)
           }
-        } else if (yesterdayMetaData.length > 0) {
-          // No today data but we have yesterday data - show yesterday's data for now
-          console.log(`[Brand Health] ${brand.name} - No today data, using yesterday's data as fallback`)
-          spend = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-          revenue = yesterdayMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
-          roas = spend > 0 ? revenue / spend : 0
-          
-          console.log(`[Brand Health] ${brand.name} - Yesterday's spend (as fallback): $${spend.toFixed(2)} from ${yesterdayMetaData.length} records`)
         }
 
         console.log(`[Brand Health] ${brand.name} - Calculated metrics:`, { spend, revenue, roas, roasChange })

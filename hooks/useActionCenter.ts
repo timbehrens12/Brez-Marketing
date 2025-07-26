@@ -379,32 +379,45 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
       totalItems += unreadBrandReports
       }
 
-            // Only count actionable notifications for sidebar:
-      // - Outreach tasks (urgent items that need action)
-      // - Brand health reports (unread reports that need review)
-      // Available tools are informational only and don't need urgent attention
-
-              console.log('[useActionCenter] Final counts for sidebar (RAW - before muting):', {
-          totalItems,
-          urgentItems,
-          note: 'RAW counts with breakdown for proper muting',
-          currentValues: { totalItems, urgentItems }
-        })
+            // Calculate breakdown using the totalItems and urgentItems we just calculated
+      // This is more accurate than estimates because it's based on the actual count logic above
       
-              // Use dynamic calculation based on the pattern observed in logs
-        const estimatedTodos = Math.max(0, totalItems - 3) // Assume 3 reports typically, rest are todos
-        const estimatedReports = Math.min(3, totalItems) // Max 3 reports typically
-        
-        setCounts({ 
-          totalItems, 
-          urgentItems,
-          breakdown: {
-            outreachTodos: estimatedTodos, 
-            urgentOutreach: Math.min(urgentItems, Math.floor(estimatedTodos * 0.6)), // ~60% of todos are urgent typically
-            brandReports: estimatedReports,
-            availableTools: 0
+      // Brand reports count (unread reports)
+      let brandReports = 0
+      if (brandsList?.length) {
+        let readBrandReports: {[key: string]: boolean} = {}
+        try {
+          const saved = localStorage.getItem(`readBrandReports_${userId}`)
+          if (saved) {
+            readBrandReports = JSON.parse(saved)
           }
-        })
+        } catch (error) {
+          console.error('Error loading read brand reports:', error)
+        }
+        brandReports = brandsList.filter(brand => !readBrandReports[brand.id]).length
+      }
+
+      // Calculate outreach todos as remaining items after subtracting brand reports
+      const outreachTodos = Math.max(0, totalItems - brandReports)
+      const urgentOutreach = urgentItems // Most urgent items are outreach-related
+      
+      console.log('[useActionCenter] Final counts for sidebar (accurate calculation):', {
+        totalItems,
+        urgentItems,
+        breakdown: { outreachTodos, urgentOutreach, brandReports },
+        note: 'Based on actual counting logic above'
+      })
+        
+      setCounts({ 
+        totalItems, 
+        urgentItems,
+        breakdown: {
+          outreachTodos, 
+          urgentOutreach,
+          brandReports,
+          availableTools: 0
+        }
+      })
 
     } catch (error) {
       console.error('Error loading action center counts:', error)
@@ -416,8 +429,8 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
     if (userId) {
       loadActionCenterCounts()
       
-      // Refresh every 2 minutes
-      const interval = setInterval(loadActionCenterCounts, 2 * 60 * 1000)
+      // Refresh every 30 seconds for more responsive notifications
+      const interval = setInterval(loadActionCenterCounts, 30 * 1000)
       
       return () => clearInterval(interval)
     }
