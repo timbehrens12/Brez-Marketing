@@ -14,6 +14,7 @@ import {
   Star, 
   Send,
   ExternalLink,
+  Check,
   CheckCircle,
   Loader2,
   // New icons for tools
@@ -194,6 +195,7 @@ export default function ActionCenterPage() {
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
   const [brandHealthData, setBrandHealthData] = useState<any[]>([])
   const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(false)
+  const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
 
   // User-dependent data for tool availability
   const [userLeadsCount, setUserLeadsCount] = useState(0)
@@ -991,12 +993,102 @@ export default function ActionCenterPage() {
     }
   }, [userId, mutedNotifications])
 
+  // Load and save read brand reports
+  useEffect(() => {
+    if (userId) {
+      const saved = localStorage.getItem(`readBrandReports_${userId}`)
+      if (saved) {
+        try {
+          setReadBrandReports(JSON.parse(saved))
+        } catch (error) {
+          console.error('Error loading read brand reports:', error)
+        }
+      }
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (userId && Object.keys(readBrandReports).length > 0) {
+      localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(readBrandReports))
+    }
+  }, [userId, readBrandReports])
+
   // Functions for muting/unmuting notifications
   const toggleMuteNotification = (notificationKey: string) => {
     setMutedNotifications(prev => ({
       ...prev,
       [notificationKey]: !prev[notificationKey]
     }))
+  }
+
+  // Mark brand report as read
+  const markBrandAsRead = (brandId: string) => {
+    setReadBrandReports(prev => ({
+      ...prev,
+      [brandId]: true
+    }))
+  }
+
+  // Mark all brand reports as read
+  const markAllBrandsAsRead = () => {
+    const newReadStates: {[key: string]: boolean} = {}
+    brandHealthData.forEach(brand => {
+      newReadStates[brand.id] = true
+    })
+    setReadBrandReports(newReadStates)
+  }
+
+  // Generate AI synopsis for each brand
+  const generateBrandSynopsis = (brand: any): string => {
+    const synopsisElements = []
+    
+    if (brand.status === 'healthy' && brand.hasData) {
+      synopsisElements.push(`${brand.name} is performing well`)
+      if (brand.roas >= 2) {
+        synopsisElements.push(`with strong ROAS of ${brand.roas.toFixed(2)}`)
+      }
+    } else if (brand.status === 'critical') {
+      synopsisElements.push(`${brand.name} needs immediate attention`)
+    } else if (brand.status === 'warning') {
+      synopsisElements.push(`${brand.name} shows concerning trends`)
+    } else if (brand.status === 'info') {
+      synopsisElements.push(`${brand.name} requires platform setup`)
+    }
+
+    if (brand.roasChange !== 0 && Math.abs(brand.roasChange) > 10) {
+      const direction = brand.roasChange > 0 ? 'up' : 'down'
+      synopsisElements.push(`ROAS is ${direction} ${Math.abs(brand.roasChange).toFixed(1)}% this week`)
+    }
+
+    if (brand.salesChange !== 0 && Math.abs(brand.salesChange) > 15) {
+      const direction = brand.salesChange > 0 ? 'increased' : 'decreased'
+      synopsisElements.push(`sales ${direction} ${Math.abs(brand.salesChange).toFixed(1)}%`)
+    }
+
+    if (brand.alerts.length > 0) {
+      synopsisElements.push(`Review Marketing Assistant for optimization recommendations`)
+    } else if (brand.hasData) {
+      synopsisElements.push(`Continue current strategy`)
+    } else {
+      synopsisElements.push(`Connect platforms to start tracking performance`)
+    }
+
+    return synopsisElements.join(', ') + '.'
+  }
+
+  // Get platform logo URL
+  const getPlatformLogo = (platformType: string): string => {
+    switch (platformType.toLowerCase()) {
+      case 'meta':
+      case 'facebook':
+        return '/meta-icon.png'
+      case 'shopify':
+        return 'https://cdn.shopify.com/s/files/1/0088/4031/8710/files/shopify_icon.png'
+      case 'google':
+        return 'https://developers.google.com/identity/images/g-logo.png'
+      default:
+        return ''
+    }
   }
 
   // Load brand health data
@@ -1486,19 +1578,37 @@ export default function ActionCenterPage() {
                     <BarChart3 className="h-5 w-5 text-purple-400" />
                     <CardTitle className="text-white text-lg">Brand Health Overview</CardTitle>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {brandHealthData.filter(brand => brand.alerts.length > 0).length > 0 && (
-                      <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {!mutedNotifications['brand-health'] ? (
-                          `${brandHealthData.filter(brand => brand.alerts.length > 0).length} Alerts`
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{brandHealthData.filter(brand => brand.alerts.length > 0).length} Alerts</span>
-                          </div>
-                        )}
-                      </Badge>
-                    )}
+                                     <div className="flex items-center gap-2">
+                     {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
+                       <Badge className="bg-[#2A2A2A] text-white text-xs">
+                         {!mutedNotifications['brand-health'] ? (
+                           `${brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports`
+                         ) : (
+                           <div className="flex items-center gap-1">
+                             <Slash className="w-3 h-3" />
+                             <span className="line-through opacity-60">{brandHealthData.filter(brand => !readBrandReports[brand.id]).length} Reports</span>
+                           </div>
+                         )}
+                       </Badge>
+                     )}
+                     {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="h-6 px-2 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                             onClick={markAllBrandsAsRead}
+                           >
+                             <Check className="w-3 h-3 mr-1" />
+                             Mark All Read
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>
+                           <p>Mark all brand reports as read</p>
+                         </TooltipContent>
+                       </Tooltip>
+                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -1608,17 +1718,42 @@ export default function ActionCenterPage() {
                         >
                                                      {/* Brand Header */}
                            <div className="flex items-center justify-between mb-3">
-                             <div className="flex items-center gap-2">
+                             <div className="flex items-center gap-2 flex-1 min-w-0">
                                {brand.logo_url ? (
-                                 <img src={brand.logo_url} alt={brand.name} className="w-6 h-6 rounded object-cover" />
+                                 <img src={brand.logo_url} alt={brand.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                                ) : (
-                                 <div className="w-6 h-6 rounded bg-[#444] flex items-center justify-center">
-                                   <span className="text-xs font-medium text-white">
+                                 <div className="w-8 h-8 rounded bg-[#444] flex items-center justify-center flex-shrink-0">
+                                   <span className="text-sm font-medium text-white">
                                      {brand.name.charAt(0).toUpperCase()}
                                    </span>
                                  </div>
                                )}
-                               <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
+                               <div className="flex-1 min-w-0">
+                                 <div className="flex items-center gap-2">
+                                   <h4 className="font-medium text-white text-sm truncate">{brand.name}</h4>
+                                   {/* Platform logos */}
+                                   <div className="flex items-center gap-1">
+                                     {brand.connections.map((conn: any, idx: number) => {
+                                       const logoUrl = getPlatformLogo(conn.platform_type)
+                                       return logoUrl ? (
+                                         <img 
+                                           key={idx}
+                                           src={logoUrl} 
+                                           alt={conn.platform_type}
+                                           className="w-4 h-4 rounded object-contain"
+                                           title={conn.platform_type}
+                                         />
+                                       ) : (
+                                         <div key={idx} className="w-4 h-4 rounded bg-[#555] flex items-center justify-center">
+                                           <span className="text-[10px] text-white font-medium">
+                                             {conn.platform_type.charAt(0).toUpperCase()}
+                                           </span>
+                                         </div>
+                                       )
+                                     })}
+                                   </div>
+                                 </div>
+                               </div>
                              </div>
                              <div className="flex items-center gap-2">
                                <div className={cn(
@@ -1640,7 +1775,31 @@ export default function ActionCenterPage() {
                                  {brand.status === 'info' && "Setup Needed"}
                                  {brand.status === 'healthy' && "Healthy"}
                                </span>
+                               {!readBrandReports[brand.id] && (
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       className="h-5 w-5 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
+                                       onClick={() => markBrandAsRead(brand.id)}
+                                     >
+                                       <Check className="w-3 h-3" />
+                                     </Button>
+                                   </TooltipTrigger>
+                                   <TooltipContent>
+                                     <p>Mark as read</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                               )}
                              </div>
+                           </div>
+
+                           {/* AI Synopsis */}
+                           <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
+                             <p className="text-xs text-[#9ca3af] leading-relaxed">
+                               {generateBrandSynopsis(brand)}
+                             </p>
                            </div>
 
                           {/* Key Metrics */}
@@ -1675,19 +1834,7 @@ export default function ActionCenterPage() {
                             </div>
                           )}
 
-                                                     {/* Platform Connections */}
-                           <div className="flex items-center gap-1 mb-3">
-                             {brand.connections.map((conn: any, idx: number) => (
-                               <Badge key={idx} variant="outline" className="text-xs">
-                                 {conn.platform_type}
-                               </Badge>
-                             ))}
-                            {brand.connections.length === 0 && (
-                              <Badge variant="outline" className="text-xs text-gray-500">
-                                No connections
-                              </Badge>
-                            )}
-                          </div>
+                                                     
 
                                                      {/* Alerts */}
                            {brand.alerts.length > 0 && (
