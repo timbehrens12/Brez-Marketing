@@ -191,10 +191,14 @@ export default function ActionCenterPage() {
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
 
   // User-dependent data for tool availability
-  const [userLeadsCount, setUserLeadsCount] = useState<number>(0)
-  const [userCampaignsCount, setUserCampaignsCount] = useState<number>(0)
-  const [userUsageData, setUserUsageData] = useState<any>(null)
-  const [isLoadingUserData, setIsLoadingUserData] = useState(true)
+  const [userLeadsCount, setUserLeadsCount] = useState(0)
+  const [userCampaignsCount, setUserCampaignsCount] = useState(0)
+  const [userUsageData, setUserUsageData] = useState<any[]>([])
+  const [isLoadingUserData, setIsLoadingUserData] = useState(false)
+  const [agencySettings, setAgencySettings] = useState<{
+    agency_name?: string
+    agency_logo_url?: string | null
+  } | null>(null)
 
   // Use brands from context
   const brands = contextBrands || []
@@ -221,49 +225,71 @@ export default function ActionCenterPage() {
   // Load user-dependent data for tool availability
   const loadUserData = useCallback(async () => {
     if (!userId) return
-
+    
+    setIsLoadingUserData(true)
+    console.log('[Action Center] Loading user data for availability checks...')
+    
     try {
       const supabase = await getSupabaseClient()
-      console.log('[Action Center] Loading user data for availability checks...')
+      
+      // Load user data in parallel
+      const [leadsResponse, campaignsResponse, usageResponse, agencyResponse] = await Promise.all([
+        // Get user's leads count
+        supabase
+          .from('leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId),
+        
+        // Get user's campaigns count  
+        supabase
+          .from('outreach_campaigns')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId),
+        
+        // Get user's usage data
+        supabase
+          .from('user_usage')
+          .select('*')
+          .eq('user_id', userId),
+        
+        // Get agency settings
+        supabase
+          .from('agency_settings')
+          .select('agency_name, agency_logo_url')
+          .eq('user_id', userId)
+          .single()
+      ])
 
-      // Load user leads count
-      const { data: leadsData, error: leadsError } = await supabase
-        .from('leads')
-        .select('id', { count: 'exact' })
-        .eq('user_id', userId)
-
-      if (leadsError) {
-        console.error('[Action Center] Error loading leads:', leadsError)
+      // Handle leads count
+      if (leadsResponse.error) {
+        console.error('[Action Center] Error loading leads:', leadsResponse.error)
       } else {
-        setUserLeadsCount(leadsData?.length || 0)
-        console.log(`[Action Center] User has ${leadsData?.length || 0} leads`)
+        setUserLeadsCount(leadsResponse.count || 0)
+        console.log(`[Action Center] User has ${leadsResponse.count || 0} leads`)
       }
 
-      // Load user outreach campaigns count
-      const { data: campaignsData, error: campaignsError } = await supabase
-        .from('outreach_campaigns')
-        .select('id', { count: 'exact' })
-        .eq('user_id', userId)
-
-      if (campaignsError) {
-        console.error('[Action Center] Error loading campaigns:', campaignsError)
+      // Handle campaigns count
+      if (campaignsResponse.error) {
+        console.error('[Action Center] Error loading campaigns:', campaignsResponse.error)
       } else {
-        setUserCampaignsCount(campaignsData?.length || 0)
-        console.log(`[Action Center] User has ${campaignsData?.length || 0} campaigns`)
+        setUserCampaignsCount(campaignsResponse.count || 0)
+        console.log(`[Action Center] User has ${campaignsResponse.count || 0} campaigns`)
       }
 
-      // Load user usage data (for usage limits)
-      const { data: usageData, error: usageError } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
-
-      if (usageError) {
-        console.error('[Action Center] Error loading usage:', usageError)
+      // Handle usage data
+      if (usageResponse.error) {
+        console.error('[Action Center] Error loading usage:', usageResponse.error)
       } else {
-        setUserUsageData(usageData)
-        console.log(`[Action Center] User usage data:`, usageData)
+        setUserUsageData(usageResponse.data || [])
+        console.log('[Action Center] User usage data:', usageResponse.data)
+      }
+
+      // Handle agency settings
+      if (agencyResponse.error && agencyResponse.error.code !== 'PGRST116') {
+        console.error('[Action Center] Error loading agency settings:', agencyResponse.error)
+      } else {
+        setAgencySettings(agencyResponse.data)
+        console.log('[Action Center] Agency settings:', agencyResponse.data)
       }
 
     } catch (error) {
@@ -514,13 +540,21 @@ export default function ActionCenterPage() {
 
   const getStatusBadge = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
-      // User-dependent tools - show user icon with status
+      // User-dependent tools - show agency logo with status
       return (
         <div className="flex items-center gap-2">
           <div className="relative">
-            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-              <User className="w-3 h-3 text-white" />
-            </div>
+            {agencySettings?.agency_logo_url ? (
+              <img 
+                src={agencySettings.agency_logo_url} 
+                alt="Agency Logo"
+                className="w-6 h-6 rounded-full object-cover border-2 border-white"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                <User className="w-3 h-3 text-white" />
+              </div>
+            )}
             {tool.status === 'available' && (
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             )}
@@ -566,11 +600,21 @@ export default function ActionCenterPage() {
               
               return (
                 <div key={brand.id} className="relative group">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-white ${
-                    isAvailable ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
-                  }`}>
-                    {brandInitials}
-                  </div>
+                  {brand.image_url ? (
+                    <img 
+                      src={brand.image_url} 
+                      alt={brand.name}
+                      className={`w-6 h-6 rounded-full object-cover border-2 border-white ${
+                        isAvailable ? 'opacity-100' : 'opacity-50 grayscale'
+                      }`}
+                    />
+                  ) : (
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-white ${
+                      isAvailable ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
+                    }`}>
+                      {brandInitials}
+                    </div>
+                  )}
                   {isAvailable && (
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
