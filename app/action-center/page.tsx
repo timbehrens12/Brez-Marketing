@@ -1661,7 +1661,7 @@ export default function ActionCenterPage() {
           
           {/* Outreach Tasks Widget - 25% width, tall height */}
           <div className="md:col-span-1">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[calc(100vh-420px)] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[875px] flex flex-col">
               <CardHeader className="pb-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1784,7 +1784,7 @@ export default function ActionCenterPage() {
 
           {/* Reusable Tools Widget - 75% width, tall height */}
           <div className="md:col-span-3">
-            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[calc(100vh-420px)] flex flex-col">
+            <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[875px] flex flex-col">
               <CardHeader className="pb-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
