@@ -355,11 +355,17 @@ export function useActionCenter(mutedNotifications: {[key: string]: boolean} = {
         totalItems += unreadBrandReports
       }
 
-            // Note: Available tools count is not included here as it's more complex
-      // The sidebar will show the sum of outreach tasks + brand reports
-      // The "X Available" tools notification is informational and doesn't need
-      // to be counted in the urgent notification badge
+            // Only count actionable notifications for sidebar:
+      // - Outreach tasks (urgent items that need action)
+      // - Brand health reports (unread reports that need review)
+      // Available tools are informational only and don't need urgent attention
 
+      console.log('[useActionCenter] Final counts for sidebar:', {
+        totalItems,
+        urgentItems,
+        note: 'Should be 2 reports + 5 todos = 7 total (not counting muted available tools)'
+      })
+      
       setCounts({ totalItems, urgentItems })
 
     } catch (error) {

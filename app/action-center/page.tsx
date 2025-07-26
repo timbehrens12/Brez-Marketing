@@ -1131,6 +1131,8 @@ export default function ActionCenterPage() {
         console.log(`[Brand Health] ${brand.name} - Meta data found:`, metaData?.length || 0, 'records')
         if (metaData && metaData.length > 0) {
           console.log(`[Brand Health] ${brand.name} - Sample data:`, metaData[0])
+          console.log(`[Brand Health] ${brand.name} - Date range: ${last30Days.toISOString().split('T')[0]} to today`)
+          console.log(`[Brand Health] ${brand.name} - Last 7 days filter: >= ${lastWeek.toISOString().split('T')[0]}`)
         }
 
 
@@ -1178,6 +1180,10 @@ export default function ActionCenterPage() {
           spend = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
           revenue = recentMetaData.reduce((sum, d) => sum + (parseFloat(d.purchase_value) || 0), 0)
           roas = spend > 0 ? revenue / spend : 0
+          
+          console.log(`[Brand Health] ${brand.name} - Calculated spend: $${spend.toFixed(2)} from ${recentMetaData.length} records`)
+          console.log(`[Brand Health] ${brand.name} - Individual spends:`, recentMetaData.map(d => `${d.date}: $${parseFloat(d.spend) || 0}`))
+          console.log(`[Brand Health] ${brand.name} - Revenue: $${revenue.toFixed(2)}, ROAS: ${roas.toFixed(2)}`)
 
           if (olderMetaData.length > 0) {
             const olderSpend = olderMetaData.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
