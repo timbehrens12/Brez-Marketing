@@ -1141,9 +1141,9 @@ export default function ActionCenterPage() {
 
 
 
-  // Load brand health data
+  // Load brand health data - memoized to prevent duplicate calls
   const loadBrandHealthData = useCallback(async () => {
-    if (!userId) return
+    if (!userId || isLoadingBrandHealth) return
     
     setIsLoadingBrandHealth(true)
     try {

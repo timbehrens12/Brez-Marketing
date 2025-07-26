@@ -122,12 +122,16 @@ export function Sidebar({ className }: SidebarProps) {
       filteredTotal = Math.max(0, filteredTotal - availableTools)
     }
     
-    console.log('[Sidebar] Filtering notification counts:', {
-      original: actionCenterCounts,
-      breakdown: { outreachTodos, urgentOutreach, brandReports, availableTools },
-      muted: mutedNotifications,
-      filtered: { totalItems: filteredTotal, urgentItems: filteredUrgent }
-    })
+    // Only log when counts actually change to reduce noise
+    const shouldLog = filteredTotal !== 0 || filteredUrgent !== 0 || Object.keys(mutedNotifications).length > 0
+    if (shouldLog) {
+      console.log('[Sidebar] Filtering notification counts:', {
+        original: actionCenterCounts,
+        breakdown: { outreachTodos, urgentOutreach, brandReports, availableTools },
+        muted: mutedNotifications,
+        filtered: { totalItems: filteredTotal, urgentItems: filteredUrgent }
+      })
+    }
     
     return { totalItems: filteredTotal, urgentItems: filteredUrgent }
   }
