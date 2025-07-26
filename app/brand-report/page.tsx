@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { DateRange } from "react-day-picker"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { startOfDay, endOfDay, format, startOfMonth, endOfMonth, subMonths, parse, isAfter, isBefore, addMonths } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Loader2, BarChart4, RefreshCw, Zap, Download, Brain } from "lucide-react"
+import { Loader2, BarChart4, RefreshCw, Zap, Download } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { useUser } from "@clerk/nextjs"
@@ -2235,22 +2234,6 @@ export default function BrandReportPage() {
                 <Download className="h-4 w-4 mr-2" />
                 {isExportingPdf ? "Exporting..." : "Export PDF"}
               </Button>
-
-              {/* Call to Action - Marketing Assistant */}
-              {selectedBrandId && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30 text-purple-300 hover:from-purple-600/30 hover:to-blue-600/30 hover:border-purple-400 hover:text-purple-200 transition-all rounded-xl"
-                  onClick={() => {
-                    // Navigate to marketing assistant
-                    window.location.href = '/marketing-assistant'
-                  }}
-                >
-                  <Brain className="h-4 w-4 mr-2" />
-                  Analyze in Marketing Assistant
-                </Button>
-              )}
               
               {selectedReport && (
                 <div className="flex items-center text-sm">
