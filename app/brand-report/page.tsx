@@ -86,11 +86,24 @@ export default function BrandReportPage() {
     
     // Check if brand has at least one platform connection (Meta, Shopify, etc.)
     const brandConnections = connections.filter(conn => conn.brand_id === brandId && conn.status === 'active')
-    const hasMetaOrShopify = brandConnections.some(conn => 
-      conn.platform_type === 'meta' || conn.platform_type === 'shopify'
+    const hasValidPlatform = brandConnections.some(conn => 
+      ['meta', 'shopify', 'facebook', 'instagram', 'google', 'tiktok'].includes(conn.platform_type?.toLowerCase())
     )
     
-    return hasMetaOrShopify
+    // Debug logging
+    console.log('🔍 Platform Check Debug:', {
+      brandId,
+      totalConnections: connections.length,
+      brandConnections: brandConnections.length,
+      brandConnectionsData: brandConnections.map(conn => ({
+        platform_type: conn.platform_type,
+        status: conn.status,
+        brand_id: conn.brand_id
+      })),
+      hasValidPlatform
+    })
+    
+    return hasValidPlatform
   }
 
   // Check refresh availability based on period type - FIXED LOGIC ORDER
@@ -289,6 +302,7 @@ export default function BrandReportPage() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('🔗 Loaded connections for brand:', selectedBrandId, data.connections)
         setConnections(data.connections || [])
       } else {
         console.error('Failed to load connections')
