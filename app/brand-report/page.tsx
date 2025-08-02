@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2, BarChart4, RefreshCw, Zap, Download, CheckSquare, Clock, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
-import { useUser } from "@clerk/nextjs"
+import { useUser, useAuth } from "@clerk/nextjs"
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip } from "recharts"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Footer } from "@/components/Footer"
-import { getAuthenticatedSupabaseClient } from "@/lib/utils/unified-supabase"
+import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
 
 interface PlatformConnection {
   id: string
@@ -39,6 +39,7 @@ interface DailyReport {
 export default function BrandReportPage() {
   const { toast } = useToast()
   const { user } = useUser()
+  const { getToken } = useAuth()
   const { selectedBrandId, brands } = useBrandContext()
   const { agencySettings } = useAgency()
   
@@ -61,6 +62,21 @@ export default function BrandReportPage() {
   const [devModeActive, setDevModeActive] = useState(false)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
+
+  // Stable Supabase client function with proper authentication
+  const getSupabaseClient = useCallback(async () => {
+    try {
+      const token = await getToken({ template: 'supabase' })
+      if (token) {
+        return getAuthenticatedSupabaseClient(token)
+      } else {
+        return getStandardSupabaseClient()
+      }
+    } catch (error) {
+      console.error('[Brand Report] Error getting Supabase client:', error)
+      return getStandardSupabaseClient()
+    }
+  }, [getToken])
 
   // Check if user has permission to generate reports for the selected brand
   const canGenerateReports = () => {
@@ -293,15 +309,8 @@ export default function BrandReportPage() {
     try {
       setIsLoadingConnections(true)
       
-      const supabase = getAuthenticatedSupabaseClient()
+      const supabase = await getSupabaseClient()
       
-      // Add extra safety check
-      if (!supabase) {
-        console.error('Supabase client not available')
-        setConnections([])
-        return
-      }
-
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('platform_connections')
         .select('*')
@@ -309,21 +318,21 @@ export default function BrandReportPage() {
         .eq('status', 'active')
 
       if (connectionsError) {
-        console.error('Error loading platform connections:', connectionsError)
+        console.error('[Brand Report] Error loading platform connections:', connectionsError)
         setConnections([])
       } else {
         // Ensure connectionsData is an array
         const safeConnectionsData = Array.isArray(connectionsData) ? connectionsData : []
-        console.log('🔗 Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
+        console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
         setConnections(safeConnectionsData)
       }
     } catch (error) {
-      console.error('Error loading connections:', error)
+      console.error('[Brand Report] Error loading connections:', error)
       setConnections([])
     } finally {
       setIsLoadingConnections(false)
     }
-  }, [user?.id, selectedBrandId])
+  }, [user?.id, selectedBrandId, getSupabaseClient])
 
   // Initialize client-side only values after mount
   useEffect(() => {
