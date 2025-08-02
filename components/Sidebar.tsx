@@ -339,7 +339,7 @@ export function Sidebar({ className }: SidebarProps) {
                 </div>
                 
                 {/* Agency name and brand icons column */}
-                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="flex-1 min-w-0 flex flex-col">
                   <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
                     {agencyLoading ? (
                       <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
@@ -351,7 +351,7 @@ export function Sidebar({ className }: SidebarProps) {
                   </h3>
                   
                   {/* Brand icons directly under agency name */}
-                  <div className="mt-1">
+                  <div className="mt-0.5">
                     <OverlaidBrandLogos 
                       agencySettings={agencySettings}
                       agencyLoading={agencyLoading}
