@@ -222,17 +222,8 @@ export default function BrandReportPage() {
         }
       }
       
-      // STEP 6B: Check if not the 1st of the month
-      if (currentDay !== 1) {
-        const nextFirst = startOfMonth(addMonths(now, 1))
-        return {
-          available: false,
-          reason: "Monthly refresh only available on 1st",
-          nextAvailable: `Available ${format(nextFirst, 'MMM d')}`,
-          buttonText: "Available on 1st",
-          type: "not-ready"
-        }
-      }
+      // STEP 6B: Monthly reports are available throughout the month (not just on the 1st)
+      // The report becomes available starting the 1st of the following month and remains available
       
       // STEP 7B: Check if already used this month (brand-specific)
       const brandSpecificKey = `lastMonthlyGeneration_${checkBrandId}`
