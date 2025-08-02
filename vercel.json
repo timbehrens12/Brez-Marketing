@@ -1,0 +1,24 @@
+{
+  "functions": {
+    "app/api/ai/**/*.ts": {
+      "maxDuration": 60
+    },
+    "app/api/leads/generate-real/route.ts": {
+      "maxDuration": 90
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/reports/refresh",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/daily-sync",
+      "schedule": "59 23 * * *"
+    },
+    {
+      "path": "/api/cron/midday-refresh",
+      "schedule": "0 14 * * *"
+    }
+  ]
+} 
