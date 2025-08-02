@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Footer } from "@/components/Footer"
-import { getSupabaseClient } from "@/lib/supabase"
+import { getAuthenticatedSupabaseClient } from "@/lib/utils/unified-supabase"
 
 interface PlatformConnection {
   id: string
@@ -293,7 +293,7 @@ export default function BrandReportPage() {
     try {
       setIsLoadingConnections(true)
       
-      const supabase = getSupabaseClient()
+      const supabase = getAuthenticatedSupabaseClient()
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('platform_connections')
         .select('*')
