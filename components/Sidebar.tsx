@@ -310,56 +310,55 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             ) : (
               // Expanded view - agency logo, name, and brand icons
-              <div className="flex flex-col gap-3 w-full">
-                {/* Agency logo and name row */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 ml-2">
-                    {agencyLoading ? (
-                      <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
-                        <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
-                      </div>
-                    ) : agencySettings.agency_logo_url ? (
-                      <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-2 overflow-hidden">
-                        <img 
-                          src={agencySettings.agency_logo_url} 
-                          alt={`${agencySettings.agency_name} Logo`} 
-                          className="w-6 h-6 object-contain rounded" 
-                        />
-                      </div>
-                    ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-                      <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-xl">
-                          {agencySettings.agency_name.slice(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
-                        <Building2 className="w-5 h-5 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-                      {agencyLoading ? (
-                        <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
-                      ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-                        agencySettings.agency_name
-                      ) : (
-                        "Agency"
-                      )}
-                    </h3>
-                  </div>
+              <div className="flex items-center gap-3 w-full">
+                {/* Agency logo */}
+                <div className="flex-shrink-0 ml-2">
+                  {agencyLoading ? (
+                    <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                      <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
+                    </div>
+                  ) : agencySettings.agency_logo_url ? (
+                    <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-2 overflow-hidden">
+                      <img 
+                        src={agencySettings.agency_logo_url} 
+                        alt={`${agencySettings.agency_name} Logo`} 
+                        className="w-6 h-6 object-contain rounded" 
+                      />
+                    </div>
+                  ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                    <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-xl">
+                        {agencySettings.agency_name.slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
+                      <Building2 className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
                 </div>
                 
-                {/* Brand icons row */}
-                <div className="ml-2">
-                  <OverlaidBrandLogos 
-                    agencySettings={agencySettings}
-                    agencyLoading={agencyLoading}
-                    showExpanded={true}
-                    maxVisibleBrands={6}
-                  />
+                {/* Agency name and brand icons column */}
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                    {agencyLoading ? (
+                      <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
+                    ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                      agencySettings.agency_name
+                    ) : (
+                      "Agency"
+                    )}
+                  </h3>
+                  
+                  {/* Brand icons directly under agency name */}
+                  <div className="mt-1">
+                    <OverlaidBrandLogos 
+                      agencySettings={agencySettings}
+                      agencyLoading={agencyLoading}
+                      showExpanded={true}
+                      maxVisibleBrands={6}
+                    />
+                  </div>
                 </div>
               </div>
             )}

@@ -27,7 +27,7 @@ import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { ShopifyTab } from "@/components/dashboard/platforms/tabs/ShopifyTab"
-import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
+
 import { transformToMetaMetrics } from '@/lib/transforms'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/DateRangePicker"
