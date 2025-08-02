@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Footer } from "@/components/Footer"
+import { getSupabaseClient } from "@/lib/supabase"
 
 interface PlatformConnection {
   id: string
@@ -90,18 +91,15 @@ export default function BrandReportPage() {
       ['meta', 'shopify', 'facebook', 'instagram', 'google', 'tiktok'].includes(conn.platform_type?.toLowerCase())
     )
     
-    // Debug logging
-    console.log('🔍 Platform Check Debug:', {
-      brandId,
-      totalConnections: connections.length,
-      brandConnections: brandConnections.length,
-      brandConnectionsData: brandConnections.map(conn => ({
-        platform_type: conn.platform_type,
-        status: conn.status,
-        brand_id: conn.brand_id
-      })),
-      hasValidPlatform
-    })
+    // Debug logging (can be removed in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Platform Check Debug:', {
+        brandId,
+        totalConnections: connections.length,
+        brandConnections: brandConnections.length,
+        hasValidPlatform
+      })
+    }
     
     return hasValidPlatform
   }
@@ -294,19 +292,20 @@ export default function BrandReportPage() {
 
     try {
       setIsLoadingConnections(true)
-      const response = await fetch('/api/platform-connection/list', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brandId: selectedBrandId })
-      })
+      
+      const supabase = getSupabaseClient()
+      const { data: connectionsData, error: connectionsError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', selectedBrandId)
+        .eq('status', 'active')
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log('🔗 Loaded connections for brand:', selectedBrandId, data.connections)
-        setConnections(data.connections || [])
-      } else {
-        console.error('Failed to load connections')
+      if (connectionsError) {
+        console.error('Error loading platform connections:', connectionsError)
         setConnections([])
+      } else {
+        console.log('🔗 Loaded', connectionsData?.length || 0, 'platform connections for brand:', selectedBrandId)
+        setConnections(connectionsData || [])
       }
     } catch (error) {
       console.error('Error loading connections:', error)
