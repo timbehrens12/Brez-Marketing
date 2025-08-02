@@ -294,6 +294,14 @@ export default function BrandReportPage() {
       setIsLoadingConnections(true)
       
       const supabase = getAuthenticatedSupabaseClient()
+      
+      // Add extra safety check
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setConnections([])
+        return
+      }
+
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('platform_connections')
         .select('*')
@@ -304,8 +312,10 @@ export default function BrandReportPage() {
         console.error('Error loading platform connections:', connectionsError)
         setConnections([])
       } else {
-        console.log('🔗 Loaded', connectionsData?.length || 0, 'platform connections for brand:', selectedBrandId)
-        setConnections(connectionsData || [])
+        // Ensure connectionsData is an array
+        const safeConnectionsData = Array.isArray(connectionsData) ? connectionsData : []
+        console.log('🔗 Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
+        setConnections(safeConnectionsData)
       }
     } catch (error) {
       console.error('Error loading connections:', error)
@@ -357,10 +367,15 @@ export default function BrandReportPage() {
 
   // Load connections when selectedBrandId changes
   useEffect(() => {
-    if (selectedBrandId && user?.id) {
-      loadConnections()
+    if (selectedBrandId && user?.id && mounted) {
+      // Small delay to ensure authentication is fully ready
+      const timer = setTimeout(() => {
+        loadConnections()
+      }, 100)
+      
+      return () => clearTimeout(timer)
     }
-  }, [selectedBrandId, user?.id, loadConnections])
+  }, [selectedBrandId, user?.id, loadConnections, mounted])
 
   // Handle case where user exists but no brand is selected (prevent infinite loading)
   useEffect(() => {
