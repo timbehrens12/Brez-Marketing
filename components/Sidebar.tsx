@@ -293,7 +293,7 @@ export function Sidebar({ className }: SidebarProps) {
                 {/* Logo Section */}
         <div className="p-4">
           <div className={cn(
-            "bg-[#2A2A2A] border border-[#333] rounded-xl transition-all duration-300",
+            "bg-[#2A2A2A] border border-[#333] rounded-xl transition-all duration-300 relative",
             showExpanded ? "w-full p-3" : "w-14 h-14 flex items-center justify-center mx-auto"
           )}>
             <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
