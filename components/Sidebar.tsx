@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Zap, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Zap, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2 } from "lucide-react"
 import { useAuth, useClerk, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
@@ -290,34 +290,77 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         )}
 
-        {/* Logo Section */}
-        <div className="p-4 flex items-center justify-center">
-                     <div className={cn(
-             "bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center relative transition-all duration-300",
-             showExpanded ? "w-full p-3" : "w-14 h-14 justify-center"
-           )}>
+                {/* Logo Section */}
+        <div className="p-4">
+          <div className={cn(
+            "bg-[#2A2A2A] border border-[#333] rounded-xl transition-all duration-300",
+            showExpanded ? "w-full p-3" : "w-14 h-14 flex items-center justify-center mx-auto"
+          )}>
             <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
             
-                         <div className={cn("flex-shrink-0", showExpanded ? "ml-2" : "")}>
-              <OverlaidBrandLogos 
-                agencySettings={agencySettings}
-                agencyLoading={agencyLoading}
-                showExpanded={showExpanded}
-                maxVisibleBrands={4}
-              />
-             </div>
-            
-            {showExpanded && (
-              <div className="flex-1 min-w-0 ml-3 transition-opacity duration-500 delay-200">
-                <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-                  {agencyLoading ? (
-                    <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
-                  ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-                    agencySettings.agency_name
-                  ) : (
-                    "Agency"
-                  )}
-                </h3>
+            {!showExpanded ? (
+              // Collapsed view - just agency logo with brand count
+              <div className="relative">
+                <OverlaidBrandLogos 
+                  agencySettings={agencySettings}
+                  agencyLoading={agencyLoading}
+                  showExpanded={false}
+                  maxVisibleBrands={4}
+                />
+              </div>
+            ) : (
+              // Expanded view - agency logo, name, and brand icons
+              <div className="flex flex-col gap-3 w-full">
+                {/* Agency logo and name row */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 ml-2">
+                    {agencyLoading ? (
+                      <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                        <div className="w-6 h-6 animate-pulse bg-[#444] rounded"></div>
+                      </div>
+                    ) : agencySettings.agency_logo_url ? (
+                      <div className="w-10 h-10 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center p-2 overflow-hidden">
+                        <img 
+                          src={agencySettings.agency_logo_url} 
+                          alt={`${agencySettings.agency_name} Logo`} 
+                          className="w-6 h-6 object-contain rounded" 
+                        />
+                      </div>
+                    ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                      <div className="w-10 h-10 bg-[#333] rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">
+                          {agencySettings.agency_name.slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#3a3a3a'}}>
+                        <Building2 className="w-5 h-5 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                      {agencyLoading ? (
+                        <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
+                      ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                        agencySettings.agency_name
+                      ) : (
+                        "Agency"
+                      )}
+                    </h3>
+                  </div>
+                </div>
+                
+                {/* Brand icons row */}
+                <div className="ml-2">
+                  <OverlaidBrandLogos 
+                    agencySettings={agencySettings}
+                    agencyLoading={agencyLoading}
+                    showExpanded={true}
+                    maxVisibleBrands={6}
+                  />
+                </div>
               </div>
             )}
           </div>
