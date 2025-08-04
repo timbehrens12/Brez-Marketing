@@ -20,7 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'ULTRA CRITICAL - PRODUCT MUST BE EXACTLY THE SAME: The clothing/product must be PIXEL-PERFECT identical to the original. Same exact size, shape, position, colors, fabric texture, wrinkles, shadows, and ALL text/graphics. DO NOT distort, stretch, shrink, recolor, or modify the product AT ALL. BACKGROUND ONLY: Replace background with natural concrete floor - medium gray color with weathered cracks, like old sidewalk concrete. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
+    prompt: 'Place this exact shirt on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The shirt should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks and a slight vignette, like in a minimal industrial setting. The lighting should be soft but directional, casting subtle shadows under the shirt to show it\'s resting on the ground. Maintain the natural folds, wrinkles, and shirt proportions as if it was gently laid down by hand. Avoid any artificial floating effect — it must look like a real photograph taken in studio lighting conditions. The shirt color, logo, and fabric texture should stay crisp and unedited. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
   }
 ]
 
@@ -502,7 +502,7 @@ export default function AdCreativeStudioPage() {
                         key={creative.id}
                         className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden"
                       >
-                        <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
+                        <div className="aspect-[2/3] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
                           {creative.status === 'generating' ? (
                             <div className="flex flex-col items-center gap-3">
                               <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
