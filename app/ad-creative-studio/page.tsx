@@ -76,15 +76,18 @@ export default function AdCreativeStudioPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate image')
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+        return
       }
 
       const data = await response.json()
       setGeneratedImage(data.imageUrl)
-      toast.success('Image generated successfully!')
+      toast.success(`Image generated successfully with ${data.modelUsed}!`)
     } catch (error) {
       console.error('Error generating image:', error)
-      toast.error('Failed to generate image. Please try again.')
+      toast.error('Failed to generate image with gpt-image-1. Check console for details.')
     } finally {
       setIsGenerating(false)
     }
