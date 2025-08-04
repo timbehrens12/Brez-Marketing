@@ -20,7 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'CRITICAL: Replace ONLY the background with weathered concrete floor. PRODUCT PRESERVATION: Keep the product 100% IDENTICAL to the original - exact same size, position, colors, textures, details, and ALL text. Do NOT modify, crop, resize, recolor or alter the product in ANY way. BACKGROUND STYLE: Natural weathered concrete floor - medium gray/taupe color with visible cracks and weathered texture, similar to old sidewalk concrete. NOT dark, NOT charcoal - natural concrete color.'
+    prompt: 'ULTRA CRITICAL - PRODUCT MUST BE EXACTLY THE SAME: The clothing/product must be PIXEL-PERFECT identical to the original. Same exact size, shape, position, colors, fabric texture, wrinkles, shadows, and ALL text/graphics. DO NOT distort, stretch, shrink, recolor, or modify the product AT ALL. BACKGROUND ONLY: Replace background with natural concrete floor - medium gray color with weathered cracks, like old sidewalk concrete. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
   }
 ]
 
@@ -183,13 +183,13 @@ export default function AdCreativeStudioPage() {
       textAddition += ' CRITICAL REQUIREMENT - MUST ADD TEXT OVERLAYS: '
       if (customText.top) {
         const topColorName = colorOptions.find(c => c.value === textColors.top)?.name || 'white'
-        textAddition += `MANDATORY: Place "${customText.top}" text at the TOP CENTER of the image (not cut off) in large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
+        textAddition += `MANDATORY: Place "${customText.top}" text in the UPPER PORTION of the image, centered horizontally and well within image boundaries. Use large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
       }
       if (customText.bottom) {
         const bottomColorName = colorOptions.find(c => c.value === textColors.bottom)?.name || 'white'
-        textAddition += `MANDATORY: Place "${customText.bottom}" text at the BOTTOM CENTER of the image (not cut off) in large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
+        textAddition += `MANDATORY: Place "${customText.bottom}" text in the LOWER PORTION of the image, centered horizontally and well within image boundaries. Use large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
       }
-      textAddition += 'CRITICAL: Text MUST be FULLY VISIBLE within image boundaries with strong contrast, drop shadows, and outlines. NEVER cut off text. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
+      textAddition += 'CRITICAL: ALL TEXT must be COMPLETELY VISIBLE with margins from edges. Use the portrait format space effectively. Strong contrast, drop shadows, and outlines required. NEVER cut off any letters. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
     }
     return textAddition
   }

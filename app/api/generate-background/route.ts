@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       image: imageFile,
       prompt: prompt, // Use the ACTUAL prompt with text overlays
       n: 1,
-      size: "1024x1024",
+      size: "1024x1536", // Portrait for more vertical space for text
       quality: "high"
     })
     
