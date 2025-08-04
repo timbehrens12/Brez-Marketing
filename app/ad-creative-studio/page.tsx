@@ -20,42 +20,42 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Background (Precision)',
     description: 'Maximum detail preservation - for designs with fine text/graphics',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. Position the product so there is ample concrete background visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the concrete texture. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
   },
   {
     id: 'concrete',
     name: 'Concrete Background (Standard)',
     description: 'Industrial concrete surface with natural texture and realistic shadows',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows. This is purely a background swap - do not enhance, modify, or add anything to the product itself.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. Position the product so there is generous concrete background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the concrete floor texture. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows.'
   },
   {
     id: 'wooden-floor',
     name: 'Wooden Floor',
     description: 'Warm wooden flooring with natural grain and lighting',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to wooden floor with natural lighting and shadows.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. Position the product so there is ample wooden floor visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the wooden floor texture. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'marble-surface',
     name: 'Marble Surface',
     description: 'Elegant marble surface with luxury appeal',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to marble surface with elegant lighting.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. Position the product so there is generous marble background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the elegant marble surface. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'studio-white',
     name: 'Studio White',
     description: 'Clean studio white background for professional product shots',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to pure white studio background with professional lighting.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. Position the product so there is ample white background visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the clean white studio background. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'outdoor-setting',
     name: 'Outdoor Setting',
     description: 'Natural outdoor environment with soft lighting',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to outdoor environment with natural lighting.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. Position the product so there is generous outdoor background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the natural outdoor environment. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   }
 ]
 
