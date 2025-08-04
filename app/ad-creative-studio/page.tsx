@@ -16,17 +16,10 @@ interface StyleOption {
 
 const STYLE_OPTIONS: StyleOption[] = [
   {
-    id: 'concrete-precision',
-    name: 'Concrete Background (Precision)',
-    description: 'Maximum detail preservation - for designs with fine text/graphics',
-    thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. Position the product in the CENTER of the frame with SUBSTANTIAL concrete background space around ALL edges - especially leave ample space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
-  },
-  {
     id: 'concrete',
-    name: 'Concrete Background (Standard)',
+    name: 'Concrete Background',
     description: 'Industrial concrete surface with natural texture and realistic shadows',
-    thumbnail: '/placeholder.jpg',
+    thumbnail: 'https://i.imgur.com/yUmekNr.png',
     prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE concrete background space around ALL edges - especially ensure significant space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows.'
   },
   {
