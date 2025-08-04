@@ -55,11 +55,35 @@ export default function AdCreativeStudioPage() {
     shopNow: { label: 'Shop Now', value: 'SHOP NOW', customizable: false },
     buyToday: { label: 'Buy Today', value: 'BUY TODAY', customizable: false },
     freeShipping: { label: 'Free Shipping', value: 'FREE SHIPPING', customizable: false },
+    swipeUp: { label: 'Swipe Up', value: 'SWIPE UP', customizable: false },
+    clickLink: { label: 'Click the Link', value: 'CLICK THE LINK', customizable: false },
+    orderNow: { label: 'Order Now', value: 'ORDER NOW', customizable: false },
+    limitedStock: { label: 'Limited Stock', value: 'LIMITED STOCK', customizable: false },
+    exclusive: { label: 'Exclusive', value: 'EXCLUSIVE', customizable: false },
+    premium: { label: 'Premium', value: 'PREMIUM', customizable: false },
+    hotDeal: { label: 'Hot Deal', value: 'HOT DEAL', customizable: false },
+    trending: { label: 'Trending', value: 'TRENDING', customizable: false },
+    mustHave: { label: 'Must Have', value: 'MUST HAVE', customizable: false },
     custom: { label: 'Custom Text', value: '', customizable: true }
   })
   const [selectedTopPreset, setSelectedTopPreset] = useState<string>('')
   const [selectedBottomPreset, setSelectedBottomPreset] = useState<string>('')
   const [customValues, setCustomValues] = useState({ topValue: '', bottomValue: '' })
+  const [textColors, setTextColors] = useState({ top: '#FFFFFF', bottom: '#FFFFFF' })
+  
+  // Color preset options
+  const colorOptions = [
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Black', value: '#000000' },
+    { name: 'Red', value: '#FF0000' },
+    { name: 'Blue', value: '#0066FF' },
+    { name: 'Green', value: '#00CC00' },
+    { name: 'Yellow', value: '#FFD700' },
+    { name: 'Orange', value: '#FF6600' },
+    { name: 'Purple', value: '#9933FF' },
+    { name: 'Pink', value: '#FF33AA' },
+    { name: 'Gray', value: '#888888' }
+  ]
   
   // New state for tabs and creatives
   const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
@@ -158,12 +182,14 @@ export default function AdCreativeStudioPage() {
     if (customText.top || customText.bottom) {
       textAddition += ' ADD TEXT OVERLAYS: '
       if (customText.top) {
-        textAddition += `Place "${customText.top}" text at the TOP of the image in large, bold, readable font. `
+        const topColorName = colorOptions.find(c => c.value === textColors.top)?.name || 'white'
+        textAddition += `Place "${customText.top}" text at the TOP of the image in large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
       }
       if (customText.bottom) {
-        textAddition += `Place "${customText.bottom}" text at the BOTTOM of the image in large, bold, readable font. `
+        const bottomColorName = colorOptions.find(c => c.value === textColors.bottom)?.name || 'white'
+        textAddition += `Place "${customText.bottom}" text at the BOTTOM of the image in large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
       }
-      textAddition += 'Make sure text is clearly visible and contrasts well with the background.'
+      textAddition += 'Make sure text is clearly visible and contrasts well with the background. Use drop shadows or outlines if needed for visibility.'
     }
     return textAddition
   }
@@ -671,7 +697,7 @@ export default function AdCreativeStudioPage() {
                       <div className="space-y-4 mb-6">
                         <div>
                           <label className="text-gray-300 text-sm block mb-3 font-medium">Top Text</label>
-                          <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="grid grid-cols-3 gap-2 mb-3">
                             {Object.entries(textPresets).map(([key, preset]) => (
                               <button
                                 key={key}
@@ -704,10 +730,32 @@ export default function AdCreativeStudioPage() {
                             </div>
                           )}
                           
+                          {/* Color Selection for Top Text */}
+                          {customText.top && (
+                            <div className="mb-3">
+                              <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
+                              <div className="grid grid-cols-5 gap-2">
+                                {colorOptions.map((color) => (
+                                  <button
+                                    key={color.value}
+                                    onClick={() => setTextColors(prev => ({ ...prev, top: color.value }))}
+                                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                                      textColors.top === color.value
+                                        ? 'border-white scale-110'
+                                        : 'border-gray-600 hover:border-gray-400'
+                                    }`}
+                                    style={{ backgroundColor: color.value }}
+                                    title={color.name}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Preview */}
                           <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
                             <p className="text-white text-sm">
-                              Preview: {customText.top || 'No text selected'}
+                              Preview: <span style={{ color: textColors.top }}>{customText.top || 'No text selected'}</span>
                             </p>
                           </div>
                         </div>
@@ -717,7 +765,7 @@ export default function AdCreativeStudioPage() {
                       <div className="space-y-4">
                         <div>
                           <label className="text-gray-300 text-sm block mb-3 font-medium">Bottom Text</label>
-                          <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="grid grid-cols-3 gap-2 mb-3">
                             {Object.entries(textPresets).map(([key, preset]) => (
                               <button
                                 key={key}
@@ -750,29 +798,52 @@ export default function AdCreativeStudioPage() {
                             </div>
                           )}
                           
+                          {/* Color Selection for Bottom Text */}
+                          {customText.bottom && (
+                            <div className="mb-3">
+                              <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
+                              <div className="grid grid-cols-5 gap-2">
+                                {colorOptions.map((color) => (
+                                  <button
+                                    key={color.value}
+                                    onClick={() => setTextColors(prev => ({ ...prev, bottom: color.value }))}
+                                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                                      textColors.bottom === color.value
+                                        ? 'border-white scale-110'
+                                        : 'border-gray-600 hover:border-gray-400'
+                                    }`}
+                                    style={{ backgroundColor: color.value }}
+                                    title={color.name}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Preview */}
                           <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
                             <p className="text-white text-sm">
-                              Preview: {customText.bottom || 'No text selected'}
+                              Preview: <span style={{ color: textColors.bottom }}>{customText.bottom || 'No text selected'}</span>
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Clear buttons */}
+                                            {/* Clear buttons */}
                       <div className="flex gap-2 mt-4">
-                      <Button 
+                        <Button
                           size="sm"
                           variant="outline"
-                        onClick={() => {
+                          onClick={() => {
                             setSelectedTopPreset('')
                             setCustomText(prev => ({ ...prev, top: '' }))
                             setCustomValues(prev => ({ ...prev, topValue: '' }))
+                            setTextColors(prev => ({ ...prev, top: '#FFFFFF' }))
                           }}
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear Top
-                      </Button>
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -780,11 +851,26 @@ export default function AdCreativeStudioPage() {
                             setSelectedBottomPreset('')
                             setCustomText(prev => ({ ...prev, bottom: '' }))
                             setCustomValues(prev => ({ ...prev, bottomValue: '' }))
+                            setTextColors(prev => ({ ...prev, bottom: '#FFFFFF' }))
                           }}
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear Bottom
-                      </Button>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedTopPreset('')
+                            setSelectedBottomPreset('')
+                            setCustomText({ top: '', bottom: '' })
+                            setCustomValues({ topValue: '', bottomValue: '' })
+                            setTextColors({ top: '#FFFFFF', bottom: '#FFFFFF' })
+                          }}
+                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                        >
+                          Clear All
+                        </Button>
                       </div>
                     </div>
 
@@ -799,13 +885,13 @@ export default function AdCreativeStudioPage() {
                         {customText.top && (
                           <li className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                            Top text: "{customText.top}"
+                            Top text: "<span style={{ color: textColors.top }}>{customText.top}</span>" in {colorOptions.find(c => c.value === textColors.top)?.name.toLowerCase() || 'white'}
                           </li>
                         )}
                         {customText.bottom && (
                           <li className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                            Bottom text: "{customText.bottom}"
+                            Bottom text: "<span style={{ color: textColors.bottom }}>{customText.bottom}</span>" in {colorOptions.find(c => c.value === textColors.bottom)?.name.toLowerCase() || 'white'}
                           </li>
                         )}
                         <li className="flex items-center gap-2">
