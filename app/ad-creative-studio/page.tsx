@@ -222,50 +222,40 @@ export default function AdCreativeStudioPage() {
           </div>
         </div>
 
-        {/* Upload Section - Top Bar */}
+        {/* Upload Section - Compact Top Bar */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
+          <div className="p-4">
+            <div className="flex items-center gap-6">
+              {/* Upload Area */}
               <div className="flex items-center gap-4">
-                <Upload className="w-6 h-6 text-white" />
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Upload Your Product</h2>
-                  <p className="text-gray-400 text-sm">Start by uploading your product image to transform</p>
+                <div className="flex items-center gap-3">
+                  <Upload className="w-5 h-5 text-white" />
+                  <h2 className="text-lg font-semibold text-white">Upload Product</h2>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                {uploadedImageUrl && (
-                  <div className="flex items-center gap-4">
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Uploaded product" 
-                      className="w-16 h-16 rounded-lg shadow-lg border border-[#333] object-cover"
-                    />
-                    <div className="text-sm">
-                      <p className="text-white font-medium">Ready to generate</p>
-                      <p className="text-gray-400">Choose a style below</p>
-                    </div>
-                  </div>
-                )}
-                
                 <div 
-                  className="border-2 border-dashed border-[#444] rounded-xl p-4 text-center hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] min-w-[200px]"
+                  className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
-                  {!uploadedImageUrl ? (
-                    <div className="space-y-2">
-                      <ImageIcon className="w-8 h-8 mx-auto text-gray-500" />
+                  {uploadedImageUrl ? (
+                    <>
+                      <img 
+                        src={uploadedImageUrl} 
+                        alt="Uploaded product" 
+                        className="w-12 h-12 rounded-lg object-cover border border-[#333]"
+                      />
                       <div>
-                        <p className="text-sm font-medium text-white">Drop image here</p>
+                        <p className="text-sm font-medium text-white">Product Uploaded</p>
+                        <p className="text-xs text-gray-400">Click to change</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-8 h-8 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium text-white">Drop image here or click</p>
                         <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload className="w-6 h-6 mx-auto text-gray-400" />
-                      <p className="text-sm text-white">Change Image</p>
-                    </div>
+                    </>
                   )}
                 </div>
                 <input
@@ -276,33 +266,71 @@ export default function AdCreativeStudioPage() {
                   className="hidden"
                 />
               </div>
+              
+              {/* Status/Result Info */}
+              <div className="flex-1 flex justify-end">
+                {generatedImage && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#333]">
+                      <img src={generatedImage} alt="Generated" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-300">Generation Complete!</p>
+                      <div className="flex gap-2 mt-1">
+                        <Button 
+                          size="sm"
+                          onClick={() => {
+                            const link = document.createElement('a')
+                            link.href = generatedImage
+                            link.download = 'generated-product-image.png'
+                            link.click()
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white border-0 text-xs px-3 py-1"
+                        >
+                          Download
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline" 
+                          className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white text-xs px-3 py-1"
+                          onClick={() => setGeneratedImage('')}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {isGenerating && (
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-300">Generating Creative...</p>
+                      <p className="text-xs text-blue-400/80">This may take 30-60 seconds</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Full-Page Style Gallery */}
+        {/* Massive Style Gallery */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
           <div className="p-6 border-b border-[#333]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-6 h-6 text-white" />
                 <div>
-                  <h2 className="text-2xl font-semibold text-white">Style Gallery</h2>
-                  <p className="text-gray-400 mt-1">Choose from our collection of AI-powered background styles</p>
+                  <h2 className="text-2xl font-bold text-white">Style Gallery</h2>
+                  <p className="text-gray-400 mt-1">
+                    Choose from our collection of AI-powered background styles - Click any style to apply it to your product
+                  </p>
                 </div>
               </div>
-              {generatedImage && (
-                <Button 
-                  onClick={() => {
-                    // Show results modal or slide-out
-                    document.getElementById('results-modal')?.classList.remove('hidden')
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white border-0"
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  View Result
-                </Button>
-              )}
+              <div className="text-sm text-gray-400">
+                {STYLE_OPTIONS.length} styles available
+              </div>
             </div>
           </div>
           <div className="p-8">
@@ -318,115 +346,44 @@ export default function AdCreativeStudioPage() {
                     <img
                       src={style.thumbnail}
                       alt={style.name}
-                      className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                      className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
                     />
+                    {/* Overlay with apply button */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <Button 
+                        disabled={!uploadedImage || isGenerating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg font-semibold shadow-xl"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          generateImage(style)
+                        }}
+                      >
+                        {isGenerating && selectedStyle?.id === style.id ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          'Apply This Style'
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Style Info */}
                   <div className="p-6">
-                    <h3 className="font-bold text-white group-hover:text-blue-300 transition-colors text-xl mb-3">{style.name}</h3>
-                    <p className="text-gray-400 leading-relaxed mb-6">{style.description}</p>
-                    
-                    <Button 
-                      disabled={!uploadedImage || isGenerating}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 py-3 text-lg font-semibold"
-                    >
-                      {isGenerating && selectedStyle?.id === style.id ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5 mr-3" />
-                          Apply This Style
-                        </>
-                      )}
-                    </Button>
+                    <h3 className="font-bold text-white text-xl mb-2 group-hover:text-blue-300 transition-colors">
+                      {style.name}
+                    </h3>
+                    <p className="text-gray-400 leading-relaxed text-sm">
+                      {style.description}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
-        {/* Results Modal/Overlay */}
-        {generatedImage && (
-          <div id="results-modal" className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-              <div className="p-6 border-b border-[#333] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <ImageIcon className="w-6 h-6 text-white" />
-                  <h2 className="text-2xl font-semibold text-white">Generated Result</h2>
-                </div>
-                <Button 
-                  variant="ghost"
-                  onClick={() => document.getElementById('results-modal')?.classList.add('hidden')}
-                  className="text-gray-400 hover:text-white"
-                >
-                  ✕
-                </Button>
-              </div>
-              <div className="p-8">
-                <div className="space-y-6">
-                  <div className="relative">
-                    <img
-                      src={generatedImage}
-                      alt="Generated product image"
-                      className="w-full rounded-lg shadow-2xl border border-[#333]"
-                    />
-                    <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button 
-                      onClick={() => {
-                        const link = document.createElement('a')
-                        link.href = generatedImage
-                        link.download = 'generated-product-image.png'
-                        link.click()
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white border-0 py-4 text-lg font-semibold"
-                    >
-                      <Upload className="w-5 h-5 mr-3" />
-                      Download Image
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white py-4 text-lg font-semibold"
-                      onClick={() => {
-                        setGeneratedImage('')
-                        document.getElementById('results-modal')?.classList.add('hidden')
-                      }}
-                    >
-                      <Sparkles className="w-5 h-5 mr-3" />
-                      Generate Another
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Generation Loading Overlay */}
-        {isGenerating && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-2xl p-8 max-w-md w-full mx-4">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 relative">
-                  <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 animate-spin"></div>
-                  <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-blue-400" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-3">Generating Creative</h3>
-                <p className="text-gray-400 mb-2">Applying {selectedStyle?.name} style to your product</p>
-                <p className="text-blue-300/80 text-sm">This may take 30-60 seconds...</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
