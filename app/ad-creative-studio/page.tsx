@@ -334,31 +334,31 @@ export default function AdCreativeStudioPage() {
                   />
                 </div>
 
-                {/* Compact Style Gallery */}
+                                  {/* Bigger Style Gallery */}
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                     <Sparkles className="w-5 h-5" />
                     Background Styles
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {STYLE_OPTIONS.map((style) => (
                       <div
                         key={style.id}
-                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden hover:border-[#555] hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden hover:border-[#555] hover:shadow-2xl transition-all duration-300 cursor-pointer group"
                         onClick={() => openStyleModal(style)}
                       >
                         <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
                           <img
                             src={style.thumbnail}
                             alt={style.name}
-                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
                           />
                         </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-white text-sm group-hover:text-blue-300 transition-colors">
+                        <div className="p-6">
+                          <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-blue-300 transition-colors">
                             {style.name}
                           </h4>
-                          <p className="text-gray-400 text-xs mt-1 line-clamp-2">
+                          <p className="text-gray-400 text-sm leading-relaxed">
                             {style.description}
                           </p>
                         </div>
@@ -456,28 +456,40 @@ export default function AdCreativeStudioPage() {
           </div>
         </div>
 
-        {/* Style Customization Modal */}
+        {/* Enhanced Style Customization Modal */}
         {showStyleModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
+              {/* Header */}
               <div className="p-6 border-b border-[#333] flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Customize Your Creative</h2>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                    <Sparkles className="w-5 h-5 text-blue-300" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Create Your Ad Creative</h2>
+                    <p className="text-gray-400 text-sm">Customize and generate your product image</p>
+                  </div>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowStyleModal(false)}
-                  className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333]"
+                  className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               
-              <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Original Image */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-4">Your Product</h3>
-                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-lg flex items-center justify-center overflow-hidden border border-[#333]">
+              <div className="p-8">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                  {/* Original Image Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Upload className="w-5 h-5 text-blue-300" />
+                      <h3 className="text-lg font-semibold text-white">Your Product</h3>
+                    </div>
+                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
                       {uploadedImageUrl ? (
                         <img
                           src={uploadedImageUrl}
@@ -485,86 +497,148 @@ export default function AdCreativeStudioPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <ImageIcon className="w-16 h-16 text-gray-500" />
+                        <div className="text-center">
+                          <ImageIcon className="w-16 h-16 mx-auto text-gray-500 mb-3" />
+                          <p className="text-gray-500 text-sm">No image uploaded</p>
+                        </div>
                       )}
                     </div>
+                    {uploadedImage && (
+                      <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-white text-sm font-medium">Image Details</p>
+                            <p className="text-gray-400 text-xs">
+                              {uploadedImage.name} • {(uploadedImage.size / 1024 / 1024).toFixed(1)} MB
+                            </p>
+                          </div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Style Preview */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-4">Preview Style: {modalStyle.name}</h3>
-                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-lg flex items-center justify-center overflow-hidden border border-[#333] mb-4">
+                  {/* Style Preview Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ImageIcon className="w-5 h-5 text-blue-300" />
+                      <h3 className="text-lg font-semibold text-white">Style Preview</h3>
+                    </div>
+                    
+                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
                       <img
                         src={modalStyle.thumbnail}
                         alt={modalStyle.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-gray-400 text-sm mb-4">{modalStyle.description}</p>
+                    
+                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
+                      <h4 className="text-white font-semibold mb-2">{modalStyle.name}</h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">{modalStyle.description}</p>
+                    </div>
 
-                    {/* Style Selector */}
-                    <div className="mb-6">
-                      <h4 className="text-white font-medium mb-3">Choose Style:</h4>
-                      <div className="grid grid-cols-3 gap-3">
-                        {STYLE_OPTIONS.map((style) => (
-                          <button
-                            key={style.id}
-                            onClick={() => setModalStyle(style)}
-                            className={`p-2 rounded-lg border transition-all duration-200 ${
-                              modalStyle.id === style.id
-                                ? 'border-blue-500 bg-blue-500/20'
-                                : 'border-[#333] hover:border-[#555]'
-                            }`}
-                          >
-                            <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
-                              <img
-                                src={style.thumbnail}
-                                alt={style.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <p className="text-white text-xs font-medium">{style.name}</p>
-                          </button>
-                        ))}
+                    {/* Style Selector - Only show if more than 1 option */}
+                    {STYLE_OPTIONS.length > 1 && (
+                      <div>
+                        <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          Choose Style:
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {STYLE_OPTIONS.map((style) => (
+                            <button
+                              key={style.id}
+                              onClick={() => setModalStyle(style)}
+                              className={`p-3 rounded-lg border transition-all duration-200 ${
+                                modalStyle.id === style.id
+                                  ? 'border-blue-500 bg-blue-500/20 shadow-lg'
+                                  : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
+                              }`}
+                            >
+                              <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
+                                <img
+                                  src={style.thumbnail}
+                                  alt={style.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <p className="text-white text-xs font-medium">{style.name}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Configuration & Generate Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Plus className="w-5 h-5 text-blue-300" />
+                      <h3 className="text-lg font-semibold text-white">Customize</h3>
+                    </div>
+
+                    {/* Custom Text Section */}
+                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                      <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add Text Overlays
+                      </h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-gray-300 text-sm block mb-2 font-medium">Top Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., SALE, NEW, LIMITED TIME"
+                            value={customText.top}
+                            onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
+                            className="w-full bg-[#333] border border-[#444] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="text-gray-300 text-sm block mb-2 font-medium">Bottom Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., 10% OFF, SHOP NOW, BUY TODAY"
+                            value={customText.bottom}
+                            onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
+                            className="w-full bg-[#333] border border-[#444] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                        <p className="text-orange-300 text-xs flex items-center gap-2">
+                          <Info className="w-3 h-3" />
+                          Text overlay feature coming in a future update
+                        </p>
                       </div>
                     </div>
 
-                    {/* Custom Text */}
-                    <div className="mb-6">
-                      <h4 className="text-white font-medium mb-3">Add Text (Coming Soon):</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-gray-400 text-xs block mb-1">Top Text</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., SALE"
-                            value={customText.top}
-                            onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <label className="text-gray-400 text-xs block mb-1">Bottom Text</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., 10% OFF"
-                            value={customText.bottom}
-                            onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
-                            disabled
-                          />
-                        </div>
-                      </div>
-                      <p className="text-gray-500 text-xs mt-2">
-                        Text overlay feature will be available in a future update
-                      </p>
+                    {/* Preview Info */}
+                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                      <h4 className="text-white font-semibold mb-3">What You'll Get:</h4>
+                      <ul className="space-y-2 text-sm text-gray-300">
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          Your product with {modalStyle.name.toLowerCase()} background
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          Perfect positioning with space for text overlays
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          High-quality image ready for ads and marketing
+                        </li>
+                      </ul>
                     </div>
 
                     {/* Generate Button */}
                     <Button
                       disabled={!uploadedImage || isGenerating}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 py-3 text-lg font-semibold"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                       onClick={generateImageFromModal}
                     >
                       {isGenerating ? (
@@ -579,6 +653,14 @@ export default function AdCreativeStudioPage() {
                         </>
                       )}
                     </Button>
+
+                    {!uploadedImage && (
+                      <div className="text-center p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <p className="text-red-300 text-sm">
+                          Please upload a product image first
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
