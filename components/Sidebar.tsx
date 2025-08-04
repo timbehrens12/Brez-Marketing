@@ -50,6 +50,12 @@ const navItems: NavItem[] = [
     description: "Brand analytics"
   },
   { 
+    name: "Ad Creative Studio", 
+    href: "/ad-creative-studio", 
+    icon: Palette,
+    description: "Design and manage ad creatives"
+  },
+  { 
     name: "Lead Generator", 
     href: "/lead-generator", 
     icon: Zap,
