@@ -54,6 +54,8 @@ export default function AdCreativeStudioPage() {
 
     setIsGenerating(true)
     setSelectedStyle(style)
+    
+    toast.info('Starting image generation with gpt-image-1... This may take 30-60 seconds.')
 
     try {
       // Convert image to base64
@@ -187,7 +189,7 @@ export default function AdCreativeStudioPage() {
                           {isGenerating && selectedStyle?.id === style.id ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Generating...
+                              Generating (30-60s)...
                             </>
                           ) : (
                             'Apply Style'

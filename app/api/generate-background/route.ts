@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Set timeout to 5 minutes for image generation
+export const maxDuration = 300
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 300000, // 5 minutes
 })
 
 export async function POST(req: NextRequest) {
@@ -16,115 +20,43 @@ export async function POST(req: NextRequest) {
     // Extract base64 data and format for OpenAI
     const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '')
     
-    console.log('Generating image with gpt-image-1 model ONLY...')
+    console.log('Generating image with gpt-image-1 using image edit...')
     console.log('Prompt length:', prompt.length)
     console.log('Base64 image length:', base64Data.length)
     
-    // Try different approaches to send both image and prompt to gpt-image-1
+    // Convert base64 to buffer for the edits endpoint
+    const imageBuffer = Buffer.from(base64Data, 'base64')
     
-    // Approach 1: Try to include the image in the prompt somehow
-    try {
-      console.log('Attempting approach 1: Enhanced prompt with image reference...')
-      const imageGenResponse = await openai.images.generate({
-        model: "gpt-image-1", 
-        prompt: `${prompt}\n\nThe image to be modified is provided as context. Use the provided product image as the base for this transformation.`,
-        n: 1,
-        size: "1024x1024",
-        quality: "high"
-      })
-      
-      const generatedImageUrl = imageGenResponse.data[0]?.url
-      if (generatedImageUrl) {
-        console.log('Approach 1 successful!')
-        return NextResponse.json({ 
-          imageUrl: generatedImageUrl,
-          style: style,
-          modelUsed: 'gpt-image-1',
-          approach: 'enhanced-prompt'
-        })
-      }
-    } catch (approach1Error: any) {
-      console.log('Approach 1 failed:', approach1Error.message)
+    // Create a File-like object that works with OpenAI SDK in Node.js
+    const imageFile = new File([imageBuffer], 'product.png', { 
+      type: 'image/png',
+      lastModified: Date.now()
+    })
+    
+    console.log('Image file created, size:', imageBuffer.length, 'bytes')
+    console.log('Starting gpt-image-1 generation... (this may take 30-60 seconds)')
+    
+    const editResponse = await openai.images.edit({
+      model: "gpt-image-1",
+      image: imageFile,
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024"
+    })
+    
+    const generatedImageUrl = editResponse.data?.[0]?.url
+
+    if (!generatedImageUrl) {
+      throw new Error('No image URL returned from gpt-image-1')
     }
     
-    // Approach 2: Try using image edits endpoint (if available for gpt-image-1)
-    try {
-      console.log('Attempting approach 2: Image edits endpoint...')
-      
-      // Convert base64 to buffer for the edits endpoint
-      const imageBuffer = Buffer.from(base64Data, 'base64')
-      
-      // Create a File-like object that works with OpenAI SDK in Node.js
-      const imageFile = new File([imageBuffer], 'product.png', { 
-        type: 'image/png',
-        lastModified: Date.now()
-      })
-      
-      console.log('Image file created, size:', imageBuffer.length, 'bytes')
-      
-      const editResponse = await openai.images.edit({
-        model: "gpt-image-1",
-        image: imageFile,
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024"
-      })
-      
-      const generatedImageUrl = editResponse.data[0]?.url
-      if (generatedImageUrl) {
-        console.log('Approach 2 (image edit) successful!')
-        return NextResponse.json({ 
-          imageUrl: generatedImageUrl,
-          style: style,
-          modelUsed: 'gpt-image-1',
-          approach: 'image-edit'
-        })
-      }
-    } catch (approach2Error: any) {
-      console.log('Approach 2 failed:', approach2Error.message)
-      console.log('Full error:', approach2Error)
-    }
-    
-    // Approach 3: Try using chat completions with multimodal capabilities
-    try {
-      console.log('Attempting approach 3: Chat completions with image generation...')
-      
-      const chatResponse = await openai.chat.completions.create({
-        model: "gpt-4o", // Use gpt-4o which supports image understanding
-        messages: [
-          {
-            role: "user",  
-            content: [
-              {
-                type: "text",
-                text: `${prompt}\n\nPlease generate a new image based on this request. I need you to create the exact scene described in the prompt using the product shown in the uploaded image.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Data}`,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-      })
-      
-      const textResponse = chatResponse.choices[0]?.message?.content
-      console.log('Chat response:', textResponse)
-      
-      // This approach might just return text, not generate an actual image
-      // But let's see what happens and log it for debugging
-      console.log('Approach 3 completed - check if it can generate images directly')
-      
-    } catch (approach3Error: any) {
-      console.log('Approach 3 failed:', approach3Error.message)
-    }
-    
-    // If all approaches fail, throw an error with details
-    throw new Error('All approaches to use gpt-image-1 with input image failed')
+    console.log('Image generated successfully with gpt-image-1!')
+
+    return NextResponse.json({ 
+      imageUrl: generatedImageUrl,
+      style: style,
+      modelUsed: 'gpt-image-1'
+    })
 
   } catch (error: any) {
     console.error('Error generating image with gpt-image-1:', error)
