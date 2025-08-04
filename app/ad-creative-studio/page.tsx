@@ -20,7 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/ED4tpzf.png',
-    prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks and a slight vignette, like in a minimal industrial setting. The lighting should be soft but directional, casting subtle shadows under the clothing to show it\'s resting on the ground. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand. Avoid any artificial floating effect — it must look like a real photograph taken in studio lighting conditions. The clothing color, logo, and fabric texture should stay crisp and unedited. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
+    prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks and a slight vignette, like in a minimal industrial setting. The lighting should be soft but directional, casting subtle shadows under the clothing to show it\'s resting on the ground. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand. Avoid any artificial floating effect — it must look like a real photograph taken in studio lighting conditions. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
   }
 ]
 
@@ -463,7 +463,7 @@ export default function AdCreativeStudioPage() {
                         }`}
                         onClick={() => openStyleModal(style)}
                     >
-                        <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                        <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
                         <img
                           src={style.thumbnail}
                           alt={style.name}
@@ -609,7 +609,7 @@ export default function AdCreativeStudioPage() {
                       <Upload className="w-5 h-5 text-gray-300" />
                       <h3 className="text-lg font-semibold text-white">Your Product</h3>
                     </div>
-                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
+                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
                       {uploadedImageUrl ? (
                         <img
                           src={uploadedImageUrl}
@@ -645,7 +645,7 @@ export default function AdCreativeStudioPage() {
                       <h3 className="text-lg font-semibold text-white">Style Preview</h3>
                     </div>
                     
-                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
+                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
                       <img
                         src={modalStyle.thumbnail}
                         alt={modalStyle.name}
@@ -676,7 +676,7 @@ export default function AdCreativeStudioPage() {
                                   : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
                               }`}
                             >
-                              <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
+                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
                                 <img
                                   src={style.thumbnail}
                                   alt={style.name}

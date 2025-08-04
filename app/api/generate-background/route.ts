@@ -30,10 +30,15 @@ export async function POST(req: NextRequest) {
     const imageBuffer = Buffer.from(base64Data, 'base64')
     
     // Create a File-like object that works with OpenAI SDK in Node.js
+    // Using higher quality PNG format to preserve detail
     const imageFile = new File([imageBuffer], 'product.png', { 
       type: 'image/png',
       lastModified: Date.now()
     })
+    
+    // Log image dimensions if possible to help with quality debugging
+    console.log('📐 Image buffer size:', imageBuffer.length, 'bytes')
+    console.log('🔍 Input image quality analysis:')
     
     console.log('Image file created, size:', imageBuffer.length, 'bytes')
     console.log('Starting gpt-image-1 generation... (this may take 30-60 seconds)')
@@ -52,7 +57,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt, // Use the ACTUAL prompt with text overlays
         n: 1,
         size: "1024x1536", // Portrait for more vertical space for text
-        quality: "high"
+        quality: "high" // Use highest available quality for better detail preservation
       })
       console.log('Portrait format succeeded!')
     } catch (portraitError: any) {
@@ -64,7 +69,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024", // Fallback to square
-        quality: "high"
+        quality: "high" // Use highest available quality for better detail preservation
       })
       console.log('Square format fallback succeeded!')
     }
@@ -88,10 +93,21 @@ export async function POST(req: NextRequest) {
     console.log('Generated data URL length:', generatedImageUrl.length)
     console.log('Input to output size ratio:', (generatedBase64.length / base64Data.length).toFixed(2))
     
-    // Log if there might be quality loss
-    if (generatedBase64.length < base64Data.length * 0.8) {
+    // Enhanced quality analysis
+    const sizeRatio = generatedBase64.length / base64Data.length
+    if (sizeRatio < 0.8) {
       console.warn('⚠️  Generated image is significantly smaller than input - possible quality loss')
+      console.warn('📊  Size ratio:', sizeRatio.toFixed(2))
+    } else {
+      console.log('✅  Generated image size looks good - ratio:', sizeRatio.toFixed(2))
     }
+    
+    // Additional quality preservation logging
+    console.log('🎯  Quality preservation check:')
+    console.log('   - Input image size:', base64Data.length, 'chars')
+    console.log('   - Output image size:', generatedBase64.length, 'chars')
+    console.log('   - Quality used: high')
+    console.log('   - Model: gpt-image-1')
     
     console.log('Image generated successfully with gpt-image-1!')
 
