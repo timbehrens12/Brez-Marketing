@@ -342,7 +342,7 @@ export default function AdCreativeStudioPage() {
                   onClick={() => generateImage(style)}
                 >
                   {/* Large Preview Image */}
-                  <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] border-b border-[#333] flex items-center justify-center overflow-hidden">
+                  <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] border-b border-[#333] flex items-center justify-center overflow-hidden relative">
                     <img
                       src={style.thumbnail}
                       alt={style.name}
