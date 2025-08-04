@@ -44,19 +44,23 @@ export async function POST(req: NextRequest) {
       size: "1024x1024"
     })
     
-    console.log('Raw gpt-image-1 response:', JSON.stringify(editResponse, null, 2))
-    console.log('Response data:', editResponse.data)
-    console.log('Data length:', editResponse.data?.length)
-    console.log('First item:', editResponse.data?.[0])
+    console.log('gpt-image-1 response received successfully!')
+    console.log('Response data length:', editResponse.data?.length)
     
-    const generatedImageUrl = editResponse.data?.[0]?.url
-
-    if (!generatedImageUrl) {
-      console.error('No URL found in response structure')
-      console.error('Full response object keys:', Object.keys(editResponse))
-      console.error('Data object keys:', editResponse.data ? Object.keys(editResponse.data) : 'data is undefined')
-      throw new Error(`No image URL returned from gpt-image-1. Response: ${JSON.stringify(editResponse)}`)
+    // gpt-image-1 returns base64 data instead of URLs
+    const base64Data = editResponse.data?.[0]?.b64_json
+    
+    if (!base64Data) {
+      console.error('No base64 data found in response')
+      console.error('Available keys in first item:', editResponse.data?.[0] ? Object.keys(editResponse.data[0]) : 'no first item')
+      throw new Error('No image data returned from gpt-image-1')
     }
+    
+    // Convert base64 to data URL that can be displayed in browser
+    const generatedImageUrl = `data:image/png;base64,${base64Data}`
+    
+    console.log('Base64 image data length:', base64Data.length)
+    console.log('Generated data URL length:', generatedImageUrl.length)
     
     console.log('Image generated successfully with gpt-image-1!')
 
