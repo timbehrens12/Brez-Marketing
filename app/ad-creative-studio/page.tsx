@@ -20,14 +20,42 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Background (Precision)',
     description: 'Maximum detail preservation - for designs with fine text/graphics',
     thumbnail: '/placeholder.jpg',
-    prompt: 'TECHNICAL BACKGROUND SWAP: Cut out this exact product and place on concrete. ZERO modifications to product. Preserve every pixel of text, graphics, distressing. Simple background replacement only.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
   },
   {
     id: 'concrete',
     name: 'Concrete Background (Standard)',
     description: 'Industrial concrete surface with natural texture and realistic shadows',
-    thumbnail: '/placeholder.jpg', // Using existing placeholder for now
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with concrete while keeping the product 100% unchanged. This is NOT a creative edit - this is precise background replacement. PRESERVE EXACTLY: All text (PROJECT, CAPRI, 24, small bottom text), all background graphics/patterns on the shirt, all design elements, all colors, all fine details, all distressing effects, all texture. DO NOT modify, reinterpret, enhance, or alter ANY aspect of the product design. The product must remain pixel-perfect identical to the original. ONLY change: Replace the white background with realistic concrete floor texture. CRITICAL PRESERVATION REQUIREMENTS: 1) All text must be identical character-by-character 2) All graphic elements must be preserved exactly 3) All distressed/vintage effects must remain unchanged 4) All small design details must be maintained 5) Color accuracy must be perfect 6) No artistic interpretation of the design. This is a technical background swap, not creative enhancement. Place the unchanged product on concrete surface with natural lighting and realistic shadows.'
+    thumbnail: '/placeholder.jpg',
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows. This is purely a background swap - do not enhance, modify, or add anything to the product itself.'
+  },
+  {
+    id: 'wooden-floor',
+    name: 'Wooden Floor',
+    description: 'Warm wooden flooring with natural grain and lighting',
+    thumbnail: '/placeholder.jpg',
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to wooden floor with natural lighting and shadows.'
+  },
+  {
+    id: 'marble-surface',
+    name: 'Marble Surface',
+    description: 'Elegant marble surface with luxury appeal',
+    thumbnail: '/placeholder.jpg',
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to marble surface with elegant lighting.'
+  },
+  {
+    id: 'studio-white',
+    name: 'Studio White',
+    description: 'Clean studio white background for professional product shots',
+    thumbnail: '/placeholder.jpg',
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to pure white studio background with professional lighting.'
+  },
+  {
+    id: 'outdoor-setting',
+    name: 'Outdoor Setting',
+    description: 'Natural outdoor environment with soft lighting',
+    thumbnail: '/placeholder.jpg',
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to outdoor environment with natural lighting.'
   }
 ]
 
