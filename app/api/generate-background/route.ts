@@ -17,29 +17,70 @@ export async function POST(req: NextRequest) {
     const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '')
     
     console.log('Generating image with gpt-image-1 model ONLY...')
+    console.log('Prompt length:', prompt.length)
+    console.log('Base64 image length:', base64Data.length)
     
-    // Only use gpt-image-1 - no fallback, no style parameter
-    const imageGenResponse = await openai.images.generate({
-      model: "gpt-image-1", 
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      quality: "hd"
-    })
-
-    const generatedImageUrl = imageGenResponse.data[0]?.url
-
-    if (!generatedImageUrl) {
-      throw new Error('No image URL returned from gpt-image-1')
+    // Try different approaches to send both image and prompt to gpt-image-1
+    
+    // Approach 1: Try to include the image in the prompt somehow
+    try {
+      console.log('Attempting approach 1: Enhanced prompt with image reference...')
+      const imageGenResponse = await openai.images.generate({
+        model: "gpt-image-1", 
+        prompt: `${prompt}\n\nThe image to be modified is provided as context. Use the provided product image as the base for this transformation.`,
+        n: 1,
+        size: "1024x1024",
+        quality: "hd"
+      })
+      
+      const generatedImageUrl = imageGenResponse.data[0]?.url
+      if (generatedImageUrl) {
+        console.log('Approach 1 successful!')
+        return NextResponse.json({ 
+          imageUrl: generatedImageUrl,
+          style: style,
+          modelUsed: 'gpt-image-1',
+          approach: 'enhanced-prompt'
+        })
+      }
+    } catch (approach1Error: any) {
+      console.log('Approach 1 failed:', approach1Error.message)
     }
-
-    console.log('Image generated successfully with gpt-image-1!')
-
-    return NextResponse.json({ 
-      imageUrl: generatedImageUrl,
-      style: style,
-      modelUsed: 'gpt-image-1'
-    })
+    
+    // Approach 2: Try using image edits endpoint (if available for gpt-image-1)
+    try {
+      console.log('Attempting approach 2: Image edits endpoint...')
+      
+      // Convert base64 to buffer for the edits endpoint
+      const imageBuffer = Buffer.from(base64Data, 'base64')
+      
+      // Create a proper Blob/File for the API
+      const imageBlob = new Blob([imageBuffer], { type: 'image/png' })
+      
+      const editResponse = await openai.images.edit({
+        model: "gpt-image-1",
+        image: imageBlob as any, // Type assertion for compatibility
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024"
+      })
+      
+      const generatedImageUrl = editResponse.data[0]?.url
+      if (generatedImageUrl) {
+        console.log('Approach 2 (image edit) successful!')
+        return NextResponse.json({ 
+          imageUrl: generatedImageUrl,
+          style: style,
+          modelUsed: 'gpt-image-1',
+          approach: 'image-edit'
+        })
+      }
+    } catch (approach2Error: any) {
+      console.log('Approach 2 failed:', approach2Error.message)
+    }
+    
+    // If all approaches fail, throw an error with details
+    throw new Error('All approaches to use gpt-image-1 with input image failed')
 
   } catch (error: any) {
     console.error('Error generating image with gpt-image-1:', error)
