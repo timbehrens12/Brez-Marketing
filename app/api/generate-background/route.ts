@@ -18,14 +18,13 @@ export async function POST(req: NextRequest) {
     
     console.log('Generating image with gpt-image-1 model ONLY...')
     
-    // Only use gpt-image-1 - no fallback
+    // Only use gpt-image-1 - no fallback, no style parameter
     const imageGenResponse = await openai.images.generate({
       model: "gpt-image-1", 
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      quality: "hd",
-      style: "natural"
+      quality: "hd"
     })
 
     const generatedImageUrl = imageGenResponse.data[0]?.url
