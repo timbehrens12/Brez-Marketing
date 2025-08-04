@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         prompt: `${prompt}\n\nThe image to be modified is provided as context. Use the provided product image as the base for this transformation.`,
         n: 1,
         size: "1024x1024",
-        quality: "hd"
+        quality: "high"
       })
       
       const generatedImageUrl = imageGenResponse.data[0]?.url
@@ -54,12 +54,17 @@ export async function POST(req: NextRequest) {
       // Convert base64 to buffer for the edits endpoint
       const imageBuffer = Buffer.from(base64Data, 'base64')
       
-      // Create a proper Blob/File for the API
-      const imageBlob = new Blob([imageBuffer], { type: 'image/png' })
+      // Create a File-like object that works with OpenAI SDK in Node.js
+      const imageFile = new File([imageBuffer], 'product.png', { 
+        type: 'image/png',
+        lastModified: Date.now()
+      })
+      
+      console.log('Image file created, size:', imageBuffer.length, 'bytes')
       
       const editResponse = await openai.images.edit({
         model: "gpt-image-1",
-        image: imageBlob as any, // Type assertion for compatibility
+        image: imageFile,
         prompt: prompt,
         n: 1,
         size: "1024x1024"
@@ -77,6 +82,45 @@ export async function POST(req: NextRequest) {
       }
     } catch (approach2Error: any) {
       console.log('Approach 2 failed:', approach2Error.message)
+      console.log('Full error:', approach2Error)
+    }
+    
+    // Approach 3: Try using chat completions with multimodal capabilities
+    try {
+      console.log('Attempting approach 3: Chat completions with image generation...')
+      
+      const chatResponse = await openai.chat.completions.create({
+        model: "gpt-4o", // Use gpt-4o which supports image understanding
+        messages: [
+          {
+            role: "user",  
+            content: [
+              {
+                type: "text",
+                text: `${prompt}\n\nPlease generate a new image based on this request. I need you to create the exact scene described in the prompt using the product shown in the uploaded image.`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Data}`,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 4000,
+      })
+      
+      const textResponse = chatResponse.choices[0]?.message?.content
+      console.log('Chat response:', textResponse)
+      
+      // This approach might just return text, not generate an actual image
+      // But let's see what happens and log it for debugging
+      console.log('Approach 3 completed - check if it can generate images directly')
+      
+    } catch (approach3Error: any) {
+      console.log('Approach 3 failed:', approach3Error.message)
     }
     
     // If all approaches fail, throw an error with details
