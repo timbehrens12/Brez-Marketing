@@ -20,35 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on DARK CRACKED CONCRETE FLOOR. The floor must be dark gray concrete with MULTIPLE VISIBLE CRACKS running through it, rough industrial texture, weathered appearance. Think construction site concrete or old warehouse floor - NOT smooth stone. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with lots of concrete floor visible around edges for text space.'
-  },
-  {
-    id: 'hardwood-planks',
-    name: 'Hardwood Planks',
-    description: 'Rich brown wooden plank flooring with natural grain',
-    thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on BROWN WOODEN PLANK FLOOR. The floor must be rich brown hardwood planks running horizontally, visible wood grain, natural wood knots and patterns. Think basketball court or living room hardwood - NOT concrete, NOT stone. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with wooden planks visible around edges.'
-  },
-  {
-    id: 'white-marble',
-    name: 'White Marble',
-    description: 'Luxurious white marble with elegant gray veining',
-    thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on WHITE MARBLE SURFACE. The surface must be bright white marble stone with elegant gray veins running through it, polished finish, luxury appearance. Think kitchen countertop or fancy bathroom marble - NOT concrete, NOT wood. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with marble surface visible around edges.'
-  },
-  {
-    id: 'pure-white',
-    name: 'Pure White',
-    description: 'Clean white studio background for professional shots',
-    thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on PURE WHITE STUDIO BACKGROUND. The background must be completely white with professional studio lighting, no texture, no patterns, no shadows - pure white seamless backdrop. Think product photography studio - NOT concrete, NOT marble, NOT floor. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with white background around edges.'
-  },
-  {
-    id: 'black-surface',
-    name: 'Black Surface',
-    description: 'Sophisticated matte black surface for premium presentation',
-    thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on MATTE BLACK SURFACE. The surface must be deep black with matte finish, no reflections, sophisticated appearance. Think high-end product display or luxury backdrop - NOT concrete, NOT marble, NOT white. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with black surface visible around edges.'
+    prompt: 'Generate a product photo on VERY DARK WEATHERED CONCRETE FLOOR. The concrete must be DARK CHARCOAL GRAY or DARK BROWN concrete - NOT light gray, NOT pale concrete. The floor should have DEEP VISIBLE CRACKS, weathered stains, rough industrial texture, dramatic shadows. Think old abandoned warehouse floor, construction site, or weathered parking garage concrete - very dark and gritty. NEVER use light colored concrete. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with dark dramatic concrete visible around all edges for text space.'
   }
 ]
 
