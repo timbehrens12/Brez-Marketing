@@ -20,7 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'CRITICAL: Create product photo on DARK GRAY CONCRETE FLOOR with subtle cracks and weathered texture. PRODUCT PRESERVATION: Keep the product EXACTLY identical - same size, position, all colors, all details, all original text (PROJECT CAPRI, etc). Do NOT crop, resize, or modify ANY part of the product. BACKGROUND ONLY: Replace only the background with dark concrete texture. CONCRETE STYLE: Charcoal gray concrete with visible cracks, industrial look - dark but not pitch black.'
+    prompt: 'CRITICAL: Replace ONLY the background with weathered concrete floor. PRODUCT PRESERVATION: Keep the product 100% IDENTICAL to the original - exact same size, position, colors, textures, details, and ALL text. Do NOT modify, crop, resize, recolor or alter the product in ANY way. BACKGROUND STYLE: Natural weathered concrete floor - medium gray/taupe color with visible cracks and weathered texture, similar to old sidewalk concrete. NOT dark, NOT charcoal - natural concrete color.'
   }
 ]
 
@@ -844,10 +844,10 @@ export default function AdCreativeStudioPage() {
                         >
                           Clear Top
                         </Button>
-                        <Button
+                      <Button 
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                        onClick={() => {
                             setSelectedBottomPreset('')
                             setCustomText(prev => ({ ...prev, bottom: '' }))
                             setCustomValues(prev => ({ ...prev, bottomValue: '' }))
@@ -856,7 +856,7 @@ export default function AdCreativeStudioPage() {
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear Bottom
-                        </Button>
+                      </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -870,7 +870,7 @@ export default function AdCreativeStudioPage() {
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear All
-                        </Button>
+                      </Button>
                       </div>
                     </div>
 
