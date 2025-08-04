@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface StyleOption {
@@ -16,39 +16,39 @@ interface StyleOption {
 
 const STYLE_OPTIONS: StyleOption[] = [
   {
-    id: 'concrete',
-    name: 'Concrete Background',
-    description: 'Industrial concrete surface with natural texture and realistic shadows',
+    id: 'smooth-stone',
+    name: 'Smooth Stone',
+    description: 'Smooth stone surface with minor cracks, like refined blacktop',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE concrete background space around ALL edges - especially ensure significant space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows.'
+    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with smooth stone/blacktop surface with minor cracks while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE smooth stone background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics. This is purely a background swap with perfect color preservation.'
   },
   {
     id: 'wooden-floor',
     name: 'Wooden Floor',
     description: 'Warm wooden flooring with natural grain and lighting',
-    thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. Position the product in the CENTER of the frame with SUBSTANTIAL wooden floor background space around ALL edges - especially leave significant space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    thumbnail: 'https://i.imgur.com/yUmekNr.png',
+    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with wooden floor while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with SUBSTANTIAL wooden floor background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
   },
   {
     id: 'marble-surface',
     name: 'Marble Surface',
     description: 'Elegant marble surface with luxury appeal',
-    thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE marble background space around ALL edges - especially ensure ample space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    thumbnail: 'https://i.imgur.com/yUmekNr.png',
+    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with marble surface while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE marble background space around ALL edges - especially ample space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
   },
   {
     id: 'studio-white',
     name: 'Studio White',
     description: 'Clean studio white background for professional product shots',
-    thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. Position the product in the CENTER of the frame with SUBSTANTIAL white background space around ALL edges - especially leave significant space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    thumbnail: 'https://i.imgur.com/yUmekNr.png',
+    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with clean studio white while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with SUBSTANTIAL white background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
   },
   {
-    id: 'outdoor-setting',
-    name: 'Outdoor Setting',
-    description: 'Natural outdoor environment with soft lighting',
-    thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE outdoor background space around ALL edges - especially ensure ample space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    id: 'dark-surface',
+    name: 'Dark Surface',
+    description: 'Sophisticated dark surface for premium product presentation',
+    thumbnail: 'https://i.imgur.com/yUmekNr.png',
+    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with dark surface while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE dark background space around ALL edges - especially ample space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
   }
 ]
 
@@ -59,6 +59,9 @@ export default function AdCreativeStudioPage() {
   const [generatedImage, setGeneratedImage] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
   const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [currentStyleIndex, setCurrentStyleIndex] = useState(0)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
+  const [customText, setCustomText] = useState({ top: '', bottom: '' })
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -67,6 +70,17 @@ export default function AdCreativeStudioPage() {
     }, 2000)
     return () => clearTimeout(timer)
   }, [])
+
+  // Carousel navigation functions
+  const nextStyle = () => {
+    setCurrentStyleIndex((prev) => (prev + 1) % STYLE_OPTIONS.length)
+  }
+
+  const prevStyle = () => {
+    setCurrentStyleIndex((prev) => (prev - 1 + STYLE_OPTIONS.length) % STYLE_OPTIONS.length)
+  }
+
+  const currentStyle = STYLE_OPTIONS[currentStyleIndex]
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -308,72 +322,166 @@ export default function AdCreativeStudioPage() {
           </div>
         </div>
 
-        {/* Massive Style Gallery */}
+        {/* Background Style Carousel Widget */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
           <div className="p-6 border-b border-[#333]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-6 h-6 text-white" />
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Style Gallery</h2>
+                  <h2 className="text-2xl font-bold text-white">Background Styles</h2>
                   <p className="text-gray-400 mt-1">
-                    Choose from our collection of AI-powered background styles - Click any style to apply it to your product
+                    Choose a background style for your product - Use arrows to browse options
                   </p>
                 </div>
               </div>
               <div className="text-sm text-gray-400">
-                {STYLE_OPTIONS.length} styles available
+                {currentStyleIndex + 1} of {STYLE_OPTIONS.length}
               </div>
             </div>
           </div>
+          
+          {/* Carousel Content */}
           <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {STYLE_OPTIONS.map((style) => (
-                <div
-                  key={style.id}
-                  className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden hover:border-[#555] hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-                  onClick={() => generateImage(style)}
-                >
-                  {/* Large Preview Image */}
-                  <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] border-b border-[#333] flex items-center justify-center overflow-hidden relative">
+            <div className="relative">
+              {/* Main Style Display */}
+              <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden">
+                {/* Large Preview with Navigation */}
+                <div className="relative">
+                  <div className="aspect-[4/3] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
                     <img
-                      src={style.thumbnail}
-                      alt={style.name}
-                      className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
+                      src={currentStyle.thumbnail}
+                      alt={currentStyle.name}
+                      className="w-full h-full object-cover"
                     />
-                    {/* Overlay with apply button */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    
+                    {/* Navigation Arrows */}
+                    <button
+                      onClick={prevStyle}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 hover:bg-black/80 border border-white/20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    >
+                      <ChevronLeft className="w-6 h-6 text-white" />
+                    </button>
+                    
+                    <button
+                      onClick={nextStyle}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 hover:bg-black/80 border border-white/20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    >
+                      <ChevronRight className="w-6 h-6 text-white" />
+                    </button>
+
+                    {/* Style Indicator Dots */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {STYLE_OPTIONS.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentStyleIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                            index === currentStyleIndex 
+                              ? 'bg-white scale-125' 
+                              : 'bg-white/40 hover:bg-white/60'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Style Info & Actions */}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-white text-2xl mb-2">
+                          {currentStyle.name}
+                        </h3>
+                        <p className="text-gray-400 leading-relaxed">
+                          {currentStyle.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 mb-4">
                       <Button 
                         disabled={!uploadedImage || isGenerating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg font-semibold shadow-xl"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          generateImage(style)
-                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg font-semibold flex-1"
+                        onClick={() => generateImage(currentStyle)}
                       >
-                        {isGenerating && selectedStyle?.id === style.id ? (
+                        {isGenerating && selectedStyle?.id === currentStyle.id ? (
                           <>
                             <Loader2 className="w-5 h-5 mr-3 animate-spin" />
                             Generating...
                           </>
                         ) : (
-                          'Apply This Style'
+                          <>
+                            <Sparkles className="w-5 h-5 mr-2" />
+                            Apply This Style
+                          </>
                         )}
                       </Button>
+
+                      <Button
+                        variant="outline"
+                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white px-6"
+                        onClick={() => setShowMoreInfo(!showMoreInfo)}
+                      >
+                        <Info className="w-4 h-4 mr-2" />
+                        More Info
+                      </Button>
                     </div>
-                  </div>
-                  
-                  {/* Style Info */}
-                  <div className="p-6">
-                    <h3 className="font-bold text-white text-xl mb-2 group-hover:text-blue-300 transition-colors">
-                      {style.name}
-                    </h3>
-                    <p className="text-gray-400 leading-relaxed text-sm">
-                      {style.description}
-                    </p>
+
+                    {/* Expandable More Info Section */}
+                    {showMoreInfo && (
+                      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#1f1f1f] border border-[#333] rounded-lg p-4 mt-4">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4" />
+                              What you'll get:
+                            </h4>
+                            <p className="text-gray-300 text-sm">
+                              Your product with a {currentStyle.name.toLowerCase()} background, perfectly positioned with space for text overlays
+                            </p>
+                          </div>
+
+                          <div>
+                            <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              Add Custom Text (Coming Soon):
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-gray-400 text-xs block mb-1">Top Text</label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g., SALE"
+                                  value={customText.top}
+                                  onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
+                                  className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
+                                  disabled
+                                />
+                              </div>
+                              <div>
+                                <label className="text-gray-400 text-xs block mb-1">Bottom Text</label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g., 10% OFF"
+                                  value={customText.bottom}
+                                  onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
+                                  className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
+                                  disabled
+                                />
+                              </div>
+                            </div>
+                            <p className="text-gray-500 text-xs mt-2">
+                              Text overlay feature will be available in a future update
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
