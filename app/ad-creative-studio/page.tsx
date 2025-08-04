@@ -16,39 +16,39 @@ interface StyleOption {
 
 const STYLE_OPTIONS: StyleOption[] = [
   {
-    id: 'smooth-stone',
-    name: 'Smooth Stone',
-    description: 'Smooth stone surface with minor cracks, like refined blacktop',
+    id: 'concrete-floor',
+    name: 'Concrete Floor',
+    description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Create a product photo with smooth stone/asphalt background. The background should be smooth dark gray stone or blacktop with subtle minor cracks. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
+    prompt: 'Generate a product photo on DARK CRACKED CONCRETE FLOOR. The floor must be dark gray concrete with MULTIPLE VISIBLE CRACKS running through it, rough industrial texture, weathered appearance. Think construction site concrete or old warehouse floor - NOT smooth stone. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with lots of concrete floor visible around edges for text space.'
   },
   {
-    id: 'wooden-floor',
-    name: 'Wooden Floor',
-    description: 'Warm wooden flooring with natural grain and lighting',
+    id: 'hardwood-planks',
+    name: 'Hardwood Planks',
+    description: 'Rich brown wooden plank flooring with natural grain',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Create a product photo with natural wooden floor background. The background should be warm brown wood planks with visible grain patterns and natural wood texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
+    prompt: 'Generate a product photo on BROWN WOODEN PLANK FLOOR. The floor must be rich brown hardwood planks running horizontally, visible wood grain, natural wood knots and patterns. Think basketball court or living room hardwood - NOT concrete, NOT stone. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with wooden planks visible around edges.'
   },
   {
-    id: 'marble-surface',
-    name: 'Marble Surface',
-    description: 'Elegant marble surface with luxury appeal',
+    id: 'white-marble',
+    name: 'White Marble',
+    description: 'Luxurious white marble with elegant gray veining',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Create a product photo with white marble background. The background should be elegant white marble with gray veining and luxury stone texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
+    prompt: 'Generate a product photo on WHITE MARBLE SURFACE. The surface must be bright white marble stone with elegant gray veins running through it, polished finish, luxury appearance. Think kitchen countertop or fancy bathroom marble - NOT concrete, NOT wood. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with marble surface visible around edges.'
   },
   {
-    id: 'studio-white',
-    name: 'Studio White',
-    description: 'Clean studio white background for professional product shots',
+    id: 'pure-white',
+    name: 'Pure White',
+    description: 'Clean white studio background for professional shots',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Create a product photo with pure white studio background. The background should be clean, bright white with professional studio lighting and no texture or patterns. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
+    prompt: 'Generate a product photo on PURE WHITE STUDIO BACKGROUND. The background must be completely white with professional studio lighting, no texture, no patterns, no shadows - pure white seamless backdrop. Think product photography studio - NOT concrete, NOT marble, NOT floor. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with white background around edges.'
   },
   {
-    id: 'dark-surface',
-    name: 'Dark Surface',
-    description: 'Sophisticated dark surface for premium product presentation',
+    id: 'black-surface',
+    name: 'Black Surface',
+    description: 'Sophisticated matte black surface for premium presentation',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Create a product photo with dark black surface background. The background should be sophisticated matte black or very dark gray surface with minimal texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
+    prompt: 'Generate a product photo on MATTE BLACK SURFACE. The surface must be deep black with matte finish, no reflections, sophisticated appearance. Think high-end product display or luxury backdrop - NOT concrete, NOT marble, NOT white. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with black surface visible around edges.'
   }
 ]
 
