@@ -44,6 +44,22 @@ export default function AdCreativeStudioPage() {
   const [currentStyleIndex, setCurrentStyleIndex] = useState(0)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
   const [customText, setCustomText] = useState({ top: '', bottom: '' })
+  const [textPresets] = useState({
+    percentage: { label: 'Percentage Off', value: '50% OFF', customizable: true },
+    money: { label: 'Money Off', value: '$10 OFF', customizable: true },
+    sale: { label: 'Sale', value: 'SALE', customizable: false },
+    new: { label: 'New', value: 'NEW', customizable: false },
+    limited: { label: 'Limited Time', value: 'LIMITED TIME', customizable: false },
+    available: { label: 'Available Now', value: 'AVAILABLE NOW', customizable: false },
+    outNow: { label: 'Out Now', value: 'OUT NOW', customizable: false },
+    shopNow: { label: 'Shop Now', value: 'SHOP NOW', customizable: false },
+    buyToday: { label: 'Buy Today', value: 'BUY TODAY', customizable: false },
+    freeShipping: { label: 'Free Shipping', value: 'FREE SHIPPING', customizable: false },
+    custom: { label: 'Custom Text', value: '', customizable: true }
+  })
+  const [selectedTopPreset, setSelectedTopPreset] = useState<string>('')
+  const [selectedBottomPreset, setSelectedBottomPreset] = useState<string>('')
+  const [customValues, setCustomValues] = useState({ topValue: '', bottomValue: '' })
   
   // New state for tabs and creatives
   const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
@@ -96,6 +112,60 @@ export default function AdCreativeStudioPage() {
   const openStyleModal = (style: StyleOption) => {
     setModalStyle(style)
     setShowStyleModal(true)
+  }
+
+  // Text preset functions
+  const handlePresetSelect = (position: 'top' | 'bottom', presetKey: string) => {
+    if (position === 'top') {
+      setSelectedTopPreset(presetKey)
+      if (presetKey && textPresets[presetKey as keyof typeof textPresets]) {
+        const preset = textPresets[presetKey as keyof typeof textPresets]
+        setCustomText(prev => ({ ...prev, top: preset.customizable ? customValues.topValue || preset.value : preset.value }))
+      }
+    } else {
+      setSelectedBottomPreset(presetKey)
+      if (presetKey && textPresets[presetKey as keyof typeof textPresets]) {
+        const preset = textPresets[presetKey as keyof typeof textPresets]
+        setCustomText(prev => ({ ...prev, bottom: preset.customizable ? customValues.bottomValue || preset.value : preset.value }))
+      }
+    }
+  }
+
+  const handleCustomValueChange = (position: 'top' | 'bottom', value: string) => {
+    if (position === 'top') {
+      setCustomValues(prev => ({ ...prev, topValue: value }))
+      if (selectedTopPreset === 'percentage') {
+        setCustomText(prev => ({ ...prev, top: `${value}% OFF` }))
+      } else if (selectedTopPreset === 'money') {
+        setCustomText(prev => ({ ...prev, top: `$${value} OFF` }))
+      } else if (selectedTopPreset === 'custom') {
+        setCustomText(prev => ({ ...prev, top: value }))
+      }
+    } else {
+      setCustomValues(prev => ({ ...prev, bottomValue: value }))
+      if (selectedBottomPreset === 'percentage') {
+        setCustomText(prev => ({ ...prev, bottom: `${value}% OFF` }))
+      } else if (selectedBottomPreset === 'money') {
+        setCustomText(prev => ({ ...prev, bottom: `$${value} OFF` }))
+      } else if (selectedBottomPreset === 'custom') {
+        setCustomText(prev => ({ ...prev, bottom: value }))
+      }
+    }
+  }
+
+  const generateTextPromptAddition = () => {
+    let textAddition = ''
+    if (customText.top || customText.bottom) {
+      textAddition += ' ADD TEXT OVERLAYS: '
+      if (customText.top) {
+        textAddition += `Place "${customText.top}" text at the TOP of the image in large, bold, readable font. `
+      }
+      if (customText.bottom) {
+        textAddition += `Place "${customText.bottom}" text at the BOTTOM of the image in large, bold, readable font. `
+      }
+      textAddition += 'Make sure text is clearly visible and contrasts well with the background.'
+    }
+    return textAddition
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +225,8 @@ export default function AdCreativeStudioPage() {
         reader.readAsDataURL(uploadedImage)
       })
 
+      const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
+      
       const response = await fetch('/api/generate-background', {
         method: 'POST',
         headers: {
@@ -162,7 +234,7 @@ export default function AdCreativeStudioPage() {
         },
         body: JSON.stringify({
           image: base64Image,
-          prompt: modalStyle.prompt,
+          prompt: enhancedPrompt,
           style: modalStyle.id
         }),
       })
@@ -578,41 +650,131 @@ export default function AdCreativeStudioPage() {
                       <h3 className="text-lg font-semibold text-white">Customize</h3>
                     </div>
 
-                    {/* Custom Text Section */}
+                    {/* Text Overlay System */}
                     <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
                       <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
                         <Plus className="w-4 h-4" />
                         Add Text Overlays
                       </h4>
-                      <div className="space-y-4">
+                      
+                      {/* Top Text */}
+                      <div className="space-y-4 mb-6">
                         <div>
-                          <label className="text-gray-300 text-sm block mb-2 font-medium">Top Text</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., SALE, NEW, LIMITED TIME"
-                            value={customText.top}
-                            onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-full bg-[#333] border border-[#444] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <label className="text-gray-300 text-sm block mb-2 font-medium">Bottom Text</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., 10% OFF, SHOP NOW, BUY TODAY"
-                            value={customText.bottom}
-                            onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-full bg-[#333] border border-[#444] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
-                            disabled
-                          />
+                          <label className="text-gray-300 text-sm block mb-3 font-medium">Top Text</label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            {Object.entries(textPresets).map(([key, preset]) => (
+                              <button
+                                key={key}
+                                onClick={() => handlePresetSelect('top', key)}
+                                className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
+                                  selectedTopPreset === key
+                                    ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                                    : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Custom value input for customizable presets */}
+                          {selectedTopPreset && textPresets[selectedTopPreset as keyof typeof textPresets]?.customizable && (
+                            <div className="mb-3">
+                              <input
+                                type="text"
+                                placeholder={
+                                  selectedTopPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
+                                  selectedTopPreset === 'money' ? 'Enter amount (e.g., 10)' :
+                                  'Enter custom text'
+                                }
+                                value={customValues.topValue}
+                                onChange={(e) => handleCustomValueChange('top', e.target.value)}
+                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Preview */}
+                          <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                            <p className="text-white text-sm">
+                              Preview: {customText.top || 'No text selected'}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                        <p className="text-orange-300 text-xs flex items-center gap-2">
-                          <Info className="w-3 h-3" />
-                          Text overlay feature coming in a future update
-                        </p>
+
+                      {/* Bottom Text */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-gray-300 text-sm block mb-3 font-medium">Bottom Text</label>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            {Object.entries(textPresets).map(([key, preset]) => (
+                              <button
+                                key={key}
+                                onClick={() => handlePresetSelect('bottom', key)}
+                                className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
+                                  selectedBottomPreset === key
+                                    ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                                    : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Custom value input for customizable presets */}
+                          {selectedBottomPreset && textPresets[selectedBottomPreset as keyof typeof textPresets]?.customizable && (
+                            <div className="mb-3">
+                              <input
+                                type="text"
+                                placeholder={
+                                  selectedBottomPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
+                                  selectedBottomPreset === 'money' ? 'Enter amount (e.g., 10)' :
+                                  'Enter custom text'
+                                }
+                                value={customValues.bottomValue}
+                                onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
+                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Preview */}
+                          <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                            <p className="text-white text-sm">
+                              Preview: {customText.bottom || 'No text selected'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Clear buttons */}
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedTopPreset('')
+                            setCustomText(prev => ({ ...prev, top: '' }))
+                            setCustomValues(prev => ({ ...prev, topValue: '' }))
+                          }}
+                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                        >
+                          Clear Top
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedBottomPreset('')
+                            setCustomText(prev => ({ ...prev, bottom: '' }))
+                            setCustomValues(prev => ({ ...prev, bottomValue: '' }))
+                          }}
+                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                        >
+                          Clear Bottom
+                        </Button>
                       </div>
                     </div>
 
@@ -624,9 +786,21 @@ export default function AdCreativeStudioPage() {
                           <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
                           Your product with {modalStyle.name.toLowerCase()} background
                         </li>
+                        {customText.top && (
+                          <li className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                            Top text: "{customText.top}"
+                          </li>
+                        )}
+                        {customText.bottom && (
+                          <li className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                            Bottom text: "{customText.bottom}"
+                          </li>
+                        )}
                         <li className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                          Perfect positioning with space for text overlays
+                          Perfect positioning with professional layout
                         </li>
                         <li className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
