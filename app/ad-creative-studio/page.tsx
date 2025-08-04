@@ -20,42 +20,42 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Background (Precision)',
     description: 'Maximum detail preservation - for designs with fine text/graphics',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. Position the product so there is ample concrete background visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the concrete texture. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Extract the exact product from the image and place it on a concrete background. Position the product in the CENTER of the frame with SUBSTANTIAL concrete background space around ALL edges - especially leave ample space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add, remove, or modify ANY aspect of the product itself. Keep the product 100% identical to the original - same colors, same design, same everything. Only replace the background with concrete texture. This is a technical background swap, not creative enhancement.'
   },
   {
     id: 'concrete',
     name: 'Concrete Background (Standard)',
     description: 'Industrial concrete surface with natural texture and realistic shadows',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. Position the product so there is generous concrete background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the concrete floor texture. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with concrete while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE concrete background space around ALL edges - especially ensure significant space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image. Only change the background to concrete floor texture with realistic lighting and shadows.'
   },
   {
     id: 'wooden-floor',
     name: 'Wooden Floor',
     description: 'Warm wooden flooring with natural grain and lighting',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. Position the product so there is ample wooden floor visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the wooden floor texture. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with wooden floor while keeping the product completely unchanged. Position the product in the CENTER of the frame with SUBSTANTIAL wooden floor background space around ALL edges - especially leave significant space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'marble-surface',
     name: 'Marble Surface',
     description: 'Elegant marble surface with luxury appeal',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. Position the product so there is generous marble background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the elegant marble surface. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with marble surface while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE marble background space around ALL edges - especially ensure ample space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'studio-white',
     name: 'Studio White',
     description: 'Clean studio white background for professional product shots',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. Position the product so there is ample white background visible around all edges (top, bottom, left, right) - about 10% more space than typical. The product should appear slightly smaller in the frame to show more of the clean white studio background. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with clean studio white while keeping the product completely unchanged. Position the product in the CENTER of the frame with SUBSTANTIAL white background space around ALL edges - especially leave significant space at the TOP and BOTTOM for text overlays. The product should take up roughly 60% of the frame height, leaving 20% space above and 20% space below for text placement. Also ensure generous side margins. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   },
   {
     id: 'outdoor-setting',
     name: 'Outdoor Setting',
     description: 'Natural outdoor environment with soft lighting',
     thumbnail: '/placeholder.jpg',
-    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. Position the product so there is generous outdoor background visible around all edges (top, bottom, left, right) - show about 10% more background space than typical. The product should appear slightly smaller in the frame to showcase more of the natural outdoor environment. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace the background with natural outdoor setting while keeping the product completely unchanged. Position the product in the CENTER of the frame with EXTENSIVE outdoor background space around ALL edges - especially ensure ample space at the TOP and BOTTOM for promotional text overlays. The product should occupy approximately 60% of the frame height, leaving 20% clear space above and 20% clear space below for text placement. Include generous side margins as well. DO NOT add any text, graphics, designs, or modifications to the product. Keep the original product exactly as it appears in the uploaded image.'
   }
 ]
 
