@@ -20,7 +20,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'Generate a product photo on VERY DARK WEATHERED CONCRETE FLOOR. The concrete must be DARK CHARCOAL GRAY or DARK BROWN concrete - NOT light gray, NOT pale concrete. The floor should have DEEP VISIBLE CRACKS, weathered stains, rough industrial texture, dramatic shadows. Think old abandoned warehouse floor, construction site, or weathered parking garage concrete - very dark and gritty. NEVER use light colored concrete. Keep the product IDENTICAL - exact same colors, exact same design, exact same text. Center the product with dark dramatic concrete visible around all edges for text space.'
+    prompt: 'CRITICAL REQUIREMENT: Generate a product photo on EXTREMELY DARK CONCRETE FLOOR. MANDATORY CONCRETE COLOR: Must be PITCH BLACK, DARK CHARCOAL, or DEEP BROWN concrete - absolutely NO light gray, NO pale concrete, NO medium concrete. REQUIRED TEXTURE: DEEP VISIBLE CRACKS, oil stains, weathered marks, rough industrial surface, heavy shadows. REFERENCE: Think black asphalt parking lot, abandoned factory floor, or coal-stained concrete - VERY DARK AND GRITTY. PRODUCT PRESERVATION: Keep product COMPLETELY IDENTICAL - exact colors, design, text unchanged. LAYOUT: Center product with dark concrete visible around ALL edges for text placement. NEVER IGNORE THESE CONCRETE REQUIREMENTS.'
   }
 ]
 
@@ -180,16 +180,16 @@ export default function AdCreativeStudioPage() {
   const generateTextPromptAddition = () => {
     let textAddition = ''
     if (customText.top || customText.bottom) {
-      textAddition += ' ADD TEXT OVERLAYS: '
+      textAddition += ' CRITICAL REQUIREMENT - MUST ADD TEXT OVERLAYS: '
       if (customText.top) {
         const topColorName = colorOptions.find(c => c.value === textColors.top)?.name || 'white'
-        textAddition += `Place "${customText.top}" text at the TOP of the image in large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
+        textAddition += `MANDATORY: Place "${customText.top}" text at the TOP of the image in large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
       }
       if (customText.bottom) {
         const bottomColorName = colorOptions.find(c => c.value === textColors.bottom)?.name || 'white'
-        textAddition += `Place "${customText.bottom}" text at the BOTTOM of the image in large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
+        textAddition += `MANDATORY: Place "${customText.bottom}" text at the BOTTOM of the image in large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
       }
-      textAddition += 'Make sure text is clearly visible and contrasts well with the background. Use drop shadows or outlines if needed for visibility.'
+      textAddition += 'CRITICAL: Text MUST be visible with strong contrast, drop shadows, and outlines. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
     }
     return textAddition
   }
