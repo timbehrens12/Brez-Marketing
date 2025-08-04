@@ -37,6 +37,15 @@ export default function AdCreativeStudioPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
+  const [isLoadingPage, setIsLoadingPage] = useState(true)
+
+  // Simulate loading for the page
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingPage(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -116,64 +125,115 @@ export default function AdCreativeStudioPage() {
     }
   }
 
+  // Show loading state
+  if (isLoadingPage) {
+    return (
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Main loading icon */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-white/70" />
+            </div>
+          </div>
+          
+          {/* Loading title */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Ad Creative Studio
+          </h1>
+          
+          {/* Dynamic loading phase */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            Initializing AI creative tools
+          </p>
+          
+          {/* Subtle loading tip */}
+          <div className="mt-8 text-xs text-gray-500 italic">
+            Building your personalized creative generation dashboard...
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10">
-              <Sparkles className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                            flex items-center justify-center border border-white/10">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
+                <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
-              <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
+            {/* Beta Notice */}
+            <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                <span className="text-orange-300 font-medium text-sm">BETA</span>
+              </div>
+              <p className="text-orange-200/80 text-xs mt-1">May struggle with small text & fine details</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Upload Section */}
-          <div className="xl:col-span-1">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Upload Section - Smaller */}
+          <div className="lg:col-span-1">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl h-fit">
               <div className="p-6 border-b border-[#333]">
                 <div className="flex items-center gap-3">
                   <Upload className="w-5 h-5 text-white" />
-                  <h2 className="text-xl font-semibold text-white">Upload Product</h2>
+                  <h2 className="text-lg font-semibold text-white">Upload</h2>
                 </div>
-                <p className="text-gray-400 mt-2">
-                  Upload the highest quality image possible for best results
+                <p className="text-gray-400 mt-1 text-sm">
+                  Upload your product image
                 </p>
               </div>
-              <div className="p-6">
+              <div className="p-4">
                 <div 
-                  className="border-2 border-dashed border-[#444] rounded-xl p-8 text-center hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05]"
+                  className="border-2 border-dashed border-[#444] rounded-xl p-6 text-center hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05]"
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   {uploadedImageUrl ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <img 
                         src={uploadedImageUrl} 
                         alt="Uploaded product" 
-                        className="max-w-full max-h-48 mx-auto rounded-lg shadow-lg border border-[#333]"
+                        className="max-w-full max-h-32 mx-auto rounded-lg shadow-lg border border-[#333]"
                       />
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
+                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white w-full"
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Change Image
+                        Change
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <ImageIcon className="w-16 h-16 mx-auto text-gray-500" />
+                    <div className="space-y-3">
+                      <ImageIcon className="w-12 h-12 mx-auto text-gray-500" />
                       <div>
-                        <p className="text-lg font-medium text-white">Drop your image here</p>
-                        <p className="text-sm text-gray-400 mt-2">PNG preferred, JPG ok • Up to 10MB</p>
-                        <p className="text-xs text-gray-500 mt-1">Higher quality = better results</p>
+                        <p className="text-sm font-medium text-white">Drop image here</p>
+                        <p className="text-xs text-gray-400 mt-1">PNG/JPG • Up to 10MB</p>
                       </div>
                     </div>
                   )}
@@ -189,122 +249,129 @@ export default function AdCreativeStudioPage() {
             </div>
           </div>
 
-          {/* Style Gallery */}
-          <div className="xl:col-span-1">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-              <div className="p-6 border-b border-[#333]">
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 text-white" />
-                  <h2 className="text-xl font-semibold text-white">Style Gallery</h2>
-                </div>
-                <p className="text-gray-400 mt-2">
-                  Choose from our collection of AI-powered background styles
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {STYLE_OPTIONS.map((style) => (
-                    <div
-                      key={style.id}
-                      className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4 hover:border-[#555] hover:shadow-lg transition-all duration-300 cursor-pointer group"
-                      onClick={() => generateImage(style)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#333] to-[#222] border border-[#444] flex items-center justify-center overflow-hidden">
-                          <img
-                            src={style.thumbnail}
-                            alt={style.name}
-                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-white group-hover:text-blue-300 transition-colors">{style.name}</h3>
-                          <p className="text-sm text-gray-400 mt-1 line-clamp-2">{style.description}</p>
-                        </div>
-                        <Button 
-                          disabled={!uploadedImage || isGenerating}
-                          className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white border-0"
-                          size="sm"
+          {/* Style Gallery & Results - Bigger */}
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Style Gallery */}
+              <div>
+                <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+                  <div className="p-6 border-b border-[#333]">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-white" />
+                      <h2 className="text-xl font-semibold text-white">Style Gallery</h2>
+                    </div>
+                    <p className="text-gray-400 mt-2">
+                      Choose from our collection of AI-powered background styles
+                    </p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid gap-4">
+                      {STYLE_OPTIONS.map((style) => (
+                        <div
+                          key={style.id}
+                          className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4 hover:border-[#555] hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                          onClick={() => generateImage(style)}
                         >
-                          {isGenerating && selectedStyle?.id === style.id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            'Apply'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Results Section */}
-          <div className="xl:col-span-1">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-              <div className="p-6 border-b border-[#333]">
-                <div className="flex items-center gap-3">
-                  <ImageIcon className="w-5 h-5 text-white" />
-                  <h2 className="text-xl font-semibold text-white">Generated Result</h2>
-                </div>
-                <p className="text-gray-400 mt-2">
-                  Your AI-generated product image will appear here
-                </p>
-              </div>
-              <div className="p-6">
-                {generatedImage ? (
-                  <div className="space-y-6">
-                    <div className="relative">
-                      <img
-                        src={generatedImage}
-                        alt="Generated product image"
-                        className="w-full rounded-lg shadow-2xl border border-[#333]"
-                      />
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
-                    </div>
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = generatedImage
-                          link.download = 'generated-product-image.png'
-                          link.click()
-                        }}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white border-0"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Download Image
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
-                        onClick={() => setGeneratedImage('')}
-                      >
-                        Generate Another
-                      </Button>
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-[#333] to-[#222] border border-[#444] flex items-center justify-center overflow-hidden">
+                              <img
+                                src={style.thumbnail}
+                                alt={style.name}
+                                className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors text-lg">{style.name}</h3>
+                              <p className="text-sm text-gray-400 mt-2 leading-relaxed">{style.description}</p>
+                            </div>
+                            <Button 
+                              disabled={!uploadedImage || isGenerating}
+                              className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white border-0 px-6"
+                            >
+                              {isGenerating && selectedStyle?.id === style.id ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                'Apply Style'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center border border-[#444]">
-                      <ImageIcon className="w-10 h-10 text-gray-500" />
+                </div>
+              </div>
+
+              {/* Results Section */}
+              <div>
+                <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+                  <div className="p-6 border-b border-[#333]">
+                    <div className="flex items-center gap-3">
+                      <ImageIcon className="w-5 h-5 text-white" />
+                      <h2 className="text-xl font-semibold text-white">Generated Result</h2>
                     </div>
-                    <h3 className="text-lg font-medium text-white mb-2">Ready to Create</h3>
-                    <p className="text-gray-400 max-w-sm mx-auto leading-relaxed">
-                      Upload your product image and select a style to generate stunning AI-powered backgrounds
+                    <p className="text-gray-400 mt-2">
+                      Your AI-generated product image will appear here
                     </p>
-                    {isGenerating && (
-                      <div className="mt-6 flex items-center justify-center gap-3">
-                        <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-                        <span className="text-blue-400 font-medium">Generating your creative... (30-60s)</span>
+                  </div>
+                  <div className="p-6">
+                    {generatedImage ? (
+                      <div className="space-y-6">
+                        <div className="relative">
+                          <img
+                            src={generatedImage}
+                            alt="Generated product image"
+                            className="w-full rounded-lg shadow-2xl border border-[#333]"
+                          />
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                        </div>
+                        <div className="space-y-3">
+                          <Button 
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = generatedImage
+                              link.download = 'generated-product-image.png'
+                              link.click()
+                            }}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white border-0 py-3"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Download Image
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="w-full bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white py-3"
+                            onClick={() => setGeneratedImage('')}
+                          >
+                            Generate Another
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center border border-[#444]">
+                          <ImageIcon className="w-12 h-12 text-gray-500" />
+                        </div>
+                        <h3 className="text-xl font-medium text-white mb-3">Ready to Create</h3>
+                        <p className="text-gray-400 max-w-sm mx-auto leading-relaxed mb-4">
+                          Upload your product image and select a style to generate stunning AI-powered backgrounds
+                        </p>
+                        {isGenerating && (
+                          <div className="mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/20 rounded-lg">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                              <span className="text-blue-400 font-semibold">Generating Creative</span>
+                            </div>
+                            <p className="text-blue-300/80 text-sm">This may take 30-60 seconds...</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
