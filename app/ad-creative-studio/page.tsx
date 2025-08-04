@@ -117,29 +117,38 @@ export default function AdCreativeStudioPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Ad Creative Studio</h1>
-          <p className="text-gray-600">Upload your product image and transform it with AI-powered backgrounds</p>
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
+      <div className="max-w-[1400px] mx-auto space-y-6">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                          flex items-center justify-center border border-white/10">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
+              <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Upload Section */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
-                  Upload Product Image
-                </CardTitle>
-                <CardDescription>
-                  Upload the highest quality image possible (PNG recommended, 1MB+ for best results). For designs with fine text/graphics, use "Precision" mode.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+          <div className="xl:col-span-1">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+              <div className="p-6 border-b border-[#333]">
+                <div className="flex items-center gap-3">
+                  <Upload className="w-5 h-5 text-white" />
+                  <h2 className="text-xl font-semibold text-white">Upload Product</h2>
+                </div>
+                <p className="text-gray-400 mt-2">
+                  Upload the highest quality image possible for best results
+                </p>
+              </div>
+              <div className="p-6">
                 <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-[#444] rounded-xl p-8 text-center hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05]"
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   {uploadedImageUrl ? (
@@ -147,19 +156,24 @@ export default function AdCreativeStudioPage() {
                       <img 
                         src={uploadedImageUrl} 
                         alt="Uploaded product" 
-                        className="max-w-full max-h-64 mx-auto rounded-lg shadow-md"
+                        className="max-w-full max-h-48 mx-auto rounded-lg shadow-lg border border-[#333]"
                       />
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
+                      >
                         <Upload className="w-4 h-4 mr-2" />
                         Change Image
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <ImageIcon className="w-12 h-12 mx-auto text-gray-400" />
+                      <ImageIcon className="w-16 h-16 mx-auto text-gray-500" />
                       <div>
-                        <p className="text-lg font-medium">Click to upload an image</p>
-                        <p className="text-sm text-gray-500">PNG preferred, JPG ok • Up to 10MB • Higher quality = better results</p>
+                        <p className="text-lg font-medium text-white">Drop your image here</p>
+                        <p className="text-sm text-gray-400 mt-2">PNG preferred, JPG ok • Up to 10MB</p>
+                        <p className="text-xs text-gray-500 mt-1">Higher quality = better results</p>
                       </div>
                     </div>
                   )}
@@ -171,77 +185,88 @@ export default function AdCreativeStudioPage() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </div>
 
-            {/* Style Options */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Background Styles
-                </CardTitle>
-                <CardDescription>
-                  Choose a background style for your product
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
+          {/* Style Gallery */}
+          <div className="xl:col-span-1">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+              <div className="p-6 border-b border-[#333]">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-white" />
+                  <h2 className="text-xl font-semibold text-white">Style Gallery</h2>
+                </div>
+                <p className="text-gray-400 mt-2">
+                  Choose from our collection of AI-powered background styles
+                </p>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
                   {STYLE_OPTIONS.map((style) => (
                     <div
                       key={style.id}
-                      className="border rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer"
+                      className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4 hover:border-[#555] hover:shadow-lg transition-all duration-300 cursor-pointer group"
                       onClick={() => generateImage(style)}
                     >
                       <div className="flex items-center gap-4">
-                        <img
-                          src={style.thumbnail}
-                          alt={style.name}
-                          className="w-16 h-16 rounded object-cover"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-medium">{style.name}</h3>
-                          <p className="text-sm text-gray-600">{style.description}</p>
+                        <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#333] to-[#222] border border-[#444] flex items-center justify-center overflow-hidden">
+                          <img
+                            src={style.thumbnail}
+                            alt={style.name}
+                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-white group-hover:text-blue-300 transition-colors">{style.name}</h3>
+                          <p className="text-sm text-gray-400 mt-1 line-clamp-2">{style.description}</p>
                         </div>
                         <Button 
                           disabled={!uploadedImage || isGenerating}
-                          className="shrink-0"
+                          className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white border-0"
+                          size="sm"
                         >
                           {isGenerating && selectedStyle?.id === style.id ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Generating (30-60s)...
+                              Generating...
                             </>
                           ) : (
-                            'Apply Style'
+                            'Apply'
                           )}
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Results Section */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Generated Result</CardTitle>
-                <CardDescription>
+          <div className="xl:col-span-1">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+              <div className="p-6 border-b border-[#333]">
+                <div className="flex items-center gap-3">
+                  <ImageIcon className="w-5 h-5 text-white" />
+                  <h2 className="text-xl font-semibold text-white">Generated Result</h2>
+                </div>
+                <p className="text-gray-400 mt-2">
                   Your AI-generated product image will appear here
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </p>
+              </div>
+              <div className="p-6">
                 {generatedImage ? (
-                  <div className="space-y-4">
-                    <img
-                      src={generatedImage}
-                      alt="Generated product image"
-                      className="w-full rounded-lg shadow-lg"
-                    />
-                    <div className="flex gap-2">
+                  <div className="space-y-6">
+                    <div className="relative">
+                      <img
+                        src={generatedImage}
+                        alt="Generated product image"
+                        className="w-full rounded-lg shadow-2xl border border-[#333]"
+                      />
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                    </div>
+                    <div className="space-y-3">
                       <Button 
                         onClick={() => {
                           const link = document.createElement('a')
@@ -249,23 +274,39 @@ export default function AdCreativeStudioPage() {
                           link.download = 'generated-product-image.png'
                           link.click()
                         }}
-                        className="flex-1"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white border-0"
                       >
-                        Download
+                        <Upload className="w-4 h-4 mr-2" />
+                        Download Image
                       </Button>
-                      <Button variant="outline" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        className="w-full bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
+                        onClick={() => setGeneratedImage('')}
+                      >
                         Generate Another
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <ImageIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>Upload an image and select a style to get started</p>
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center border border-[#444]">
+                      <ImageIcon className="w-10 h-10 text-gray-500" />
+                    </div>
+                    <h3 className="text-lg font-medium text-white mb-2">Ready to Create</h3>
+                    <p className="text-gray-400 max-w-sm mx-auto leading-relaxed">
+                      Upload your product image and select a style to generate stunning AI-powered backgrounds
+                    </p>
+                    {isGenerating && (
+                      <div className="mt-6 flex items-center justify-center gap-3">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                        <span className="text-blue-400 font-medium">Generating your creative... (30-60s)</span>
+                      </div>
+                    )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
