@@ -44,10 +44,18 @@ export async function POST(req: NextRequest) {
       size: "1024x1024"
     })
     
+    console.log('Raw gpt-image-1 response:', JSON.stringify(editResponse, null, 2))
+    console.log('Response data:', editResponse.data)
+    console.log('Data length:', editResponse.data?.length)
+    console.log('First item:', editResponse.data?.[0])
+    
     const generatedImageUrl = editResponse.data?.[0]?.url
 
     if (!generatedImageUrl) {
-      throw new Error('No image URL returned from gpt-image-1')
+      console.error('No URL found in response structure')
+      console.error('Full response object keys:', Object.keys(editResponse))
+      console.error('Data object keys:', editResponse.data ? Object.keys(editResponse.data) : 'data is undefined')
+      throw new Error(`No image URL returned from gpt-image-1. Response: ${JSON.stringify(editResponse)}`)
     }
     
     console.log('Image generated successfully with gpt-image-1!')
