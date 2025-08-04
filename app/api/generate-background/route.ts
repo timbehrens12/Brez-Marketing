@@ -20,10 +20,11 @@ export async function POST(req: NextRequest) {
     // Extract base64 data and format for OpenAI
     const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '')
     
-    console.log('Generating image with gpt-image-1 using image edit...')
-    console.log('Prompt length:', prompt.length)
-    console.log('Base64 input image length:', base64Data.length)
-    console.log('Estimated original image size:', Math.round(base64Data.length * 0.75), 'bytes')
+    console.log('🎨 Generating image with gpt-image-1 using image edit...')
+    console.log('📏 Prompt length:', prompt.length)
+    console.log('🖼️ Base64 input image length:', base64Data.length)
+    console.log('📦 Estimated original image size:', Math.round(base64Data.length * 0.75), 'bytes')
+    console.log('📝 FULL PROMPT BEING SENT:', prompt)
     
     // Convert base64 to buffer for the edits endpoint
     const imageBuffer = Buffer.from(base64Data, 'base64')

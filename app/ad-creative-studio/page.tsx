@@ -225,8 +225,15 @@ export default function AdCreativeStudioPage() {
         reader.readAsDataURL(uploadedImage)
       })
 
-      const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
+            const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
       
+      // Debug logging
+      console.log('🚀 SENDING TO API:')
+      console.log('📝 Final Prompt:', enhancedPrompt)
+      console.log('🎨 Style ID:', modalStyle.id)
+      console.log('📷 Image size:', base64Image.length, 'characters')
+      console.log('📋 Text overlays:', customText)
+
       const response = await fetch('/api/generate-background', {
         method: 'POST',
         headers: {
@@ -241,13 +248,16 @@ export default function AdCreativeStudioPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('API Error:', errorData)
+        console.error('❌ API Error Response:', errorData)
+        console.error('❌ Response Status:', response.status, response.statusText)
         updateCreativeStatus(creativeId, 'failed')
         toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         return
       }
 
       const data = await response.json()
+      console.log('✅ API Success Response:', data)
+      console.log('🖼️ Generated image URL length:', data.imageUrl?.length || 'no imageUrl')
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
       toast.success(`🎨 Image generated successfully!`)
@@ -319,12 +329,12 @@ export default function AdCreativeStudioPage() {
               </div>
             </div>
             {/* Beta Notice */}
-            <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 rounded-lg px-4 py-2">
+            <div className="bg-gradient-to-r from-gray-500/20 to-gray-400/20 border border-gray-400/30 rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                <span className="text-orange-300 font-medium text-sm">BETA</span>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                <span className="text-gray-300 font-medium text-sm">BETA</span>
               </div>
-              <p className="text-orange-200/80 text-xs mt-1">May struggle with small text & fine details</p>
+              <p className="text-gray-200/80 text-xs mt-1">May struggle with small text & fine details</p>
             </div>
           </div>
         </div>
@@ -337,7 +347,7 @@ export default function AdCreativeStudioPage() {
                 onClick={() => setActiveTab('create')}
                 className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'create'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-white text-black'
                     : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
                 }`}
               >
@@ -347,13 +357,13 @@ export default function AdCreativeStudioPage() {
                 onClick={() => setActiveTab('generated')}
                 className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
                   activeTab === 'generated'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-white text-black'
                     : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
                 }`}
               >
                 Generated Creatives
                 {generatedCreatives.length > 0 && (
-                  <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                  <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
                     {generatedCreatives.length}
                   </span>
                 )}
@@ -365,7 +375,7 @@ export default function AdCreativeStudioPage() {
           <div className="p-6">
             {activeTab === 'create' ? (
               <div className="space-y-6">
-                {/* Upload Section */}
+          {/* Upload Section */}
                 <div className="flex items-center gap-6 p-4 bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg">
                   <div className="flex items-center gap-3">
                     <Upload className="w-5 h-5 text-white" />
@@ -373,61 +383,61 @@ export default function AdCreativeStudioPage() {
                   </div>
                   <div 
                     className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                  >
-                    {uploadedImageUrl ? (
+                  onClick={() => document.getElementById('image-upload')?.click()}
+                >
+                  {uploadedImageUrl ? (
                       <>
-                        <img 
-                          src={uploadedImageUrl} 
-                          alt="Uploaded product" 
+                      <img 
+                        src={uploadedImageUrl} 
+                        alt="Uploaded product" 
                           className="w-12 h-12 rounded-lg object-cover border border-[#333]"
                         />
                         <div>
                           <p className="text-sm font-medium text-white">Product Uploaded</p>
                           <p className="text-xs text-gray-400">Click to change</p>
-                        </div>
+                    </div>
                       </>
-                    ) : (
+                  ) : (
                       <>
                         <ImageIcon className="w-8 h-8 text-gray-500" />
-                        <div>
+                      <div>
                           <p className="text-sm font-medium text-white">Drop image here or click</p>
                           <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
-                        </div>
+                      </div>
                       </>
-                    )}
-                  </div>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+                  )}
+                </div>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
                 </div>
 
                                   {/* Bigger Style Gallery */}
                 <div>
                   <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
-                    Background Styles
+                  <Sparkles className="w-5 h-5" />
+                  Background Styles
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {STYLE_OPTIONS.map((style) => (
-                      <div
-                        key={style.id}
+                  {STYLE_OPTIONS.map((style) => (
+                    <div
+                      key={style.id}
                         className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden hover:border-[#555] hover:shadow-2xl transition-all duration-300 cursor-pointer group"
                         onClick={() => openStyleModal(style)}
-                      >
+                    >
                         <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
-                          <img
-                            src={style.thumbnail}
-                            alt={style.name}
+                        <img
+                          src={style.thumbnail}
+                          alt={style.name}
                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
                           />
                         </div>
                         <div className="p-6">
-                          <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-blue-300 transition-colors">
+                          <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-gray-300 transition-colors">
                             {style.name}
                           </h4>
                           <p className="text-gray-400 text-sm leading-relaxed">
@@ -451,9 +461,9 @@ export default function AdCreativeStudioPage() {
                     <ImageIcon className="w-16 h-16 mx-auto text-gray-500 mb-4" />
                     <h4 className="text-lg font-medium text-white mb-2">No creatives yet</h4>
                     <p className="text-gray-400 mb-4">Upload an image and generate your first creative!</p>
-                    <Button
+                        <Button 
                       onClick={() => setActiveTab('create')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                      className="bg-white hover:bg-gray-200 text-black border-0"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Create Your First Creative
@@ -469,8 +479,8 @@ export default function AdCreativeStudioPage() {
                         <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
                           {creative.status === 'generating' ? (
                             <div className="flex flex-col items-center gap-3">
-                              <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                              <p className="text-blue-300 text-sm font-medium">Generating...</p>
+                              <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                              <p className="text-gray-300 text-sm font-medium">Generating...</p>
                             </div>
                           ) : creative.status === 'completed' ? (
                             <img
@@ -480,8 +490,8 @@ export default function AdCreativeStudioPage() {
                             />
                           ) : (
                             <div className="flex flex-col items-center gap-3">
-                              <X className="w-8 h-8 text-red-400" />
-                              <p className="text-red-300 text-sm font-medium">Failed</p>
+                              <X className="w-8 h-8 text-gray-400" />
+                              <p className="text-gray-300 text-sm font-medium">Failed</p>
                             </div>
                           )}
                         </div>
@@ -500,7 +510,7 @@ export default function AdCreativeStudioPage() {
                                     link.download = `creative-${creative.id}.png`
                                     link.click()
                                   }}
-                                  className="bg-green-600 hover:bg-green-700 text-white border-0 px-2 py-1"
+                                  className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-2 py-1"
                                 >
                                   <Download className="w-3 h-3" />
                                 </Button>
@@ -509,24 +519,24 @@ export default function AdCreativeStudioPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => deleteCreative(creative.id)}
-                                className="bg-red-600/20 border-red-600/30 text-red-300 hover:bg-red-600/30 px-2 py-1"
+                                className="bg-gray-600/20 border-gray-600/30 text-gray-300 hover:bg-gray-600/30 px-2 py-1"
                               >
                                 <Trash2 className="w-3 h-3" />
-                              </Button>
+                        </Button>
                             </div>
                           </div>
                           <p className="text-gray-400 text-xs">
                             {creative.createdAt.toLocaleDateString()} at {creative.createdAt.toLocaleTimeString()}
                           </p>
-                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
+                </div>
                 )}
               </div>
             )}
           </div>
-        </div>
+          </div>
 
         {/* Enhanced Style Customization Modal */}
         {showStyleModal && (
@@ -535,10 +545,10 @@ export default function AdCreativeStudioPage() {
               {/* Header */}
               <div className="p-6 border-b border-[#333] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <Sparkles className="w-5 h-5 text-blue-300" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-500/20 to-gray-400/20 rounded-lg flex items-center justify-center border border-gray-500/30">
+                    <Sparkles className="w-5 h-5 text-gray-300" />
                   </div>
-                  <div>
+          <div>
                     <h2 className="text-2xl font-bold text-white">Create Your Ad Creative</h2>
                     <p className="text-gray-400 text-sm">Customize and generate your product image</p>
                   </div>
@@ -558,7 +568,7 @@ export default function AdCreativeStudioPage() {
                   {/* Original Image Section */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
-                      <Upload className="w-5 h-5 text-blue-300" />
+                      <Upload className="w-5 h-5 text-gray-300" />
                       <h3 className="text-lg font-semibold text-white">Your Product</h3>
                     </div>
                     <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
@@ -584,7 +594,7 @@ export default function AdCreativeStudioPage() {
                               {uploadedImage.name} • {(uploadedImage.size / 1024 / 1024).toFixed(1)} MB
                             </p>
                           </div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                         </div>
                       </div>
                     )}
@@ -593,7 +603,7 @@ export default function AdCreativeStudioPage() {
                   {/* Style Preview Section */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <ImageIcon className="w-5 h-5 text-blue-300" />
+                      <ImageIcon className="w-5 h-5 text-gray-300" />
                       <h3 className="text-lg font-semibold text-white">Style Preview</h3>
                     </div>
                     
@@ -624,7 +634,7 @@ export default function AdCreativeStudioPage() {
                               onClick={() => setModalStyle(style)}
                               className={`p-3 rounded-lg border transition-all duration-200 ${
                                 modalStyle.id === style.id
-                                  ? 'border-blue-500 bg-blue-500/20 shadow-lg'
+                                  ? 'border-white bg-white/20 shadow-lg'
                                   : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
                               }`}
                             >
@@ -646,7 +656,7 @@ export default function AdCreativeStudioPage() {
                   {/* Configuration & Generate Section */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <Plus className="w-5 h-5 text-blue-300" />
+                      <Plus className="w-5 h-5 text-gray-300" />
                       <h3 className="text-lg font-semibold text-white">Customize</h3>
                     </div>
 
@@ -668,7 +678,7 @@ export default function AdCreativeStudioPage() {
                                 onClick={() => handlePresetSelect('top', key)}
                                 className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
                                   selectedTopPreset === key
-                                    ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                                    ? 'border-white bg-white/20 text-white'
                                     : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
                                 }`}
                               >
@@ -689,7 +699,7 @@ export default function AdCreativeStudioPage() {
                                 }
                                 value={customValues.topValue}
                                 onChange={(e) => handleCustomValueChange('top', e.target.value)}
-                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
                               />
                             </div>
                           )}
@@ -714,7 +724,7 @@ export default function AdCreativeStudioPage() {
                                 onClick={() => handlePresetSelect('bottom', key)}
                                 className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
                                   selectedBottomPreset === key
-                                    ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                                    ? 'border-white bg-white/20 text-white'
                                     : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
                                 }`}
                               >
@@ -735,7 +745,7 @@ export default function AdCreativeStudioPage() {
                                 }
                                 value={customValues.bottomValue}
                                 onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
-                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
                               />
                             </div>
                           )}
@@ -751,10 +761,10 @@ export default function AdCreativeStudioPage() {
 
                       {/* Clear buttons */}
                       <div className="flex gap-2 mt-4">
-                        <Button
+                      <Button 
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                        onClick={() => {
                             setSelectedTopPreset('')
                             setCustomText(prev => ({ ...prev, top: '' }))
                             setCustomValues(prev => ({ ...prev, topValue: '' }))
@@ -762,7 +772,7 @@ export default function AdCreativeStudioPage() {
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear Top
-                        </Button>
+                      </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -774,7 +784,7 @@ export default function AdCreativeStudioPage() {
                           className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
                         >
                           Clear Bottom
-                        </Button>
+                      </Button>
                       </div>
                     </div>
 
@@ -783,36 +793,36 @@ export default function AdCreativeStudioPage() {
                       <h4 className="text-white font-semibold mb-3">What You'll Get:</h4>
                       <ul className="space-y-2 text-sm text-gray-300">
                         <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                           Your product with {modalStyle.name.toLowerCase()} background
                         </li>
                         {customText.top && (
                           <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                             Top text: "{customText.top}"
                           </li>
                         )}
                         {customText.bottom && (
                           <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                             Bottom text: "{customText.bottom}"
                           </li>
                         )}
                         <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                           Perfect positioning with professional layout
                         </li>
                         <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
                           High-quality image ready for ads and marketing
                         </li>
                       </ul>
-                    </div>
+                  </div>
 
                     {/* Generate Button */}
                     <Button
                       disabled={!uploadedImage || isGenerating}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white border-0 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                       onClick={generateImageFromModal}
                     >
                       {isGenerating ? (
@@ -829,8 +839,8 @@ export default function AdCreativeStudioPage() {
                     </Button>
 
                     {!uploadedImage && (
-                      <div className="text-center p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <p className="text-red-300 text-sm">
+                      <div className="text-center p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg">
+                        <p className="text-gray-300 text-sm">
                           Please upload a product image first
                         </p>
                       </div>
