@@ -19,7 +19,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     id: 'concrete-floor',
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
-    thumbnail: 'https://i.imgur.com/yUmekNr.png',
+    thumbnail: 'https://i.imgur.com/ED4tpzf.png',
     prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks and a slight vignette, like in a minimal industrial setting. The lighting should be soft but directional, casting subtle shadows under the clothing to show it\'s resting on the ground. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand. Avoid any artificial floating effect — it must look like a real photograph taken in studio lighting conditions. The clothing color, logo, and fabric texture should stay crisp and unedited. LAYOUT: Center the product in portrait format with plenty of space above and below for text overlays.'
   }
 ]
@@ -134,6 +134,10 @@ export default function AdCreativeStudioPage() {
   }
 
   const openStyleModal = (style: StyleOption) => {
+    if (!uploadedImage) {
+      toast.error('Please upload a product image first!')
+      return
+    }
     setModalStyle(style)
     setShowStyleModal(true)
   }
@@ -452,14 +456,22 @@ export default function AdCreativeStudioPage() {
                   {STYLE_OPTIONS.map((style) => (
                     <div
                       key={style.id}
-                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden hover:border-[#555] hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+                        className={`bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group ${
+                          uploadedImage 
+                            ? 'hover:border-[#555] hover:shadow-2xl cursor-pointer' 
+                            : 'opacity-50 cursor-not-allowed'
+                        }`}
                         onClick={() => openStyleModal(style)}
                     >
                         <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
                         <img
                           src={style.thumbnail}
                           alt={style.name}
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
+                            className={`w-full h-full object-cover transition-all duration-300 ${
+                              uploadedImage 
+                                ? 'opacity-80 group-hover:opacity-100 group-hover:scale-105' 
+                                : 'opacity-30'
+                            }`}
                           />
                         </div>
                         <div className="p-6">
