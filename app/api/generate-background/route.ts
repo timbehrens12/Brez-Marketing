@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     
     console.log('Generating image with gpt-image-1 using image edit...')
     console.log('Prompt length:', prompt.length)
-    console.log('Base64 image length:', base64Data.length)
+    console.log('Base64 input image length:', base64Data.length)
+    console.log('Estimated original image size:', Math.round(base64Data.length * 0.75), 'bytes')
     
     // Convert base64 to buffer for the edits endpoint
     const imageBuffer = Buffer.from(base64Data, 'base64')
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest) {
       image: imageFile,
       prompt: prompt,
       n: 1,
-      size: "1024x1024"
+      size: "1024x1024", // Keep at 1024x1024 for now, but let's see if we can go higher
+      quality: "high" // Ensure high quality output
     })
     
     console.log('gpt-image-1 response received successfully!')
