@@ -1,0 +1,47 @@
+// Update these sections in the fetchPeriodData function
+
+// When setting up the date ranges (around line 805):
+// Get the previous month dates (last complete month)
+const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+const previousMonthStart = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1, 0, 0, 0)
+const previousMonthEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59)
+
+// Get two months ago dates for comparison
+const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 1)
+const twoMonthsAgoStart = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1, 0, 0, 0)
+const twoMonthsAgoEnd = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0, 23, 59, 59)
+
+// When fetching monthly data (around line 910):
+// Fetch previous month orders (this is our "current" data for the monthly report)
+const { data: monthData, error: monthError } = await supabase
+  .from('shopify_orders')
+  .select('*')
+  .eq('connection_id', shopifyConnection.id)
+  .gte('created_at', format(previousMonthStart, 'yyyy-MM-dd HH:mm:ss'))
+  .lte('created_at', format(previousMonthEnd, 'yyyy-MM-dd HH:mm:ss'))
+
+// Fetch two months ago orders (this is our "previous" data for comparison)
+const { data: prevMonthData, error: prevMonthError } = await supabase
+  .from('shopify_orders')
+  .select('*')
+  .eq('connection_id', shopifyConnection.id)
+  .gte('created_at', format(twoMonthsAgoStart, 'yyyy-MM-dd HH:mm:ss'))
+  .lte('created_at', format(twoMonthsAgoEnd, 'yyyy-MM-dd HH:mm:ss'))
+
+// Update the Meta data fetch queries similarly:
+
+// Fetch previous month Meta data
+const { data: monthlyMetaData, error: monthlyMetaError } = await supabase
+  .from('meta_ad_insights')
+  .select('*')
+  .eq('connection_id', metaConnection.id)
+  .gte('date', format(previousMonthStart, 'yyyy-MM-dd'))
+  .lte('date', format(previousMonthEnd, 'yyyy-MM-dd'))
+
+// Fetch two months ago Meta data
+const { data: prevMonthMetaData, error: prevMonthMetaError } = await supabase
+  .from('meta_ad_insights')
+  .select('*')
+  .eq('connection_id', metaConnection.id)
+  .gte('date', format(twoMonthsAgoStart, 'yyyy-MM-dd'))
+  .lte('date', format(twoMonthsAgoEnd, 'yyyy-MM-dd')) 
