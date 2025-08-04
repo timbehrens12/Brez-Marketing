@@ -41,14 +41,33 @@ export async function POST(req: NextRequest) {
     // Use the actual user prompt directly - no overrides!
     console.log('Using actual user prompt for gpt-image-1...')
     
-    const editResponse = await openai.images.edit({
-      model: "gpt-image-1",
-      image: imageFile,
-      prompt: prompt, // Use the ACTUAL prompt with text overlays
-      n: 1,
-      size: "1024x1536", // Portrait for more vertical space for text
-      quality: "high"
-    })
+    let editResponse;
+    
+    // Try portrait first, fallback to square if it fails
+    try {
+      console.log('Attempting portrait format (1024x1536)...')
+      editResponse = await openai.images.edit({
+        model: "gpt-image-1",
+        image: imageFile,
+        prompt: prompt, // Use the ACTUAL prompt with text overlays
+        n: 1,
+        size: "1024x1536", // Portrait for more vertical space for text
+        quality: "high"
+      })
+      console.log('Portrait format succeeded!')
+    } catch (portraitError: any) {
+      console.log('Portrait format failed, trying square format:', portraitError.message)
+      
+      editResponse = await openai.images.edit({
+        model: "gpt-image-1",
+        image: imageFile,
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024", // Fallback to square
+        quality: "high"
+      })
+      console.log('Square format fallback succeeded!')
+    }
     
     console.log('gpt-image-1 response received successfully!')
     console.log('Response data length:', editResponse.data?.length)
