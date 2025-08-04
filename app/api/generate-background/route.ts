@@ -48,18 +48,18 @@ export async function POST(req: NextRequest) {
     console.log('Response data length:', editResponse.data?.length)
     
     // gpt-image-1 returns base64 data instead of URLs
-    const base64Data = editResponse.data?.[0]?.b64_json
+    const generatedBase64 = editResponse.data?.[0]?.b64_json
     
-    if (!base64Data) {
+    if (!generatedBase64) {
       console.error('No base64 data found in response')
       console.error('Available keys in first item:', editResponse.data?.[0] ? Object.keys(editResponse.data[0]) : 'no first item')
       throw new Error('No image data returned from gpt-image-1')
     }
     
     // Convert base64 to data URL that can be displayed in browser
-    const generatedImageUrl = `data:image/png;base64,${base64Data}`
+    const generatedImageUrl = `data:image/png;base64,${generatedBase64}`
     
-    console.log('Base64 image data length:', base64Data.length)
+    console.log('Generated base64 data length:', generatedBase64.length)
     console.log('Generated data URL length:', generatedImageUrl.length)
     
     console.log('Image generated successfully with gpt-image-1!')
