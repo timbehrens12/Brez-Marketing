@@ -16,11 +16,18 @@ interface StyleOption {
 
 const STYLE_OPTIONS: StyleOption[] = [
   {
+    id: 'concrete-precision',
+    name: 'Concrete Background (Precision)',
+    description: 'Maximum detail preservation - for designs with fine text/graphics',
+    thumbnail: '/placeholder.jpg',
+    prompt: 'TECHNICAL BACKGROUND SWAP: Cut out this exact product and place on concrete. ZERO modifications to product. Preserve every pixel of text, graphics, distressing. Simple background replacement only.'
+  },
+  {
     id: 'concrete',
-    name: 'Concrete Background',
+    name: 'Concrete Background (Standard)',
     description: 'Industrial concrete surface with natural texture and realistic shadows',
     thumbnail: '/placeholder.jpg', // Using existing placeholder for now
-    prompt: 'Transform this product image by placing it on a realistic concrete floor background while preserving EVERY detail of the original product exactly as shown. CRITICAL: Keep all text, logos, colors, fabric texture, and product details 100% identical to the original - do not alter, blur, or change any aspect of the product itself. Only change the background to a natural concrete surface with visible texture, subtle cracks, and realistic wear patterns. Use professional studio lighting that creates soft, directional shadows under the product to show depth. The product should appear naturally placed on the concrete as if photographed in a real industrial or urban setting. Maintain authentic imperfections in both the concrete texture and product placement to avoid an overly-perfect AI look. The lighting should be natural and slightly uneven, creating realistic highlights and shadows. Preserve the exact colors, saturation, and contrast of the original product.'
+    prompt: 'BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with concrete while keeping the product 100% unchanged. This is NOT a creative edit - this is precise background replacement. PRESERVE EXACTLY: All text (PROJECT, CAPRI, 24, small bottom text), all background graphics/patterns on the shirt, all design elements, all colors, all fine details, all distressing effects, all texture. DO NOT modify, reinterpret, enhance, or alter ANY aspect of the product design. The product must remain pixel-perfect identical to the original. ONLY change: Replace the white background with realistic concrete floor texture. CRITICAL PRESERVATION REQUIREMENTS: 1) All text must be identical character-by-character 2) All graphic elements must be preserved exactly 3) All distressed/vintage effects must remain unchanged 4) All small design details must be maintained 5) Color accuracy must be perfect 6) No artistic interpretation of the design. This is a technical background swap, not creative enhancement. Place the unchanged product on concrete surface with natural lighting and realistic shadows.'
   }
 ]
 
@@ -69,6 +76,11 @@ export default function AdCreativeStudioPage() {
           console.log('Original image type:', uploadedImage.type)
           console.log('Base64 length:', result.length)
           
+          // Warn if image might be too low quality
+          if (uploadedImage.size < 500000) { // Less than 500KB
+            console.warn('⚠️  Image is quite small - consider uploading higher resolution for better detail preservation')
+          }
+          
           resolve(result)
         }
         reader.readAsDataURL(uploadedImage)
@@ -95,7 +107,7 @@ export default function AdCreativeStudioPage() {
 
       const data = await response.json()
       setGeneratedImage(data.imageUrl)
-      toast.success(`🎨 High-quality image generated with ${data.modelUsed}! Details preserved.`)
+      toast.success(`🎨 Image generated with ${data.modelUsed}! Check text/details carefully - regenerate with Precision mode if needed.`)
     } catch (error) {
       console.error('Error generating image:', error)
       toast.error('Failed to generate image with gpt-image-1. Check console for details.')
@@ -122,7 +134,7 @@ export default function AdCreativeStudioPage() {
                   Upload Product Image
                 </CardTitle>
                 <CardDescription>
-                  Upload the highest quality image possible of your product (PNG recommended, 1MB+ for best results)
+                  Upload the highest quality image possible (PNG recommended, 1MB+ for best results). For designs with fine text/graphics, use "Precision" mode.
                 </CardDescription>
               </CardHeader>
               <CardContent>

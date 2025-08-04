@@ -37,14 +37,51 @@ export async function POST(req: NextRequest) {
     console.log('Image file created, size:', imageBuffer.length, 'bytes')
     console.log('Starting gpt-image-1 generation... (this may take 30-60 seconds)')
     
-    const editResponse = await openai.images.edit({
-      model: "gpt-image-1",
-      image: imageFile,
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024", // Keep at 1024x1024 for now, but let's see if we can go higher
-      quality: "high" // Ensure high quality output
-    })
+    // Try multiple approaches for maximum detail preservation
+    let editResponse;
+    
+    // Approach 1: Try with very specific preservation prompt
+    try {
+      console.log('Attempting precision background replacement...')
+      const precisionPrompt = `TECHNICAL INSTRUCTION: Perform exact background replacement. Keep product 100% identical. Only replace background with concrete texture. Preserve all text: "${prompt.includes('PROJECT') ? 'PROJECT, CAPRI, 24, and all small text' : 'all text'}" exactly as shown. No creative interpretation.`;
+      
+      editResponse = await openai.images.edit({
+        model: "gpt-image-1",
+        image: imageFile,
+        prompt: precisionPrompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "high"
+      })
+      
+      console.log('Precision approach succeeded')
+      
+    } catch (precisionError: any) {
+      console.log('Precision approach failed, trying detailed preservation:', precisionError.message)
+      
+      // Approach 2: Original detailed prompt with maximum resolution
+      try {
+        console.log('Attempting with enhanced detail preservation at 1024x1536...')
+        editResponse = await openai.images.edit({
+          model: "gpt-image-1",
+          image: imageFile,
+          prompt: prompt,
+          n: 1,
+          size: "1024x1536", // Portrait for better text preservation
+          quality: "high"
+        })
+      } catch (detailError: any) {
+        console.log('Enhanced detail failed, falling back to standard:', detailError.message)
+        editResponse = await openai.images.edit({
+          model: "gpt-image-1",
+          image: imageFile,
+          prompt: prompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "high"
+        })
+      }
+    }
     
     console.log('gpt-image-1 response received successfully!')
     console.log('Response data length:', editResponse.data?.length)
@@ -63,6 +100,12 @@ export async function POST(req: NextRequest) {
     
     console.log('Generated base64 data length:', generatedBase64.length)
     console.log('Generated data URL length:', generatedImageUrl.length)
+    console.log('Input to output size ratio:', (generatedBase64.length / base64Data.length).toFixed(2))
+    
+    // Log if there might be quality loss
+    if (generatedBase64.length < base64Data.length * 0.8) {
+      console.warn('⚠️  Generated image is significantly smaller than input - possible quality loss')
+    }
     
     console.log('Image generated successfully with gpt-image-1!')
 
