@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface StyleOption {
@@ -20,37 +20,47 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Smooth Stone',
     description: 'Smooth stone surface with minor cracks, like refined blacktop',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with smooth stone/blacktop surface with minor cracks while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE smooth stone background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics. This is purely a background swap with perfect color preservation.'
+    prompt: 'Create a product photo with smooth stone/asphalt background. The background should be smooth dark gray stone or blacktop with subtle minor cracks. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
   },
   {
     id: 'wooden-floor',
     name: 'Wooden Floor',
     description: 'Warm wooden flooring with natural grain and lighting',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with wooden floor while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with SUBSTANTIAL wooden floor background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
+    prompt: 'Create a product photo with natural wooden floor background. The background should be warm brown wood planks with visible grain patterns and natural wood texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
   },
   {
     id: 'marble-surface',
     name: 'Marble Surface',
     description: 'Elegant marble surface with luxury appeal',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with marble surface while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE marble background space around ALL edges - especially ample space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
+    prompt: 'Create a product photo with white marble background. The background should be elegant white marble with gray veining and luxury stone texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
   },
   {
     id: 'studio-white',
     name: 'Studio White',
     description: 'Clean studio white background for professional product shots',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with clean studio white while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with SUBSTANTIAL white background space around ALL edges - especially significant space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
+    prompt: 'Create a product photo with pure white studio background. The background should be clean, bright white with professional studio lighting and no texture or patterns. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
   },
   {
     id: 'dark-surface',
     name: 'Dark Surface',
     description: 'Sophisticated dark surface for premium product presentation',
     thumbnail: 'https://i.imgur.com/yUmekNr.png',
-    prompt: 'EXACT COLOR PRESERVATION - BACKGROUND REPLACEMENT ONLY: Replace ONLY the background with dark surface while keeping the product COMPLETELY unchanged. CRITICAL COLOR MATCHING: Preserve every single color exactly as it appears in the original - do not shift hues, saturation, or brightness. Keep blues as exact blue, whites as exact white, etc. Position the product in the CENTER with EXTENSIVE dark background space around ALL edges - especially ample space at TOP and BOTTOM for text overlays. Product should occupy 60% of frame height, leaving 20% clear space above and 20% below for text. Include generous side margins. DO NOT add, modify, enhance, or alter ANY aspect of the product design, colors, text, or graphics.'
+    prompt: 'Create a product photo with dark black surface background. The background should be sophisticated matte black or very dark gray surface with minimal texture. Keep the product colors EXACTLY the same - preserve all blues, whites, and text perfectly. Position product centered with 60% of frame height, leaving 20% space top and bottom for text overlays. DO NOT modify the product itself in any way.'
   }
 ]
+
+interface GeneratedCreative {
+  id: string
+  originalImage: string
+  generatedImage: string
+  style: StyleOption
+  customText: { top: string; bottom: string }
+  createdAt: Date
+  status: 'generating' | 'completed' | 'failed'
+}
 
 export default function AdCreativeStudioPage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
@@ -62,6 +72,12 @@ export default function AdCreativeStudioPage() {
   const [currentStyleIndex, setCurrentStyleIndex] = useState(0)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
   const [customText, setCustomText] = useState({ top: '', bottom: '' })
+  
+  // New state for tabs and creatives
+  const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
+  const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
+  const [showStyleModal, setShowStyleModal] = useState(false)
+  const [modalStyle, setModalStyle] = useState<StyleOption>(STYLE_OPTIONS[0])
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -82,6 +98,34 @@ export default function AdCreativeStudioPage() {
 
   const currentStyle = STYLE_OPTIONS[currentStyleIndex]
 
+  // Functions for managing creatives
+  const addCreative = (creative: Omit<GeneratedCreative, 'id' | 'createdAt'>) => {
+    const newCreative: GeneratedCreative = {
+      ...creative,
+      id: Date.now().toString(),
+      createdAt: new Date()
+    }
+    setGeneratedCreatives(prev => [newCreative, ...prev])
+    return newCreative.id
+  }
+
+  const updateCreativeStatus = (id: string, status: GeneratedCreative['status'], generatedImage?: string) => {
+    setGeneratedCreatives(prev => prev.map(creative => 
+      creative.id === id 
+        ? { ...creative, status, ...(generatedImage && { generatedImage }) }
+        : creative
+    ))
+  }
+
+  const deleteCreative = (id: string) => {
+    setGeneratedCreatives(prev => prev.filter(creative => creative.id !== id))
+  }
+
+  const openStyleModal = (style: StyleOption) => {
+    setModalStyle(style)
+    setShowStyleModal(true)
+  }
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -97,16 +141,27 @@ export default function AdCreativeStudioPage() {
     }
   }
 
-  const generateImage = async (style: StyleOption) => {
+  const generateImageFromModal = async () => {
     if (!uploadedImage) {
       toast.error('Please upload an image first')
       return
     }
 
+    // Create creative entry
+    const creativeId = addCreative({
+      originalImage: uploadedImageUrl,
+      generatedImage: '',
+      style: modalStyle,
+      customText: customText,
+      status: 'generating'
+    })
+
     setIsGenerating(true)
-    setSelectedStyle(style)
+    setSelectedStyle(modalStyle)
+    setShowStyleModal(false)
+    setActiveTab('generated') // Switch to generated tab
     
-    toast.info('Starting image generation with gpt-image-1... This may take 30-60 seconds.')
+    toast.info('Starting image generation... This may take 30-60 seconds.')
 
     try {
       // Convert image to base64 with maximum quality preservation
@@ -115,12 +170,10 @@ export default function AdCreativeStudioPage() {
         reader.onload = () => {
           let result = reader.result as string
           
-          // Log the original image details for debugging
           console.log('Original image size:', uploadedImage.size, 'bytes')
           console.log('Original image type:', uploadedImage.type)
           console.log('Base64 length:', result.length)
           
-          // Warn if image might be too low quality
           if (uploadedImage.size < 500000) { // Less than 500KB
             console.warn('⚠️  Image is quite small - consider uploading higher resolution for better detail preservation')
           }
@@ -137,24 +190,27 @@ export default function AdCreativeStudioPage() {
         },
         body: JSON.stringify({
           image: base64Image,
-          prompt: style.prompt,
-          style: style.id
+          prompt: modalStyle.prompt,
+          style: modalStyle.id
         }),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
         console.error('API Error:', errorData)
+        updateCreativeStatus(creativeId, 'failed')
         toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         return
       }
 
       const data = await response.json()
+      updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
-      toast.success(`🎨 Image generated with ${data.modelUsed}! Check text/details carefully - regenerate with Precision mode if needed.`)
+      toast.success(`🎨 Image generated successfully!`)
     } catch (error) {
       console.error('Error generating image:', error)
-      toast.error('Failed to generate image with gpt-image-1. Check console for details.')
+      updateCreativeStatus(creativeId, 'failed')
+      toast.error('Failed to generate image. Check console for details.')
     } finally {
       setIsGenerating(false)
     }
@@ -229,262 +285,334 @@ export default function AdCreativeStudioPage() {
           </div>
         </div>
 
-        {/* Upload Section - Compact Top Bar */}
+        {/* Tab Navigation */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-          <div className="p-4">
-            <div className="flex items-center gap-6">
-              {/* Upload Area */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <Upload className="w-5 h-5 text-white" />
-                  <h2 className="text-lg font-semibold text-white">Upload Product</h2>
-                </div>
-                <div 
-                  className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                >
-                  {uploadedImageUrl ? (
-                    <>
-                      <img 
-                        src={uploadedImageUrl} 
-                        alt="Uploaded product" 
-                        className="w-12 h-12 rounded-lg object-cover border border-[#333]"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-white">Product Uploaded</p>
-                        <p className="text-xs text-gray-400">Click to change</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <ImageIcon className="w-8 h-8 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-white">Drop image here or click</p>
-                        <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </div>
-              
-              {/* Status/Result Info */}
-              <div className="flex-1 flex justify-end">
-                {generatedImage && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#333]">
-                      <img src={generatedImage} alt="Generated" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-green-300">Generation Complete!</p>
-                      <div className="flex gap-2 mt-1">
-                        <Button 
-                          size="sm"
-                          onClick={() => {
-                            const link = document.createElement('a')
-                            link.href = generatedImage
-                            link.download = 'generated-product-image.png'
-                            link.click()
-                          }}
-                          className="bg-green-600 hover:bg-green-700 text-white border-0 text-xs px-3 py-1"
-                        >
-                          Download
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="outline" 
-                          className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white text-xs px-3 py-1"
-                          onClick={() => setGeneratedImage('')}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+          <div className="p-4 border-b border-[#333]">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setActiveTab('create')}
+                className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  activeTab === 'create'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                }`}
+              >
+                Create New
+              </button>
+              <button
+                onClick={() => setActiveTab('generated')}
+                className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === 'generated'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                }`}
+              >
+                Generated Creatives
+                {generatedCreatives.length > 0 && (
+                  <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                    {generatedCreatives.length}
+                  </span>
                 )}
-                {isGenerating && (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-300">Generating Creative...</p>
-                      <p className="text-xs text-blue-400/80">This may take 30-60 seconds</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Background Style Carousel Widget */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-          <div className="p-6 border-b border-[#333]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-white" />
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Background Styles</h2>
-                  <p className="text-gray-400 mt-1">
-                    Choose a background style for your product - Use arrows to browse options
-                  </p>
-                </div>
-              </div>
-              <div className="text-sm text-gray-400">
-                {currentStyleIndex + 1} of {STYLE_OPTIONS.length}
-              </div>
-            </div>
-          </div>
-          
-          {/* Carousel Content */}
-          <div className="p-8">
-            <div className="relative">
-              {/* Main Style Display */}
-              <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden">
-                {/* Large Preview with Navigation */}
-                <div className="relative">
-                  <div className="aspect-[4/3] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
-                    <img
-                      src={currentStyle.thumbnail}
-                      alt={currentStyle.name}
-                      className="w-full h-full object-cover"
-                    />
-                    
-                    {/* Navigation Arrows */}
-                    <button
-                      onClick={prevStyle}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 hover:bg-black/80 border border-white/20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                    >
-                      <ChevronLeft className="w-6 h-6 text-white" />
-                    </button>
-                    
-                    <button
-                      onClick={nextStyle}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 hover:bg-black/80 border border-white/20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                    >
-                      <ChevronRight className="w-6 h-6 text-white" />
-                    </button>
-
-                    {/* Style Indicator Dots */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {STYLE_OPTIONS.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentStyleIndex(index)}
-                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                            index === currentStyleIndex 
-                              ? 'bg-white scale-125' 
-                              : 'bg-white/40 hover:bg-white/60'
-                          }`}
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'create' ? (
+              <div className="space-y-6">
+                {/* Upload Section */}
+                <div className="flex items-center gap-6 p-4 bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Upload className="w-5 h-5 text-white" />
+                    <h2 className="text-lg font-semibold text-white">Upload Product</h2>
+                  </div>
+                  <div 
+                    className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                  >
+                    {uploadedImageUrl ? (
+                      <>
+                        <img 
+                          src={uploadedImageUrl} 
+                          alt="Uploaded product" 
+                          className="w-12 h-12 rounded-lg object-cover border border-[#333]"
                         />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Style Info & Actions */}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-bold text-white text-2xl mb-2">
-                          {currentStyle.name}
-                        </h3>
-                        <p className="text-gray-400 leading-relaxed">
-                          {currentStyle.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 mb-4">
-                      <Button 
-                        disabled={!uploadedImage || isGenerating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 py-3 text-lg font-semibold flex-1"
-                        onClick={() => generateImage(currentStyle)}
-                      >
-                        {isGenerating && selectedStyle?.id === currentStyle.id ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5 mr-2" />
-                            Apply This Style
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white px-6"
-                        onClick={() => setShowMoreInfo(!showMoreInfo)}
-                      >
-                        <Info className="w-4 h-4 mr-2" />
-                        More Info
-                      </Button>
-                    </div>
-
-                    {/* Expandable More Info Section */}
-                    {showMoreInfo && (
-                      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#1f1f1f] border border-[#333] rounded-lg p-4 mt-4">
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                              <ImageIcon className="w-4 h-4" />
-                              What you'll get:
-                            </h4>
-                            <p className="text-gray-300 text-sm">
-                              Your product with a {currentStyle.name.toLowerCase()} background, perfectly positioned with space for text overlays
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                              <Plus className="w-4 h-4" />
-                              Add Custom Text (Coming Soon):
-                            </h4>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-gray-400 text-xs block mb-1">Top Text</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g., SALE"
-                                  value={customText.top}
-                                  onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
-                                  className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
-                                  disabled
-                                />
-                              </div>
-                              <div>
-                                <label className="text-gray-400 text-xs block mb-1">Bottom Text</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g., 10% OFF"
-                                  value={customText.bottom}
-                                  onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
-                                  className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
-                                  disabled
-                                />
-                              </div>
-                            </div>
-                            <p className="text-gray-500 text-xs mt-2">
-                              Text overlay feature will be available in a future update
-                            </p>
-                          </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">Product Uploaded</p>
+                          <p className="text-xs text-gray-400">Click to change</p>
                         </div>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-gray-500" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Drop image here or click</p>
+                          <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
+                        </div>
+                      </>
                     )}
                   </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Compact Style Gallery */}
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Background Styles
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {STYLE_OPTIONS.map((style) => (
+                      <div
+                        key={style.id}
+                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden hover:border-[#555] hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                        onClick={() => openStyleModal(style)}
+                      >
+                        <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                          <img
+                            src={style.thumbnail}
+                            alt={style.name}
+                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                          />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-white text-sm group-hover:text-blue-300 transition-colors">
+                            {style.name}
+                          </h4>
+                          <p className="text-gray-400 text-xs mt-1 line-clamp-2">
+                            {style.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Generated Creatives Tab
+              <div>
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5" />
+                  Your Generated Creatives
+                </h3>
+                {generatedCreatives.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ImageIcon className="w-16 h-16 mx-auto text-gray-500 mb-4" />
+                    <h4 className="text-lg font-medium text-white mb-2">No creatives yet</h4>
+                    <p className="text-gray-400 mb-4">Upload an image and generate your first creative!</p>
+                    <Button
+                      onClick={() => setActiveTab('create')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Creative
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {generatedCreatives.map((creative) => (
+                      <div
+                        key={creative.id}
+                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden"
+                      >
+                        <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
+                          {creative.status === 'generating' ? (
+                            <div className="flex flex-col items-center gap-3">
+                              <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                              <p className="text-blue-300 text-sm font-medium">Generating...</p>
+                            </div>
+                          ) : creative.status === 'completed' ? (
+                            <img
+                              src={creative.generatedImage}
+                              alt="Generated creative"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-3">
+                              <X className="w-8 h-8 text-red-400" />
+                              <p className="text-red-300 text-sm font-medium">Failed</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium text-white text-sm">
+                              {creative.style.name}
+                            </h4>
+                            <div className="flex gap-2">
+                              {creative.status === 'completed' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement('a')
+                                    link.href = creative.generatedImage
+                                    link.download = `creative-${creative.id}.png`
+                                    link.click()
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-white border-0 px-2 py-1"
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deleteCreative(creative.id)}
+                                className="bg-red-600/20 border-red-600/30 text-red-300 hover:bg-red-600/30 px-2 py-1"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-gray-400 text-xs">
+                            {creative.createdAt.toLocaleDateString()} at {creative.createdAt.toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Style Customization Modal */}
+        {showStyleModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-[#333] flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">Customize Your Creative</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStyleModal(false)}
+                  className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333]"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Original Image */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Your Product</h3>
+                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-lg flex items-center justify-center overflow-hidden border border-[#333]">
+                      {uploadedImageUrl ? (
+                        <img
+                          src={uploadedImageUrl}
+                          alt="Your product"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-16 h-16 text-gray-500" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Style Preview */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Preview Style: {modalStyle.name}</h3>
+                    <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded-lg flex items-center justify-center overflow-hidden border border-[#333] mb-4">
+                      <img
+                        src={modalStyle.thumbnail}
+                        alt={modalStyle.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-gray-400 text-sm mb-4">{modalStyle.description}</p>
+
+                    {/* Style Selector */}
+                    <div className="mb-6">
+                      <h4 className="text-white font-medium mb-3">Choose Style:</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        {STYLE_OPTIONS.map((style) => (
+                          <button
+                            key={style.id}
+                            onClick={() => setModalStyle(style)}
+                            className={`p-2 rounded-lg border transition-all duration-200 ${
+                              modalStyle.id === style.id
+                                ? 'border-blue-500 bg-blue-500/20'
+                                : 'border-[#333] hover:border-[#555]'
+                            }`}
+                          >
+                            <div className="aspect-square bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
+                              <img
+                                src={style.thumbnail}
+                                alt={style.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <p className="text-white text-xs font-medium">{style.name}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom Text */}
+                    <div className="mb-6">
+                      <h4 className="text-white font-medium mb-3">Add Text (Coming Soon):</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-gray-400 text-xs block mb-1">Top Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., SALE"
+                            value={customText.top}
+                            onChange={(e) => setCustomText(prev => ({ ...prev, top: e.target.value }))}
+                            className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-xs block mb-1">Bottom Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., 10% OFF"
+                            value={customText.bottom}
+                            onChange={(e) => setCustomText(prev => ({ ...prev, bottom: e.target.value }))}
+                            className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white text-sm"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                      <p className="text-gray-500 text-xs mt-2">
+                        Text overlay feature will be available in a future update
+                      </p>
+                    </div>
+
+                    {/* Generate Button */}
+                    <Button
+                      disabled={!uploadedImage || isGenerating}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 py-3 text-lg font-semibold"
+                      onClick={generateImageFromModal}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                          Generating Creative...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Generate Creative
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
