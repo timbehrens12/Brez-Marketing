@@ -758,7 +758,7 @@ export default function AdCreativeStudioPage() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
-        <div className="max-w-[1400px] mx-auto space-y-6">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <div className="flex items-center justify-between">
@@ -1169,9 +1169,9 @@ export default function AdCreativeStudioPage() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Completely Redesigned Modal */}
+        {/* Modals */}
+        {/* Completely Redesigned Modal */}
         {showStyleModal && (
           <div className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -1544,6 +1544,8 @@ export default function AdCreativeStudioPage() {
             </div>
           </div>
         )}
+      </div>
+    </div>
     </>
   )
 }
