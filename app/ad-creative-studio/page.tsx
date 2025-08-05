@@ -271,6 +271,15 @@ export default function AdCreativeStudioPage() {
     localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
   }
 
+  // R&D: Function to reset usage count for development
+  const resetUsage = () => {
+    const currentWeekStart = getCurrentWeekStart()
+    const newUsageData = { current: 0, weekStartDate: currentWeekStart }
+    setUsageData(newUsageData)
+    localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
+    toast.success('Usage count reset for R&D')
+  }
+
   // Get progress color based on usage percentage
   const getProgressColor = () => {
     if (usagePercentage > 90) return '#ef4444' // Red
@@ -839,9 +848,20 @@ export default function AdCreativeStudioPage() {
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {getDaysUntilReset()}d left
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                    {getDaysUntilReset()}d left
+                  </span>
+                  {usageData.current > 0 && (
+                    <button
+                      onClick={resetUsage}
+                      className="text-xs text-red-400 hover:text-red-300 transition-colors px-1 py-0.5 rounded border border-red-500/20 hover:border-red-400/40"
+                      title="R&D: Reset usage count"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div className="flex items-center gap-3">
