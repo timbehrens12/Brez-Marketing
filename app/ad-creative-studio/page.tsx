@@ -287,10 +287,6 @@ export default function AdCreativeStudioPage() {
         setGeneratedCreatives(data.creatives || [])
         console.log('✅ Loaded', data.creatives?.length || 0, 'creatives')
         
-        // If we're on the generated tab and switched brands, ensure we stay on generated tab
-        if (activeTab === 'generated') {
-          setActiveTab('generated')
-        }
       } catch (error) {
         console.error('Error loading creatives:', error)
         toast.error('Failed to load previous creatives')
@@ -301,7 +297,7 @@ export default function AdCreativeStudioPage() {
     }
 
     loadCreatives()
-  }, [selectedBrandId, user?.id, activeTab])
+  }, [selectedBrandId, user?.id])
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -807,10 +803,11 @@ export default function AdCreativeStudioPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
-                <p className="text-gray-300 mt-1">Create professional ad creatives with AI-powered styling and custom text overlays</p>
+                <p className="text-gray-300 mt-1">Create ad creatives with AI-powered styling and custom text overlays</p>
               </div>
             </div>
             
+            <div className="flex items-center gap-4">
             {/* Usage Limits Display */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
               <div className="flex items-center justify-between mb-2">
@@ -959,6 +956,7 @@ export default function AdCreativeStudioPage() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
