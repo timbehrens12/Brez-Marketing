@@ -196,6 +196,20 @@ export default function AdCreativeStudioPage() {
   const [retryCreativeId, setRetryCreativeId] = useState('')
   const [retryImage, setRetryImage] = useState<File | null>(null)
 
+  // Prevent body scroll when modals are open
+  useEffect(() => {
+    if (showStyleModal || showRetryModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showStyleModal, showRetryModal])
+
   // Weekly usage system - 10 generations per week (universal)
   const WEEKLY_LIMIT = 10
   const [usageData, setUsageData] = useState({
@@ -1539,8 +1553,20 @@ export default function AdCreativeStudioPage() {
 
       {/* Retry Issue Selection Modal */}
       {showRetryModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4 overflow-hidden"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRetryModal(false)
+              setRetryImage(null)
+            }
+          }}
+        >
+            <div 
+              className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header */}
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
                 <div className="flex items-center gap-3">
@@ -1605,22 +1631,33 @@ export default function AdCreativeStudioPage() {
                   Select what went wrong with the previous generation so we can fix it:
                 </p>
                 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                   {RETRY_ISSUES.map((issue) => (
                     <button
                       key={issue.id}
-                      onClick={() => retryImage ? retryCreativeWithIssue(issue.id) : alert('Please upload the product image first!')}
-                      className={`w-full p-3 text-left bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg transition-all duration-200 group ${
+                      onClick={() => {
+                        if (!retryImage) {
+                          toast.error('Please upload the product image first!')
+                          return
+                        }
+                        retryCreativeWithIssue(issue.id)
+                      }}
+                      disabled={!retryImage}
+                      className={`w-full p-4 text-left bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg transition-all duration-200 group ${
                         retryImage 
-                          ? 'hover:border-[#555] hover:from-[#252525] hover:to-[#212121] cursor-pointer' 
+                          ? 'hover:border-orange-400/50 hover:from-[#252525] hover:to-[#212121] cursor-pointer hover:shadow-lg' 
                           : 'opacity-50 cursor-not-allowed'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-orange-400 rounded-full group-hover:bg-orange-300"></div>
-                        <div>
-                          <p className="text-white font-medium text-sm">{issue.label}</p>
-                          <p className="text-gray-400 text-xs mt-1">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-3 h-3 rounded-full mt-1 transition-colors ${
+                          retryImage 
+                            ? 'bg-orange-400 group-hover:bg-orange-300' 
+                            : 'bg-gray-500'
+                        }`}></div>
+                        <div className="flex-1">
+                          <p className="text-white font-medium text-sm mb-1">{issue.label}</p>
+                          <p className="text-gray-400 text-xs leading-relaxed">
                             {issue.id === 'distorted-text' && 'Text, logos, or graphics were unclear or distorted'}
                             {issue.id === 'neck-tag-distortion' && 'Neck tag text was blurry, distorted, or illegible'}
                             {issue.id === 'distorted-graphics' && 'Graphics, logos, or visual elements were distorted'}
