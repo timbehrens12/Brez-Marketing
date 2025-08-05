@@ -185,6 +185,41 @@ export default function AdCreativeStudioPage() {
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [retryCreativeId, setRetryCreativeId] = useState('')
 
+  // Usage tier definitions
+  const USAGE_TIERS = {
+    'Free': { limit: 20, color: 'from-gray-500/20 to-gray-400/20', textColor: 'text-gray-300', borderColor: 'border-gray-400/30' },
+    'Basic': { limit: 100, color: 'from-blue-500/20 to-cyan-500/20', textColor: 'text-blue-300', borderColor: 'border-blue-500/30' },
+    'Pro': { limit: 500, color: 'from-purple-500/20 to-blue-500/20', textColor: 'text-purple-300', borderColor: 'border-purple-500/30' },
+    'Enterprise': { limit: 2000, color: 'from-yellow-500/20 to-orange-500/20', textColor: 'text-yellow-300', borderColor: 'border-yellow-500/30' }
+  }
+
+  // Mock usage data - would come from API in real implementation
+  const [usageData, setUsageData] = useState({
+    current: 87,
+    tier: 'Pro' as keyof typeof USAGE_TIERS,
+    resetDate: '2024-02-01'
+  })
+
+  // Get tier info
+  const tierInfo = USAGE_TIERS[usageData.tier]
+  const usagePercentage = (usageData.current / tierInfo.limit) * 100
+
+  // Function to update usage count
+  const incrementUsage = () => {
+    setUsageData(prev => ({
+      ...prev,
+      current: Math.min(prev.current + 1, tierInfo.limit)
+    }))
+  }
+
+  // Get progress color based on usage percentage
+  const getProgressColor = () => {
+    if (usagePercentage > 90) return '#ef4444' // Red
+    if (usagePercentage > 80) return '#f59e0b' // Amber
+    if (usagePercentage > 60) return '#3b82f6' // Blue
+    return '#10b981' // Green
+  }
+
   // Load creative generations from database when brand changes
   useEffect(() => {
     const loadCreatives = async () => {
@@ -379,7 +414,8 @@ export default function AdCreativeStudioPage() {
 
       const data = await response.json()
       updateCreativeStatus(newCreativeId, 'completed', data.imageUrl)
-      toast.success(`Retry successful! Issue addressed: ${issue.label}`)
+              incrementUsage() // Increment usage count on successful retry
+        toast.success(`Retry successful! Issue addressed: ${issue.label}`)
     } catch (error) {
       console.error('Error retrying generation:', error)
       updateCreativeStatus(newCreativeId, 'failed')
@@ -474,6 +510,12 @@ export default function AdCreativeStudioPage() {
       return
     }
 
+    // Check usage limits
+    if (usageData.current >= tierInfo.limit) {
+      toast.error(`You've reached your ${usageData.tier} plan limit of ${tierInfo.limit} generations this month. Upgrade your plan to continue.`)
+      return
+    }
+
     // Generate enhanced prompt
     const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
 
@@ -560,6 +602,7 @@ export default function AdCreativeStudioPage() {
       console.log('🖼️ Generated image URL length:', data.imageUrl?.length || 'no imageUrl')
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
+      incrementUsage() // Increment usage count on successful generation
       toast.success(`🎨 Image generated successfully!`)
     } catch (error) {
       console.error('Error generating image:', error)
@@ -691,6 +734,65 @@ export default function AdCreativeStudioPage() {
               <div>
                 <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
                 <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
+              </div>
+            </div>
+
+            {/* Usage Limits Display */}
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-300 text-xs font-medium">MONTHLY USAGE</span>
+                <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${tierInfo.color} ${tierInfo.textColor} border ${tierInfo.borderColor}`}>
+                  {usageData.tier}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {/* Circular Progress */}
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                    {/* Background circle */}
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="2"
+                      strokeDasharray="100, 100"
+                    />
+                    {/* Progress circle */}
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke={getProgressColor()}
+                      strokeWidth="2"
+                      strokeDasharray={`${usagePercentage}, 100`}
+                      className="transition-all duration-300"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">
+                      {Math.round(usagePercentage)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Usage Stats */}
+                <div>
+                  <div className="text-white font-semibold text-sm">
+                    {usageData.current} / {tierInfo.limit}
+                  </div>
+                  <div className="text-gray-400 text-xs">
+                    {tierInfo.limit - usageData.current} remaining
+                  </div>
+                  {usagePercentage > 90 && (
+                    <div className="text-red-400 text-xs font-medium">
+                      ⚠️ Almost at limit
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
