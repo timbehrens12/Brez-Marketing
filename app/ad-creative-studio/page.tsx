@@ -845,6 +845,12 @@ export default function AdCreativeStudioPage() {
                       <div className="text-gray-400 text-xs">
                         PNG/JPG • Up to 10MB
                       </div>
+                      <div className="text-amber-400 text-xs mt-1 font-medium">
+                        ⚠️ Use high-quality images
+                      </div>
+                      <div className="text-gray-500 text-xs">
+                        Blurry images may distort text/graphics
+                      </div>
                     </div>
                   </>
                 )}
@@ -1412,6 +1418,21 @@ export default function AdCreativeStudioPage() {
                     )}
                   </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Generation Loading Modal */}
+        {isGenerating && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[99999]">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 max-w-md mx-4 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin"></div>
+              <h3 className="text-xl font-bold text-white mb-2">Creating Your Ad Creative</h3>
+              <p className="text-gray-300 mb-3">Using AI to perfectly preserve your product...</p>
+              <div className="text-amber-400 text-sm font-medium mb-1">
+                ⏱️ May take up to 2 minutes
+              </div>
+              <p className="text-gray-500 text-xs">Please keep this tab open</p>
             </div>
           </div>
         )}
