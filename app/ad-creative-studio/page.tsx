@@ -830,8 +830,8 @@ export default function AdCreativeStudioPage() {
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
-                <span className="text-xs text-gray-400">
-                  Resets in {getDaysUntilReset()}d
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  {getDaysUntilReset()}d left
                 </span>
               </div>
               
@@ -1540,7 +1540,7 @@ export default function AdCreativeStudioPage() {
                     
                     {usageData.current >= WEEKLY_LIMIT && (
                       <div className="flex-1 flex items-center justify-center text-center py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <p className="text-red-400 text-sm">Weekly limit reached • Resets in {getDaysUntilReset()} days</p>
+                        <p className="text-red-400 text-sm">Weekly limit reached • Resets in {getDaysUntilReset()}d</p>
                       </div>
                     )}
                   </div>
