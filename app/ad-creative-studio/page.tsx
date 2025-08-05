@@ -286,6 +286,9 @@ export default function AdCreativeStudioPage() {
       return
     }
 
+    // Generate enhanced prompt
+    const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
+
     // Create creative entry
     const creativeId = addCreative({
       brand_id: selectedBrandId!,
@@ -328,8 +331,6 @@ export default function AdCreativeStudioPage() {
         reader.readAsDataURL(uploadedImage)
       })
 
-            const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
-      
       // Debug logging
       console.log('🚀 SENDING TO API:')
       console.log('📝 Final Prompt:', enhancedPrompt)
@@ -423,11 +424,11 @@ export default function AdCreativeStudioPage() {
   // Show brand selection requirement if no brand is selected
   if (!selectedBrandId || !selectedBrand) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center min-h-[80vh]">
             <div className="text-center space-y-6 max-w-md">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#1a1a1a] to-[#161616] rounded-full flex items-center justify-center border border-[#333]">
                 <Building2 className="w-10 h-10 text-gray-300" />
               </div>
               <div className="space-y-4">
@@ -436,7 +437,7 @@ export default function AdCreativeStudioPage() {
                   To use the Ad Creative Studio, you need to select a brand first. 
                   This ensures your generated creatives are saved and organized by brand.
                 </p>
-                <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 border border-gray-600 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#161616]/50 border border-[#333] rounded-lg p-4">
                   <div className="flex items-center space-x-2 text-amber-400 mb-2">
                     <FlaskConical className="w-5 h-5" />
                     <span className="font-semibold">Beta Feature</span>
