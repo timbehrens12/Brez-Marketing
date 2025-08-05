@@ -271,10 +271,14 @@ export default function AdCreativeStudioPage() {
     const loadCreatives = async () => {
       if (!selectedBrandId || !user?.id) {
         setGeneratedCreatives([])
+        setIsLoadingCreatives(false)
         return
       }
 
+      // Start loading immediately and clear old creatives
       setIsLoadingCreatives(true)
+      setGeneratedCreatives([]) // Clear immediately when brand changes
+      
       try {
         console.log('📚 Loading creatives for brand:', selectedBrandId)
         const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}`)
@@ -1110,7 +1114,13 @@ export default function AdCreativeStudioPage() {
                   <ImageIcon className="w-6 h-6" />
                   Your Generated Creatives
                 </h3>
-                {generatedCreatives.length === 0 ? (
+                {isLoadingCreatives ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin mx-auto mb-4"></div>
+                    <h4 className="text-lg font-medium text-white mb-2">Loading Creatives</h4>
+                    <p className="text-gray-400">Fetching your brand's creative history...</p>
+                  </div>
+                ) : generatedCreatives.length === 0 ? (
                   <div className="text-center py-12">
                     <ImageIcon className="w-16 h-16 mx-auto text-gray-500 mb-4" />
                     <h4 className="text-lg font-medium text-white mb-2">No creatives yet</h4>
