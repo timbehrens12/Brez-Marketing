@@ -902,44 +902,47 @@ export default function DashboardPage() {
         
         if (isMounted.current && !cancelled) {
           // Batch the metrics update with other state changes
+          // FIX: Replace entire metrics object instead of merging to prevent duplication
           startTransition(() => {
-            setMetrics(prevMetrics => ({
-              ...prevMetrics,
-              totalSales: data.totalSales ?? prevMetrics.totalSales,
-              salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
-              ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
-              ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
-              unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
-              unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
-              averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
-              aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
-              customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
-              retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
-              conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
-              conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
-              returnRate: data.returnRate ?? prevMetrics.returnRate,
-              returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
-              conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
-              ctr: data.ctr ?? prevMetrics.ctr,
-              ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
-              clicks: data.clicks ?? prevMetrics.clicks,
-              clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
-              impressions: data.impressions ?? prevMetrics.impressions,
-              impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
-              adSpend: data.adSpend ?? prevMetrics.adSpend,
-              adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
-              conversions: data.conversions ?? prevMetrics.conversions,
-              costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
-              cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
-              topProducts: data.topProducts ?? prevMetrics.topProducts,
-              revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
-              dailyData: data.dailyData ?? prevMetrics.dailyData,
-              customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
-              salesData: data.salesData ?? prevMetrics.salesData,
-              ordersData: data.ordersData ?? prevMetrics.ordersData,
-              aovData: data.aovData ?? prevMetrics.aovData,
-              unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
-            }));
+            setMetrics({
+              totalSales: data.totalSales ?? 0,
+              salesGrowth: data.salesGrowth ?? 0,
+              ordersPlaced: data.ordersPlaced ?? 0,
+              ordersGrowth: data.ordersGrowth ?? 0,
+              unitsSold: data.unitsSold ?? 0,
+              unitsGrowth: data.unitsGrowth ?? 0,
+              averageOrderValue: data.averageOrderValue ?? 0,
+              aovGrowth: data.aovGrowth ?? 0,
+              customerRetentionRate: data.customerRetentionRate ?? 0,
+              retentionGrowth: data.retentionGrowth ?? 0,
+              conversionRate: data.conversionRate ?? 0,
+              conversionGrowth: data.conversionGrowth ?? 0,
+              returnRate: data.returnRate ?? 0,
+              returnGrowth: data.returnGrowth ?? 0,
+              conversionRateGrowth: data.conversionRateGrowth ?? 0,
+              ctr: data.ctr ?? 0,
+              ctrGrowth: data.ctrGrowth ?? 0,
+              clicks: data.clicks ?? 0,
+              clickGrowth: data.clickGrowth ?? 0,
+              impressions: data.impressions ?? 0,
+              impressionGrowth: data.impressionGrowth ?? 0,
+              adSpend: data.adSpend ?? 0,
+              adSpendGrowth: data.adSpendGrowth ?? 0,
+              roas: data.roas ?? 0,
+              roasGrowth: data.roasGrowth ?? 0,
+              conversions: data.conversions ?? 0,
+              conversionGrowth: data.conversionGrowth ?? 0,
+              costPerResult: data.costPerResult ?? 0,
+              cprGrowth: data.cprGrowth ?? 0,
+              topProducts: data.topProducts ?? [],
+              revenueByDay: data.revenueByDay ?? [],
+              dailyData: data.dailyData ?? [],
+              customerSegments: data.customerSegments ?? { newCustomers: 0, returningCustomers: 0 },
+              salesData: data.salesData ?? [],
+              ordersData: data.ordersData ?? [],
+              aovData: data.aovData ?? [],
+              unitsSoldData: data.unitsSoldData ?? []
+            });
           });
         }
         
@@ -1039,27 +1042,29 @@ export default function DashboardPage() {
       //   clicks: metaData.clicks
       // });
       
-      // Update state regardless of received values to ensure we display most recent data
+      // FIX: Only update Meta-specific metrics to prevent duplication, preserve other metrics
       setMetrics(prev => ({
         ...prev,
-        adSpend: metaData.adSpend ?? prev.adSpend ?? 0,
-        adSpendGrowth: metaData.adSpendGrowth ?? prev.adSpendGrowth ?? 0,
-        roas: metaData.roas ?? prev.roas ?? 0,
-        roasGrowth: metaData.roasGrowth ?? prev.roasGrowth ?? 0,
-        impressions: metaData.impressions ?? prev.impressions ?? 0,
-        impressionGrowth: metaData.impressionGrowth ?? prev.impressionGrowth ?? 0,
-        ctr: metaData.ctr ?? prev.ctr ?? 0,
-        ctrGrowth: metaData.ctrGrowth ?? prev.ctrGrowth ?? 0,
-        clicks: metaData.clicks ?? prev.clicks ?? 0,
-        clickGrowth: metaData.clickGrowth ?? prev.clickGrowth ?? 0,
-        conversions: metaData.conversions ?? prev.conversions ?? 0,
-        conversionGrowth: metaData.conversionGrowth ?? prev.conversionGrowth ?? 0,
-        cpc: metaData.cpc ?? prev.cpc ?? 0,
-        costPerResult: metaData.costPerResult ?? prev.costPerResult ?? 0,
-        cprGrowth: metaData.cprGrowth ?? prev.cprGrowth ?? 0,
-        dailyData: metaData.dailyData ?? prev.dailyData ?? [],
+        // Only update Meta-specific metrics, don't duplicate Shopify data
+        adSpend: metaData.adSpend ?? 0,
+        adSpendGrowth: metaData.adSpendGrowth ?? 0,
+        roas: metaData.roas ?? 0,
+        roasGrowth: metaData.roasGrowth ?? 0,
+        impressions: metaData.impressions ?? 0,
+        impressionGrowth: metaData.impressionGrowth ?? 0,
+        ctr: metaData.ctr ?? 0,
+        ctrGrowth: metaData.ctrGrowth ?? 0,
+        clicks: metaData.clicks ?? 0,
+        clickGrowth: metaData.clickGrowth ?? 0,
+        conversions: metaData.conversions ?? 0,
+        conversionGrowth: metaData.conversionGrowth ?? 0,
+        cpc: metaData.cpc ?? 0,
+        costPerResult: metaData.costPerResult ?? 0,
+        cprGrowth: metaData.cprGrowth ?? 0,
         // Add Reach update here
-        reach: metaData.reach ?? prev.reach ?? 0,
+        reach: metaData.reach ?? 0,
+        // For dailyData, only update if we have new Meta daily data, otherwise preserve existing
+        dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
       }));
       
       // Dispatch a custom event to notify MetaTab components about the refresh
@@ -1234,44 +1239,34 @@ export default function DashboardPage() {
         
         if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
         const data = await response.json()
+        // FIX: Only update Shopify-specific metrics to prevent duplication, preserve Meta metrics
         setMetrics(prevMetrics => ({
           ...prevMetrics,
-          totalSales: data.totalSales ?? prevMetrics.totalSales,
-          salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
-          ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
-          ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
-          unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
-          unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
-          averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
-          aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
-          customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
-          retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
-          conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
-          conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
-          returnRate: data.returnRate ?? prevMetrics.returnRate,
-          returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
-          conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
-          ctr: data.ctr ?? prevMetrics.ctr,
-          ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
-          clicks: data.clicks ?? prevMetrics.clicks,
-          clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
-          impressions: data.impressions ?? prevMetrics.impressions,
-          impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
-          adSpend: data.adSpend ?? prevMetrics.adSpend,
-          adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
-          roas: data.roas ?? prevMetrics.roas,
-          roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
-          conversions: data.conversions ?? prevMetrics.conversions,
-          costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
-          cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
-          topProducts: data.topProducts ?? prevMetrics.topProducts,
-          revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
-          dailyData: data.dailyData ?? prevMetrics.dailyData,
-          customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
-          salesData: data.salesData ?? prevMetrics.salesData,
-          ordersData: data.ordersData ?? prevMetrics.ordersData,
-          aovData: data.aovData ?? prevMetrics.aovData,
-          unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
+          // Only update Shopify-specific metrics
+          totalSales: data.totalSales ?? 0,
+          salesGrowth: data.salesGrowth ?? 0,
+          ordersPlaced: data.ordersPlaced ?? 0,
+          ordersGrowth: data.ordersGrowth ?? 0,
+          unitsSold: data.unitsSold ?? 0,
+          unitsGrowth: data.unitsGrowth ?? 0,
+          averageOrderValue: data.averageOrderValue ?? 0,
+          aovGrowth: data.aovGrowth ?? 0,
+          customerRetentionRate: data.customerRetentionRate ?? 0,
+          retentionGrowth: data.retentionGrowth ?? 0,
+          conversionRate: data.conversionRate ?? 0,
+          conversionGrowth: data.conversionGrowth ?? 0,
+          returnRate: data.returnRate ?? 0,
+          returnGrowth: data.returnGrowth ?? 0,
+          conversionRateGrowth: data.conversionRateGrowth ?? 0,
+          topProducts: data.topProducts ?? [],
+          revenueByDay: data.revenueByDay ?? [],
+          customerSegments: data.customerSegments ?? { newCustomers: 0, returningCustomers: 0 },
+          salesData: data.salesData ?? [],
+          ordersData: data.ordersData ?? [],
+          aovData: data.aovData ?? [],
+          unitsSoldData: data.unitsSoldData ?? [],
+          // Preserve existing Meta metrics - don't overwrite with Shopify data
+          // adSpend, roas, impressions, clicks, etc. are preserved from previous state
         }))
         
         // Dispatch event to notify components of fresh data
@@ -1497,11 +1492,33 @@ export default function DashboardPage() {
           const data = await response.json();
           // console.log('[Dashboard] Refreshed Shopify metrics:', data);
           
-          // Update metrics state to show the refreshed data
+          // FIX: Update only Shopify metrics to prevent duplication
           if (!cancelled) {
             setMetrics(prevMetrics => ({
               ...prevMetrics,
-              ...data
+              // Only update Shopify-specific metrics, preserve Meta metrics
+              totalSales: data.totalSales ?? prevMetrics.totalSales,
+              salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
+              ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
+              ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
+              unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
+              unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
+              averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
+              aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
+              customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
+              retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
+              conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
+              conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
+              returnRate: data.returnRate ?? prevMetrics.returnRate,
+              returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
+              topProducts: data.topProducts ?? prevMetrics.topProducts,
+              revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
+              customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
+              salesData: data.salesData ?? prevMetrics.salesData,
+              ordersData: data.ordersData ?? prevMetrics.ordersData,
+              aovData: data.aovData ?? prevMetrics.aovData,
+              unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData,
+              // Preserve Meta metrics - don't overwrite them
             }));
           }
 
