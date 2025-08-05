@@ -418,14 +418,12 @@ export default function AdCreativeStudioPage() {
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings.agency_logo_url ? (
+              {agencySettings?.agency_logo_url && (
                 <img 
                   src={agencySettings.agency_logo_url} 
                   alt={`${agencySettings.agency_name} Logo`} 
                   className="w-12 h-12 object-contain rounded" 
                 />
-              ) : (
-                <Sparkles className="w-8 h-8 text-white/70" />
               )}
             </div>
           </div>
@@ -467,14 +465,12 @@ export default function AdCreativeStudioPage() {
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings.agency_logo_url ? (
+              {agencySettings?.agency_logo_url && (
                 <img 
                   src={agencySettings.agency_logo_url} 
                   alt={`${agencySettings.agency_name} Logo`} 
                   className="w-12 h-12 object-contain rounded" 
                 />
-              ) : (
-                <Building2 className="w-8 h-8 text-white/70" />
               )}
             </div>
           </div>
@@ -625,7 +621,7 @@ export default function AdCreativeStudioPage() {
                           uploadedImage 
                             ? 'hover:border-[#555] hover:shadow-2xl cursor-pointer' 
                             : 'opacity-50 cursor-not-allowed'
-                        }`}
+                        } h-fit`}
                         onClick={() => openStyleModal(style)}
                     >
                         <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
@@ -639,7 +635,7 @@ export default function AdCreativeStudioPage() {
                             }`}
                           />
                         </div>
-                        <div className="p-6">
+                        <div className="p-6 flex-shrink-0">
                           <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-gray-300 transition-colors">
                             {style.name}
                           </h4>
@@ -673,11 +669,11 @@ export default function AdCreativeStudioPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {generatedCreatives.map((creative) => (
                       <div
                         key={creative.id}
-                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden"
+                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden h-fit"
                       >
                         <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative">
                           {creative.status === 'generating' ? (
@@ -698,7 +694,7 @@ export default function AdCreativeStudioPage() {
                             </div>
                           )}
                         </div>
-                        <div className="p-4">
+                        <div className="p-4 flex-shrink-0">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-medium text-white text-sm">
                               {creative.style_name}
@@ -725,15 +721,15 @@ export default function AdCreativeStudioPage() {
                                 className="bg-gray-600/20 border-gray-600/30 text-gray-300 hover:bg-gray-600/30 px-2 py-1"
                               >
                                 <Trash2 className="w-3 h-3" />
-                        </Button>
-                            </div>
+                      </Button>
                           </div>
-                          <p className="text-gray-400 text-xs">
-                            {new Date(creative.created_at).toLocaleDateString()} at {new Date(creative.created_at).toLocaleTimeString()}
-                          </p>
-                      </div>
+                        </div>
+                        <p className="text-gray-400 text-xs">
+                          {new Date(creative.created_at).toLocaleDateString()} at {new Date(creative.created_at).toLocaleTimeString()}
+                        </p>
                     </div>
-                  ))}
+                  </div>
+                ))})
                 </div>
                 )}
               </div>
@@ -741,373 +737,270 @@ export default function AdCreativeStudioPage() {
           </div>
           </div>
 
-        {/* Enhanced Style Customization Modal */}
+        {/* Completely Redesigned Modal */}
         {showStyleModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
-              {/* Header */}
-              <div className="p-6 border-b border-[#333] flex items-center justify-between">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              {/* Compact Header */}
+              <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-gray-500/20 to-gray-400/20 rounded-lg flex items-center justify-center border border-gray-500/30">
-                    <Sparkles className="w-5 h-5 text-gray-300" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-          <div>
-                    <h2 className="text-2xl font-bold text-white">Create Your Ad Creative</h2>
-                    <p className="text-gray-400 text-sm">Customize and generate your product image</p>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Generate Creative</h2>
+                    <p className="text-gray-400 text-xs">{modalStyle.name} Style</p>
                   </div>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowStyleModal(false)}
-                  className="bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] hover:text-white"
+                  className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               
-              <div className="p-8">
-                {/* Images Section - Side by Side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Original Image Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Upload className="w-5 h-5 text-gray-300" />
-                      <h3 className="text-lg font-semibold text-white">Your Product</h3>
-                    </div>
-                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
+              <div className="p-6 space-y-6">
+                {/* Compact Image Preview Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white text-sm font-medium flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Your Product
+                    </p>
+                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-lg overflow-hidden border border-[#333]">
                       {uploadedImageUrl ? (
-                        <img
-                          src={uploadedImageUrl}
-                          alt="Your product"
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={uploadedImageUrl} alt="Product" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="text-center">
-                          <ImageIcon className="w-16 h-16 mx-auto text-gray-500 mb-3" />
-                          <p className="text-gray-500 text-sm">No image uploaded</p>
+                        <div className="flex items-center justify-center h-full">
+                          <ImageIcon className="w-12 h-12 text-gray-500" />
                         </div>
                       )}
                     </div>
-                    {uploadedImage && (
-                      <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-white text-sm font-medium">Image Details</p>
-                            <p className="text-gray-400 text-xs">
-                              {uploadedImage.name} • {(uploadedImage.size / 1024 / 1024).toFixed(1)} MB
-                            </p>
-                          </div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        </div>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Style Preview Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <ImageIcon className="w-5 h-5 text-gray-300" />
-                      <h3 className="text-lg font-semibold text-white">Selected Style</h3>
-                    </div>
-                    
-                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
-                      <img
-                        src={modalStyle.thumbnail}
-                        alt={modalStyle.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
-                      <h4 className="text-white font-semibold mb-2">{modalStyle.name}</h4>
-                      <p className="text-gray-400 text-sm leading-relaxed">{modalStyle.description}</p>
+                  
+                  <div className="space-y-2">
+                    <p className="text-white text-sm font-medium flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4" />
+                      Background Style
+                    </p>
+                    <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-lg overflow-hidden border border-[#333]">
+                      <img src={modalStyle.thumbnail} alt={modalStyle.name} className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
 
-                {/* Style Selector - Only show if more than 1 option */}
+                {/* Style Options - Horizontal Row */}
                 {STYLE_OPTIONS.length > 1 && (
-                  <div className="mb-8">
-                    <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                  <div>
+                    <p className="text-white text-sm font-medium mb-3 flex items-center gap-2">
                       <Sparkles className="w-4 h-4" />
-                      Choose Style:
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      Choose Style
+                    </p>
+                    <div className="flex gap-3 overflow-x-auto pb-2">
                       {STYLE_OPTIONS.map((style) => (
                         <button
                           key={style.id}
                           onClick={() => setModalStyle(style)}
-                          className={`p-3 rounded-lg border transition-all duration-200 ${
+                          className={`flex-shrink-0 w-20 p-2 rounded-lg border transition-all duration-200 ${
                             modalStyle.id === style.id
-                              ? 'border-white bg-white/20 shadow-lg'
+                              ? 'border-white bg-white/10'
                               : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
                           }`}
                         >
-                          <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
-                            <img
-                              src={style.thumbnail}
-                              alt={style.name}
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded mb-1 overflow-hidden">
+                            <img src={style.thumbnail} alt={style.name} className="w-full h-full object-cover" />
                           </div>
-                          <p className="text-white text-xs font-medium">{style.name}</p>
+                          <p className="text-white text-[10px] font-medium leading-tight">{style.name}</p>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Configuration Section - Full Width Below Images */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Text Customization */}
-                  <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
-                    <h4 className="text-white font-semibold mb-6 flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Add Text Overlays
-                    </h4>
-                    
-                    {/* Top Text */}
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <label className="text-gray-300 text-sm block mb-3 font-medium">Top Text</label>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          {Object.entries(textPresets).map(([key, preset]) => (
-                            <button
-                              key={key}
-                              onClick={() => handlePresetSelect('top', key)}
-                              className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
-                                selectedTopPreset === key
-                                  ? 'border-white bg-white/20 text-white'
-                                  : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
-                              }`}
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        {/* Custom value input for customizable presets */}
-                        {selectedTopPreset && textPresets[selectedTopPreset as keyof typeof textPresets]?.customizable && (
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              placeholder={
-                                selectedTopPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
-                                selectedTopPreset === 'money' ? 'Enter amount (e.g., 10)' :
-                                'Enter custom text'
-                              }
-                              value={customValues.topValue}
-                              onChange={(e) => handleCustomValueChange('top', e.target.value)}
-                              className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Color Selection for Top Text */}
-                        {customText.top && (
-                          <div className="mb-3">
-                            <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
-                            <div className="grid grid-cols-5 gap-2">
-                              {colorOptions.map((color) => (
-                                <button
-                                  key={color.value}
-                                  onClick={() => setTextColors(prev => ({ ...prev, top: color.value }))}
-                                  className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
-                                    textColors.top === color.value
-                                      ? 'border-white scale-110'
-                                      : 'border-gray-600 hover:border-gray-400'
-                                  }`}
-                                  style={{ backgroundColor: color.value }}
-                                  title={color.name}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Preview */}
-                        <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
-                          <p className="text-white text-sm">
-                            Preview: <span style={{ color: textColors.top }}>{customText.top || 'No text selected'}</span>
-                          </p>
-                        </div>
+                {/* Compact Text Controls */}
+                <div className="bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Text Overlays
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Top Text Column */}
+                    <div className="space-y-3">
+                      <label className="text-gray-300 text-xs font-medium">Top Text</label>
+                      <div className="grid grid-cols-2 gap-1">
+                        {Object.entries(textPresets).slice(0, 6).map(([key, preset]) => (
+                          <button
+                            key={key}
+                            onClick={() => handlePresetSelect('top', key)}
+                            className={`px-2 py-1 text-[10px] rounded border transition-all ${
+                              selectedTopPreset === key
+                                ? 'border-white bg-white/20 text-white'
+                                : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555]'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
                       </div>
-                    </div>
-
-                    {/* Bottom Text */}
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <label className="text-gray-300 text-sm block mb-3 font-medium">Bottom Text</label>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          {Object.entries(textPresets).map(([key, preset]) => (
-                            <button
-                              key={key}
-                              onClick={() => handlePresetSelect('bottom', key)}
-                              className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
-                                selectedBottomPreset === key
-                                  ? 'border-white bg-white/20 text-white'
-                                  : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
-                              }`}
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        {/* Custom value input for customizable presets */}
-                        {selectedBottomPreset && textPresets[selectedBottomPreset as keyof typeof textPresets]?.customizable && (
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              placeholder={
-                                selectedBottomPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
-                                selectedBottomPreset === 'money' ? 'Enter amount (e.g., 10)' :
-                                'Enter custom text'
-                              }
-                              value={customValues.bottomValue}
-                              onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
-                              className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Color Selection for Bottom Text */}
-                        {customText.bottom && (
-                          <div className="mb-3">
-                            <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
-                            <div className="grid grid-cols-5 gap-2">
-                              {colorOptions.map((color) => (
-                                <button
-                                  key={color.value}
-                                  onClick={() => setTextColors(prev => ({ ...prev, bottom: color.value }))}
-                                  className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
-                                    textColors.bottom === color.value
-                                      ? 'border-white scale-110'
-                                      : 'border-gray-600 hover:border-gray-400'
-                                  }`}
-                                  style={{ backgroundColor: color.value }}
-                                  title={color.name}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Preview */}
-                        <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
-                          <p className="text-white text-sm">
-                            Preview: <span style={{ color: textColors.bottom }}>{customText.bottom || 'No text selected'}</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Clear buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedTopPreset('')
-                          setCustomText(prev => ({ ...prev, top: '' }))
-                          setCustomValues(prev => ({ ...prev, topValue: '' }))
-                          setTextColors(prev => ({ ...prev, top: '#FFFFFF' }))
-                        }}
-                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                      >
-                        Clear Top
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedBottomPreset('')
-                          setCustomText(prev => ({ ...prev, bottom: '' }))
-                          setCustomValues(prev => ({ ...prev, bottomValue: '' }))
-                          setTextColors(prev => ({ ...prev, bottom: '#FFFFFF' }))
-                        }}
-                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                      >
-                        Clear Bottom
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedTopPreset('')
-                          setSelectedBottomPreset('')
-                          setCustomText({ top: '', bottom: '' })
-                          setCustomValues({ topValue: '', bottomValue: '' })
-                          setTextColors({ top: '#FFFFFF', bottom: '#FFFFFF' })
-                        }}
-                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                      >
-                        Clear All
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Preview and Generate */}
-                  <div className="space-y-6">
-                    {/* Preview Info */}
-                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
-                      <h4 className="text-white font-semibold mb-3">What You'll Get:</h4>
-                      <ul className="space-y-2 text-sm text-gray-300">
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                          Your product with {modalStyle.name.toLowerCase()} background
-                        </li>
-                        {customText.top && (
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                            Top text: "<span style={{ color: textColors.top }}>{customText.top}</span>" in {colorOptions.find(c => c.value === textColors.top)?.name.toLowerCase() || 'white'}
-                          </li>
-                        )}
-                        {customText.bottom && (
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                            Bottom text: "<span style={{ color: textColors.bottom }}>{customText.bottom}</span>" in {colorOptions.find(c => c.value === textColors.bottom)?.name.toLowerCase() || 'white'}
-                          </li>
-                        )}
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                          Perfect positioning with professional layout
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                          High-quality image ready for ads and marketing
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Generate Button */}
-                    <Button
-                      disabled={!uploadedImage || isGenerating}
-                      className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white border-0 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                      onClick={generateImageFromModal}
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                          Generating Creative...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5 mr-2" />
-                          Generate Creative
-                        </>
+                      
+                      {selectedTopPreset && textPresets[selectedTopPreset as keyof typeof textPresets]?.customizable && (
+                        <input
+                          type="text"
+                          placeholder="Custom value"
+                          value={customValues.topValue}
+                          onChange={(e) => handleCustomValueChange('top', e.target.value)}
+                          className="w-full bg-[#333] border border-[#444] rounded px-2 py-1 text-white text-xs placeholder-gray-500 focus:border-gray-400 focus:outline-none"
+                        />
                       )}
-                    </Button>
-
-                    {!uploadedImage && (
-                      <div className="text-center p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg">
-                        <p className="text-gray-300 text-sm">
-                          Please upload a product image first
+                      
+                      {customText.top && (
+                        <div className="flex gap-1">
+                          {colorOptions.slice(0, 5).map((color) => (
+                            <button
+                              key={color.value}
+                              onClick={() => setTextColors(prev => ({ ...prev, top: color.value }))}
+                              className={`w-5 h-5 rounded border ${
+                                textColors.top === color.value ? 'border-white' : 'border-gray-600'
+                              }`}
+                              style={{ backgroundColor: color.value }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="bg-[#333] rounded px-2 py-1">
+                        <p className="text-[10px] text-gray-400">
+                          Preview: <span style={{ color: textColors.top }}>{customText.top || 'None'}</span>
                         </p>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Bottom Text Column */}
+                    <div className="space-y-3">
+                      <label className="text-gray-300 text-xs font-medium">Bottom Text</label>
+                      <div className="grid grid-cols-2 gap-1">
+                        {Object.entries(textPresets).slice(0, 6).map(([key, preset]) => (
+                          <button
+                            key={key}
+                            onClick={() => handlePresetSelect('bottom', key)}
+                            className={`px-2 py-1 text-[10px] rounded border transition-all ${
+                              selectedBottomPreset === key
+                                ? 'border-white bg-white/20 text-white'
+                                : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555]'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {selectedBottomPreset && textPresets[selectedBottomPreset as keyof typeof textPresets]?.customizable && (
+                        <input
+                          type="text"
+                          placeholder="Custom value"
+                          value={customValues.bottomValue}
+                          onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
+                          className="w-full bg-[#333] border border-[#444] rounded px-2 py-1 text-white text-xs placeholder-gray-500 focus:border-gray-400 focus:outline-none"
+                        />
+                      )}
+                      
+                      {customText.bottom && (
+                        <div className="flex gap-1">
+                          {colorOptions.slice(0, 5).map((color) => (
+                            <button
+                              key={color.value}
+                              onClick={() => setTextColors(prev => ({ ...prev, bottom: color.value }))}
+                              className={`w-5 h-5 rounded border ${
+                                textColors.bottom === color.value ? 'border-white' : 'border-gray-600'
+                              }`}
+                              style={{ backgroundColor: color.value }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="bg-[#333] rounded px-2 py-1">
+                        <p className="text-[10px] text-gray-400">
+                          Preview: <span style={{ color: textColors.bottom }}>{customText.bottom || 'None'}</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Clear Buttons Row */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedTopPreset('')
+                        setCustomText(prev => ({ ...prev, top: '' }))
+                        setCustomValues(prev => ({ ...prev, topValue: '' }))
+                        setTextColors(prev => ({ ...prev, top: '#FFFFFF' }))
+                      }}
+                      className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs px-3 py-1 h-7"
+                    >
+                      Clear Top
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedBottomPreset('')
+                        setCustomText(prev => ({ ...prev, bottom: '' }))
+                        setCustomValues(prev => ({ ...prev, bottomValue: '' }))
+                        setTextColors(prev => ({ ...prev, bottom: '#FFFFFF' }))
+                      }}
+                      className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs px-3 py-1 h-7"
+                    >
+                      Clear Bottom
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedTopPreset('')
+                        setSelectedBottomPreset('')
+                        setCustomText({ top: '', bottom: '' })
+                        setCustomValues({ topValue: '', bottomValue: '' })
+                        setTextColors({ top: '#FFFFFF', bottom: '#FFFFFF' })
+                      }}
+                      className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs px-3 py-1 h-7"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <div className="flex gap-4">
+                  <Button
+                    disabled={!uploadedImage || isGenerating}
+                    className="flex-1 bg-gradient-to-r from-white to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black border-0 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    onClick={generateImageFromModal}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Creative
+                      </>
+                    )}
+                  </Button>
+                  
+                  {!uploadedImage && (
+                    <div className="flex-1 flex items-center justify-center text-center py-3 bg-gray-500/10 border border-gray-500/20 rounded-lg">
+                      <p className="text-gray-400 text-sm">Upload a product image first</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
