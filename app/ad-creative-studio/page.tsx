@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -402,7 +402,7 @@ export default function AdCreativeStudioPage() {
   // Show loading state
   if (isLoadingPage || isLoadingAfterBrandSelection) {
     return (
-      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -450,7 +450,7 @@ export default function AdCreativeStudioPage() {
   // Show brand selection requirement if no brand is selected
   if (!selectedBrandId || !selectedBrand) {
     return (
-      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -515,7 +515,7 @@ export default function AdCreativeStudioPage() {
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                             flex items-center justify-center border border-white/10">
-                <Sparkles className="w-6 h-6 text-white" />
+                <Palette className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
@@ -607,46 +607,79 @@ export default function AdCreativeStudioPage() {
           <div className="p-6">
             {activeTab === 'create' ? (
               <div className="space-y-6">
-                                  {/* Bigger Style Gallery */}
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Background Styles
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {STYLE_OPTIONS.map((style) => (
-                    <div
-                      key={style.id}
-                        className={`bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group ${
-                          uploadedImage 
-                            ? 'hover:border-[#555] hover:shadow-2xl cursor-pointer' 
-                            : 'opacity-50 cursor-not-allowed'
-                        } h-fit`}
-                        onClick={() => openStyleModal(style)}
-                    >
-                        <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
-                        <img
-                          src={style.thumbnail}
-                          alt={style.name}
-                            className={`w-full h-full object-cover transition-all duration-300 ${
-                              uploadedImage 
-                                ? 'opacity-80 group-hover:opacity-100 group-hover:scale-105' 
-                                : 'opacity-30'
-                            }`}
-                          />
-                        </div>
-                        <div className="p-6 flex-shrink-0">
-                          <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-gray-300 transition-colors">
-                            {style.name}
-                          </h4>
-                          <p className="text-gray-400 text-sm leading-relaxed">
-                            {style.description}
-                          </p>
+                {!uploadedImage ? (
+                  // No Product Uploaded State
+                  <div className="text-center py-16">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#333] to-[#222] rounded-2xl flex items-center justify-center border-2 border-dashed border-[#444]">
+                        <Upload className="w-12 h-12 text-gray-400" />
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold text-white mb-3">Upload Your Product</h3>
+                      <p className="text-gray-400 mb-8 leading-relaxed">
+                        Get started by uploading a product image to transform with our AI-powered creative templates.
+                      </p>
+                      
+                      <div 
+                        className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-8 hover:border-[#555] transition-all duration-300 cursor-pointer group"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                      >
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center group-hover:from-white/10 group-hover:to-white/15 transition-all">
+                            <ImageIcon className="w-8 h-8 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-white font-semibold text-lg mb-1">Choose Product Image</p>
+                            <p className="text-gray-400 text-sm">PNG, JPG up to 10MB</p>
+                          </div>
+                          <Button className="bg-white hover:bg-gray-200 text-black border-0 mt-2">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Image
+                          </Button>
                         </div>
                       </div>
-                    ))}
+                      
+                      <div className="mt-8 text-center">
+                        <p className="text-gray-500 text-xs">
+                          Once uploaded, you'll be able to choose from our creative templates
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  // Product Uploaded - Show Templates
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                      <Palette className="w-5 h-5" />
+                      Creative Templates
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {STYLE_OPTIONS.map((style) => (
+                        <div
+                          key={style.id}
+                          className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit"
+                          onClick={() => openStyleModal(style)}
+                        >
+                          <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                            <img
+                              src={style.thumbnail}
+                              alt={style.name}
+                              className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                            />
+                          </div>
+                          <div className="p-6 flex-shrink-0">
+                            <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-gray-300 transition-colors">
+                              {style.name}
+                            </h4>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                              {style.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               // Generated Creatives Tab
