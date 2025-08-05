@@ -827,8 +827,8 @@ export default function AdCreativeStudioPage() {
             
             <div className="flex items-center gap-4">
             {/* Usage Limits Display */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px]">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
+              <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
                 <span className="text-xs text-gray-400">
                   Resets in {getDaysUntilReset()}d
@@ -891,10 +891,10 @@ export default function AdCreativeStudioPage() {
             
             {/* Product Upload Widget */}
             <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px] cursor-pointer hover:border-white/20 transition-all duration-300"
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
                 onClick={() => document.getElementById('image-upload')?.click()}
               >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
                 <span className="text-xs text-gray-400">
                   {uploadedImageUrl ? 'Click to change' : 'Upload now'}
@@ -954,8 +954,8 @@ export default function AdCreativeStudioPage() {
             </div>
             
             {/* Beta Notice Widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px]">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
+              <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">STATUS</span>
                 <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                 </div>
