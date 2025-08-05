@@ -15,7 +15,55 @@ interface StyleOption {
   description: string
   thumbnail: string
   prompt: string
+  category: string
+  goodFor: string
 }
+
+interface RetryIssue {
+  id: string
+  label: string
+  promptAddition: string
+}
+
+const RETRY_ISSUES: RetryIssue[] = [
+  {
+    id: 'distorted-text',
+    label: 'Distorted Text',
+    promptAddition: 'CRITICAL FIX: The previous generation had distorted or unclear text. Pay EXTRA attention to preserving all text elements with perfect clarity, readability, and positioning. Ensure all text, logos, and graphics are crystal clear and identical to the original image.'
+  },
+  {
+    id: 'distorted-graphics',
+    label: 'Distorted Graphics/Logo',
+    promptAddition: 'CRITICAL FIX: The previous generation had distorted graphics or logos. Pay EXTRA attention to preserving all graphic elements, logos, symbols, and visual designs with perfect clarity and positioning. Ensure all graphics remain identical to the original image.'
+  },
+  {
+    id: 'wrong-colors',
+    label: 'Wrong Colors',
+    promptAddition: 'CRITICAL FIX: The previous generation had incorrect colors. Pay EXTRA attention to preserving the exact colors of the clothing item, graphics, text, and all visual elements. Match colors PRECISELY to the original image.'
+  },
+  {
+    id: 'poor-positioning',
+    label: 'Poor Positioning',
+    promptAddition: 'CRITICAL FIX: The previous generation had poor positioning or sizing. Ensure the clothing item is properly centered, sized appropriately (85-90% of frame width), and positioned naturally with realistic fabric draping and contact points.'
+  },
+  {
+    id: 'artificial-look',
+    label: 'Too Artificial/AI-like',
+    promptAddition: 'CRITICAL FIX: The previous generation looked too artificial or AI-generated. Add more natural imperfections, realistic lighting variations, authentic fabric behavior, and natural surface textures to make it look like a genuine photograph.'
+  },
+  {
+    id: 'missing-details',
+    label: 'Missing Details',
+    promptAddition: 'CRITICAL FIX: The previous generation was missing important details from the original. Ensure ALL details, textures, patterns, small text, graphics, and visual elements from the original image are preserved and clearly visible.'
+  }
+]
+
+const TEMPLATE_CATEGORIES = [
+  { id: 'all', name: 'All Templates' },
+  { id: 'clothing', name: 'Clothing & Apparel' },
+  { id: 'accessories', name: 'Accessories' },
+  { id: 'products', name: 'Physical Products' }
+]
 
 const STYLE_OPTIONS: StyleOption[] = [
   {
@@ -23,6 +71,8 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Concrete Floor',
     description: 'Dark cracked concrete floor with industrial texture',
     thumbnail: 'https://i.imgur.com/ED4tpzf.png',
+    category: 'clothing',
+    goodFor: 'Clothing, apparel, streetwear',
     prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks, subtle stains, and natural imperfections - NOT a perfect pristine surface. Include slight dust particles, minor scuff marks, and natural wear patterns that make it look authentically used. The lighting should be soft but directional with subtle variations, casting realistic shadows under the clothing to show it\'s resting on the ground. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric sits - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand with natural imperfections. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in studio lighting conditions with natural inconsistencies. CRITICAL SIZING REQUIREMENTS: Make the clothing item as LARGE as possible while maintaining proper proportions - the garment should fill most of the frame width (85-90% of image width) and be prominently displayed. Only leave minimal equal spacing at top and bottom for text overlays when needed. The product should be the DOMINANT focal point, not tiny or undersized. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. SMALL TEXT PRESERVATION: Pay special attention to preserving small text like "PROJECT CAPRI" or brand names - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Center the product in portrait format with EQUAL spacing above and below for text overlays when needed - ensure top and bottom margins are perfectly balanced.'
   },
   {
@@ -30,6 +80,8 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'Black Background',
     description: 'Clean matte black background for dramatic contrast',
     thumbnail: 'https://i.imgur.com/TJO2Jmm.png',
+    category: 'clothing',
+    goodFor: 'Clothing, apparel, fashion items',
     prompt: 'Place this exact clothing item on a realistic matte black background, similar to professional product photography setups. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a deep matte black with subtle texture variations - NOT a perfect digital black but with natural imperfections like slight dust particles, minor surface variations, and realistic lighting gradients that make it look authentically photographed. The lighting should be professional but natural, with soft directional light that creates realistic shadows and highlights on the fabric. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric drapes - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface, showing genuine fabric physics. Maintain the natural folds, wrinkles, and garment proportions as if it was carefully placed by hand with natural imperfections. Include subtle ambient reflections and realistic light falloff on the black surface. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in a professional studio with natural lighting inconsistencies and fabric behavior. CRITICAL SIZING REQUIREMENTS: Make the clothing item as LARGE as possible while maintaining proper proportions - the garment should fill most of the frame width (85-90% of image width) and be prominently displayed. Only leave minimal equal spacing at top and bottom for text overlays when needed. The product should be the DOMINANT focal point, not tiny or undersized. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. SMALL TEXT PRESERVATION: Pay special attention to preserving small text like "PROJECT CAPRI" or brand names - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Center the product in portrait format with EQUAL spacing above and below for text overlays when needed - ensure top and bottom margins are perfectly balanced.'
   },
   {
@@ -37,6 +89,8 @@ const STYLE_OPTIONS: StyleOption[] = [
     name: 'White Background',
     description: 'Clean white background for minimal, professional look',
     thumbnail: 'https://i.imgur.com/zgCXJwr.png',
+    category: 'clothing',
+    goodFor: 'Clothing, apparel, e-commerce',
     prompt: 'Place this exact clothing item on a realistic matte white background, similar to high-end e-commerce product photography. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a soft matte white with subtle texture variations - NOT a perfect digital white but with natural imperfections like slight paper grain, minor surface variations, and realistic lighting gradients that make it look authentically photographed on a white backdrop. The lighting should be professional but natural, with soft even illumination that creates realistic shadows and subtle highlights on the fabric without being too harsh or artificial. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric sits - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface, showing genuine fabric physics and natural draping. Maintain the natural folds, wrinkles, and garment proportions as if it was carefully arranged by hand with natural imperfections. Include subtle cast shadows on the white surface that look naturally photographed. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in a professional studio with natural lighting variations and authentic fabric behavior. CRITICAL SIZING REQUIREMENTS: Make the clothing item as LARGE as possible while maintaining proper proportions - the garment should fill most of the frame width (85-90% of image width) and be prominently displayed. Only leave minimal equal spacing at top and bottom for text overlays when needed. The product should be the DOMINANT focal point, not tiny or undersized. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. SMALL TEXT PRESERVATION: Pay special attention to preserving small text like "PROJECT CAPRI" or brand names - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Center the product in portrait format with EQUAL spacing above and below for text overlays when needed - ensure top and bottom margins are perfectly balanced.'
   }
 ]
@@ -55,6 +109,7 @@ interface GeneratedCreative {
   metadata: any
   created_at: string
   updated_at: string
+  custom_name?: string
 }
 
 export default function AdCreativeStudioPage() {
@@ -120,6 +175,10 @@ export default function AdCreativeStudioPage() {
   const [isLoadingCreatives, setIsLoadingCreatives] = useState(false)
   const [showStyleModal, setShowStyleModal] = useState(false)
   const [modalStyle, setModalStyle] = useState<StyleOption>(STYLE_OPTIONS[0])
+  const [creativeName, setCreativeName] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [showRetryModal, setShowRetryModal] = useState(false)
+  const [retryCreativeId, setRetryCreativeId] = useState('')
 
   // Load creative generations from database when brand changes
   useEffect(() => {
@@ -234,8 +293,98 @@ export default function AdCreativeStudioPage() {
       return
     }
     setModalStyle(style)
+    setCreativeName('')
     setShowStyleModal(true)
   }
+
+  const openRetryModal = (creativeId: string) => {
+    setRetryCreativeId(creativeId)
+    setShowRetryModal(true)
+  }
+
+  const generateDefaultName = () => {
+    const brandName = selectedBrand?.name || 'Brand'
+    const existingCount = generatedCreatives.filter(c => 
+      c.custom_name?.startsWith(brandName) || 
+      c.style_name.includes(brandName)
+    ).length
+    return `${brandName} Creative ${existingCount + 1}`
+  }
+
+  const retryCreativeWithIssue = async (issueId: string) => {
+    const creative = generatedCreatives.find(c => c.id === retryCreativeId)
+    if (!creative) return
+
+    const issue = RETRY_ISSUES.find(i => i.id === issueId)
+    if (!issue) return
+
+    // Find the original style
+    const style = STYLE_OPTIONS.find(s => s.id === creative.style_id)
+    if (!style) return
+
+    // Create enhanced prompt with retry fix
+    const enhancedPrompt = style.prompt + ' ' + issue.promptAddition + generateTextPromptAddition()
+
+    // Create new creative entry for retry
+    const newCreativeId = addCreative({
+      brand_id: selectedBrandId!,
+      user_id: user!.id,
+      style_id: style.id,
+      style_name: style.name,
+      original_image_url: creative.original_image_url,
+      generated_image_url: '',
+      prompt_used: enhancedPrompt,
+      text_overlays: creative.text_overlays,
+      status: 'generating',
+      metadata: { retryOf: creative.id, retryIssue: issueId },
+      updated_at: new Date().toISOString(),
+      custom_name: creative.custom_name
+    })
+
+    setShowRetryModal(false)
+    setActiveTab('generated')
+    toast.info(`Retrying generation with focus on: ${issue.label}`)
+
+    try {
+      // Use the original image from the creative
+      const response = await fetch('/api/generate-background', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: creative.original_image_url,
+          prompt: enhancedPrompt,
+          style: style.id,
+          brandId: selectedBrandId,
+          userId: user?.id,
+          styleName: style.name,
+          textOverlays: creative.text_overlays,
+          saveToDatabase: true,
+          customName: creative.custom_name
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        updateCreativeStatus(newCreativeId, 'failed')
+        toast.error(`Retry failed: ${errorData.error}`)
+        return
+      }
+
+      const data = await response.json()
+      updateCreativeStatus(newCreativeId, 'completed', data.imageUrl)
+      toast.success(`Retry successful! Issue addressed: ${issue.label}`)
+    } catch (error) {
+      console.error('Error retrying generation:', error)
+      updateCreativeStatus(newCreativeId, 'failed')
+      toast.error('Retry failed. Please try again.')
+    }
+  }
+
+  const filteredStyleOptions = selectedCategory === 'all' 
+    ? STYLE_OPTIONS 
+    : STYLE_OPTIONS.filter(style => style.category === selectedCategory)
 
   // Text preset functions
   const handlePresetSelect = (position: 'top' | 'bottom', presetKey: string) => {
@@ -323,7 +472,8 @@ export default function AdCreativeStudioPage() {
     // Generate enhanced prompt
     const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
 
-    // Create creative entry
+    // Create creative entry with custom name
+    const finalName = creativeName.trim() || generateDefaultName()
     const creativeId = addCreative({
       brand_id: selectedBrandId!,
       user_id: user!.id,
@@ -335,7 +485,8 @@ export default function AdCreativeStudioPage() {
       text_overlays: customText,
       status: 'generating',
       metadata: {},
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      custom_name: finalName
     })
 
     setIsGenerating(true)
@@ -385,7 +536,8 @@ export default function AdCreativeStudioPage() {
           userId: user?.id,
           styleName: modalStyle.name,
           textOverlays: { top: customText.top, bottom: customText.bottom },
-          saveToDatabase: true
+          saveToDatabase: true,
+          customName: finalName
         }),
       })
 
@@ -663,12 +815,31 @@ export default function AdCreativeStudioPage() {
                 ) : (
                   // Product Uploaded - Show Templates
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                      <Palette className="w-5 h-5" />
-                      Creative Templates
-                    </h3>
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Palette className="w-5 h-5" />
+                        Creative Templates
+                      </h3>
+                      
+                      {/* Category Filter */}
+                      <div className="flex gap-2">
+                        {TEMPLATE_CATEGORIES.map((category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => setSelectedCategory(category.id)}
+                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                              selectedCategory === category.id
+                                ? 'bg-white text-black'
+                                : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] border border-[#444]'
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {STYLE_OPTIONS.map((style) => (
+                      {filteredStyleOptions.map((style) => (
                         <div
                           key={style.id}
                           className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit"
@@ -682,9 +853,12 @@ export default function AdCreativeStudioPage() {
                             />
                           </div>
                           <div className="p-6 flex-shrink-0">
-                            <h4 className="font-semibold text-white text-lg mb-2 group-hover:text-gray-300 transition-colors">
+                            <h4 className="font-semibold text-white text-lg mb-1 group-hover:text-gray-300 transition-colors">
                               {style.name}
                             </h4>
+                            <p className="text-gray-500 text-xs mb-2">
+                              • {style.goodFor}
+                            </p>
                             <p className="text-gray-400 text-sm leading-relaxed">
                               {style.description}
                             </p>
@@ -743,23 +917,41 @@ export default function AdCreativeStudioPage() {
                         </div>
                         <div className="p-4 flex-shrink-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-white text-base">
-                              {creative.style_name}
-                            </h4>
+                            <div>
+                              <h4 className="font-medium text-white text-base">
+                                {creative.custom_name || creative.style_name}
+                              </h4>
+                              {creative.custom_name && (
+                                <p className="text-gray-400 text-sm">{creative.style_name}</p>
+                              )}
+                            </div>
                             <div className="flex gap-2">
                               {creative.status === 'completed' && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    const link = document.createElement('a')
-                                    link.href = creative.generated_image_url
-                                    link.download = `creative-${creative.id}.png`
-                                    link.click()
-                                  }}
-                                  className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-2 py-1"
-                                >
-                                  <Download className="w-3 h-3" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => openRetryModal(creative.id)}
+                                    className="bg-orange-600 hover:bg-orange-700 text-white border-0 px-2 py-1"
+                                    title="Retry with improvements"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a')
+                                      link.href = creative.generated_image_url
+                                      const fileName = creative.custom_name 
+                                        ? `${creative.custom_name.replace(/[^a-zA-Z0-9]/g, '_')}.png`
+                                        : `creative-${creative.id}.png`
+                                      link.download = fileName
+                                      link.click()
+                                    }}
+                                    className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-2 py-1"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                </>
                               )}
                               <Button
                                 size="sm"
@@ -1031,6 +1223,21 @@ export default function AdCreativeStudioPage() {
                   </div>
                 </div>
 
+                {/* Creative Name Input */}
+                <div className="bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3 text-sm">Creative Name (Optional)</h4>
+                  <input
+                    type="text"
+                    placeholder={`Default: ${generateDefaultName()}`}
+                    value={creativeName}
+                    onChange={(e) => setCreativeName(e.target.value)}
+                    className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none"
+                  />
+                  <p className="text-gray-500 text-xs mt-2">
+                    Custom name for your creative. Leave blank for auto-generated name.
+                  </p>
+                </div>
+
                 {/* Generate Button */}
                 <div className="flex gap-4">
                   <Button
@@ -1056,6 +1263,71 @@ export default function AdCreativeStudioPage() {
                       <p className="text-gray-400 text-sm">Upload a product image first</p>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Retry Issue Selection Modal */}
+        {showRetryModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500/20 to-orange-400/20 rounded-lg flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Retry Creative</h2>
+                    <p className="text-gray-400 text-xs">What went wrong?</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRetryModal(false)}
+                  className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="p-6">
+                <p className="text-gray-300 text-sm mb-4">
+                  Select what went wrong with the previous generation so we can fix it:
+                </p>
+                
+                <div className="space-y-3">
+                  {RETRY_ISSUES.map((issue) => (
+                    <button
+                      key={issue.id}
+                      onClick={() => retryCreativeWithIssue(issue.id)}
+                      className="w-full p-3 text-left bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg hover:border-[#555] hover:from-[#252525] hover:to-[#212121] transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-orange-400 rounded-full group-hover:bg-orange-300"></div>
+                        <div>
+                          <p className="text-white font-medium text-sm">{issue.label}</p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            {issue.id === 'distorted-text' && 'Text, logos, or graphics were unclear or distorted'}
+                            {issue.id === 'distorted-graphics' && 'Graphics, logos, or visual elements were distorted'}
+                            {issue.id === 'wrong-colors' && 'Colors didn\'t match the original product'}
+                            {issue.id === 'poor-positioning' && 'Product was poorly positioned or sized'}
+                            {issue.id === 'artificial-look' && 'Image looked too AI-generated or fake'}
+                            {issue.id === 'missing-details' && 'Important details were missing from the original'}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-[#333]">
+                  <p className="text-gray-500 text-xs text-center">
+                    We'll regenerate your creative with special focus on fixing the selected issue.
+                  </p>
                 </div>
               </div>
             </div>

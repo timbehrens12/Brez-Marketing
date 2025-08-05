@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
       generatedImageUrl,
       promptUsed,
       textOverlays,
-      metadata
+      metadata,
+      customName
     } = await req.json()
 
     if (!brandId || !userId || !styleId || !styleName || !originalImageUrl || !generatedImageUrl || !promptUsed) {
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
         text_overlays: textOverlays || {},
         status: 'completed',
         metadata: metadata || {},
+        custom_name: customName || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

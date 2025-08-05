@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
       userId, 
       styleName, 
       textOverlays,
-      saveToDatabase = false 
+      saveToDatabase = false,
+      customName
     } = await req.json()
 
     if (!image || !prompt) {
@@ -80,8 +81,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt, // Use the ACTUAL prompt with text overlays
         n: 1,
         size: "1024x1536", // Portrait for more vertical space for text
-        quality: "high", // Use highest supported quality for maximum detail preservation
-        input_fidelity: "high" // CRITICAL: High fidelity for exact product preservation like ChatGPT
+        quality: "high" // Use highest supported quality for maximum detail preservation
       })
       console.log('Portrait format succeeded!')
     } catch (portraitError: any) {
@@ -93,8 +93,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024", // Fallback to square
-        quality: "high", // Use highest supported quality for maximum detail preservation
-        input_fidelity: "high" // CRITICAL: High fidelity for exact product preservation like ChatGPT
+        quality: "high" // Use highest supported quality for maximum detail preservation
       })
       console.log('Square format fallback succeeded!')
     }
@@ -132,7 +131,6 @@ export async function POST(req: NextRequest) {
     console.log('   - Input image size:', base64Data.length, 'chars')
     console.log('   - Output image size:', generatedBase64.length, 'chars')
     console.log('   - Quality used: high')
-    console.log('   - Input fidelity: high (ChatGPT-level preservation)')
     console.log('   - Model: gpt-image-1')
     
     console.log('Image generated successfully with gpt-image-1!')
@@ -155,10 +153,10 @@ export async function POST(req: NextRequest) {
             prompt_used: prompt,
             text_overlays: textOverlays || {},
             status: 'completed',
+            custom_name: customName || null,
             metadata: {
               model_used: 'gpt-image-1',
               quality: 'high',
-              input_fidelity: 'high',
               size_ratio: (generatedBase64.length / base64Data.length).toFixed(2)
             },
             created_at: new Date().toISOString(),
