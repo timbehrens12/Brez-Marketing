@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
+import { Database } from '@/types/supabase'
 
 // Set timeout to 5 minutes for image generation
 export const maxDuration = 300
@@ -9,12 +11,33 @@ const openai = new OpenAI({
   timeout: 300000, // 5 minutes
 })
 
+// Create Supabase client for database operations
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+)
+
 export async function POST(req: NextRequest) {
   try {
-    const { image, prompt, style } = await req.json()
+    const { 
+      image, 
+      prompt, 
+      style, 
+      brandId, 
+      userId, 
+      styleName, 
+      textOverlays,
+      saveToDatabase = false 
+    } = await req.json()
 
     if (!image || !prompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // If saving to database, validate brand and user info
+    if (saveToDatabase && (!brandId || !userId)) {
+      return NextResponse.json({ error: 'Brand ID and User ID required for database save' }, { status: 400 })
     }
 
     // Extract base64 data and format for OpenAI
@@ -114,10 +137,54 @@ export async function POST(req: NextRequest) {
     
     console.log('Image generated successfully with gpt-image-1!')
 
+    // Save to database if requested
+    let creativeRecord = null
+    if (saveToDatabase) {
+      try {
+        console.log('💾 Saving creative generation to database...')
+        
+        const { data: creative, error: dbError } = await supabase
+          .from('creative_generations')
+          .insert({
+            brand_id: brandId,
+            user_id: userId,
+            style_id: style,
+            style_name: styleName || style,
+            original_image_url: image, // Store the original base64 image
+            generated_image_url: generatedImageUrl,
+            prompt_used: prompt,
+            text_overlays: textOverlays || {},
+            status: 'completed',
+            metadata: {
+              model_used: 'gpt-image-1',
+              quality: 'high',
+              input_fidelity: 'high',
+              size_ratio: (generatedBase64.length / base64Data.length).toFixed(2)
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (dbError) {
+          console.error('Error saving to database:', dbError)
+          // Don't fail the generation if database save fails
+        } else {
+          console.log('✅ Successfully saved creative generation with ID:', creative.id)
+          creativeRecord = creative
+        }
+      } catch (dbError) {
+        console.error('Error saving creative generation:', dbError)
+        // Don't fail the generation if database save fails
+      }
+    }
+
     return NextResponse.json({ 
       imageUrl: generatedImageUrl,
       style: style,
-      modelUsed: 'gpt-image-1'
+      modelUsed: 'gpt-image-1',
+      creative: creativeRecord // Include the database record if saved
     })
 
   } catch (error: any) {

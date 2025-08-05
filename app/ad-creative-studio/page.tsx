@@ -1,10 +1,12 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useBrandContext } from '@/lib/context/BrandContext'
+import { useUser } from '@clerk/nextjs'
 
 interface StyleOption {
   id: string
@@ -26,15 +28,25 @@ const STYLE_OPTIONS: StyleOption[] = [
 
 interface GeneratedCreative {
   id: string
-  originalImage: string
-  generatedImage: string
-  style: StyleOption
-  customText: { top: string; bottom: string }
-  createdAt: Date
+  brand_id: string
+  user_id: string
+  style_id: string
+  style_name: string
+  original_image_url: string
+  generated_image_url: string
+  prompt_used: string
+  text_overlays: any
   status: 'generating' | 'completed' | 'failed'
+  metadata: any
+  created_at: string
+  updated_at: string
 }
 
 export default function AdCreativeStudioPage() {
+  // Brand context
+  const { selectedBrand, selectedBrandId } = useBrandContext()
+  const { user } = useUser()
+  
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -88,8 +100,41 @@ export default function AdCreativeStudioPage() {
   // New state for tabs and creatives
   const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
   const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
+  const [isLoadingCreatives, setIsLoadingCreatives] = useState(false)
   const [showStyleModal, setShowStyleModal] = useState(false)
   const [modalStyle, setModalStyle] = useState<StyleOption>(STYLE_OPTIONS[0])
+
+  // Load creative generations from database when brand changes
+  useEffect(() => {
+    const loadCreatives = async () => {
+      if (!selectedBrandId || !user?.id) {
+        setGeneratedCreatives([])
+        return
+      }
+
+      setIsLoadingCreatives(true)
+      try {
+        console.log('📚 Loading creatives for brand:', selectedBrandId)
+        const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch creatives')
+        }
+
+        const data = await response.json()
+        setGeneratedCreatives(data.creatives || [])
+        console.log('✅ Loaded', data.creatives?.length || 0, 'creatives')
+      } catch (error) {
+        console.error('Error loading creatives:', error)
+        toast.error('Failed to load previous creatives')
+        setGeneratedCreatives([])
+      } finally {
+        setIsLoadingCreatives(false)
+      }
+    }
+
+    loadCreatives()
+  }, [selectedBrandId, user?.id])
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -129,8 +174,30 @@ export default function AdCreativeStudioPage() {
     ))
   }
 
-  const deleteCreative = (id: string) => {
-    setGeneratedCreatives(prev => prev.filter(creative => creative.id !== id))
+  const deleteCreative = async (id: string) => {
+    if (!user?.id) {
+      toast.error('You must be logged in to delete creatives')
+      return
+    }
+
+    try {
+      console.log('🗑️ Deleting creative:', id)
+      
+      const response = await fetch(`/api/creative-generations?id=${id}&userId=${user.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete creative')
+      }
+
+      setGeneratedCreatives(prev => prev.filter(creative => creative.id !== id))
+      toast.success('Creative deleted successfully!')
+      console.log('✅ Creative deleted successfully')
+    } catch (error) {
+      console.error('Error deleting creative:', error)
+      toast.error('Failed to delete creative')
+    }
   }
 
   const openStyleModal = (style: StyleOption) => {
@@ -272,7 +339,12 @@ export default function AdCreativeStudioPage() {
         body: JSON.stringify({
           image: base64Image,
           prompt: enhancedPrompt,
-          style: modalStyle.id
+          style: modalStyle.id,
+          brandId: selectedBrandId,
+          userId: user?.id,
+          styleName: modalStyle.name,
+          textOverlays: { top: customText.top, bottom: customText.bottom },
+          saveToDatabase: true
         }),
       })
 
@@ -336,6 +408,39 @@ export default function AdCreativeStudioPage() {
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
             Building your personalized creative generation dashboard...
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show brand selection requirement if no brand is selected
+  if (!selectedBrandId || !selectedBrand) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center min-h-[80vh]">
+            <div className="text-center space-y-6 max-w-md">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center">
+                <Building2 className="w-10 h-10 text-gray-300" />
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-white">Select a Brand</h2>
+                <p className="text-gray-400 text-lg leading-relaxed">
+                  To use the Ad Creative Studio, you need to select a brand first. 
+                  This ensures your generated creatives are saved and organized by brand.
+                </p>
+                <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 border border-gray-600 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 text-amber-400 mb-2">
+                    <FlaskConical className="w-5 h-5" />
+                    <span className="font-semibold">Beta Feature</span>
+                  </div>
+                  <p className="text-gray-300 text-sm">
+                    The Ad Creative Studio is currently in beta. It may struggle with very small text and complex designs.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -522,7 +627,7 @@ export default function AdCreativeStudioPage() {
                             </div>
                           ) : creative.status === 'completed' ? (
                             <img
-                              src={creative.generatedImage}
+                              src={creative.generated_image_url}
                               alt="Generated creative"
                               className="w-full h-full object-cover"
                             />

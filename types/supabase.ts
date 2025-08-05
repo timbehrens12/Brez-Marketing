@@ -62,6 +62,53 @@ export type Database = {
           created_at?: string
         }
       }
+      creative_generations: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          style_id: string
+          style_name: string
+          original_image_url: string
+          generated_image_url: string
+          prompt_used: string
+          text_overlays: any
+          status: string
+          metadata: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          style_id: string
+          style_name: string
+          original_image_url: string
+          generated_image_url: string
+          prompt_used: string
+          text_overlays?: any
+          status?: string
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          style_id?: string
+          style_name?: string
+          original_image_url?: string
+          generated_image_url?: string
+          prompt_used?: string
+          text_overlays?: any
+          status?: string
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
