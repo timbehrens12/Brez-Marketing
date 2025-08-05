@@ -286,6 +286,11 @@ export default function AdCreativeStudioPage() {
         const data = await response.json()
         setGeneratedCreatives(data.creatives || [])
         console.log('✅ Loaded', data.creatives?.length || 0, 'creatives')
+        
+        // If we're on the generated tab and switched brands, ensure we stay on generated tab
+        if (activeTab === 'generated') {
+          setActiveTab('generated')
+        }
       } catch (error) {
         console.error('Error loading creatives:', error)
         toast.error('Failed to load previous creatives')
@@ -296,7 +301,7 @@ export default function AdCreativeStudioPage() {
     }
 
     loadCreatives()
-  }, [selectedBrandId, user?.id])
+  }, [selectedBrandId, user?.id, activeTab])
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -802,7 +807,7 @@ export default function AdCreativeStudioPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
-                <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
+                <p className="text-gray-300 mt-1">Create professional ad creatives with AI-powered styling and custom text overlays</p>
               </div>
             </div>
             
@@ -856,7 +861,11 @@ export default function AdCreativeStudioPage() {
                   <div className="text-gray-400 text-xs">
                     {WEEKLY_LIMIT - usageData.current} remaining
                   </div>
-                  {usagePercentage > 90 && (
+                  {usageData.current >= WEEKLY_LIMIT ? (
+                    <div className="text-red-400 text-xs font-medium">
+                      🚫 Limit Reached
+                    </div>
+                  ) : usagePercentage > 90 && (
                     <div className="text-red-400 text-xs font-medium">
                       ⚠️ Almost at limit
                     </div>
@@ -1476,11 +1485,19 @@ export default function AdCreativeStudioPage() {
                     {/* Generate Button */}
                 <div className="flex gap-4">
                     <Button
-                      disabled={!uploadedImage || isGenerating}
-                    className="flex-1 bg-gradient-to-r from-white to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black border-0 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                      disabled={!uploadedImage || isGenerating || usageData.current >= WEEKLY_LIMIT}
+                    className={`flex-1 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 ${
+                      usageData.current >= WEEKLY_LIMIT 
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-white to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
+                    } border-0`}
                       onClick={generateImageFromModal}
                     >
-                      {isGenerating ? (
+                      {usageData.current >= WEEKLY_LIMIT ? (
+                        <>
+                          🚫 Usage Limit Reached
+                        </>
+                      ) : isGenerating ? (
                         <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Generating...
@@ -1493,9 +1510,15 @@ export default function AdCreativeStudioPage() {
                       )}
                     </Button>
 
-                    {!uploadedImage && (
+                    {!uploadedImage && usageData.current < WEEKLY_LIMIT && (
                     <div className="flex-1 flex items-center justify-center text-center py-3 bg-gray-500/10 border border-gray-500/20 rounded-lg">
                       <p className="text-gray-400 text-sm">Upload a product image first</p>
+                      </div>
+                    )}
+                    
+                    {usageData.current >= WEEKLY_LIMIT && (
+                      <div className="flex-1 flex items-center justify-center text-center py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <p className="text-red-400 text-sm">Weekly limit reached • Resets in {getDaysUntilReset()} days</p>
                       </div>
                     )}
                   </div>
