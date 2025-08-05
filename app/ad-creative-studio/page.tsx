@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -785,7 +785,7 @@ export default function AdCreativeStudioPage() {
               <span className="font-semibold">Beta Feature</span>
             </div>
             <p className="text-gray-300 text-xs">
-              The Ad Creative Studio is currently in beta. It may struggle with very small text and complex designs.
+              The Ad Creative Studio is currently in beta. It may struggle with small text, tags, neck labels, and complex fine details.
             </p>
           </div>
         </div>
@@ -813,7 +813,7 @@ export default function AdCreativeStudioPage() {
             
             <div className="flex items-center gap-4">
             {/* Usage Limits Display */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
                 <span className="text-xs text-gray-400">
@@ -877,21 +877,21 @@ export default function AdCreativeStudioPage() {
             
             {/* Product Upload Widget */}
             <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px] cursor-pointer hover:border-white/20 transition-all duration-300"
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px] cursor-pointer hover:border-white/20 transition-all duration-300"
                 onClick={() => document.getElementById('image-upload')?.click()}
               >
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
                 <span className="text-xs text-gray-400">
                   {uploadedImageUrl ? 'Click to change' : 'Upload now'}
                 </span>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {uploadedImageUrl ? (
                   <>
-                    {/* Large Product Preview */}
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white/10">
+                    {/* Larger Product Preview */}
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-white/10">
                     <img 
                       src={uploadedImageUrl} 
                       alt="Uploaded product" 
@@ -912,8 +912,8 @@ export default function AdCreativeStudioPage() {
                 ) : (
                   <>
                     {/* Upload Icon */}
-                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    <div className="w-16 h-16 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
                     
                     {/* Upload Info */}
@@ -940,15 +940,15 @@ export default function AdCreativeStudioPage() {
             </div>
             
             {/* Beta Notice Widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] min-h-[120px]">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-300 text-xs font-medium">STATUS</span>
                 <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                 </div>
               
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center">
-                  <FlaskConical className="w-6 h-6 text-amber-400" />
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <FlaskConical className="w-8 h-8 text-amber-400" />
               </div>
                 
                 <div>
@@ -956,7 +956,7 @@ export default function AdCreativeStudioPage() {
                     Beta Version
                   </div>
                   <div className="text-gray-400 text-xs">
-                    May struggle with fine details
+                    May struggle with small text, tags & fine details
                   </div>
                 </div>
               </div>
@@ -1020,7 +1020,7 @@ export default function AdCreativeStudioPage() {
                           <div className="text-amber-400 text-sm font-medium">⚠️ Upload High-Quality Images</div>
                         </div>
                         <p className="text-gray-300 text-xs">
-                          Blurry or low-resolution images may cause text distortion and graphics quality issues in your final creative.
+                          Blurry or low-resolution images may cause text distortion, tag blurriness, and graphics quality issues in your final creative.
                         </p>
                       </div>
                       
@@ -1184,7 +1184,7 @@ export default function AdCreativeStudioPage() {
                                     className="bg-orange-600 hover:bg-orange-700 text-white border-0 px-2 py-1"
                                     title="Retry with improvements"
                                   >
-                                    <Plus className="w-3 h-3" />
+                                    <RotateCcw className="w-3 h-3" />
                                   </Button>
                                 <Button
                                   size="sm"
@@ -1545,7 +1545,7 @@ export default function AdCreativeStudioPage() {
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-orange-500/20 to-orange-400/20 rounded-lg flex items-center justify-center">
-                    <Plus className="w-4 h-4 text-orange-400" />
+                    <RotateCcw className="w-4 h-4 text-orange-400" />
       </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Retry Creative</h2>
