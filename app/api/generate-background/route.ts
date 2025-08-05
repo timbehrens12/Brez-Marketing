@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt, // Use the ACTUAL prompt with text overlays
         n: 1,
         size: "1024x1536", // Portrait for more vertical space for text
-        quality: "high", // Use highest available quality for better detail preservation
+        quality: "hd", // Use ultra-high quality for maximum detail preservation  
         input_fidelity: "high" // CRITICAL: High fidelity for exact product preservation like ChatGPT
       })
       console.log('Portrait format succeeded!')
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024", // Fallback to square
-        quality: "high", // Use highest available quality for better detail preservation
+        quality: "hd", // Use ultra-high quality for maximum detail preservation  
         input_fidelity: "high" // CRITICAL: High fidelity for exact product preservation like ChatGPT
       })
       console.log('Square format fallback succeeded!')

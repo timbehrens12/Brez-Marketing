@@ -262,6 +262,12 @@ export default function AdCreativeStudioPage() {
       }
       textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with EQUAL margins on all sides. Strong contrast, drop shadows, and outlines required for readability. NEVER cut off any letters. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
     }
+    // Add ULTRA-CRITICAL preservation instruction at the end
+    if (textAddition) {
+      textAddition += ' '
+    }
+    textAddition += 'ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way.'
+    
     return textAddition
   }
 
