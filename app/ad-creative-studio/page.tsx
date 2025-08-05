@@ -430,14 +430,26 @@ export default function AdCreativeStudioPage() {
     toast.info(`Retrying generation with focus on: ${issue.label}`)
 
     try {
-      // Use the original image from the creative
+      // Convert retry image to base64 if provided, otherwise use original
+      let imageToUse = creative.original_image_url
+      
+      if (retryImage) {
+        imageToUse = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            resolve(reader.result as string)
+          }
+          reader.readAsDataURL(retryImage)
+        })
+      }
+
       const response = await fetch('/api/generate-background', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: creative.original_image_url,
+          image: imageToUse,
           prompt: enhancedPrompt,
           style: style.id,
           brandId: selectedBrandId,
@@ -458,11 +470,13 @@ export default function AdCreativeStudioPage() {
 
       const data = await response.json()
       updateCreativeStatus(newCreativeId, 'completed', data.imageUrl)
-              incrementUsage() // Increment usage count on successful retry
-        toast.success(`Retry successful! Issue addressed: ${issue.label}`)
+      incrementUsage() // Increment usage count on successful retry
+      setRetryImage(null) // Clear retry image after successful generation
+      toast.success(`Retry successful! Issue addressed: ${issue.label}`)
     } catch (error) {
       console.error('Error retrying generation:', error)
       updateCreativeStatus(newCreativeId, 'failed')
+      setRetryImage(null) // Clear retry image on error
       toast.error('Retry failed. Please try again.')
     }
   }
@@ -594,17 +608,17 @@ export default function AdCreativeStudioPage() {
         reader.onload = () => {
           let result = reader.result as string
           
-          console.log('Retry image size:', retryImage.size, 'bytes')
-          console.log('Retry image type:', retryImage.type)
+          console.log('Uploaded image size:', uploadedImage.size, 'bytes')
+          console.log('Uploaded image type:', uploadedImage.type)
           console.log('Base64 length:', result.length)
           
-          if (retryImage.size < 500000) { // Less than 500KB
+          if (uploadedImage.size < 500000) { // Less than 500KB
             console.warn('⚠️  Image is quite small - consider uploading higher resolution for better detail preservation')
           }
           
           resolve(result)
         }
-        reader.readAsDataURL(retryImage)
+        reader.readAsDataURL(uploadedImage)
       })
 
       // Debug logging
@@ -1101,9 +1115,15 @@ export default function AdCreativeStudioPage() {
                       >
                         <div className="bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden relative rounded-lg">
                           {creative.status === 'generating' ? (
-                            <div className="flex flex-col items-center gap-3 py-8">
-                              <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-                              <p className="text-gray-300 text-sm font-medium">Generating...</p>
+                            <div className="flex flex-col items-center gap-4 py-12">
+                              <div className="w-12 h-12 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin"></div>
+                              <div className="text-center">
+                                <p className="text-white text-sm font-medium mb-1">Creating Your Ad Creative</p>
+                                <p className="text-gray-400 text-xs mb-2">Using AI to perfectly preserve your product...</p>
+                                <div className="text-amber-400 text-xs font-medium">
+                                  ⏱️ May take up to 2 minutes
+                                </div>
+                              </div>
                             </div>
                           ) : creative.status === 'completed' ? (
                             <img
@@ -1474,20 +1494,7 @@ export default function AdCreativeStudioPage() {
           </div>
       )}
 
-      {/* Generation Loading Modal */}
-      {isGenerating && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[9999999]" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 max-w-md mx-4 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin"></div>
-              <h3 className="text-xl font-bold text-white mb-2">Creating Your Ad Creative</h3>
-              <p className="text-gray-300 mb-3">Using AI to perfectly preserve your product...</p>
-              <div className="text-amber-400 text-sm font-medium mb-1">
-                ⏱️ May take up to 2 minutes
-              </div>
-              <p className="text-gray-500 text-xs">Please keep this tab open</p>
-            </div>
-          </div>
-        )}
+      {/* No full screen loading modal - loading will show in the widget */}
 
       {/* Retry Issue Selection Modal */}
       {showRetryModal && (
@@ -1507,7 +1514,10 @@ export default function AdCreativeStudioPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowRetryModal(false)}
+                  onClick={() => {
+                    setShowRetryModal(false)
+                    setRetryImage(null) // Clear retry image when closing modal
+                  }}
                   className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
                 >
                   <X className="w-4 h-4" />
