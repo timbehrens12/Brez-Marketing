@@ -188,18 +188,53 @@ export default function AdCreativeStudioPage() {
   // Weekly usage system - 10 generations per week (universal)
   const WEEKLY_LIMIT = 10
   const [usageData, setUsageData] = useState({
-    current: 3,
-    weekStartDate: '2024-01-29' // Monday start of current week
+    current: 0,
+    weekStartDate: ''
   })
+
+  // Get current Monday as week start
+  const getCurrentWeekStart = () => {
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Sunday = 0, Monday = 1
+    const monday = new Date(now)
+    monday.setDate(now.getDate() + mondayOffset)
+    return monday.toISOString().split('T')[0] // YYYY-MM-DD format
+  }
+
+  // Initialize usage data from localStorage
+  useEffect(() => {
+    const currentWeekStart = getCurrentWeekStart()
+    const stored = localStorage.getItem('ad-creative-usage')
+    
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // If it's a new week, reset usage
+      if (parsed.weekStartDate !== currentWeekStart) {
+        const newUsageData = { current: 0, weekStartDate: currentWeekStart }
+        setUsageData(newUsageData)
+        localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
+      } else {
+        setUsageData(parsed)
+      }
+    } else {
+      // First time, initialize
+      const newUsageData = { current: 0, weekStartDate: currentWeekStart }
+      setUsageData(newUsageData)
+      localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
+    }
+  }, [])
 
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to update usage count
   const incrementUsage = () => {
-    setUsageData(prev => ({
-      ...prev,
-      current: Math.min(prev.current + 1, WEEKLY_LIMIT)
-    }))
+    const newUsageData = {
+      ...usageData,
+      current: Math.min(usageData.current + 1, WEEKLY_LIMIT)
+    }
+    setUsageData(newUsageData)
+    localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
   }
 
   // Get progress color based on usage percentage
@@ -845,12 +880,7 @@ export default function AdCreativeStudioPage() {
                       <div className="text-gray-400 text-xs">
                         PNG/JPG • Up to 10MB
                       </div>
-                      <div className="text-amber-400 text-xs mt-1 font-medium">
-                        ⚠️ Use high-quality images
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        Blurry images may distort text/graphics
-                      </div>
+
                     </div>
                   </>
                 )}
@@ -935,9 +965,19 @@ export default function AdCreativeStudioPage() {
                       </div>
                       
                       <h3 className="text-2xl font-bold text-white mb-3">Upload Your Product</h3>
-                      <p className="text-gray-400 mb-8 leading-relaxed">
+                      <p className="text-gray-400 mb-4 leading-relaxed">
                         Get started by uploading a product image to transform with our AI-powered creative templates.
                       </p>
+                      
+                      {/* Quality Notice */}
+                      <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-3 mb-6">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-amber-400 text-sm font-medium">⚠️ Upload High-Quality Images</div>
+                        </div>
+                        <p className="text-gray-300 text-xs">
+                          Blurry or low-resolution images may cause text distortion and graphics quality issues in your final creative.
+                        </p>
+                      </div>
                       
                       <div 
                         className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-8 hover:border-[#555] transition-all duration-300 cursor-pointer group"
@@ -1131,7 +1171,7 @@ export default function AdCreativeStudioPage() {
 
         {/* Completely Redesigned Modal */}
         {showStyleModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               {/* Compact Header */}
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
@@ -1424,7 +1464,7 @@ export default function AdCreativeStudioPage() {
 
         {/* Generation Loading Modal */}
         {isGenerating && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[99999]">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[9999999]">
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 max-w-md mx-4 text-center">
               <div className="w-16 h-16 mx-auto mb-4 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin"></div>
               <h3 className="text-xl font-bold text-white mb-2">Creating Your Ad Creative</h3>
@@ -1439,7 +1479,7 @@ export default function AdCreativeStudioPage() {
 
         {/* Retry Issue Selection Modal */}
         {showRetryModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4">
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl">
               {/* Header */}
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
