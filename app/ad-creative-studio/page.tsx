@@ -184,6 +184,7 @@ export default function AdCreativeStudioPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [retryCreativeId, setRetryCreativeId] = useState('')
+  const [retryImage, setRetryImage] = useState<File | null>(null)
 
   // Weekly usage system - 10 generations per week (universal)
   const WEEKLY_LIMIT = 10
@@ -374,7 +375,15 @@ export default function AdCreativeStudioPage() {
 
   const openRetryModal = (creativeId: string) => {
     setRetryCreativeId(creativeId)
+    setRetryImage(null) // Reset retry image
     setShowRetryModal(true)
+  }
+
+  const handleRetryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      setRetryImage(file)
+    }
   }
 
   const generateDefaultName = () => {
@@ -388,7 +397,7 @@ export default function AdCreativeStudioPage() {
 
   const retryCreativeWithIssue = async (issueId: string) => {
     const creative = generatedCreatives.find(c => c.id === retryCreativeId)
-    if (!creative) return
+    if (!creative || !retryImage) return
 
     const issue = RETRY_ISSUES.find(i => i.id === issueId)
     if (!issue) return
@@ -585,17 +594,17 @@ export default function AdCreativeStudioPage() {
         reader.onload = () => {
           let result = reader.result as string
           
-          console.log('Original image size:', uploadedImage.size, 'bytes')
-          console.log('Original image type:', uploadedImage.type)
+          console.log('Retry image size:', retryImage.size, 'bytes')
+          console.log('Retry image type:', retryImage.type)
           console.log('Base64 length:', result.length)
           
-          if (uploadedImage.size < 500000) { // Less than 500KB
+          if (retryImage.size < 500000) { // Less than 500KB
             console.warn('⚠️  Image is quite small - consider uploading higher resolution for better detail preservation')
           }
           
           resolve(result)
         }
-        reader.readAsDataURL(uploadedImage)
+        reader.readAsDataURL(retryImage)
       })
 
       // Debug logging
@@ -757,8 +766,8 @@ export default function AdCreativeStudioPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
-        <div className="max-w-[1400px] mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <div className="flex items-center justify-between">
@@ -1169,34 +1178,34 @@ export default function AdCreativeStudioPage() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+          </div>
 
     {/* Completely Redesigned Modal */}
-    {showStyleModal && (
+        {showStyleModal && (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
           {/* Compact Header */}
           <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
-            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div>
+                  </div>
+          <div>
                 <h2 className="text-xl font-bold text-white">Generate Creative</h2>
                 <p className="text-gray-400 text-xs">{modalStyle.name} Style</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowStyleModal(false)}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStyleModal(false)}
               className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-          
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
           <div className="p-6 space-y-6">
                 {/* Compact Image Preview Row */}
                 <div className="grid grid-cols-2 gap-4">
@@ -1478,7 +1487,7 @@ export default function AdCreativeStudioPage() {
               <p className="text-gray-500 text-xs">Please keep this tab open</p>
             </div>
           </div>
-      )}
+        )}
 
       {/* Retry Issue Selection Modal */}
       {showRetryModal && (
@@ -1489,11 +1498,11 @@ export default function AdCreativeStudioPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-orange-500/20 to-orange-400/20 rounded-lg flex items-center justify-center">
                     <Plus className="w-4 h-4 text-orange-400" />
-                  </div>
+      </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Retry Creative</h2>
                     <p className="text-gray-400 text-xs">What went wrong?</p>
-                  </div>
+    </div>
                 </div>
                 <Button
                   variant="outline"
@@ -1506,6 +1515,41 @@ export default function AdCreativeStudioPage() {
               </div>
               
               <div className="p-6">
+                {/* Image Upload Section */}
+                <div className="mb-6 p-4 bg-gradient-to-br from-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg">
+                  <h3 className="text-white font-medium text-sm mb-3 flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Re-upload Product Image
+                  </h3>
+                  <p className="text-gray-400 text-xs mb-3">
+                    Upload the same product image used for the original creative
+                  </p>
+                  
+                  <div className="flex items-center gap-3">
+                    <label className="flex-1 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleRetryImageUpload}
+                        className="hidden"
+                      />
+                      <div className="p-3 bg-gradient-to-br from-[#2a2a2a] to-[#222] border border-[#444] rounded-lg hover:border-[#555] transition-colors text-center">
+                        <div className="flex items-center justify-center gap-2 text-gray-300">
+                          <Upload className="w-4 h-4" />
+                          <span className="text-sm">Choose Image</span>
+                        </div>
+                      </div>
+                    </label>
+                    
+                    {retryImage && (
+                      <div className="flex items-center gap-2 text-green-400">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-xs">{retryImage.name}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <p className="text-gray-300 text-sm mb-4">
                   Select what went wrong with the previous generation so we can fix it:
                 </p>
@@ -1514,8 +1558,12 @@ export default function AdCreativeStudioPage() {
                   {RETRY_ISSUES.map((issue) => (
                     <button
                       key={issue.id}
-                      onClick={() => retryCreativeWithIssue(issue.id)}
-                      className="w-full p-3 text-left bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg hover:border-[#555] hover:from-[#252525] hover:to-[#212121] transition-all duration-200 group"
+                      onClick={() => retryImage ? retryCreativeWithIssue(issue.id) : alert('Please upload the product image first!')}
+                      className={`w-full p-3 text-left bg-gradient-to-br from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg transition-all duration-200 group ${
+                        retryImage 
+                          ? 'hover:border-[#555] hover:from-[#252525] hover:to-[#212121] cursor-pointer' 
+                          : 'opacity-50 cursor-not-allowed'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-orange-400 rounded-full group-hover:bg-orange-300"></div>
