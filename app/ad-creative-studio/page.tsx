@@ -78,7 +78,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     thumbnail: 'https://i.imgur.com/ED4tpzf.png',
     category: 'clothing',
     goodFor: 'Clothing, apparel, streetwear',
-    prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks, subtle stains, and natural imperfections - NOT a perfect pristine surface. Include slight dust particles, minor scuff marks, and natural wear patterns that make it look authentically used. The lighting should be soft but directional with subtle variations, casting realistic shadows under the clothing to show it\'s resting on the ground. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric sits - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand with natural imperfections. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in studio lighting conditions with natural inconsistencies. CRITICAL SIZING REQUIREMENTS: Make the clothing item as LARGE as possible while maintaining proper proportions - the garment should fill most of the frame width (85-90% of image width) and be prominently displayed. Only leave minimal equal spacing at top and bottom for text overlays when needed. The product should be the DOMINANT focal point, not tiny or undersized. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. ULTRA-CRITICAL NO FAKE CONTENT RULE: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE. This includes: NO fake neck tags, NO fake brand names, NO fake size labels, NO fake care instructions, NO fake logos, NO fake text of any kind. SPECIFICALLY PROHIBITED: Never add "PROJECT CAPRI" or any other test brand names, never create fictional text on clothing. If the original clothing item is a plain garment with no visible tags, text, or graphics, then keep it completely plain. DO NOT add any fictional content whatsoever. SMALL TEXT PRESERVATION: Pay special attention to preserving any small text or brand names that actually exist in the original - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Center the product in portrait format with EQUAL spacing above and below for text overlays when needed - ensure top and bottom margins are perfectly balanced.'
+    prompt: 'Place this exact clothing item on a realistic concrete surface background, similar to the lighting and texture in high-end fashion editorials. The clothing should be laid flat with natural shadows around the edges to reflect realistic depth. The background should be a medium-toned concrete floor with visible cracks, subtle stains, and natural imperfections - NOT a perfect pristine surface. Include slight dust particles, minor scuff marks, and natural wear patterns that make it look authentically used. The lighting should be soft but directional with subtle variations, casting realistic shadows under the clothing to show it\'s resting on the ground. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric sits - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand with natural imperfections. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in studio lighting conditions with natural inconsistencies. CRITICAL SIZING REQUIREMENTS: Make the clothing item as LARGE as possible while maintaining proper proportions - the garment should fill most of the frame width (85-90% of image width) and be prominently displayed. Only leave minimal equal spacing at top and bottom for text overlays when needed. The product should be the DOMINANT focal point, not tiny or undersized. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. EXTREME BLUE COLOR ACCURACY: If the clothing contains ANY blue colors, tones, or blue-tinted elements, they MUST be preserved with EXACT color fidelity - do not shift hues, change saturation, or alter the blue tones in any way. Blue graphics, logos, or design elements must remain precisely the same shade and intensity. ANTI-DISTORTION PROTECTION: Do not warp, stretch, compress, or geometrically distort ANY part of the clothing - maintain perfect proportional accuracy and shape integrity throughout the entire garment. CRYSTAL-CLEAR TAG PRESERVATION: Any existing tags, neck labels, or brand text must be rendered with MAXIMUM clarity and sharpness - never blur, pixelate, or reduce the quality of existing text elements. ULTRA-CRITICAL NO FAKE CONTENT RULE: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE. This includes: NO fake neck tags, NO fake brand names, NO fake size labels, NO fake care instructions, NO fake logos, NO fake text of any kind. SPECIFICALLY PROHIBITED: Never add "PROJECT CAPRI" or any other test brand names, never create fictional text on clothing. If the original clothing item is a plain garment with no visible tags, text, or graphics, then keep it completely plain. DO NOT add any fictional content whatsoever. SMALL TEXT PRESERVATION: Pay special attention to preserving any small text or brand names that actually exist in the original - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Center the product in portrait format with EQUAL spacing above and below for text overlays when needed - ensure top and bottom margins are perfectly balanced.'
   },
   {
     id: 'black-background',
@@ -185,30 +185,20 @@ export default function AdCreativeStudioPage() {
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [retryCreativeId, setRetryCreativeId] = useState('')
 
-  // Usage tier definitions
-  const USAGE_TIERS = {
-    'Free': { limit: 20, color: 'from-gray-500/20 to-gray-400/20', textColor: 'text-gray-300', borderColor: 'border-gray-400/30' },
-    'Basic': { limit: 100, color: 'from-blue-500/20 to-cyan-500/20', textColor: 'text-blue-300', borderColor: 'border-blue-500/30' },
-    'Pro': { limit: 500, color: 'from-purple-500/20 to-blue-500/20', textColor: 'text-purple-300', borderColor: 'border-purple-500/30' },
-    'Enterprise': { limit: 2000, color: 'from-yellow-500/20 to-orange-500/20', textColor: 'text-yellow-300', borderColor: 'border-yellow-500/30' }
-  }
-
-  // Mock usage data - would come from API in real implementation
+  // Weekly usage system - 10 generations per week (universal)
+  const WEEKLY_LIMIT = 10
   const [usageData, setUsageData] = useState({
-    current: 87,
-    tier: 'Pro' as keyof typeof USAGE_TIERS,
-    resetDate: '2024-02-01'
+    current: 3,
+    weekStartDate: '2024-01-29' // Monday start of current week
   })
 
-  // Get tier info
-  const tierInfo = USAGE_TIERS[usageData.tier]
-  const usagePercentage = (usageData.current / tierInfo.limit) * 100
+  const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to update usage count
   const incrementUsage = () => {
     setUsageData(prev => ({
       ...prev,
-      current: Math.min(prev.current + 1, tierInfo.limit)
+      current: Math.min(prev.current + 1, WEEKLY_LIMIT)
     }))
   }
 
@@ -218,6 +208,16 @@ export default function AdCreativeStudioPage() {
     if (usagePercentage > 80) return '#f59e0b' // Amber
     if (usagePercentage > 60) return '#3b82f6' // Blue
     return '#10b981' // Green
+  }
+
+  // Calculate days until reset (next Monday)
+  const getDaysUntilReset = () => {
+    const today = new Date()
+    const nextMonday = new Date()
+    nextMonday.setDate(today.getDate() + (7 - today.getDay() + 1) % 7)
+    if (nextMonday <= today) nextMonday.setDate(nextMonday.getDate() + 7)
+    const diff = nextMonday.getTime() - today.getTime()
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
   }
 
   // Load creative generations from database when brand changes
@@ -484,7 +484,7 @@ export default function AdCreativeStudioPage() {
     if (textAddition) {
       textAddition += ' '
     }
-    textAddition += 'ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain.'
+    textAddition += 'ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Do not blur, distort, or alter any existing text elements. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters.'
     
     return textAddition
   }
@@ -511,8 +511,8 @@ export default function AdCreativeStudioPage() {
     }
 
     // Check usage limits
-    if (usageData.current >= tierInfo.limit) {
-      toast.error(`You've reached your ${usageData.tier} plan limit of ${tierInfo.limit} generations this month. Upgrade your plan to continue.`)
+    if (usageData.current >= WEEKLY_LIMIT) {
+      toast.error(`You've reached your weekly limit of ${WEEKLY_LIMIT} generations. Resets in ${getDaysUntilReset()} days.`)
       return
     }
 
@@ -740,9 +740,9 @@ export default function AdCreativeStudioPage() {
             {/* Usage Limits Display */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300 text-xs font-medium">MONTHLY USAGE</span>
-                <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${tierInfo.color} ${tierInfo.textColor} border ${tierInfo.borderColor}`}>
-                  {usageData.tier}
+                <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
+                <span className="text-xs text-gray-400">
+                  Resets in {getDaysUntilReset()}d
                 </span>
               </div>
               
@@ -782,10 +782,10 @@ export default function AdCreativeStudioPage() {
                 {/* Usage Stats */}
                 <div>
                   <div className="text-white font-semibold text-sm">
-                    {usageData.current} / {tierInfo.limit}
+                    {usageData.current} / {WEEKLY_LIMIT}
                   </div>
                   <div className="text-gray-400 text-xs">
-                    {tierInfo.limit - usageData.current} remaining
+                    {WEEKLY_LIMIT - usageData.current} remaining
                   </div>
                   {usagePercentage > 90 && (
                     <div className="text-red-400 text-xs font-medium">
@@ -796,34 +796,60 @@ export default function AdCreativeStudioPage() {
               </div>
             </div>
             
-            {/* Upload Section - Moved to Header */}
-            <div className="flex items-center gap-4">
-              <div 
-                className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
+            {/* Product Upload Widget */}
+            <div 
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px] cursor-pointer hover:border-white/20 transition-all duration-300"
+              onClick={() => document.getElementById('image-upload')?.click()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
+                <span className="text-xs text-gray-400">
+                  {uploadedImageUrl ? 'Click to change' : 'Upload now'}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-3">
                 {uploadedImageUrl ? (
                   <>
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Uploaded product" 
-                      className="w-12 h-12 rounded-lg object-cover border border-[#333]"
-                    />
+                    {/* Large Product Preview */}
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white/10">
+                      <img 
+                        src={uploadedImageUrl} 
+                        alt="Uploaded product" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    {/* Product Info */}
                     <div>
-                      <p className="text-sm font-medium text-white">Product Uploaded</p>
-                      <p className="text-xs text-gray-400">Click to change</p>
+                      <div className="text-white font-semibold text-sm">
+                        Product Uploaded
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        Ready for generation
+                      </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    <ImageIcon className="w-8 h-8 text-gray-500" />
+                    {/* Upload Icon */}
+                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    </div>
+                    
+                    {/* Upload Info */}
                     <div>
-                      <p className="text-sm font-medium text-white">Upload Product</p>
-                      <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
+                      <div className="text-white font-semibold text-sm">
+                        Upload Product
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        PNG/JPG • Up to 10MB
+                      </div>
                     </div>
                   </>
                 )}
               </div>
+              
               <input
                 id="image-upload"
                 type="file"
@@ -831,14 +857,28 @@ export default function AdCreativeStudioPage() {
                 onChange={handleImageUpload}
                 className="hidden"
               />
+            </div>
+            
+            {/* Beta Notice Widget */}
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[200px]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-300 text-xs font-medium">STATUS</span>
+                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+              </div>
               
-              {/* Beta Notice */}
-              <div className="bg-gradient-to-r from-gray-500/20 to-gray-400/20 border border-gray-400/30 rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                  <span className="text-gray-300 font-medium text-sm">BETA</span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <FlaskConical className="w-6 h-6 text-amber-400" />
                 </div>
-                <p className="text-gray-200/80 text-xs mt-1">May struggle with small text & fine details</p>
+                
+                <div>
+                  <div className="text-white font-semibold text-sm">
+                    Beta Version
+                  </div>
+                  <div className="text-gray-400 text-xs">
+                    May struggle with fine details
+                  </div>
+                </div>
               </div>
             </div>
           </div>
