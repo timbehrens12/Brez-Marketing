@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2 } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -156,20 +156,20 @@ export default function AdCreativeStudioPage() {
   const currentStyle = STYLE_OPTIONS[currentStyleIndex]
 
   // Functions for managing creatives
-  const addCreative = (creative: Omit<GeneratedCreative, 'id' | 'createdAt'>) => {
+  const addCreative = (creative: Omit<GeneratedCreative, 'id' | 'created_at'>) => {
     const newCreative: GeneratedCreative = {
       ...creative,
       id: Date.now().toString(),
-      createdAt: new Date()
+      created_at: new Date().toISOString()
     }
     setGeneratedCreatives(prev => [newCreative, ...prev])
     return newCreative.id
   }
 
-  const updateCreativeStatus = (id: string, status: GeneratedCreative['status'], generatedImage?: string) => {
+  const updateCreativeStatus = (id: string, status: GeneratedCreative['status'], generatedImageUrl?: string) => {
     setGeneratedCreatives(prev => prev.map(creative => 
       creative.id === id 
-        ? { ...creative, status, ...(generatedImage && { generatedImage }) }
+        ? { ...creative, status, ...(generatedImageUrl && { generated_image_url: generatedImageUrl }) }
         : creative
     ))
   }
@@ -288,11 +288,17 @@ export default function AdCreativeStudioPage() {
 
     // Create creative entry
     const creativeId = addCreative({
-      originalImage: uploadedImageUrl,
-      generatedImage: '',
-      style: modalStyle,
-      customText: customText,
-      status: 'generating'
+      brand_id: selectedBrandId!,
+      user_id: user!.id,
+      style_id: modalStyle.id,
+      style_name: modalStyle.name,
+      original_image_url: uploadedImageUrl,
+      generated_image_url: '',
+      prompt_used: enhancedPrompt,
+      text_overlays: customText,
+      status: 'generating',
+      metadata: {},
+      updated_at: new Date().toISOString()
     })
 
     setIsGenerating(true)
@@ -641,7 +647,7 @@ export default function AdCreativeStudioPage() {
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-medium text-white text-sm">
-                              {creative.style.name}
+                              {creative.style_name}
                             </h4>
                             <div className="flex gap-2">
                               {creative.status === 'completed' && (
@@ -649,7 +655,7 @@ export default function AdCreativeStudioPage() {
                                   size="sm"
                                   onClick={() => {
                                     const link = document.createElement('a')
-                                    link.href = creative.generatedImage
+                                    link.href = creative.generated_image_url
                                     link.download = `creative-${creative.id}.png`
                                     link.click()
                                   }}
@@ -669,7 +675,7 @@ export default function AdCreativeStudioPage() {
                             </div>
                           </div>
                           <p className="text-gray-400 text-xs">
-                            {creative.createdAt.toLocaleDateString()} at {creative.createdAt.toLocaleTimeString()}
+                            {new Date(creative.created_at).toLocaleDateString()} at {new Date(creative.created_at).toLocaleTimeString()}
                           </p>
                       </div>
                     </div>
