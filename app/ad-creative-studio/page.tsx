@@ -187,13 +187,13 @@ export default function AdCreativeStudioPage() {
       textAddition += ' CRITICAL REQUIREMENT - MUST ADD TEXT OVERLAYS: '
       if (customText.top) {
         const topColorName = colorOptions.find(c => c.value === textColors.top)?.name || 'white'
-        textAddition += `MANDATORY: Place "${customText.top}" text in the UPPER PORTION of the image, centered horizontally and well within image boundaries. Use large, bold, readable font. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). `
+        textAddition += `MANDATORY: Place "${customText.top}" text in the TOP 20% of the image, PERFECTLY CENTERED horizontally with equal spacing from left and right edges. The text must be PERFECTLY STRAIGHT and LEVEL (not tilted or wonky). Use large, bold, readable font that is EVENLY SPACED and SYMMETRICALLY POSITIONED. Make the text color ${topColorName.toLowerCase()} (${textColors.top}). Ensure text is PRECISELY ALIGNED and appears professional. `
       }
       if (customText.bottom) {
         const bottomColorName = colorOptions.find(c => c.value === textColors.bottom)?.name || 'white'
-        textAddition += `MANDATORY: Place "${customText.bottom}" text in the LOWER PORTION of the image, centered horizontally and well within image boundaries. Use large, bold, readable font. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). `
+        textAddition += `MANDATORY: Place "${customText.bottom}" text in the BOTTOM 20% of the image, PERFECTLY CENTERED horizontally with equal spacing from left and right edges. The text must be PERFECTLY STRAIGHT and LEVEL (not tilted or wonky). Use large, bold, readable font that is EVENLY SPACED and SYMMETRICALLY POSITIONED. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). Ensure text is PRECISELY ALIGNED and appears professional. `
       }
-      textAddition += 'CRITICAL: ALL TEXT must be COMPLETELY VISIBLE with margins from edges. Use the portrait format space effectively. Strong contrast, drop shadows, and outlines required. NEVER cut off any letters. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
+      textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with EQUAL margins on all sides. Strong contrast, drop shadows, and outlines required for readability. NEVER cut off any letters. DO NOT SKIP THE TEXT OVERLAYS - THEY ARE REQUIRED.'
     }
     return textAddition
   }
