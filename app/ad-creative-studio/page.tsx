@@ -1170,33 +1170,34 @@ export default function AdCreativeStudioPage() {
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Completely Redesigned Modal */}
-      {showStyleModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-              {/* Compact Header */}
-              <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-          <div>
-                    <h2 className="text-xl font-bold text-white">Generate Creative</h2>
-                    <p className="text-gray-400 text-xs">{modalStyle.name} Style</p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowStyleModal(false)}
-                  className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+    {/* Completely Redesigned Modal */}
+    {showStyleModal && (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+          {/* Compact Header */}
+          <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
-              
-              <div className="p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Generate Creative</h2>
+                <p className="text-gray-400 text-xs">{modalStyle.name} Style</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStyleModal(false)}
+              className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <div className="p-6 space-y-6">
                 {/* Compact Image Preview Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
