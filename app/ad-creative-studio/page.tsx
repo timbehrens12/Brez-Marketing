@@ -896,8 +896,8 @@ export default function AdCreativeStudioPage() {
               >
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
-                <span className="text-xs text-gray-400">
-                  {uploadedImageUrl ? 'Click to change' : 'Upload now'}
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  {uploadedImageUrl ? 'Change' : 'Upload'}
                 </span>
               </div>
               
