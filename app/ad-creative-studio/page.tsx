@@ -7,6 +7,7 @@ import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRigh
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
+import { useAgency } from "@/contexts/AgencyContext"
 
 interface StyleOption {
   id: string
@@ -46,6 +47,7 @@ export default function AdCreativeStudioPage() {
   // Brand context
   const { selectedBrand, selectedBrandId } = useBrandContext()
   const { user } = useUser()
+  const { agencySettings } = useAgency()
   
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
@@ -53,6 +55,7 @@ export default function AdCreativeStudioPage() {
   const [generatedImage, setGeneratedImage] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null)
   const [isLoadingPage, setIsLoadingPage] = useState(true)
+  const [isLoadingAfterBrandSelection, setIsLoadingAfterBrandSelection] = useState(false)
   const [currentStyleIndex, setCurrentStyleIndex] = useState(0)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
   const [customText, setCustomText] = useState({ top: '', bottom: '' })
@@ -143,6 +146,17 @@ export default function AdCreativeStudioPage() {
     }, 2000)
     return () => clearTimeout(timer)
   }, [])
+
+  // Handle brand selection loading
+  React.useEffect(() => {
+    if (selectedBrandId && !isLoadingPage) {
+      setIsLoadingAfterBrandSelection(true)
+      const timer = setTimeout(() => {
+        setIsLoadingAfterBrandSelection(false)
+      }, 1000) // Show loading for 1 second after brand selection
+      return () => clearTimeout(timer)
+    }
+  }, [selectedBrandId, isLoadingPage])
 
   // Carousel navigation functions
   const nextStyle = () => {
@@ -386,7 +400,7 @@ export default function AdCreativeStudioPage() {
   }
 
   // Show loading state
-  if (isLoadingPage) {
+  if (isLoadingPage || isLoadingAfterBrandSelection) {
     return (
       <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
         {/* Background pattern */}
@@ -404,7 +418,15 @@ export default function AdCreativeStudioPage() {
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white/70" />
+              {agencySettings.agency_logo_url ? (
+                <img 
+                  src={agencySettings.agency_logo_url} 
+                  alt={`${agencySettings.agency_name} Logo`} 
+                  className="w-12 h-12 object-contain rounded" 
+                />
+              ) : (
+                <Sparkles className="w-8 h-8 text-white/70" />
+              )}
             </div>
           </div>
           
@@ -415,7 +437,7 @@ export default function AdCreativeStudioPage() {
           
           {/* Dynamic loading phase */}
           <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
-            Initializing AI creative tools
+            {isLoadingAfterBrandSelection ? 'Loading creative tools...' : 'Initializing AI creative tools'}
           </p>
           
           {/* Subtle loading tip */}
@@ -430,30 +452,58 @@ export default function AdCreativeStudioPage() {
   // Show brand selection requirement if no brand is selected
   if (!selectedBrandId || !selectedBrand) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center min-h-[80vh]">
-            <div className="text-center space-y-6 max-w-md">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#1a1a1a] to-[#161616] rounded-full flex items-center justify-center border border-[#333]">
-                <Building2 className="w-10 h-10 text-gray-300" />
-              </div>
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white">Select a Brand</h2>
-                <p className="text-gray-400 text-lg leading-relaxed">
-                  To use the Ad Creative Studio, you need to select a brand first. 
-                  This ensures your generated creatives are saved and organized by brand.
-                </p>
-                <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#161616]/50 border border-[#333] rounded-lg p-4">
-                  <div className="flex items-center space-x-2 text-amber-400 mb-2">
-                    <FlaskConical className="w-5 h-5" />
-                    <span className="font-semibold">Beta Feature</span>
-                  </div>
-                  <p className="text-gray-300 text-sm">
-                    The Ad Creative Studio is currently in beta. It may struggle with very small text and complex designs.
-                  </p>
-                </div>
-              </div>
+      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Main icon - NO loading animation */}
+          <div className="w-20 h-20 mx-auto mb-8 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              {agencySettings.agency_logo_url ? (
+                <img 
+                  src={agencySettings.agency_logo_url} 
+                  alt={`${agencySettings.agency_name} Logo`} 
+                  className="w-12 h-12 object-contain rounded" 
+                />
+              ) : (
+                <Building2 className="w-8 h-8 text-white/70" />
+              )}
             </div>
+          </div>
+          
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Ad Creative Studio
+          </h1>
+          
+          {/* Brand selection message */}
+          <p className="text-xl text-gray-300 mb-6 font-medium min-h-[28px]">
+            Select a Brand to Continue
+          </p>
+          
+          {/* Description */}
+          <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            To use the Ad Creative Studio, you need to select a brand first. 
+            This ensures your generated creatives are saved and organized by brand.
+          </p>
+
+          {/* Beta notice */}
+          <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#161616]/50 border border-[#333] rounded-lg p-4">
+            <div className="flex items-center justify-center space-x-2 text-amber-400 mb-2">
+              <FlaskConical className="w-5 h-5" />
+              <span className="font-semibold">Beta Feature</span>
+            </div>
+            <p className="text-gray-300 text-xs">
+              The Ad Creative Studio is currently in beta. It may struggle with very small text and complex designs.
+            </p>
           </div>
         </div>
       </div>
@@ -476,13 +526,51 @@ export default function AdCreativeStudioPage() {
                 <p className="text-gray-300 mt-1">Upload your product image and transform it with AI-powered backgrounds</p>
               </div>
             </div>
-            {/* Beta Notice */}
-            <div className="bg-gradient-to-r from-gray-500/20 to-gray-400/20 border border-gray-400/30 rounded-lg px-4 py-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                <span className="text-gray-300 font-medium text-sm">BETA</span>
+            
+            {/* Upload Section - Moved to Header */}
+            <div className="flex items-center gap-4">
+              <div 
+                className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
+                onClick={() => document.getElementById('image-upload')?.click()}
+              >
+                {uploadedImageUrl ? (
+                  <>
+                    <img 
+                      src={uploadedImageUrl} 
+                      alt="Uploaded product" 
+                      className="w-12 h-12 rounded-lg object-cover border border-[#333]"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-white">Product Uploaded</p>
+                      <p className="text-xs text-gray-400">Click to change</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="w-8 h-8 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium text-white">Upload Product</p>
+                      <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
+                    </div>
+                  </>
+                )}
               </div>
-              <p className="text-gray-200/80 text-xs mt-1">May struggle with small text & fine details</p>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              
+              {/* Beta Notice */}
+              <div className="bg-gradient-to-r from-gray-500/20 to-gray-400/20 border border-gray-400/30 rounded-lg px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                  <span className="text-gray-300 font-medium text-sm">BETA</span>
+                </div>
+                <p className="text-gray-200/80 text-xs mt-1">May struggle with small text & fine details</p>
+              </div>
             </div>
           </div>
         </div>
@@ -523,47 +611,6 @@ export default function AdCreativeStudioPage() {
           <div className="p-6">
             {activeTab === 'create' ? (
               <div className="space-y-6">
-          {/* Upload Section */}
-                <div className="flex items-center gap-6 p-4 bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Upload className="w-5 h-5 text-white" />
-                    <h2 className="text-lg font-semibold text-white">Upload Product</h2>
-                  </div>
-                  <div 
-                    className="border-2 border-dashed border-[#444] rounded-lg p-3 hover:border-[#555] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white/[0.02] to-white/[0.05] flex items-center gap-3"
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                >
-                  {uploadedImageUrl ? (
-                      <>
-                      <img 
-                        src={uploadedImageUrl} 
-                        alt="Uploaded product" 
-                          className="w-12 h-12 rounded-lg object-cover border border-[#333]"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-white">Product Uploaded</p>
-                          <p className="text-xs text-gray-400">Click to change</p>
-                    </div>
-                      </>
-                  ) : (
-                      <>
-                        <ImageIcon className="w-8 h-8 text-gray-500" />
-                      <div>
-                          <p className="text-sm font-medium text-white">Drop image here or click</p>
-                          <p className="text-xs text-gray-400">PNG/JPG • Up to 10MB</p>
-                      </div>
-                      </>
-                  )}
-                </div>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                </div>
-
                                   {/* Bigger Style Gallery */}
                 <div>
                   <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -720,7 +767,8 @@ export default function AdCreativeStudioPage() {
               </div>
               
               <div className="p-8">
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Images Section - Side by Side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                   {/* Original Image Section */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
@@ -757,10 +805,10 @@ export default function AdCreativeStudioPage() {
                   </div>
 
                   {/* Style Preview Section */}
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
                       <ImageIcon className="w-5 h-5 text-gray-300" />
-                      <h3 className="text-lg font-semibold text-white">Style Preview</h3>
+                      <h3 className="text-lg font-semibold text-white">Selected Style</h3>
                     </div>
                     
                     <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded-xl flex items-center justify-center overflow-hidden border border-[#333] shadow-lg">
@@ -775,235 +823,233 @@ export default function AdCreativeStudioPage() {
                       <h4 className="text-white font-semibold mb-2">{modalStyle.name}</h4>
                       <p className="text-gray-400 text-sm leading-relaxed">{modalStyle.description}</p>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Style Selector - Only show if more than 1 option */}
-                    {STYLE_OPTIONS.length > 1 && (
+                {/* Style Selector - Only show if more than 1 option */}
+                {STYLE_OPTIONS.length > 1 && (
+                  <div className="mb-8">
+                    <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Choose Style:
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {STYLE_OPTIONS.map((style) => (
+                        <button
+                          key={style.id}
+                          onClick={() => setModalStyle(style)}
+                          className={`p-3 rounded-lg border transition-all duration-200 ${
+                            modalStyle.id === style.id
+                              ? 'border-white bg-white/20 shadow-lg'
+                              : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
+                          }`}
+                        >
+                          <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
+                            <img
+                              src={style.thumbnail}
+                              alt={style.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <p className="text-white text-xs font-medium">{style.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Configuration Section - Full Width Below Images */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Text Customization */}
+                  <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                    <h4 className="text-white font-semibold mb-6 flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add Text Overlays
+                    </h4>
+                    
+                    {/* Top Text */}
+                    <div className="space-y-4 mb-6">
                       <div>
-                        <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4" />
-                          Choose Style:
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {STYLE_OPTIONS.map((style) => (
+                        <label className="text-gray-300 text-sm block mb-3 font-medium">Top Text</label>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          {Object.entries(textPresets).map(([key, preset]) => (
                             <button
-                              key={style.id}
-                              onClick={() => setModalStyle(style)}
-                              className={`p-3 rounded-lg border transition-all duration-200 ${
-                                modalStyle.id === style.id
-                                  ? 'border-white bg-white/20 shadow-lg'
-                                  : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
+                              key={key}
+                              onClick={() => handlePresetSelect('top', key)}
+                              className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
+                                selectedTopPreset === key
+                                  ? 'border-white bg-white/20 text-white'
+                                  : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
                               }`}
                             >
-                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] rounded overflow-hidden mb-2">
-                                <img
-                                  src={style.thumbnail}
-                                  alt={style.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <p className="text-white text-xs font-medium">{style.name}</p>
+                              {preset.label}
                             </button>
                           ))}
                         </div>
+                        
+                        {/* Custom value input for customizable presets */}
+                        {selectedTopPreset && textPresets[selectedTopPreset as keyof typeof textPresets]?.customizable && (
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              placeholder={
+                                selectedTopPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
+                                selectedTopPreset === 'money' ? 'Enter amount (e.g., 10)' :
+                                'Enter custom text'
+                              }
+                              value={customValues.topValue}
+                              onChange={(e) => handleCustomValueChange('top', e.target.value)}
+                              className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Color Selection for Top Text */}
+                        {customText.top && (
+                          <div className="mb-3">
+                            <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
+                            <div className="grid grid-cols-5 gap-2">
+                              {colorOptions.map((color) => (
+                                <button
+                                  key={color.value}
+                                  onClick={() => setTextColors(prev => ({ ...prev, top: color.value }))}
+                                  className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                                    textColors.top === color.value
+                                      ? 'border-white scale-110'
+                                      : 'border-gray-600 hover:border-gray-400'
+                                  }`}
+                                  style={{ backgroundColor: color.value }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Preview */}
+                        <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                          <p className="text-white text-sm">
+                            Preview: <span style={{ color: textColors.top }}>{customText.top || 'No text selected'}</span>
+                          </p>
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Bottom Text */}
+                    <div className="space-y-4 mb-6">
+                      <div>
+                        <label className="text-gray-300 text-sm block mb-3 font-medium">Bottom Text</label>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          {Object.entries(textPresets).map(([key, preset]) => (
+                            <button
+                              key={key}
+                              onClick={() => handlePresetSelect('bottom', key)}
+                              className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
+                                selectedBottomPreset === key
+                                  ? 'border-white bg-white/20 text-white'
+                                  : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {/* Custom value input for customizable presets */}
+                        {selectedBottomPreset && textPresets[selectedBottomPreset as keyof typeof textPresets]?.customizable && (
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              placeholder={
+                                selectedBottomPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
+                                selectedBottomPreset === 'money' ? 'Enter amount (e.g., 10)' :
+                                'Enter custom text'
+                              }
+                              value={customValues.bottomValue}
+                              onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
+                              className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Color Selection for Bottom Text */}
+                        {customText.bottom && (
+                          <div className="mb-3">
+                            <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
+                            <div className="grid grid-cols-5 gap-2">
+                              {colorOptions.map((color) => (
+                                <button
+                                  key={color.value}
+                                  onClick={() => setTextColors(prev => ({ ...prev, bottom: color.value }))}
+                                  className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                                    textColors.bottom === color.value
+                                      ? 'border-white scale-110'
+                                      : 'border-gray-600 hover:border-gray-400'
+                                  }`}
+                                  style={{ backgroundColor: color.value }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Preview */}
+                        <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                          <p className="text-white text-sm">
+                            Preview: <span style={{ color: textColors.bottom }}>{customText.bottom || 'No text selected'}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clear buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedTopPreset('')
+                          setCustomText(prev => ({ ...prev, top: '' }))
+                          setCustomValues(prev => ({ ...prev, topValue: '' }))
+                          setTextColors(prev => ({ ...prev, top: '#FFFFFF' }))
+                        }}
+                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                      >
+                        Clear Top
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedBottomPreset('')
+                          setCustomText(prev => ({ ...prev, bottom: '' }))
+                          setCustomValues(prev => ({ ...prev, bottomValue: '' }))
+                          setTextColors(prev => ({ ...prev, bottom: '#FFFFFF' }))
+                        }}
+                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                      >
+                        Clear Bottom
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedTopPreset('')
+                          setSelectedBottomPreset('')
+                          setCustomText({ top: '', bottom: '' })
+                          setCustomValues({ topValue: '', bottomValue: '' })
+                          setTextColors({ top: '#FFFFFF', bottom: '#FFFFFF' })
+                        }}
+                        className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Configuration & Generate Section */}
+                  {/* Preview and Generate */}
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Plus className="w-5 h-5 text-gray-300" />
-                      <h3 className="text-lg font-semibold text-white">Customize</h3>
-                    </div>
-
-                    {/* Text Overlay System */}
-                    <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
-                      <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add Text Overlays
-                      </h4>
-                      
-                      {/* Top Text */}
-                      <div className="space-y-4 mb-6">
-                        <div>
-                          <label className="text-gray-300 text-sm block mb-3 font-medium">Top Text</label>
-                          <div className="grid grid-cols-3 gap-2 mb-3">
-                            {Object.entries(textPresets).map(([key, preset]) => (
-                              <button
-                                key={key}
-                                onClick={() => handlePresetSelect('top', key)}
-                                className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
-                                  selectedTopPreset === key
-                                    ? 'border-white bg-white/20 text-white'
-                                    : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
-                                }`}
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Custom value input for customizable presets */}
-                          {selectedTopPreset && textPresets[selectedTopPreset as keyof typeof textPresets]?.customizable && (
-                            <div className="mb-3">
-                              <input
-                                type="text"
-                                placeholder={
-                                  selectedTopPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
-                                  selectedTopPreset === 'money' ? 'Enter amount (e.g., 10)' :
-                                  'Enter custom text'
-                                }
-                                value={customValues.topValue}
-                                onChange={(e) => handleCustomValueChange('top', e.target.value)}
-                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
-                              />
-                            </div>
-                          )}
-                          
-                          {/* Color Selection for Top Text */}
-                          {customText.top && (
-                            <div className="mb-3">
-                              <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
-                              <div className="grid grid-cols-5 gap-2">
-                                {colorOptions.map((color) => (
-                                  <button
-                                    key={color.value}
-                                    onClick={() => setTextColors(prev => ({ ...prev, top: color.value }))}
-                                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
-                                      textColors.top === color.value
-                                        ? 'border-white scale-110'
-                                        : 'border-gray-600 hover:border-gray-400'
-                                    }`}
-                                    style={{ backgroundColor: color.value }}
-                                    title={color.name}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Preview */}
-                          <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
-                            <p className="text-white text-sm">
-                              Preview: <span style={{ color: textColors.top }}>{customText.top || 'No text selected'}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bottom Text */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-gray-300 text-sm block mb-3 font-medium">Bottom Text</label>
-                          <div className="grid grid-cols-3 gap-2 mb-3">
-                            {Object.entries(textPresets).map(([key, preset]) => (
-                              <button
-                                key={key}
-                                onClick={() => handlePresetSelect('bottom', key)}
-                                className={`p-2 text-xs rounded-lg border transition-all duration-200 ${
-                                  selectedBottomPreset === key
-                                    ? 'border-white bg-white/20 text-white'
-                                    : 'border-[#444] bg-[#333] text-gray-300 hover:border-[#555] hover:bg-[#3a3a3a]'
-                                }`}
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Custom value input for customizable presets */}
-                          {selectedBottomPreset && textPresets[selectedBottomPreset as keyof typeof textPresets]?.customizable && (
-                            <div className="mb-3">
-                              <input
-                                type="text"
-                                placeholder={
-                                  selectedBottomPreset === 'percentage' ? 'Enter percentage (e.g., 25)' :
-                                  selectedBottomPreset === 'money' ? 'Enter amount (e.g., 10)' :
-                                  'Enter custom text'
-                                }
-                                value={customValues.bottomValue}
-                                onChange={(e) => handleCustomValueChange('bottom', e.target.value)}
-                                className="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:border-gray-400 focus:outline-none transition-colors"
-                              />
-                            </div>
-                          )}
-                          
-                          {/* Color Selection for Bottom Text */}
-                          {customText.bottom && (
-                            <div className="mb-3">
-                              <label className="text-gray-300 text-xs block mb-2 font-medium">Text Color</label>
-                              <div className="grid grid-cols-5 gap-2">
-                                {colorOptions.map((color) => (
-                                  <button
-                                    key={color.value}
-                                    onClick={() => setTextColors(prev => ({ ...prev, bottom: color.value }))}
-                                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
-                                      textColors.bottom === color.value
-                                        ? 'border-white scale-110'
-                                        : 'border-gray-600 hover:border-gray-400'
-                                    }`}
-                                    style={{ backgroundColor: color.value }}
-                                    title={color.name}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Preview */}
-                          <div className="bg-[#333] border border-[#444] rounded-lg px-3 py-2">
-                            <p className="text-white text-sm">
-                              Preview: <span style={{ color: textColors.bottom }}>{customText.bottom || 'No text selected'}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                                            {/* Clear buttons */}
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedTopPreset('')
-                            setCustomText(prev => ({ ...prev, top: '' }))
-                            setCustomValues(prev => ({ ...prev, topValue: '' }))
-                            setTextColors(prev => ({ ...prev, top: '#FFFFFF' }))
-                          }}
-                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                        >
-                          Clear Top
-                        </Button>
-                      <Button 
-                          size="sm"
-                          variant="outline"
-                        onClick={() => {
-                            setSelectedBottomPreset('')
-                            setCustomText(prev => ({ ...prev, bottom: '' }))
-                            setCustomValues(prev => ({ ...prev, bottomValue: '' }))
-                            setTextColors(prev => ({ ...prev, bottom: '#FFFFFF' }))
-                          }}
-                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                        >
-                          Clear Bottom
-                      </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedTopPreset('')
-                            setSelectedBottomPreset('')
-                            setCustomText({ top: '', bottom: '' })
-                            setCustomValues({ topValue: '', bottomValue: '' })
-                            setTextColors({ top: '#FFFFFF', bottom: '#FFFFFF' })
-                          }}
-                          className="bg-[#333] border-[#444] text-gray-300 hover:bg-[#3a3a3a] text-xs"
-                        >
-                          Clear All
-                      </Button>
-                      </div>
-                    </div>
-
                     {/* Preview Info */}
                     <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
                       <h4 className="text-white font-semibold mb-3">What You'll Get:</h4>
@@ -1033,7 +1079,7 @@ export default function AdCreativeStudioPage() {
                           High-quality image ready for ads and marketing
                         </li>
                       </ul>
-                  </div>
+                    </div>
 
                     {/* Generate Button */}
                     <Button
