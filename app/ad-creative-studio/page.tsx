@@ -758,7 +758,7 @@ export default function AdCreativeStudioPage() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6">
-      <div className="max-w-[1400px] mx-auto space-y-6">
+        <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <div className="flex items-center justify-between">
@@ -1169,11 +1169,11 @@ export default function AdCreativeStudioPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Modals */}
-        {/* Completely Redesigned Modal */}
-        {showStyleModal && (
-          <div className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+      {/* Completely Redesigned Modal */}
+      {showStyleModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               {/* Compact Header */}
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
@@ -1459,14 +1459,14 @@ export default function AdCreativeStudioPage() {
                       </div>
                     )}
                   </div>
+                </div>
               </div>
-            </div>
           </div>
-        )}
+      )}
 
-        {/* Generation Loading Modal */}
-        {isGenerating && (
-          <div className="fixed top-0 left-0 w-full h-full bg-black/90 backdrop-blur-xl flex items-center justify-center z-[9999999]">
+      {/* Generation Loading Modal */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[9999999]" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 max-w-md mx-4 text-center">
               <div className="w-16 h-16 mx-auto mb-4 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin"></div>
               <h3 className="text-xl font-bold text-white mb-2">Creating Your Ad Creative</h3>
@@ -1477,11 +1477,11 @@ export default function AdCreativeStudioPage() {
               <p className="text-gray-500 text-xs">Please keep this tab open</p>
             </div>
           </div>
-        )}
+      )}
 
-        {/* Retry Issue Selection Modal */}
-        {showRetryModal && (
-          <div className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4">
+      {/* Retry Issue Selection Modal */}
+      {showRetryModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl">
               {/* Header */}
               <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
@@ -1543,9 +1543,7 @@ export default function AdCreativeStudioPage() {
               </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+      )}
     </>
   )
 }
