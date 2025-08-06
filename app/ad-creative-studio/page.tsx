@@ -1950,21 +1950,21 @@ export default function AdCreativeStudioPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
+            <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f]">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg flex items-center justify-center">
-                  <Crop className="w-4 h-4 text-blue-400" />
+                <div className="w-8 h-8 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-lg flex items-center justify-center">
+                  <Crop className="w-4 h-4 text-gray-300" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">Crop Image</h2>
-                  <p className="text-gray-400 text-xs">Drag the corners and edges to crop</p>
+                  <p className="text-gray-400 text-xs">Drag the edges to adjust framing</p>
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCropModal(false)}
-                className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
+                className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0 transition-all duration-200"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -2035,56 +2035,75 @@ export default function AdCreativeStudioPage() {
 
                 {/* Crop Selection Area */}
                 <div 
-                  className="absolute border-2 border-blue-400 pointer-events-auto cursor-move"
+                  className="absolute border border-white/80 pointer-events-auto cursor-move group transition-all duration-200 hover:border-white"
                   style={{
                     left: `${cropArea.x}%`,
                     top: `${cropArea.y}%`,
                     width: `${cropArea.width}%`,
-                    height: `${cropArea.height}%`
+                    height: `${cropArea.height}%`,
+                    boxShadow: '0 0 0 1px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, 'move')}
                 >
-                  {/* Edge handles - middle of each side */}
+                  {/* Subtle corner indicators */}
+                  <div className="absolute w-3 h-3 border-l border-t border-white/60 top-1 left-1" />
+                  <div className="absolute w-3 h-3 border-r border-t border-white/60 top-1 right-1" />
+                  <div className="absolute w-3 h-3 border-l border-b border-white/60 bottom-1 left-1" />
+                  <div className="absolute w-3 h-3 border-r border-b border-white/60 bottom-1 right-1" />
+
+                  {/* Modern edge handles */}
                   {/* Top edge handle */}
                   <div 
-                    className="absolute w-6 h-2 bg-blue-400 border border-white cursor-ns-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ns-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
                     style={{
-                      top: '-4px',
+                      top: '-6px',
                       left: '50%',
-                      transform: 'translateX(-50%)'
+                      transform: 'translateX(-50%)',
+                      width: '40px',
+                      height: '4px',
+                      borderRadius: '2px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
                   
                   {/* Bottom edge handle */}
                   <div 
-                    className="absolute w-6 h-2 bg-blue-400 border border-white cursor-ns-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ns-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
                     style={{
-                      bottom: '-4px',
+                      bottom: '-6px',
                       left: '50%',
-                      transform: 'translateX(-50%)'
+                      transform: 'translateX(-50%)',
+                      width: '40px',
+                      height: '4px',
+                      borderRadius: '2px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
                   
                   {/* Left edge handle */}
                   <div 
-                    className="absolute w-2 h-6 bg-blue-400 border border-white cursor-ew-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ew-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
                     style={{
-                      left: '-4px',
+                      left: '-6px',
                       top: '50%',
-                      transform: 'translateY(-50%)'
+                      transform: 'translateY(-50%)',
+                      width: '4px',
+                      height: '40px',
+                      borderRadius: '2px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
                   
                   {/* Right edge handle */}
                   <div 
-                    className="absolute w-2 h-6 bg-blue-400 border border-white cursor-ew-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ew-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
                     style={{
-                      right: '-4px',
+                      right: '-6px',
                       top: '50%',
-                      transform: 'translateY(-50%)'
+                      transform: 'translateY(-50%)',
+                      width: '4px',
+                      height: '40px',
+                      borderRadius: '2px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
@@ -2098,14 +2117,14 @@ export default function AdCreativeStudioPage() {
                 <Button
                   variant="outline"
                   onClick={handleUndoCrop}
-                  className="flex-1 bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                  className="flex-1 bg-gray-800/50 border-gray-600/50 text-gray-300 hover:bg-gray-700/70 hover:border-gray-500 transition-all duration-200"
                 >
                   Undo Changes
                 </Button>
               )}
               <Button
                 onClick={handleApplyCrop}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0"
+                className="flex-1 bg-white hover:bg-gray-100 text-black border-0 font-medium transition-all duration-200 hover:shadow-lg"
               >
                 Apply Crop
               </Button>
