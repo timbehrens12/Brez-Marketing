@@ -473,13 +473,44 @@ export default function AdCreativeStudioPage() {
           return
         }
 
-        const { width, height } = img
+        // Get the container dimensions to calculate actual displayed image size
+        const container = document.querySelector('.crop-container') as HTMLElement
+        if (!container) {
+          reject(new Error('Container not found'))
+          return
+        }
+
+        const containerRect = container.getBoundingClientRect()
+        const imageAspect = img.naturalWidth / img.naturalHeight
+        const containerAspect = containerRect.width / containerRect.height
         
-        // Convert percentages to pixel values
-        const sourceX = (cropArea.x / 100) * width
-        const sourceY = (cropArea.y / 100) * height
-        const sourceWidth = (cropArea.width / 100) * width
-        const sourceHeight = (cropArea.height / 100) * height
+        let displayedWidth, displayedHeight, offsetX, offsetY
+        
+        if (imageAspect > containerAspect) {
+          // Image is wider - fit to container width
+          displayedWidth = containerRect.width
+          displayedHeight = containerRect.width / imageAspect
+          offsetX = 0
+          offsetY = (containerRect.height - displayedHeight) / 2
+        } else {
+          // Image is taller - fit to container height
+          displayedHeight = containerRect.height
+          displayedWidth = containerRect.height * imageAspect
+          offsetY = 0
+          offsetX = (containerRect.width - displayedWidth) / 2
+        }
+
+        // Convert crop percentages to actual image pixels
+        const cropX = ((cropArea.x / 100) * containerRect.width - offsetX) / displayedWidth
+        const cropY = ((cropArea.y / 100) * containerRect.height - offsetY) / displayedHeight
+        const cropWidth = (cropArea.width / 100) * containerRect.width / displayedWidth
+        const cropHeight = (cropArea.height / 100) * containerRect.height / displayedHeight
+
+        // Calculate source coordinates in original image
+        const sourceX = Math.max(0, cropX * img.naturalWidth)
+        const sourceY = Math.max(0, cropY * img.naturalHeight)
+        const sourceWidth = Math.min(img.naturalWidth - sourceX, cropWidth * img.naturalWidth)
+        const sourceHeight = Math.min(img.naturalHeight - sourceY, cropHeight * img.naturalHeight)
 
         canvas.width = sourceWidth
         canvas.height = sourceHeight
@@ -1979,7 +2010,7 @@ export default function AdCreativeStudioPage() {
             {/* Interactive Crop Area */}
             <div className="px-6 py-6">
               <div 
-                className="crop-container relative mx-auto bg-gray-900 rounded-lg overflow-hidden"
+                className="crop-container relative mx-auto bg-black rounded-lg overflow-hidden"
                 style={{ width: '810px', height: '675px' }}
               >
                 <img 
@@ -2060,58 +2091,62 @@ export default function AdCreativeStudioPage() {
                   <div className="absolute w-3 h-3 border-r border-b border-white/60 bottom-1 right-1" />
 
                   {/* Modern edge handles - All 4 sides */}
-                  {/* Top edge handle */}
+                  {/* Top edge handle - More visible */}
                   <div 
-                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ns-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
+                    className="absolute bg-white border-2 border-gray-800 cursor-ns-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
                     style={{
-                      top: '-8px',
+                      top: '-10px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '50px',
-                      height: '6px',
-                      borderRadius: '3px'
+                      width: '60px',
+                      height: '8px',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
                   
-                  {/* Bottom edge handle */}
+                  {/* Bottom edge handle - More visible */}
                   <div 
-                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ns-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
+                    className="absolute bg-white border-2 border-gray-800 cursor-ns-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
                     style={{
-                      bottom: '-8px',
+                      bottom: '-10px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '50px',
-                      height: '6px',
-                      borderRadius: '3px'
+                      width: '60px',
+                      height: '8px',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
                   
                   {/* Left edge handle */}
                   <div 
-                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ew-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
+                    className="absolute bg-white border-2 border-gray-800 cursor-ew-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
                     style={{
-                      left: '-8px',
+                      left: '-10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '6px',
-                      height: '50px',
-                      borderRadius: '3px'
+                      width: '8px',
+                      height: '60px',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
                   
                   {/* Right edge handle */}
                   <div 
-                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ew-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
+                    className="absolute bg-white border-2 border-gray-800 cursor-ew-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
                     style={{
-                      right: '-8px',
+                      right: '-10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '6px',
-                      height: '50px',
-                      borderRadius: '3px'
+                      width: '8px',
+                      height: '60px',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
