@@ -80,6 +80,15 @@ const TEMPLATE_CATEGORIES = [
   { id: 'products', name: 'Physical Products' }
 ]
 
+// Template base groups for carousel functionality  
+const TEMPLATE_BASE_GROUPS = [
+  'concrete-floor',
+  'black-background', 
+  'white-background',
+  'asphalt-surface',
+  'sidewalk-pavement'
+]
+
 const STYLE_OPTIONS: StyleOption[] = [
   {
     id: 'concrete-floor',
@@ -132,7 +141,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     id: 'concrete-floor-angled',
     name: 'Concrete Floor (Angled)',
     description: 'Dark cracked concrete floor with dynamic angled positioning',
-    thumbnail: 'https://i.imgur.com/ED4tpzf.png',
+    thumbnail: 'https://i.imgur.com/S4sVMFP.png',
     category: 'clothing',
     goodFor: 'Clothing, apparel, streetwear',
     prompt: 'Place this exact clothing item on a realistic concrete surface background with DYNAMIC ANGLED POSITIONING, similar to the lighting and texture in high-end fashion editorials. The clothing should be positioned at a natural diagonal angle (approximately 15-25 degrees clockwise) to create visual interest and dynamic composition, as if it was casually placed or naturally settled at an angle. The garment should maintain natural shadows around the edges to reflect realistic depth while being positioned diagonally across the frame. The background should be a medium-toned concrete floor with visible cracks, subtle stains, and natural imperfections - NOT a perfect pristine surface. Include slight dust particles, minor scuff marks, and natural wear patterns that make it look authentically used. The lighting should be soft but directional with subtle variations, casting realistic shadows under the angled clothing to show it\'s resting on the ground. Add natural fabric behavior with authentic wrinkles, creases, and slight variations in how the fabric sits at the diagonal angle - avoid making it look artificially perfect or too smooth. The clothing should have natural weight distribution and realistic contact points with the surface while maintaining the angled positioning. Maintain the natural folds, wrinkles, and garment proportions as if it was gently laid down by hand at a natural diagonal angle with natural imperfections. Avoid any artificial floating effect or overly perfect positioning — it must look like a real photograph taken in studio lighting conditions with natural inconsistencies. CRITICAL SIZING REQUIREMENTS: Position the clothing item with proper framing and breathing room - the garment should fill approximately 60-70% of the frame width, leaving comfortable space on the sides. Ensure generous spacing at top and bottom (approximately 15-20% of image height on each side) for text overlays and visual balance. The product should be prominently displayed but not overly zoomed in, maintaining an aesthetic distance similar to professional product photography with proper margins and visual breathing room. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. DO NOT alter, distort, or change the fundamental shape or silhouette of the garment in any way. CRITICAL PRESERVATION REQUIREMENTS: The clothing color, logo, graphics, text, patterns, fabric texture, and ALL visual elements must be preserved PIXEL-PERFECT and IDENTICAL to the original. DO NOT alter, reinterpret, stylize, or change ANY aspect of the product including small details, characters, symbols, or graphics. Every logo, graphic element, text character, and design detail must remain EXACTLY as provided - same colors, same clarity, same positioning. EXTREME BLUE COLOR ACCURACY: If the clothing contains ANY blue colors, tones, or blue-tinted elements, they MUST be preserved with EXACT color fidelity - do not shift hues, change saturation, or alter the blue tones in any way. Blue graphics, logos, or design elements must remain precisely the same shade and intensity. ANTI-DISTORTION PROTECTION: Do not warp, stretch, compress, or geometrically distort ANY part of the clothing - maintain perfect proportional accuracy and shape integrity throughout the entire garment. ULTRA-CRITICAL TEXT PRESERVATION: Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, brand names, and any text on tags or labels. These MUST be rendered with MAXIMUM clarity and sharpness - never blur, pixelate, or reduce the quality of ANY text elements no matter how small. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. This includes tiny size numbers, care instruction text, brand text on neck tags, and any microscopic text anywhere on the garment. Never allow neck tag text to become blurry, pixelated, or illegible. ULTRA-CRITICAL NO FAKE CONTENT RULE: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE. This includes: NO fake neck tags, NO fake brand names, NO fake size labels, NO fake care instructions, NO fake logos, NO fake text of any kind. SPECIFICALLY PROHIBITED: Never add "PROJECT CAPRI" or any other test brand names, never create fictional text on clothing. If the original clothing item is a plain garment with no visible tags, text, or graphics, then keep it completely plain. DO NOT add any fictional content whatsoever. SMALL TEXT PRESERVATION: Pay special attention to preserving any small text or brand names that actually exist in the original - these must remain crystal clear, perfectly readable, and NEVER distorted, blurred, or altered. Maintain exact font style, letter spacing, and text clarity. CRITICAL TAG/LABEL RULE: ONLY preserve tags, labels, and text that are ACTUALLY VISIBLE in the original image - DO NOT create, add, or invent any tags, labels, or text that are not present in the source image. If there are visible clothing tags, brand labels, size tags, care labels, or any text/branding on the garment, preserve them EXACTLY as shown with crystal-clear readability. If there are NO visible tags or labels in the original, DO NOT add any. Never fabricate or imagine tags that aren\'t there. Only copy what actually exists in the source image. LAYOUT: Position the product at a natural diagonal angle (15-25 degrees clockwise) in portrait format with generous and EQUAL spacing above and below for text overlays - ensure top and bottom margins are perfectly balanced with approximately 15-20% of image height on each side. Maintain comfortable side margins with the product filling only 60-70% of frame width for proper visual breathing room and professional framing.'
@@ -258,6 +267,42 @@ export default function AdCreativeStudioPage() {
   const [creativeName, setCreativeName] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showRetryModal, setShowRetryModal] = useState(false)
+  
+  // Carousel state for template variants
+  const [templateCarouselStates, setTemplateCarouselStates] = useState<{[key: string]: number}>({})
+  
+  // Helper functions for carousel
+  const getTemplateVariants = (baseId: string) => {
+    return STYLE_OPTIONS.filter(style => 
+      style.id === baseId || style.id === `${baseId}-angled`
+    )
+  }
+  
+  const getCurrentVariant = (baseId: string) => {
+    const variants = getTemplateVariants(baseId)
+    const currentIndex = templateCarouselStates[baseId] || 0
+    return variants[currentIndex] || variants[0]
+  }
+  
+  const nextVariant = (baseId: string) => {
+    const variants = getTemplateVariants(baseId)
+    const currentIndex = templateCarouselStates[baseId] || 0
+    const nextIndex = (currentIndex + 1) % variants.length
+    setTemplateCarouselStates(prev => ({
+      ...prev,
+      [baseId]: nextIndex
+    }))
+  }
+  
+  const prevVariant = (baseId: string) => {
+    const variants = getTemplateVariants(baseId)
+    const currentIndex = templateCarouselStates[baseId] || 0
+    const prevIndex = currentIndex === 0 ? variants.length - 1 : currentIndex - 1
+    setTemplateCarouselStates(prev => ({
+      ...prev,
+      [baseId]: prevIndex
+    }))
+  }
   const [retryCreativeId, setRetryCreativeId] = useState('')
   const [retryImage, setRetryImage] = useState<File | null>(null)
 
@@ -1460,32 +1505,89 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                       </div>
                     </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {filteredStyleOptions.map((style) => (
-                    <div
-                      key={style.id}
-                          className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit"
-                        onClick={() => openStyleModal(style)}
-                    >
-                        <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
-                        <img
-                          src={style.thumbnail}
-                          alt={style.name}
-                              className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
-                          />
-                        </div>
-                          <div className="p-6 flex-shrink-0">
-                            <h4 className="font-semibold text-white text-lg mb-1 group-hover:text-gray-300 transition-colors">
-                            {style.name}
-                          </h4>
-                            <p className="text-gray-500 text-xs mb-2">
-                              • {style.goodFor}
-                            </p>
-                          <p className="text-gray-400 text-sm leading-relaxed">
-                            {style.description}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      {TEMPLATE_BASE_GROUPS.map((baseId) => {
+                        const currentVariant = getCurrentVariant(baseId)
+                        const variants = getTemplateVariants(baseId)
+                        
+                        // Filter by category
+                        if (selectedCategory !== 'all' && currentVariant.category !== selectedCategory) {
+                          return null
+                        }
+                        
+                        return (
+                          <div
+                            key={baseId}
+                            className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit relative"
+                          >
+                            {/* Carousel Navigation Arrows */}
+                            {variants.length > 1 && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    prevVariant(baseId)
+                                  }}
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                  title="Previous variant"
+                                >
+                                  <ChevronLeft className="w-4 h-4 text-white" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    nextVariant(baseId)
+                                  }}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                  title="Next variant"
+                                >
+                                  <ChevronRight className="w-4 h-4 text-white" />
+                                </button>
+                              </>
+                            )}
+                            
+                            {/* Template Content */}
+                            <div 
+                              onClick={() => openStyleModal(currentVariant)}
+                              className="w-full h-full"
+                            >
+                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                                <img
+                                  src={currentVariant.thumbnail}
+                                  alt={currentVariant.name}
+                                  className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                                />
+                              </div>
+                              <div className="p-6 flex-shrink-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className="font-semibold text-white text-lg group-hover:text-gray-300 transition-colors">
+                                    {currentVariant.name}
+                                  </h4>
+                                  {variants.length > 1 && (
+                                    <div className="flex gap-1">
+                                      {variants.map((_, index) => (
+                                        <div
+                                          key={index}
+                                          className={`w-2 h-2 rounded-full transition-all ${
+                                            index === (templateCarouselStates[baseId] || 0)
+                                              ? 'bg-white'
+                                              : 'bg-gray-600'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-gray-500 text-xs mb-2">
+                                  • {currentVariant.goodFor}
+                                </p>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                  {currentVariant.description}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
                   </div>
                 </div>
                 )}
@@ -1696,23 +1798,35 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                       <Sparkles className="w-4 h-4" />
                       Choose Style
                     </p>
-                    <div className="flex gap-3 overflow-x-auto pb-2">
-                      {STYLE_OPTIONS.map((style) => (
-                        <button
-                          key={style.id}
-                          onClick={() => setModalStyle(style)}
-                          className={`flex-shrink-0 w-20 p-2 rounded-lg border transition-all duration-200 ${
-                            modalStyle.id === style.id
-                              ? 'border-white bg-white/10'
-                              : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
-                          }`}
-                        >
-                          <div className="aspect-[4/5] bg-gradient-to-br from-[#333] to-[#222] rounded mb-1 overflow-hidden">
-                            <img src={style.thumbnail} alt={style.name} className="w-full h-full object-cover" />
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {TEMPLATE_BASE_GROUPS.map((baseId) => {
+                        const variants = getTemplateVariants(baseId)
+                        return (
+                          <div key={baseId} className="flex gap-2 flex-shrink-0">
+                            {variants.map((style) => (
+                              <button
+                                key={style.id}
+                                onClick={() => setModalStyle(style)}
+                                className={`flex-shrink-0 w-20 p-2 rounded-lg border transition-all duration-200 ${
+                                  modalStyle.id === style.id
+                                    ? 'border-white bg-white/10'
+                                    : 'border-[#333] hover:border-[#555] bg-[#2A2A2A]'
+                                }`}
+                              >
+                                <div className="aspect-[4/5] bg-gradient-to-br from-[#333] to-[#222] rounded mb-1 overflow-hidden">
+                                  <img src={style.thumbnail} alt={style.name} className="w-full h-full object-cover" />
+                                </div>
+                                <p className="text-xs text-gray-300 text-center truncate">
+                                  {style.name.includes('Angled') ? 'Angled' : 'Normal'}
+                                </p>
+                              </button>
+                            ))}
+                            {variants.length > 1 && baseId !== TEMPLATE_BASE_GROUPS[TEMPLATE_BASE_GROUPS.length - 1] && (
+                              <div className="w-px bg-[#444] mx-1 self-stretch"></div>
+                            )}
                           </div>
-                          <p className="text-white text-xs font-medium leading-tight">{style.name}</p>
-                        </button>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
