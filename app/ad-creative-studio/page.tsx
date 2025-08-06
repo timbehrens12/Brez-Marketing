@@ -1045,78 +1045,78 @@ export default function AdCreativeStudioPage() {
             {activeTab === 'create' ? (
               <div className="space-y-6">
                 {!uploadedImage ? (
-                  // No Product Uploaded State - Redesigned
-                  <div className="max-w-4xl mx-auto">
-                    <div className="grid md:grid-cols-2 gap-8 items-center">
-                      {/* Left Side - Upload Section */}
-                      <div>
-                        <h3 className="text-3xl font-bold text-white mb-3">Upload Your Product</h3>
-                        <p className="text-gray-400 mb-6 text-lg leading-relaxed">
-                          Transform your product images into stunning ad creatives with AI-powered styling and custom text overlays.
-                        </p>
-                        
-                        <div 
-                          className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-6 hover:border-[#555] transition-all duration-300 cursor-pointer group mb-4"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center group-hover:from-white/10 group-hover:to-white/15 transition-all flex-shrink-0">
-                              <ImageIcon className="w-8 h-8 text-white" />
+                  // No Product Uploaded State - Horizontal Layout
+                  <div className="py-12">
+                    <div className="max-w-6xl mx-auto">
+                      <div className="grid md:grid-cols-2 gap-12 items-center">
+                        {/* Left Side - Description */}
+                        <div>
+                          <h3 className="text-3xl font-bold text-white mb-4">Upload Your Product</h3>
+                          <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                            Transform your product images into stunning ad creatives with AI-powered styling and custom text overlays.
+                          </p>
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-white rounded-full mt-3 flex-shrink-0"></div>
+                              <div>
+                                <h4 className="text-white font-medium text-base mb-1">Multiple Background Styles</h4>
+                                <p className="text-gray-400 text-sm">Choose from concrete, asphalt, black, and white backgrounds</p>
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-white font-semibold text-lg mb-1">Choose Product Image</p>
-                              <p className="text-gray-400 text-sm">PNG, JPG up to 10MB • Best results with high-resolution images</p>
+                            
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-white rounded-full mt-3 flex-shrink-0"></div>
+                              <div>
+                                <h4 className="text-white font-medium text-base mb-1">Custom Text Overlays</h4>
+                                <p className="text-gray-400 text-sm">Add sales text, calls-to-action, and promotional messages</p>
+                              </div>
                             </div>
-                            <Button className="bg-white hover:bg-gray-200 text-black border-0 flex-shrink-0">
-                              <Upload className="w-4 h-4 mr-2" />
-                              Upload
-                            </Button>
+                            
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-white rounded-full mt-3 flex-shrink-0"></div>
+                              <div>
+                                <h4 className="text-white font-medium text-base mb-1">Perfect Preservation</h4>
+                                <p className="text-gray-400 text-sm">AI preserves exact shapes, colors, and text including neck tags</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         
-                        {/* Quality Notice - Compact */}
-                        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-3">
-                          <div className="flex items-start gap-2">
-                            <div className="text-amber-400 text-sm">⚠️</div>
-                            <div>
-                              <div className="text-amber-400 text-sm font-medium mb-1">Image Quality Matters</div>
-                              <p className="text-gray-300 text-xs leading-relaxed">
-                                High-quality images prevent text distortion and ensure clear neck tags and small details in your final creative.
-                              </p>
+                        {/* Right Side - Upload Section */}
+                        <div>
+                          <div 
+                            className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-8 hover:border-[#555] transition-all duration-300 cursor-pointer group mb-6"
+                            onClick={() => document.getElementById('image-upload')?.click()}
+                          >
+                            <div className="text-center">
+                              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center group-hover:from-white/10 group-hover:to-white/15 transition-all">
+                                <ImageIcon className="w-8 h-8 text-white" />
+                              </div>
+                              
+                              <h4 className="text-white font-semibold text-lg mb-2">Choose Product Image</h4>
+                              <p className="text-gray-400 text-sm mb-4">PNG, JPG up to 10MB</p>
+                              
+                              <Button className="bg-white hover:bg-gray-200 text-black border-0">
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Image
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Image Quality Notice */}
+                          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="text-amber-400 text-lg">⚠️</div>
+                              <div>
+                                <h5 className="text-amber-400 font-medium text-sm mb-2">Image Quality Matters</h5>
+                                <p className="text-gray-300 text-xs leading-relaxed">
+                                  High-quality images prevent text distortion, tag blurriness, and ensure clear neck tags and small details in your final creative.
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Right Side - Template Preview */}
-                      <div>
-                        <h4 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                          <Palette className="w-5 h-5" />
-                          Available Templates
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {STYLE_OPTIONS.slice(0, 4).map((style) => (
-                            <div
-                              key={style.id}
-                              className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden opacity-60"
-                            >
-                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center">
-                                <img
-                                  src={style.thumbnail}
-                                  alt={style.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="p-3">
-                                <h5 className="font-medium text-white text-sm mb-1">{style.name}</h5>
-                                <p className="text-gray-500 text-xs">{style.description}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-gray-500 text-sm mt-4 text-center">
-                          Upload a product image to unlock all creative templates
-                        </p>
                       </div>
                     </div>
                   </div>
