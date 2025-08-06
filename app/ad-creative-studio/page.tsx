@@ -241,6 +241,20 @@ export default function AdCreativeStudioPage() {
   const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 })
   const [originalImageUrls, setOriginalImageUrls] = useState<{[key: string]: string}>({}) // Store original URLs for undo
 
+  // Prevent background scrolling when crop modal is open
+  useEffect(() => {
+    if (showCropModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showCropModal])
+
   // Get current Monday as week start
   const getCurrentWeekStart = () => {
     const now = new Date()
@@ -553,6 +567,12 @@ export default function AdCreativeStudioPage() {
           : creative
       ))
       
+      // Update the crop modal to show the original image
+      setCropImageUrl(originalUrl)
+      
+      // Reset crop area to full image
+      setCropArea({ x: 0, y: 0, width: 100, height: 100 })
+      
       // Remove from original URLs since we're back to original
       setOriginalImageUrls(prev => {
         const newUrls = { ...prev }
@@ -560,7 +580,6 @@ export default function AdCreativeStudioPage() {
         return newUrls
       })
       
-      setShowCropModal(false)
       toast.success('Restored to original image!')
     }
   }
@@ -2077,67 +2096,63 @@ export default function AdCreativeStudioPage() {
                   <div className="absolute w-3 h-3 border-l border-b border-white/60 bottom-1 left-1" />
                   <div className="absolute w-3 h-3 border-r border-b border-white/60 bottom-1 right-1" />
 
-                  {/* SUPER VISIBLE HANDLES - All 4 sides */}
-                  {/* Top edge handle - MASSIVE AND VISIBLE */}
+                  {/* Sleek edge handles - All 4 sides */}
+                  {/* Top edge handle */}
                   <div 
-                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ns-resize transition-all duration-200 shadow-xl z-30"
+                    className="absolute bg-white/90 hover:bg-white cursor-ns-resize transition-all duration-200 z-20"
                     style={{
-                      top: '-20px',
+                      top: '-6px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '100px',
-                      height: '16px',
-                      borderRadius: '8px',
-                      border: '3px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      width: '40px',
+                      height: '4px',
+                      borderRadius: '2px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
                   
-                  {/* Bottom edge handle - MASSIVE AND VISIBLE */}
+                  {/* Bottom edge handle */}
                   <div 
-                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ns-resize transition-all duration-200 shadow-xl z-30"
+                    className="absolute bg-white/90 hover:bg-white cursor-ns-resize transition-all duration-200 z-20"
                     style={{
-                      bottom: '-20px',
+                      bottom: '-6px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '100px',
-                      height: '16px',
-                      borderRadius: '8px',
-                      border: '3px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      width: '40px',
+                      height: '4px',
+                      borderRadius: '2px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
                   
-                  {/* Left edge handle - MASSIVE AND VISIBLE */}
+                  {/* Left edge handle */}
                   <div 
-                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ew-resize transition-all duration-200 shadow-xl z-30"
+                    className="absolute bg-white/90 hover:bg-white cursor-ew-resize transition-all duration-200 z-20"
                     style={{
-                      left: '-20px',
+                      left: '-6px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '16px',
-                      height: '100px',
-                      borderRadius: '8px',
-                      border: '3px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      width: '4px',
+                      height: '40px',
+                      borderRadius: '2px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
                   
-                  {/* Right edge handle - MASSIVE AND VISIBLE */}
+                  {/* Right edge handle */}
                   <div 
-                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ew-resize transition-all duration-200 shadow-xl z-30"
+                    className="absolute bg-white/90 hover:bg-white cursor-ew-resize transition-all duration-200 z-20"
                     style={{
-                      right: '-20px',
+                      right: '-6px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '16px',
-                      height: '100px',
-                      borderRadius: '8px',
-                      border: '3px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      width: '4px',
+                      height: '40px',
+                      borderRadius: '2px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
