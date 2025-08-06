@@ -445,8 +445,8 @@ export default function AdCreativeStudioPage() {
     setCropCreativeId(creativeId)
     setCropImageUrl(imageUrl)
     
-    // Initialize crop area to cover most of the image with some margin
-    setCropArea({ x: 10, y: 10, width: 80, height: 80 })
+    // Initialize crop area as a more natural rectangle
+    setCropArea({ x: 15, y: 20, width: 70, height: 60 })
     
     // Store original URL if not already stored (for undo functionality)
     if (!originalImageUrls[creativeId]) {
@@ -550,51 +550,78 @@ export default function AdCreativeStudioPage() {
   // Interactive crop handlers
   const handleMouseDown = (e: React.MouseEvent, handle: string) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsDragging(true)
     setDragHandle(handle)
-  }
+    
+    // Add global mouse move and up listeners
+    const handleGlobalMouseMove = (globalE: MouseEvent) => {
+      if (!isDragging && !dragHandle) return
+      
+      const cropContainer = document.querySelector('.crop-container') as HTMLElement
+      if (!cropContainer) return
+      
+      const rect = cropContainer.getBoundingClientRect()
+      const x = Math.max(0, Math.min(100, ((globalE.clientX - rect.left) / rect.width) * 100))
+      const y = Math.max(0, Math.min(100, ((globalE.clientY - rect.top) / rect.height) * 100))
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragHandle) return
+      setCropArea(prev => {
+        let newArea = { ...prev }
 
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+        switch (handle) {
+          case 'nw': // Top-left
+            const maxWidth = prev.x + prev.width
+            const maxHeight = prev.y + prev.height
+            newArea.x = Math.min(x, maxWidth - 5)
+            newArea.y = Math.min(y, maxHeight - 5)
+            newArea.width = maxWidth - newArea.x
+            newArea.height = maxHeight - newArea.y
+            break
+          case 'ne': // Top-right
+            const maxHeight2 = prev.y + prev.height
+            newArea.width = Math.max(5, x - prev.x)
+            newArea.y = Math.min(y, maxHeight2 - 5)
+            newArea.height = maxHeight2 - newArea.y
+            break
+          case 'sw': // Bottom-left
+            const maxWidth2 = prev.x + prev.width
+            newArea.x = Math.min(x, maxWidth2 - 5)
+            newArea.width = maxWidth2 - newArea.x
+            newArea.height = Math.max(5, y - prev.y)
+            break
+          case 'se': // Bottom-right
+            newArea.width = Math.max(5, x - prev.x)
+            newArea.height = Math.max(5, y - prev.y)
+            break
+          case 'move': // Move entire crop area
+            const centerX = prev.x + prev.width / 2
+            const centerY = prev.y + prev.height / 2
+            const deltaX = x - centerX
+            const deltaY = y - centerY
+            newArea.x = Math.max(0, Math.min(100 - prev.width, prev.x + deltaX))
+            newArea.y = Math.max(0, Math.min(100 - prev.height, prev.y + deltaY))
+            break
+        }
 
-    setCropArea(prev => {
-      let newArea = { ...prev }
+        // Ensure crop area doesn't go outside bounds
+        newArea.x = Math.max(0, newArea.x)
+        newArea.y = Math.max(0, newArea.y)
+        newArea.width = Math.min(100 - newArea.x, Math.max(5, newArea.width))
+        newArea.height = Math.min(100 - newArea.y, Math.max(5, newArea.height))
 
-      switch (dragHandle) {
-        case 'nw': // Top-left
-          newArea.width = Math.max(10, prev.width + (prev.x - Math.max(0, x)))
-          newArea.height = Math.max(10, prev.height + (prev.y - Math.max(0, y)))
-          newArea.x = Math.max(0, Math.min(x, prev.x + prev.width - 10))
-          newArea.y = Math.max(0, Math.min(y, prev.y + prev.height - 10))
-          break
-        case 'ne': // Top-right
-          newArea.width = Math.max(10, Math.min(100 - prev.x, x - prev.x))
-          newArea.height = Math.max(10, prev.height + (prev.y - Math.max(0, y)))
-          newArea.y = Math.max(0, Math.min(y, prev.y + prev.height - 10))
-          break
-        case 'sw': // Bottom-left
-          newArea.width = Math.max(10, prev.width + (prev.x - Math.max(0, x)))
-          newArea.height = Math.max(10, Math.min(100 - prev.y, y - prev.y))
-          newArea.x = Math.max(0, Math.min(x, prev.x + prev.width - 10))
-          break
-        case 'se': // Bottom-right
-          newArea.width = Math.max(10, Math.min(100 - prev.x, x - prev.x))
-          newArea.height = Math.max(10, Math.min(100 - prev.y, y - prev.y))
-          break
-        case 'move': // Move entire crop area
-          const deltaX = x - (prev.x + prev.width / 2)
-          const deltaY = y - (prev.y + prev.height / 2)
-          newArea.x = Math.max(0, Math.min(100 - prev.width, prev.x + deltaX))
-          newArea.y = Math.max(0, Math.min(100 - prev.height, prev.y + deltaY))
-          break
-      }
-
-      return newArea
-    })
+        return newArea
+      })
+    }
+    
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false)
+      setDragHandle('')
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleGlobalMouseMove)
+    document.addEventListener('mouseup', handleGlobalMouseUp)
   }
 
   const handleMouseUp = () => {
@@ -1914,7 +1941,6 @@ export default function AdCreativeStudioPage() {
               setShowCropModal(false)
             }
           }}
-          onMouseUp={handleMouseUp}
         >
           <div 
             className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-2xl w-full shadow-2xl"
@@ -1944,10 +1970,8 @@ export default function AdCreativeStudioPage() {
             {/* Interactive Crop Area */}
             <div className="px-6 py-6">
               <div 
-                className="relative mx-auto bg-gray-900 rounded-lg overflow-hidden border border-gray-700"
+                className="crop-container relative mx-auto bg-gray-900 rounded-lg overflow-hidden border border-gray-700"
                 style={{ width: '400px', height: '400px' }}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
               >
                 <img 
                   src={cropImageUrl} 
@@ -2020,19 +2044,19 @@ export default function AdCreativeStudioPage() {
 
                   {/* Corner handles */}
                   <div 
-                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-nw-resize -top-1 -left-1"
+                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-nw-resize -top-2 -left-2 rounded-sm hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(e, 'nw')}
                   />
                   <div 
-                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-ne-resize -top-1 -right-1"
+                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-ne-resize -top-2 -right-2 rounded-sm hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(e, 'ne')}
                   />
                   <div 
-                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-sw-resize -bottom-1 -left-1"
+                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-sw-resize -bottom-2 -left-2 rounded-sm hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(e, 'sw')}
                   />
                   <div 
-                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-se-resize -bottom-1 -right-1"
+                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-se-resize -bottom-2 -right-2 rounded-sm hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(e, 'se')}
                   />
                 </div>
