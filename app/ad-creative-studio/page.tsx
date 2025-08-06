@@ -221,6 +221,7 @@ export default function AdCreativeStudioPage() {
 
   // Weekly usage system - 10 generations per week (universal)
   const WEEKLY_LIMIT = 10
+const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
     weekStartDate: ''
@@ -870,6 +871,12 @@ export default function AdCreativeStudioPage() {
       return
     }
 
+    // Check storage limits
+    if (generatedCreatives.length >= STORAGE_LIMIT) {
+      toast.error(`You've reached your storage limit of ${STORAGE_LIMIT} saved creatives. Please delete some before creating new ones.`)
+      return
+    }
+
     // Generate enhanced prompt
     const enhancedPrompt = modalStyle.prompt + generateTextPromptAddition()
 
@@ -1409,10 +1416,31 @@ export default function AdCreativeStudioPage() {
             ) : (
               // Generated Creatives Tab
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                  <ImageIcon className="w-6 h-6" />
-                  Your Generated Creatives
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <ImageIcon className="w-6 h-6" />
+                    Your Generated Creatives
+                  </h3>
+                  
+                  {/* Storage Limit Tracker */}
+                  <div className="bg-gradient-to-r from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-gray-400">Storage:</div>
+                      <div className={`text-sm font-medium ${
+                        generatedCreatives.length >= STORAGE_LIMIT 
+                          ? 'text-red-400' 
+                          : generatedCreatives.length >= STORAGE_LIMIT * 0.8 
+                            ? 'text-yellow-400' 
+                            : 'text-green-400'
+                      }`}>
+                        {generatedCreatives.length}/{STORAGE_LIMIT}
+                      </div>
+                      {generatedCreatives.length >= STORAGE_LIMIT && (
+                        <div className="text-xs text-red-400 ml-1">🚫 Limit Reached</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 {isLoadingCreatives ? (
                   <div className="text-center py-12">
                     <div className="w-12 h-12 border-4 border-t-white/20 border-r-white/10 border-b-white/10 border-l-white/20 rounded-full animate-spin mx-auto mb-4"></div>
@@ -1738,7 +1766,7 @@ export default function AdCreativeStudioPage() {
                     </div>
 
                   {/* Clear Buttons Row */}
-                  <div className="flex gap-3 mt-5">
+                  <div className="flex gap-3 mt-5 justify-center">
                       <Button
                         size="sm"
                         variant="outline"
@@ -1800,15 +1828,19 @@ export default function AdCreativeStudioPage() {
                     {/* Generate Button */}
                 <div className="flex gap-4">
                     <Button
-                      disabled={!uploadedImage || isGenerating || usageData.current >= WEEKLY_LIMIT}
+                      disabled={!uploadedImage || isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
                     className={`flex-1 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 ${
-                      usageData.current >= WEEKLY_LIMIT 
+                      usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white cursor-not-allowed' 
                         : 'bg-gradient-to-r from-white to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
                     } border-0`}
                       onClick={generateImageFromModal}
                     >
-                      {usageData.current >= WEEKLY_LIMIT ? (
+                      {generatedCreatives.length >= STORAGE_LIMIT ? (
+                        <>
+                          🗄️ Storage Full - Delete Some First
+                        </>
+                      ) : usageData.current >= WEEKLY_LIMIT ? (
                         <>
                           🚫 Usage Limit Reached
                         </>
