@@ -473,44 +473,31 @@ export default function AdCreativeStudioPage() {
           return
         }
 
-        // Get the container dimensions to calculate actual displayed image size
-        const container = document.querySelector('.crop-container') as HTMLElement
-        if (!container) {
-          reject(new Error('Container not found'))
+        // Use the stored image bounds from calculateImageCropArea
+        const imageBounds = (window as any).imageBounds
+        if (!imageBounds) {
+          reject(new Error('Image bounds not calculated'))
           return
         }
 
-        const containerRect = container.getBoundingClientRect()
-        const imageAspect = img.naturalWidth / img.naturalHeight
-        const containerAspect = containerRect.width / containerRect.height
-        
-        let displayedWidth, displayedHeight, offsetX, offsetY
-        
-        if (imageAspect > containerAspect) {
-          // Image is wider - fit to container width
-          displayedWidth = containerRect.width
-          displayedHeight = containerRect.width / imageAspect
-          offsetX = 0
-          offsetY = (containerRect.height - displayedHeight) / 2
-        } else {
-          // Image is taller - fit to container height
-          displayedHeight = containerRect.height
-          displayedWidth = containerRect.height * imageAspect
-          offsetY = 0
-          offsetX = (containerRect.width - displayedWidth) / 2
+        // Convert crop area percentages to image-relative coordinates
+        // Subtract the image offset and scale by image dimensions
+        const relativeX = Math.max(0, (cropArea.x - imageBounds.x) / imageBounds.width)
+        const relativeY = Math.max(0, (cropArea.y - imageBounds.y) / imageBounds.height)
+        const relativeWidth = Math.min(1 - relativeX, cropArea.width / imageBounds.width)
+        const relativeHeight = Math.min(1 - relativeY, cropArea.height / imageBounds.height)
+
+        // Calculate source coordinates in original image pixels
+        const sourceX = Math.floor(relativeX * img.naturalWidth)
+        const sourceY = Math.floor(relativeY * img.naturalHeight)
+        const sourceWidth = Math.floor(relativeWidth * img.naturalWidth)
+        const sourceHeight = Math.floor(relativeHeight * img.naturalHeight)
+
+        // Ensure we have valid dimensions
+        if (sourceWidth <= 0 || sourceHeight <= 0) {
+          reject(new Error('Invalid crop dimensions'))
+          return
         }
-
-        // Convert crop percentages to actual image pixels
-        const cropX = ((cropArea.x / 100) * containerRect.width - offsetX) / displayedWidth
-        const cropY = ((cropArea.y / 100) * containerRect.height - offsetY) / displayedHeight
-        const cropWidth = (cropArea.width / 100) * containerRect.width / displayedWidth
-        const cropHeight = (cropArea.height / 100) * containerRect.height / displayedHeight
-
-        // Calculate source coordinates in original image
-        const sourceX = Math.max(0, cropX * img.naturalWidth)
-        const sourceY = Math.max(0, cropY * img.naturalHeight)
-        const sourceWidth = Math.min(img.naturalWidth - sourceX, cropWidth * img.naturalWidth)
-        const sourceHeight = Math.min(img.naturalHeight - sourceY, cropHeight * img.naturalHeight)
 
         canvas.width = sourceWidth
         canvas.height = sourceHeight
@@ -607,7 +594,7 @@ export default function AdCreativeStudioPage() {
     const height = (imageDisplayHeight / containerRect.height) * 100
     
     // Store image bounds for constraint checking
-    window.imageBounds = { x, y, width, height }
+    ;(window as any).imageBounds = { x, y, width, height }
     
     return { x, y, width, height }
   }
@@ -2010,7 +1997,7 @@ export default function AdCreativeStudioPage() {
             {/* Interactive Crop Area */}
             <div className="px-6 py-6">
               <div 
-                className="crop-container relative mx-auto bg-black rounded-lg overflow-hidden"
+                className="crop-container relative mx-auto bg-black rounded-lg"
                 style={{ width: '810px', height: '675px' }}
               >
                 <img 
@@ -2090,63 +2077,67 @@ export default function AdCreativeStudioPage() {
                   <div className="absolute w-3 h-3 border-l border-b border-white/60 bottom-1 left-1" />
                   <div className="absolute w-3 h-3 border-r border-b border-white/60 bottom-1 right-1" />
 
-                  {/* Modern edge handles - All 4 sides */}
-                  {/* Top edge handle - More visible */}
+                  {/* SUPER VISIBLE HANDLES - All 4 sides */}
+                  {/* Top edge handle - MASSIVE AND VISIBLE */}
                   <div 
-                    className="absolute bg-white border-2 border-gray-800 cursor-ns-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
+                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ns-resize transition-all duration-200 shadow-xl z-30"
                     style={{
-                      top: '-10px',
+                      top: '-20px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '60px',
-                      height: '8px',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                      width: '100px',
+                      height: '16px',
+                      borderRadius: '8px',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
                   
-                  {/* Bottom edge handle - More visible */}
+                  {/* Bottom edge handle - MASSIVE AND VISIBLE */}
                   <div 
-                    className="absolute bg-white border-2 border-gray-800 cursor-ns-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
+                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ns-resize transition-all duration-200 shadow-xl z-30"
                     style={{
-                      bottom: '-10px',
+                      bottom: '-20px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '60px',
-                      height: '8px',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                      width: '100px',
+                      height: '16px',
+                      borderRadius: '8px',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
                   
-                  {/* Left edge handle */}
+                  {/* Left edge handle - MASSIVE AND VISIBLE */}
                   <div 
-                    className="absolute bg-white border-2 border-gray-800 cursor-ew-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
+                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ew-resize transition-all duration-200 shadow-xl z-30"
                     style={{
-                      left: '-10px',
+                      left: '-20px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '8px',
-                      height: '60px',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                      width: '16px',
+                      height: '100px',
+                      borderRadius: '8px',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
                   
-                  {/* Right edge handle */}
+                  {/* Right edge handle - MASSIVE AND VISIBLE */}
                   <div 
-                    className="absolute bg-white border-2 border-gray-800 cursor-ew-resize transition-all duration-200 hover:bg-gray-200 hover:shadow-lg z-20"
+                    className="absolute bg-blue-500 hover:bg-blue-400 cursor-ew-resize transition-all duration-200 shadow-xl z-30"
                     style={{
-                      right: '-10px',
+                      right: '-20px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '8px',
-                      height: '60px',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                      width: '16px',
+                      height: '100px',
+                      borderRadius: '8px',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
