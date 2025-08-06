@@ -1980,7 +1980,7 @@ export default function AdCreativeStudioPage() {
             <div className="px-6 py-6">
               <div 
                 className="crop-container relative mx-auto bg-gray-900 rounded-lg overflow-hidden"
-                style={{ width: '900px', height: '750px' }}
+                style={{ width: '810px', height: '675px' }}
               >
                 <img 
                   src={cropImageUrl} 
@@ -1998,11 +1998,11 @@ export default function AdCreativeStudioPage() {
                   }}
                 />
                 
-                {/* Gray overlay for cropped-out areas */}
+                {/* Black overlay for cropped-out areas */}
                 <div className="absolute inset-0 pointer-events-none">
                   {/* Top cropped area */}
                   <div 
-                    className="absolute bg-black/50"
+                    className="absolute bg-black/70"
                     style={{
                       top: 0,
                       left: 0,
@@ -2012,7 +2012,7 @@ export default function AdCreativeStudioPage() {
                   />
                   {/* Bottom cropped area */}
                   <div 
-                    className="absolute bg-black/50"
+                    className="absolute bg-black/70"
                     style={{
                       top: `${cropArea.y + cropArea.height}%`,
                       left: 0,
@@ -2022,7 +2022,7 @@ export default function AdCreativeStudioPage() {
                   />
                   {/* Left cropped area */}
                   <div 
-                    className="absolute bg-black/50"
+                    className="absolute bg-black/70"
                     style={{
                       top: `${cropArea.y}%`,
                       left: 0,
@@ -2032,7 +2032,7 @@ export default function AdCreativeStudioPage() {
                   />
                   {/* Right cropped area */}
                   <div 
-                    className="absolute bg-black/50"
+                    className="absolute bg-black/70"
                     style={{
                       top: `${cropArea.y}%`,
                       left: `${cropArea.x + cropArea.width}%`,
@@ -2059,59 +2059,59 @@ export default function AdCreativeStudioPage() {
                   <div className="absolute w-3 h-3 border-l border-b border-white/60 bottom-1 left-1" />
                   <div className="absolute w-3 h-3 border-r border-b border-white/60 bottom-1 right-1" />
 
-                  {/* Modern edge handles */}
+                  {/* Modern edge handles - All 4 sides */}
                   {/* Top edge handle */}
                   <div 
-                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ns-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
+                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ns-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
                     style={{
-                      top: '-6px',
+                      top: '-8px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '40px',
-                      height: '4px',
-                      borderRadius: '2px'
+                      width: '50px',
+                      height: '6px',
+                      borderRadius: '3px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
                   
                   {/* Bottom edge handle */}
                   <div 
-                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ns-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
+                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ns-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
                     style={{
-                      bottom: '-6px',
+                      bottom: '-8px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '40px',
-                      height: '4px',
-                      borderRadius: '2px'
+                      width: '50px',
+                      height: '6px',
+                      borderRadius: '3px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
                   
                   {/* Left edge handle */}
                   <div 
-                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ew-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
+                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ew-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
                     style={{
-                      left: '-6px',
+                      left: '-8px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '40px',
-                      borderRadius: '2px'
+                      width: '6px',
+                      height: '50px',
+                      borderRadius: '3px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
                   
                   {/* Right edge handle */}
                   <div 
-                    className="absolute bg-white/20 backdrop-blur-sm border border-white/40 cursor-ew-resize transition-all duration-200 hover:bg-white/30 hover:border-white/60 hover:shadow-lg"
+                    className="absolute bg-white/40 backdrop-blur-sm border-2 border-white/60 cursor-ew-resize transition-all duration-200 hover:bg-white/60 hover:border-white/80 hover:shadow-lg z-10"
                     style={{
-                      right: '-6px',
+                      right: '-8px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '40px',
-                      borderRadius: '2px'
+                      width: '6px',
+                      height: '50px',
+                      borderRadius: '3px'
                     }}
                     onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
