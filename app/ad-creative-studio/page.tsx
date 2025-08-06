@@ -844,7 +844,50 @@ export default function AdCreativeStudioPage() {
             </div>
             
             <div className="flex items-center gap-4">
-            {/* Usage Limits Display */}
+            {/* Product Image Display - Now in larger widget */}
+            <div 
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
+                onClick={() => document.getElementById('image-upload')?.click()}
+              >
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  {uploadedImageUrl ? 'Change' : 'Upload'}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-center flex-1">
+                {uploadedImageUrl ? (
+                  <>
+                    {/* Large Product Preview - Full height */}
+                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[80px]">
+                    <img 
+                      src={uploadedImageUrl} 
+                      alt="Uploaded product" 
+                        className="w-full h-full object-cover"
+                    />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Upload Icon */}
+                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+            
+            {/* Weekly Usage Display - Now in smaller widget */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
@@ -916,70 +959,6 @@ export default function AdCreativeStudioPage() {
                   )}
                 </div>
               </div>
-            </div>
-            
-            {/* Product Upload Widget */}
-            <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {uploadedImageUrl ? 'Change' : 'Upload'}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {uploadedImageUrl ? (
-                  <>
-                    {/* Larger Product Preview */}
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-white/10">
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Uploaded product" 
-                        className="w-full h-full object-cover"
-                    />
-                    </div>
-                    
-                    {/* Product Info */}
-                    <div>
-                      <div className="text-white font-semibold text-sm">
-                        Product Uploaded
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        Ready for generation
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Upload Icon */}
-                    <div className="w-16 h-16 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-gray-400" />
-                    </div>
-                    
-                    {/* Upload Info */}
-                    <div>
-                      <div className="text-white font-semibold text-sm">
-                        Upload Product
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        PNG/JPG • Up to 10MB
-                      </div>
-
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
             </div>
             
             {/* Beta Notice Widget */}
