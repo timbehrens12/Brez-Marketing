@@ -1101,17 +1101,17 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             
             <div className="flex items-center gap-4">
             {/* Weekly Usage Display - First widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
+                <span className="text-gray-300 text-sm font-medium">WEEKLY USAGE</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                  <span className="text-sm text-gray-400 whitespace-nowrap">
                     {getDaysUntilReset()}d left
                 </span>
                   {usageData.current > 0 && (
                     <button
                       onClick={resetUsage}
-                      className="text-xs text-red-400 hover:text-red-300 transition-colors px-1 py-0.5 rounded border border-red-500/20 hover:border-red-400/40"
+                      className="text-sm text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded border border-red-500/20 hover:border-red-400/40"
                       title="R&D: Reset usage count"
                     >
                       Reset
@@ -1122,8 +1122,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
               
               <div className="flex items-center gap-3">
                 {/* Circular Progress */}
-                <div className="relative w-12 h-12">
-                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                <div className="relative w-16 h-16">
+                  <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                     {/* Background circle */}
                     <path
                       d="M18 2.0845
@@ -1147,7 +1147,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-sm font-bold text-white">
                       {Math.round(usagePercentage)}%
                     </span>
                   </div>
@@ -1155,10 +1155,10 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 
                 {/* Usage Stats */}
                 <div>
-                  <div className="text-white font-semibold text-sm">
+                  <div className="text-white font-semibold text-base">
                     {usageData.current} / {WEEKLY_LIMIT}
                   </div>
-                  <div className="text-gray-400 text-xs">
+                  <div className="text-gray-400 text-sm">
                     {WEEKLY_LIMIT - usageData.current} remaining
                   </div>
                   {usageData.current >= WEEKLY_LIMIT ? (
@@ -1175,22 +1175,22 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             </div>
             
             {/* Beta Notice Widget - Second widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-xs font-medium">STATUS</span>
-                <FlaskConical className="w-4 h-4 text-orange-400" />
+                <span className="text-gray-300 text-sm font-medium">STATUS</span>
+                <FlaskConical className="w-5 h-5 text-orange-400" />
               </div>
               
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
-                  <FlaskConical className="w-6 h-6 text-orange-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
+                  <FlaskConical className="w-8 h-8 text-orange-400" />
                 </div>
                 
                 <div>
-                  <div className="text-white font-semibold text-sm">
+                  <div className="text-white font-semibold text-base">
                     Beta Version
                   </div>
-                  <div className="text-gray-400 text-xs">
+                  <div className="text-gray-400 text-sm">
                     May struggle with small text, tags, neck labels, and complex fine details
                   </div>
                 </div>
@@ -1199,12 +1199,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             
             {/* Product Image Display - Third widget with larger space */}
             <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
                 onClick={() => document.getElementById('image-upload')?.click()}
               >
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
+                <span className="text-gray-300 text-sm font-medium">PRODUCT IMAGE</span>
+                <span className="text-sm text-gray-400 whitespace-nowrap">
                   {uploadedImageUrl ? 'Change' : 'Upload'}
                 </span>
               </div>
@@ -1213,7 +1213,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 {uploadedImageUrl ? (
                   <>
                     {/* Large Product Preview - Full height */}
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[120px] max-h-[70px]">
+                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[180px] max-h-[110px]">
                     <img 
                       src={uploadedImageUrl} 
                       alt="Uploaded product" 
@@ -1224,8 +1224,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 ) : (
                   <>
                     {/* Upload Icon */}
-                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    <div className="w-16 h-16 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
                   </>
                 )}
@@ -1461,7 +1461,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {generatedCreatives.map((creative) => (
                       <div
                         key={creative.id}
