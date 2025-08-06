@@ -613,10 +613,7 @@ export default function AdCreativeStudioPage() {
           case 'right': // Right edge
             newArea.width = Math.max(5, Math.min(100 - startCropArea.x, startCropArea.width + deltaX))
             break
-          case 'move': // Move entire crop area
-            newArea.x = Math.max(0, Math.min(100 - startCropArea.width, startCropArea.x + deltaX))
-            newArea.y = Math.max(0, Math.min(100 - startCropArea.height, startCropArea.y + deltaY))
-            break
+
         }
 
         return newArea
@@ -1992,50 +1989,11 @@ export default function AdCreativeStudioPage() {
                   }}
                 />
                 
-                {/* Crop Overlay */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* Dark overlay areas */}
-                  <div 
-                    className="absolute bg-black/50"
-                    style={{
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${cropArea.y}%`
-                    }}
-                  />
-                  <div 
-                    className="absolute bg-black/50"
-                    style={{
-                      top: `${cropArea.y + cropArea.height}%`,
-                      left: 0,
-                      width: '100%',
-                      height: `${100 - cropArea.y - cropArea.height}%`
-                    }}
-                  />
-                  <div 
-                    className="absolute bg-black/50"
-                    style={{
-                      top: `${cropArea.y}%`,
-                      left: 0,
-                      width: `${cropArea.x}%`,
-                      height: `${cropArea.height}%`
-                    }}
-                  />
-                  <div 
-                    className="absolute bg-black/50"
-                    style={{
-                      top: `${cropArea.y}%`,
-                      left: `${cropArea.x + cropArea.width}%`,
-                      width: `${100 - cropArea.x - cropArea.width}%`,
-                      height: `${cropArea.height}%`
-                    }}
-                  />
-                </div>
+
 
                 {/* Crop Selection Area */}
                 <div 
-                  className="absolute border border-white/80 pointer-events-auto cursor-move group transition-all duration-200 hover:border-white"
+                  className="absolute border border-white/80 pointer-events-none group transition-all duration-200 hover:border-white"
                   style={{
                     left: `${cropArea.x}%`,
                     top: `${cropArea.y}%`,
@@ -2043,7 +2001,6 @@ export default function AdCreativeStudioPage() {
                     height: `${cropArea.height}%`,
                     boxShadow: '0 0 0 1px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)'
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, 'move')}
                 >
                   {/* Subtle corner indicators */}
                   <div className="absolute w-3 h-3 border-l border-t border-white/60 top-1 left-1" />
