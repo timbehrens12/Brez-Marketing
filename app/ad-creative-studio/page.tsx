@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -226,6 +226,16 @@ export default function AdCreativeStudioPage() {
     weekStartDate: ''
   })
 
+  // Crop functionality state
+  const [showCropModal, setShowCropModal] = useState(false)
+  const [cropCreativeId, setCropCreativeId] = useState<string>('')
+  const [cropImageUrl, setCropImageUrl] = useState<string>('')
+  const [cropSettings, setCropSettings] = useState({
+    cropType: 'horizontal' as 'horizontal' | 'vertical',
+    cropAmount: 10 // percentage to crop from each side
+  })
+  const [originalImageUrls, setOriginalImageUrls] = useState<{[key: string]: string}>({}) // Store original URLs for undo
+
   // Get current Monday as week start
   const getCurrentWeekStart = () => {
     const now = new Date()
@@ -424,6 +434,123 @@ export default function AdCreativeStudioPage() {
     setRetryCreativeId(creativeId)
     setRetryImage(null) // Reset retry image
     setShowRetryModal(true)
+  }
+
+  const openCropModal = (creativeId: string, imageUrl: string) => {
+    setCropCreativeId(creativeId)
+    setCropImageUrl(imageUrl)
+    
+    // Store original URL if not already stored (for undo functionality)
+    if (!originalImageUrls[creativeId]) {
+      setOriginalImageUrls(prev => ({
+        ...prev,
+        [creativeId]: imageUrl
+      }))
+    }
+    
+    setShowCropModal(true)
+  }
+
+  // Crop image processing function
+  const applyCrop = async (imageUrl: string, cropType: 'horizontal' | 'vertical', cropAmount: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'))
+          return
+        }
+
+        const { width, height } = img
+        let newWidth = width
+        let newHeight = height
+        let sourceX = 0
+        let sourceY = 0
+        let sourceWidth = width
+        let sourceHeight = height
+
+        if (cropType === 'horizontal') {
+          // Crop from left and right
+          const cropPixels = (width * cropAmount) / 100
+          sourceX = cropPixels / 2
+          sourceWidth = width - cropPixels
+          newWidth = sourceWidth
+        } else {
+          // Crop from top and bottom
+          const cropPixels = (height * cropAmount) / 100
+          sourceY = cropPixels / 2
+          sourceHeight = height - cropPixels
+          newHeight = sourceHeight
+        }
+
+        canvas.width = newWidth
+        canvas.height = newHeight
+
+        ctx.drawImage(
+          img,
+          sourceX, sourceY, sourceWidth, sourceHeight,
+          0, 0, newWidth, newHeight
+        )
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const croppedUrl = URL.createObjectURL(blob)
+            resolve(croppedUrl)
+          } else {
+            reject(new Error('Failed to create blob'))
+          }
+        }, 'image/png')
+      }
+
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = imageUrl
+    })
+  }
+
+  // Apply crop to the selected creative
+  const handleApplyCrop = async () => {
+    try {
+      const croppedImageUrl = await applyCrop(cropImageUrl, cropSettings.cropType, cropSettings.cropAmount)
+      
+      // Update the creative with the cropped image
+      setGeneratedCreatives(prev => prev.map(creative => 
+        creative.id === cropCreativeId 
+          ? { ...creative, generated_image_url: croppedImageUrl }
+          : creative
+      ))
+
+      setShowCropModal(false)
+      toast.success('Image cropped successfully!')
+    } catch (error) {
+      console.error('Crop error:', error)
+      toast.error('Failed to crop image')
+    }
+  }
+
+  // Undo crop - restore original image
+  const handleUndoCrop = () => {
+    const originalUrl = originalImageUrls[cropCreativeId]
+    if (originalUrl) {
+      setGeneratedCreatives(prev => prev.map(creative => 
+        creative.id === cropCreativeId 
+          ? { ...creative, generated_image_url: originalUrl }
+          : creative
+      ))
+      
+      // Remove from original URLs since we're back to original
+      setOriginalImageUrls(prev => {
+        const newUrls = { ...prev }
+        delete newUrls[cropCreativeId]
+        return newUrls
+      })
+      
+      setShowCropModal(false)
+      toast.success('Restored to original image!')
+    }
   }
 
   const handleRetryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1229,6 +1356,14 @@ export default function AdCreativeStudioPage() {
                                 <>
                                   <Button
                                     size="sm"
+                                    onClick={() => openCropModal(creative.id, creative.generated_image_url)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-2 py-1"
+                                    title="Crop image"
+                                  >
+                                    <Crop className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
                                     onClick={() => openRetryModal(creative.id)}
                                     className="bg-orange-600 hover:bg-orange-700 text-white border-0 px-2 py-1"
                                     title="Retry with improvements"
@@ -1717,6 +1852,129 @@ export default function AdCreativeStudioPage() {
               </div>
             </div>
           </div>
+      )}
+
+      {/* Crop Modal */}
+      {showCropModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4 overflow-hidden"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCropModal(false)
+            }
+          }}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between bg-gradient-to-r from-[#222] to-[#1a1a1a]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg flex items-center justify-center">
+                  <Crop className="w-4 h-4 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Crop Image</h2>
+                  <p className="text-gray-400 text-xs">Adjust the framing of your creative</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCropModal(false)}
+                className="bg-transparent border-[#444] text-gray-300 hover:bg-[#333] hover:text-white h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Preview */}
+            <div className="px-6 py-4">
+              <div className="mb-4">
+                <img 
+                  src={cropImageUrl} 
+                  alt="Preview" 
+                  className="w-full h-48 object-contain bg-gray-900 rounded-lg border border-gray-700"
+                />
+              </div>
+
+              {/* Crop Controls */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Crop Direction
+                  </label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={cropSettings.cropType === 'horizontal' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCropSettings(prev => ({ ...prev, cropType: 'horizontal' }))}
+                      className={`flex-1 ${
+                        cropSettings.cropType === 'horizontal' 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-0' 
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Horizontal
+                    </Button>
+                    <Button
+                      variant={cropSettings.cropType === 'vertical' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCropSettings(prev => ({ ...prev, cropType: 'vertical' }))}
+                      className={`flex-1 ${
+                        cropSettings.cropType === 'vertical' 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-0' 
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Vertical
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Crop Amount: {cropSettings.cropAmount}%
+                  </label>
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    step="5"
+                    value={cropSettings.cropAmount}
+                    onChange={(e) => setCropSettings(prev => ({ ...prev, cropAmount: parseInt(e.target.value) }))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>5%</span>
+                    <span>50%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 border-t border-[#333] flex gap-3">
+              {originalImageUrls[cropCreativeId] && (
+                <Button
+                  variant="outline"
+                  onClick={handleUndoCrop}
+                  className="flex-1 bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                >
+                  Undo Changes
+                </Button>
+              )}
+              <Button
+                onClick={handleApplyCrop}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0"
+              >
+                Apply Crop
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
