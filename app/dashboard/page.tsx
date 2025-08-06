@@ -988,7 +988,7 @@ export default function DashboardPage() {
 
   // Update the fetchMetaMetrics function to remove blockers and always force refresh
   const fetchMetaMetrics = useCallback(async (initialLoad: boolean = false, forceRefresh: boolean = true) => {
-    // console.log(`fetchMetaMetrics called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
+    console.log(`[fetchMetaMetrics] Called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
     // Remove the blocking condition - we always want to fetch fresh Meta data
     if (!selectedBrandId) return;
@@ -1028,12 +1028,17 @@ export default function DashboardPage() {
       
       const metaData = await metaResponse.json();
       
-      // Log the raw CPC received from the API
-      // console.log('>>> [fetchMetaMetrics] Received Meta metrics raw data:', metaData);
-      // console.log(`>>> [fetchMetaMetrics] CPC from API: ${metaData?.cpc}`); 
-      // --- Log Reach from API ---
-      // console.log(`>>> [fetchMetaMetrics] Reach from API: ${metaData?.reach}`); 
-      // --- End Log ---
+      // Log the raw data received from the API to debug doubling
+      console.log('>>> [fetchMetaMetrics] Received Meta metrics:', {
+        adSpend: metaData?.adSpend,
+        adSpendGrowth: metaData?.adSpendGrowth,
+        impressions: metaData?.impressions,
+        impressionGrowth: metaData?.impressionGrowth,
+        clicks: metaData?.clicks,
+        clickGrowth: metaData?.clickGrowth,
+        roas: metaData?.roas,
+        roasGrowth: metaData?.roasGrowth
+      });
       
       // console.log('Received Meta metrics:', {
       //   adSpend: metaData.adSpend,
@@ -1043,29 +1048,45 @@ export default function DashboardPage() {
       // });
       
       // FIX: Only update Meta-specific metrics to prevent duplication, preserve other metrics
-      setMetrics(prev => ({
-        ...prev,
-        // Only update Meta-specific metrics, don't duplicate Shopify data
-        adSpend: metaData.adSpend ?? 0,
-        adSpendGrowth: metaData.adSpendGrowth ?? 0,
-        roas: metaData.roas ?? 0,
-        roasGrowth: metaData.roasGrowth ?? 0,
-        impressions: metaData.impressions ?? 0,
-        impressionGrowth: metaData.impressionGrowth ?? 0,
-        ctr: metaData.ctr ?? 0,
-        ctrGrowth: metaData.ctrGrowth ?? 0,
-        clicks: metaData.clicks ?? 0,
-        clickGrowth: metaData.clickGrowth ?? 0,
-        conversions: metaData.conversions ?? 0,
-        conversionGrowth: metaData.conversionGrowth ?? 0,
-        cpc: metaData.cpc ?? 0,
-        costPerResult: metaData.costPerResult ?? 0,
-        cprGrowth: metaData.cprGrowth ?? 0,
-        // Add Reach update here
-        reach: metaData.reach ?? 0,
-        // For dailyData, only update if we have new Meta daily data, otherwise preserve existing
-        dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
-      }));
+      console.log('>>> [fetchMetaMetrics] Previous metrics before update:', {
+        adSpendGrowth: prev => prev.adSpendGrowth,
+        impressionGrowth: prev => prev.impressionGrowth,
+        roasGrowth: prev => prev.roasGrowth
+      });
+      
+      setMetrics(prev => {
+        const newMetrics = {
+          ...prev,
+          // Only update Meta-specific metrics, don't duplicate Shopify data
+          adSpend: metaData.adSpend ?? 0,
+          adSpendGrowth: metaData.adSpendGrowth ?? 0,
+          roas: metaData.roas ?? 0,
+          roasGrowth: metaData.roasGrowth ?? 0,
+          impressions: metaData.impressions ?? 0,
+          impressionGrowth: metaData.impressionGrowth ?? 0,
+          ctr: metaData.ctr ?? 0,
+          ctrGrowth: metaData.ctrGrowth ?? 0,
+          clicks: metaData.clicks ?? 0,
+          clickGrowth: metaData.clickGrowth ?? 0,
+          conversions: metaData.conversions ?? 0,
+          conversionGrowth: metaData.conversionGrowth ?? 0,
+          cpc: metaData.cpc ?? 0,
+          costPerResult: metaData.costPerResult ?? 0,
+          cprGrowth: metaData.cprGrowth ?? 0,
+          // Add Reach update here
+          reach: metaData.reach ?? 0,
+          // For dailyData, only update if we have new Meta daily data, otherwise preserve existing
+          dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
+        };
+        
+        console.log('>>> [fetchMetaMetrics] New metrics being applied:', {
+          adSpendGrowth: newMetrics.adSpendGrowth,
+          impressionGrowth: newMetrics.impressionGrowth,
+          roasGrowth: newMetrics.roasGrowth
+        });
+        
+        return newMetrics;
+      });
       
       // Dispatch a custom event to notify MetaTab components about the refresh
       window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
@@ -1298,7 +1319,11 @@ export default function DashboardPage() {
         }
       }
       
-      // Now call the normal fetchMetaMetrics function with force refresh
+      // Call fetchMetaMetrics to get the latest calculated metrics after resync
+      // Add a small delay to ensure resync data is processed
+      if (activePlatforms.meta) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for resync to settle
+      }
       await fetchMetaMetrics(true, true);
       
     } catch (error) {
