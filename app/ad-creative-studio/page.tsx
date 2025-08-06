@@ -230,10 +230,15 @@ export default function AdCreativeStudioPage() {
   const [showCropModal, setShowCropModal] = useState(false)
   const [cropCreativeId, setCropCreativeId] = useState<string>('')
   const [cropImageUrl, setCropImageUrl] = useState<string>('')
-  const [cropSettings, setCropSettings] = useState({
-    cropType: 'horizontal' as 'horizontal' | 'vertical',
-    cropAmount: 10 // percentage to crop from each side
+  const [cropArea, setCropArea] = useState({
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100
   })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragHandle, setDragHandle] = useState<string>('')
+  const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 })
   const [originalImageUrls, setOriginalImageUrls] = useState<{[key: string]: string}>({}) // Store original URLs for undo
 
   // Get current Monday as week start
@@ -440,6 +445,9 @@ export default function AdCreativeStudioPage() {
     setCropCreativeId(creativeId)
     setCropImageUrl(imageUrl)
     
+    // Initialize crop area to cover most of the image with some margin
+    setCropArea({ x: 10, y: 10, width: 80, height: 80 })
+    
     // Store original URL if not already stored (for undo functionality)
     if (!originalImageUrls[creativeId]) {
       setOriginalImageUrls(prev => ({
@@ -452,7 +460,7 @@ export default function AdCreativeStudioPage() {
   }
 
   // Crop image processing function
-  const applyCrop = async (imageUrl: string, cropType: 'horizontal' | 'vertical', cropAmount: number): Promise<string> => {
+  const applyCrop = async (imageUrl: string, cropArea: { x: number, y: number, width: number, height: number }): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.crossOrigin = 'anonymous'
@@ -466,34 +474,20 @@ export default function AdCreativeStudioPage() {
         }
 
         const { width, height } = img
-        let newWidth = width
-        let newHeight = height
-        let sourceX = 0
-        let sourceY = 0
-        let sourceWidth = width
-        let sourceHeight = height
+        
+        // Convert percentages to pixel values
+        const sourceX = (cropArea.x / 100) * width
+        const sourceY = (cropArea.y / 100) * height
+        const sourceWidth = (cropArea.width / 100) * width
+        const sourceHeight = (cropArea.height / 100) * height
 
-        if (cropType === 'horizontal') {
-          // Crop from left and right
-          const cropPixels = (width * cropAmount) / 100
-          sourceX = cropPixels / 2
-          sourceWidth = width - cropPixels
-          newWidth = sourceWidth
-        } else {
-          // Crop from top and bottom
-          const cropPixels = (height * cropAmount) / 100
-          sourceY = cropPixels / 2
-          sourceHeight = height - cropPixels
-          newHeight = sourceHeight
-        }
-
-        canvas.width = newWidth
-        canvas.height = newHeight
+        canvas.width = sourceWidth
+        canvas.height = sourceHeight
 
         ctx.drawImage(
           img,
           sourceX, sourceY, sourceWidth, sourceHeight,
-          0, 0, newWidth, newHeight
+          0, 0, sourceWidth, sourceHeight
         )
 
         canvas.toBlob((blob) => {
@@ -514,7 +508,7 @@ export default function AdCreativeStudioPage() {
   // Apply crop to the selected creative
   const handleApplyCrop = async () => {
     try {
-      const croppedImageUrl = await applyCrop(cropImageUrl, cropSettings.cropType, cropSettings.cropAmount)
+      const croppedImageUrl = await applyCrop(cropImageUrl, cropArea)
       
       // Update the creative with the cropped image
       setGeneratedCreatives(prev => prev.map(creative => 
@@ -551,6 +545,61 @@ export default function AdCreativeStudioPage() {
       setShowCropModal(false)
       toast.success('Restored to original image!')
     }
+  }
+
+  // Interactive crop handlers
+  const handleMouseDown = (e: React.MouseEvent, handle: string) => {
+    e.preventDefault()
+    setIsDragging(true)
+    setDragHandle(handle)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragHandle) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+
+    setCropArea(prev => {
+      let newArea = { ...prev }
+
+      switch (dragHandle) {
+        case 'nw': // Top-left
+          newArea.width = Math.max(10, prev.width + (prev.x - Math.max(0, x)))
+          newArea.height = Math.max(10, prev.height + (prev.y - Math.max(0, y)))
+          newArea.x = Math.max(0, Math.min(x, prev.x + prev.width - 10))
+          newArea.y = Math.max(0, Math.min(y, prev.y + prev.height - 10))
+          break
+        case 'ne': // Top-right
+          newArea.width = Math.max(10, Math.min(100 - prev.x, x - prev.x))
+          newArea.height = Math.max(10, prev.height + (prev.y - Math.max(0, y)))
+          newArea.y = Math.max(0, Math.min(y, prev.y + prev.height - 10))
+          break
+        case 'sw': // Bottom-left
+          newArea.width = Math.max(10, prev.width + (prev.x - Math.max(0, x)))
+          newArea.height = Math.max(10, Math.min(100 - prev.y, y - prev.y))
+          newArea.x = Math.max(0, Math.min(x, prev.x + prev.width - 10))
+          break
+        case 'se': // Bottom-right
+          newArea.width = Math.max(10, Math.min(100 - prev.x, x - prev.x))
+          newArea.height = Math.max(10, Math.min(100 - prev.y, y - prev.y))
+          break
+        case 'move': // Move entire crop area
+          const deltaX = x - (prev.x + prev.width / 2)
+          const deltaY = y - (prev.y + prev.height / 2)
+          newArea.x = Math.max(0, Math.min(100 - prev.width, prev.x + deltaX))
+          newArea.y = Math.max(0, Math.min(100 - prev.height, prev.y + deltaY))
+          break
+      }
+
+      return newArea
+    })
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+    setDragHandle('')
   }
 
   const handleRetryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -971,50 +1020,7 @@ export default function AdCreativeStudioPage() {
             </div>
             
             <div className="flex items-center gap-4">
-            {/* Product Image Display - Now in larger widget */}
-            <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {uploadedImageUrl ? 'Change' : 'Upload'}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-center flex-1">
-                {uploadedImageUrl ? (
-                  <>
-                    {/* Large Product Preview - Full height */}
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[80px]">
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Uploaded product" 
-                        className="w-full h-full object-cover"
-                    />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Upload Icon */}
-                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-            
-            {/* Weekly Usage Display - Now in smaller widget */}
+            {/* Weekly Usage Display - First widget */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">WEEKLY USAGE</span>
@@ -1088,28 +1094,72 @@ export default function AdCreativeStudioPage() {
               </div>
             </div>
             
-            {/* Beta Notice Widget */}
+            {/* Beta Notice Widget - Second widget */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-xs font-medium">STATUS</span>
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center">
-                  <FlaskConical className="w-8 h-8 text-amber-400" />
+                <FlaskConical className="w-4 h-4 text-orange-400" />
               </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
+                  <FlaskConical className="w-6 h-6 text-orange-400" />
+                </div>
                 
                 <div>
                   <div className="text-white font-semibold text-sm">
                     Beta Version
                   </div>
                   <div className="text-gray-400 text-xs">
-                    May struggle with small text, tags & fine details
+                    May struggle with small text, tags, neck labels, and complex fine details
                   </div>
                 </div>
               </div>
             </div>
+            
+            {/* Product Image Display - Third widget with larger space */}
+            <div 
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
+                onClick={() => document.getElementById('image-upload')?.click()}
+              >
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-xs font-medium">PRODUCT IMAGE</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  {uploadedImageUrl ? 'Change' : 'Upload'}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-center flex-1">
+                {uploadedImageUrl ? (
+                  <>
+                    {/* Large Product Preview - Full height */}
+                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[80px]">
+                    <img 
+                      src={uploadedImageUrl} 
+                      alt="Uploaded product" 
+                        className="w-full h-full object-cover"
+                    />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Upload Icon */}
+                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
             </div>
           </div>
         </div>
@@ -1854,19 +1904,20 @@ export default function AdCreativeStudioPage() {
           </div>
       )}
 
-      {/* Crop Modal */}
+      {/* Interactive Crop Modal */}
       {showCropModal && (
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4 overflow-hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4"
           style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowCropModal(false)
             }
           }}
+          onMouseUp={handleMouseUp}
         >
           <div 
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-md w-full shadow-2xl"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-2xl border border-[#333] max-w-2xl w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -1877,7 +1928,7 @@ export default function AdCreativeStudioPage() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">Crop Image</h2>
-                  <p className="text-gray-400 text-xs">Adjust the framing of your creative</p>
+                  <p className="text-gray-400 text-xs">Drag the corners and edges to crop</p>
                 </div>
               </div>
               <Button
@@ -1890,67 +1941,100 @@ export default function AdCreativeStudioPage() {
               </Button>
             </div>
 
-            {/* Preview */}
-            <div className="px-6 py-4">
-              <div className="mb-4">
+            {/* Interactive Crop Area */}
+            <div className="px-6 py-6">
+              <div 
+                className="relative mx-auto bg-gray-900 rounded-lg overflow-hidden border border-gray-700"
+                style={{ width: '400px', height: '400px' }}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+              >
                 <img 
                   src={cropImageUrl} 
-                  alt="Preview" 
-                  className="w-full h-48 object-contain bg-gray-900 rounded-lg border border-gray-700"
+                  alt="Crop preview" 
+                  className="w-full h-full object-contain"
+                  onLoad={(e) => {
+                    const img = e.target as HTMLImageElement
+                    setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
+                  }}
                 />
-              </div>
-
-              {/* Crop Controls */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Crop Direction
-                  </label>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={cropSettings.cropType === 'horizontal' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setCropSettings(prev => ({ ...prev, cropType: 'horizontal' }))}
-                      className={`flex-1 ${
-                        cropSettings.cropType === 'horizontal' 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-0' 
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      Horizontal
-                    </Button>
-                    <Button
-                      variant={cropSettings.cropType === 'vertical' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setCropSettings(prev => ({ ...prev, cropType: 'vertical' }))}
-                      className={`flex-1 ${
-                        cropSettings.cropType === 'vertical' 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-0' 
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      Vertical
-                    </Button>
-                  </div>
+                
+                {/* Crop Overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Dark overlay areas */}
+                  <div 
+                    className="absolute bg-black/50"
+                    style={{
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${cropArea.y}%`
+                    }}
+                  />
+                  <div 
+                    className="absolute bg-black/50"
+                    style={{
+                      top: `${cropArea.y + cropArea.height}%`,
+                      left: 0,
+                      width: '100%',
+                      height: `${100 - cropArea.y - cropArea.height}%`
+                    }}
+                  />
+                  <div 
+                    className="absolute bg-black/50"
+                    style={{
+                      top: `${cropArea.y}%`,
+                      left: 0,
+                      width: `${cropArea.x}%`,
+                      height: `${cropArea.height}%`
+                    }}
+                  />
+                  <div 
+                    className="absolute bg-black/50"
+                    style={{
+                      top: `${cropArea.y}%`,
+                      left: `${cropArea.x + cropArea.width}%`,
+                      width: `${100 - cropArea.x - cropArea.width}%`,
+                      height: `${cropArea.height}%`
+                    }}
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Crop Amount: {cropSettings.cropAmount}%
-                  </label>
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    step="5"
-                    value={cropSettings.cropAmount}
-                    onChange={(e) => setCropSettings(prev => ({ ...prev, cropAmount: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>5%</span>
-                    <span>50%</span>
+                {/* Crop Selection Area */}
+                <div 
+                  className="absolute border-2 border-blue-400 pointer-events-auto cursor-move"
+                  style={{
+                    left: `${cropArea.x}%`,
+                    top: `${cropArea.y}%`,
+                    width: `${cropArea.width}%`,
+                    height: `${cropArea.height}%`
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, 'move')}
+                >
+                  {/* Grid lines */}
+                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-30">
+                    {Array.from({ length: 9 }).map((_, i) => (
+                      <div key={i} className="border border-blue-400/50" />
+                    ))}
                   </div>
+
+                  {/* Corner handles */}
+                  <div 
+                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-nw-resize -top-1 -left-1"
+                    onMouseDown={(e) => handleMouseDown(e, 'nw')}
+                  />
+                  <div 
+                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-ne-resize -top-1 -right-1"
+                    onMouseDown={(e) => handleMouseDown(e, 'ne')}
+                  />
+                  <div 
+                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-sw-resize -bottom-1 -left-1"
+                    onMouseDown={(e) => handleMouseDown(e, 'sw')}
+                  />
+                  <div 
+                    className="absolute w-3 h-3 bg-blue-400 border border-white cursor-se-resize -bottom-1 -right-1"
+                    onMouseDown={(e) => handleMouseDown(e, 'se')}
+                  />
                 </div>
               </div>
             </div>
