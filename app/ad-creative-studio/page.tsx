@@ -445,8 +445,8 @@ export default function AdCreativeStudioPage() {
     setCropCreativeId(creativeId)
     setCropImageUrl(imageUrl)
     
-    // Initialize crop area as a natural rectangle (like photo crop)
-    setCropArea({ x: 10, y: 15, width: 80, height: 70 })
+    // Initialize crop area to fit the actual image (will be updated when image loads)
+    setCropArea({ x: 0, y: 0, width: 100, height: 100 })
     
     // Store original URL if not already stored (for undo functionality)
     if (!originalImageUrls[creativeId]) {
@@ -547,78 +547,89 @@ export default function AdCreativeStudioPage() {
     }
   }
 
+  // Calculate crop area to fit actual image dimensions
+  const calculateImageCropArea = (img: HTMLImageElement, container: HTMLElement) => {
+    const containerRect = container.getBoundingClientRect()
+    const imageAspect = img.naturalWidth / img.naturalHeight
+    const containerAspect = containerRect.width / containerRect.height
+    
+    let imageDisplayWidth, imageDisplayHeight, imageOffsetX, imageOffsetY
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider - fit to container width
+      imageDisplayWidth = containerRect.width
+      imageDisplayHeight = containerRect.width / imageAspect
+      imageOffsetX = 0
+      imageOffsetY = (containerRect.height - imageDisplayHeight) / 2
+    } else {
+      // Image is taller - fit to container height
+      imageDisplayHeight = containerRect.height
+      imageDisplayWidth = containerRect.height * imageAspect
+      imageOffsetY = 0
+      imageOffsetX = (containerRect.width - imageDisplayWidth) / 2
+    }
+    
+    // Convert to percentages relative to container
+    const x = (imageOffsetX / containerRect.width) * 100
+    const y = (imageOffsetY / containerRect.height) * 100
+    const width = (imageDisplayWidth / containerRect.width) * 100
+    const height = (imageDisplayHeight / containerRect.height) * 100
+    
+    return { x, y, width, height }
+  }
+
   // Interactive crop handlers
   const handleMouseDown = (e: React.MouseEvent, handle: string) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(true)
-    setDragHandle(handle)
     
-    // Add global mouse move and up listeners
+    const cropContainer = document.querySelector('.crop-container') as HTMLElement
+    if (!cropContainer) return
+    
+    const startMouseX = e.clientX
+    const startMouseY = e.clientY
+    const startCropArea = { ...cropArea }
+    
     const handleGlobalMouseMove = (globalE: MouseEvent) => {
-      if (!isDragging && !dragHandle) return
-      
-      const cropContainer = document.querySelector('.crop-container') as HTMLElement
-      if (!cropContainer) return
-      
       const rect = cropContainer.getBoundingClientRect()
-      const x = Math.max(0, Math.min(100, ((globalE.clientX - rect.left) / rect.width) * 100))
-      const y = Math.max(0, Math.min(100, ((globalE.clientY - rect.top) / rect.height) * 100))
+      const deltaX = ((globalE.clientX - startMouseX) / rect.width) * 100
+      const deltaY = ((globalE.clientY - startMouseY) / rect.height) * 100
 
       setCropArea(prev => {
-        let newArea = { ...prev }
+        let newArea = { ...startCropArea }
 
         switch (handle) {
           case 'top': // Top edge
-            const bottomY = prev.y + prev.height
-            newArea.y = Math.min(y, bottomY - 5)
-            newArea.height = bottomY - newArea.y
+            newArea.y = Math.max(0, Math.min(startCropArea.y + startCropArea.height - 5, startCropArea.y + deltaY))
+            newArea.height = startCropArea.y + startCropArea.height - newArea.y
             break
           case 'bottom': // Bottom edge
-            newArea.height = Math.max(5, y - prev.y)
+            newArea.height = Math.max(5, Math.min(100 - startCropArea.y, startCropArea.height + deltaY))
             break
           case 'left': // Left edge
-            const rightX = prev.x + prev.width
-            newArea.x = Math.min(x, rightX - 5)
-            newArea.width = rightX - newArea.x
+            newArea.x = Math.max(0, Math.min(startCropArea.x + startCropArea.width - 5, startCropArea.x + deltaX))
+            newArea.width = startCropArea.x + startCropArea.width - newArea.x
             break
           case 'right': // Right edge
-            newArea.width = Math.max(5, x - prev.x)
+            newArea.width = Math.max(5, Math.min(100 - startCropArea.x, startCropArea.width + deltaX))
             break
           case 'move': // Move entire crop area
-            const centerX = prev.x + prev.width / 2
-            const centerY = prev.y + prev.height / 2
-            const deltaX = x - centerX
-            const deltaY = y - centerY
-            newArea.x = Math.max(0, Math.min(100 - prev.width, prev.x + deltaX))
-            newArea.y = Math.max(0, Math.min(100 - prev.height, prev.y + deltaY))
+            newArea.x = Math.max(0, Math.min(100 - startCropArea.width, startCropArea.x + deltaX))
+            newArea.y = Math.max(0, Math.min(100 - startCropArea.height, startCropArea.y + deltaY))
             break
         }
-
-        // Ensure crop area doesn't go outside bounds
-        newArea.x = Math.max(0, newArea.x)
-        newArea.y = Math.max(0, newArea.y)
-        newArea.width = Math.min(100 - newArea.x, Math.max(5, newArea.width))
-        newArea.height = Math.min(100 - newArea.y, Math.max(5, newArea.height))
 
         return newArea
       })
     }
     
     const handleGlobalMouseUp = () => {
-      setIsDragging(false)
-      setDragHandle('')
       document.removeEventListener('mousemove', handleGlobalMouseMove)
       document.removeEventListener('mouseup', handleGlobalMouseUp)
     }
     
     document.addEventListener('mousemove', handleGlobalMouseMove)
     document.addEventListener('mouseup', handleGlobalMouseUp)
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-    setDragHandle('')
   }
 
   const handleRetryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1971,6 +1982,12 @@ export default function AdCreativeStudioPage() {
                   className="w-full h-full object-contain"
                   onLoad={(e) => {
                     const img = e.target as HTMLImageElement
+                    const container = document.querySelector('.crop-container') as HTMLElement
+                    if (container) {
+                      // Calculate crop area to fit the actual image dimensions
+                      const imageCropArea = calculateImageCropArea(img, container)
+                      setCropArea(imageCropArea)
+                    }
                     setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
                   }}
                 />
