@@ -599,21 +599,28 @@ export default function AdCreativeStudioPage() {
         let newArea = { ...startCropArea }
 
         switch (handle) {
-          case 'top': // Top edge
-            newArea.y = Math.max(0, Math.min(startCropArea.y + startCropArea.height - 5, startCropArea.y + deltaY))
-            newArea.height = startCropArea.y + startCropArea.height - newArea.y
+          case 'top': // Top edge - shrink from top
+            const newTopY = Math.max(0, Math.min(startCropArea.y + startCropArea.height - 5, startCropArea.y + deltaY))
+            newArea.y = newTopY
+            newArea.height = startCropArea.y + startCropArea.height - newTopY
             break
-          case 'bottom': // Bottom edge
+          case 'bottom': // Bottom edge - expand/shrink from bottom
             newArea.height = Math.max(5, Math.min(100 - startCropArea.y, startCropArea.height + deltaY))
             break
-          case 'left': // Left edge
-            newArea.x = Math.max(0, Math.min(startCropArea.x + startCropArea.width - 5, startCropArea.x + deltaX))
-            newArea.width = startCropArea.x + startCropArea.width - newArea.x
+          case 'left': // Left edge - shrink from left
+            const newLeftX = Math.max(0, Math.min(startCropArea.x + startCropArea.width - 5, startCropArea.x + deltaX))
+            newArea.x = newLeftX
+            newArea.width = startCropArea.x + startCropArea.width - newLeftX
             break
-          case 'right': // Right edge
+          case 'right': // Right edge - expand/shrink from right
             newArea.width = Math.max(5, Math.min(100 - startCropArea.x, startCropArea.width + deltaX))
             break
-
+          case 'move': // Move entire crop area - RESTORED
+            newArea.x = Math.max(0, Math.min(100 - startCropArea.width, startCropArea.x + deltaX))
+            newArea.y = Math.max(0, Math.min(100 - startCropArea.height, startCropArea.y + deltaY))
+            newArea.width = startCropArea.width
+            newArea.height = startCropArea.height
+            break
         }
 
         return newArea
@@ -1054,7 +1061,7 @@ export default function AdCreativeStudioPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-400 whitespace-nowrap">
                     {getDaysUntilReset()}d left
-                  </span>
+                </span>
                   {usageData.current > 0 && (
                     <button
                       onClick={resetUsage}
@@ -1186,8 +1193,8 @@ export default function AdCreativeStudioPage() {
                 className="hidden"
               />
             </div>
-
-            </div>
+            
+                </div>
           </div>
         </div>
 
@@ -1246,8 +1253,8 @@ export default function AdCreativeStudioPage() {
                                 <h4 className="text-white font-medium text-base mb-1">Multiple Background Styles</h4>
                                 <p className="text-gray-400 text-sm">Choose from concrete, asphalt, black, and white backgrounds</p>
                               </div>
-                            </div>
-                            
+                      </div>
+                      
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 bg-white rounded-full mt-3 flex-shrink-0"></div>
                               <div>
@@ -1261,32 +1268,32 @@ export default function AdCreativeStudioPage() {
                               <div>
                                 <h4 className="text-white font-medium text-base mb-1">Perfect Preservation</h4>
                                 <p className="text-gray-400 text-sm">AI preserves exact shapes, colors, and text including neck tags</p>
-                              </div>
+                        </div>
                             </div>
                           </div>
-                        </div>
-                        
+                      </div>
+                      
                         {/* Right Side - Upload Section */}
                         <div>
-                          <div 
+                      <div 
                             className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-8 hover:border-[#555] transition-all duration-300 cursor-pointer group mb-6"
-                            onClick={() => document.getElementById('image-upload')?.click()}
-                          >
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                      >
                             <div className="text-center">
                               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center group-hover:from-white/10 group-hover:to-white/15 transition-all">
-                                <ImageIcon className="w-8 h-8 text-white" />
-                              </div>
+                            <ImageIcon className="w-8 h-8 text-white" />
+                          </div>
                               
                               <h4 className="text-white font-semibold text-lg mb-2">Choose Product Image</h4>
                               <p className="text-gray-400 text-sm mb-4">PNG, JPG up to 10MB</p>
                               
                               <Button className="bg-white hover:bg-gray-200 text-black border-0">
-                                <Upload className="w-4 h-4 mr-2" />
-                                Upload Image
-                              </Button>
-                            </div>
-                          </div>
-                          
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Image
+                          </Button>
+                        </div>
+                      </div>
+                      
                           {/* Image Quality Notice */}
                           <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4">
                             <div className="flex items-start gap-3">
@@ -1970,8 +1977,8 @@ export default function AdCreativeStudioPage() {
             {/* Interactive Crop Area */}
             <div className="px-6 py-6">
               <div 
-                className="crop-container relative mx-auto bg-gray-900 rounded-lg overflow-hidden border border-gray-700"
-                style={{ width: '400px', height: '400px' }}
+                className="crop-container relative mx-auto bg-transparent rounded-lg overflow-hidden"
+                style={{ width: '600px', height: '500px' }}
               >
                 <img 
                   src={cropImageUrl} 
@@ -1993,7 +2000,7 @@ export default function AdCreativeStudioPage() {
 
                 {/* Crop Selection Area */}
                 <div 
-                  className="absolute border border-white/80 pointer-events-none group transition-all duration-200 hover:border-white"
+                  className="absolute border border-white/80 pointer-events-auto cursor-move group transition-all duration-200 hover:border-white"
                   style={{
                     left: `${cropArea.x}%`,
                     top: `${cropArea.y}%`,
@@ -2001,6 +2008,7 @@ export default function AdCreativeStudioPage() {
                     height: `${cropArea.height}%`,
                     boxShadow: '0 0 0 1px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)'
                   }}
+                  onMouseDown={(e) => handleMouseDown(e, 'move')}
                 >
                   {/* Subtle corner indicators */}
                   <div className="absolute w-3 h-3 border-l border-t border-white/60 top-1 left-1" />
@@ -2085,9 +2093,9 @@ export default function AdCreativeStudioPage() {
               >
                 Apply Crop
               </Button>
+              </div>
             </div>
           </div>
-        </div>
       )}
     </>
   )
