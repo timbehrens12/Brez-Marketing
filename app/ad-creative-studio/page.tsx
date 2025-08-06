@@ -1199,7 +1199,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             
             {/* Product Image Display - Third widget with larger space */}
             <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[250px] h-[160px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
+              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 min-w-[200px] h-[120px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
                 onClick={() => document.getElementById('image-upload')?.click()}
               >
               <div className="flex items-center justify-between">
@@ -1213,7 +1213,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 {uploadedImageUrl ? (
                   <>
                     {/* Large Product Preview - Full height */}
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[140px]">
+                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[120px] max-h-[70px]">
                     <img 
                       src={uploadedImageUrl} 
                       alt="Uploaded product" 
