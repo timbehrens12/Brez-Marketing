@@ -445,8 +445,8 @@ export default function AdCreativeStudioPage() {
     setCropCreativeId(creativeId)
     setCropImageUrl(imageUrl)
     
-    // Initialize crop area as a more natural rectangle
-    setCropArea({ x: 15, y: 20, width: 70, height: 60 })
+    // Initialize crop area as a natural rectangle (like photo crop)
+    setCropArea({ x: 10, y: 15, width: 80, height: 70 })
     
     // Store original URL if not already stored (for undo functionality)
     if (!originalImageUrls[creativeId]) {
@@ -569,29 +569,21 @@ export default function AdCreativeStudioPage() {
         let newArea = { ...prev }
 
         switch (handle) {
-          case 'nw': // Top-left
-            const maxWidth = prev.x + prev.width
-            const maxHeight = prev.y + prev.height
-            newArea.x = Math.min(x, maxWidth - 5)
-            newArea.y = Math.min(y, maxHeight - 5)
-            newArea.width = maxWidth - newArea.x
-            newArea.height = maxHeight - newArea.y
+          case 'top': // Top edge
+            const bottomY = prev.y + prev.height
+            newArea.y = Math.min(y, bottomY - 5)
+            newArea.height = bottomY - newArea.y
             break
-          case 'ne': // Top-right
-            const maxHeight2 = prev.y + prev.height
-            newArea.width = Math.max(5, x - prev.x)
-            newArea.y = Math.min(y, maxHeight2 - 5)
-            newArea.height = maxHeight2 - newArea.y
-            break
-          case 'sw': // Bottom-left
-            const maxWidth2 = prev.x + prev.width
-            newArea.x = Math.min(x, maxWidth2 - 5)
-            newArea.width = maxWidth2 - newArea.x
+          case 'bottom': // Bottom edge
             newArea.height = Math.max(5, y - prev.y)
             break
-          case 'se': // Bottom-right
+          case 'left': // Left edge
+            const rightX = prev.x + prev.width
+            newArea.x = Math.min(x, rightX - 5)
+            newArea.width = rightX - newArea.x
+            break
+          case 'right': // Right edge
             newArea.width = Math.max(5, x - prev.x)
-            newArea.height = Math.max(5, y - prev.y)
             break
           case 'move': // Move entire crop area
             const centerX = prev.x + prev.width / 2
@@ -2035,29 +2027,49 @@ export default function AdCreativeStudioPage() {
                   }}
                   onMouseDown={(e) => handleMouseDown(e, 'move')}
                 >
-                  {/* Grid lines */}
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-30">
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="border border-blue-400/50" />
-                    ))}
-                  </div>
-
-                  {/* Corner handles */}
+                  {/* Edge handles - middle of each side */}
+                  {/* Top edge handle */}
                   <div 
-                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-nw-resize -top-2 -left-2 rounded-sm hover:bg-blue-300 transition-colors"
-                    onMouseDown={(e) => handleMouseDown(e, 'nw')}
+                    className="absolute w-6 h-2 bg-blue-400 border border-white cursor-ns-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    style={{
+                      top: '-4px',
+                      left: '50%',
+                      transform: 'translateX(-50%)'
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'top')}
                   />
+                  
+                  {/* Bottom edge handle */}
                   <div 
-                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-ne-resize -top-2 -right-2 rounded-sm hover:bg-blue-300 transition-colors"
-                    onMouseDown={(e) => handleMouseDown(e, 'ne')}
+                    className="absolute w-6 h-2 bg-blue-400 border border-white cursor-ns-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    style={{
+                      bottom: '-4px',
+                      left: '50%',
+                      transform: 'translateX(-50%)'
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'bottom')}
                   />
+                  
+                  {/* Left edge handle */}
                   <div 
-                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-sw-resize -bottom-2 -left-2 rounded-sm hover:bg-blue-300 transition-colors"
-                    onMouseDown={(e) => handleMouseDown(e, 'sw')}
+                    className="absolute w-2 h-6 bg-blue-400 border border-white cursor-ew-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    style={{
+                      left: '-4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'left')}
                   />
+                  
+                  {/* Right edge handle */}
                   <div 
-                    className="absolute w-4 h-4 bg-blue-400 border-2 border-white cursor-se-resize -bottom-2 -right-2 rounded-sm hover:bg-blue-300 transition-colors"
-                    onMouseDown={(e) => handleMouseDown(e, 'se')}
+                    className="absolute w-2 h-6 bg-blue-400 border border-white cursor-ew-resize rounded-sm hover:bg-blue-300 transition-colors"
+                    style={{
+                      right: '-4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'right')}
                   />
                 </div>
               </div>
@@ -2086,4 +2098,5 @@ export default function AdCreativeStudioPage() {
       )}
     </>
   )
+}
 }
