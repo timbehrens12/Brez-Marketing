@@ -1195,14 +1195,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   <FlaskConical className="w-8 h-8 text-orange-400" />
                 </div>
                 
-                                  <div>
-                    <div className="text-white font-semibold text-base">
-                      Beta Version
-                    </div>
-                    <div className="text-gray-400 text-sm">
-                      AI may struggle with fine details
-                    </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-semibold text-base">
+                    Beta Version
                   </div>
+                  <div className="text-gray-400 text-sm">
+                    AI struggles with details
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -1222,11 +1222,11 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 {uploadedImageUrl ? (
                   <>
                     {/* Large Product Preview - Full height */}
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[180px] max-h-[110px]">
+                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[180px] max-h-[110px] flex items-center justify-center">
                     <img 
                       src={uploadedImageUrl} 
                       alt="Uploaded product" 
-                        className="w-full h-full object-cover"
+                        className="max-w-full max-h-full object-contain"
                     />
                     </div>
                   </>
@@ -1601,19 +1601,34 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 {/* Compact Image Preview Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    <p className="text-white text-base font-medium flex items-center gap-2">
-                      <Upload className="w-4 h-4" />
-                      Your Product
-                    </p>
-                    <div className="aspect-[4/5] bg-gradient-to-br from-[#333] to-[#222] rounded-lg overflow-hidden border border-[#333]">
+                    <div className="flex items-center justify-between">
+                      <p className="text-white text-base font-medium flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        Your Product
+                      </p>
+                      <button
+                        onClick={() => document.getElementById('modal-image-upload')?.click()}
+                        className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded border border-[#333] hover:border-[#555]"
+                      >
+                        Change
+                      </button>
+                    </div>
+                    <div className="aspect-[4/5] bg-gradient-to-br from-[#333] to-[#222] rounded-lg overflow-hidden border border-[#333] flex items-center justify-center">
                       {uploadedImageUrl ? (
-                        <img src={uploadedImageUrl} alt="Product" className="w-full h-full object-cover" />
+                        <img src={uploadedImageUrl} alt="Product" className="max-w-full max-h-full object-contain" />
                       ) : (
                         <div className="flex items-center justify-center h-full">
                           <ImageIcon className="w-10 h-10 text-gray-500" />
                         </div>
                       )}
                     </div>
+                    <input
+                      id="modal-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                   </div>
 
                   <div className="space-y-3">
