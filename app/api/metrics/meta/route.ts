@@ -707,6 +707,16 @@ function processMetaData(data: any[]): ProcessedMetaData {
   const ctrGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'ctr') : 0
   const roasGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'roas') : 0
   
+  // Debug log the calculated growth values
+  console.log(`>>> [API Meta Route] Calculated growth values:`, {
+    adSpendGrowth,
+    impressionGrowth,
+    clickGrowth,
+    roasGrowth,
+    ctrGrowth,
+    conversionGrowth
+  });
+  
   // Calculate overall metrics
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0

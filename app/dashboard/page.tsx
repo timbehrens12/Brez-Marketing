@@ -1319,12 +1319,59 @@ export default function DashboardPage() {
         }
       }
       
-      // Call fetchMetaMetrics to get the latest calculated metrics after resync
-      // Add a small delay to ensure resync data is processed
-      if (activePlatforms.meta) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for resync to settle
+      // POTENTIAL FIX: Only call fetchMetaMetrics if Meta platform is NOT active
+      // This prevents double-calling when Meta resync already processes the data
+      if (!activePlatforms.meta) {
+        console.log('>>> [fetchAllData] Calling fetchMetaMetrics because Meta platform is not active');
+        await fetchMetaMetrics(true, true);
+      } else {
+        console.log('>>> [fetchAllData] Skipping fetchMetaMetrics because Meta resync already processed data');
+        
+        // Instead, just trigger a final metrics fetch to get the processed data
+        try {
+          const params = new URLSearchParams({
+            brandId: selectedBrandId.toString(),
+            from: fromDateStr,
+            to: toDateStr,
+            t: new Date().getTime().toString() // Cache buster
+          });
+          
+          const response = await fetch(`/api/metrics/meta?${params.toString()}`);
+          if (response.ok) {
+            const metaData = await response.json();
+            
+            console.log('>>> [fetchAllData] Final Meta data after resync:', {
+              adSpendGrowth: metaData?.adSpendGrowth,
+              impressionGrowth: metaData?.impressionGrowth,
+              roasGrowth: metaData?.roasGrowth
+            });
+            
+            // Apply the metrics without additional processing
+            setMetrics(prev => ({
+              ...prev,
+              adSpend: metaData.adSpend ?? prev.adSpend,
+              adSpendGrowth: metaData.adSpendGrowth ?? prev.adSpendGrowth,
+              roas: metaData.roas ?? prev.roas,
+              roasGrowth: metaData.roasGrowth ?? prev.roasGrowth,
+              impressions: metaData.impressions ?? prev.impressions,
+              impressionGrowth: metaData.impressionGrowth ?? prev.impressionGrowth,
+              ctr: metaData.ctr ?? prev.ctr,
+              ctrGrowth: metaData.ctrGrowth ?? prev.ctrGrowth,
+              clicks: metaData.clicks ?? prev.clicks,
+              clickGrowth: metaData.clickGrowth ?? prev.clickGrowth,
+              conversions: metaData.conversions ?? prev.conversions,
+              conversionGrowth: metaData.conversionGrowth ?? prev.conversionGrowth,
+              cpc: metaData.cpc ?? prev.cpc,
+              costPerResult: metaData.costPerResult ?? prev.costPerResult,
+              cprGrowth: metaData.cprGrowth ?? prev.cprGrowth,
+              reach: metaData.reach ?? prev.reach,
+              dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
+            }));
+          }
+        } catch (error) {
+          console.error('>>> [fetchAllData] Error fetching final Meta data:', error);
+        }
       }
-      await fetchMetaMetrics(true, true);
       
     } catch (error) {
       // console.error('Error refreshing data:', error)
