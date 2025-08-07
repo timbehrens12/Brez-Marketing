@@ -626,6 +626,8 @@ export default function AdCreativeStudioPage() {
   const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
   const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
   const [isLoadingCreatives, setIsLoadingCreatives] = useState(false)
+  const [loadedImages, setLoadedImages] = useState<Record<string, { original: string, generated: string }>>({})
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set())
   const [showStyleModal, setShowStyleModal] = useState(false)
   const [modalStyle, setModalStyle] = useState<StyleOption>(STYLE_OPTIONS[0])
   const [creativeName, setCreativeName] = useState('')
@@ -805,6 +807,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       // Start loading immediately and clear old creatives
       setIsLoadingCreatives(true)
       setGeneratedCreatives([]) // Clear immediately when brand changes
+      setLoadedImages({}) // Clear loaded images cache
+      setLoadingImages(new Set()) // Clear loading images
       
       try {
         console.log('📚 Loading creatives for brand:', selectedBrandId)
@@ -834,6 +838,18 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
     loadCreatives()
   }, [selectedBrandId, user?.id])
+
+  // Auto-load images for completed creatives when they become visible
+  useEffect(() => {
+    const completedCreatives = generatedCreatives.filter(c => c.status === 'completed')
+    
+    // Load images for the first few creatives immediately
+    completedCreatives.slice(0, 6).forEach(creative => {
+      if (!loadedImages[creative.id] && !loadingImages.has(creative.id)) {
+        loadCreativeImages(creative.id)
+      }
+    })
+  }, [generatedCreatives])
 
   // Simulate loading for the page
   React.useEffect(() => {
@@ -1312,6 +1328,46 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
     textAddition += 'ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Do not blur, distort, or alter any existing text elements no matter how small. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters.'
     
     return textAddition
+  }
+
+  // Function to load images for a specific creative
+  const loadCreativeImages = async (creativeId: string) => {
+    // Don't load if already loading or loaded
+    if (loadingImages.has(creativeId) || loadedImages[creativeId]) {
+      return
+    }
+
+    setLoadingImages(prev => new Set(prev).add(creativeId))
+
+    try {
+      console.log('🖼️ Loading images for creative:', creativeId)
+      const response = await fetch(`/api/creative-images?id=${creativeId}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch creative images')
+      }
+
+      const data = await response.json()
+      
+      setLoadedImages(prev => ({
+        ...prev,
+        [creativeId]: {
+          original: data.originalImageUrl,
+          generated: data.generatedImageUrl
+        }
+      }))
+      
+      console.log('✅ Images loaded for creative:', creativeId)
+    } catch (error) {
+      console.error('Error loading creative images:', error)
+      toast.error('Failed to load creative images')
+    } finally {
+      setLoadingImages(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(creativeId)
+        return newSet
+      })
+    }
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2114,11 +2170,28 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                               </div>
                             </div>
                           ) : creative.status === 'completed' ? (
-                            <img
-                              src={creative.generated_image_url}
-                              alt="Generated creative"
-                              className="w-full h-auto object-contain max-h-none"
-                            />
+                            loadedImages[creative.id] ? (
+                              <img
+                                src={loadedImages[creative.id].generated}
+                                alt="Generated creative"
+                                className="w-full h-auto object-contain max-h-none"
+                              />
+                            ) : loadingImages.has(creative.id) ? (
+                              <div className="flex items-center justify-center h-40">
+                                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                                <span className="ml-2 text-gray-400">Loading image...</span>
+                              </div>
+                            ) : (
+                              <div 
+                                className="flex items-center justify-center h-40 cursor-pointer bg-gray-800 hover:bg-gray-700 transition-colors"
+                                onClick={() => loadCreativeImages(creative.id)}
+                              >
+                                <div className="text-center">
+                                  <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <span className="text-gray-400 text-sm">Click to load image</span>
+                                </div>
+                              </div>
+                            )
                           ) : (
                             <div className="flex flex-col items-center gap-3 py-8">
                               <X className="w-8 h-8 text-gray-400" />
@@ -2141,7 +2214,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                                 <>
                                   <Button
                                     size="sm"
-                                    onClick={() => openCropModal(creative.id, creative.generated_image_url)}
+                                    onClick={() => {
+                                      const imageUrl = loadedImages[creative.id]?.generated
+                                      if (imageUrl) {
+                                        openCropModal(creative.id, imageUrl)
+                                      } else {
+                                        toast.error('Image not loaded yet')
+                                      }
+                                    }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-2 py-1"
                                     title="Crop image"
                                   >
@@ -2157,14 +2237,19 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                                   </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() => {
-                                    const link = document.createElement('a')
-                                    link.href = creative.generated_image_url
+                                                                    onClick={() => {
+                                    const imageUrl = loadedImages[creative.id]?.generated
+                                    if (imageUrl) {
+                                      const link = document.createElement('a')
+                                      link.href = imageUrl
                                       const fileName = creative.custom_name 
                                         ? `${creative.custom_name.replace(/[^a-zA-Z0-9]/g, '_')}.png`
                                         : `creative-${creative.id}.png`
                                       link.download = fileName
-                                    link.click()
+                                      link.click()
+                                    } else {
+                                      toast.error('Image not loaded yet')
+                                    }
                                   }}
                                   className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-2 py-1"
                                 >
