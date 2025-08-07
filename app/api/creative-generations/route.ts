@@ -11,11 +11,16 @@ const supabase = createClient<Database>(
 
 // GET - Fetch creative generations for a specific brand
 export async function GET(req: NextRequest) {
+  // Set a timeout to prevent 504 errors
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Request timeout')), 10000) // 10 second timeout
+  )
+  
   try {
     const { searchParams } = new URL(req.url)
     const brandId = searchParams.get('brandId')
     const userId = searchParams.get('userId')
-    const limit = parseInt(searchParams.get('limit') || '50') // Default limit of 50
+    const limit = parseInt(searchParams.get('limit') || '25') // Reduce default limit to 25
     const offset = parseInt(searchParams.get('offset') || '0') // Default offset of 0
 
     if (!brandId || !userId) {
@@ -24,41 +29,73 @@ export async function GET(req: NextRequest) {
 
     console.log('🎨 Fetching creative generations for brand:', brandId, 'user:', userId, 'limit:', limit, 'offset:', offset)
 
-    // Use direct SQL query to bypass RLS performance issues with service role
-    const { data, error } = await supabase.rpc('get_creative_generations_for_brand', {
-      p_brand_id: brandId,
-      p_user_id: userId,
-      p_limit: limit,
-      p_offset: offset
-    })
+    try {
+      // Use lightweight function to avoid loading massive base64 images (3-4MB each!)
+      const { data, error } = await Promise.race([
+        supabase.rpc('get_user_creatives_lightweight', {
+          p_brand_id: brandId,
+          p_user_id: userId,
+          p_limit: limit,
+          p_offset: offset
+        }),
+        timeoutPromise
+      ]) as any
 
-    if (error) {
-      console.error('Error fetching creative generations:', error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch creative generations',
-        details: error?.message 
-      }, { status: 500 })
-    }
-
-    // Extract total count from the first record (all records have the same total_count)
-    const totalCount = data && data.length > 0 ? data[0].total_count : 0
-    
-    // Remove total_count from each record to clean up the response
-    const cleanedData = data?.map((record: any) => {
-      const { total_count, ...rest } = record
-      return rest
-    }) || []
-
-    console.log('✅ Successfully fetched', cleanedData.length, 'creative generations out of', totalCount, 'total')
-    return NextResponse.json({ 
-      creatives: cleanedData,
-      pagination: {
-        total: totalCount || 0,
-        limit,
-        offset,
-        hasMore: (totalCount || 0) > offset + limit
+      if (error) {
+        console.error('Error fetching creative generations:', error)
+        return NextResponse.json({ 
+          error: 'Failed to fetch creative generations',
+          details: error?.message 
+        }, { status: 500 })
       }
-    })
+
+      // For now, we'll skip the total count to avoid any performance issues
+      // The frontend can handle pagination without knowing the exact total
+      console.log('✅ Successfully fetched', data?.length || 0, 'creative generations')
+      return NextResponse.json({ 
+        creatives: data || [],
+        pagination: {
+          total: data?.length || 0, // Just return the current batch size
+          limit,
+          offset,
+          hasMore: (data?.length || 0) === limit // If we got a full page, assume there might be more
+        }
+      })
+
+    } catch (functionError) {
+      console.error('Function call failed, falling back to direct query:', functionError)
+      
+      // Fallback to direct query if function fails
+      const { data, error } = await Promise.race([
+        supabase
+          .from('creative_generations')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1),
+        timeoutPromise
+      ]) as any
+
+      if (error) {
+        console.error('Error fetching creative generations (fallback):', error)
+        return NextResponse.json({ 
+          error: 'Failed to fetch creative generations',
+          details: error?.message 
+        }, { status: 500 })
+      }
+
+      console.log('✅ Successfully fetched (fallback)', data?.length || 0, 'creative generations')
+      return NextResponse.json({ 
+        creatives: data || [],
+        pagination: {
+          total: data?.length || 0,
+          limit,
+          offset,
+          hasMore: (data?.length || 0) === limit
+        }
+      })
+    }
 
   } catch (error: any) {
     console.error('Error in GET /api/creative-generations:', error)

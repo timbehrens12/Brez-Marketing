@@ -808,7 +808,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       
       try {
         console.log('📚 Loading creatives for brand:', selectedBrandId)
-        const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}&limit=50`)
+        const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}&limit=25`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch creatives')
