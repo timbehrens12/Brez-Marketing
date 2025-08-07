@@ -843,10 +843,13 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   useEffect(() => {
     const completedCreatives = generatedCreatives.filter(c => c.status === 'completed')
     
-    // Load images for the first few creatives immediately
-    completedCreatives.slice(0, 6).forEach(creative => {
+    // Load images for all completed creatives with a slight delay for better UX
+    completedCreatives.forEach((creative, index) => {
       if (!loadedImages[creative.id] && !loadingImages.has(creative.id)) {
-        loadCreativeImages(creative.id)
+        // Stagger the loading to prevent overwhelming the server
+        setTimeout(() => {
+          loadCreativeImages(creative.id)
+        }, index * 200) // 200ms delay between each image load
       }
     })
   }, [generatedCreatives])
@@ -2176,20 +2179,10 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                                 alt="Generated creative"
                                 className="w-full h-auto object-contain max-h-none"
                               />
-                            ) : loadingImages.has(creative.id) ? (
+                            ) : (
                               <div className="flex items-center justify-center h-40">
                                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                                 <span className="ml-2 text-gray-400">Loading image...</span>
-                              </div>
-                            ) : (
-                              <div 
-                                className="flex items-center justify-center h-40 cursor-pointer bg-gray-800 hover:bg-gray-700 transition-colors"
-                                onClick={() => loadCreativeImages(creative.id)}
-                              >
-                                <div className="text-center">
-                                  <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                  <span className="text-gray-400 text-sm">Click to load image</span>
-                                </div>
                               </div>
                             )
                           ) : (
