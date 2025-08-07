@@ -659,12 +659,12 @@ const STYLE_OPTIONS: StyleOption[] = [
   },
   {
     id: 'unboxing-desk-setup',
-    name: 'Unboxing Desk Setup',
-    description: 'Product partially in branded packaging on modern desk with accessories and unboxing feel',
+    name: 'Desk Setting',
+    description: 'Product on modern desk with accessories for professional lifestyle setting',
     thumbnail: 'https://i.imgur.com/placeholder.png',
     category: 'products',
-    goodFor: 'Electronics, tech gadgets, luxury items, subscription boxes, premium products',
-    prompt: 'Photograph this exact product partially emerging from its branded packaging on a modern desk, surrounded by carefully arranged accessories with soft directional lighting for an authentic unboxing experience. MODERN DESK SURFACE: Use a clean, contemporary desk with smooth finish and modern aesthetic. The surface should be uncluttered and professional looking. BRANDED PACKAGING: Show the product partially inside or emerging from its original branded packaging. The packaging should look authentic and high-quality, suggesting premium unboxing experience. UNBOXING MOMENT: Capture the excitement and anticipation of the unboxing moment - the product should appear as if just being revealed from its packaging. CAREFULLY ARRANGED ACCESSORIES: Include relevant accessories or complementary items tastefully arranged around the main product. These should enhance rather than compete with the focal point. SOFT DIRECTIONAL LIGHTING: Use gentle, directional lighting that creates depth and dimension while maintaining the clean, modern aesthetic of an unboxing video or photo. PREMIUM EXPERIENCE: The overall presentation should suggest luxury, quality, and the special moment of receiving and opening a premium product. TECH AESTHETIC: The environment should feel contemporary and tech-savvy, appealing to modern consumers who value both product and experience. AUTHENTIC MOMENT: The scene should feel like a genuine unboxing moment, not overly staged, capturing the natural excitement of receiving something new. LIFESTYLE CONTEXT: Suggest the modern lifestyle of someone who appreciates quality products and the ritual of unboxing premium items. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the authentic unboxing desk presentation.'
+    goodFor: 'Electronics, tech gadgets, luxury items, office supplies, premium products',
+    prompt: 'Photograph this exact product elegantly positioned on a modern desk surrounded by carefully arranged accessories with soft directional lighting for a professional lifestyle setting. MODERN DESK SURFACE: Use a clean, contemporary desk with smooth finish and modern aesthetic. The surface should be uncluttered and professional looking. ELEGANT POSITIONING: Position the product prominently on the desk surface, suggesting it is being used or displayed in a real work environment. CAREFULLY ARRANGED ACCESSORIES: Include relevant accessories or complementary items tastefully arranged around the main product. These should enhance rather than compete with the focal point and suggest productive use. SOFT DIRECTIONAL LIGHTING: Use gentle, directional lighting that creates depth and dimension while maintaining the clean, modern aesthetic of a professional workspace. PREMIUM LIFESTYLE: The overall presentation should suggest quality, productivity, and the refined taste of someone who appreciates well-designed products. TECH AESTHETIC: The environment should feel contemporary and tech-savvy, appealing to modern professionals who value both function and style. AUTHENTIC SETTING: The scene should feel like a genuine workspace, suggesting the product fits naturally into a productive, modern lifestyle. PROFESSIONAL CONTEXT: Suggest the environment of someone who appreciates quality products and maintains an organized, efficient workspace. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the professional desk setting presentation.'
   }
 ]
 
@@ -1563,6 +1563,11 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
     setShowStyleModal(false)
     setActiveTab('generated') // Switch to generated tab
     
+    // Scroll to top of the page after switching tabs
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 100)
+    
     toast.info('Starting image generation... This may take 30-60 seconds.')
 
     try {
@@ -1625,6 +1630,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
       incrementUsage() // Increment usage count on successful generation
+      
+      // Immediately load the images for the completed creative
+      setTimeout(() => {
+        loadCreativeImages(creativeId)
+      }, 500) // Small delay to ensure the creative is fully updated
+      
       toast.success(`🎨 Image generated successfully!`)
     } catch (error) {
       console.error('Error generating image:', error)

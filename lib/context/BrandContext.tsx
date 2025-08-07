@@ -40,18 +40,18 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [brands, setBrands] = useState<Brand[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Auto-selection disabled - user must manually select brand each time
-  // useEffect(() => {
-  //   if (typeof window !== 'undefined') {
-  //     const saved = localStorage.getItem('selectedBrandId')
-  //     const hasEverSelected = localStorage.getItem('hasEverSelectedBrand')
-  //     
-  //     // Only restore selection if user has explicitly selected a brand before
-  //     if (saved && hasEverSelected === 'true') {
-  //       setSelectedBrandId(saved)
-  //     }
-  //   }
-  // }, [])
+  // Auto-restore brand selection from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('selectedBrandId')
+      const hasEverSelected = localStorage.getItem('hasEverSelectedBrand')
+      
+      // Only restore selection if user has explicitly selected a brand before
+      if (saved && hasEverSelected === 'true') {
+        setSelectedBrandId(saved)
+      }
+    }
+  }, [])
 
   // Custom setter that also saves to localStorage
   const setSelectedBrandIdWithPersistence = (id: string | null) => {
