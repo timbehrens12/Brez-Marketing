@@ -1534,26 +1534,26 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         ))}
                       </div>
                     </div>
-                  <div className="space-y-8">
-                    {/* Clothing & Apparel Section */}
-                    {(selectedCategory === 'all' || selectedCategory === 'clothing') && (
-                      <div>
-                        <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Clothing & Apparel Templates
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                          {TEMPLATE_BASE_GROUPS.filter(baseId => {
-                            const variant = getCurrentVariant(baseId)
-                            return variant.category === 'clothing'
-                          }).map((baseId) => {
-                            const currentVariant = getCurrentVariant(baseId)
-                            const variants = getTemplateVariants(baseId)
-                        
-                        return (
-                          <div
+                                     <div className="space-y-8">
+                     {/* Clothing & Apparel Section */}
+                     {(selectedCategory === 'all' || selectedCategory === 'clothing') && (
+                       <div>
+                         <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                           <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                           </svg>
+                           Clothing & Apparel Templates
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                           {TEMPLATE_BASE_GROUPS.filter(baseId => {
+                             const variant = getCurrentVariant(baseId)
+                             return variant.category === 'clothing'
+                           }).map((baseId) => {
+                             const currentVariant = getCurrentVariant(baseId)
+                             const variants = getTemplateVariants(baseId)
+                         
+                         return (
+                           <div
                             key={baseId}
                             className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit relative"
                           >
@@ -1626,96 +1626,97 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                           </div>
                         )
                       })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Physical Products Section */}
-                    {(selectedCategory === 'all' || selectedCategory === 'products') && (
-                      <div>
-                        <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                          Physical Products Templates
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                          {TEMPLATE_BASE_GROUPS.filter(baseId => {
-                            const variant = getCurrentVariant(baseId)
-                            return variant.category === 'products'
-                          }).map((baseId) => {
-                            const currentVariant = getCurrentVariant(baseId)
-                            const variants = getTemplateVariants(baseId)
-                        
-                        return (
-                          <div
-                            key={baseId}
-                            className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit relative"
-                          >
-                            {/* Carousel Navigation Arrows */}
-                            {variants.length > 1 && (
-                              <>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    prevVariant(baseId)
-                                  }}
-                                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-                                  title="Previous variant"
-                                >
-                                  <ChevronLeft className="w-4 h-4 text-white" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    nextVariant(baseId)
-                                  }}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-                                  title="Next variant"
-                                >
-                                  <ChevronRight className="w-4 h-4 text-white" />
-                                </button>
-                              </>
-                            )}
-                            
-                            {/* Template Content */}
-                            <div 
-                              onClick={() => openStyleModal(currentVariant)}
-                              className="w-full h-full"
-                            >
-                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
-                                <img
-                                  src={currentVariant.thumbnail}
-                                  alt={currentVariant.name}
-                                  className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
-                                />
-                              </div>
-                              <div className="p-6 flex-shrink-0">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h3 className="text-white font-semibold text-base group-hover:text-orange-400 transition-colors">
-                                    {currentVariant.name}
-                                  </h3>
-                                  {variants.length > 1 && (
-                                    <span className="text-xs text-orange-400 font-medium bg-orange-400/10 px-2 py-1 rounded-full">
-                                      {variants.findIndex(v => v.id === currentVariant.id) + 1} of {variants.length}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-gray-500 text-xs mb-2">
-                                  Best for: {currentVariant.goodFor}
-                                </p>
-                                <p className="text-gray-400 text-sm leading-relaxed">
-                                  {currentVariant.description}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                         </div>
+                       </div>
+                     )}
+ 
+                     {/* Physical Products Section */}
+                     {(selectedCategory === 'all' || selectedCategory === 'products') && (
+                       <div>
+                         <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                           <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                           </svg>
+                           Physical Products Templates
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                           {TEMPLATE_BASE_GROUPS.filter(baseId => {
+                             const variant = getCurrentVariant(baseId)
+                             return variant.category === 'products'
+                           }).map((baseId) => {
+                             const currentVariant = getCurrentVariant(baseId)
+                             const variants = getTemplateVariants(baseId)
+                         
+                         return (
+                           <div
+                             key={baseId}
+                             className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit relative"
+                           >
+                             {/* Carousel Navigation Arrows */}
+                             {variants.length > 1 && (
+                               <>
+                                 <button
+                                   onClick={(e) => {
+                                     e.stopPropagation()
+                                     prevVariant(baseId)
+                                   }}
+                                   className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                   title="Previous variant"
+                                 >
+                                   <ChevronLeft className="w-4 h-4 text-white" />
+                                 </button>
+                                 <button
+                                   onClick={(e) => {
+                                     e.stopPropagation()
+                                     nextVariant(baseId)
+                                   }}
+                                   className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                   title="Next variant"
+                                 >
+                                   <ChevronRight className="w-4 h-4 text-white" />
+                                 </button>
+                               </>
+                             )}
+                             
+                             {/* Template Content */}
+                             <div 
+                               onClick={() => openStyleModal(currentVariant)}
+                               className="w-full h-full"
+                             >
+                               <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                                 <img
+                                   src={currentVariant.thumbnail}
+                                   alt={currentVariant.name}
+                                   className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                                 />
+                               </div>
+                               <div className="p-6 flex-shrink-0">
+                                 <div className="flex items-center justify-between mb-1">
+                                   <h3 className="text-white font-semibold text-base group-hover:text-orange-400 transition-colors">
+                                     {currentVariant.name}
+                                   </h3>
+                                   {variants.length > 1 && (
+                                     <span className="text-xs text-orange-400 font-medium bg-orange-400/10 px-2 py-1 rounded-full">
+                                       {variants.findIndex(v => v.id === currentVariant.id) + 1} of {variants.length}
+                                     </span>
+                                   )}
+                                 </div>
+                                 <p className="text-gray-500 text-xs mb-2">
+                                   Best for: {currentVariant.goodFor}
+                                 </p>
+                                 <p className="text-gray-400 text-sm leading-relaxed">
+                                   {currentVariant.description}
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         )
+                       })}
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 </div>
                 )}
               </div>
             ) : (
