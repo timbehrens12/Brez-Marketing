@@ -1176,14 +1176,24 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
           </p>
 
           {/* Beta notice */}
-          <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#161616]/50 border border-[#333] rounded-lg p-4">
-            <div className="flex items-center justify-center space-x-2 text-amber-400 mb-2">
-              <FlaskConical className="w-5 h-5" />
-              <span className="font-semibold">Beta Feature</span>
+          <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#161616]/50 border border-[#333] rounded-lg p-5">
+            <div className="flex items-center justify-center space-x-2 text-amber-400 mb-3">
+              <FlaskConical className="w-6 h-6" />
+              <span className="font-semibold text-lg">Beta Feature</span>
             </div>
-            <p className="text-gray-300 text-xs">
-              The Ad Creative Studio is currently in beta. It may struggle with small text, tags, neck labels, and complex fine details.
-            </p>
+            <div className="text-gray-300 text-sm space-y-2">
+              <p className="font-medium text-center mb-3">The Ad Creative Studio is currently in beta testing.</p>
+              <div className="text-xs space-y-1">
+                <p><strong>Known Limitations:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>May struggle with fine text, small labels, and neck tags</li>
+                  <li>Poor quality or low-resolution images may produce subpar results</li>
+                  <li>Complex graphics and intricate details might be distorted</li>
+                  <li>Occasional issues with color accuracy and fabric textures</li>
+                </ul>
+                <p className="mt-3"><strong>Beta Benefits:</strong> Early access to AI-powered creative generation, regular improvements, and direct feedback integration.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1286,8 +1296,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             {/* Beta Notice Widget - Second widget */}
             <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between hover:border-white/20 transition-all duration-300">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-sm font-medium">STATUS</span>
-                <FlaskConical className="w-5 h-5 text-orange-400" />
+                <span className="text-gray-300 text-sm font-medium">SYSTEM STATUS</span>
+                <FlaskConical className="w-6 h-6 text-orange-400" />
               </div>
               
               <div className="flex items-center gap-3">
@@ -1299,8 +1309,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   <div className="text-white font-semibold text-base">
                     Beta Version
                   </div>
-                  <div className="text-gray-400 text-sm">
-                    AI struggles with details
+                  <div className="text-gray-400 text-xs leading-tight">
+                    May struggle with fine text, poor quality images, tags & complex details
                   </div>
                 </div>
               </div>
