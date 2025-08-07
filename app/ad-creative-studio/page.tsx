@@ -963,9 +963,13 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   useEffect(() => {
     const completedCreatives = generatedCreatives.filter(c => c.status === 'completed')
     
-    // Load images for all completed creatives with a slight delay for better UX
+    // UUID validation regex
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    
+    // Load images for all completed creatives with valid UUIDs with a slight delay for better UX
     completedCreatives.forEach((creative, index) => {
-      if (!loadedImages[creative.id] && !loadingImages.has(creative.id)) {
+      // Only attempt to load images for creatives with valid UUID IDs
+      if (uuidRegex.test(creative.id) && !loadedImages[creative.id] && !loadingImages.has(creative.id)) {
         // Stagger the loading to prevent overwhelming the server
         setTimeout(() => {
           loadCreativeImages(creative.id)
@@ -1457,6 +1461,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const loadCreativeImages = async (creativeId: string) => {
     // Don't load if already loading or loaded
     if (loadingImages.has(creativeId) || loadedImages[creativeId]) {
+      return
+    }
+
+    // Check if the ID is a valid UUID format (not a timestamp)
+    // UUIDs have the format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(creativeId)) {
+      console.log('🚫 Skipping image load for non-UUID creative ID:', creativeId)
       return
     }
 
