@@ -87,13 +87,23 @@ const TEMPLATE_CATEGORIES = [
 
 // Template base groups for carousel functionality  
 const TEMPLATE_BASE_GROUPS = [
+  // NEW CLOTHING TEMPLATES
+  'forest-branch-hanger',
+  'backyard-clothesline',
+  'bed-morning-light',
+  'luxury-closet-floating',
+  'gallery-wall-mount',
+  'hologram-sci-fi',
+  'mirror-showroom-mannequin',
+  'runway-ghost-model',
+  
+  // EXISTING CLOTHING TEMPLATES
   'concrete-floor',
   'black-background', 
   'white-background',
   'asphalt-surface',
   'sidewalk-pavement',
   'hanger-studio',
-  'product-studio-white',
   'mannequin-spotlight',
   'suspended-clothespins',
   'modern-chair',
@@ -108,6 +118,9 @@ const TEMPLATE_BASE_GROUPS = [
   'beach-sand',
   'kraft-paper',
   'gym-mat',
+  
+  // EXISTING PRODUCT TEMPLATES
+  'product-studio-white',
   'glossy-black-pedestal',
   'marble-kitchen-counter',
   'hand-held-product',
@@ -127,10 +140,88 @@ const TEMPLATE_BASE_GROUPS = [
   'futuristic-tech-lab',
   'rotating-display-platform',
   'freezer-cold-storage',
-  'cracked-glass-industrial'
+  'cracked-glass-industrial',
+  
+  // NEW PRODUCT TEMPLATES
+  'rustic-cafe-table',
+  'seamless-white-cube',
+  'unboxing-desk-setup'
 ]
 
 const STYLE_OPTIONS: StyleOption[] = [
+  // NEW CLOTHING TEMPLATES - Latest additions
+  {
+    id: 'forest-branch-hanger',
+    name: 'Forest Branch Hanger',
+    description: 'Product suspended on wooden hanger between tree branches in sunlit forest clearing',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, outdoor apparel, natural fashion',
+    prompt: 'Display this exact clothing item suspended on a wooden hanger between two thin tree branches in a sunlit forest clearing with dappled sunlight and soft leaves underfoot. FOREST SETTING: Create an authentic forest clearing with natural lighting filtering through tree canopy. The environment should feel peaceful and naturally beautiful. TREE BRANCH SUSPENSION: Suspend the wooden hanger between two realistic tree branches that extend into the frame from either side. The branches should look natural with bark texture and slight variations. WOODEN HANGER: Use a natural wood hanger with visible grain and organic shape. The hanger should complement the forest environment and look like it belongs in nature. DAPPLED SUNLIGHT: Create beautiful dappled lighting effects as sunlight filters through leaves above. The light should create natural patterns of light and shadow on the clothing and forest floor. SOFT LEAVES UNDERFOOT: Include a natural carpet of fallen leaves beneath the hanging garment. The leaves should look authentic with natural colors and realistic placement. NATURAL DRAPING: The clothing should hang naturally from the hanger with realistic fabric behavior and gravity effects. All fabric folds and draping should look authentic. FOREST ATMOSPHERE: The overall mood should be serene, natural, and harmonious with the outdoor environment. Perfect for outdoor brands or natural lifestyle aesthetics. ORGANIC LIGHTING: Use natural outdoor lighting that feels authentic to a forest environment - soft, diffused, and naturally directional. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the natural forest presentation.'
+  },
+  {
+    id: 'backyard-clothesline',
+    name: 'Backyard Clothesline',
+    description: 'Product clipped to natural twine clothesline in suburban backyard with gentle wind',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, casual wear, lifestyle fashion',
+    prompt: 'Display this exact clothing item clipped to a natural twine clothesline in a suburban backyard with gentle wind effects and warm sunlight. SUBURBAN BACKYARD: Create a comfortable, lived-in backyard environment that feels authentic and homey. Include subtle hints of domestic life without overwhelming the clothing focus. NATURAL TWINE CLOTHESLINE: Use authentic natural twine or rope clothesline that looks well-used and realistic. The line should be properly tensioned between supports. CLOTHESPIN ATTACHMENT: Attach the clothing using natural wooden clothespins positioned realistically. The clips should hold the garment naturally without distorting its shape. GENTLE WIND EFFECTS: Show subtle wind movement in the fabric - gentle billowing or natural movement that makes the clothing look alive and dynamic. WARM SUNLIGHT: Use natural, warm sunlight that creates an inviting domestic atmosphere. The lighting should feel like a pleasant afternoon. NATURAL MOVEMENT: The clothing should appear to be gently moving in a light breeze, with realistic fabric physics and natural draping effects. DOMESTIC COMFORT: The overall mood should evoke comfort, home, and everyday life - perfect for casual wear and lifestyle branding. AUTHENTIC DETAILS: Include realistic details like natural wear on the clothesline, authentic clothespin placement, and genuine backyard elements. LIFESTYLE AESTHETIC: The presentation should feel like a real moment captured in everyday life, not overly styled or artificial. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the authentic backyard clothesline presentation.'
+  },
+  {
+    id: 'bed-morning-light',
+    name: 'Bed Morning Light',
+    description: 'Product laid flat on neatly made bed with throw pillows and soft morning light',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, sleepwear, loungewear, lifestyle fashion',
+    prompt: 'Display this exact clothing item laid flat on a neatly made bed with throw pillows and soft natural morning light from a nearby window. NEATLY MADE BED: Create a well-made bed with clean, smooth bedding in neutral tones. The bed should look inviting and professionally styled. THROW PILLOWS: Include 2-3 decorative throw pillows arranged naturally on the bed. Pillows should complement the overall aesthetic without competing with the clothing. FLAT LAY POSITIONING: Position the clothing item laid flat and naturally arranged on the bed surface. The garment should look like it was carefully placed but not overly styled. SOFT MORNING LIGHT: Use gentle, warm morning light streaming through a nearby window. The light should be soft and diffused, creating a peaceful morning atmosphere. WINDOW LIGHTING: The natural light should feel authentic to early morning - warm, gentle, and naturally directional from one side of the frame. NATURAL FABRIC BEHAVIOR: The clothing should rest naturally on the bedding with realistic contact points and authentic fabric draping. BEDROOM ATMOSPHERE: Create a serene, comfortable bedroom environment that feels lived-in and welcoming. Perfect for loungewear, sleepwear, or lifestyle brands. LIFESTYLE CONTEXT: The setting should suggest comfort, relaxation, and morning routines - making the clothing feel like part of everyday luxury. NATURAL STYLING: Arrange all elements naturally, as if capturing a real moment in a beautiful bedroom during morning hours. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the serene bedroom morning presentation.'
+  },
+  {
+    id: 'luxury-closet-floating',
+    name: 'Luxury Closet Floating',
+    description: 'Product floating slightly above floor in center of luxury walk-in closet',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, luxury fashion, high-end apparel',
+    prompt: 'Display this exact clothing item floating slightly above the floor in the center of a luxury walk-in closet with shelves, mirrors, and soft lighting. LUXURY WALK-IN CLOSET: Create an upscale walk-in closet environment with high-end finishes, organized shelving, and premium materials. The space should feel sophisticated and aspirational. FLOATING EFFECT: Position the clothing item as if it\'s gently levitating or floating in the center of the closet space. The floating effect should look magical yet believable. CLOSET SHELVING: Include organized shelves with subtle hints of luxury items - perhaps shoes, accessories, or folded garments in the background, all tastefully blurred. MIRRORS: Incorporate mirrors into the closet design to add depth and luxury feel. Mirrors should enhance the space without creating distracting reflections. SOFT LIGHTING: Use sophisticated lighting - perhaps recessed ceiling lights or elegant fixtures that create even, luxurious illumination throughout the closet. PREMIUM MATERIALS: Show high-end closet materials like rich wood finishes, chrome fixtures, or marble accents that suggest luxury and quality. ORGANIZED LUXURY: The closet should appear meticulously organized and designed, like a high-end boutique or luxury retail space. ASPIRATIONAL MOOD: The overall atmosphere should evoke luxury, organization, and sophisticated lifestyle - perfect for premium fashion brands. DEPTH AND SPACE: Create visual depth in the closet space while keeping the floating clothing as the clear focal point. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the luxury floating closet presentation.'
+  },
+  {
+    id: 'gallery-wall-mount',
+    name: 'Gallery Wall Mount',
+    description: 'Product mounted flat on minimalist gallery wall under spotlights with museum placard',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, artistic fashion, designer pieces, statement wear',
+    prompt: 'Display this exact clothing item mounted flat on a minimalist gallery wall under overhead spotlights with a small museum placard nearby. MINIMALIST GALLERY WALL: Create a clean, white gallery wall with perfect smoothness and professional museum-quality finish. The wall should be pristine and uncluttered. FLAT WALL MOUNTING: Mount the clothing item flat against the wall as if it\'s a piece of art. The garment should appear to be professionally displayed like a museum artifact. OVERHEAD SPOTLIGHTS: Use focused spotlights from above that dramatically illuminate the clothing. The lighting should be precise and gallery-quality with controlled shadows. MUSEUM PLACARD: Include a small, elegant museum-style placard positioned near the clothing. The placard should be subtle and professional, suggesting the garment\'s importance. GALLERY ATMOSPHERE: Create the sophisticated atmosphere of a contemporary art gallery or fashion museum. The environment should feel curated and artistic. ARTISTIC PRESENTATION: The clothing should be presented as art - elevated beyond mere fashion to something culturally significant and worthy of museum display. PRECISE LIGHTING: Use museum-quality lighting that perfectly illuminates the garment while creating dramatic shadows and highlighting textures. CULTURAL ELEVATION: The presentation should suggest that this clothing piece is worthy of artistic consideration and cultural preservation. PROFESSIONAL CURATION: Every element should feel professionally curated and intentionally placed, like a high-end fashion exhibition. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the museum gallery presentation.'
+  },
+  {
+    id: 'hologram-sci-fi',
+    name: 'Hologram Sci-Fi',
+    description: 'Product projected as 3D hologram above sci-fi podium with glowing blue light and particle effects',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, tech fashion, futuristic wear, innovative designs',
+    prompt: 'Display this exact clothing item projected as a 3D hologram above a sci-fi podium with glowing blue light, particle effects, and digital distortion. SCI-FI PODIUM: Create a futuristic podium or platform with sleek, technological design. The base should look advanced with subtle glowing elements and modern materials. 3D HOLOGRAM EFFECT: Present the clothing as a realistic hologram projection - semi-transparent with subtle digital distortion effects that make it look authentically holographic. GLOWING BLUE LIGHT: Use predominantly blue lighting with digital glows and technological ambiance. The lighting should feel futuristic and high-tech. PARTICLE EFFECTS: Include subtle digital particle effects around the hologram - floating pixels, light particles, or energy distortions that enhance the sci-fi atmosphere. DIGITAL DISTORTION: Add realistic holographic distortion effects - subtle scan lines, digital artifacts, or projection imperfections that make the hologram look authentic. FUTURISTIC ENVIRONMENT: Create a clean, high-tech environment that suggests advanced technology and innovation. Think space-age laboratory or future retail. TECHNOLOGICAL PRECISION: The hologram should look precise and high-tech, suggesting advanced projection technology and scientific innovation. ENERGY EFFECTS: Include subtle energy effects - glowing edges on the clothing, light emanation, or digital aura that suggests the projection technology. INNOVATION AESTHETIC: The overall mood should suggest cutting-edge technology, innovation, and future fashion concepts. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the futuristic hologram presentation.'
+  },
+  {
+    id: 'mirror-showroom-mannequin',
+    name: 'Mirror Showroom Mannequin',
+    description: 'Product worn by headless mannequin in front of mirror showing front and back views',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, fashion retail, fitted garments, formal wear',
+    prompt: 'Display this exact clothing item worn by a headless mannequin positioned in front of a mirror, showing both front and reflected back views in a modern showroom. HEADLESS MANNEQUIN: Use a professional, headless display mannequin with realistic proportions and clean, white finish. The mannequin should showcase the clothing\'s fit perfectly. MIRROR POSITIONING: Position the mannequin at an angle in front of a large, high-quality mirror that clearly shows the back view of the garment in reflection. DUAL VIEW PRESENTATION: The composition should show both the front view of the clothing and the back view via the mirror reflection, giving a complete 360-degree understanding of the garment. MODERN SHOWROOM: Create a contemporary retail showroom environment with clean lines, professional lighting, and upscale finishes that suggest premium fashion retail. PERFECT FIT: The clothing should fit the mannequin perfectly, showing proper draping, silhouette, and how the garment would look when worn by a real person. CLEAR REFLECTION: The mirror should provide a crystal-clear reflection of the back view, allowing viewers to see construction details, back design elements, and overall fit. RETAIL LIGHTING: Use professional retail lighting that evenly illuminates both the mannequin and its reflection without creating harsh glare on the mirror. SHOWROOM ATMOSPHERE: The environment should feel like a high-end boutique or department store showroom - sophisticated and retail-ready. COMPREHENSIVE VIEW: The presentation should give customers a complete view of the garment from multiple angles, as they would experience in premium retail. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy in both the direct view and mirror reflection.'
+  },
+  {
+    id: 'runway-ghost-model',
+    name: 'Runway Ghost Model',
+    description: 'Product styled on invisible ghost model mid-runway under spotlight with blurred audience',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'clothing',
+    goodFor: 'Clothing, high fashion, runway wear, designer pieces',
+    prompt: 'Display this exact clothing item styled on an invisible ghost model mid-runway under a single spotlight with a blurred audience and fashion show energy. INVISIBLE GHOST MODEL: Present the clothing as if worn by an invisible model - the garment should maintain human form and movement but without showing the actual body underneath. RUNWAY SETTING: Create an authentic fashion runway environment with proper proportions, lighting, and atmosphere of a high-end fashion show. SINGLE SPOTLIGHT: Use a dramatic single spotlight that follows the invisible model down the runway, creating focused illumination on the clothing while leaving surroundings dimmer. BLURRED AUDIENCE: Include subtle, out-of-focus silhouettes of an audience in the background to suggest the energy and context of a live fashion show. FASHION SHOW ENERGY: Capture the dynamic energy and movement of a runway presentation - the clothing should appear to be in motion as if walking down the catwalk. DRAMATIC LIGHTING: Use theatrical lighting typical of fashion shows - focused, dramatic, and designed to highlight the clothing\'s details and movement. RUNWAY MOVEMENT: The clothing should show natural movement and flow as if being worn by a model in motion, with realistic fabric behavior and draping. HIGH FASHION ATMOSPHERE: Create the sophisticated, exclusive atmosphere of a premier fashion show with professional lighting and staging. CATWALK DYNAMICS: The presentation should capture the essence of high fashion presentation - dramatic, elegant, and worthy of the runway. CRITICAL: Preserve ALL original clothing details including textures, colors, patterns, text, graphics, and structural elements with perfect accuracy while creating the dynamic runway ghost model presentation.'
+  },
   {
     id: 'concrete-floor',
     name: 'Concrete Floor',
@@ -545,6 +636,35 @@ const STYLE_OPTIONS: StyleOption[] = [
     category: 'products',
     goodFor: 'Rugged products, industrial items, protective gear, durable goods',
     prompt: 'Photograph this exact product centered on a cracked-glass surface with overhead dramatic lighting, cinematic shadow play, and a dark industrial atmosphere. CRACKED GLASS SURFACE: Use tempered glass with realistic crack patterns - spider web cracks or impact patterns that look authentic and dramatic without being completely shattered. OVERHEAD DRAMATIC LIGHTING: Create strong, directional lighting from above that highlights the glass cracks and creates dramatic shadows and light patterns. CINEMATIC SHADOW PLAY: Use the lighting to create interesting shadow patterns through the cracked glass. Shadows should be dramatic and artistic, adding visual impact. DARK INDUSTRIAL ATMOSPHERE: Set the scene in a dark, industrial environment with concrete, metal, or urban elements that suggest strength and durability. GLASS CRACK DETAILS: The cracks should catch and refract light in interesting ways, creating visual drama and emphasizing the contrast between fragility and the product\'s durability. DRAMATIC CONTRAST: Use strong contrast between light and dark areas to create visual impact and emphasize the dramatic nature of the cracked glass. INDUSTRIAL AESTHETIC: The overall mood should be urban, industrial, and slightly edgy - perfect for products that emphasize strength, protection, or durability. LIGHT REFRACTION: Show how light interacts with the cracked glass surface, creating interesting optical effects and visual interest. STRENGTH METAPHOR: The cracked glass should serve as a metaphor for overcoming challenges or protection, suitable for rugged or protective products. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the dramatic cracked glass presentation.'
+  },
+
+  // NEW PRODUCT TEMPLATES - Latest additions
+  {
+    id: 'rustic-cafe-table',
+    name: 'Rustic Café Table',
+    description: 'Product on rustic wooden café table with out-of-focus pastries and natural window lighting',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'products',
+    goodFor: 'Food products, beverages, café items, artisan goods, lifestyle products',
+    prompt: 'Photograph this exact product placed on a rustic wooden café table with out-of-focus pastries and natural window lighting for a cozy, café atmosphere. RUSTIC WOODEN TABLE: Use authentic weathered wood with natural grain patterns, subtle imperfections, and warm tones that suggest a well-loved café environment. OUT-OF-FOCUS PASTRIES: Include subtle, blurred pastries or café items in the background to suggest the café setting without competing with the main product. These should be artfully out of focus. NATURAL WINDOW LIGHTING: Use soft, warm natural light streaming through a nearby window. The lighting should feel authentic to a café environment - gentle, inviting, and naturally directional. COZY CAFÉ ATMOSPHERE: Create the warm, inviting atmosphere of a neighborhood café or bistro. The environment should feel comfortable, lived-in, and welcoming. LIFESTYLE CONTEXT: The setting should suggest daily rituals, comfort, and social connection - making the product feel like part of a pleasant café experience. ARTISANAL QUALITY: The overall presentation should suggest craftsmanship, quality, and attention to detail - perfect for artisan products or premium café items. WARM AMBIANCE: Use warm color tones throughout - golden wood, soft lighting, and cozy atmosphere that makes viewers want to linger. AUTHENTIC DETAILS: Include realistic café details like natural wood wear, authentic lighting, and genuine café atmosphere without overdoing prop elements. INVITING MOOD: The overall mood should be welcoming, comfortable, and suggest the pleasure of a café visit or coffee break. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the cozy café presentation.'
+  },
+  {
+    id: 'seamless-white-cube',
+    name: 'Seamless White Cube',
+    description: 'Product centered in seamless white cube with soft edge shadows and high-key lighting',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'products',
+    goodFor: 'Electronics, cosmetics, luxury items, premium products, e-commerce',
+    prompt: 'Photograph this exact product centered inside a seamless white cube environment with soft edge shadows and perfectly balanced high-key lighting for professional e-commerce display. SEAMLESS WHITE CUBE: Create a perfect white cube environment with no visible corners, edges, or seams. The background should appear infinite and pristinely white from all directions. CENTERED POSITIONING: Position the product perfectly centered within the white cube space with equal spacing on all sides for optimal e-commerce presentation. SOFT EDGE SHADOWS: Create subtle, soft shadows around the product edges that define its shape without being harsh or distracting. Shadows should be minimal but present for depth. HIGH-KEY LIGHTING: Use bright, even lighting that eliminates harsh shadows while maintaining enough contrast to show product details and textures clearly. BALANCED ILLUMINATION: Ensure perfectly even lighting from multiple directions that eliminates hot spots and creates consistent illumination across the entire product. PROFESSIONAL E-COMMERCE: The setup should meet the highest standards for e-commerce product photography - clean, bright, and distraction-free. PRISTINE PRESENTATION: Everything should appear flawless and professional, suitable for premium product catalogs or high-end online retail. OPTIMAL CLARITY: The lighting and setup should reveal every product detail with perfect clarity while maintaining the clean, minimal aesthetic. COMMERCIAL QUALITY: The final image should meet commercial photography standards for luxury brands and premium e-commerce platforms. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the seamless white cube presentation.'
+  },
+  {
+    id: 'unboxing-desk-setup',
+    name: 'Unboxing Desk Setup',
+    description: 'Product partially in branded packaging on modern desk with accessories and unboxing feel',
+    thumbnail: 'https://i.imgur.com/placeholder.png',
+    category: 'products',
+    goodFor: 'Electronics, tech gadgets, luxury items, subscription boxes, premium products',
+    prompt: 'Photograph this exact product partially emerging from its branded packaging on a modern desk, surrounded by carefully arranged accessories with soft directional lighting for an authentic unboxing experience. MODERN DESK SURFACE: Use a clean, contemporary desk with smooth finish and modern aesthetic. The surface should be uncluttered and professional looking. BRANDED PACKAGING: Show the product partially inside or emerging from its original branded packaging. The packaging should look authentic and high-quality, suggesting premium unboxing experience. UNBOXING MOMENT: Capture the excitement and anticipation of the unboxing moment - the product should appear as if just being revealed from its packaging. CAREFULLY ARRANGED ACCESSORIES: Include relevant accessories or complementary items tastefully arranged around the main product. These should enhance rather than compete with the focal point. SOFT DIRECTIONAL LIGHTING: Use gentle, directional lighting that creates depth and dimension while maintaining the clean, modern aesthetic of an unboxing video or photo. PREMIUM EXPERIENCE: The overall presentation should suggest luxury, quality, and the special moment of receiving and opening a premium product. TECH AESTHETIC: The environment should feel contemporary and tech-savvy, appealing to modern consumers who value both product and experience. AUTHENTIC MOMENT: The scene should feel like a genuine unboxing moment, not overly staged, capturing the natural excitement of receiving something new. LIFESTYLE CONTEXT: Suggest the modern lifestyle of someone who appreciates quality products and the ritual of unboxing premium items. CRITICAL: Preserve ALL original product details including colors, textures, materials, logos, text, and structural elements with perfect accuracy while creating the authentic unboxing desk presentation.'
   }
 ]
 
