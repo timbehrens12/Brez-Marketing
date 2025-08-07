@@ -1631,10 +1631,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       setGeneratedImage(data.imageUrl)
       incrementUsage() // Increment usage count on successful generation
       
-      // Immediately load the images for the completed creative
-      setTimeout(() => {
-        loadCreativeImages(creativeId)
-      }, 500) // Small delay to ensure the creative is fully updated
+      // Immediately set the loaded images to display the result without API call
+      setLoadedImages(prev => ({
+        ...prev,
+        [creativeId]: {
+          original: uploadedImageUrl,
+          generated: data.imageUrl
+        }
+      }))
       
       toast.success(`🎨 Image generated successfully!`)
     } catch (error) {
@@ -2316,9 +2320,15 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                               </div>
                             </div>
                           ) : creative.status === 'completed' ? (
-                            loadedImages[creative.id] ? (
+                            loadedImages[creative.id]?.generated ? (
                               <img
                                 src={loadedImages[creative.id].generated}
+                                alt="Generated creative"
+                                className="w-full h-auto object-contain max-h-none"
+                              />
+                            ) : creative.generated_image_url ? (
+                              <img
+                                src={creative.generated_image_url}
                                 alt="Generated creative"
                                 className="w-full h-auto object-contain max-h-none"
                               />
