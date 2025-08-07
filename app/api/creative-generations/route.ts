@@ -24,14 +24,13 @@ export async function GET(req: NextRequest) {
 
     console.log('🎨 Fetching creative generations for brand:', brandId, 'user:', userId, 'limit:', limit, 'offset:', offset)
 
-    // Fetch creative generations for the brand, ordered by newest first with pagination
-    const { data, error, count } = await supabase
-      .from('creative_generations')
-      .select('*', { count: 'exact' })
-      .eq('brand_id', brandId)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    // Use direct SQL query to bypass RLS performance issues with service role
+    const { data, error } = await supabase.rpc('get_creative_generations_for_brand', {
+      p_brand_id: brandId,
+      p_user_id: userId,
+      p_limit: limit,
+      p_offset: offset
+    })
 
     if (error) {
       console.error('Error fetching creative generations:', error)
@@ -41,14 +40,23 @@ export async function GET(req: NextRequest) {
       }, { status: 500 })
     }
 
-    console.log('✅ Successfully fetched', data?.length || 0, 'creative generations out of', count, 'total')
+    // Extract total count from the first record (all records have the same total_count)
+    const totalCount = data && data.length > 0 ? data[0].total_count : 0
+    
+    // Remove total_count from each record to clean up the response
+    const cleanedData = data?.map((record: any) => {
+      const { total_count, ...rest } = record
+      return rest
+    }) || []
+
+    console.log('✅ Successfully fetched', cleanedData.length, 'creative generations out of', totalCount, 'total')
     return NextResponse.json({ 
-      creatives: data || [],
+      creatives: cleanedData,
       pagination: {
-        total: count || 0,
+        total: totalCount || 0,
         limit,
         offset,
-        hasMore: (count || 0) > offset + limit
+        hasMore: (totalCount || 0) > offset + limit
       }
     })
 
