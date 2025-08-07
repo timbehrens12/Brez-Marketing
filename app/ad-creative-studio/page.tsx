@@ -91,11 +91,11 @@ const TEMPLATE_BASE_GROUPS = [
   'forest-branch-hanger',
   'backyard-clothesline',
   'bed-morning-light',
-  'luxury-closet-floating',
+  'luxury-closet-island',
   'gallery-wall-mount',
   'hologram-sci-fi',
-  'mirror-showroom-mannequin',
-  'runway-ghost-model',
+  'white-studio-pants',
+  'white-studio-torso',
   
   // EXISTING CLOTHING TEMPLATES
   'concrete-floor',
