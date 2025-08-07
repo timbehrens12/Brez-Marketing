@@ -808,7 +808,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       
       try {
         console.log('📚 Loading creatives for brand:', selectedBrandId)
-        const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}`)
+        const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&userId=${user.id}&limit=50`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch creatives')
@@ -816,7 +816,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
         const data = await response.json()
         setGeneratedCreatives(data.creatives || [])
-        console.log('✅ Loaded', data.creatives?.length || 0, 'creatives')
+        console.log('✅ Loaded', data.creatives?.length || 0, 'creatives out of', data.pagination?.total || 0, 'total')
+        
+        // If there are more creatives than what we loaded, show a message
+        if (data.pagination?.hasMore) {
+          console.log('📄 More creatives available:', data.pagination.total - data.creatives.length, 'additional creatives')
+        }
         
       } catch (error) {
         console.error('Error loading creatives:', error)

@@ -15,28 +15,42 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const brandId = searchParams.get('brandId')
     const userId = searchParams.get('userId')
+    const limit = parseInt(searchParams.get('limit') || '50') // Default limit of 50
+    const offset = parseInt(searchParams.get('offset') || '0') // Default offset of 0
 
     if (!brandId || !userId) {
       return NextResponse.json({ error: 'Brand ID and User ID are required' }, { status: 400 })
     }
 
-    console.log('🎨 Fetching creative generations for brand:', brandId, 'user:', userId)
+    console.log('🎨 Fetching creative generations for brand:', brandId, 'user:', userId, 'limit:', limit, 'offset:', offset)
 
-    // Fetch creative generations for the brand, ordered by newest first
-    const { data, error } = await supabase
+    // Fetch creative generations for the brand, ordered by newest first with pagination
+    const { data, error, count } = await supabase
       .from('creative_generations')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('brand_id', brandId)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error('Error fetching creative generations:', error)
-      return NextResponse.json({ error: 'Failed to fetch creative generations' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to fetch creative generations',
+        details: error?.message 
+      }, { status: 500 })
     }
 
-    console.log('✅ Successfully fetched', data?.length || 0, 'creative generations')
-    return NextResponse.json({ creatives: data || [] })
+    console.log('✅ Successfully fetched', data?.length || 0, 'creative generations out of', count, 'total')
+    return NextResponse.json({ 
+      creatives: data || [],
+      pagination: {
+        total: count || 0,
+        limit,
+        offset,
+        hasMore: (count || 0) > offset + limit
+      }
+    })
 
   } catch (error: any) {
     console.error('Error in GET /api/creative-generations:', error)
