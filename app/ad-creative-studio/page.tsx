@@ -81,7 +81,7 @@ const RETRY_ISSUES: RetryIssue[] = [
 const TEMPLATE_CATEGORIES = [
   { id: 'all', name: 'All Templates' },
   { id: 'clothing', name: 'Clothing & Apparel' },
-  { id: 'accessories', name: 'Accessories' },
+  { id: 'multi-product', name: 'Multi Product' },
   { id: 'products', name: 'Physical Products' }
 ]
 
@@ -1861,7 +1861,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             </div>
             
             {/* Beta Notice Widget - Second widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between hover:border-white/20 transition-all duration-300">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-sm font-medium">SYSTEM STATUS</span>
                 <FlaskConical className="w-6 h-6 text-orange-400" />
@@ -1877,7 +1877,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     Beta Version
                   </div>
                   <div className="text-gray-400 text-xs leading-tight">
-                    May struggle with fine text, poor quality images, tags & complex details
+                    May struggle with fine text, poor quality images, tags & complex details. Hundreds more templates coming over the next weeks!
                   </div>
                 </div>
               </div>
