@@ -200,7 +200,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     thumbnail: 'https://i.imgur.com/zgCXJwr.png',
     category: 'products',
     goodFor: 'Cosmetics, electronics, accessories, bottles, containers, gadgets',
-    prompt: 'Photograph this exact product in a professional product photography studio setup with a pristine white background and natural shadow, similar to high-end commercial product shots. BACKGROUND: Create a pure, seamless white background that appears infinite - no visible corners, edges, or seams. The background should be clean matte white with subtle gradient variations that create depth without being noticeable. Think of the classic "limbo" or "infinity" white background used in professional studios. LIGHTING: Use professional studio lighting with soft, diffused illumination that eliminates harsh shadows while creating a natural, realistic shadow beneath the product. The lighting should be bright but not blown out, with gentle gradients that add dimensionality. Create subtle rim lighting around the product edges to separate it from the background. SHADOW: Generate a soft, natural shadow directly beneath the product that grounds it to the surface. The shadow should be subtle and realistic - not too dark or dramatic, but enough to show the product is resting on a surface rather than floating. The shadow should follow the product\'s shape naturally and fade softly at the edges. PRODUCT POSITIONING: Position the product centrally with perfect stability and natural orientation. The product should appear to be sitting naturally on an invisible white surface. Ensure the product is perfectly straight and stable, not tilted unless that\'s the natural resting position. COMPOSITION: Frame the product with generous white space around all sides for text overlays and visual breathing room. The product should fill approximately 60-70% of the frame width while maintaining professional spacing. Center the product both horizontally and vertically with balanced margins. ULTRA-CRITICAL PRESERVATION: Preserve the EXACT colors, textures, materials, logos, text, labels, and all visual elements of the product with pixel-perfect accuracy. DO NOT alter any aspect of the product appearance including brand names, graphics, text, colors, or materials. Keep all text and labels crystal clear and readable. SURFACE TEXTURE: Show realistic material properties - plastic should look smooth and slightly reflective, glass should have appropriate transparency and reflections, metal should show subtle reflections, matte surfaces should appear non-reflective, etc. Maintain authentic material characteristics. PROFESSIONAL QUALITY: The final image should look like it was shot in a professional photography studio for e-commerce or marketing purposes - clean, bright, and commercial-grade quality. Avoid any amateur or casual photography look. LAYOUT: Portrait format with the product centered and generous equal spacing on all sides for text overlays. Ensure top and bottom margins are perfectly balanced with approximately 15-20% of image height on each side. Maintain professional framing with the product as the clear focal point against the pristine white background. ULTRA-CRITICAL NO FAKE CONTENT RULE: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE. This includes: NO fake brand names, NO fake labels, NO fake text, NO fake logos, NO fake product names or descriptions. If the original product has no visible branding, keep it completely plain. Only preserve content that actually exists in the source image. Never fabricate or add fictional content.'
+    prompt: 'Photograph this exact product in a professional product photography studio setup with a pristine white background and dramatic side lighting, exactly like the reference image style. BACKGROUND: Create a pure, seamless white background that appears infinite - no visible corners, edges, or seams. The background should be clean matte white with subtle warm gradient variations that create depth without being noticeable. Think of the classic "limbo" or "infinity" white background used in professional studios, but with a slight warm cream tone like in the reference. DRAMATIC SIDE LIGHTING: Use professional studio lighting with strong directional light coming from the upper left or upper right side, creating dramatic shadows that fall diagonally across the white surface. The lighting should create strong contrast between the lit side and shadow side of the product, with bright highlights on one side and deeper shadows on the opposite side. DRAMATIC SHADOW: Generate a prominent, well-defined shadow that extends diagonally from the product across the white surface, similar to the reference image. The shadow should be dark enough to create visual impact and drama, but still maintain detail and not be completely black. The shadow should follow the product\'s shape and extend significantly across the frame, creating visual interest and grounding the product to the surface. The shadow should have soft edges but be bold and noticeable. PRODUCT POSITIONING: Position the product centrally with perfect stability and natural orientation. The product should appear to be sitting naturally on an invisible white surface. Ensure the product is perfectly straight and stable, not tilted unless that\'s the natural resting position. COMPOSITION: Frame the product with generous white space around all sides for text overlays and visual breathing room. The product should fill approximately 60-70% of the frame width while maintaining professional spacing. Center the product both horizontally and vertically with balanced margins. ULTRA-CRITICAL PRESERVATION: Preserve the EXACT colors, textures, materials, logos, text, labels, and all visual elements of the product with pixel-perfect accuracy. DO NOT alter any aspect of the product appearance including brand names, graphics, text, colors, or materials. Keep all text and labels crystal clear and readable. SURFACE TEXTURE: Show realistic material properties - plastic should look smooth and slightly reflective, glass should have appropriate transparency and reflections, metal should show subtle reflections, matte surfaces should appear non-reflective, etc. Maintain authentic material characteristics. PROFESSIONAL QUALITY: The final image should look like it was shot in a professional photography studio for e-commerce or marketing purposes - clean, bright, and commercial-grade quality. Avoid any amateur or casual photography look. LAYOUT: Portrait format with the product centered and generous equal spacing on all sides for text overlays. Ensure top and bottom margins are perfectly balanced with approximately 15-20% of image height on each side. Maintain professional framing with the product as the clear focal point against the pristine white background. ULTRA-CRITICAL NO FAKE CONTENT RULE: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE. This includes: NO fake brand names, NO fake labels, NO fake text, NO fake logos, NO fake product names or descriptions. If the original product has no visible branding, keep it completely plain. Only preserve content that actually exists in the source image. Never fabricate or add fictional content.'
   }
 ]
 
@@ -1534,15 +1534,23 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         ))}
                       </div>
                     </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {TEMPLATE_BASE_GROUPS.map((baseId) => {
-                        const currentVariant = getCurrentVariant(baseId)
-                        const variants = getTemplateVariants(baseId)
-                        
-                        // Filter by category
-                        if (selectedCategory !== 'all' && currentVariant.category !== selectedCategory) {
-                          return null
-                        }
+                  <div className="space-y-8">
+                    {/* Clothing & Apparel Section */}
+                    {(selectedCategory === 'all' || selectedCategory === 'clothing') && (
+                      <div>
+                        <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Clothing & Apparel Templates
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {TEMPLATE_BASE_GROUPS.filter(baseId => {
+                            const variant = getCurrentVariant(baseId)
+                            return variant.category === 'clothing'
+                          }).map((baseId) => {
+                            const currentVariant = getCurrentVariant(baseId)
+                            const variants = getTemplateVariants(baseId)
                         
                         return (
                           <div
@@ -1618,8 +1626,96 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                           </div>
                         )
                       })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Physical Products Section */}
+                    {(selectedCategory === 'all' || selectedCategory === 'products') && (
+                      <div>
+                        <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                          </svg>
+                          Physical Products Templates
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {TEMPLATE_BASE_GROUPS.filter(baseId => {
+                            const variant = getCurrentVariant(baseId)
+                            return variant.category === 'products'
+                          }).map((baseId) => {
+                            const currentVariant = getCurrentVariant(baseId)
+                            const variants = getTemplateVariants(baseId)
+                        
+                        return (
+                          <div
+                            key={baseId}
+                            className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl overflow-hidden transition-all duration-300 group hover:border-[#555] hover:shadow-2xl cursor-pointer h-fit relative"
+                          >
+                            {/* Carousel Navigation Arrows */}
+                            {variants.length > 1 && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    prevVariant(baseId)
+                                  }}
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                  title="Previous variant"
+                                >
+                                  <ChevronLeft className="w-4 h-4 text-white" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    nextVariant(baseId)
+                                  }}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                  title="Next variant"
+                                >
+                                  <ChevronRight className="w-4 h-4 text-white" />
+                                </button>
+                              </>
+                            )}
+                            
+                            {/* Template Content */}
+                            <div 
+                              onClick={() => openStyleModal(currentVariant)}
+                              className="w-full h-full"
+                            >
+                              <div className="aspect-[3/4] bg-gradient-to-br from-[#333] to-[#222] flex items-center justify-center overflow-hidden">
+                                <img
+                                  src={currentVariant.thumbnail}
+                                  alt={currentVariant.name}
+                                  className="w-full h-full object-cover transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                                />
+                              </div>
+                              <div className="p-6 flex-shrink-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h3 className="text-white font-semibold text-base group-hover:text-orange-400 transition-colors">
+                                    {currentVariant.name}
+                                  </h3>
+                                  {variants.length > 1 && (
+                                    <span className="text-xs text-orange-400 font-medium bg-orange-400/10 px-2 py-1 rounded-full">
+                                      {variants.findIndex(v => v.id === currentVariant.id) + 1} of {variants.length}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-500 text-xs mb-2">
+                                  Best for: {currentVariant.goodFor}
+                                </p>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                  {currentVariant.description}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
                 )}
               </div>
             ) : (
