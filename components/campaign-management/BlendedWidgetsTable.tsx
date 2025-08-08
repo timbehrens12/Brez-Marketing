@@ -269,6 +269,7 @@ export default function BlendedWidgetsTable({
 
   const fetchBudgetData = async () => {
     try {
+      console.log(`[BlendedWidgets] ⭐ BUDGET FETCH STARTED ⭐ for ${brands.length} brands`, { brands: brands.map(b => ({ id: b.id, name: b.name })), metaMetrics })
       const supabase = getStandardSupabaseClient()
       
       let totalBudget = 0
@@ -276,6 +277,7 @@ export default function BlendedWidgetsTable({
       const brandBudgets: BudgetData['brands'] = []
 
       for (const brand of brands) {
+        console.log(`[BlendedWidgets] 🔍 Processing brand: ${brand.name} (${brand.id})`)
         try {
           // Get active campaigns for this brand
           const { data: campaigns, error } = await supabase
@@ -284,10 +286,16 @@ export default function BlendedWidgetsTable({
             .eq('brand_id', brand.id)
             .eq('status', 'ACTIVE')
 
+          console.log(`[BlendedWidgets] Query result for brand ${brand.name} (${brand.id}):`, { campaigns, error })
+
           let budget = 0
           
-          if (error && error.code !== 'PGRST116') {
+          if (error) {
             console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
+            console.log(`[BlendedWidgets] Error details:`, { error_code: error.code, message: error.message, hint: error.hint })
+          }
+          
+          if (error && error.code !== 'PGRST116') {
             
             // Fallback to brand_budgets table if meta_campaigns fails
             try {
