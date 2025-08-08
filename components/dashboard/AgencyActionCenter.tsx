@@ -494,13 +494,24 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     try {
       const supabase = await getSupabaseClient()
       
-      const [leadsResponse, campaignsResponse, usageResponse, outreachResponse] = await Promise.all([
+      const [leadsResponse, campaignsResponse, usageResponse] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
         supabase.from('outreach_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-        supabase.from('user_usage').select('*').eq('user_id', userId),
-        // Get outreach message usage for today
-        supabase.from('outreach_message_usage').select('generated_at').eq('user_id', userId)
+        supabase.from('user_usage').select('*').eq('user_id', userId)
       ])
+
+      // Query outreach data separately to avoid the UUID error
+      let outreachResponse
+      try {
+        outreachResponse = await supabase
+          .from('outreach_message_usage')
+          .select('generated_at')
+          .eq('user_id', userId)
+        console.log(`[Agency Center] DEBUG: Outreach query successful, got ${outreachResponse.data?.length || 0} records`)
+      } catch (error) {
+        console.error(`[Agency Center] DEBUG: Outreach query failed:`, error)
+        outreachResponse = { error, data: null }
+      }
 
       if (!leadsResponse.error) {
         setUserLeadsCount(leadsResponse.count || 0)
