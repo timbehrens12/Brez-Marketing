@@ -68,7 +68,10 @@ export class AIUsageService {
 
       // If no usage record exists, user can use the feature
       if (!usage) {
-        return { canUse: true }
+        return { 
+          canUse: true, 
+          remainingUses: limits.dailyLimit || 0 
+        }
       }
 
       // Check cooldown for features that have it
@@ -121,7 +124,10 @@ export class AIUsageService {
         }
       }
 
-      return { canUse: true }
+      return { 
+        canUse: true, 
+        remainingUses: limits.dailyLimit || 0 
+      }
 
     } catch (error) {
       console.error('Error in checkUsageStatus:', error)
