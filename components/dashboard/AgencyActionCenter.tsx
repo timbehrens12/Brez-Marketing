@@ -187,8 +187,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Use global brand selection instead of local state
   const selectedBrandId = globalSelectedBrandId || 'all'
   const setSelectedBrandId = (id: string) => {
+    console.log(`[Agency Center] 🔧 Setting brand selection from "${globalSelectedBrandId}" to "${id}"`)
     setGlobalSelectedBrandId(id === 'all' ? null : id)
   }
+  
+  // Debug brand selection state
+  console.log(`[Agency Center] 🔍 Brand selection state - Global: "${globalSelectedBrandId}", Local: "${selectedBrandId}", Available brands:`, contextBrands.map(b => `${b.name}(${b.id})`).join(', '))
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   
