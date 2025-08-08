@@ -407,7 +407,7 @@ export default function BlendedWidgetsTable({
               icon={CreditCard}
               iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
               title="Total Blended Budget Usage"
-              value={budgetData.budgetUsedPercentage}
+              value={budgetData.budgetUsedPercentage / 100}
               change={0} // No change data for budget yet
               isPercentage={true}
               decimals={1}
@@ -419,11 +419,7 @@ export default function BlendedWidgetsTable({
                   </div>
                   <div className="w-full bg-[#333] rounded-full h-2">
                     <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        budgetData.budgetUsedPercentage >= 90 ? 'bg-red-500' :
-                        budgetData.budgetUsedPercentage >= 80 ? 'bg-orange-500' :
-                        budgetData.budgetUsedPercentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
+                      className="h-2 rounded-full bg-white transition-all duration-300"
                       style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
                     />
                   </div>
