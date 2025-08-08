@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Zap, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2 } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Zap, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2, MessageCircle } from "lucide-react"
 import { useAuth, useClerk, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
@@ -42,6 +42,12 @@ const navItems: NavItem[] = [
     href: "/marketing-assistant", 
     icon: BrainCircuit,
     description: "AI marketing insights"
+  },
+  { 
+    name: "AI Agency Assistant", 
+    href: "/ai-marketing-consultant", 
+    icon: MessageCircle,
+    description: "Chat with AI assistant"
   },
   { 
     name: "Brand Report", 

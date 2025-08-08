@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useBrandContext } from '@/lib/context/BrandContext'
+
 import { useAgency } from '@/contexts/AgencyContext'
 import { useAuth } from '@clerk/nextjs'
 import { Brain, ArrowLeft } from 'lucide-react'
@@ -11,24 +11,23 @@ import AIMarketingConsultant from '@/components/campaign-management/AIMarketingC
 
 export default function AIMarketingConsultantPage() {
   const router = useRouter()
-  const { selectedBrandId, contextBrands } = useBrandContext()
   const { agencySettings } = useAgency()
   const { userId } = useAuth()
   const [isLoadingPage, setIsLoadingPage] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [loadingPhase, setLoadingPhase] = useState('Initializing AI consultant...')
+  const [loadingPhase, setLoadingPhase] = useState('Initializing AI assistant...')
 
   // Simulate loading with progress phases
   useEffect(() => {
-    if (!userId || !selectedBrandId) return
+    if (!userId) return
 
     const phases = [
-      { progress: 20, phase: 'Loading your brand data...', duration: 800 },
-      { progress: 40, phase: 'Analyzing campaign performance...', duration: 1000 },
+      { progress: 20, phase: 'Loading your agency data...', duration: 800 },
+      { progress: 40, phase: 'Analyzing your portfolio...', duration: 1000 },
       { progress: 60, phase: 'Preparing AI insights...', duration: 900 },
-      { progress: 80, phase: 'Configuring marketing consultant...', duration: 700 },
+      { progress: 80, phase: 'Configuring agency assistant...', duration: 700 },
       { progress: 95, phase: 'Almost ready...', duration: 500 },
-      { progress: 100, phase: 'Welcome to your AI Marketing Consultant!', duration: 300 }
+      { progress: 100, phase: 'Welcome to your AI Agency Assistant!', duration: 300 }
     ]
 
     let currentPhaseIndex = 0
@@ -51,69 +50,9 @@ export default function AIMarketingConsultantPage() {
 
     // Start the loading sequence after a brief moment
     setTimeout(runPhase, 500)
-  }, [userId, selectedBrandId])
+  }, [userId])
 
-  // Show brand selection screen if no brand selected
-  if (!selectedBrandId) {
-    return (
-      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
-        </div>
-        
-        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
-          {/* Main logo */}
-          <div className="w-20 h-20 mx-auto mb-8 relative">
-            <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              {agencySettings.agency_logo_url ? (
-                <img 
-                  src={agencySettings.agency_logo_url} 
-                  alt={`${agencySettings.agency_name} Logo`} 
-                  className="w-12 h-12 object-contain rounded" 
-                />
-              ) : (
-                <Brain className="w-8 h-8 text-white" />
-              )}
-            </div>
-          </div>
 
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">
-            AI Marketing Consultant
-          </h1>
-
-          {/* Message */}
-          <div className="w-full max-w-md mx-auto mb-6">
-            <p className="text-gray-400 text-base">
-              Choose a brand from the sidebar to start chatting with your AI-powered marketing consultant for personalized insights and recommendations.
-            </p>
-          </div>
-
-          {/* Back button */}
-          <Button
-            onClick={() => router.push('/marketing-assistant')}
-            variant="outline"
-            size="sm"
-            className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] hover:border-white/20"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Marketing Assistant
-          </Button>
-
-          {/* Footer text */}
-          <div className="mt-8 text-xs text-gray-500 italic">
-            Select a brand to unlock your AI marketing consultant...
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // Show loading screen while initializing
   if (isLoadingPage) {
@@ -148,7 +87,7 @@ export default function AIMarketingConsultantPage() {
 
           {/* Title */}
           <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">
-            AI Marketing Consultant
+            AI Agency Assistant
           </h1>
 
           {/* Current phase */}
@@ -174,11 +113,11 @@ export default function AIMarketingConsultantPage() {
           <div className="text-left space-y-2 text-sm text-gray-400">
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 20 ? 'text-gray-300' : ''}`}>
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-green-400' : loadingProgress >= 20 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Loading brand data</span>
+              <span>Loading agency data</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 40 ? 'text-gray-300' : ''}`}>
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-green-400' : loadingProgress >= 40 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Analyzing campaign performance</span>
+              <span>Analyzing your portfolio</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 60 ? 'text-gray-300' : ''}`}>
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-green-400' : loadingProgress >= 60 ? 'bg-white/60' : 'bg-white/20'}`}></div>
@@ -186,7 +125,7 @@ export default function AIMarketingConsultantPage() {
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 80 ? 'text-gray-300' : ''}`}>
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 80 ? 'bg-white/60' : 'bg-white/20'}`}></div>
-              <span>Configuring marketing consultant</span>
+              <span>Configuring agency assistant</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
@@ -196,7 +135,7 @@ export default function AIMarketingConsultantPage() {
 
           {/* Subtle loading tip */}
           <div className="mt-8 text-xs text-gray-500 italic">
-            Preparing your personalized AI marketing consultant...
+            Preparing your AI agency assistant...
           </div>
         </div>
       </div>
@@ -216,9 +155,9 @@ export default function AIMarketingConsultantPage() {
                 <Brain className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">AI Marketing Consultant</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-white">AI Agency Assistant</h1>
                 <p className="text-gray-400 text-sm">
-                  Get personalized marketing insights and recommendations powered by AI
+                  Chat with your AI assistant for help with all aspects of your agency
                 </p>
               </div>
             </div>
