@@ -676,35 +676,35 @@ export default function AIMarketingConsultant(
 
   if (selectedMode === 'brand' && !selectedBrandId) {
     return (
-      <Card className="bg-gradient-to-br from-[#0B0B0F] via-[#111118] to-[#0A0A0A] border-[#1E1E2F] shadow-2xl rounded-xl overflow-hidden h-[1400px] flex flex-col backdrop-blur-sm">
-        <CardHeader className="bg-gradient-to-r from-[#1A1A2E]/80 via-[#16213E]/60 to-[#0F0F23]/80 pb-6 border-b border-[#2A2A3F]/50">
+      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1200px] flex flex-col">
+        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-indigo-500/20 rounded-2xl 
-                            flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
-                <Brain className="w-7 h-7 text-blue-400" />
+              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                            flex items-center justify-center border border-white/10 shadow-lg">
+                <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl text-white font-bold tracking-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                <CardTitle className="text-2xl text-white font-bold tracking-tight">
                   AI Marketing Assistant
                 </CardTitle>
-                <p className="text-gray-300 font-medium text-sm">Your intelligent marketing optimization partner</p>
+                <p className="text-gray-400 font-medium">Your intelligent marketing optimization partner</p>
               </div>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-8 flex-1 flex items-center justify-center">
           <div className="text-center py-12 max-w-md">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-500/20 shadow-lg">
-              <Store className="w-10 h-10 text-blue-400" />
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
+              <Store className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-3">Ready to Optimize</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Ready to Optimize</h3>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               Switch to Agency mode for multi-brand insights, or select a brand to get personalized campaign optimization recommendations.
             </p>
             <Button
               onClick={() => setSelectedMode('agency')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg transition-all duration-300"
+              className="bg-white/10 hover:bg-white/20 text-white font-medium px-6 py-2 rounded-lg border border-white/20 transition-all duration-300"
             >
               <Building2 className="w-4 h-4 mr-2" />
               Switch to Agency Mode
@@ -716,21 +716,21 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0B0B0F] via-[#111118] to-[#0A0A0A] border-[#1E1E2F] shadow-2xl rounded-xl overflow-hidden h-[1400px] flex flex-col backdrop-blur-sm">
-      <CardHeader className="bg-gradient-to-r from-[#1A1A2E]/80 via-[#16213E]/60 to-[#0F0F23]/80 pb-6 border-b border-[#2A2A3F]/50">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1200px] flex flex-col">
+      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-indigo-500/20 rounded-2xl 
-                          flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
-              <Brain className="w-7 h-7 text-blue-400" />
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl text-white font-bold tracking-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+              <CardTitle className="text-2xl text-white font-bold tracking-tight">
                 AI Marketing Assistant
               </CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-gray-300 font-medium text-sm">Your intelligent marketing optimization partner</p>
-                <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20 text-xs px-2 py-1">
+                <p className="text-gray-400 font-medium">Your intelligent marketing optimization partner</p>
+                <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
                   {remainingUses !== null ? `${remainingUses}/5 left today` : 'Pro'}
                 </Badge>
               </div>
@@ -738,7 +738,7 @@ export default function AIMarketingConsultant(
           </div>
           
           {/* Mode Selector */}
-          <div className="flex items-center gap-2 p-1 bg-[#0F0F23]/50 rounded-xl border border-[#2A2A3F]/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 p-1 bg-[#0f0f0f] rounded-xl border border-[#1a1a1a]">
             {AI_MODES.map((mode) => (
               <Button
                 key={mode.id}
@@ -752,7 +752,7 @@ export default function AIMarketingConsultant(
                 }}
                 className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
                   selectedMode === mode.id
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    ? "bg-white/10 text-white border-white/20"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -764,31 +764,31 @@ export default function AIMarketingConsultant(
         </div>
       </CardHeader>
 
-      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 140px)' }}>
+      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
         {/* Marketing Goal Selection */}
-        <div className="border-b border-[#2A2A3F]/50 p-6 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
-          <div className="mb-4">
-            <p className="text-sm text-gray-300 mb-3 font-medium">Focus Area:</p>
-            <div className="grid grid-cols-2 gap-3">
+        <div className="border-b border-[#1a1a1a] p-4 bg-[#0f0f0f]/50">
+          <div className="mb-3">
+            <p className="text-sm text-gray-400 mb-3 font-medium">Focus Area:</p>
+            <div className="grid grid-cols-2 gap-2">
               {MARKETING_GOALS.map((goal) => (
                 <Button
                   key={goal.id}
                   variant={selectedGoal === goal.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedGoal(goal.id)}
-                  className={`h-auto p-3 text-left flex flex-col items-start gap-2 rounded-xl transition-all duration-300 min-h-[80px] w-full ${
+                  className={`h-auto p-3 text-left flex flex-col items-start gap-2 rounded-xl transition-all duration-300 min-h-[70px] w-full ${
                     selectedGoal === goal.id
-                      ? "bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border-blue-500/30 shadow-lg backdrop-blur-sm"
-                      : "bg-[#0F0F23]/50 border-[#2A2A3F]/50 text-gray-400 hover:text-white hover:bg-[#1A1A2E]/50 hover:border-blue-500/20"
+                      ? "bg-white/10 text-white border-white/20 shadow-lg"
+                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                   }`}
                 >
                   <div className="flex items-center gap-2 w-full">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      selectedGoal === goal.id ? "bg-blue-500/20" : "bg-white/5"
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      selectedGoal === goal.id ? "bg-white/10" : "bg-white/5"
                     }`}>
                       {goal.icon}
                     </div>
-                    <span className="text-sm font-semibold flex-1 truncate">{goal.title}</span>
+                    <span className="text-xs font-semibold flex-1 truncate">{goal.title}</span>
                   </div>
                   <span className="text-xs text-gray-500 leading-tight w-full break-words overflow-hidden display-webkit-box" style={{
                     WebkitLineClamp: 2,
@@ -804,26 +804,26 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Chat Messages */}
-        <div className="bg-gradient-to-b from-[#0F0F23]/20 to-[#1A1A2E]/20" style={{ flex: '1 1 auto', maxHeight: '350px' }}>
-          <ScrollArea className="h-full p-6">
-            <div className="space-y-4">
+        <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto', maxHeight: '300px' }}>
+          <ScrollArea className="h-full p-4">
+            <div className="space-y-3">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-4 backdrop-blur-sm ${
+                    className={`max-w-[80%] rounded-2xl p-3 ${
                       message.type === 'user'
-                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30 shadow-lg'
+                        ? 'bg-white/10 text-white border border-white/20'
                         : message.type === 'system'
-                        ? 'bg-gradient-to-r from-gray-600/10 to-gray-700/10 text-gray-300 border border-gray-500/20'
-                        : 'bg-gradient-to-r from-[#0F0F23]/80 to-[#1A1A2E]/60 border border-[#2A2A3F]/50 text-white shadow-lg'
+                        ? 'bg-gray-500/10 text-gray-300 border border-gray-500/20'
+                        : 'bg-[#0f0f0f] border border-[#1a1a1a] text-white shadow-lg'
                     }`}
                   >
                     {message.isLoading ? (
                       <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span className="text-sm">{message.content}</span>
                       </div>
                     ) : (
@@ -835,7 +835,7 @@ export default function AIMarketingConsultant(
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-400 mt-2">
+                    <div className="text-xs text-gray-500 mt-2">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
@@ -847,8 +847,8 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Custom Input Field */}
-        <div className="border-b border-[#2A2A3F]/50 p-4 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
-          <div className="flex gap-3">
+        <div className="border-b border-[#1a1a1a] p-3 bg-[#0f0f0f]/50">
+          <div className="flex gap-2">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -862,13 +862,13 @@ export default function AIMarketingConsultant(
                 }}
                 placeholder="Ask me anything about your marketing..."
                 disabled={isLoading || isLimitReached}
-                className="w-full px-4 py-3 bg-[#0F0F23]/50 border border-[#2A2A3F]/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-[#1A1A2E]/50 transition-all duration-300"
+                className="w-full px-3 py-2 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white/20 focus:bg-white/5 transition-all duration-300 text-sm"
               />
             </div>
             <Button
               onClick={() => handleCustomInput(inputMessage)}
               disabled={isLoading || isLimitReached || !inputMessage.trim()}
-              className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
             >
               <Send className="w-4 h-4" />
             </Button>
@@ -876,9 +876,9 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Quick Prompts */}
-        <div className="p-6 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
-          <div className="mb-4">
-            <p className="text-sm text-gray-300 mb-3 font-medium">Quick Actions:</p>
+        <div className="p-4 bg-[#0f0f0f]/50">
+          <div className="mb-3">
+            <p className="text-sm text-gray-400 mb-3 font-medium">Quick Actions:</p>
             <div className="flex gap-2 flex-wrap">
               {categories.map((category) => (
                 <Button
@@ -888,8 +888,8 @@ export default function AIMarketingConsultant(
                   onClick={() => setSelectedCategory(category.id)}
                   className={`text-xs rounded-xl transition-all duration-300 ${
                     selectedCategory === category.id
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                      : "bg-[#0F0F23]/50 border-[#2A2A3F]/50 text-gray-400 hover:text-white hover:bg-[#1A1A2E]/50 hover:border-blue-500/20"
+                      ? "bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                   }`}
                 >
                   {category.label} ({category.count})
@@ -898,7 +898,7 @@ export default function AIMarketingConsultant(
             </div>
           </div>
           
-          <div className="grid gap-3 max-h-[250px] overflow-y-auto custom-scrollbar">
+          <div className="grid gap-2 max-h-[200px] overflow-y-auto custom-scrollbar">
             {filteredPrompts.map((prompt) => (
               <Button
                 key={prompt.id}
@@ -906,32 +906,32 @@ export default function AIMarketingConsultant(
                 size="sm"
                 onClick={() => handlePromptSelect(prompt)}
                 disabled={isLoading || isLimitReached}
-                className="justify-between h-auto p-4 text-left bg-[#0F0F23]/50 hover:bg-[#1A1A2E]/50 
-                         border border-[#2A2A3F]/50 hover:border-blue-500/30 rounded-xl transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="justify-between h-auto p-3 text-left bg-[#0f0f0f] hover:bg-white/5 
+                         border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg flex items-center justify-center text-blue-400 group-hover:text-blue-300">
+                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center text-gray-400">
                     {prompt.icon}
                   </div>
-                  <span className="text-sm text-white font-medium group-hover:text-blue-100">{prompt.title}</span>
+                  <span className="text-sm text-white font-medium">{prompt.title}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-blue-400" />
+                <ChevronRight className="w-4 h-4 text-gray-500" />
               </Button>
             ))}
           </div>
           
-          <div className="mt-4 pt-4 border-t border-[#2A2A3F]/50 flex items-center justify-between">
-            <p className="text-xs text-gray-400">
+          <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex items-center justify-between">
+            <p className="text-xs text-gray-500">
               {selectedMode === 'agency' ? '🏢 Analyzing agency-wide performance data' : '💡 Analyzing brand-specific campaign data'}
             </p>
             {remainingUses !== null && (
-              <div className={`text-xs px-3 py-1 rounded-full font-medium backdrop-blur-sm ${
+              <div className={`text-xs px-2 py-1 rounded-full font-medium ${
                 remainingUses <= 1 
-                  ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                  ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
                   : remainingUses <= 3 
-                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                  : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                  : 'bg-green-500/10 text-green-400 border border-green-500/20'
               }`}>
                 {remainingUses} questions remaining today
               </div>
