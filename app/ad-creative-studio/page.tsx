@@ -3,14 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
 import { useAgency } from "@/contexts/AgencyContext"
-import { trackCreativeStudioUsage, trackWeeklyCreativeUsage } from '@/lib/utils/tool-usage-tracker'
-import { useSearchParams } from 'next/navigation'
 
 interface StyleOption {
   id: string
@@ -693,10 +690,6 @@ export default function AdCreativeStudioPage() {
   const { selectedBrand, selectedBrandId } = useBrandContext()
   const { user } = useUser()
   const { agencySettings } = useAgency()
-  const searchParams = useSearchParams()
-  
-  // Check if we're in weekly batch mode
-  const isWeeklyMode = searchParams.get('mode') === 'weekly'
   
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
@@ -1638,15 +1631,6 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       setGeneratedImage(data.imageUrl)
       incrementUsage() // Increment usage count on successful generation
       
-      // Track tool usage for action center
-      if (user?.id) {
-        if (isWeeklyMode) {
-          trackWeeklyCreativeUsage(user.id, selectedBrandId || undefined, 1)
-        } else {
-          trackCreativeStudioUsage(user.id, selectedBrandId || undefined, 1)
-        }
-      }
-      
       // Immediately set the loaded images to display the result without API call
       setLoadedImages(prev => ({
         ...prev,
@@ -1796,20 +1780,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 <Palette className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  Ad Creative Studio
-                  {isWeeklyMode && (
-                    <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 text-sm font-semibold">
-                      Weekly Batch Mode
-                    </Badge>
-                  )}
-                </h1>
-                <p className="text-gray-300 mt-1">
-                  {isWeeklyMode 
-                    ? "Generate 10 creative variations for your weekly campaigns" 
-                    : "Create ad creatives with AI-powered styling and custom text overlays"
-                  }
-                </p>
+                <h1 className="text-3xl font-bold text-white">Ad Creative Studio</h1>
+                <p className="text-gray-300 mt-1">Create ad creatives with AI-powered styling and custom text overlays</p>
               </div>
             </div>
             

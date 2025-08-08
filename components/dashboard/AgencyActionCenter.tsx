@@ -152,24 +152,14 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     dependencyType: 'brand'
   },
   {
-    id: 'ad-creative-studio',
-    name: 'Ad Creative Studio',
-    description: 'Generate professional ad creatives using AI',
+    id: 'creative-generator',
+    name: 'Creative Generator',
+    description: 'AI-powered ad creative generation with product backgrounds',
     icon: Palette,
     category: 'ai-powered',
     href: '/ad-creative-studio',
-    features: ['AI-Generated Creatives', '50+ Templates', 'Product Placement'],
-    dependencyType: 'user'
-  },
-  {
-    id: 'weekly-creative-batch',
-    name: 'Weekly Creative Batch',
-    description: 'Generate 10 weekly creatives for your campaigns',
-    icon: Calendar,
-    category: 'automation',
-    href: '/ad-creative-studio?mode=weekly',
-    features: ['10 Creatives/Week', 'Automated Generation', 'Variety Pack'],
-    frequency: 'Weekly',
+    features: ['Product Backgrounds', 'AI Image Generation', 'Creative Templates'],
+    frequency: '10/week',
     dependencyType: 'user'
   }
 ]
@@ -623,18 +613,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
 
 
-  // Tool availability logic (exactly like action center)
+  // Enhanced tool availability logic with proper generation limit checking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-    console.log(`[Agency Center] Checking availability for ${tool.name} (${tool.id}), dependencyType: ${tool.dependencyType}`)
 
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
-        // No dependencies, always available (or coming soon as handled above)
+        // No dependencies, always available
         return { ...tool, status: 'available' }
 
       case 'user':
-        // User-dependent tools - check user data regardless of selected brand
+        // User-dependent tools - check user data and usage limits
         if (tool.id === 'lead-generator') {
           // Lead generator has weekly usage limits
           const now = new Date()
@@ -665,6 +654,36 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
         
+        if (tool.id === 'creative-generator') {
+          // Creative generator has weekly limits - check localStorage for creative generations
+          const now = new Date()
+          const startOfWeek = new Date(now)
+          const dayOfWeek = now.getDay()
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+          startOfWeek.setDate(now.getDate() - daysToSubtract)
+          
+          const WEEKLY_LIMIT = 10 // 10 creatives per week
+          let currentWeeklyUsage = 0
+          
+          // Check localStorage for creative generations this week
+          if (typeof window !== 'undefined') {
+            for (let i = 0; i < 7; i++) {
+              const checkDate = new Date(startOfWeek)
+              checkDate.setDate(startOfWeek.getDate() + i)
+              const dateStr = format(checkDate, 'yyyy-MM-dd')
+              const dailyUsage = parseInt(localStorage.getItem(`creativeGenerations_${dateStr}`) || '0')
+              currentWeeklyUsage += dailyUsage
+            }
+          }
+          
+          const hasGenerationsLeft = currentWeeklyUsage < WEEKLY_LIMIT
+          console.log(`[Agency Center] ${tool.name}: ${hasGenerationsLeft ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
+          return { 
+            ...tool, 
+            status: hasGenerationsLeft ? 'available' : 'unavailable'
+          }
+        }
+        
         if (tool.id === 'outreach-tool') {
           // Outreach tool needs user to have leads to manage
           const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
@@ -679,29 +698,84 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         return { ...tool, status: 'available' }
 
       case 'brand':
-        // Brand-dependent tools - check platform connections for the brand
-        if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
-          return { ...tool, status: 'available' }
-        }
-
-        // If no specific brand selected, check if ANY brand has the required platforms
-        if (!brandId || brandId === 'all') {
-          const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
-            const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-            return tool.requiresPlatforms!.every(platform => 
+        // Brand-dependent tools - check platform connections AND usage limits per brand
+        
+        // First check platform requirements
+        if (tool.requiresPlatforms && tool.requiresPlatforms.length > 0) {
+          if (!brandId || brandId === 'all') {
+            // Check if ANY brand has required platforms
+            const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              return tool.requiresPlatforms!.every(platform => 
+                brandConnections.some(conn => conn.platform_type === platform)
+              )
+            })
+            if (!hasAnyBrandWithPlatforms) {
+              return { ...tool, status: 'unavailable' }
+            }
+          } else {
+            // Check specific brand platforms
+            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+            const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
               brandConnections.some(conn => conn.platform_type === platform)
             )
-          })
-          return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
+            if (!hasRequiredPlatforms) {
+              return { ...tool, status: 'unavailable' }
+            }
+          }
         }
 
-        // Check specific brand
-        const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-        const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
-          brandConnections.some(conn => conn.platform_type === platform)
-        )
+        // Now check usage limits for specific tools
+        if (tool.id === 'brand-reports') {
+          // Check if any brand can generate reports (has platforms and hasn't hit limits)
+          if (!brandId || brandId === 'all') {
+            // Check ALL brands for availability
+            const availableBrands = brands.filter((brand: any) => {
+              // Skip brands without required platforms
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
+                brandConnections.some(conn => conn.platform_type === platform)
+              )
+              if (!hasRequiredPlatforms) return false
+              
+              // Check daily limit
+              const today = format(new Date(), 'yyyy-MM-dd')
+              const dailyKey = `lastManualGeneration_${brand.id}`
+              const lastDaily = typeof window !== 'undefined' ? localStorage.getItem(dailyKey) : null
+              const canGenerateDaily = lastDaily !== today
+              
+              // Check monthly limit
+              const currentMonth = format(new Date(), 'yyyy-MM')
+              const monthlyKey = `lastMonthlyGeneration_${brand.id}`
+              const lastMonthly = typeof window !== 'undefined' ? localStorage.getItem(monthlyKey) : null
+              const canGenerateMonthly = lastMonthly !== currentMonth
+              
+              return canGenerateDaily || canGenerateMonthly
+            })
+            
+            const hasAvailableBrands = availableBrands.length > 0
+            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
+            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand limits
+            const today = format(new Date(), 'yyyy-MM-dd')
+            const dailyKey = `lastManualGeneration_${brandId}`
+            const lastDaily = typeof window !== 'undefined' ? localStorage.getItem(dailyKey) : null
+            const canGenerateDaily = lastDaily !== today
+            
+            const currentMonth = format(new Date(), 'yyyy-MM')
+            const monthlyKey = `lastMonthlyGeneration_${brandId}`
+            const lastMonthly = typeof window !== 'undefined' ? localStorage.getItem(monthlyKey) : null
+            const canGenerateMonthly = lastMonthly !== currentMonth
+            
+            const canGenerate = canGenerateDaily || canGenerateMonthly
+            console.log(`[Agency Center] ${tool.name}: ${canGenerate ? 'Available' : 'Unavailable'} (brand: ${brandId}, daily: ${canGenerateDaily}, monthly: ${canGenerateMonthly})`)
+            return { ...tool, status: canGenerate ? 'available' : 'unavailable' }
+          }
+        }
 
-        return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
+        // Default for brand-dependent tools (passed platform check)
+        return { ...tool, status: 'available' }
 
       default:
         return { ...tool, status: 'unavailable' }
@@ -1119,7 +1193,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     const taskId = `tool-available-${toolId}`
     markTaskComplete(taskId)
     
-    // Update usage data in real-time for tools with usage limits
+    // For lead generator, update usage data in real-time
     if (toolId === 'lead-generator') {
       const now = new Date()
       const newUsageRecord = {
@@ -1141,75 +1215,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
       })
     }
-
-    // Track brand-dependent tool usage (campaign optimizer, marketing assistant, brand reports)
-    if (['campaign-optimizer', 'marketing-assistant', 'brand-reports'].includes(toolId)) {
-      console.log(`[Agency Center] 🎯 Brand-dependent tool ${toolId} used - tool should now show as 'used' for current brand`)
-      
-      // Update AI usage tracking for brand-dependent tools
-      const updateAIUsage = async () => {
-        try {
-          if (!selectedBrandId) return
-          
-          const featureTypeMap: { [key: string]: string } = {
-            'campaign-optimizer': 'campaign_recommendations',
-            'marketing-assistant': 'marketing_analysis',
-            'brand-reports': 'health_report'
-          }
-          
-          const featureType = featureTypeMap[toolId]
-          if (featureType) {
-            const response = await fetch('/api/ai/usage-tracking', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                brandId: selectedBrandId,
-                featureType,
-                action: 'record_usage'
-              })
-            })
-            
-            if (response.ok) {
-              console.log(`[Agency Center] ✅ AI usage recorded for ${featureType}`)
-            }
-          }
-        } catch (error) {
-          console.error(`[Agency Center] ❌ Error recording AI usage:`, error)
-        }
-      }
-      
-      updateAIUsage()
-    }
-
-    // Track creative tool usage
-    if (['ad-creative-studio', 'weekly-creative-batch'].includes(toolId)) {
-      console.log(`[Agency Center] 🎨 Creative tool ${toolId} used`)
-      // Could add creative usage tracking here if needed
-    }
     
     // Update notification store immediately when tools are used
     decrementTodo() // Assuming tool usage reduces todo count
     console.log('[Agency Center] 📱 Tool usage notification count decreased')
-  }, [markTaskComplete, userId, selectedBrandId, decrementTodo])
-
-  // Listen for tool usage events from other parts of the application
-  useEffect(() => {
-    const handleToolUsageEvent = (event: CustomEvent) => {
-      const { toolId, context } = event.detail
-      console.log(`[Agency Center] 🔄 Tool usage event received:`, { toolId, context })
-      handleToolUsed(toolId)
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('toolUsed', handleToolUsageEvent as EventListener)
-    }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('toolUsed', handleToolUsageEvent as EventListener)
-      }
-    }
-  }, [handleToolUsed])
+  }, [markTaskComplete, userId, decrementTodo])
 
   // Load brand health data with real data and AI synopsis (exactly like action center)
   const loadBrandHealthData = useCallback(async (forceRefresh = false) => {
@@ -2474,9 +2484,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* First row - 3 tools */}
+                    {/* Tools Grid - 3 columns, 2 rows */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {filteredTools.slice(0, 3).map((tool) => {
+                      {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         const isDisabled = tool.status === 'coming-soon' || tool.status === 'unavailable'
                         
@@ -2556,12 +2566,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         )
                       })}
                     </div>
-                    
-                    {/* Second row - 2 tools centered */}
-                    {filteredTools.length > 3 && (
-                      <div className="flex justify-center">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-                                                {filteredTools.slice(3).map((tool) => {
+
+
                           const IconComponent = tool.icon
                           const isDisabled = tool.status === 'coming-soon' || tool.status === 'unavailable'
                           
