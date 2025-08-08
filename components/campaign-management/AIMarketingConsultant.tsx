@@ -80,18 +80,18 @@ interface MarketingGoal {
 
 const AI_MODES: AIMode[] = [
   {
-    id: 'brand',
-    title: 'Brand Assistant',
-    description: 'Focus on specific brand optimization and insights',
-    icon: <Store className="w-4 h-4" />,
-    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-  },
-  {
     id: 'agency',
     title: 'Agency Assistant',
     description: 'Overall agency management and multi-brand insights',
     icon: <Building2 className="w-4 h-4" />,
     color: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+  },
+  {
+    id: 'brand',
+    title: 'Brand Assistant',
+    description: 'Focus on specific brand optimization and insights',
+    icon: <Store className="w-4 h-4" />,
+    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
   }
 ]
 
@@ -791,23 +791,22 @@ export default function AIMarketingConsultant(
     <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-screen flex flex-col shadow-2xl">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
-        <div className="border-b border-[#1a1a1a] p-6 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
+        <div className="border-b border-[#1a1a1a] p-3 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
           <div className="flex items-center justify-between">
             {/* Left: Title and Mode Selector */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg 
                               flex items-center justify-center border border-white/10 shadow-lg">
-                  <Brain className="w-6 h-6 text-white" />
+                  <Brain className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">AI Marketing Assistant</h2>
-                  <p className="text-gray-400 text-sm">Intelligent campaign optimization insights</p>
+                  <h2 className="text-lg font-bold text-white tracking-tight">AI Marketing Assistant</h2>
                 </div>
               </div>
               
               {/* Mode Selector on same row */}
-              <div className="flex items-center gap-2 p-1 bg-[#0a0a0a] rounded-xl border border-[#1a1a1a] shadow-inner">
+              <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
                 {AI_MODES.map((mode) => (
                   <Button
                     key={mode.id}
@@ -819,7 +818,7 @@ export default function AIMarketingConsultant(
                       setIsInitialized(false)
                       setSelectedCategory('all')
                     }}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
+                    className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-all duration-300 ${
                       selectedMode === mode.id
                         ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
                         : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -833,38 +832,38 @@ export default function AIMarketingConsultant(
             </div>
 
             {/* Right: Focus and Usage */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {/* Focus Area Dropdown */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400 font-medium">Focus:</span>
+                <span className="text-xs text-gray-400 font-medium">Focus:</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg"
+                      className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg h-7 px-2"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
-                        <span className="text-sm">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
+                        <span className="text-xs">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
                         <ChevronDown className="w-3 h-3" />
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-72 bg-[#0a0a0a] border-[#1a1a1a] rounded-xl shadow-2xl">
+                  <DropdownMenuContent className="w-64 bg-[#0a0a0a] border-[#1a1a1a] rounded-lg shadow-2xl">
                     {MARKETING_GOALS.map((goal) => (
                       <DropdownMenuItem
                         key={goal.id}
                         onClick={() => setSelectedGoal(goal.id)}
-                        className="focus:bg-white/5 cursor-pointer p-4 rounded-lg m-1"
+                        className="focus:bg-white/5 cursor-pointer p-2 rounded-md m-1"
                       >
-                        <div className="flex items-start gap-3 w-full">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center flex-shrink-0 border border-white/10">
+                        <div className="flex items-start gap-2 w-full">
+                          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center flex-shrink-0 border border-white/10">
                             {goal.icon}
                           </div>
                           <div className="flex-1">
-                            <div className="text-sm font-semibold text-white">{goal.title}</div>
-                            <div className="text-xs text-gray-400 mt-1 leading-relaxed">{goal.description}</div>
+                            <div className="text-xs font-semibold text-white">{goal.title}</div>
+                            <div className="text-xs text-gray-400 mt-0.5 leading-relaxed">{goal.description}</div>
                           </div>
                         </div>
                       </DropdownMenuItem>
@@ -875,25 +874,25 @@ export default function AIMarketingConsultant(
 
               {/* Usage Badge */}
               {remainingUses !== null && (
-                <Badge className="bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20 text-xs px-3 py-1 rounded-lg font-medium">
-                  {remainingUses}/5 left today
+                <Badge className="bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20 text-xs px-2 py-0.5 rounded-md font-medium">
+                  {remainingUses}/5
                 </Badge>
               )}
             </div>
           </div>
         </div>
 
-        {/* Chat Messages - Maximum Space */}
-        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '3 1 auto', minHeight: '600px' }}>
-          <ScrollArea className="h-full p-6">
-            <div className="space-y-5 max-w-5xl mx-auto">
+        {/* Chat Messages - Compact */}
+        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '2 1 auto', minHeight: '300px' }}>
+          <ScrollArea className="h-full p-3">
+            <div className="space-y-3 max-w-4xl mx-auto">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-5 ${
+                    className={`max-w-[85%] rounded-lg p-3 ${
                       message.type === 'user'
                         ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
                         : message.type === 'system'
@@ -902,12 +901,12 @@ export default function AIMarketingConsultant(
                     }`}
                   >
                     {message.isLoading ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-medium">{message.content}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs font-medium">{message.content}</span>
                       </div>
                     ) : (
-                      <div className="text-sm whitespace-pre-wrap space-y-4 leading-relaxed">
+                      <div className="text-xs whitespace-pre-wrap space-y-2 leading-relaxed">
                         {message.content.split('\n\n').map((paragraph, index) => (
                           <p key={index} className="leading-relaxed">
                             {paragraph}
@@ -915,7 +914,7 @@ export default function AIMarketingConsultant(
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 mt-4 font-medium">
+                    <div className="text-xs text-gray-500 mt-2 font-medium">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
@@ -927,8 +926,8 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Custom Input Field */}
-        <div className="border-y border-[#1a1a1a] p-5 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
-          <div className="flex gap-3 max-w-5xl mx-auto">
+        <div className="border-y border-[#1a1a1a] p-2 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
+          <div className="flex gap-2 max-w-4xl mx-auto">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -942,76 +941,75 @@ export default function AIMarketingConsultant(
                 }}
                 placeholder="Ask me anything about your marketing campaigns..."
                 disabled={isLoading || isLimitReached}
-                className="w-full px-5 py-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
+                className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-xs shadow-inner"
               />
             </div>
             <Button
               onClick={() => handleCustomInput(inputMessage)}
               disabled={isLoading || isLimitReached || !inputMessage.trim()}
-              className="px-5 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
+              className="px-3 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3 h-3" />
             </Button>
           </div>
         </div>
 
-        {/* Quick Prompts - Flexible Space with Scroll */}
-        <div className="p-4 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col min-h-0" style={{ flex: '1 0 0' }}>
-          <div className="max-w-5xl mx-auto w-full h-full flex flex-col min-h-0">
-            <div className="mb-4 flex-shrink-0">
-              <p className="text-sm text-gray-400 mb-3 font-semibold">Quick Actions:</p>
-              <div className="flex gap-2 flex-wrap">
+        {/* Quick Prompts - Compact Grid */}
+        <div className="p-3 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col">
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="mb-3 flex-shrink-0">
+              <p className="text-xs text-gray-400 mb-2 font-semibold">Quick Actions:</p>
+              <div className="flex gap-1 flex-wrap">
                 {categories.map((category) => (
                   <Button
                     key={category.id}
                     variant={selectedCategory === category.id ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`text-xs rounded-xl transition-all duration-300 font-medium ${
+                    className={`text-xs rounded-lg px-2 py-1 transition-all duration-300 font-medium ${
                       selectedCategory === category.id
                         ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border-blue-500/20 text-white shadow-lg"
                         : "bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                     }`}
                   >
-                    {category.label} ({category.count})
+                    {category.label}
                   </Button>
                 ))}
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar min-h-0">
-              {filteredPrompts.map((prompt) => (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+              {filteredPrompts.slice(0, 12).map((prompt) => (
                 <Button
                   key={prompt.id}
                   variant="ghost"
                   size="sm"
                   onClick={() => handlePromptSelect(prompt)}
                   disabled={isLoading || isLimitReached}
-                  className="justify-between h-auto p-3 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
+                  className="justify-start h-auto p-2 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
                            border border-[#1a1a1a] hover:border-white/10 rounded-lg transition-all duration-300
                            disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 bg-gradient-to-br from-white/5 to-white/10 rounded-md flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5 flex-shrink-0">
                       {prompt.icon}
                     </div>
-                    <span className="text-sm text-white font-medium group-hover:text-white transition-colors leading-relaxed">{prompt.title}</span>
+                    <span className="text-xs text-white font-medium group-hover:text-white transition-colors leading-tight truncate">{prompt.title}</span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
                 </Button>
               ))}
             </div>
             
             {remainingUses !== null && (
-              <div className="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-center flex-shrink-0">
-                <div className={`text-xs px-4 py-2 rounded-xl font-semibold border ${
+              <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex justify-center flex-shrink-0">
+                <div className={`text-xs px-3 py-1 rounded-lg font-semibold border ${
                   remainingUses <= 1 
                     ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border-red-500/20' 
                     : remainingUses <= 3 
                     ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 text-yellow-400 border-yellow-500/20'
                     : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-400 border-green-500/20'
                 }`}>
-                  {remainingUses} questions remaining today
+                  {remainingUses} left today
                 </div>
               </div>
             )}
