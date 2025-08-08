@@ -174,15 +174,24 @@ export class AIUsageService {
 
           console.log(`[AI Usage] Recording usage: existingDate=${existingDate}, today=${today}, isNewDay=${isNewDay}, newCount=${newCount}`)
 
-          await this.supabase
+          const { data: updateData, error: updateError } = await this.supabase
             .from('ai_usage_tracking')
             .update({
               daily_usage_count: newCount,
               daily_usage_date: today,
               last_used_at: now.toISOString()
             })
+            .eq('user_id', userId)
             .eq('brand_id', brandId)
             .eq('feature_type', featureType)
+            .select()
+
+          if (updateError) {
+            console.error('[AI Usage] Error updating usage tracking:', updateError)
+            return false
+          }
+          
+          console.log('[AI Usage] Successfully updated usage tracking:', updateData)
         } else {
           // Create new record
           await this.supabase
