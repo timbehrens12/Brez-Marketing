@@ -1287,25 +1287,29 @@ export default function MarketingAssistantPage() {
               </div>
             </div>
 
-            {/* Bottom Section - Ad Creative and AI Consultant */}
+            {/* Bottom Section - Ad Creative and Performance Chart side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
-              {/* Left Column - Ad Creative and Performance Chart */}
-              <div className="space-y-6 h-full">
+              {/* Left: Ad Creative Breakdown */}
+              <div className="h-full">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              </div>
+
+              {/* Right: Performance Chart */}
+              <div className="h-full">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
                   // Remove loading prop
                   // loading={isLoadingMetrics || isRefreshingData} 
                 />
               </div>
+            </div>
 
-              {/* Right Column - AI Marketing Consultant */}
-              <div className="h-full">
-                <AIMarketingConsultant 
-                  // Remove loading prop
-                  // loading={isLoadingMetrics || isRefreshingData} 
-                />
-              </div>
+            {/* AI Marketing Consultant - Full Width */}
+            <div className="w-full">
+              <AIMarketingConsultant 
+                // Remove loading prop
+                // loading={isLoadingMetrics || isRefreshingData} 
+              />
             </div>
           </div>
         </>
