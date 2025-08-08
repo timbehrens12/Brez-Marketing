@@ -512,6 +512,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const loadAiUsageData = useCallback(async () => {
     if (!userId) return
     
+    console.log('[AI Usage Debug] 🔄 Starting to load AI usage data for', brands.length, 'brands')
     setIsLoadingAiUsage(true)
     
     try {
@@ -519,13 +520,18 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const brandUsageData: Record<string, any> = {}
       
       for (const brand of brands) {
+        console.log(`[AI Usage Debug] 📡 Fetching AI usage for brand: ${brand.name} (${brand.id})`)
         try {
           const response = await fetch(`/api/ai/usage-status?brandId=${brand.id}`)
+          console.log(`[AI Usage Debug] 📊 Response status for ${brand.name}:`, response.status)
+          
           if (response.ok) {
             const usageStats = await response.json()
+            console.log(`[AI Usage Debug] ✅ AI usage stats for ${brand.name}:`, usageStats)
             brandUsageData[brand.id] = usageStats
           } else {
-            console.warn(`Failed to fetch AI usage for brand ${brand.id}:`, response.statusText)
+            const errorText = await response.text()
+            console.warn(`[AI Usage Debug] ❌ Failed to fetch AI usage for brand ${brand.name}:`, response.statusText, errorText)
             // Set default values for this brand
             brandUsageData[brand.id] = {
               campaign_recommendations: { canUse: true },
@@ -534,7 +540,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             }
           }
         } catch (error) {
-          console.error(`Error fetching AI usage for brand ${brand.id}:`, error)
+          console.error(`[AI Usage Debug] 💥 Error fetching AI usage for brand ${brand.name}:`, error)
           // Set default values for this brand
           brandUsageData[brand.id] = {
             campaign_recommendations: { canUse: true },
@@ -544,16 +550,52 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
       }
       
+      console.log('[AI Usage Debug] 🎯 Final brandUsageData:', brandUsageData)
       setAiUsageData(brandUsageData)
       
     } catch (error) {
-      console.error('[Agency Center] Error loading AI usage data:', error)
+      console.error('[AI Usage Debug] 💥 Error loading AI usage data:', error)
       // Set empty object as fallback
       setAiUsageData({})
     } finally {
       setIsLoadingAiUsage(false)
+      console.log('[AI Usage Debug] ✅ Finished loading AI usage data')
     }
   }, [userId, brands])
+
+  // Manual override function for testing (accessible from console)
+  const setManualAiUsageOverride = useCallback((overrideData: Record<string, any>) => {
+    console.log('[AI Usage Debug] 🛠️ MANUAL OVERRIDE: Setting AI usage data to:', overrideData)
+    setAiUsageData(overrideData)
+    
+    // Also store in window for easy access from console
+    if (typeof window !== 'undefined') {
+      (window as any).currentAiUsageData = overrideData
+    }
+  }, [])
+
+  // Expose manual override function to window for console access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).setManualAiUsageOverride = setManualAiUsageOverride
+      (window as any).currentAiUsageData = aiUsageData
+      (window as any).refreshAiUsageData = loadAiUsageData
+      
+      console.log('🚀 AI Usage Testing Functions Available:')
+      console.log('- window.setManualAiUsageOverride(data) - manually set AI usage data')
+      console.log('- window.currentAiUsageData - view current AI usage data')
+      console.log('- window.refreshAiUsageData() - reload AI usage data from API')
+      console.log('')
+      console.log('Example to block marketing_analysis for Test Brand:')
+      console.log(`window.setManualAiUsageOverride({
+  'your-brand-id': {
+    campaign_recommendations: { canUse: true },
+    health_report: { canUse: true },
+    marketing_analysis: { canUse: false, reason: 'Daily limit reached' }
+  }
+})`)
+    }
+  }, [setManualAiUsageOverride, aiUsageData, loadAiUsageData])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
@@ -778,61 +820,83 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         // Now check usage limits for specific AI tools
         if (tool.id === 'campaign-optimizer') {
+          console.log(`[Tool Debug] 🛠️ Checking availability for Campaign Optimizer`)
+          console.log(`[Tool Debug] 📊 Current aiUsageData:`, aiUsageData)
+          console.log(`[Tool Debug] 🎯 Checking for brandId: ${brandId}`)
+          
           // Campaign Optimizer uses 'campaign_recommendations' feature with 24-hour cooldown
           if (!brandId || brandId === 'all') {
+            console.log(`[Tool Debug] 🌍 Checking ALL brands for Campaign Optimizer availability`)
             // Check ALL brands for availability
             const availableBrands = brands.filter((brand: any) => {
+              console.log(`[Tool Debug] 🔍 Checking brand: ${brand.name} (${brand.id})`)
+              
               // Skip brands without required platforms
               const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
               const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
                 brandConnections.some(conn => conn.platform_type === platform)
               )
+              console.log(`[Tool Debug] 🔌 Brand ${brand.name} has required platforms:`, hasRequiredPlatforms)
               if (!hasRequiredPlatforms) return false
               
               // Check AI usage limits
               const brandUsage = aiUsageData[brand.id]
               const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
+              console.log(`[Tool Debug] 🤖 Brand ${brand.name} AI usage:`, brandUsage)
+              console.log(`[Tool Debug] ✅ Brand ${brand.name} can use campaign_recommendations:`, canUse)
               return canUse
             })
             
             const hasAvailableBrands = availableBrands.length > 0
-            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
+            console.log(`[Tool Debug] 🎯 Campaign Optimizer final result: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length}/${brands.length} brands available)`)
+            console.log(`[Tool Debug] 📝 Available brands:`, availableBrands.map(b => b.name))
             return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
           } else {
             // Check specific brand AI usage
             const brandUsage = aiUsageData[brandId]
             const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
-            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
+            console.log(`[Tool Debug] 🎯 Campaign Optimizer for brand ${brandId}: ${canUse ? 'Available' : 'Unavailable'}`)
             return { ...tool, status: canUse ? 'available' : 'unavailable' }
           }
         }
         
         if (tool.id === 'marketing-assistant') {
+          console.log(`[Tool Debug] 🛠️ Checking availability for Marketing Assistant`)
+          console.log(`[Tool Debug] 📊 Current aiUsageData:`, aiUsageData)
+          console.log(`[Tool Debug] 🎯 Checking for brandId: ${brandId}`)
+          
           // Marketing Assistant uses 'marketing_analysis' feature with 5 daily limit
           if (!brandId || brandId === 'all') {
+            console.log(`[Tool Debug] 🌍 Checking ALL brands for Marketing Assistant availability`)
             // Check ALL brands for availability
             const availableBrands = brands.filter((brand: any) => {
+              console.log(`[Tool Debug] 🔍 Checking brand: ${brand.name} (${brand.id})`)
+              
               // Skip brands without required platforms
               const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
               const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
                 brandConnections.some(conn => conn.platform_type === platform)
               )
+              console.log(`[Tool Debug] 🔌 Brand ${brand.name} has required platforms:`, hasRequiredPlatforms)
               if (!hasRequiredPlatforms) return false
               
               // Check AI usage limits
               const brandUsage = aiUsageData[brand.id]
               const canUse = brandUsage?.marketing_analysis?.canUse ?? true
+              console.log(`[Tool Debug] 🤖 Brand ${brand.name} AI usage:`, brandUsage)
+              console.log(`[Tool Debug] ✅ Brand ${brand.name} can use marketing_analysis:`, canUse)
               return canUse
             })
             
             const hasAvailableBrands = availableBrands.length > 0
-            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
+            console.log(`[Tool Debug] 🎯 Marketing Assistant final result: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length}/${brands.length} brands available)`)
+            console.log(`[Tool Debug] 📝 Available brands:`, availableBrands.map(b => b.name))
             return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
           } else {
             // Check specific brand AI usage
             const brandUsage = aiUsageData[brandId]
             const canUse = brandUsage?.marketing_analysis?.canUse ?? true
-            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
+            console.log(`[Tool Debug] 🎯 Marketing Assistant for brand ${brandId}: ${canUse ? 'Available' : 'Unavailable'}`)
             return { ...tool, status: canUse ? 'available' : 'unavailable' }
           }
         }
