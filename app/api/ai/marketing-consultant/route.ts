@@ -100,8 +100,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       response,
-      remainingUses: updatedStatus.remainingUses || 0,
-      timestamp: new Date().toISOString()
+      remainingUses: updatedStatus.remainingUses ?? 14, // Default to 14 if undefined
+      timestamp: new Date().toISOString(),
+      debug: {
+        updatedStatus,
+        trackingBrandId,
+        userId
+      }
     })
 
   } catch (error) {

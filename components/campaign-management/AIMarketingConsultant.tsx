@@ -617,11 +617,15 @@ export default function AIMarketingConsultant(
       }
       
       // Update remaining uses
+      console.log('[AI Marketing Frontend] API Response:', data)
       if (data.remainingUses !== undefined) {
+        console.log('[AI Marketing Frontend] Setting remaining uses:', data.remainingUses)
         setRemainingUses(data.remainingUses)
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
+      } else {
+        console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
       
       // Clean up the response content

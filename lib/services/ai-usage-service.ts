@@ -113,6 +113,8 @@ export class AIUsageService {
         
         const remaining = limits.dailyLimit - usage.daily_usage_count
         console.log(`[AI Usage] Daily limit check: ${usage.daily_usage_count}/${limits.dailyLimit}, remaining: ${remaining}`)
+        console.log(`[AI Usage] Full usage object:`, usage)
+        console.log(`[AI Usage] Returning:`, { canUse: true, remainingUses: remaining })
         return { 
           canUse: true, 
           remainingUses: remaining 
