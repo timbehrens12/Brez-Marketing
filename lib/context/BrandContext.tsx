@@ -46,10 +46,13 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem('selectedBrandId')
       const hasEverSelected = localStorage.getItem('hasEverSelectedBrand')
       
-      // Only restore selection if user has explicitly selected a brand before
-      if (saved && hasEverSelected === 'true') {
-        setSelectedBrandId(saved)
-      }
+      // DISABLED: Auto-restore brand selection to ensure clean start every time
+      // Users must explicitly select a brand each session for better UX
+      // if (saved && hasEverSelected === 'true') {
+      //   setSelectedBrandId(saved)
+      // }
+      
+      console.log('[BrandContext] Brand auto-selection disabled - user must select brand manually')
     }
   }, [])
 
