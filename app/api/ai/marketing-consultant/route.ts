@@ -89,11 +89,13 @@ export async function POST(request: NextRequest) {
     )
 
     // Get updated usage status to return remaining uses
+    console.log(`[AI Marketing] Checking updated usage status for brand ${trackingBrandId}...`)
     const updatedStatus = await aiUsageService.checkUsageStatus(
       trackingBrandId, 
       userId, 
       'ai_consultant_chat'
     )
+    console.log(`[AI Marketing] Updated usage status:`, updatedStatus)
 
     return NextResponse.json({
       success: true,

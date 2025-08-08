@@ -89,7 +89,10 @@ export class AIUsageService {
       // Check daily limits for features that have them
       if (limits.dailyLimit) {
         const today = now.toISOString().split('T')[0]
-        const usageDate = usage.daily_usage_date.toString()
+        // Handle both string and Date types from database
+        const usageDate = usage.daily_usage_date instanceof Date 
+          ? usage.daily_usage_date.toISOString().split('T')[0]
+          : usage.daily_usage_date.toString()
         
         // Reset daily count if it's a new day
         if (usageDate !== today) {
@@ -108,9 +111,11 @@ export class AIUsageService {
           }
         }
         
+        const remaining = limits.dailyLimit - usage.daily_usage_count
+        console.log(`[AI Usage] Daily limit check: ${usage.daily_usage_count}/${limits.dailyLimit}, remaining: ${remaining}`)
         return { 
           canUse: true, 
-          remainingUses: limits.dailyLimit - usage.daily_usage_count 
+          remainingUses: remaining 
         }
       }
 
@@ -159,8 +164,13 @@ export class AIUsageService {
 
         if (existingUsage) {
           // Update existing record
-          const isNewDay = existingUsage.daily_usage_date.toString() !== today
+          const existingDate = existingUsage.daily_usage_date instanceof Date 
+            ? existingUsage.daily_usage_date.toISOString().split('T')[0]
+            : existingUsage.daily_usage_date.toString()
+          const isNewDay = existingDate !== today
           const newCount = isNewDay ? 1 : (existingUsage.daily_usage_count || 0) + 1
+
+          console.log(`[AI Usage] Recording usage: existingDate=${existingDate}, today=${today}, isNewDay=${isNewDay}, newCount=${newCount}`)
 
           await this.supabase
             .from('ai_usage_tracking')

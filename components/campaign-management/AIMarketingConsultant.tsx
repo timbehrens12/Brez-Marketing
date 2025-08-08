@@ -798,7 +798,7 @@ export default function AIMarketingConsultant(
             {/* Title and Usage Counter */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
+                <div className="w-10 h-10 bg-gradient-to-br from-white/10 to-gray-200/20 rounded-xl 
                               flex items-center justify-center border border-white/10 shadow-lg">
                   <Brain className="w-5 h-5 text-white" />
                 </div>
@@ -832,7 +832,7 @@ export default function AIMarketingConsultant(
                   }}
                   className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
                     selectedMode === mode.id
-                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
+                      ? "bg-gradient-to-r from-white/10 to-gray-200/20 text-white border border-white/20 shadow-lg"
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
@@ -899,7 +899,7 @@ export default function AIMarketingConsultant(
                   onClick={() => setSelectedCategory(category.id)}
                   className={`text-xs rounded-lg px-2 py-1 transition-all duration-300 font-medium ${
                     selectedCategory === category.id
-                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
+                      ? "bg-gradient-to-r from-white/10 to-gray-200/20 text-white border border-white/20 shadow-lg"
                       : "bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
@@ -949,7 +949,7 @@ export default function AIMarketingConsultant(
                     <div
                       className={`max-w-[85%] rounded-xl p-4 ${
                         message.type === 'user'
-                          ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
+                          ? 'bg-gradient-to-r from-white/10 to-gray-200/20 text-white border border-white/20 shadow-lg'
                           : message.type === 'system'
                           ? 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-300 border border-gray-500/20 shadow-lg'
                           : 'bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#1a1a1a] text-white shadow-2xl'
@@ -957,7 +957,7 @@ export default function AIMarketingConsultant(
                     >
                       {message.isLoading ? (
                         <div className="flex items-center gap-3">
-                          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                           <span className="text-sm font-medium">{message.content}</span>
                         </div>
                       ) : (
@@ -998,13 +998,13 @@ export default function AIMarketingConsultant(
                     ? "Ask me anything about your agency performance, brands, or growth strategies..." 
                     : "Ask me anything about your marketing campaigns..."}
                   disabled={isLoading || isLimitReached}
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
+                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/30 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
                 />
               </div>
               <Button
                 onClick={() => handleCustomInput(inputMessage)}
                 disabled={isLoading || isLimitReached || !inputMessage.trim()}
-                className="px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
+                className="px-4 py-3 bg-gradient-to-r from-white/10 to-gray-200/20 hover:from-white/20 hover:to-gray-200/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 shadow-lg"
               >
                 <Send className="w-4 h-4" />
               </Button>
