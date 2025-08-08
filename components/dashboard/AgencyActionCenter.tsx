@@ -655,18 +655,24 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           for (const brand of brands) {
             const response = await fetch(`/api/creative-generations?brandId=${brand.id}&userId=${userId}&limit=100`)
             if (response.ok) {
-              const { generations } = await response.json()
+              const responseData = await response.json()
+              console.log(`[Agency Center] DEBUG: Creative Studio API response for ${brand.name}:`, responseData)
+              
+              const { generations } = responseData
               
               // Filter for completed generations this week
               const weeklyGenerations = generations?.filter((gen: any) => {
                 const genDate = new Date(gen.created_at)
-                return genDate >= startOfWeek && gen.status === 'completed'
+                const isThisWeek = genDate >= startOfWeek
+                const isCompleted = gen.status === 'completed'
+                return isThisWeek && isCompleted
               }) || []
               
               totalWeeklyCreativeCount += weeklyGenerations.length
-              console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyGenerations.length} completed this week`)
+              console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyGenerations.length} completed this week (total generations: ${generations?.length || 0})`)
             } else {
-              console.error(`[Agency Center] Creative Studio API failed for brand ${brand.name}:`, response.status)
+              const errorText = await response.text()
+              console.error(`[Agency Center] Creative Studio API failed for brand ${brand.name}:`, response.status, errorText)
             }
           }
           
@@ -934,16 +940,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const monthlyAvailable = brandReports.monthly !== currentMonth
               
               // DEBUG: Log the brand report status
-              console.log(`[Agency Center] Brand Reports - Brand ${brand.name}:`, {
-                dailyKey: `lastManualGeneration_${brand.id}`,
-                monthlyKey: `lastMonthlyGeneration_${brand.id}`,
-                dailyStored: brandReports.daily,
-                monthlyStored: brandReports.monthly,
-                today,
-                currentMonth,
-                dailyAvailable,
-                monthlyAvailable
-              })
+              console.log(`[Agency Center] Brand Reports - Brand ${brand.name}:`)
+              console.log(`  Daily: stored="${brandReports.daily}", today="${today}", available=${dailyAvailable}`)
+              console.log(`  Monthly: stored="${brandReports.monthly}", month="${currentMonth}", available=${monthlyAvailable}`)
+              console.log(`  Overall available: ${dailyAvailable || monthlyAvailable}`)
               
               return dailyAvailable || monthlyAvailable
             })
