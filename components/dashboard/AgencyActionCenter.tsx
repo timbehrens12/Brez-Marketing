@@ -500,24 +500,37 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         supabase.from('user_usage').select('*').eq('user_id', userId)
       ])
 
-      // Query outreach data separately to avoid the UUID error
+      // Fetch outreach usage via API to bypass RLS
       let outreachResponse
       try {
-        console.log(`[Agency Center] DEBUG: Querying outreach_message_usage with userId: "${userId}"`)
-        outreachResponse = await supabase
-          .from('outreach_message_usage')
-          .select('generated_at')
-          .eq('user_id', userId)
-        console.log(`[Agency Center] DEBUG: Outreach query successful, got ${outreachResponse.data?.length || 0} records`)
+        console.log(`[Agency Center] DEBUG: Fetching outreach usage via API for userId: "${userId}"`)
         
-        // Also check what user_ids actually exist in the table
-        const allUsersResponse = await supabase
-          .from('outreach_message_usage')
-          .select('user_id')
-          .limit(5)
-        console.log(`[Agency Center] DEBUG: Sample user_ids in table:`, allUsersResponse.data?.map(r => r.user_id))
+        const response = await fetch('/api/outreach/usage', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (response.ok) {
+          const usageData = await response.json()
+          console.log(`[Agency Center] DEBUG: Outreach API successful:`, usageData)
+          
+          // Extract daily count from the API response
+          const dailyUsedCount = usageData.usage?.daily?.used || 0
+          console.log(`[Agency Center] DEBUG: Daily outreach count from API: ${dailyUsedCount}`)
+          
+          // Create a fake data array to match existing logic expectations
+          outreachResponse = {
+            data: dailyUsedCount > 0 ? Array(dailyUsedCount).fill({ generated_at: new Date().toISOString() }) : [],
+            error: null
+          }
+        } else {
+          console.error(`[Agency Center] DEBUG: Outreach API failed with status:`, response.status)
+          outreachResponse = { error: new Error(`API failed: ${response.status}`), data: null }
+        }
       } catch (error) {
-        console.error(`[Agency Center] DEBUG: Outreach query failed:`, error)
+        console.error(`[Agency Center] DEBUG: Outreach API error:`, error)
         outreachResponse = { error, data: null }
       }
 
