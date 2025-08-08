@@ -788,7 +788,7 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-[calc(100vh-3rem)] flex flex-col shadow-2xl">
+    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-[calc(100vh-1rem)] flex flex-col shadow-2xl">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
         <div className="border-b border-[#1a1a1a] p-6 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
@@ -883,8 +883,8 @@ export default function AIMarketingConsultant(
           </div>
         </div>
 
-        {/* Chat Messages - Expanded Space */}
-        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '2 1 auto', minHeight: '450px' }}>
+        {/* Chat Messages - Maximum Space */}
+        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '3 1 auto', minHeight: '600px' }}>
           <ScrollArea className="h-full p-6">
             <div className="space-y-5 max-w-5xl mx-auto">
               {messages.map((message) => (
@@ -955,8 +955,8 @@ export default function AIMarketingConsultant(
           </div>
         </div>
 
-        {/* Quick Prompts - Expanded Space */}
-        <div className="p-6 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col" style={{ flex: '1 1 auto', minHeight: '350px' }}>
+        {/* Quick Prompts - Controlled Space */}
+        <div className="p-6 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col" style={{ flex: '0 0 auto', maxHeight: '300px' }}>
           <div className="max-w-5xl mx-auto w-full h-full flex flex-col">
             <div className="mb-5">
               <p className="text-sm text-gray-400 mb-4 font-semibold">Quick Actions:</p>
@@ -979,7 +979,7 @@ export default function AIMarketingConsultant(
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar">
               {filteredPrompts.map((prompt) => (
                 <Button
                   key={prompt.id}
@@ -987,17 +987,17 @@ export default function AIMarketingConsultant(
                   size="sm"
                   onClick={() => handlePromptSelect(prompt)}
                   disabled={isLoading || isLimitReached}
-                  className="justify-between h-auto p-5 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
-                           border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
+                  className="justify-between h-auto p-3 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
+                           border border-[#1a1a1a] hover:border-white/10 rounded-lg transition-all duration-300
                            disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5">
                       {prompt.icon}
                     </div>
                     <span className="text-sm text-white font-medium group-hover:text-white transition-colors leading-relaxed">{prompt.title}</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
                 </Button>
               ))}
             </div>
