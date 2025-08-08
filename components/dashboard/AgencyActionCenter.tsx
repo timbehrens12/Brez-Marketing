@@ -195,6 +195,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userCampaignsCount, setUserCampaignsCount] = useState(0)
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
+  
+  // AI usage tracking for tool availability
+  const [aiUsageData, setAiUsageData] = useState<Record<string, any>>({})
+  const [isLoadingAiUsage, setIsLoadingAiUsage] = useState(true)
 
   // Refresh functionality with cooldown
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
@@ -224,9 +228,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   
   // Track overall loading state and notify parent
   useEffect(() => {
-    const isOverallLoading = isLoadingConnections || isLoadingUserData || isLoadingBrandHealth || isRefreshing
+    const isOverallLoading = isLoadingConnections || isLoadingUserData || isLoadingBrandHealth || isLoadingAiUsage || isRefreshing
     onLoadingStateChange?.(isOverallLoading)
-  }, [isLoadingConnections, isLoadingUserData, isLoadingBrandHealth, isRefreshing, onLoadingStateChange])
+  }, [isLoadingConnections, isLoadingUserData, isLoadingBrandHealth, isLoadingAiUsage, isRefreshing, onLoadingStateChange])
 
   // Loading ref
   const loadingRef = useRef(false)
@@ -504,6 +508,53 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [userId, getSupabaseClient])
 
+  // Load AI usage data for tool availability
+  const loadAiUsageData = useCallback(async () => {
+    if (!userId) return
+    
+    setIsLoadingAiUsage(true)
+    
+    try {
+      // Fetch AI usage status for all brands
+      const brandUsageData: Record<string, any> = {}
+      
+      for (const brand of brands) {
+        try {
+          const response = await fetch(`/api/ai/usage-status?brandId=${brand.id}`)
+          if (response.ok) {
+            const usageStats = await response.json()
+            brandUsageData[brand.id] = usageStats
+          } else {
+            console.warn(`Failed to fetch AI usage for brand ${brand.id}:`, response.statusText)
+            // Set default values for this brand
+            brandUsageData[brand.id] = {
+              campaign_recommendations: { canUse: true },
+              health_report: { canUse: true },
+              marketing_analysis: { canUse: true }
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching AI usage for brand ${brand.id}:`, error)
+          // Set default values for this brand
+          brandUsageData[brand.id] = {
+            campaign_recommendations: { canUse: true },
+            health_report: { canUse: true },
+            marketing_analysis: { canUse: true }
+          }
+        }
+      }
+      
+      setAiUsageData(brandUsageData)
+      
+    } catch (error) {
+      console.error('[Agency Center] Error loading AI usage data:', error)
+      // Set empty object as fallback
+      setAiUsageData({})
+    } finally {
+      setIsLoadingAiUsage(false)
+    }
+  }, [userId, brands])
+
   // Filter active todos
   const isTaskActive = (taskId: string) => {
     const state = taskStates[taskId]
@@ -725,9 +776,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
 
-        // Now check usage limits for specific tools
-        if (tool.id === 'brand-reports') {
-          // Check if any brand can generate reports (has platforms and hasn't hit limits)
+        // Now check usage limits for specific AI tools
+        if (tool.id === 'campaign-optimizer') {
+          // Campaign Optimizer uses 'campaign_recommendations' feature with 24-hour cooldown
           if (!brandId || brandId === 'all') {
             // Check ALL brands for availability
             const availableBrands = brands.filter((brand: any) => {
@@ -738,39 +789,81 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               )
               if (!hasRequiredPlatforms) return false
               
-              // Check daily limit
-              const today = format(new Date(), 'yyyy-MM-dd')
-              const dailyKey = `lastManualGeneration_${brand.id}`
-              const lastDaily = typeof window !== 'undefined' ? localStorage.getItem(dailyKey) : null
-              const canGenerateDaily = lastDaily !== today
-              
-              // Check monthly limit
-              const currentMonth = format(new Date(), 'yyyy-MM')
-              const monthlyKey = `lastMonthlyGeneration_${brand.id}`
-              const lastMonthly = typeof window !== 'undefined' ? localStorage.getItem(monthlyKey) : null
-              const canGenerateMonthly = lastMonthly !== currentMonth
-              
-              return canGenerateDaily || canGenerateMonthly
+              // Check AI usage limits
+              const brandUsage = aiUsageData[brand.id]
+              const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
+              return canUse
             })
             
             const hasAvailableBrands = availableBrands.length > 0
             console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
             return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
           } else {
-            // Check specific brand limits
-            const today = format(new Date(), 'yyyy-MM-dd')
-            const dailyKey = `lastManualGeneration_${brandId}`
-            const lastDaily = typeof window !== 'undefined' ? localStorage.getItem(dailyKey) : null
-            const canGenerateDaily = lastDaily !== today
+            // Check specific brand AI usage
+            const brandUsage = aiUsageData[brandId]
+            const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
+            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
+            return { ...tool, status: canUse ? 'available' : 'unavailable' }
+          }
+        }
+        
+        if (tool.id === 'marketing-assistant') {
+          // Marketing Assistant uses 'marketing_analysis' feature with 5 daily limit
+          if (!brandId || brandId === 'all') {
+            // Check ALL brands for availability
+            const availableBrands = brands.filter((brand: any) => {
+              // Skip brands without required platforms
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
+                brandConnections.some(conn => conn.platform_type === platform)
+              )
+              if (!hasRequiredPlatforms) return false
+              
+              // Check AI usage limits
+              const brandUsage = aiUsageData[brand.id]
+              const canUse = brandUsage?.marketing_analysis?.canUse ?? true
+              return canUse
+            })
             
-            const currentMonth = format(new Date(), 'yyyy-MM')
-            const monthlyKey = `lastMonthlyGeneration_${brandId}`
-            const lastMonthly = typeof window !== 'undefined' ? localStorage.getItem(monthlyKey) : null
-            const canGenerateMonthly = lastMonthly !== currentMonth
+            const hasAvailableBrands = availableBrands.length > 0
+            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
+            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand AI usage
+            const brandUsage = aiUsageData[brandId]
+            const canUse = brandUsage?.marketing_analysis?.canUse ?? true
+            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
+            return { ...tool, status: canUse ? 'available' : 'unavailable' }
+          }
+        }
+        
+        if (tool.id === 'brand-reports') {
+          // Brand Reports uses 'health_report' feature with 3 daily limit
+          if (!brandId || brandId === 'all') {
+            // Check ALL brands for availability
+            const availableBrands = brands.filter((brand: any) => {
+              // Skip brands without required platforms
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
+                brandConnections.some(conn => conn.platform_type === platform)
+              )
+              if (!hasRequiredPlatforms) return false
+              
+              // Check AI usage limits
+              const brandUsage = aiUsageData[brand.id]
+              const canUse = brandUsage?.health_report?.canUse ?? true
+              return canUse
+            })
             
-            const canGenerate = canGenerateDaily || canGenerateMonthly
-            console.log(`[Agency Center] ${tool.name}: ${canGenerate ? 'Available' : 'Unavailable'} (brand: ${brandId}, daily: ${canGenerateDaily}, monthly: ${canGenerateMonthly})`)
-            return { ...tool, status: canGenerate ? 'available' : 'unavailable' }
+            const hasAvailableBrands = availableBrands.length > 0
+            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
+            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand AI usage
+            const brandUsage = aiUsageData[brandId]
+            const canUse = brandUsage?.health_report?.canUse ?? true
+            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
+            return { ...tool, status: canUse ? 'available' : 'unavailable' }
           }
         }
 
@@ -786,13 +879,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Calculate tools but prevent recalculation during brand switches
   const reusableTools = useMemo((): ReusableTool[] => {
     // Don't calculate availability if still loading critical data
-    if (isLoadingConnections || isLoadingUserData) {
+    if (isLoadingConnections || isLoadingUserData || isLoadingAiUsage) {
       return BASE_REUSABLE_TOOLS.map(tool => ({ ...tool, status: 'unavailable' as const }))
     }
 
     // For agency-level tools, always check availability across all brands, not per-brand
     return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, 'all'))
-  }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, brands])
+  }, [isLoadingConnections, isLoadingUserData, isLoadingAiUsage, userLeadsCount, userCampaignsCount, userUsageData, aiUsageData, connections, brands])
 
   // Helper functions for categories and status (exactly like action center)
   const getCategoryIcon = (category: string) => {
@@ -1164,6 +1257,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       // Refresh all data
       await Promise.all([
         loadUserData(),
+        loadAiUsageData(),
         generateTodos(),
         loadBrandHealthData(true) // Force refresh with real data sync
       ])
@@ -1717,6 +1811,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Refresh all action center data - but don't reload brand health if already loaded to prevent duplication
           await Promise.all([
             loadUserData(),
+            loadAiUsageData(),
             generateTodos(),
             // Only reload brand health if this is a manual refresh, not initial load
             brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
@@ -1762,6 +1857,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Load all data - only load brand health if not already loaded
           await Promise.all([
             loadUserData(),
+            loadAiUsageData(),
             generateTodos(),
             brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
           ])
