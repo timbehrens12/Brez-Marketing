@@ -44,8 +44,7 @@ import { GlobalRefreshButton } from "@/components/dashboard/GlobalRefreshButton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
-import { AINotification } from "@/components/dashboard/AINotification"
-import { useNotifications } from "@/contexts/NotificationContext"
+
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { useActionCenter } from "@/hooks/useActionCenter"
@@ -142,8 +141,7 @@ export default function DashboardPage() {
   // console.log('[Dashboard] Calling useBrandContext')
   const { brands, selectedBrandId, setSelectedBrandId, isLoading: brandsLoading } = useBrandContext()
   
-  // console.log('[Dashboard] Calling useNotifications')
-  const { addNotification } = useNotifications()
+
   
   // console.log('[Dashboard] Calling useAgency')
   const { agencySettings } = useAgency()

@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ClipboardList } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { useSimpleNotifications } from '@/hooks/useSimpleNotifications'
+
 import { useAuth } from '@clerk/nextjs'
 
 interface UnifiedDashboardHeaderProps {
@@ -42,8 +42,7 @@ export function UnifiedDashboardHeader({
   brandName
 }: UnifiedDashboardHeaderProps) {
   
-  // Get notification counts for agency tab badge
-  const { actionCenterCounts } = useSimpleNotifications()
+
 
   return (
     <div className="sticky top-0 z-40 bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] backdrop-blur-xl border-b border-[#222] shadow-2xl">
@@ -107,12 +106,7 @@ export function UnifiedDashboardHeader({
                             )}>
                               <ClipboardList size={26} className="drop-shadow-md" />
                             </div>
-                                        {/* Notification badge */}
-            {actionCenterCounts.totalItems > 0 && (
-              <div className="absolute -top-2 -right-2 min-w-[20px] h-[20px] rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-gray-800 z-20">
-                {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
-              </div>
-            )}
+
                           </div>
                           {activeTab === "agency" && (
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>
@@ -336,11 +330,6 @@ export function UnifiedDashboardHeader({
                 >
                   <div className="flex items-center justify-center relative">
                     <ClipboardList size={20} />
-                    {actionCenterCounts.totalItems > 0 && (
-                      <div className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-gray-800">
-                        {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
-                      </div>
-                    )}
                   </div>
                 </TabsTrigger>
 

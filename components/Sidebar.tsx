@@ -11,7 +11,7 @@ import BrandSelector from "@/components/BrandSelector"
 import OverlaidBrandLogos from "@/components/OverlaidBrandLogos"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useAgency } from "@/contexts/AgencyContext"
-import { useSimpleNotifications } from "@/hooks/useSimpleNotifications"
+
 import { useState, useEffect } from "react"
 import {
   Tooltip,
@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
+
 
 interface NavItem {
   name: string;
@@ -88,15 +88,7 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { selectedBrandId, setSelectedBrandId } = useBrandContext()
   const { agencySettings, isLoading: agencyLoading } = useAgency()
-  // Get notification counts
-  const { actionCenterCounts } = useSimpleNotifications()
-  
-  // Simple logging when counts change (no forced re-renders)
-  useEffect(() => {
-    if (actionCenterCounts && actionCenterCounts.totalItems > 0) {
-      console.log('[Sidebar] 📱 Notification badge updated:', actionCenterCounts.totalItems)
-    }
-  }, [actionCenterCounts.totalItems])
+
   
   // Sidebar state - always collapsed by default, expand on hover or when pinned
   const [isPinned, setIsPinned] = useState(false)
@@ -403,24 +395,12 @@ export function Sidebar({ className }: SidebarProps) {
                     <div className="flex items-center w-full">
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
                         <item.icon className="h-6 w-6 flex-shrink-0" />
-                                                  {/* Notification dot for collapsed sidebar */}
-                        {!showExpanded && item.name === "Dashboard" && actionCenterCounts.totalItems > 0 && (
-                          <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full text-xs flex items-center justify-center bg-white border border-[#444]">
-                            <span className="text-[11px] font-bold leading-none px-1 text-black">
-                              {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
-                            </span>
-                          </div>
-                        )}
+
                         {showExpanded && (
                           <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
                             <div className="flex items-center justify-between">
                               <p className="text-sm font-medium truncate">{item.name}</p>
                               <div className="flex items-center gap-2">
-                                {item.name === "Dashboard" && actionCenterCounts.totalItems > 0 && (
-                                  <Badge className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white text-black border border-[#444]">
-                                    {actionCenterCounts.totalItems}
-                                  </Badge>
-                                )}
                               {isComingSoon && (
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
                                   Soon
@@ -447,19 +427,9 @@ export function Sidebar({ className }: SidebarProps) {
                       <div>
                         <div className="flex items-center gap-2">
                         <p className="font-medium">{item.name}</p>
-                          {item.name === "Dashboard" && actionCenterCounts.totalItems > 0 && (
-                            <Badge className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white text-black border border-[#444]">
-                              {actionCenterCounts.totalItems}
-                            </Badge>
-                          )}
                         </div>
                         <p className="text-xs text-gray-400">{item.description}</p>
-                        {item.name === "Dashboard" && actionCenterCounts.totalItems > 0 && (
-                          <p className="text-xs text-gray-300 mt-1">
-                            {actionCenterCounts.urgentItems > 0 && `${actionCenterCounts.urgentItems} urgent • `}
-                            {actionCenterCounts.totalItems} total items
-                          </p>
-                        )}
+
                       </div>
                     </TooltipContent>
                   </Tooltip>
