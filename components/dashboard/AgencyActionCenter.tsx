@@ -20,10 +20,7 @@ import {
   Check,
   RefreshCw,
   BarChart3,
-  Volume,
-  VolumeX,
-  BellOff,
-  Slash,
+
   ChevronDown,
   Filter,
   Tag,
@@ -54,8 +51,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { PlatformConnection } from '@/types/platformConnection'
 import { useBrandContext } from '@/lib/context/BrandContext'
-import { useSimpleNotifications } from '@/hooks/useSimpleNotifications'
-import { useNotificationStore } from '@/stores/useNotificationStore'
+
 import { useAgency } from '@/contexts/AgencyContext'
 
 interface TodoItem {
@@ -194,8 +190,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   
-  // Muted notifications state
-  const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
+
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>('all')
 
   // Brand health read state
@@ -227,18 +222,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     agency_logo_url?: string | null
   } | null>(null)
 
-  // Add action center hook to trigger notification refresh when page loads
-  const { refresh, actionCenterCounts, lastUpdated } = useSimpleNotifications()
-  
-  // Get direct notification store actions for real-time updates
-  const { markBrandHealthRead, decrementTodo } = useNotificationStore()
-  
-  // Simple logging when notification counts change (no forced re-renders)
-  useEffect(() => {
-    if (actionCenterCounts && actionCenterCounts.totalItems > 0) {
-      console.log('[Agency Center] 📱 Notification counts loaded:', actionCenterCounts.totalItems)
-    }
-  }, [actionCenterCounts.totalItems]) // Only trigger when the actual count changes
+
 
   // Brand Health data state
   const [brandHealthData, setBrandHealthData] = useState<any[]>([])
@@ -692,10 +676,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const markTaskComplete = useCallback((taskId: string) => {
     updateTaskState(taskId, { status: 'completed' })
     
-    // Update notification store immediately for real-time UI updates
-    decrementTodo()
-    console.log('[Agency Center] 📱 Task marked as complete, notification count decreased:', taskId)
-  }, [updateTaskState, decrementTodo])
+    console.log('[Agency Center] Task marked as complete:', taskId)
+  }, [updateTaskState])
 
   const markTaskDismissed = useCallback((taskId: string) => {
     updateTaskState(taskId, { status: 'dismissed' })
@@ -1232,40 +1214,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }
 
-  // Functions for muting/unmuting notifications
-  const toggleMuteNotification = (notificationKey: string) => {
-    setMutedNotifications(prev => {
-      const isMuting = !prev[notificationKey] // Will be true if we're muting (was false before)
-      
-      const newMutedState = {
-        ...prev,
-        [notificationKey]: isMuting
-      }
-      
-      // Save to localStorage immediately
-      if (userId) {
-        localStorage.setItem(`mutedNotifications_${userId}`, JSON.stringify(newMutedState))
-      }
-      
-      // Update notification counts in real-time based on muting/unmuting
-      if (isMuting) {
-        // When muting, we need to decrease the appropriate counter
-        if (notificationKey.includes('brand_health')) {
-          markBrandHealthRead()
-          console.log('[Agency Center] 📱 Brand health notification muted')
-        } else if (notificationKey.includes('todo') || notificationKey.includes('outreach')) {
-          decrementTodo()
-          console.log('[Agency Center] 📱 Todo notification muted')
-        }
-      } else {
-        // When unmuting, refresh to recalculate true counts
-        refresh()
-        console.log('[Agency Center] 📱 Notification unmuted, refreshing counts')
-      }
-      
-      return newMutedState
-    })
-  }
+
 
   // Functions for marking brand health reports as read
   const markBrandAsRead = (brandId: string) => {
@@ -1283,9 +1232,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       return newReadState
     })
     
-    // Update notification store immediately for real-time UI updates
-    markBrandHealthRead()
-    console.log('[Agency Center] 📱 Brand health notification count decreased')
+    console.log('[Agency Center] Brand health report marked as read')
     
     // Show feedback
     toast.success('Report marked as read', { duration: 2000 })
@@ -1311,11 +1258,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(allReadState))
     }
 
-    // Update notification store for each unread report
-    for (let i = 0; i < unreadCount; i++) {
-      markBrandHealthRead()
-    }
-    console.log('[Agency Center] 📱 All brand health notifications cleared')
+    console.log('[Agency Center] All brand health reports marked as read')
     
     // Show feedback
     toast.success(`Marked ${unreadCount} reports as read`, { duration: 2000 })
@@ -1396,11 +1339,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         loadBrandHealthData(true) // Force refresh with real data sync
       ])
 
-      // Trigger notification refresh
-      console.log('[Agency Center] Manual refresh completed, triggering notification refresh')
-      if (refresh) {
-        refresh() // Use refresh for immediate updates
-      }
+      console.log('[Agency Center] Manual refresh completed')
 
       toast.success('Agency center refreshed successfully!', { duration: 3000 })
       console.log('[Agency Center] Manual refresh completed')
@@ -1444,10 +1383,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       })
     }
     
-    // Update notification store immediately when tools are used
-    decrementTodo() // Assuming tool usage reduces todo count
-    console.log('[Agency Center] 📱 Tool usage notification count decreased')
-  }, [markTaskComplete, userId, decrementTodo])
+    console.log('[Agency Center] Tool used successfully')
+  }, [markTaskComplete, userId])
 
   // Load brand health data with real data and AI synopsis (exactly like action center)
   const loadBrandHealthData = useCallback(async (forceRefresh = false) => {
@@ -1840,15 +1777,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
       }
 
-      // Load muted notifications
-      const savedMuted = localStorage.getItem(`mutedNotifications_${userId}`)
-      if (savedMuted) {
-        try {
-          setMutedNotifications(JSON.parse(savedMuted))
-        } catch (error) {
-          console.error('Error loading muted notifications:', error)
-        }
-      }
+
 
       // Load read brand reports
       const savedRead = localStorage.getItem(`readBrandReports_${userId}`)
@@ -1887,10 +1816,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       if (shouldRefresh) {
         localStorage.setItem(lastRefreshKey, now.toString())
         
-        // Trigger notification refresh when task states change
-        if (refresh) {
-          refresh() // Use refresh for immediate updates
-        }
+        // Task states changed
       }
     }
   }, [userId, taskStates]) // Remove refreshCounts to prevent infinite loops
@@ -1912,23 +1838,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
     }
 
-    // Listen for manual notification refresh events
+    // Listen for manual refresh events
     const handleForceRefresh = () => {
       console.log('[Agency Center] Force refresh event received')
-      if (refresh) {
-        refresh() // Use refresh for immediate updates
-      }
     }
 
     // Listen for localStorage changes from other tabs/windows
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `actionCenter_taskStates_${userId}` || 
-          e.key === `readBrandReports_${userId}` || 
-          e.key === `mutedNotifications_${userId}`) {
-        console.log('[Agency Center] Storage change detected, refreshing notifications')
-        if (refresh) {
-          refresh() // Use refresh for immediate updates
-        }
+          e.key === `readBrandReports_${userId}`) {
+        console.log('[Agency Center] Storage change detected')
       }
     }
 
@@ -1951,9 +1870,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           ])
 
           // Trigger notification refresh
-          if (refresh) {
-            refresh() // Use refresh for immediate updates
-          }
+          // Refresh completed
         } catch (error) {
           console.error('[Agency Center] Error during global refresh:', error)
         } finally {
@@ -1979,7 +1896,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       window.removeEventListener('global-refresh-all', handleGlobalRefresh)
       window.removeEventListener('storage', handleStorageChange)
     }
-      }, [userId, handleToolUsed, refresh, loadUserData, generateTodos, loadBrandHealthData])
+      }, [userId, handleToolUsed, loadUserData, generateTodos, loadBrandHealthData])
 
   // Load data on mount - inform parent when ready
   useEffect(() => {
@@ -2214,44 +2131,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         className="h-6 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md px-2"
                         onClick={markAllBrandsAsRead}
                       >
-                        {!mutedNotifications['brand-health'] ? (
-                          <div className="flex items-center gap-2">
-                            <span>{brandHealthData.length} Overviews</span>
-                            {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
-                                <span className="text-xs text-blue-400">
-                                  {brandHealthData.filter(brand => !readBrandReports[brand.id]).length} new
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{brandHealthData.length} Overviews</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span>{brandHealthData.length} Overviews</span>
+                          {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+                              <span className="text-xs text-blue-400">
+                                {brandHealthData.filter(brand => !readBrandReports[brand.id]).length} new
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </Button>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                            onClick={() => toggleMuteNotification('brand-health')}
-                          >
-                            {mutedNotifications['brand-health'] ? (
-                              <BellOff className="w-4 h-4" />
-                            ) : (
-                              <Volume className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{mutedNotifications['brand-health'] ? 'Unmute brand health notifications' : 'Mute brand health notifications'}</p>
-                        </TooltipContent>
-                      </Tooltip>
+
                     </>
                   )}
                 </div>
@@ -2482,34 +2374,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   ) : activeTodos.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {!mutedNotifications['outreach-tasks'] ? (
-                          `${activeTodos.length} to-do's`
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{activeTodos.length} to-do's</span>
-                          </div>
-                        )}
+                        {`${activeTodos.length} to-do's`}
                       </Badge>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                            onClick={() => toggleMuteNotification('outreach-tasks')}
-                          >
-                            {mutedNotifications['outreach-tasks'] ? (
-                              <BellOff className="w-4 h-4" />
-                            ) : (
-                              <Volume className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{mutedNotifications['outreach-tasks'] ? 'Unmute notifications' : 'Mute notifications'}</p>
-                        </TooltipContent>
-                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -2593,35 +2459,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       </div>
                     ) : (
                       <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {!mutedNotifications['available-tools'] ? (
-                          `${availableToolsCount} Available`
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Slash className="w-3 h-3" />
-                            <span className="line-through opacity-60">{availableToolsCount} Available</span>
-                          </div>
-                        )}
+                        {`${availableToolsCount} Available`}
                       </Badge>
                     )}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-[#333] rounded-md"
-                          onClick={() => toggleMuteNotification('available-tools')}
-                        >
-                          {mutedNotifications['available-tools'] ? (
-                            <BellOff className="w-4 h-4" />
-                          ) : (
-                            <Volume className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{mutedNotifications['available-tools'] ? 'Unmute notifications' : 'Mute notifications'}</p>
-                      </TooltipContent>
-                    </Tooltip>
                   </div>
                 </div>
                 <CardDescription className="text-[#9ca3af] text-sm">
