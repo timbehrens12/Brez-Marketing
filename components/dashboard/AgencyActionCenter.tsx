@@ -503,11 +503,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       // Query outreach data separately to avoid the UUID error
       let outreachResponse
       try {
+        console.log(`[Agency Center] DEBUG: Querying outreach_message_usage with userId: "${userId}"`)
         outreachResponse = await supabase
           .from('outreach_message_usage')
           .select('generated_at')
           .eq('user_id', userId)
         console.log(`[Agency Center] DEBUG: Outreach query successful, got ${outreachResponse.data?.length || 0} records`)
+        
+        // Also check what user_ids actually exist in the table
+        const allUsersResponse = await supabase
+          .from('outreach_message_usage')
+          .select('user_id')
+          .limit(5)
+        console.log(`[Agency Center] DEBUG: Sample user_ids in table:`, allUsersResponse.data?.map(r => r.user_id))
       } catch (error) {
         console.error(`[Agency Center] DEBUG: Outreach query failed:`, error)
         outreachResponse = { error, data: null }
