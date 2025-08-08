@@ -574,28 +574,25 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [])
 
-  // Expose manual override function to window for console access
+  // Expose manual override function to window for console access (run once)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).setManualAiUsageOverride = setManualAiUsageOverride
-      (window as any).currentAiUsageData = aiUsageData
       (window as any).refreshAiUsageData = loadAiUsageData
       
       console.log('🚀 AI Usage Testing Functions Available:')
       console.log('- window.setManualAiUsageOverride(data) - manually set AI usage data')
-      console.log('- window.currentAiUsageData - view current AI usage data')
       console.log('- window.refreshAiUsageData() - reload AI usage data from API')
-      console.log('')
-      console.log('Example to block marketing_analysis for Test Brand:')
-      console.log(`window.setManualAiUsageOverride({
-  'your-brand-id': {
-    campaign_recommendations: { canUse: true },
-    health_report: { canUse: true },
-    marketing_analysis: { canUse: false, reason: 'Daily limit reached' }
-  }
-})`)
+      console.log('- Check window.currentAiUsageData for current data')
     }
-  }, [setManualAiUsageOverride, aiUsageData, loadAiUsageData])
+  }, [])
+
+  // Update current AI usage data in window when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).currentAiUsageData = aiUsageData
+    }
+  }, [aiUsageData])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
