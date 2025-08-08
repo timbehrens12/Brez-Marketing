@@ -494,10 +494,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     try {
       const supabase = await getSupabaseClient()
       
-      const [leadsResponse, campaignsResponse, usageResponse] = await Promise.all([
+      const [leadsResponse, campaignsResponse, usageResponse, outreachResponse] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
         supabase.from('outreach_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId),
         supabase.from('user_usage').select('*').eq('user_id', userId),
+        // Get outreach message usage for today
+        supabase.from('outreach_message_usage').select('generated_at').eq('user_id', userId)
       ])
 
       if (!leadsResponse.error) {
@@ -510,6 +512,29 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       if (!usageResponse.error) {
         setUserUsageData(usageResponse.data || [])
+      }
+
+      // Process outreach usage data and add to userUsageData
+      if (!outreachResponse.error && outreachResponse.data) {
+        // Group outreach messages by date and count them
+        const outreachByDate = outreachResponse.data.reduce((acc: any, message: any) => {
+          const date = new Date(message.generated_at).toISOString().split('T')[0]
+          acc[date] = (acc[date] || 0) + 1
+          return acc
+        }, {})
+
+        // Convert to format compatible with userUsageData
+        const outreachUsageData = Object.entries(outreachByDate).map(([date, count]) => ({
+          date,
+          outreach_messages: count,
+          user_id: userId
+        }))
+
+        // Merge with existing usage data
+        setUserUsageData(prev => {
+          const merged = [...(prev || []), ...outreachUsageData]
+          return merged
+        })
       }
 
     } catch (error) {
@@ -749,12 +774,34 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
         
         if (tool.id === 'outreach-tool') {
-          // Outreach tool needs user to have leads to manage
+          // Outreach tool needs user to have leads AND be under daily limit (25/day)
           const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
-          console.log(`[Agency Center] ${tool.name}: ${hasLeads ? 'Available' : 'Unavailable'} (hasLeads: ${hasLeads})`)
+          
+          if (!hasLeads) {
+            console.log(`[Agency Center] ${tool.name}: Unavailable (No leads to manage)`)
+            return { ...tool, status: 'unavailable' }
+          }
+          
+          // Check daily outreach message usage (25 per day limit)
+          const today = new Date()
+          const startOfToday = new Date(today)
+          startOfToday.setHours(0, 0, 0, 0)
+          
+          // Count today's outreach messages from toolUsageData (will be loaded from database)
+          const dailyOutreachCount = userUsageData?.reduce((sum: number, record: any) => {
+            const recordDate = new Date(record.date)
+            if (recordDate >= startOfToday) {
+              return sum + (record.outreach_messages || 0)
+            }
+            return sum
+          }, 0) || 0
+          
+          const DAILY_LIMIT = 25
+          const hasUsageLeft = dailyOutreachCount < DAILY_LIMIT
+          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyOutreachCount}/${DAILY_LIMIT})`)
           return { 
             ...tool, 
-            status: hasLeads ? 'available' : 'unavailable'
+            status: hasUsageLeft ? 'available' : 'unavailable'
           }
         }
         
@@ -932,7 +979,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
               {tool.status === 'available' ? 'Available' : 
                tool.id === 'lead-generator' ? 'Weekly Limit Reached' :
-               tool.id === 'outreach-tool' ? 'No Leads' : 'Unavailable'}
+               tool.id === 'outreach-tool' ? 'Daily Limit Reached' : 'Unavailable'}
             </span>
           </div>
         </div>
