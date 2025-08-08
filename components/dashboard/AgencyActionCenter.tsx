@@ -602,25 +602,41 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Load AI usage tracking for campaign optimizer - USER BASED, not per brand
         let totalCampaignOptimizerUsage = 0
         try {
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - Querying ai_usage_tracking for brands:`, brands.map(b => `${b.name}(${b.id})`))
+          
           // Try to get ALL campaign recommendations for this user across all brands
-          const { data: aiUsageData } = await supabase
+          const { data: aiUsageData, error } = await supabase
             .from('ai_usage_tracking')
-            .select('usage_count, brand_id')
+            .select('usage_count, brand_id, feature_type')
             .in('brand_id', brands.map(b => b.id))
             .eq('feature_type', 'campaign_recommendations')
 
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - AI usage query result:`, {
+            error,
+            data: aiUsageData,
+            dataLength: aiUsageData?.length || 0
+          })
+
           if (aiUsageData) {
+            aiUsageData.forEach(record => {
+              const brandName = brands.find(b => b.id === record.brand_id)?.name || 'Unknown'
+              console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brandName}: ${record.usage_count} usages`)
+            })
+            
             totalCampaignOptimizerUsage = aiUsageData.reduce((sum, record) => sum + (record.usage_count || 0), 0)
             console.log(`[Agency Center] Campaign Optimizer - TOTAL USER USAGE: ${totalCampaignOptimizerUsage}/3 used (user-based limit)`)
+          } else {
+            console.log(`[Agency Center] Campaign Optimizer DEBUG - No AI usage data found`)
           }
         } catch (error) {
-          console.log(`[Agency Center] Campaign Optimizer - RLS blocked, setting to 0`)
+          console.log(`[Agency Center] Campaign Optimizer - RLS blocked or error:`, error)
           totalCampaignOptimizerUsage = 0
         }
 
         // Set the SAME count for all brands (user-based limit)
         for (const brand of brands) {
           newToolUsageData.campaignOptimizer[brand.id] = totalCampaignOptimizerUsage
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - Setting brand ${brand.name} usage to: ${totalCampaignOptimizerUsage}`)
         }
 
         // Load brand report generation data from localStorage
@@ -899,27 +915,41 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       case 'brand':
         // Brand-dependent tools - check actual usage and platform requirements
         
-        // Campaign Optimizer - check AI usage tracking
+        // Campaign Optimizer - check AI usage tracking (USER-BASED, not per-brand)
         if (tool.id === 'campaign-optimizer') {
           if (!brandId || brandId === 'all') {
-            // Check if ANY brand has available uses
-            const hasAnyAvailable = brands.some((brand: any) => {
+            // Check if user has available uses (requires at least one brand with Meta connection)
+            const hasAnyMetaConnection = brands.some((brand: any) => {
               const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-              if (!hasMetaConnection) return false
-              
-              const usageCount = toolUsageData.campaignOptimizer[brand.id] || 0
-              return usageCount < 3 // 3 uses per brand
+              return brandConnections.some(conn => conn.platform_type === 'meta')
             })
-            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
+            
+            if (!hasAnyMetaConnection) {
+              console.log(`[Agency Center] Campaign Optimizer - No Meta connections found`)
+              return { ...tool, status: 'unavailable' }
+            }
+            
+            // Get user's total usage across all brands (should be the same for all brands)
+            const totalUsage = toolUsageData.campaignOptimizer[brands[0]?.id] || 0
+            const hasUsageLeft = totalUsage < 3 // 3 uses per USER (not per brand)
+            
+            console.log(`[Agency Center] Campaign Optimizer - User total usage: ${totalUsage}/3, Available: ${hasUsageLeft}`)
+            return { ...tool, status: hasUsageLeft ? 'available' : 'unavailable' }
           } else {
-            // Check specific brand
+            // Check specific brand - must have Meta connection and user must have usage left
             const brandConnections = connections.filter(conn => conn.brand_id === brandId)
             const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-            if (!hasMetaConnection) return { ...tool, status: 'unavailable' }
+            if (!hasMetaConnection) {
+              console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} has no Meta connection`)
+              return { ...tool, status: 'unavailable' }
+            }
             
-            const usageCount = toolUsageData.campaignOptimizer[brandId] || 0
-            return { ...tool, status: usageCount < 3 ? 'available' : 'unavailable' }
+            // User's total usage (same across all brands since it's user-based)
+            const totalUsage = toolUsageData.campaignOptimizer[brandId] || 0
+            const hasUsageLeft = totalUsage < 3
+            
+            console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} - User usage: ${totalUsage}/3, Available: ${hasUsageLeft}`)
+            return { ...tool, status: hasUsageLeft ? 'available' : 'unavailable' }
           }
         }
         
@@ -940,10 +970,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const monthlyAvailable = brandReports.monthly !== currentMonth
               
               // DEBUG: Log the brand report status
-              console.log(`[Agency Center] Brand Reports DEBUG - Brand ${brand.name}:`)
-              console.log(`  Daily stored: "${brandReports.daily}" vs today: "${today}" = available: ${dailyAvailable}`)
-              console.log(`  Monthly stored: "${brandReports.monthly}" vs month: "${currentMonth}" = available: ${monthlyAvailable}`)
-              console.log(`  Final result: ${dailyAvailable || monthlyAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`)
+              try {
+                console.log(`[Agency Center] Brand Reports DEBUG - Brand ${brand.name}:`)
+                console.log(`  brandReports object:`, brandReports)
+                console.log(`  Daily stored: "${brandReports.daily}" vs today: "${today}"`)
+                console.log(`  Monthly stored: "${brandReports.monthly}" vs month: "${currentMonth}"`)
+                console.log(`  Daily available: ${dailyAvailable}, Monthly available: ${monthlyAvailable}`)
+                console.log(`  Final result: ${dailyAvailable || monthlyAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`)
+              } catch (err) {
+                console.error(`[Agency Center] Brand Reports DEBUG error:`, err)
+              }
               
               return dailyAvailable || monthlyAvailable
             })
