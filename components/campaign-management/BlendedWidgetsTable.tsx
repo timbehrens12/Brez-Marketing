@@ -250,7 +250,7 @@ export default function BlendedWidgetsTable({
   // isLoadingMetrics, 
   // isRefreshingData 
 }: BlendedWidgetsTableProps) {
-  const { brands } = useBrandContext()
+  const { brands, selectedBrand } = useBrandContext()
   const { userId } = useAuth()
   const [budgetData, setBudgetData] = useState<BudgetData>({
     totalBudget: 0,
@@ -263,20 +263,26 @@ export default function BlendedWidgetsTable({
   // const loading = isLoadingMetrics || isRefreshingData
 
   useEffect(() => {
-    if (!userId || !brands) return
+    if (!userId || !selectedBrand) return
     fetchBudgetData()
-  }, [userId, brands, metaMetrics.adSpend])
+  }, [userId, selectedBrand, metaMetrics.adSpend])
 
   const fetchBudgetData = async () => {
     try {
-      console.log(`[BlendedWidgets] ⭐ BUDGET FETCH STARTED ⭐ for ${brands.length} brands`, { brands: brands.map(b => ({ id: b.id, name: b.name })), metaMetrics })
+      if (!selectedBrand) {
+        console.log(`[BlendedWidgets] No brand selected, skipping budget fetch`)
+        return
+      }
+
+      console.log(`[BlendedWidgets] ⭐ BUDGET FETCH STARTED ⭐ for selected brand: ${selectedBrand.name} (${selectedBrand.id})`, { selectedBrand, metaMetrics })
       const supabase = getStandardSupabaseClient()
       
       let totalBudget = 0
       let totalSpend = metaMetrics.adSpend
       const brandBudgets: BudgetData['brands'] = []
 
-      for (const brand of brands) {
+      // Only process the selected brand
+      const brand = selectedBrand
         console.log(`[BlendedWidgets] 🔍 Processing brand: ${brand.name} (${brand.id})`)
         try {
           // Get active campaigns for this brand using the same API as CampaignWidget
@@ -327,15 +333,13 @@ export default function BlendedWidgetsTable({
             console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns.length} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
             console.log(`[BlendedWidgets] Valid campaigns:`, validCampaigns.map((c: any) => ({ name: c.campaign_name, budget: c.budget, status: c.status })))
           }
-          const brandSpend = 0 // We'll use the blended spend for now
-          
-          totalBudget += budget
+          totalBudget = budget  // Use this brand's budget as the total
           brandBudgets.push({
             brand_id: brand.id,
             brand_name: brand.name,
             budget,
-            spend: brandSpend,
-            percentage: budget > 0 ? (brandSpend / budget) * 100 : 0
+            spend: totalSpend,
+            percentage: budget > 0 ? (totalSpend / budget) * 100 : 0
           })
         } catch (brandError) {
           console.log(`[BlendedWidgets] Error fetching budget for brand ${brand.name}:`, brandError)
@@ -348,7 +352,6 @@ export default function BlendedWidgetsTable({
             percentage: 0
           })
         }
-      }
 
       const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
 
