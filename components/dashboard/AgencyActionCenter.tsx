@@ -105,7 +105,8 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Performance Analysis', 'Budget Optimization', 'Ad Set Recommendations'],
     requiresPlatforms: ['meta'],
     requiresData: true,
-    dependencyType: 'brand'
+    dependencyType: 'brand',
+    frequency: '3 per brand'
   },
   {
     id: 'lead-generator',
@@ -115,7 +116,8 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     category: 'tools',
     href: '/lead-generator',
     features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
-    dependencyType: 'user'
+    dependencyType: 'user',
+    frequency: '1 per week'
   },
   {
     id: 'outreach-tool',
@@ -149,18 +151,21 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Performance Reports', 'AI-Generated Insights', 'Export Options'],
     requiresPlatforms: ['meta'],
     requiresData: true,
-    dependencyType: 'brand'
+    dependencyType: 'brand',
+    frequency: 'Daily & Monthly'
   },
   {
-    id: 'creative-generator',
-    name: 'Creative Generator',
-    description: 'AI-powered ad creative generation with product backgrounds',
+    id: 'ad-creative-studio',
+    name: 'Ad Creative Studio',
+    description: 'AI-powered creative generation for ad campaigns',
     icon: Palette,
     category: 'ai-powered',
     href: '/ad-creative-studio',
-    features: ['Product Backgrounds', 'AI Image Generation', 'Creative Templates'],
-    frequency: '10/week',
-    dependencyType: 'user'
+    features: ['AI Image Generation', 'Background Replacement', 'Template Library'],
+    requiresPlatforms: [],
+    requiresData: false,
+    dependencyType: 'brand',
+    frequency: '10 per week'
   }
 ]
 
@@ -196,9 +201,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   
-  // AI usage tracking for tool availability
-  const [aiUsageData, setAiUsageData] = useState<Record<string, any>>({})
-  const [isLoadingAiUsage, setIsLoadingAiUsage] = useState(true)
+  // Tool usage tracking
+  const [toolUsageData, setToolUsageData] = useState<{
+    campaignOptimizer: { [brandId: string]: number }
+    brandReports: { [brandId: string]: { daily?: string, monthly?: string } }
+    creativeStudio: { [brandId: string]: { count: number, weekStart: string } }
+  }>({
+    campaignOptimizer: {},
+    brandReports: {},
+    creativeStudio: {}
+  })
 
   // Refresh functionality with cooldown
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
@@ -228,9 +240,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   
   // Track overall loading state and notify parent
   useEffect(() => {
-    const isOverallLoading = isLoadingConnections || isLoadingUserData || isLoadingBrandHealth || isLoadingAiUsage || isRefreshing
+    const isOverallLoading = isLoadingConnections || isLoadingUserData || isLoadingBrandHealth || isRefreshing
     onLoadingStateChange?.(isOverallLoading)
-  }, [isLoadingConnections, isLoadingUserData, isLoadingBrandHealth, isLoadingAiUsage, isRefreshing, onLoadingStateChange])
+  }, [isLoadingConnections, isLoadingUserData, isLoadingBrandHealth, isRefreshing, onLoadingStateChange])
 
   // Loading ref
   const loadingRef = useRef(false)
@@ -508,91 +520,73 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [userId, getSupabaseClient])
 
-  // Load AI usage data for tool availability
-  const loadAiUsageData = useCallback(async () => {
-    if (!userId) return
-    
-    console.log('[AI Usage Debug] 🔄 Starting to load AI usage data for', brands.length, 'brands')
-    setIsLoadingAiUsage(true)
-    
-    try {
-      // Fetch AI usage status for all brands
-      const brandUsageData: Record<string, any> = {}
-      
-      for (const brand of brands) {
-        console.log(`[AI Usage Debug] 📡 Fetching AI usage for brand: ${brand.name} (${brand.id})`)
-        try {
-          const response = await fetch(`/api/ai/usage-status?brandId=${brand.id}`)
-          console.log(`[AI Usage Debug] 📊 Response status for ${brand.name}:`, response.status)
-          
-          if (response.ok) {
-            const usageStats = await response.json()
-            console.log(`[AI Usage Debug] ✅ AI usage stats for ${brand.name}:`, usageStats)
-            brandUsageData[brand.id] = usageStats
-          } else {
-            const errorText = await response.text()
-            console.warn(`[AI Usage Debug] ❌ Failed to fetch AI usage for brand ${brand.name}:`, response.statusText, errorText)
-            // Set default values for this brand
-            brandUsageData[brand.id] = {
-              campaign_recommendations: { canUse: true },
-              health_report: { canUse: true },
-              marketing_analysis: { canUse: true }
-            }
-          }
-        } catch (error) {
-          console.error(`[AI Usage Debug] 💥 Error fetching AI usage for brand ${brand.name}:`, error)
-          // Set default values for this brand
-          brandUsageData[brand.id] = {
-            campaign_recommendations: { canUse: true },
-            health_report: { canUse: true },
-            marketing_analysis: { canUse: true }
-          }
+  // Load tool usage data for all brands
+  useEffect(() => {
+    const loadToolUsageData = async () => {
+      if (!userId || brands.length === 0) return
+
+      try {
+        const supabase = await getSupabaseClient()
+        const newToolUsageData = {
+          campaignOptimizer: {} as { [brandId: string]: number },
+          brandReports: {} as { [brandId: string]: { daily?: string, monthly?: string } },
+          creativeStudio: {} as { [brandId: string]: { count: number, weekStart: string } }
         }
+
+        // Load AI usage tracking for campaign optimizer
+        const { data: aiUsageData } = await supabase
+          .from('ai_usage_tracking')
+          .select('brand_id, usage_count, feature_type')
+          .in('brand_id', brands.map(b => b.id))
+          .eq('feature_type', 'campaign_recommendations')
+
+        if (aiUsageData) {
+          aiUsageData.forEach(record => {
+            newToolUsageData.campaignOptimizer[record.brand_id] = record.usage_count || 0
+          })
+        }
+
+        // Load brand report generation data from localStorage
+        const today = format(new Date(), 'yyyy-MM-dd')
+        const currentMonth = format(new Date(), 'yyyy-MM')
+        
+        brands.forEach(brand => {
+          const dailyKey = `lastManualGeneration_${brand.id}`
+          const monthlyKey = `lastMonthlyGeneration_${brand.id}`
+          
+          const dailyGenerated = localStorage.getItem(dailyKey)
+          const monthlyGenerated = localStorage.getItem(monthlyKey)
+          
+          newToolUsageData.brandReports[brand.id] = {
+            daily: dailyGenerated || undefined,
+            monthly: monthlyGenerated || undefined
+          }
+        })
+
+        // Load creative studio usage (TODO: Replace with actual database query when implemented)
+        const now = new Date()
+        const startOfWeek = new Date(now)
+        const dayOfWeek = now.getDay()
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+        startOfWeek.setDate(now.getDate() - daysToSubtract)
+        startOfWeek.setHours(0, 0, 0, 0)
+        
+        // For now, initialize to 0 for all brands
+        brands.forEach(brand => {
+          newToolUsageData.creativeStudio[brand.id] = {
+            count: 0, // TODO: Query actual usage from creative_generations table
+            weekStart: startOfWeek.toISOString()
+          }
+        })
+
+        setToolUsageData(newToolUsageData)
+      } catch (error) {
+        console.error('Error loading tool usage data:', error)
       }
-      
-      console.log('[AI Usage Debug] 🎯 Final brandUsageData:', brandUsageData)
-      setAiUsageData(brandUsageData)
-      
-    } catch (error) {
-      console.error('[AI Usage Debug] 💥 Error loading AI usage data:', error)
-      // Set empty object as fallback
-      setAiUsageData({})
-    } finally {
-      setIsLoadingAiUsage(false)
-      console.log('[AI Usage Debug] ✅ Finished loading AI usage data')
     }
-  }, [userId, brands])
 
-  // Manual override function for testing (accessible from console)
-  const setManualAiUsageOverride = useCallback((overrideData: Record<string, any>) => {
-    console.log('[AI Usage Debug] 🛠️ MANUAL OVERRIDE: Setting AI usage data to:', overrideData)
-    setAiUsageData(overrideData)
-    
-    // Also store in window for easy access from console
-    if (typeof window !== 'undefined') {
-      (window as any).currentAiUsageData = overrideData
-    }
-  }, [])
-
-  // Expose manual override function to window for console access (run once)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).setManualAiUsageOverride = setManualAiUsageOverride
-      (window as any).refreshAiUsageData = loadAiUsageData
-      
-      console.log('🚀 AI Usage Testing Functions Available:')
-      console.log('- window.setManualAiUsageOverride(data) - manually set AI usage data')
-      console.log('- window.refreshAiUsageData() - reload AI usage data from API')
-      console.log('- Check window.currentAiUsageData for current data')
-    }
-  }, [])
-
-  // Update current AI usage data in window when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).currentAiUsageData = aiUsageData
-    }
-  }, [aiUsageData])
+    loadToolUsageData()
+  }, [userId, brands, getSupabaseClient])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
@@ -703,9 +697,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
 
 
-  // Enhanced tool availability logic with proper generation limit checking
+  // Tool availability logic with actual usage tracking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
@@ -713,7 +706,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         return { ...tool, status: 'available' }
 
       case 'user':
-        // User-dependent tools - check user data and usage limits
+        // User-dependent tools - check user data regardless of selected brand
         if (tool.id === 'lead-generator') {
           // Lead generator has weekly usage limits
           const now = new Date()
@@ -744,36 +737,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
         
-        if (tool.id === 'creative-generator') {
-          // Creative generator has weekly limits - check localStorage for creative generations
-          const now = new Date()
-          const startOfWeek = new Date(now)
-          const dayOfWeek = now.getDay()
-          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-          startOfWeek.setDate(now.getDate() - daysToSubtract)
-          
-          const WEEKLY_LIMIT = 10 // 10 creatives per week
-          let currentWeeklyUsage = 0
-          
-          // Check localStorage for creative generations this week
-          if (typeof window !== 'undefined') {
-            for (let i = 0; i < 7; i++) {
-              const checkDate = new Date(startOfWeek)
-              checkDate.setDate(startOfWeek.getDate() + i)
-              const dateStr = format(checkDate, 'yyyy-MM-dd')
-              const dailyUsage = parseInt(localStorage.getItem(`creativeGenerations_${dateStr}`) || '0')
-              currentWeeklyUsage += dailyUsage
-            }
-          }
-          
-          const hasGenerationsLeft = currentWeeklyUsage < WEEKLY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasGenerationsLeft ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
-          return { 
-            ...tool, 
-            status: hasGenerationsLeft ? 'available' : 'unavailable'
-          }
-        }
-        
         if (tool.id === 'outreach-tool') {
           // Outreach tool needs user to have leads to manage
           const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
@@ -788,148 +751,109 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         return { ...tool, status: 'available' }
 
       case 'brand':
-        // Brand-dependent tools - check platform connections AND usage limits per brand
+        // Brand-dependent tools - check actual usage and platform requirements
         
-        // First check platform requirements
-        if (tool.requiresPlatforms && tool.requiresPlatforms.length > 0) {
+        // Campaign Optimizer - check AI usage tracking
+        if (tool.id === 'campaign-optimizer') {
           if (!brandId || brandId === 'all') {
-            // Check if ANY brand has required platforms
+            // Check if ANY brand has available uses
+            const hasAnyAvailable = brands.some((brand: any) => {
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
+              if (!hasMetaConnection) return false
+              
+              const usageCount = toolUsageData.campaignOptimizer[brand.id] || 0
+              return usageCount < 3 // 3 uses per brand
+            })
+            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand
+            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+            const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
+            if (!hasMetaConnection) return { ...tool, status: 'unavailable' }
+            
+            const usageCount = toolUsageData.campaignOptimizer[brandId] || 0
+            return { ...tool, status: usageCount < 3 ? 'available' : 'unavailable' }
+          }
+        }
+        
+        // Brand Reports - check localStorage for generation dates
+        if (tool.id === 'brand-reports') {
+          if (!brandId || brandId === 'all') {
+            // Check if ANY brand has available reports
+            const today = format(new Date(), 'yyyy-MM-dd')
+            const currentMonth = format(new Date(), 'yyyy-MM')
+            
+            const hasAnyAvailable = brands.some((brand: any) => {
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
+              if (!hasMetaConnection) return false
+              
+              const brandReports = toolUsageData.brandReports[brand.id] || {}
+              const dailyAvailable = brandReports.daily !== today
+              const monthlyAvailable = brandReports.monthly !== currentMonth
+              
+              return dailyAvailable || monthlyAvailable
+            })
+            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand
+            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+            const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
+            if (!hasMetaConnection) return { ...tool, status: 'unavailable' }
+            
+            const today = format(new Date(), 'yyyy-MM-dd')
+            const currentMonth = format(new Date(), 'yyyy-MM')
+            const brandReports = toolUsageData.brandReports[brandId] || {}
+            const dailyAvailable = brandReports.daily !== today
+            const monthlyAvailable = brandReports.monthly !== currentMonth
+            
+            return { ...tool, status: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable' }
+          }
+        }
+        
+        // Creative Studio - check weekly usage
+        if (tool.id === 'ad-creative-studio') {
+          if (!brandId || brandId === 'all') {
+            // Check if ANY brand has available uses
+            const hasAnyAvailable = brands.some((brand: any) => {
+              const creativeData = toolUsageData.creativeStudio[brand.id] || { count: 0 }
+              return creativeData.count < 10 // 10 per week
+            })
+            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
+          } else {
+            // Check specific brand
+            const creativeData = toolUsageData.creativeStudio[brandId] || { count: 0 }
+            return { ...tool, status: creativeData.count < 10 ? 'available' : 'unavailable' }
+          }
+        }
+        
+        // Marketing Assistant - always available if Meta connected
+        if (tool.id === 'marketing-assistant') {
+          if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
+            return { ...tool, status: 'available' }
+          }
+
+          if (!brandId || brandId === 'all') {
             const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
               const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
               return tool.requiresPlatforms!.every(platform => 
                 brandConnections.some(conn => conn.platform_type === platform)
               )
             })
-            if (!hasAnyBrandWithPlatforms) {
-              return { ...tool, status: 'unavailable' }
-            }
-          } else {
-            // Check specific brand platforms
-            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-            const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
-              brandConnections.some(conn => conn.platform_type === platform)
-            )
-            if (!hasRequiredPlatforms) {
-              return { ...tool, status: 'unavailable' }
-            }
+            return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
           }
-        }
 
-        // Now check usage limits for specific AI tools
-        if (tool.id === 'campaign-optimizer') {
-          console.log(`[Tool Debug] 🛠️ Checking availability for Campaign Optimizer`)
-          console.log(`[Tool Debug] 📊 Current aiUsageData:`, aiUsageData)
-          console.log(`[Tool Debug] 🎯 Checking for brandId: ${brandId}`)
-          
-          // Campaign Optimizer uses 'campaign_recommendations' feature with 24-hour cooldown
-          if (!brandId || brandId === 'all') {
-            console.log(`[Tool Debug] 🌍 Checking ALL brands for Campaign Optimizer availability`)
-            // Check ALL brands for availability
-            const availableBrands = brands.filter((brand: any) => {
-              console.log(`[Tool Debug] 🔍 Checking brand: ${brand.name} (${brand.id})`)
-              
-              // Skip brands without required platforms
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
-                brandConnections.some(conn => conn.platform_type === platform)
-              )
-              console.log(`[Tool Debug] 🔌 Brand ${brand.name} has required platforms:`, hasRequiredPlatforms)
-              if (!hasRequiredPlatforms) return false
-              
-              // Check AI usage limits
-              const brandUsage = aiUsageData[brand.id]
-              const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
-              console.log(`[Tool Debug] 🤖 Brand ${brand.name} AI usage:`, brandUsage)
-              console.log(`[Tool Debug] ✅ Brand ${brand.name} can use campaign_recommendations:`, canUse)
-              return canUse
-            })
-            
-            const hasAvailableBrands = availableBrands.length > 0
-            console.log(`[Tool Debug] 🎯 Campaign Optimizer final result: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length}/${brands.length} brands available)`)
-            console.log(`[Tool Debug] 📝 Available brands:`, availableBrands.map(b => b.name))
-            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand AI usage
-            const brandUsage = aiUsageData[brandId]
-            const canUse = brandUsage?.campaign_recommendations?.canUse ?? true
-            console.log(`[Tool Debug] 🎯 Campaign Optimizer for brand ${brandId}: ${canUse ? 'Available' : 'Unavailable'}`)
-            return { ...tool, status: canUse ? 'available' : 'unavailable' }
-          }
+          const brandConnections = connections.filter(conn => conn.brand_id === brandId)
+          const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
+            brandConnections.some(conn => conn.platform_type === platform)
+          )
+
+          return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
         }
         
-        if (tool.id === 'marketing-assistant') {
-          console.log(`[Tool Debug] 🛠️ Checking availability for Marketing Assistant`)
-          console.log(`[Tool Debug] 📊 Current aiUsageData:`, aiUsageData)
-          console.log(`[Tool Debug] 🎯 Checking for brandId: ${brandId}`)
-          
-          // Marketing Assistant uses 'marketing_analysis' feature with 5 daily limit
-          if (!brandId || brandId === 'all') {
-            console.log(`[Tool Debug] 🌍 Checking ALL brands for Marketing Assistant availability`)
-            // Check ALL brands for availability
-            const availableBrands = brands.filter((brand: any) => {
-              console.log(`[Tool Debug] 🔍 Checking brand: ${brand.name} (${brand.id})`)
-              
-              // Skip brands without required platforms
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
-                brandConnections.some(conn => conn.platform_type === platform)
-              )
-              console.log(`[Tool Debug] 🔌 Brand ${brand.name} has required platforms:`, hasRequiredPlatforms)
-              if (!hasRequiredPlatforms) return false
-              
-              // Check AI usage limits
-              const brandUsage = aiUsageData[brand.id]
-              const canUse = brandUsage?.marketing_analysis?.canUse ?? true
-              console.log(`[Tool Debug] 🤖 Brand ${brand.name} AI usage:`, brandUsage)
-              console.log(`[Tool Debug] ✅ Brand ${brand.name} can use marketing_analysis:`, canUse)
-              return canUse
-            })
-            
-            const hasAvailableBrands = availableBrands.length > 0
-            console.log(`[Tool Debug] 🎯 Marketing Assistant final result: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length}/${brands.length} brands available)`)
-            console.log(`[Tool Debug] 📝 Available brands:`, availableBrands.map(b => b.name))
-            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand AI usage
-            const brandUsage = aiUsageData[brandId]
-            const canUse = brandUsage?.marketing_analysis?.canUse ?? true
-            console.log(`[Tool Debug] 🎯 Marketing Assistant for brand ${brandId}: ${canUse ? 'Available' : 'Unavailable'}`)
-            return { ...tool, status: canUse ? 'available' : 'unavailable' }
-          }
-        }
-        
-        if (tool.id === 'brand-reports') {
-          // Brand Reports uses 'health_report' feature with 3 daily limit
-          if (!brandId || brandId === 'all') {
-            // Check ALL brands for availability
-            const availableBrands = brands.filter((brand: any) => {
-              // Skip brands without required platforms
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasRequiredPlatforms = tool.requiresPlatforms!.every(platform => 
-                brandConnections.some(conn => conn.platform_type === platform)
-              )
-              if (!hasRequiredPlatforms) return false
-              
-              // Check AI usage limits
-              const brandUsage = aiUsageData[brand.id]
-              const canUse = brandUsage?.health_report?.canUse ?? true
-              return canUse
-            })
-            
-            const hasAvailableBrands = availableBrands.length > 0
-            console.log(`[Agency Center] ${tool.name}: ${hasAvailableBrands ? 'Available' : 'Unavailable'} (${availableBrands.length} brands available)`)
-            return { ...tool, status: hasAvailableBrands ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand AI usage
-            const brandUsage = aiUsageData[brandId]
-            const canUse = brandUsage?.health_report?.canUse ?? true
-            console.log(`[Agency Center] ${tool.name}: ${canUse ? 'Available' : 'Unavailable'} (brand: ${brandId})`)
-            return { ...tool, status: canUse ? 'available' : 'unavailable' }
-          }
-        }
-
-        // Default for brand-dependent tools (passed platform check)
-        return { ...tool, status: 'available' }
+        // Default brand-dependent tools
+        return { ...tool, status: 'unavailable' }
 
       default:
         return { ...tool, status: 'unavailable' }
@@ -940,13 +864,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Calculate tools but prevent recalculation during brand switches
   const reusableTools = useMemo((): ReusableTool[] => {
     // Don't calculate availability if still loading critical data
-    if (isLoadingConnections || isLoadingUserData || isLoadingAiUsage) {
+    if (isLoadingConnections || isLoadingUserData) {
       return BASE_REUSABLE_TOOLS.map(tool => ({ ...tool, status: 'unavailable' as const }))
     }
 
     // For agency-level tools, always check availability across all brands, not per-brand
     return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, 'all'))
-  }, [isLoadingConnections, isLoadingUserData, isLoadingAiUsage, userLeadsCount, userCampaignsCount, userUsageData, aiUsageData, connections, brands])
+  }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, brands, toolUsageData])
 
   // Helper functions for categories and status (exactly like action center)
   const getCategoryIcon = (category: string) => {
@@ -1318,7 +1242,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       // Refresh all data
       await Promise.all([
         loadUserData(),
-        loadAiUsageData(),
         generateTodos(),
         loadBrandHealthData(true) // Force refresh with real data sync
       ])
@@ -1872,7 +1795,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Refresh all action center data - but don't reload brand health if already loaded to prevent duplication
           await Promise.all([
             loadUserData(),
-            loadAiUsageData(),
             generateTodos(),
             // Only reload brand health if this is a manual refresh, not initial load
             brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
@@ -1918,7 +1840,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Load all data - only load brand health if not already loaded
           await Promise.all([
             loadUserData(),
-            loadAiUsageData(),
             generateTodos(),
             brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
           ])
@@ -2641,7 +2562,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Tools Grid - 3 columns, 2 rows */}
+                    {/* 3x2 grid for all tools */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
