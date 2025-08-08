@@ -169,6 +169,27 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     requiresPlatforms: ['meta'],
     requiresData: true,
     dependencyType: 'brand' // Depends on brand having Meta connection
+  },
+  {
+    id: 'ad-creative-studio',
+    name: 'Ad Creative Studio',
+    description: 'Generate professional ad creatives using AI',
+    icon: Palette,
+    category: 'ai-powered',
+    href: '/ad-creative-studio',
+    features: ['AI-Generated Creatives', '50+ Templates', 'Product Placement'],
+    dependencyType: 'user'
+  },
+  {
+    id: 'weekly-creative-batch',
+    name: 'Weekly Creative Batch',
+    description: 'Generate 10 weekly creatives for your campaigns',
+    icon: Calendar,
+    category: 'automation',
+    href: '/ad-creative-studio?mode=weekly',
+    features: ['10 Creatives/Week', 'Automated Generation', 'Variety Pack'],
+    frequency: 'Weekly',
+    dependencyType: 'user'
   }
 ]
 

@@ -150,6 +150,27 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     requiresPlatforms: ['meta'],
     requiresData: true,
     dependencyType: 'brand'
+  },
+  {
+    id: 'ad-creative-studio',
+    name: 'Ad Creative Studio',
+    description: 'Generate professional ad creatives using AI',
+    icon: Palette,
+    category: 'ai-powered',
+    href: '/ad-creative-studio',
+    features: ['AI-Generated Creatives', '50+ Templates', 'Product Placement'],
+    dependencyType: 'user'
+  },
+  {
+    id: 'weekly-creative-batch',
+    name: 'Weekly Creative Batch',
+    description: 'Generate 10 weekly creatives for your campaigns',
+    icon: Calendar,
+    category: 'automation',
+    href: '/ad-creative-studio?mode=weekly',
+    features: ['10 Creatives/Week', 'Automated Generation', 'Variety Pack'],
+    frequency: 'Weekly',
+    dependencyType: 'user'
   }
 ]
 
@@ -604,11 +625,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Tool availability logic (exactly like action center)
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-
-    // Coming soon tools are always coming soon
-    if (tool.id === 'ad-creative-studio') {
-      return { ...tool, status: 'coming-soon' }
-    }
+    console.log(`[Agency Center] Checking availability for ${tool.name} (${tool.id}), dependencyType: ${tool.dependencyType}`)
 
     // Handle different dependency types
     switch (tool.dependencyType) {
@@ -1102,7 +1119,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     const taskId = `tool-available-${toolId}`
     markTaskComplete(taskId)
     
-    // For lead generator, update usage data in real-time
+    // Update usage data in real-time for tools with usage limits
     if (toolId === 'lead-generator') {
       const now = new Date()
       const newUsageRecord = {
@@ -1124,11 +1141,75 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
       })
     }
+
+    // Track brand-dependent tool usage (campaign optimizer, marketing assistant, brand reports)
+    if (['campaign-optimizer', 'marketing-assistant', 'brand-reports'].includes(toolId)) {
+      console.log(`[Agency Center] 🎯 Brand-dependent tool ${toolId} used - tool should now show as 'used' for current brand`)
+      
+      // Update AI usage tracking for brand-dependent tools
+      const updateAIUsage = async () => {
+        try {
+          if (!selectedBrandId) return
+          
+          const featureTypeMap: { [key: string]: string } = {
+            'campaign-optimizer': 'campaign_recommendations',
+            'marketing-assistant': 'marketing_analysis',
+            'brand-reports': 'health_report'
+          }
+          
+          const featureType = featureTypeMap[toolId]
+          if (featureType) {
+            const response = await fetch('/api/ai/usage-tracking', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                brandId: selectedBrandId,
+                featureType,
+                action: 'record_usage'
+              })
+            })
+            
+            if (response.ok) {
+              console.log(`[Agency Center] ✅ AI usage recorded for ${featureType}`)
+            }
+          }
+        } catch (error) {
+          console.error(`[Agency Center] ❌ Error recording AI usage:`, error)
+        }
+      }
+      
+      updateAIUsage()
+    }
+
+    // Track creative tool usage
+    if (['ad-creative-studio', 'weekly-creative-batch'].includes(toolId)) {
+      console.log(`[Agency Center] 🎨 Creative tool ${toolId} used`)
+      // Could add creative usage tracking here if needed
+    }
     
     // Update notification store immediately when tools are used
     decrementTodo() // Assuming tool usage reduces todo count
     console.log('[Agency Center] 📱 Tool usage notification count decreased')
-  }, [markTaskComplete, userId, decrementTodo])
+  }, [markTaskComplete, userId, selectedBrandId, decrementTodo])
+
+  // Listen for tool usage events from other parts of the application
+  useEffect(() => {
+    const handleToolUsageEvent = (event: CustomEvent) => {
+      const { toolId, context } = event.detail
+      console.log(`[Agency Center] 🔄 Tool usage event received:`, { toolId, context })
+      handleToolUsed(toolId)
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('toolUsed', handleToolUsageEvent as EventListener)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('toolUsed', handleToolUsageEvent as EventListener)
+      }
+    }
+  }, [handleToolUsed])
 
   // Load brand health data with real data and AI synopsis (exactly like action center)
   const loadBrandHealthData = useCallback(async (forceRefresh = false) => {
