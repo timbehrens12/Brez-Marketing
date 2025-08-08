@@ -27,8 +27,7 @@ import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBrea
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
 import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
 
-import AIPoweredAlerts from "@/components/campaign-management/AIPoweredAlerts"
-import GoalTrackingWidget from "@/components/campaign-management/GoalTrackingWidget"
+
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Brain, Clock } from "lucide-react"
@@ -1282,19 +1281,6 @@ export default function MarketingAssistantPage() {
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
                 </div>
-
-            {/* New Widgets Section - AI Alerts and Goal Tracking side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
-              {/* Left: AI-Powered Alerts */}
-              <div className="h-full">
-                <AIPoweredAlerts />
-              </div>
-
-              {/* Right: Goal Tracking */}
-              <div className="h-full">
-                <GoalTrackingWidget />
-              </div>
-            </div>
 
             {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">

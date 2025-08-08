@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Progress } from "@/components/ui/progress"
+
 import Image from "next/image"
 import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon, CreditCard, Layers, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -324,19 +324,7 @@ export default function BlendedWidgetsTable({
     }
   }
 
-  const getBudgetColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-red-500'
-    if (percentage >= 80) return 'bg-orange-500'
-    if (percentage >= 70) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
 
-  const getBudgetTextColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-red-400'
-    if (percentage >= 80) return 'text-orange-400'
-    if (percentage >= 70) return 'text-yellow-400'
-    return 'text-green-400'
-  }
 
   return (
     <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
@@ -355,46 +343,7 @@ export default function BlendedWidgetsTable({
           </div>
         </div>
         
-        {/* Total Blended Budget Section */}
-        <div className="bg-[#0f0f0f] border-b border-[#333] px-6 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-blue-500" />
-              <h3 className="text-lg font-semibold text-white">Total Blended Budget</h3>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-2">
-                <span className={cn("text-sm font-medium", getBudgetTextColor(budgetData.budgetUsedPercentage))}>
-                  ${budgetData.totalSpend.toFixed(2)} / ${budgetData.totalBudget.toFixed(2)}
-                </span>
-                {budgetData.budgetUsedPercentage >= 90 && (
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
-                )}
-              </div>
-              <span className={cn("text-xs", getBudgetTextColor(budgetData.budgetUsedPercentage))}>
-                {budgetData.budgetUsedPercentage.toFixed(1)}% used
-              </span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Progress 
-              value={Math.min(budgetData.budgetUsedPercentage, 100)} 
-              className="h-2 bg-[#333]"
-            />
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Daily budget usage across all brands</span>
-              <span>
-                {budgetData.budgetUsedPercentage >= 90 
-                  ? "Budget limit reached" 
-                  : budgetData.budgetUsedPercentage >= 80 
-                  ? "Approaching budget limit" 
-                  : "Within budget"}
-              </span>
-            </div>
-          </div>
-        </div>
-        
+
         {/* Content */}
         <div className="flex-1 p-6 overflow-auto">
           {/* 2-column, 4-row grid with modern cards */}
@@ -655,6 +604,39 @@ export default function BlendedWidgetsTable({
               }
             ]}
           />
+          
+          {/* Row 5 - Budget Usage (spanning 2 columns) */}
+          <div className="col-span-2">
+            <BlendedMetricCard
+              icon={CreditCard}
+              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+              title="Total Blended Budget Usage"
+              value={budgetData.budgetUsedPercentage}
+              change={0} // No change data for budget yet
+              suffix="%"
+              decimals={1}
+              platforms={[
+                { 
+                  name: "Meta", 
+                  icon: "https://i.imgur.com/6hyyRrs.png", 
+                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
+                  active: budgetData.totalBudget > 0
+                },
+                { 
+                  name: "TikTok", 
+                  icon: "https://i.imgur.com/AXHa9UT.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                },
+                { 
+                  name: "Google Ads", 
+                  icon: "https://i.imgur.com/TavV4UJ.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                }
+              ]}
+            />
+          </div>
         </div>
         </div>
       </div>
