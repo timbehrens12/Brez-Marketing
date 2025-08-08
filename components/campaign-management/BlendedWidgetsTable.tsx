@@ -279,23 +279,22 @@ export default function BlendedWidgetsTable({
       for (const brand of brands) {
         console.log(`[BlendedWidgets] 🔍 Processing brand: ${brand.name} (${brand.id})`)
         try {
-          // Get active campaigns for this brand
-          const { data: campaigns, error } = await supabase
-            .from('meta_campaigns')
-            .select('budget, budget_type')
-            .eq('brand_id', brand.id)
-            .eq('status', 'ACTIVE')
+          // Get active campaigns for this brand using the same API as CampaignWidget
+          const response = await fetch(`/api/meta/campaigns?brandId=${brand.id}&status=ACTIVE`)
+          const apiData = await response.json()
+          
+          const campaigns = apiData.campaigns || []
+          const error = response.ok ? null : { message: `HTTP ${response.status}` }
 
-          console.log(`[BlendedWidgets] Query result for brand ${brand.name} (${brand.id}):`, { campaigns, error })
+          console.log(`[BlendedWidgets] API result for brand ${brand.name} (${brand.id}):`, { campaigns: campaigns.length, error, apiData })
 
           let budget = 0
           
           if (error) {
             console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
-            console.log(`[BlendedWidgets] Error details:`, { error_code: error.code, message: error.message, hint: error.hint })
           }
           
-          if (error && error.code !== 'PGRST116') {
+          if (error) {
             
             // Fallback to brand_budgets table if meta_campaigns fails
             try {
@@ -315,17 +314,18 @@ export default function BlendedWidgetsTable({
             }
           } else {
             // Filter and sum up all active campaign budgets for this brand
-            const validCampaigns = campaigns?.filter(campaign => {
+            const validCampaigns = campaigns.filter((campaign: any) => {
               const campaignBudget = parseFloat(campaign.budget || '0')
               return campaignBudget > 0
-            }) || []
+            })
             
-            budget = validCampaigns.reduce((sum, campaign) => {
+            budget = validCampaigns.reduce((sum: number, campaign: any) => {
               const campaignBudget = parseFloat(campaign.budget || '0')
               return sum + campaignBudget
             }, 0)
             
-            console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns?.length || 0} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
+            console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns.length} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
+            console.log(`[BlendedWidgets] Valid campaigns:`, validCampaigns.map((c: any) => ({ name: c.campaign_name, budget: c.budget, status: c.status })))
           }
           const brandSpend = 0 // We'll use the blended spend for now
           
