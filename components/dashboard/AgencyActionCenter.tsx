@@ -933,7 +933,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const dailyAvailable = brandReports.daily !== today
               const monthlyAvailable = brandReports.monthly !== currentMonth
               
-              return dailyAvailable && monthlyAvailable
+              // DEBUG: Log the brand report status
+              console.log(`[Agency Center] Brand Reports - Brand ${brand.name}:`, {
+                dailyKey: `lastManualGeneration_${brand.id}`,
+                monthlyKey: `lastMonthlyGeneration_${brand.id}`,
+                dailyStored: brandReports.daily,
+                monthlyStored: brandReports.monthly,
+                today,
+                currentMonth,
+                dailyAvailable,
+                monthlyAvailable
+              })
+              
+              return dailyAvailable || monthlyAvailable
             })
             return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
           } else {
@@ -948,7 +960,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const dailyAvailable = brandReports.daily !== today
             const monthlyAvailable = brandReports.monthly !== currentMonth
             
-            return { ...tool, status: (dailyAvailable && monthlyAvailable) ? 'available' : 'unavailable' }
+            // DEBUG: Log specific brand report status
+            console.log(`[Agency Center] Brand Reports - Specific Brand:`, {
+              brandId,
+              dailyStored: brandReports.daily,
+              monthlyStored: brandReports.monthly,
+              today,
+              currentMonth,
+              dailyAvailable,
+              monthlyAvailable,
+              finalStatus: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable'
+            })
+            
+            return { ...tool, status: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable' }
           }
         }
         
