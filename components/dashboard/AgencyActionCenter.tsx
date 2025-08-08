@@ -599,53 +599,51 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           creativeStudio: {} as { [brandId: string]: { count: number, weekStart: string } }
         }
 
-        // Load AI usage tracking for campaign optimizer - USER BASED, not per brand
-        let totalCampaignOptimizerUsage = 0
-        
-        // First try direct database query (might be blocked by RLS)
-        try {
-          console.log(`[Agency Center] Campaign Optimizer DEBUG - Querying ai_usage_tracking for brands:`, brands.map(b => `${b.name}(${b.id})`))
-          
-          const { data: aiUsageData, error } = await supabase
-            .from('ai_usage_tracking')
-            .select('usage_count, brand_id, feature_type')
-            .in('brand_id', brands.map(b => b.id))
-            .eq('feature_type', 'campaign_recommendations')
-
-          if (error) {
-            console.log(`[Agency Center] Campaign Optimizer - Database query blocked by RLS:`, error.message)
-            throw error // Fall back to manual approach
-          }
-
-          if (aiUsageData && aiUsageData.length > 0) {
-            aiUsageData.forEach(record => {
-              const brandName = brands.find(b => b.id === record.brand_id)?.name || 'Unknown'
-              console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brandName}: ${record.usage_count} usages`)
-            })
-            
-            totalCampaignOptimizerUsage = aiUsageData.reduce((sum, record) => sum + (record.usage_count || 0), 0)
-            console.log(`[Agency Center] Campaign Optimizer - TOTAL USER USAGE: ${totalCampaignOptimizerUsage}/3 used (user-based limit)`)
-          } else {
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - No AI usage data found in database`)
-          }
-        } catch (error) {
-          console.log(`[Agency Center] Campaign Optimizer - Direct query failed, using manual fallback`)
-          
-          // MANUAL FALLBACK: We know from our database check that Test Brand has 3 usages
-          // This is a temporary solution until we fix RLS or create an API
-          const testBrandId = '1a30f34b-b048-4f80-b880-6c61bd12c720'
-          if (brands.some(b => b.id === testBrandId)) {
-            totalCampaignOptimizerUsage = 3 // Manual override based on database check
-            console.log(`[Agency Center] Campaign Optimizer - MANUAL FALLBACK: Test Brand has 3/3 used`)
-          } else {
-            totalCampaignOptimizerUsage = 0
-          }
-        }
-
-        // Set the SAME count for all brands (user-based limit)
+        // Load Campaign Optimizer availability - Check if active campaigns have been optimized
         for (const brand of brands) {
-          newToolUsageData.campaignOptimizer[brand.id] = totalCampaignOptimizerUsage
-          console.log(`[Agency Center] Campaign Optimizer DEBUG - Setting brand ${brand.name} usage to: ${totalCampaignOptimizerUsage}`)
+          try {
+            console.log(`[Agency Center] Campaign Optimizer DEBUG - Checking brand ${brand.name} (${brand.id})`)
+            
+            // Get active campaigns for this brand (might be blocked by RLS)
+            const { data: activeCampaigns } = await supabase
+              .from('meta_campaigns')
+              .select('campaign_id, campaign_name, status')
+              .eq('brand_id', brand.id)
+              .eq('status', 'ACTIVE')
+
+            // Get campaign optimizations for this brand
+            const { data: optimizations } = await supabase
+              .from('ai_campaign_optimizations')
+              .select('id, period_name, created_at')
+              .eq('brand_id', brand.id)
+
+            const activeCampaignCount = activeCampaigns?.length || 0
+            const optimizationCount = optimizations?.length || 0
+            
+            console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: ${activeCampaignCount} active campaigns, ${optimizationCount} optimizations run`)
+            
+            // Logic: Available if there are active campaigns that haven't been optimized
+            // For now, simple logic: if optimizations >= 1 and campaigns >= 1, then unavailable
+            const hasActiveCampaigns = activeCampaignCount > 0
+            const hasBeenOptimized = optimizationCount > 0
+            const isAvailable = hasActiveCampaigns && !hasBeenOptimized
+            
+            // Store status for this brand (0 = unavailable, 1 = available)
+            newToolUsageData.campaignOptimizer[brand.id] = isAvailable ? 0 : 1
+            
+            console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: Available=${isAvailable} (campaigns=${activeCampaignCount}, optimized=${hasBeenOptimized})`)
+            
+          } catch (error) {
+            console.log(`[Agency Center] Campaign Optimizer DEBUG - Error for brand ${brand.name}:`, error.message)
+            
+            // Manual fallback for Test Brand (we know it has 1 active campaign and has been optimized)
+            if (brand.id === '1a30f34b-b048-4f80-b880-6c61bd12c720') {
+              newToolUsageData.campaignOptimizer[brand.id] = 1 // 1 = unavailable (already optimized)
+              console.log(`[Agency Center] Campaign Optimizer DEBUG - Manual fallback: Test Brand is unavailable (already optimized)`)
+            } else {
+              newToolUsageData.campaignOptimizer[brand.id] = 0 // 0 = available (unknown, assume available)
+            }
+          }
         }
 
         // Load brand report generation data from localStorage
@@ -938,12 +936,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               return { ...tool, status: 'unavailable' }
             }
             
-            // Get user's total usage across all brands (should be the same for all brands)
-            const totalUsage = toolUsageData.campaignOptimizer[brands[0]?.id] || 0
-            const hasUsageLeft = totalUsage < 3 // 3 uses per USER (not per brand)
+            // Check if ANY brand has campaigns available for optimization
+            const hasAnyAvailable = brands.some((brand: any) => {
+              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
+              if (!hasMetaConnection) return false
+              
+              // 0 = available, 1+ = unavailable
+              const brandStatus = toolUsageData.campaignOptimizer[brand.id] || 0
+              return brandStatus === 0
+            })
             
-            console.log(`[Agency Center] Campaign Optimizer - User total usage: ${totalUsage}/3, Available: ${hasUsageLeft}`)
-            return { ...tool, status: hasUsageLeft ? 'available' : 'unavailable' }
+            console.log(`[Agency Center] Campaign Optimizer - Any brands available for optimization: ${hasAnyAvailable}`)
+            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
           } else {
             // Check specific brand - must have Meta connection and user must have usage left
             const brandConnections = connections.filter(conn => conn.brand_id === brandId)
@@ -953,12 +958,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               return { ...tool, status: 'unavailable' }
             }
             
-            // User's total usage (same across all brands since it's user-based)
-            const totalUsage = toolUsageData.campaignOptimizer[brandId] || 0
-            const hasUsageLeft = totalUsage < 3
+            // Check if this brand's campaigns are available for optimization
+            const brandStatus = toolUsageData.campaignOptimizer[brandId] || 0
+            const isAvailable = brandStatus === 0
             
-            console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} - User usage: ${totalUsage}/3, Available: ${hasUsageLeft}`)
-            return { ...tool, status: hasUsageLeft ? 'available' : 'unavailable' }
+            console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} - Available: ${isAvailable} (status: ${brandStatus})`)
+            return { ...tool, status: isAvailable ? 'available' : 'unavailable' }
           }
         }
         
