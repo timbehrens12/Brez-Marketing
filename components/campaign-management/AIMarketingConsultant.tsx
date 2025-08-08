@@ -7,6 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { 
   Brain,
   MessageCircle,
@@ -32,7 +38,9 @@ import {
   Send,
   FileText,
   UserPlus,
-  Phone
+  Phone,
+  CheckCircle,
+  Filter
 } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -255,6 +263,30 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
 
   // Agency Management
   {
+    id: 'brands-need-focus',
+    icon: <AlertTriangle className="w-4 h-4" />,
+    title: 'Which brands need immediate focus?',
+    prompt: 'Analyze all my brands and identify which ones need immediate attention or intervention. Focus on performance issues, declining metrics, or urgent optimization opportunities.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'available-reports',
+    icon: <FileText className="w-4 h-4" />,
+    title: 'What reports are available?',
+    prompt: 'Show me what reports I can generate for my brands. Include performance reports, ROI analysis, weekly summaries, and any other available analytics.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'campaign-optimizations',
+    icon: <Zap className="w-4 h-4" />,
+    title: 'Available campaign optimizations',
+    prompt: 'Identify campaign optimization opportunities across all my brands. What campaigns can be scaled, paused, or need immediate attention?',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
     id: 'multi-brand-performance',
     icon: <Building2 className="w-4 h-4" />,
     title: 'Compare performance across brands',
@@ -275,6 +307,14 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     icon: <TrendingUp className="w-4 h-4" />,
     title: 'Develop agency growth strategy',
     prompt: 'Based on my current agency performance, help me develop a growth strategy. Include recommendations for scaling successful approaches and expanding into new opportunities.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'top-performing-brands',
+    icon: <CheckCircle className="w-4 h-4" />,
+    title: 'Which brands are performing best?',
+    prompt: 'Identify my top-performing brands and analyze what makes them successful. How can I replicate these strategies across other brands?',
     category: 'agency',
     mode: 'agency'
   },
@@ -339,7 +379,9 @@ export default function AIMarketingConsultant(
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can ${selectedMode === 'agency' ? 'analyze your entire agency performance and help with multi-brand insights, client management, and business growth' : 'analyze your campaign data and provide personalized brand recommendations'}. Choose a question below or type your own!`,
+      content: selectedMode === 'agency' 
+        ? `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your entire agency performance, help with multi-brand insights, client management, and business growth. Choose a question below or type your own!`
+        : `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your campaign data and provide personalized brand recommendations. Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
@@ -357,16 +399,20 @@ export default function AIMarketingConsultant(
 
   // Listen for refresh events to reset conversation with fresh data
   useEffect(() => {
-    if (!selectedBrandId) return
+    if (selectedMode === 'brand' && !selectedBrandId) return
 
     let refreshTimeout: NodeJS.Timeout
 
     const handleRefreshEvent = (event: CustomEvent) => {
       const { brandId, source } = event.detail
       
-      // Only refresh if it's for the current brand, not from this widget
-      if (brandId === selectedBrandId && source !== 'AIMarketingConsultant') {
-        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source })
+      // For brand mode, only refresh if it's for the current brand
+      // For agency mode, refresh on any brand update
+      const shouldRefresh = selectedMode === 'agency' || 
+                           (selectedMode === 'brand' && brandId === selectedBrandId)
+      
+      if (shouldRefresh && source !== 'AIMarketingConsultant') {
+        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source, mode: selectedMode })
         
         // Clear existing conversation and reset
         clearTimeout(refreshTimeout)
@@ -382,7 +428,9 @@ export default function AIMarketingConsultant(
           const welcomeMessage: ChatMessage = {
             id: 'welcome-refresh',
             type: 'system',
-            content: `🔄 Data updated! I'm now analyzing your latest campaign performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`,
+            content: selectedMode === 'agency'
+              ? `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`
+              : `🔄 Data updated! I'm now analyzing your latest campaign performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`,
             timestamp: new Date()
           }
           
@@ -405,7 +453,7 @@ export default function AIMarketingConsultant(
       window.removeEventListener('newDayDetected', handleRefreshEvent as EventListener)
       window.removeEventListener('force-meta-refresh', handleRefreshEvent as EventListener)
     }
-  }, [selectedBrandId, selectedGoal, user])
+  }, [selectedBrandId, selectedGoal, selectedMode, user])
 
   // Auto-scroll to bottom of chat container when new messages arrive (but not for initial welcome message)
   useEffect(() => {
@@ -717,94 +765,85 @@ export default function AIMarketingConsultant(
 
   return (
     <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1200px] flex flex-col">
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl text-white font-bold tracking-tight">
-                AI Marketing Assistant
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-gray-400 font-medium">Your intelligent marketing optimization partner</p>
-                <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
-                  {remainingUses !== null ? `${remainingUses}/5 left today` : 'Pro'}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          
-          {/* Mode Selector */}
-          <div className="flex items-center gap-2 p-1 bg-[#0f0f0f] rounded-xl border border-[#1a1a1a]">
-            {AI_MODES.map((mode) => (
-              <Button
-                key={mode.id}
-                variant={selectedMode === mode.id ? "default" : "ghost"}
-                size="sm"
-                onClick={() => {
-                  setSelectedMode(mode.id)
-                  setMessages([])
-                  setIsInitialized(false)
-                  setSelectedCategory('all')
-                }}
-                className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
-                  selectedMode === mode.id
-                    ? "bg-white/10 text-white border-white/20"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {mode.icon}
-                {mode.title}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
-        {/* Marketing Goal Selection */}
+      <CardContent className="p-0 flex flex-col h-full">
+        {/* Top Controls */}
         <div className="border-b border-[#1a1a1a] p-4 bg-[#0f0f0f]/50">
-          <div className="mb-3">
-            <p className="text-sm text-gray-400 mb-3 font-medium">Focus Area:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {MARKETING_GOALS.map((goal) => (
+          <div className="flex items-center justify-between mb-3">
+            {/* Mode Selector */}
+            <div className="flex items-center gap-2 p-1 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
+              {AI_MODES.map((mode) => (
                 <Button
-                  key={goal.id}
-                  variant={selectedGoal === goal.id ? "default" : "outline"}
+                  key={mode.id}
+                  variant={selectedMode === mode.id ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setSelectedGoal(goal.id)}
-                  className={`h-auto p-3 text-left flex flex-col items-start gap-2 rounded-xl transition-all duration-300 min-h-[70px] w-full ${
-                    selectedGoal === goal.id
-                      ? "bg-white/10 text-white border-white/20 shadow-lg"
-                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
+                  onClick={() => {
+                    setSelectedMode(mode.id)
+                    setMessages([])
+                    setIsInitialized(false)
+                    setSelectedCategory('all')
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
+                    selectedMode === mode.id
+                      ? "bg-white/10 text-white border-white/20"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <div className="flex items-center gap-2 w-full">
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      selectedGoal === goal.id ? "bg-white/10" : "bg-white/5"
-                    }`}>
-                      {goal.icon}
-                    </div>
-                    <span className="text-xs font-semibold flex-1 truncate">{goal.title}</span>
-                  </div>
-                  <span className="text-xs text-gray-500 leading-tight w-full break-words overflow-hidden display-webkit-box" style={{
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical' as const,
-                    display: '-webkit-box'
-                  }}>
-                    {goal.description}
-                  </span>
+                  {mode.icon}
+                  {mode.title}
                 </Button>
               ))}
             </div>
+
+            {/* Usage Badge */}
+            {remainingUses !== null && (
+              <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
+                {remainingUses}/5 left today
+              </Badge>
+            )}
+          </div>
+
+          {/* Focus Area Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-400 font-medium">Focus:</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-[#0f0f0f] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10"
+                >
+                  <div className="flex items-center gap-2">
+                    {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
+                    <span className="text-sm">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 bg-[#0f0f0f] border-[#1a1a1a]">
+                {MARKETING_GOALS.map((goal) => (
+                  <DropdownMenuItem
+                    key={goal.id}
+                    onClick={() => setSelectedGoal(goal.id)}
+                    className="focus:bg-white/5 cursor-pointer p-3"
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {goal.icon}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white">{goal.title}</div>
+                        <div className="text-xs text-gray-400 mt-1">{goal.description}</div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Chat Messages */}
-        <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto', maxHeight: '300px' }}>
+        <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto', maxHeight: '400px' }}>
           <ScrollArea className="h-full p-4">
             <div className="space-y-3">
               {messages.map((message) => (
@@ -898,7 +937,7 @@ export default function AIMarketingConsultant(
             </div>
           </div>
           
-          <div className="grid gap-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+          <div className="grid gap-2 max-h-[280px] overflow-y-auto custom-scrollbar">
             {filteredPrompts.map((prompt) => (
               <Button
                 key={prompt.id}
@@ -921,11 +960,8 @@ export default function AIMarketingConsultant(
             ))}
           </div>
           
-          <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex items-center justify-between">
-            <p className="text-xs text-gray-500">
-              {selectedMode === 'agency' ? '🏢 Analyzing agency-wide performance data' : '💡 Analyzing brand-specific campaign data'}
-            </p>
-            {remainingUses !== null && (
+          {remainingUses !== null && (
+            <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex justify-end">
               <div className={`text-xs px-2 py-1 rounded-full font-medium ${
                 remainingUses <= 1 
                   ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
@@ -935,8 +971,8 @@ export default function AIMarketingConsultant(
               }`}>
                 {remainingUses} questions remaining today
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
