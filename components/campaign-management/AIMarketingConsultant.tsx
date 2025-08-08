@@ -883,17 +883,17 @@ export default function AIMarketingConsultant(
           </div>
         </div>
 
-        {/* Chat Messages - More Space */}
-        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '1 1 auto', minHeight: '300px' }}>
+        {/* Chat Messages - Expanded Space */}
+        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '2 1 auto', minHeight: '450px' }}>
           <ScrollArea className="h-full p-6">
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="space-y-5 max-w-5xl mx-auto">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-4 ${
+                    className={`max-w-[85%] rounded-2xl p-5 ${
                       message.type === 'user'
                         ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
                         : message.type === 'system'
@@ -907,7 +907,7 @@ export default function AIMarketingConsultant(
                         <span className="text-sm font-medium">{message.content}</span>
                       </div>
                     ) : (
-                      <div className="text-sm whitespace-pre-wrap space-y-3 leading-relaxed">
+                      <div className="text-sm whitespace-pre-wrap space-y-4 leading-relaxed">
                         {message.content.split('\n\n').map((paragraph, index) => (
                           <p key={index} className="leading-relaxed">
                             {paragraph}
@@ -915,7 +915,7 @@ export default function AIMarketingConsultant(
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 mt-3 font-medium">
+                    <div className="text-xs text-gray-500 mt-4 font-medium">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
@@ -927,8 +927,8 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Custom Input Field */}
-        <div className="border-y border-[#1a1a1a] p-4 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
-          <div className="flex gap-3 max-w-4xl mx-auto">
+        <div className="border-y border-[#1a1a1a] p-5 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
+          <div className="flex gap-3 max-w-5xl mx-auto">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -942,24 +942,24 @@ export default function AIMarketingConsultant(
                 }}
                 placeholder="Ask me anything about your marketing campaigns..."
                 disabled={isLoading || isLimitReached}
-                className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
+                className="w-full px-5 py-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
               />
             </div>
             <Button
               onClick={() => handleCustomInput(inputMessage)}
               disabled={isLoading || isLimitReached || !inputMessage.trim()}
-              className="px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
+              className="px-5 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Quick Prompts - More Compact */}
-        <div className="p-4 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col">
-          <div className="max-w-4xl mx-auto w-full">
-            <div className="mb-4">
-              <p className="text-sm text-gray-400 mb-3 font-semibold">Quick Actions:</p>
+        {/* Quick Prompts - Expanded Space */}
+        <div className="p-6 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col" style={{ flex: '1 1 auto', minHeight: '350px' }}>
+          <div className="max-w-5xl mx-auto w-full h-full flex flex-col">
+            <div className="mb-5">
+              <p className="text-sm text-gray-400 mb-4 font-semibold">Quick Actions:</p>
               <div className="flex gap-2 flex-wrap">
                 {categories.map((category) => (
                   <Button
@@ -979,7 +979,7 @@ export default function AIMarketingConsultant(
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-y-auto custom-scrollbar">
               {filteredPrompts.map((prompt) => (
                 <Button
                   key={prompt.id}
@@ -987,24 +987,24 @@ export default function AIMarketingConsultant(
                   size="sm"
                   onClick={() => handlePromptSelect(prompt)}
                   disabled={isLoading || isLimitReached}
-                  className="justify-between h-auto p-4 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
+                  className="justify-between h-auto p-5 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
                            border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
                            disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5">
                       {prompt.icon}
                     </div>
-                    <span className="text-sm text-white font-medium group-hover:text-white transition-colors">{prompt.title}</span>
+                    <span className="text-sm text-white font-medium group-hover:text-white transition-colors leading-relaxed">{prompt.title}</span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
                 </Button>
               ))}
             </div>
             
             {remainingUses !== null && (
-              <div className="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-center">
-                <div className={`text-xs px-3 py-2 rounded-xl font-semibold border ${
+              <div className="mt-5 pt-5 border-t border-[#1a1a1a] flex justify-center">
+                <div className={`text-xs px-4 py-2 rounded-xl font-semibold border ${
                   remainingUses <= 1 
                     ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border-red-500/20' 
                     : remainingUses <= 3 
