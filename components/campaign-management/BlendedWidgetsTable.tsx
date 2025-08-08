@@ -280,20 +280,42 @@ export default function BlendedWidgetsTable({
           // Get active campaigns for this brand
           const { data: campaigns, error } = await supabase
             .from('meta_campaigns')
-            .select('daily_budget')
+            .select('budget, budget_type')
             .eq('brand_id', brand.id)
             .eq('status', 'ACTIVE')
-            .not('daily_budget', 'is', null)
+            .not('budget', 'is', null)
+            .gt('budget', 0)
 
+          let budget = 0
+          
           if (error && error.code !== 'PGRST116') {
             console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
-          }
+            
+            // Fallback to brand_budgets table if meta_campaigns fails
+            try {
+              const { data: brandBudgetConfig, error: budgetError } = await supabase
+                .from('brand_budgets')
+                .select('daily_budget')
+                .eq('brand_id', brand.id)
+                .eq('user_id', userId)
+                .single()
 
-          // Sum up all active campaign budgets for this brand
-          const budget = campaigns?.reduce((sum, campaign) => {
-            const campaignBudget = parseFloat(campaign.daily_budget || '0')
-            return sum + campaignBudget
-          }, 0) || 0
+              if (!budgetError && brandBudgetConfig?.daily_budget) {
+                budget = brandBudgetConfig.daily_budget
+                console.log(`[BlendedWidgets] Using fallback budget from brand_budgets: $${budget}`)
+              }
+            } catch (fallbackError) {
+              console.log(`[BlendedWidgets] Fallback budget query also failed:`, fallbackError)
+            }
+          } else {
+            // Sum up all active campaign budgets for this brand
+            budget = campaigns?.reduce((sum, campaign) => {
+              const campaignBudget = parseFloat(campaign.budget || '0')
+              return sum + campaignBudget
+            }, 0) || 0
+            
+            console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns?.length || 0} active campaigns, total budget: $${budget}`)
+          }
           const brandSpend = 0 // We'll use the blended spend for now
           
           totalBudget += budget
@@ -373,7 +395,7 @@ export default function BlendedWidgetsTable({
               title="Total Blended Budget Usage"
               value={budgetData.budgetUsedPercentage}
               change={0} // No change data for budget yet
-              suffix="%"
+              isPercentage={true}
               decimals={1}
               customContent={
                 <div className="mt-3 space-y-2">
