@@ -53,13 +53,7 @@ interface ChatMessage {
   isLoading?: boolean
 }
 
-interface AIMode {
-  id: 'brand' | 'agency'
-  title: string
-  description: string
-  icon: React.ReactNode
-  color: string
-}
+
 
 interface PromptSuggestion {
   id: string
@@ -78,22 +72,7 @@ interface MarketingGoal {
   color: string
 }
 
-const AI_MODES: AIMode[] = [
-  {
-    id: 'brand',
-    title: 'Brand Assistant',
-    description: 'Focus on specific brand optimization and insights',
-    icon: <Store className="w-4 h-4" />,
-    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-  },
-  {
-    id: 'agency',
-    title: 'Agency Assistant',
-    description: 'Overall agency management and multi-brand insights',
-    icon: <Building2 className="w-4 h-4" />,
-    color: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-  }
-]
+
 
 const MARKETING_GOALS: MarketingGoal[] = [
   {
@@ -364,30 +343,27 @@ export default function AIMarketingConsultant(
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedGoal, setSelectedGoal] = useState<string>('general')
-  const [selectedMode, setSelectedMode] = useState<'brand' | 'agency'>('brand')
+  const [selectedMode, setSelectedMode] = useState<'brand' | 'agency'>('agency')
   const [remainingUses, setRemainingUses] = useState<number | null>(null)
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
 
   // Initialize with welcome message
   useEffect(() => {
-    if ((selectedMode === 'brand' && !selectedBrandId) || isInitialized) return
+    if (isInitialized) return
 
     const selectedGoalData = MARKETING_GOALS.find(g => g.id === selectedGoal)
-    const selectedModeData = AI_MODES.find(m => m.id === selectedMode)
     
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: selectedMode === 'agency' 
-        ? `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your entire agency performance, help with multi-brand insights, client management, and business growth. Choose a question below or type your own!`
-        : `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your campaign data and provide personalized brand recommendations. Choose a question below or type your own!`,
+      content: `👋 Hi ${user?.firstName || 'there'}! I'm your Agency Assistant focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your entire agency performance, help with multi-brand insights, client management, and business growth. Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
     setMessages([welcomeMessage])
     setIsInitialized(true)
-  }, [selectedBrandId, user, isInitialized, selectedGoal, selectedMode])
+  }, [user, isInitialized, selectedGoal])
 
   // Reset conversation when goal changes
   useEffect(() => {
@@ -399,20 +375,13 @@ export default function AIMarketingConsultant(
 
   // Listen for refresh events to reset conversation with fresh data
   useEffect(() => {
-    if (selectedMode === 'brand' && !selectedBrandId) return
-
     let refreshTimeout: NodeJS.Timeout
 
     const handleRefreshEvent = (event: CustomEvent) => {
-      const { brandId, source } = event.detail
+      const { source } = event.detail
       
-      // For brand mode, only refresh if it's for the current brand
-      // For agency mode, refresh on any brand update
-      const shouldRefresh = selectedMode === 'agency' || 
-                           (selectedMode === 'brand' && brandId === selectedBrandId)
-      
-      if (shouldRefresh && source !== 'AIMarketingConsultant') {
-        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source, mode: selectedMode })
+      if (source !== 'AIMarketingConsultant') {
+        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source })
         
         // Clear existing conversation and reset
         clearTimeout(refreshTimeout)
@@ -428,9 +397,7 @@ export default function AIMarketingConsultant(
           const welcomeMessage: ChatMessage = {
             id: 'welcome-refresh',
             type: 'system',
-            content: selectedMode === 'agency'
-              ? `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`
-              : `🔄 Data updated! I'm now analyzing your latest campaign performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`,
+            content: `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`,
             timestamp: new Date()
           }
           
@@ -453,7 +420,7 @@ export default function AIMarketingConsultant(
       window.removeEventListener('newDayDetected', handleRefreshEvent as EventListener)
       window.removeEventListener('force-meta-refresh', handleRefreshEvent as EventListener)
     }
-  }, [selectedBrandId, selectedGoal, selectedMode, user])
+  }, [selectedGoal, user])
 
   // Auto-scroll to bottom of chat container when new messages arrive (but not for initial welcome message)
   useEffect(() => {
@@ -486,7 +453,7 @@ export default function AIMarketingConsultant(
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...',
+      content: 'Analyzing your agency data...',
       timestamp: new Date(),
       isLoading: true
     }
@@ -527,7 +494,7 @@ export default function AIMarketingConsultant(
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...',
+      content: 'Analyzing your agency data...',
       timestamp: new Date(),
       isLoading: true
     }
@@ -562,10 +529,10 @@ export default function AIMarketingConsultant(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          brandId: selectedMode === 'brand' ? selectedBrandId : null,
+          brandId: null,
           prompt,
           marketingGoal: selectedGoal,
-          mode: selectedMode,
+          mode: 'agency',
           userContext: {
             name: user?.firstName || 'there'
           }
@@ -722,78 +689,14 @@ export default function AIMarketingConsultant(
   //   )
   // }
 
-  if (selectedMode === 'brand' && !selectedBrandId) {
-    return (
-      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1200px] flex flex-col">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl text-white font-bold tracking-tight">
-                  AI Marketing Assistant
-                </CardTitle>
-                <p className="text-gray-400 font-medium">Your intelligent marketing optimization partner</p>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-8 flex-1 flex items-center justify-center">
-          <div className="text-center py-12 max-w-md">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-              <Store className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Ready to Optimize</h3>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Switch to Agency mode for multi-brand insights, or select a brand to get personalized campaign optimization recommendations.
-            </p>
-            <Button
-              onClick={() => setSelectedMode('agency')}
-              className="bg-white/10 hover:bg-white/20 text-white font-medium px-6 py-2 rounded-lg border border-white/20 transition-all duration-300"
-            >
-              <Building2 className="w-4 h-4 mr-2" />
-              Switch to Agency Mode
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+
 
   return (
     <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1200px] flex flex-col">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Controls */}
         <div className="border-b border-[#1a1a1a] p-4 bg-[#0f0f0f]/50">
-          <div className="flex items-center justify-between mb-3">
-            {/* Mode Selector */}
-            <div className="flex items-center gap-2 p-1 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
-              {AI_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={selectedMode === mode.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedMode(mode.id)
-                    setMessages([])
-                    setIsInitialized(false)
-                    setSelectedCategory('all')
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
-                    selectedMode === mode.id
-                      ? "bg-white/10 text-white border-white/20"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {mode.icon}
-                  {mode.title}
-                </Button>
-              ))}
-            </div>
-
+          <div className="flex items-center justify-end mb-3">
             {/* Usage Badge */}
             {remainingUses !== null && (
               <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
