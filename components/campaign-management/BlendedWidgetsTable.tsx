@@ -1,9 +1,14 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
-import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon, CreditCard, Layers } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Target, Eye, MousePointer, PercentIcon, CreditCard, Layers, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useBrandContext } from '@/lib/context/BrandContext'
+import { useAuth } from '@clerk/nextjs'
+import { getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
 
 interface MetaMetrics {
   adSpend: number
@@ -33,6 +38,19 @@ interface MetaMetrics {
   previousCtr: number
   previousCpc: number
   previousRoas: number
+}
+
+interface BudgetData {
+  totalBudget: number
+  totalSpend: number
+  budgetUsedPercentage: number
+  brands: Array<{
+    brand_id: string
+    brand_name: string
+    budget: number
+    spend: number
+    percentage: number
+  }>
 }
 
 interface BlendedWidgetsTableProps {
@@ -223,8 +241,79 @@ export default function BlendedWidgetsTable({
   // isLoadingMetrics, 
   // isRefreshingData 
 }: BlendedWidgetsTableProps) {
+  const { brands } = useBrandContext()
+  const { userId } = useAuth()
+  const [budgetData, setBudgetData] = useState<BudgetData>({
+    totalBudget: 0,
+    totalSpend: 0,
+    budgetUsedPercentage: 0,
+    brands: []
+  })
+
   // Remove loading state calculation
   // const loading = isLoadingMetrics || isRefreshingData
+
+  useEffect(() => {
+    if (!userId || !brands) return
+    fetchBudgetData()
+  }, [userId, brands, metaMetrics.adSpend])
+
+  const fetchBudgetData = async () => {
+    try {
+      const supabase = getStandardSupabaseClient()
+      
+      let totalBudget = 0
+      let totalSpend = metaMetrics.adSpend
+      const brandBudgets: BudgetData['brands'] = []
+
+      for (const brand of brands) {
+        const { data: budgetConfig } = await supabase
+          .from('brand_budgets')
+          .select('daily_budget')
+          .eq('brand_id', brand.id)
+          .eq('user_id', userId)
+          .single()
+
+        const budget = budgetConfig?.daily_budget || 0
+        const brandSpend = 0 // We'll use the blended spend for now
+        
+        totalBudget += budget
+        brandBudgets.push({
+          brand_id: brand.id,
+          brand_name: brand.name,
+          budget,
+          spend: brandSpend,
+          percentage: budget > 0 ? (brandSpend / budget) * 100 : 0
+        })
+      }
+
+      const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
+
+      setBudgetData({
+        totalBudget,
+        totalSpend,
+        budgetUsedPercentage,
+        brands: brandBudgets
+      })
+
+    } catch (error) {
+      console.error('Error fetching budget data:', error)
+    }
+  }
+
+  const getBudgetColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-red-500'
+    if (percentage >= 80) return 'bg-orange-500'
+    if (percentage >= 70) return 'bg-yellow-500'
+    return 'bg-green-500'
+  }
+
+  const getBudgetTextColor = (percentage: number) => {
+    if (percentage >= 90) return 'text-red-400'
+    if (percentage >= 80) return 'text-orange-400'
+    if (percentage >= 70) return 'text-yellow-400'
+    return 'text-green-400'
+  }
 
   return (
     <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
@@ -239,6 +328,46 @@ export default function BlendedWidgetsTable({
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
               <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Total Blended Budget Section */}
+        <div className="bg-[#0f0f0f] border-b border-[#333] px-6 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-blue-500" />
+              <h3 className="text-lg font-semibold text-white">Total Blended Budget</h3>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-2">
+                <span className={cn("text-sm font-medium", getBudgetTextColor(budgetData.budgetUsedPercentage))}>
+                  ${budgetData.totalSpend.toFixed(2)} / ${budgetData.totalBudget.toFixed(2)}
+                </span>
+                {budgetData.budgetUsedPercentage >= 90 && (
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                )}
+              </div>
+              <span className={cn("text-xs", getBudgetTextColor(budgetData.budgetUsedPercentage))}>
+                {budgetData.budgetUsedPercentage.toFixed(1)}% used
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Progress 
+              value={Math.min(budgetData.budgetUsedPercentage, 100)} 
+              className="h-2 bg-[#333]"
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Daily budget usage across all brands</span>
+              <span>
+                {budgetData.budgetUsedPercentage >= 90 
+                  ? "Budget limit reached" 
+                  : budgetData.budgetUsedPercentage >= 80 
+                  ? "Approaching budget limit" 
+                  : "Within budget"}
+              </span>
             </div>
           </div>
         </div>

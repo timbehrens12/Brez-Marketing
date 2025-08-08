@@ -26,7 +26,7 @@ import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBrea
 
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
 import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
-import TotalBlendedBudget from "@/components/campaign-management/TotalBlendedBudget"
+
 import AIPoweredAlerts from "@/components/campaign-management/AIPoweredAlerts"
 import GoalTrackingWidget from "@/components/campaign-management/GoalTrackingWidget"
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
@@ -1265,11 +1265,6 @@ export default function MarketingAssistantPage() {
 
           {/* Main Content Grid - All widgets now show with preloaded data */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-8">
-            {/* Total Blended Budget - Full width at the top */}
-            <div>
-              <TotalBlendedBudget />
-            </div>
-
             {/* Top Section - Blended Widgets and Advertising Report */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
               {/* Left: Blended Widgets Table - 50% width */}
