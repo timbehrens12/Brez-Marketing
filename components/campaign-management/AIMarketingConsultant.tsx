@@ -788,234 +788,230 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-screen flex flex-col shadow-2xl">
-      <CardContent className="p-0 flex flex-col h-full">
+    <div className="h-screen flex gap-4 p-4">
+      {/* Left Column - Controls and Quick Actions (25%) */}
+      <Card className="bg-gradient-to-br from-white via-gray-50 to-gray-100 border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-lg" style={{ width: '25%' }}>
+        <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
-        <div className="border-b border-[#1a1a1a] p-3 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
-          <div className="flex items-center justify-between">
-            {/* Left: Title and Mode Selector */}
-            <div className="flex items-center gap-4">
+        <div className="border-b border-gray-200 p-4 bg-gradient-to-r from-gray-50 to-gray-100">
+          <div className="flex flex-col gap-4">
+            {/* Title and Usage Counter */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg 
-                              flex items-center justify-center border border-white/10 shadow-lg">
-                  <Brain className="w-4 h-4 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl 
+                              flex items-center justify-center border border-gray-300 shadow-sm">
+                  <Brain className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white tracking-tight">AI Marketing Assistant</h2>
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">AI Marketing Assistant</h2>
+                  <p className="text-gray-600 text-sm">Intelligent campaign optimization insights</p>
                 </div>
               </div>
               
-              {/* Mode Selector on same row */}
-              <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
-                {AI_MODES.map((mode) => (
-                  <Button
-                    key={mode.id}
-                    variant={selectedMode === mode.id ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedMode(mode.id)
-                      setMessages([])
-                      setIsInitialized(false)
-                      setSelectedCategory('all')
-                    }}
-                    className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-all duration-300 ${
-                      selectedMode === mode.id
-                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
-                        : "text-gray-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {mode.icon}
-                    {mode.title}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Focus and Usage */}
-            <div className="flex items-center gap-3">
-              {/* Focus Area Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">Focus:</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg h-7 px-2"
-                    >
-                      <div className="flex items-center gap-1">
-                        {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
-                        <span className="text-xs">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
-                        <ChevronDown className="w-3 h-3" />
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64 bg-[#0a0a0a] border-[#1a1a1a] rounded-lg shadow-2xl">
-                    {MARKETING_GOALS.map((goal) => (
-                      <DropdownMenuItem
-                        key={goal.id}
-                        onClick={() => setSelectedGoal(goal.id)}
-                        className="focus:bg-white/5 cursor-pointer p-2 rounded-md m-1"
-                      >
-                        <div className="flex items-start gap-2 w-full">
-                          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center flex-shrink-0 border border-white/10">
-                            {goal.icon}
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-xs font-semibold text-white">{goal.title}</div>
-                            <div className="text-xs text-gray-400 mt-0.5 leading-relaxed">{goal.description}</div>
-                          </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Usage Badge */}
+              {/* Usage Counter in Header */}
               {remainingUses !== null && (
-                <Badge className="bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20 text-xs px-2 py-0.5 rounded-md font-medium">
-                  {remainingUses}/5
-                </Badge>
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                  <MessageCircle className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">{remainingUses}/15 left today</span>
+                </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Chat Messages - Compact */}
-        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '2 1 auto', minHeight: '300px' }}>
-          <ScrollArea className="h-full p-3">
-            <div className="space-y-3 max-w-4xl mx-auto">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg p-3 ${
-                      message.type === 'user'
-                        ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
-                        : message.type === 'system'
-                        ? 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-300 border border-gray-500/20 shadow-lg'
-                        : 'bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#1a1a1a] text-white shadow-2xl'
-                    }`}
-                  >
-                    {message.isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs font-medium">{message.content}</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs whitespace-pre-wrap space-y-2 leading-relaxed">
-                        {message.content.split('\n\n').map((paragraph, index) => (
-                          <p key={index} className="leading-relaxed">
-                            {paragraph}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500 mt-2 font-medium">
-                      {message.timestamp.toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Custom Input Field */}
-        <div className="border-y border-[#1a1a1a] p-2 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
-          <div className="flex gap-2 max-w-4xl mx-auto">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleCustomInput(inputMessage)
-                  }
-                }}
-                placeholder="Ask me anything about your marketing campaigns..."
-                disabled={isLoading || isLimitReached}
-                className="w-full px-3 py-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-xs shadow-inner"
-              />
-            </div>
-            <Button
-              onClick={() => handleCustomInput(inputMessage)}
-              disabled={isLoading || isLimitReached || !inputMessage.trim()}
-              className="px-3 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
-            >
-              <Send className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Quick Prompts - Compact Grid */}
-        <div className="p-3 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col">
-          <div className="max-w-4xl mx-auto w-full">
-            <div className="mb-3 flex-shrink-0">
-              <p className="text-xs text-gray-400 mb-2 font-semibold">Quick Actions:</p>
-              <div className="flex gap-1 flex-wrap">
-                {categories.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`text-xs rounded-lg px-2 py-1 transition-all duration-300 font-medium ${
-                      selectedCategory === category.id
-                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border-blue-500/20 text-white shadow-lg"
-                        : "bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
-                    }`}
-                  >
-                    {category.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-              {filteredPrompts.slice(0, 12).map((prompt) => (
+            {/* Mode Selector */}
+            <div className="flex items-center gap-2 p-1 bg-white rounded-lg border border-gray-200 shadow-sm">
+              {AI_MODES.map((mode) => (
                 <Button
-                  key={prompt.id}
-                  variant="ghost"
+                  key={mode.id}
+                  variant={selectedMode === mode.id ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => handlePromptSelect(prompt)}
-                  disabled={isLoading || isLimitReached}
-                  className="justify-start h-auto p-2 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
-                           border border-[#1a1a1a] hover:border-white/10 rounded-lg transition-all duration-300
-                           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
+                  onClick={() => {
+                    setSelectedMode(mode.id)
+                    setMessages([])
+                    setIsInitialized(false)
+                    setSelectedCategory('all')
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
+                    selectedMode === mode.id
+                      ? "bg-gray-900 text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-6 h-6 bg-gradient-to-br from-white/5 to-white/10 rounded-md flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5 flex-shrink-0">
-                      {prompt.icon}
-                    </div>
-                    <span className="text-xs text-white font-medium group-hover:text-white transition-colors leading-tight truncate">{prompt.title}</span>
-                  </div>
+                  {mode.icon}
+                  {mode.title}
                 </Button>
               ))}
             </div>
-            
-            {remainingUses !== null && (
-              <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex justify-center flex-shrink-0">
-                <div className={`text-xs px-3 py-1 rounded-lg font-semibold border ${
-                  remainingUses <= 1 
-                    ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border-red-500/20' 
-                    : remainingUses <= 3 
-                    ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 text-yellow-400 border-yellow-500/20'
-                    : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-400 border-green-500/20'
-                }`}>
-                  {remainingUses} left today
-                </div>
-              </div>
-            )}
+
+            {/* Focus Area Dropdown - Bigger */}
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-gray-600 font-medium">Marketing Focus:</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 rounded-lg h-12 px-4 justify-start"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                        {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-72 bg-white border-gray-200 rounded-xl shadow-xl">
+                  {MARKETING_GOALS.map((goal) => (
+                    <DropdownMenuItem
+                      key={goal.id}
+                      onClick={() => setSelectedGoal(goal.id)}
+                      className="focus:bg-gray-50 cursor-pointer p-4 rounded-lg m-1"
+                    >
+                      <div className="flex items-start gap-3 w-full">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                          {goal.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900">{goal.title}</div>
+                          <div className="text-xs text-gray-500 mt-1 leading-relaxed">{goal.description}</div>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Quick Prompts Section */}
+        <div className="p-4 bg-white flex flex-col flex-1 min-h-0">
+          <div className="mb-4">
+            <p className="text-sm text-gray-700 mb-3 font-semibold">Quick Actions:</p>
+            <div className="flex gap-1 flex-wrap">
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`text-xs rounded-lg px-2 py-1 transition-all duration-300 font-medium ${
+                    selectedCategory === category.id
+                      ? "bg-gray-900 text-white shadow-md"
+                      : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto">
+            {filteredPrompts.slice(0, 12).map((prompt) => (
+              <Button
+                key={prompt.id}
+                variant="ghost"
+                size="sm"
+                onClick={() => handlePromptSelect(prompt)}
+                disabled={isLoading || isLimitReached}
+                className="justify-start h-auto p-3 text-left bg-gray-50 hover:bg-gray-100 
+                         border border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-300
+                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-gray-500 group-hover:text-gray-700 transition-colors border border-gray-200 flex-shrink-0">
+                    {prompt.icon}
+                  </div>
+                  <span className="text-xs text-gray-700 font-medium group-hover:text-gray-900 transition-colors leading-tight truncate">{prompt.title}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </div>
+        </CardContent>
+      </Card>
+
+      {/* Right Column - Chat and Results (75%) */}
+      <Card className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-lg" style={{ width: '75%' }}>
+        <CardContent className="p-0 flex flex-col h-full">
+          {/* Chat Messages */}
+          <div className="bg-gray-50" style={{ flex: '1 1 auto', minHeight: '300px' }}>
+            <ScrollArea className="h-full p-6">
+              <div className="space-y-4 max-w-4xl mx-auto">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-xl p-4 ${
+                        message.type === 'user'
+                          ? 'bg-gray-900 text-white shadow-lg'
+                          : message.type === 'system'
+                          ? 'bg-blue-50 text-blue-900 border border-blue-200 shadow-sm'
+                          : 'bg-white border border-gray-200 text-gray-900 shadow-lg'
+                      }`}
+                    >
+                      {message.isLoading ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm font-medium">{message.content}</span>
+                        </div>
+                      ) : (
+                        <div className="text-sm whitespace-pre-wrap space-y-3 leading-relaxed">
+                          {message.content.split('\n\n').map((paragraph, index) => (
+                            <p key={index} className="leading-relaxed">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500 mt-3 font-medium">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Custom Input Field */}
+          <div className="border-t border-gray-200 p-4 bg-white">
+            <div className="flex gap-3 max-w-4xl mx-auto">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleCustomInput(inputMessage)
+                    }
+                  }}
+                  placeholder={selectedMode === 'agency' 
+                    ? "Ask me anything about your agency performance, brands, or growth strategies..." 
+                    : "Ask me anything about your marketing campaigns..."}
+                  disabled={isLoading || isLimitReached}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all duration-300 text-sm shadow-sm"
+                />
+              </div>
+              <Button
+                onClick={() => handleCustomInput(inputMessage)}
+                disabled={isLoading || isLimitReached || !inputMessage.trim()}
+                className="px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 } 

@@ -31,7 +31,7 @@ const AI_FEATURE_LIMITS: Record<AIFeatureType, AIFeatureLimits> = {
     dailyLimit: 3 // 3 health reports per day
   },
   ai_consultant_chat: {
-    dailyLimit: 5 // 5 chat messages per day
+    dailyLimit: 15 // 15 chat messages per day
   },
   marketing_analysis: {
     dailyLimit: 5 // 5 marketing analyses per day

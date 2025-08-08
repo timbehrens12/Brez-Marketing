@@ -389,6 +389,7 @@ Your communication style:
 - Be conversational and friendly, not formal  
 - Write in plain text without markdown formatting (no *, **, #, -, etc.)
 - Use simple bullet points with • when listing items
+- Always refer to brands by their actual names (${analysisData.brands?.map((b: any) => b.name).join(', ') || 'your brands'})
 - Provide strategic recommendations for agency growth and efficiency
 - Focus on ROI, scalability, and practical next steps for agency operations
 - Help with client management, outreach strategies, and business development
@@ -398,13 +399,23 @@ Your communication style:
 - Do not use asterisks, dashes, or other markdown symbols
 
 Current Agency Context:
-- Total Brands: ${analysisData.brands?.length || 0}
+- Your Brands: ${analysisData.brands?.map((b: any) => b.name).join(', ') || 'None'}
 - Analysis Period: ${dateRange?.days || 30} days (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
 - Total Agency Spend: $${(analysis.totalSpend || 0).toFixed(2)}
 - Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x
 - Active Campaigns: ${analysis.activeCampaigns || 0}
 - Combined Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
 - Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
+
+${analysisData.analysis?.topPerformingBrands?.length > 0 ? `
+Top Performing Brands:
+${analysisData.analysis.topPerformingBrands.map((b: any, i: number) => `${i+1}. ${b.brand_name}: ${b.roas.toFixed(2)}x ROAS, $${b.spend.toFixed(0)} spent`).join('\n')}
+` : ''}
+
+${analysisData.analysis?.underPerformingBrands?.length > 0 ? `
+Brands Needing Attention:
+${analysisData.analysis.underPerformingBrands.map((b: any, i: number) => `${i+1}. ${b.brand_name}: ${b.roas.toFixed(2)}x ROAS, $${b.spend.toFixed(0)} spent`).join('\n')}
+` : ''}
 
 You can help with campaign optimization across brands, lead generation strategies, outreach automation, client retention, proposal optimization, resource allocation, and overall agency growth planning.`
 
@@ -500,7 +511,12 @@ async function gatherAgencyWideData(supabase: any, userId: string) {
       .eq('user_id', userId)
     
     if (!brands || brands.length === 0) {
-      return { campaigns: [], analysis: { totalSpend: 0, averageROAS: 0 } }
+      return { 
+        campaigns: [], 
+        brands: [],
+        analysis: { totalSpend: 0, averageROAS: 0 },
+        dateRange: { from: 'N/A', to: 'N/A', days: 30 }
+      }
     }
 
     let allCampaigns: any[] = []
@@ -508,19 +524,40 @@ async function gatherAgencyWideData(supabase: any, userId: string) {
     let totalRevenue = 0
     let totalImpressions = 0
     let totalClicks = 0
+    let brandPerformance: any[] = []
     
     // Aggregate data across all brands
     for (const brand of brands) {
       try {
         const brandData = await gatherComprehensiveMarketingData(supabase, brand.id)
-        allCampaigns = [...allCampaigns, ...brandData.campaigns]
+        
+        // Add brand name to campaigns for identification
+        const campaignsWithBrand = brandData.campaigns.map((campaign: any) => ({
+          ...campaign,
+          brand_name: brand.name,
+          brand_id: brand.id
+        }))
+        
+        allCampaigns = [...allCampaigns, ...campaignsWithBrand]
         
         totalSpend += brandData.analysis.totalSpend || 0
         totalRevenue += brandData.analysis.totalRevenue || 0
         totalImpressions += brandData.analysis.totalImpressions || 0
         totalClicks += brandData.analysis.totalClicks || 0
+        
+        // Track individual brand performance
+        brandPerformance.push({
+          brand_name: brand.name,
+          brand_id: brand.id,
+          spend: brandData.analysis.totalSpend || 0,
+          revenue: brandData.analysis.totalRevenue || 0,
+          roas: (brandData.analysis.totalSpend > 0) ? (brandData.analysis.totalRevenue / brandData.analysis.totalSpend) : 0,
+          activeCampaigns: brandData.analysis.activecampaigns || 0,
+          topPerformers: brandData.analysis.topPerformers || [],
+          underPerformers: brandData.analysis.underPerformers || []
+        })
       } catch (error) {
-        console.error(`Error gathering data for brand ${brand.id}:`, error)
+        console.error(`Error gathering data for brand ${brand.name} (${brand.id}):`, error)
       }
     }
 
@@ -529,9 +566,21 @@ async function gatherAgencyWideData(supabase: any, userId: string) {
     const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
     const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
 
+    // Sort brands by performance
+    const topPerformingBrands = brandPerformance
+      .filter(b => b.spend > 0)
+      .sort((a, b) => b.roas - a.roas)
+      .slice(0, 3)
+    
+    const underPerformingBrands = brandPerformance
+      .filter(b => b.spend > 0)
+      .sort((a, b) => a.roas - b.roas)
+      .slice(0, 3)
+
     return {
       campaigns: allCampaigns,
       brands,
+      brandPerformance,
       analysis: {
         totalSpend,
         totalRevenue,
@@ -541,11 +590,19 @@ async function gatherAgencyWideData(supabase: any, userId: string) {
         averageCTR,
         averageCPC,
         brandCount: brands.length,
-        activeCampaigns: allCampaigns.filter(c => c.effective_status === 'ACTIVE').length
-      }
+        activeCampaigns: allCampaigns.filter(c => c.effective_status === 'ACTIVE').length,
+        topPerformingBrands,
+        underPerformingBrands
+      },
+      dateRange: { from: 'N/A', to: 'N/A', days: 30 }
     }
   } catch (error) {
     console.error('Error gathering agency-wide data:', error)
-    return { campaigns: [], analysis: { totalSpend: 0, averageROAS: 0 } }
+    return { 
+      campaigns: [], 
+      brands: [],
+      analysis: { totalSpend: 0, averageROAS: 0 },
+      dateRange: { from: 'N/A', to: 'N/A', days: 30 }
+    }
   }
 } 
