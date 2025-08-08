@@ -599,22 +599,28 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           creativeStudio: {} as { [brandId: string]: { count: number, weekStart: string } }
         }
 
-        // Load AI usage tracking for campaign optimizer via API to bypass RLS
-        for (const brand of brands) {
-          try {
-            // For now, try direct query - if it fails due to RLS, we'll create an API
-            const { data: aiUsageData } = await supabase
-              .from('ai_usage_tracking')
-              .select('usage_count')
-              .eq('brand_id', brand.id)
-              .eq('feature_type', 'campaign_recommendations')
-              .single()
+        // Load AI usage tracking for campaign optimizer - USER BASED, not per brand
+        let totalCampaignOptimizerUsage = 0
+        try {
+          // Try to get ALL campaign recommendations for this user across all brands
+          const { data: aiUsageData } = await supabase
+            .from('ai_usage_tracking')
+            .select('usage_count, brand_id')
+            .in('brand_id', brands.map(b => b.id))
+            .eq('feature_type', 'campaign_recommendations')
 
-            newToolUsageData.campaignOptimizer[brand.id] = aiUsageData?.usage_count || 0
-          } catch (error) {
-            console.log(`[Agency Center] Campaign Optimizer - RLS blocked for brand ${brand.name}, setting to 0`)
-            newToolUsageData.campaignOptimizer[brand.id] = 0
+          if (aiUsageData) {
+            totalCampaignOptimizerUsage = aiUsageData.reduce((sum, record) => sum + (record.usage_count || 0), 0)
+            console.log(`[Agency Center] Campaign Optimizer - TOTAL USER USAGE: ${totalCampaignOptimizerUsage}/3 used (user-based limit)`)
           }
+        } catch (error) {
+          console.log(`[Agency Center] Campaign Optimizer - RLS blocked, setting to 0`)
+          totalCampaignOptimizerUsage = 0
+        }
+
+        // Set the SAME count for all brands (user-based limit)
+        for (const brand of brands) {
+          newToolUsageData.campaignOptimizer[brand.id] = totalCampaignOptimizerUsage
         }
 
         // Load brand report generation data from localStorage
@@ -642,9 +648,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         startOfWeek.setDate(now.getDate() - daysToSubtract)
         startOfWeek.setHours(0, 0, 0, 0)
         
-        // Query creative generations for each brand via API
-        for (const brand of brands) {
-          try {
+        // Query ALL creative generations for the USER (across all brands) this week
+        let totalWeeklyCreativeCount = 0
+        try {
+          // Get all generations for all brands for this user
+          for (const brand of brands) {
             const response = await fetch(`/api/creative-generations?brandId=${brand.id}&userId=${userId}&limit=100`)
             if (response.ok) {
               const { generations } = await response.json()
@@ -655,23 +663,26 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 return genDate >= startOfWeek && gen.status === 'completed'
               }) || []
               
-              const weeklyCount = weeklyGenerations.length
-              
-              newToolUsageData.creativeStudio[brand.id] = {
-                count: weeklyCount,
-                weekStart: startOfWeek.toISOString()
-              }
-              
-              console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyCount}/10 used this week`)
+              totalWeeklyCreativeCount += weeklyGenerations.length
+              console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyGenerations.length} completed this week`)
             } else {
               console.error(`[Agency Center] Creative Studio API failed for brand ${brand.name}:`, response.status)
-              newToolUsageData.creativeStudio[brand.id] = {
-                count: 0,
-                weekStart: startOfWeek.toISOString()
-              }
             }
-          } catch (error) {
-            console.error(`[Agency Center] Creative Studio API error for brand ${brand.name}:`, error)
+          }
+          
+          // Set the SAME count for all brands (user-based limit, not per-brand)
+          for (const brand of brands) {
+            newToolUsageData.creativeStudio[brand.id] = {
+              count: totalWeeklyCreativeCount,
+              weekStart: startOfWeek.toISOString()
+            }
+          }
+          
+          console.log(`[Agency Center] Creative Studio - TOTAL USER USAGE: ${totalWeeklyCreativeCount}/10 used this week (user-based limit)`)
+        } catch (error) {
+          console.error(`[Agency Center] Creative Studio error:`, error)
+          // Set 0 for all brands if error
+          for (const brand of brands) {
             newToolUsageData.creativeStudio[brand.id] = {
               count: 0,
               weekStart: startOfWeek.toISOString()
@@ -922,7 +933,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const dailyAvailable = brandReports.daily !== today
               const monthlyAvailable = brandReports.monthly !== currentMonth
               
-              return dailyAvailable || monthlyAvailable
+              return dailyAvailable && monthlyAvailable
             })
             return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
           } else {
@@ -937,7 +948,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const dailyAvailable = brandReports.daily !== today
             const monthlyAvailable = brandReports.monthly !== currentMonth
             
-            return { ...tool, status: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable' }
+            return { ...tool, status: (dailyAvailable && monthlyAvailable) ? 'available' : 'unavailable' }
           }
         }
         
