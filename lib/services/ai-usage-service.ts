@@ -130,9 +130,10 @@ export class AIUsageService {
   ): Promise<boolean> {
     try {
       const now = new Date()
+      const today = now.toISOString().split('T')[0]
 
       // Try to insert into ai_usage_logs table (new structure)
-      const { error } = await this.supabase
+      const { error: logError } = await this.supabase
         .from('ai_usage_logs')
         .insert({
           brand_id: brandId,
@@ -142,14 +143,46 @@ export class AIUsageService {
           created_at: now.toISOString()
         })
 
-      if (error) {
-        // If table doesn't exist, log but don't fail
-        if (error.code === '42P01') {
-          console.log('[AI Usage] ai_usage_logs table not found, skipping usage recording')
-          return true
+      if (logError && logError.code !== '42P01') {
+        console.error('Error recording AI usage:', logError)
+      }
+
+      // Update or insert usage tracking for daily limits
+      const limits = AI_FEATURE_LIMITS[featureType]
+      if (limits.dailyLimit) {
+        const { data: existingUsage } = await this.supabase
+          .from('ai_usage_tracking')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('feature_type', featureType)
+          .single()
+
+        if (existingUsage) {
+          // Update existing record
+          const isNewDay = existingUsage.daily_usage_date.toString() !== today
+          const newCount = isNewDay ? 1 : (existingUsage.daily_usage_count || 0) + 1
+
+          await this.supabase
+            .from('ai_usage_tracking')
+            .update({
+              daily_usage_count: newCount,
+              daily_usage_date: today,
+              last_used_at: now.toISOString()
+            })
+            .eq('brand_id', brandId)
+            .eq('feature_type', featureType)
+        } else {
+          // Create new record
+          await this.supabase
+            .from('ai_usage_tracking')
+            .insert({
+              brand_id: brandId,
+              feature_type: featureType,
+              daily_usage_count: 1,
+              daily_usage_date: today,
+              last_used_at: now.toISOString()
+            })
         }
-        console.error('Error recording AI usage:', error)
-        return false
       }
 
       return true

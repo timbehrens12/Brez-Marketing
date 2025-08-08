@@ -790,35 +790,35 @@ export default function AIMarketingConsultant(
   return (
     <div className="h-screen flex gap-4 p-4">
       {/* Left Column - Controls and Quick Actions (25%) */}
-      <Card className="bg-gradient-to-br from-white via-gray-50 to-gray-100 border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-lg" style={{ width: '25%' }}>
+      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '25%' }}>
         <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
-        <div className="border-b border-gray-200 p-4 bg-gradient-to-r from-gray-50 to-gray-100">
+        <div className="border-b border-[#1a1a1a] p-4 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
           <div className="flex flex-col gap-4">
             {/* Title and Usage Counter */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl 
-                              flex items-center justify-center border border-gray-300 shadow-sm">
-                  <Brain className="w-5 h-5 text-gray-700" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
+                              flex items-center justify-center border border-white/10 shadow-lg">
+                  <Brain className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">AI Marketing Assistant</h2>
-                  <p className="text-gray-600 text-sm">Intelligent campaign optimization insights</p>
+                  <h2 className="text-xl font-bold text-white tracking-tight">AI Marketing Assistant</h2>
+                  <p className="text-gray-400 text-sm">Intelligent campaign optimization insights</p>
                 </div>
               </div>
               
               {/* Usage Counter in Header */}
               {remainingUses !== null && (
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
-                  <MessageCircle className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">{remainingUses}/15 left today</span>
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 shadow-sm">
+                  <MessageCircle className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-white">{remainingUses}/15 left today</span>
                 </div>
               )}
             </div>
             
             {/* Mode Selector */}
-            <div className="flex items-center gap-2 p-1 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
               {AI_MODES.map((mode) => (
                 <Button
                   key={mode.id}
@@ -832,8 +832,8 @@ export default function AIMarketingConsultant(
                   }}
                   className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
                     selectedMode === mode.id
-                      ? "bg-gray-900 text-white shadow-md"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {mode.icon}
@@ -844,38 +844,38 @@ export default function AIMarketingConsultant(
 
             {/* Focus Area Dropdown - Bigger */}
             <div className="flex flex-col gap-2">
-              <span className="text-sm text-gray-600 font-medium">Marketing Focus:</span>
+              <span className="text-sm text-gray-400 font-medium">Marketing Focus:</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 rounded-lg h-12 px-4 justify-start"
+                    className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg h-12 px-4 justify-start"
                   >
                     <div className="flex items-center gap-3 w-full">
-                      <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
                         {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
                       </div>
                       <div className="flex-1 text-left">
-                        <span className="font-medium">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
+                        <span className="font-medium text-white">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
                       </div>
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72 bg-white border-gray-200 rounded-xl shadow-xl">
+                <DropdownMenuContent className="w-72 bg-[#0a0a0a] border-[#1a1a1a] rounded-xl shadow-2xl">
                   {MARKETING_GOALS.map((goal) => (
                     <DropdownMenuItem
                       key={goal.id}
                       onClick={() => setSelectedGoal(goal.id)}
-                      className="focus:bg-gray-50 cursor-pointer p-4 rounded-lg m-1"
+                      className="focus:bg-white/5 cursor-pointer p-4 rounded-lg m-1"
                     >
                       <div className="flex items-start gap-3 w-full">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
                           {goal.icon}
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-semibold text-gray-900">{goal.title}</div>
-                          <div className="text-xs text-gray-500 mt-1 leading-relaxed">{goal.description}</div>
+                          <div className="text-sm font-semibold text-white">{goal.title}</div>
+                          <div className="text-xs text-gray-400 mt-1 leading-relaxed">{goal.description}</div>
                         </div>
                       </div>
                     </DropdownMenuItem>
@@ -887,9 +887,9 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Quick Prompts Section */}
-        <div className="p-4 bg-white flex flex-col flex-1 min-h-0">
+        <div className="p-4 bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a] flex flex-col flex-1 min-h-0">
           <div className="mb-4">
-            <p className="text-sm text-gray-700 mb-3 font-semibold">Quick Actions:</p>
+            <p className="text-sm text-gray-400 mb-3 font-semibold">Quick Actions:</p>
             <div className="flex gap-1 flex-wrap">
               {categories.map((category) => (
                 <Button
@@ -899,8 +899,8 @@ export default function AIMarketingConsultant(
                   onClick={() => setSelectedCategory(category.id)}
                   className={`text-xs rounded-lg px-2 py-1 transition-all duration-300 font-medium ${
                     selectedCategory === category.id
-                      ? "bg-gray-900 text-white shadow-md"
-                      : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
+                      : "bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {category.label}
@@ -917,15 +917,15 @@ export default function AIMarketingConsultant(
                 size="sm"
                 onClick={() => handlePromptSelect(prompt)}
                 disabled={isLoading || isLimitReached}
-                className="justify-start h-auto p-3 text-left bg-gray-50 hover:bg-gray-100 
-                         border border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm group"
+                className="justify-start h-auto p-3 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
+                         border border-[#1a1a1a] hover:border-white/10 rounded-lg transition-all duration-300
+                         disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-gray-500 group-hover:text-gray-700 transition-colors border border-gray-200 flex-shrink-0">
+                  <div className="w-6 h-6 bg-white/5 rounded-md flex items-center justify-center text-gray-400 group-hover:text-white transition-colors border border-white/5 flex-shrink-0">
                     {prompt.icon}
                   </div>
-                  <span className="text-xs text-gray-700 font-medium group-hover:text-gray-900 transition-colors leading-tight truncate">{prompt.title}</span>
+                  <span className="text-xs text-white font-medium group-hover:text-white transition-colors leading-tight truncate">{prompt.title}</span>
                 </div>
               </Button>
             ))}
@@ -935,10 +935,10 @@ export default function AIMarketingConsultant(
       </Card>
 
       {/* Right Column - Chat and Results (75%) */}
-      <Card className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-lg" style={{ width: '75%' }}>
+      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '75%' }}>
         <CardContent className="p-0 flex flex-col h-full">
           {/* Chat Messages */}
-          <div className="bg-gray-50" style={{ flex: '1 1 auto', minHeight: '300px' }}>
+          <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '1 1 auto', minHeight: '300px' }}>
             <ScrollArea className="h-full p-6">
               <div className="space-y-4 max-w-4xl mx-auto">
                 {messages.map((message) => (
@@ -949,15 +949,15 @@ export default function AIMarketingConsultant(
                     <div
                       className={`max-w-[85%] rounded-xl p-4 ${
                         message.type === 'user'
-                          ? 'bg-gray-900 text-white shadow-lg'
+                          ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
                           : message.type === 'system'
-                          ? 'bg-blue-50 text-blue-900 border border-blue-200 shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-900 shadow-lg'
+                          ? 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-300 border border-gray-500/20 shadow-lg'
+                          : 'bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#1a1a1a] text-white shadow-2xl'
                       }`}
                     >
                       {message.isLoading ? (
                         <div className="flex items-center gap-3">
-                          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                           <span className="text-sm font-medium">{message.content}</span>
                         </div>
                       ) : (
@@ -981,7 +981,7 @@ export default function AIMarketingConsultant(
           </div>
 
           {/* Custom Input Field */}
-          <div className="border-t border-gray-200 p-4 bg-white">
+          <div className="border-t border-[#1a1a1a] p-4 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
             <div className="flex gap-3 max-w-4xl mx-auto">
               <div className="flex-1 relative">
                 <input
@@ -998,13 +998,13 @@ export default function AIMarketingConsultant(
                     ? "Ask me anything about your agency performance, brands, or growth strategies..." 
                     : "Ask me anything about your marketing campaigns..."}
                   disabled={isLoading || isLimitReached}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all duration-300 text-sm shadow-sm"
+                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
                 />
               </div>
               <Button
                 onClick={() => handleCustomInput(inputMessage)}
                 disabled={isLoading || isLimitReached || !inputMessage.trim()}
-                className="px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
               >
                 <Send className="w-4 h-4" />
               </Button>
