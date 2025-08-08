@@ -788,7 +788,7 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-[calc(100vh-1rem)] flex flex-col shadow-2xl">
+    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-screen flex flex-col shadow-2xl">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
         <div className="border-b border-[#1a1a1a] p-6 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
@@ -955,11 +955,11 @@ export default function AIMarketingConsultant(
           </div>
         </div>
 
-        {/* Quick Prompts - Controlled Space */}
-        <div className="p-6 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col" style={{ flex: '0 0 auto', maxHeight: '300px' }}>
-          <div className="max-w-5xl mx-auto w-full h-full flex flex-col">
-            <div className="mb-5">
-              <p className="text-sm text-gray-400 mb-4 font-semibold">Quick Actions:</p>
+        {/* Quick Prompts - Flexible Space with Scroll */}
+        <div className="p-4 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col min-h-0" style={{ flex: '1 0 0' }}>
+          <div className="max-w-5xl mx-auto w-full h-full flex flex-col min-h-0">
+            <div className="mb-4 flex-shrink-0">
+              <p className="text-sm text-gray-400 mb-3 font-semibold">Quick Actions:</p>
               <div className="flex gap-2 flex-wrap">
                 {categories.map((category) => (
                   <Button
@@ -979,7 +979,7 @@ export default function AIMarketingConsultant(
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 overflow-y-auto custom-scrollbar min-h-0">
               {filteredPrompts.map((prompt) => (
                 <Button
                   key={prompt.id}
@@ -1003,7 +1003,7 @@ export default function AIMarketingConsultant(
             </div>
             
             {remainingUses !== null && (
-              <div className="mt-5 pt-5 border-t border-[#1a1a1a] flex justify-center">
+              <div className="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-center flex-shrink-0">
                 <div className={`text-xs px-4 py-2 rounded-xl font-semibold border ${
                   remainingUses <= 1 
                     ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border-red-500/20' 
