@@ -1281,10 +1281,8 @@ export default function MarketingAssistantPage() {
                 </div>
 
             {/* Middle Section - Campaign Management at 100% width */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-              <div className="p-6" style={{ minHeight: '600px', maxHeight: '800px', overflow: 'auto' }}>
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-              </div>
+            <div>
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
 
             {/* Bottom Section - Ad Creative and Performance Chart side by side */}

@@ -783,10 +783,10 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     
                       return (
       <Card key={campaign.campaign_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
-                   shadow-lg hover:shadow-2xl group overflow-hidden">
+                   shadow-sm hover:shadow-lg group overflow-hidden">
                             <CardContent className="p-0">
                               {/* Campaign Header */}
-                              <div className="p-6 pb-4 bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a]">
+                              <div className="px-6 py-4 bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a]">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-4">
                 {/* Platform logo for "All Platforms" tab */}
@@ -802,20 +802,19 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   </div>
                 )}
                 
-                                    <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                                    <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                                                   flex items-center justify-center border border-white/10 
-                                                  group-hover:from-white/10 group-hover:to-white/15 transition-all duration-300
-                                                  shadow-lg">
-                                      <span className="text-white font-bold text-xl">
+                                                  group-hover:from-white/10 group-hover:to-white/15 transition-all duration-300">
+                                      <span className="text-white font-bold text-sm">
                                         {campaign.campaign_name.charAt(0).toUpperCase()}
                                       </span>
                                     </div>
                 
                                     <div className="flex flex-col gap-1">
-                                      <h3 className="text-xl font-bold text-white tracking-tight">
+                                      <h3 className="text-lg font-bold text-white tracking-tight">
                                         {campaign.campaign_name}
                                       </h3>
-                                      <div className="flex items-center gap-3 text-sm">
+                                      <div className="flex items-center gap-3 text-xs">
                                         <span className="text-gray-500 font-medium">{campaign.objective}</span>
                                         {campaign.account_name && (
                                           <>
@@ -850,8 +849,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                               </div>
                               
                               {/* Performance Metrics Grid */}
-                              <div className="p-6 pt-4">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 lg:gap-4">
+                              <div className="px-6 py-3">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
                                   <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
                                     <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Budget</div>
                                     <div className="text-xl font-bold text-white">{formatCurrency(campaign.budget)}</div>
@@ -1104,9 +1103,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }
 
       return (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Search and filters */}
-          <div className="flex flex-col sm:flex-row gap-4 p-6 pb-0">
+          <div className="flex flex-col sm:flex-row gap-4 px-6 pt-4 pb-0">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -1153,8 +1152,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </div>
 
           {/* Campaigns table */}
-          <div className="px-6 pb-6">
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="px-6 pb-4">
+            <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
               {filteredCampaigns.map(renderCampaignCard)}
             </div>
           </div>
@@ -1245,9 +1244,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     }
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Search and filters */}
-        <div className="flex flex-col sm:flex-row gap-4 p-6 pb-0">
+        <div className="flex flex-col sm:flex-row gap-4 px-6 pt-4 pb-0">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -1294,8 +1293,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         </div>
 
         {/* Campaigns table */}
-        <div className="px-6 pb-6">
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="px-6 pb-4">
+          <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
             {filteredCampaigns.map(renderCampaignCard)}
           </div>
         </div>
@@ -1304,7 +1303,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-    <div className="space-y-6 relative" style={{ minHeight: '600px' }}>
+    <div className="space-y-8 relative">
       {/* Remove Loading Overlay - completely commented out */}
       {/* 
       {isRefreshing && (
@@ -1322,15 +1321,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       
       {/* Header */}
       <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-8 py-5 border-b border-[#333] rounded-t-lg">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                           flex items-center justify-center border border-white/10 shadow-lg">
-              <Users className="w-6 h-6 text-white" />
+              <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Campaign Management</h2>
-              <p className="text-gray-400 font-medium text-base">
+              <h2 className="text-2xl font-bold tracking-tight text-white">Campaign Management</h2>
+              <p className="text-gray-400 text-sm">
                 Manage and optimize your advertising campaigns across all platforms
               </p>
             </div>
@@ -1338,9 +1337,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         </div>
 
         {/* Tabbed Interface */}
-        <div className="p-6">
+        <div className="px-8 py-6">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-12">
+            <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-11">
               <TabsTrigger 
                 value="all" 
                 className="flex items-center justify-center gap-2 data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white
@@ -1401,7 +1400,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </TabsList>
 
             {/* Tab Content */}
-            <div className="mt-6">
+            <div className="mt-4">
               <TabsContent value="all">
                 {renderPlatformContent('all')}
               </TabsContent>
