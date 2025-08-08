@@ -168,6 +168,14 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
   },
   {
     id: 'creative-fatigue',
+    icon: <Clock className="w-4 h-4" />,
+    title: 'Check for ad fatigue before ROAS drops',
+    prompt: 'Analyze my ad creatives for early signs of fatigue by examining creative runtime, frequency, engagement trends, and performance decay patterns. Identify which creatives are at risk of declining performance BEFORE they significantly impact ROAS. Provide specific recommendations for creative rotation and refresh timing.',
+    category: 'creative',
+    mode: 'brand'
+  },
+  {
+    id: 'creative-refresh',
     icon: <Sparkles className="w-4 h-4" />,
     title: 'Which creatives need refreshing?',
     prompt: 'Examine my ad creative performance and identify which ones are showing signs of fatigue or declining performance. Recommend creative refresh strategies and winning elements to replicate.',
@@ -265,8 +273,24 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
   {
     id: 'brands-need-focus',
     icon: <AlertTriangle className="w-4 h-4" />,
-    title: 'Which brands need immediate focus?',
-    prompt: 'Analyze all my brands and identify which ones need immediate attention or intervention. Focus on performance issues, declining metrics, or urgent optimization opportunities.',
+    title: 'Which brands need immediate attention?',
+    prompt: 'Analyze all my brands and identify which ones need immediate attention or intervention. Look for sudden performance drops, declining ROAS, creative fatigue patterns, and budget inefficiencies. Provide prioritized action items for each brand requiring attention.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'performance-fluctuations',
+    icon: <Activity className="w-4 h-4" />,
+    title: 'Detect performance fluctuations',
+    prompt: 'Scan all brands for sudden fluctuations in key metrics (ROAS, CPC, CTR, conversion rates). Identify potential causes and predict what might happen next based on historical patterns and current trends. Flag any brands showing early warning signs.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'predictive-analysis',
+    icon: <TrendingUp className="w-4 h-4" />,
+    title: 'What will happen to my brands next?',
+    prompt: 'Analyze current trends across all my brands and provide predictive insights. Based on historical patterns, seasonal factors, and current performance trajectory, forecast what is likely to happen in the next 7-30 days. Include recommendations to capitalize on opportunities or prevent issues.',
     category: 'agency',
     mode: 'agency'
   },
@@ -764,109 +788,126 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[calc(100vh-3rem)] flex flex-col">
+    <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden h-[calc(100vh-3rem)] flex flex-col shadow-2xl">
       <CardContent className="p-0 flex flex-col h-full">
-        {/* Top Controls */}
-        <div className="border-b border-[#1a1a1a] p-4 bg-[#0f0f0f]/50">
-          <div className="flex items-center justify-between mb-3">
-            {/* Mode Selector */}
-            <div className="flex items-center gap-2 p-1 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
-              {AI_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={selectedMode === mode.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedMode(mode.id)
-                    setMessages([])
-                    setIsInitialized(false)
-                    setSelectedCategory('all')
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
-                    selectedMode === mode.id
-                      ? "bg-white/10 text-white border-white/20"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {mode.icon}
-                  {mode.title}
-                </Button>
-              ))}
+        {/* Header with Title and Mode/Focus Controls */}
+        <div className="border-b border-[#1a1a1a] p-6 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
+          <div className="flex items-center justify-between">
+            {/* Left: Title and Mode Selector */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
+                              flex items-center justify-center border border-white/10 shadow-lg">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">AI Marketing Assistant</h2>
+                  <p className="text-gray-400 text-sm">Intelligent campaign optimization insights</p>
+                </div>
+              </div>
+              
+              {/* Mode Selector on same row */}
+              <div className="flex items-center gap-2 p-1 bg-[#0a0a0a] rounded-xl border border-[#1a1a1a] shadow-inner">
+                {AI_MODES.map((mode) => (
+                  <Button
+                    key={mode.id}
+                    variant={selectedMode === mode.id ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedMode(mode.id)
+                      setMessages([])
+                      setIsInitialized(false)
+                      setSelectedCategory('all')
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
+                      selectedMode === mode.id
+                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 shadow-lg"
+                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {mode.icon}
+                    {mode.title}
+                  </Button>
+                ))}
+              </div>
             </div>
 
-            {/* Usage Badge */}
-            {remainingUses !== null && (
-              <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
-                {remainingUses}/5 left today
-              </Badge>
-            )}
-          </div>
+            {/* Right: Focus and Usage */}
+            <div className="flex items-center gap-4">
+              {/* Focus Area Dropdown */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400 font-medium">Focus:</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
+                        <span className="text-sm">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
+                        <ChevronDown className="w-3 h-3" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-72 bg-[#0a0a0a] border-[#1a1a1a] rounded-xl shadow-2xl">
+                    {MARKETING_GOALS.map((goal) => (
+                      <DropdownMenuItem
+                        key={goal.id}
+                        onClick={() => setSelectedGoal(goal.id)}
+                        className="focus:bg-white/5 cursor-pointer p-4 rounded-lg m-1"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center flex-shrink-0 border border-white/10">
+                            {goal.icon}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-white">{goal.title}</div>
+                            <div className="text-xs text-gray-400 mt-1 leading-relaxed">{goal.description}</div>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-          {/* Focus Area Dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400 font-medium">Focus:</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-[#0f0f0f] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10"
-                >
-                  <div className="flex items-center gap-2">
-                    {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
-                    <span className="text-sm">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
-                    <ChevronDown className="w-3 h-3" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 bg-[#0f0f0f] border-[#1a1a1a]">
-                {MARKETING_GOALS.map((goal) => (
-                  <DropdownMenuItem
-                    key={goal.id}
-                    onClick={() => setSelectedGoal(goal.id)}
-                    className="focus:bg-white/5 cursor-pointer p-3"
-                  >
-                    <div className="flex items-start gap-3 w-full">
-                      <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        {goal.icon}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-white">{goal.title}</div>
-                        <div className="text-xs text-gray-400 mt-1">{goal.description}</div>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              {/* Usage Badge */}
+              {remainingUses !== null && (
+                <Badge className="bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20 text-xs px-3 py-1 rounded-lg font-medium">
+                  {remainingUses}/5 left today
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Chat Messages */}
-        <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto', maxHeight: '400px' }}>
-          <ScrollArea className="h-full p-4">
-            <div className="space-y-3">
+        {/* Chat Messages - More Space */}
+        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '1 1 auto', minHeight: '300px' }}>
+          <ScrollArea className="h-full p-6">
+            <div className="space-y-4 max-w-4xl mx-auto">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-3 ${
+                    className={`max-w-[85%] rounded-2xl p-4 ${
                       message.type === 'user'
-                        ? 'bg-white/10 text-white border border-white/20'
+                        ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-white border border-blue-500/20 shadow-lg'
                         : message.type === 'system'
-                        ? 'bg-gray-500/10 text-gray-300 border border-gray-500/20'
-                        : 'bg-[#0f0f0f] border border-[#1a1a1a] text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-300 border border-gray-500/20 shadow-lg'
+                        : 'bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border border-[#1a1a1a] text-white shadow-2xl'
                     }`}
                   >
                     {message.isLoading ? (
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm">{message.content}</span>
+                        <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-medium">{message.content}</span>
                       </div>
                     ) : (
-                      <div className="text-sm whitespace-pre-wrap space-y-2 leading-relaxed">
+                      <div className="text-sm whitespace-pre-wrap space-y-3 leading-relaxed">
                         {message.content.split('\n\n').map((paragraph, index) => (
                           <p key={index} className="leading-relaxed">
                             {paragraph}
@@ -874,7 +915,7 @@ export default function AIMarketingConsultant(
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-gray-500 mt-3 font-medium">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
@@ -886,8 +927,8 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Custom Input Field */}
-        <div className="border-b border-[#1a1a1a] p-3 bg-[#0f0f0f]/50">
-          <div className="flex gap-2">
+        <div className="border-y border-[#1a1a1a] p-4 bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f]">
+          <div className="flex gap-3 max-w-4xl mx-auto">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -899,80 +940,82 @@ export default function AIMarketingConsultant(
                     handleCustomInput(inputMessage)
                   }
                 }}
-                placeholder="Ask me anything about your marketing..."
+                placeholder="Ask me anything about your marketing campaigns..."
                 disabled={isLoading || isLimitReached}
-                className="w-full px-3 py-2 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white/20 focus:bg-white/5 transition-all duration-300 text-sm"
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
               />
             </div>
             <Button
               onClick={() => handleCustomInput(inputMessage)}
               disabled={isLoading || isLimitReached || !inputMessage.trim()}
-              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
+              className="px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20 shadow-lg"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Quick Prompts */}
-        <div className="p-4 bg-[#0f0f0f]/50 flex flex-col flex-1">
-          <div className="mb-3">
-            <p className="text-sm text-gray-400 mb-3 font-medium">Quick Actions:</p>
-            <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
+        {/* Quick Prompts - More Compact */}
+        <div className="p-4 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] flex flex-col">
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="mb-4">
+              <p className="text-sm text-gray-400 mb-3 font-semibold">Quick Actions:</p>
+              <div className="flex gap-2 flex-wrap">
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`text-xs rounded-xl transition-all duration-300 font-medium ${
+                      selectedCategory === category.id
+                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border-blue-500/20 text-white shadow-lg"
+                        : "bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    {category.label} ({category.count})
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scrollbar">
+              {filteredPrompts.map((prompt) => (
                 <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  key={prompt.id}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`text-xs rounded-xl transition-all duration-300 ${
-                    selectedCategory === category.id
-                      ? "bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
-                  }`}
+                  onClick={() => handlePromptSelect(prompt)}
+                  disabled={isLoading || isLimitReached}
+                  className="justify-between h-auto p-4 text-left bg-gradient-to-r from-[#0a0a0a] to-[#0f0f0f] hover:from-white/5 hover:to-white/10 
+                           border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
+                           disabled:opacity-50 disabled:cursor-not-allowed shadow-lg group"
                 >
-                  {category.label} ({category.count})
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
+                      {prompt.icon}
+                    </div>
+                    <span className="text-sm text-white font-medium group-hover:text-white transition-colors">{prompt.title}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
                 </Button>
               ))}
             </div>
-          </div>
-          
-          <div className="grid gap-2 flex-1 overflow-y-auto custom-scrollbar">
-            {filteredPrompts.map((prompt) => (
-              <Button
-                key={prompt.id}
-                variant="ghost"
-                size="sm"
-                onClick={() => handlePromptSelect(prompt)}
-                disabled={isLoading || isLimitReached}
-                className="justify-between h-auto p-3 text-left bg-[#0f0f0f] hover:bg-white/5 
-                         border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-white/5 rounded-lg flex items-center justify-center text-gray-400">
-                    {prompt.icon}
-                  </div>
-                  <span className="text-sm text-white font-medium">{prompt.title}</span>
+            
+            {remainingUses !== null && (
+              <div className="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-center">
+                <div className={`text-xs px-3 py-2 rounded-xl font-semibold border ${
+                  remainingUses <= 1 
+                    ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border-red-500/20' 
+                    : remainingUses <= 3 
+                    ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 text-yellow-400 border-yellow-500/20'
+                    : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-400 border-green-500/20'
+                }`}>
+                  {remainingUses} questions remaining today
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
-              </Button>
-            ))}
-          </div>
-          
-          {remainingUses !== null && (
-            <div className="mt-3 pt-3 border-t border-[#1a1a1a] flex justify-end">
-              <div className={`text-xs px-2 py-1 rounded-full font-medium ${
-                remainingUses <= 1 
-                  ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
-                  : remainingUses <= 3 
-                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                  : 'bg-green-500/10 text-green-400 border border-green-500/20'
-              }`}>
-                {remainingUses} questions remaining today
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
