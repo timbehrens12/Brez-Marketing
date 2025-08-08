@@ -616,21 +616,26 @@ function processMetaData(data: any[]): ProcessedMetaData {
   let totalConversions = 0
   let totalReach = 0
   
-  // Process daily data
+  // Process daily data by grouping by date first to avoid double counting
   const dailyData: DailyDataItem[] = []
-  const seenDates = new Set<string>()
   
   console.log(`Processing ${sortedData.length} Meta records, sorted from ${sortedData[0]?.date} to ${sortedData[sortedData.length-1]?.date}`)
   
+  // Group data by date to prevent double aggregation
+  const dataByDate = new Map<string, any[]>()
   sortedData.forEach(item => {
     const dateStr = item.date
-    
-    // Skip if we've already processed this date (aggregate by date)
-    if (seenDates.has(dateStr)) return
-    seenDates.add(dateStr)
-    
-    // Aggregate metrics for this date
-    const dayItems = sortedData.filter(d => d.date === dateStr)
+    if (!dataByDate.has(dateStr)) {
+      dataByDate.set(dateStr, [])
+    }
+    dataByDate.get(dateStr)!.push(item)
+  })
+  
+  console.log(`Found ${dataByDate.size} unique dates with data`)
+  
+  // Process each unique date
+  dataByDate.forEach((dayItems, dateStr) => {
+    console.log(`Processing date ${dateStr} with ${dayItems.length} records`)
     
     const daySpend = dayItems.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
     const dayImpressions = dayItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
@@ -685,13 +690,18 @@ function processMetaData(data: any[]): ProcessedMetaData {
       reach: dayReach
     })
     
-    // Add to totals
+    // Add to totals (only once per date)
     totalSpend += daySpend
     totalImpressions += dayImpressions
     totalClicks += dayClicks
     totalConversions += dayConversions
     totalReach += dayReach
+    
+    console.log(`Date ${dateStr}: spend=${daySpend}, impressions=${dayImpressions}, clicks=${dayClicks}, conversions=${dayConversions}`)
   })
+  
+  // Sort daily data by date to maintain chronological order
+  dailyData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   
   console.log(`Aggregated ${dailyData.length} unique days of data, total spend: ${totalSpend}`)
   
