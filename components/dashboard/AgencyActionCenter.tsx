@@ -187,12 +187,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Use global brand selection instead of local state
   const selectedBrandId = globalSelectedBrandId || 'all'
   const setSelectedBrandId = (id: string) => {
-    console.log(`[Agency Center] 🔧 Setting brand selection from "${globalSelectedBrandId}" to "${id}"`)
     setGlobalSelectedBrandId(id === 'all' ? null : id)
   }
   
-  // Debug brand selection state
-  console.log(`[Agency Center] 🔍 Brand selection state - Global: "${globalSelectedBrandId}", Local: "${selectedBrandId}", Available brands:`, contextBrands.map(b => `${b.name}(${b.id})`).join(', '))
+  // Brand selection working correctly now
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   
@@ -777,7 +775,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Tool availability logic with actual usage tracking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-    console.log(`[Agency Center] 🔥 FIXED VERSION getToolAvailability called for ${tool.id} with brandId: "${brandId}" (global: "${globalSelectedBrandId}")`)
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
