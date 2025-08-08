@@ -267,24 +267,40 @@ export default function BlendedWidgetsTable({
       const brandBudgets: BudgetData['brands'] = []
 
       for (const brand of brands) {
-        const { data: budgetConfig } = await supabase
-          .from('brand_budgets')
-          .select('daily_budget')
-          .eq('brand_id', brand.id)
-          .eq('user_id', userId)
-          .single()
+        try {
+          const { data: budgetConfig, error } = await supabase
+            .from('brand_budgets')
+            .select('daily_budget')
+            .eq('brand_id', brand.id)
+            .eq('user_id', userId)
+            .single()
 
-        const budget = budgetConfig?.daily_budget || 0
-        const brandSpend = 0 // We'll use the blended spend for now
-        
-        totalBudget += budget
-        brandBudgets.push({
-          brand_id: brand.id,
-          brand_name: brand.name,
-          budget,
-          spend: brandSpend,
-          percentage: budget > 0 ? (brandSpend / budget) * 100 : 0
-        })
+          if (error && error.code !== 'PGRST116') {
+            console.log(`[BlendedWidgets] Budget query error for brand ${brand.name}:`, error)
+          }
+
+          const budget = budgetConfig?.daily_budget || 0
+          const brandSpend = 0 // We'll use the blended spend for now
+          
+          totalBudget += budget
+          brandBudgets.push({
+            brand_id: brand.id,
+            brand_name: brand.name,
+            budget,
+            spend: brandSpend,
+            percentage: budget > 0 ? (brandSpend / budget) * 100 : 0
+          })
+        } catch (brandError) {
+          console.log(`[BlendedWidgets] Error fetching budget for brand ${brand.name}:`, brandError)
+          // Still add the brand with 0 budget
+          brandBudgets.push({
+            brand_id: brand.id,
+            brand_name: brand.name,
+            budget: 0,
+            spend: 0,
+            percentage: 0
+          })
+        }
       }
 
       const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
@@ -297,7 +313,14 @@ export default function BlendedWidgetsTable({
       })
 
     } catch (error) {
-      console.error('Error fetching budget data:', error)
+      console.error('[BlendedWidgets] Error fetching budget data:', error)
+      // Set fallback data
+      setBudgetData({
+        totalBudget: 0,
+        totalSpend: metaMetrics.adSpend,
+        budgetUsedPercentage: 0,
+        brands: []
+      })
     }
   }
 
