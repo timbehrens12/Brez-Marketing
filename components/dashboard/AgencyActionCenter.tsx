@@ -563,7 +563,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         })
 
-        // Load creative studio usage (TODO: Replace with actual database query when implemented)
+        // Load creative studio usage from creative_generations table
         const now = new Date()
         const startOfWeek = new Date(now)
         const dayOfWeek = now.getDay()
@@ -571,13 +571,24 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         startOfWeek.setDate(now.getDate() - daysToSubtract)
         startOfWeek.setHours(0, 0, 0, 0)
         
-        // For now, initialize to 0 for all brands
-        brands.forEach(brand => {
+        // Query actual creative generations for each brand
+        for (const brand of brands) {
+          const { data: creativeData } = await supabase
+            .from('creative_generations')
+            .select('id, created_at')
+            .eq('brand_id', brand.id)
+            .gte('created_at', startOfWeek.toISOString())
+            .eq('status', 'completed')
+
+          const weeklyCount = creativeData?.length || 0
+          
           newToolUsageData.creativeStudio[brand.id] = {
-            count: 0, // TODO: Query actual usage from creative_generations table
+            count: weeklyCount,
             weekStart: startOfWeek.toISOString()
           }
-        })
+          
+          console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyCount}/10 used this week`)
+        }
 
         setToolUsageData(newToolUsageData)
       } catch (error) {
