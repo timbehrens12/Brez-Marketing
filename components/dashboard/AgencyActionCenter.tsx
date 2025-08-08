@@ -500,39 +500,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         supabase.from('user_usage').select('*').eq('user_id', userId)
       ])
 
-      // Fetch outreach usage via API to bypass RLS
-      let outreachResponse
-      try {
-        console.log(`[Agency Center] DEBUG: Fetching outreach usage via API for userId: "${userId}"`)
-        
-        const response = await fetch('/api/outreach/usage', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-        
-        if (response.ok) {
-          const usageData = await response.json()
-          console.log(`[Agency Center] DEBUG: Outreach API successful:`, usageData)
-          
-          // Extract daily count from the API response
-          const dailyUsedCount = usageData.usage?.daily?.used || 0
-          console.log(`[Agency Center] DEBUG: Daily outreach count from API: ${dailyUsedCount}`)
-          
-          // Create a fake data array to match existing logic expectations
-          outreachResponse = {
-            data: dailyUsedCount > 0 ? Array(dailyUsedCount).fill({ generated_at: new Date().toISOString() }) : [],
-            error: null
-          }
-        } else {
-          console.error(`[Agency Center] DEBUG: Outreach API failed with status:`, response.status)
-          outreachResponse = { error: new Error(`API failed: ${response.status}`), data: null }
-        }
-      } catch (error) {
-        console.error(`[Agency Center] DEBUG: Outreach API error:`, error)
-        outreachResponse = { error, data: null }
-      }
+      // Get outreach message usage directly from database (RLS now disabled)
+      const outreachResponse = await supabase
+        .from('outreach_message_usage')
+        .select('generated_at')
+        .eq('user_id', userId)
 
       if (!leadsResponse.error) {
         setUserLeadsCount(leadsResponse.count || 0)
@@ -599,60 +571,37 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           creativeStudio: {} as { [brandId: string]: { count: number, weekStart: string } }
         }
 
-        // Load Campaign Optimizer availability - Check if active campaigns have been optimized
+        // Load Campaign Optimizer availability - Check if active campaigns have been optimized (RLS now disabled)
         for (const brand of brands) {
-          let activeCampaignCount = 0
-          let optimizationCount = 0
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - Checking brand ${brand.name} (${brand.id})`)
           
-          try {
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - Checking brand ${brand.name} (${brand.id})`)
-            
-            // Get active campaigns for this brand (might be blocked by RLS)
-            const { data: activeCampaigns } = await supabase
-              .from('meta_campaigns')
-              .select('campaign_id, campaign_name, status')
-              .eq('brand_id', brand.id)
-              .eq('status', 'ACTIVE')
+          // Get active campaigns for this brand
+          const { data: activeCampaigns } = await supabase
+            .from('meta_campaigns')
+            .select('campaign_id, campaign_name, status')
+            .eq('brand_id', brand.id)
+            .eq('status', 'ACTIVE')
 
-            // Get campaign optimizations for this brand
-            const { data: optimizations } = await supabase
-              .from('ai_campaign_optimizations')
-              .select('id, period_name, created_at')
-              .eq('brand_id', brand.id)
+          // Get campaign optimizations for this brand
+          const { data: optimizations } = await supabase
+            .from('ai_campaign_optimizations')
+            .select('id, period_name, created_at')
+            .eq('brand_id', brand.id)
 
-            activeCampaignCount = activeCampaigns?.length || 0
-            optimizationCount = optimizations?.length || 0
-            
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: ${activeCampaignCount} active campaigns, ${optimizationCount} optimizations run`)
-            
-            // Logic: Available if there are active campaigns that haven't been optimized
-            // For now, simple logic: if optimizations >= 1 and campaigns >= 1, then unavailable
-            const hasActiveCampaigns = activeCampaignCount > 0
-            const hasBeenOptimized = optimizationCount > 0
-            const isAvailable = hasActiveCampaigns && !hasBeenOptimized
-            
-            // Store status for this brand (0 = available, 1 = unavailable)
-            newToolUsageData.campaignOptimizer[brand.id] = isAvailable ? 0 : 1
-            
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: Available=${isAvailable} (campaigns=${activeCampaignCount}, optimized=${hasBeenOptimized})`)
-            
-          } catch (error) {
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - Error for brand ${brand.name}:`, error.message)
-            
-            // Manual fallback for Test Brand (we know it has 1 active campaign and has been optimized)
-            if (brand.id === '1a30f34b-b048-4f80-b880-6c61bd12c720') {
-              newToolUsageData.campaignOptimizer[brand.id] = 1 // 1 = unavailable (already optimized)
-              console.log(`[Agency Center] Campaign Optimizer DEBUG - Manual fallback: Test Brand is unavailable (already optimized)`)
-            } else {
-              newToolUsageData.campaignOptimizer[brand.id] = 0 // 0 = available (unknown, assume available)
-            }
-          }
+          const activeCampaignCount = activeCampaigns?.length || 0
+          const optimizationCount = optimizations?.length || 0
           
-          // Additional manual override for Test Brand if RLS blocked the optimizations query
-          if (brand.id === '1a30f34b-b048-4f80-b880-6c61bd12c720' && optimizationCount === 0) {
-            console.log(`[Agency Center] Campaign Optimizer DEBUG - RLS Override: Test Brand optimizations blocked, manually setting to unavailable`)
-            newToolUsageData.campaignOptimizer[brand.id] = 1 // 1 = unavailable (already optimized)
-          }
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: ${activeCampaignCount} active campaigns, ${optimizationCount} optimizations run`)
+          
+          // Logic: Available if there are active campaigns that haven't been optimized
+          const hasActiveCampaigns = activeCampaignCount > 0
+          const hasBeenOptimized = optimizationCount > 0
+          const isAvailable = hasActiveCampaigns && !hasBeenOptimized
+          
+          // Store status for this brand (0 = available, 1 = unavailable)
+          newToolUsageData.campaignOptimizer[brand.id] = isAvailable ? 0 : 1
+          
+          console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: Available=${isAvailable} (campaigns=${activeCampaignCount}, optimized=${hasBeenOptimized})`)
         }
 
         // Load brand report generation data from localStorage
@@ -680,51 +629,23 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         startOfWeek.setDate(now.getDate() - daysToSubtract)
         startOfWeek.setHours(0, 0, 0, 0)
         
-        // Query ALL creative generations for the USER (across all brands) this week
-        let totalWeeklyCreativeCount = 0
-        try {
-          // Get all generations for all brands for this user
-          for (const brand of brands) {
-            const response = await fetch(`/api/creative-generations?brandId=${brand.id}&userId=${userId}&limit=100`)
-            if (response.ok) {
-              const responseData = await response.json()
-              console.log(`[Agency Center] DEBUG: Creative Studio API response for ${brand.name}:`, JSON.stringify(responseData, null, 2))
-              
-              const { creatives: generations } = responseData  // API returns "creatives", not "generations"
-              
-              // Filter for completed generations this week
-              const weeklyGenerations = generations?.filter((gen: any) => {
-                const genDate = new Date(gen.created_at)
-                const isThisWeek = genDate >= startOfWeek
-                const isCompleted = gen.status === 'completed'
-                return isThisWeek && isCompleted
-              }) || []
-              
-              totalWeeklyCreativeCount += weeklyGenerations.length
-              console.log(`[Agency Center] Creative Studio - Brand ${brand.name}: ${weeklyGenerations.length} completed this week (total generations: ${generations?.length || 0})`)
-            } else {
-              const errorText = await response.text()
-              console.error(`[Agency Center] Creative Studio API failed for brand ${brand.name}:`, response.status, errorText)
-            }
-          }
-          
-          // Set the SAME count for all brands (user-based limit, not per-brand)
-          for (const brand of brands) {
-            newToolUsageData.creativeStudio[brand.id] = {
-              count: totalWeeklyCreativeCount,
-              weekStart: startOfWeek.toISOString()
-            }
-          }
-          
-          console.log(`[Agency Center] Creative Studio - TOTAL USER USAGE: ${totalWeeklyCreativeCount}/10 used this week (user-based limit)`)
-        } catch (error) {
-          console.error(`[Agency Center] Creative Studio error:`, error)
-          // Set 0 for all brands if error
-          for (const brand of brands) {
-            newToolUsageData.creativeStudio[brand.id] = {
-              count: 0,
-              weekStart: startOfWeek.toISOString()
-            }
+        // Query ALL creative generations for the USER (across all brands) this week (RLS now disabled)
+        const { data: allCreativeGenerations } = await supabase
+          .from('creative_generations')
+          .select('id, created_at, status, brand_id')
+          .eq('user_id', userId)
+          .gte('created_at', startOfWeek.toISOString())
+          .eq('status', 'completed')
+
+        const totalWeeklyCreativeCount = allCreativeGenerations?.length || 0
+        
+        console.log(`[Agency Center] Creative Studio - TOTAL USER USAGE: ${totalWeeklyCreativeCount}/10 used this week (user-based limit)`)
+        
+        // Set the SAME count for all brands (user-based limit, not per-brand)
+        for (const brand of brands) {
+          newToolUsageData.creativeStudio[brand.id] = {
+            count: totalWeeklyCreativeCount,
+            weekStart: startOfWeek.toISOString()
           }
         }
 
