@@ -1199,15 +1199,15 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="min-h-screen bg-[#0A0A0A]">
-      {/* Page Header - Contained Width */}
-      <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222]">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+    <div className="w-full">
+      {/* Page Header - Full Width */}
+      <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
                             flex items-center justify-center border border-white/10">
-                <Brain className="w-5 h-5 text-white" />
+                <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Marketing Assistant</h1>
@@ -1229,22 +1229,22 @@ export default function MarketingAssistantPage() {
               variant="outline"
               size="sm"
               className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                       hover:border-white/20 px-3 py-1.5 rounded-lg font-medium transition-all 
-                       duration-300 group disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                       hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
+                       duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isRefreshingAll ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Refreshing...
                 </>
               ) : refreshCooldown ? (
                 <>
-                  <Clock className="w-3.5 h-3.5 mr-1.5" />
+                  <Clock className="w-4 h-4 mr-2" />
                   Cooldown
                 </>
               ) : (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 mr-1.5 group-hover:rotate-180 transition-transform duration-500" />
+                  <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
                   Refresh All
                 </>
               )}
@@ -1253,140 +1253,58 @@ export default function MarketingAssistantPage() {
         </div>
       </div>
 
-      {/* Main Content Container */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Meta Connection Status Banner */}
-        <MetaConnectionStatus 
-          brandId={selectedBrandId} 
-          className="mb-6" 
-        />
+      {/* Meta Connection Status Banner */}
+      <div className="max-w-7xl mx-auto px-6 py-2">
+        <MetaConnectionStatus brandId={selectedBrandId} />
+      </div>
 
-        {/* Main Content Grid */}
-        <div className="space-y-4">
-          {/* Top Row - Key Metrics and Daily Report */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Metrics Overview - 2/3 width */}
-            <div className="lg:col-span-2">
+      {/* Main Content with Professional Layout */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Left Sidebar - Metrics and Performance */}
+          <div className="xl:col-span-3 space-y-4">
+            {/* Blended Widgets Table - Compact */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
               <BlendedWidgetsTable 
                 metaMetrics={metaMetrics}
+                compact={true}
               />
             </div>
-
-            {/* Daily Report Summary - 1/3 width */}
-            <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3 h-full">
-                <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-2">
-                  <Clock className="w-3 h-3 text-gray-400" />
-                  Daily Summary
-                </h3>
-                <div className="h-[calc(100%-1.5rem)] text-sm">
-                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Row - Campaign Management and Performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Campaign Management - 2/3 width */}
-            <div className="lg:col-span-2">
-              <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-                <div className="p-3" style={{ maxHeight: '400px', overflow: 'auto' }}>
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                </div>
-              </div>
-            </div>
-
-            {/* Performance Chart - 1/3 width */}
-            <div className="lg:col-span-1">
+            
+            {/* Performance Chart - Compact */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
               <PerformanceChart 
                 preloadedPerformanceData={preloadedData.performanceData}
+                compact={true}
               />
             </div>
           </div>
 
-          {/* Bottom Row - Creative Insights and AI Consultant */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Ad Creative Breakdown */}
-            <div>
-              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+          {/* Center Main Content */}
+          <div className="xl:col-span-6 space-y-6">
+            {/* Campaign Management Widget - Streamlined */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+              <div className="p-4" style={{ minHeight: '400px', maxHeight: '500px', overflow: 'auto' }}>
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} compact={true} />
+              </div>
             </div>
 
-            {/* AI Marketing Consultant */}
-            <div>
-              <AIMarketingConsultant />
+            {/* Ad Creative Breakdown - Streamlined */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
+              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} compact={true} />
             </div>
           </div>
 
-          {/* Optional: Additional Insights Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {/* Quick Stats Cards */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
-              <h3 className="text-xs font-semibold text-white mb-2">Campaign Health</h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Active Campaigns</span>
-                  <span className="text-xs font-medium text-white">
-                    {preloadedData.campaigns?.filter(c => c.status === 'ACTIVE').length || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Total Spend Today</span>
-                  <span className="text-xs font-medium text-white">
-                    ${metaMetrics.adSpend.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Avg. ROAS</span>
-                  <span className="text-xs font-medium text-white">
-                    {metaMetrics.roas.toFixed(2)}x
-                  </span>
-                </div>
-              </div>
+          {/* Right Sidebar - AI Insights */}
+          <div className="xl:col-span-3 space-y-4">
+            {/* Daily Report - Compact */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
+              <AIDailyReport preloadedReport={preloadedData.dailyReport} compact={true} />
             </div>
 
-            {/* Performance Highlights */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
-              <h3 className="text-xs font-semibold text-white mb-2">Performance Highlights</h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">ROAS Growth</span>
-                  <span className="text-xs font-medium text-green-400">
-                    {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Conversion Rate</span>
-                  <span className="text-xs font-medium text-white">
-                    {((metaMetrics.conversions / metaMetrics.clicks) * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">CTR</span>
-                  <span className="text-xs font-medium text-white">
-                    {metaMetrics.ctr.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
-              <h3 className="text-xs font-semibold text-white mb-2">Quick Actions</h3>
-              <div className="space-y-1.5">
-                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
-                                 transition-colors text-xs text-white">
-                  View Full Report →
-                </button>
-                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
-                                 transition-colors text-xs text-white">
-                  Export Analytics →
-                </button>
-                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
-                                 transition-colors text-xs text-white">
-                  Schedule Report →
-                </button>
-              </div>
+            {/* AI Marketing Consultant - Compact */}
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
+              <AIMarketingConsultant compact={true} />
             </div>
           </div>
         </div>
