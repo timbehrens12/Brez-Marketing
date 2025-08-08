@@ -658,7 +658,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const responseData = await response.json()
               console.log(`[Agency Center] DEBUG: Creative Studio API response for ${brand.name}:`, JSON.stringify(responseData, null, 2))
               
-              const { generations } = responseData
+              const { creatives: generations } = responseData  // API returns "creatives", not "generations"
               
               // Filter for completed generations this week
               const weeklyGenerations = generations?.filter((gen: any) => {
@@ -941,16 +941,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               
               // DEBUG: Log the brand report status
               console.log(`[Agency Center] Brand Reports DEBUG - Brand ${brand.name}:`)
-              console.log(`  Brand ID: ${brand.id}`)
-              console.log(`  Daily: stored="${brandReports.daily}", today="${today}", available=${dailyAvailable}`)
-              console.log(`  Monthly: stored="${brandReports.monthly}", month="${currentMonth}", available=${monthlyAvailable}`)
-              console.log(`  Overall available: ${dailyAvailable || monthlyAvailable}`)
-              console.log(`  LocalStorage keys: daily="lastManualGeneration_${brand.id}", monthly="lastMonthlyGeneration_${brand.id}"`)
-              
-              // Also manually check localStorage
-              const manualDailyCheck = localStorage.getItem(`lastManualGeneration_${brand.id}`)
-              const manualMonthlyCheck = localStorage.getItem(`lastMonthlyGeneration_${brand.id}`)
-              console.log(`  Manual localStorage check: daily="${manualDailyCheck}", monthly="${manualMonthlyCheck}"`)
+              console.log(`  Daily stored: "${brandReports.daily}" vs today: "${today}" = available: ${dailyAvailable}`)
+              console.log(`  Monthly stored: "${brandReports.monthly}" vs month: "${currentMonth}" = available: ${monthlyAvailable}`)
+              console.log(`  Final result: ${dailyAvailable || monthlyAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`)
               
               return dailyAvailable || monthlyAvailable
             })
