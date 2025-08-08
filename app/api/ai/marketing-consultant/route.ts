@@ -399,7 +399,7 @@ Your communication style:
 
 Current Agency Context:
 - Total Brands: ${analysisData.brands?.length || 0}
-- Analysis Period: ${dateRange.days} days (${dateRange.from} to ${dateRange.to})
+- Analysis Period: ${dateRange?.days || 30} days (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
 - Total Agency Spend: $${(analysis.totalSpend || 0).toFixed(2)}
 - Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x
 - Active Campaigns: ${analysis.activeCampaigns || 0}
@@ -428,7 +428,7 @@ Your communication style:
 
 Current Context:
 - Brand: ${brandName}${brandNiche ? ` (${brandNiche} business)` : ''}
-- Analysis Period: ${dateRange.days} days (${dateRange.from} to ${dateRange.to})
+- Analysis Period: ${dateRange?.days || 30} days (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
 - Total Campaigns: ${campaigns.length} 
  - Active Campaigns: ${analysis.activecampaigns || 0}
 - Total Ad Spend: $${(analysis.totalSpend || 0).toFixed(2)}
@@ -473,7 +473,7 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
 
   } catch (error) {
     console.error('Error generating AI response:', error)
-    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${mode === 'agency' ? 'agency' : brandName} data. In the meantime, I can see ${mode === 'agency' ? 'your agency has' : 'you\'ve'} spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
+    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${mode === 'agency' ? 'agency' : brandName} data. In the meantime, I can see ${mode === 'agency' ? 'your agency has' : 'you have'} spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
   }
 }
 
