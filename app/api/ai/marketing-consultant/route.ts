@@ -16,15 +16,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { brandId, prompt, marketingGoal, userContext } = await request.json()
+    const { brandId, prompt, marketingGoal, userContext, mode = 'brand' } = await request.json()
     
-    if (!brandId || !prompt) {
+    if (!prompt) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
+    
+    // For brand mode, brandId is required
+    if (mode === 'brand' && !brandId) {
+      return NextResponse.json({ error: 'Brand ID required for brand mode' }, { status: 400 })
+    }
 
-    // Check AI usage status and daily limits
+    // Initialize Supabase client
+    const supabase = createClient()
+    
+    // Check AI usage status and daily limits (use first brand for agency mode)
+    const trackingBrandId = mode === 'agency' ? 
+      (await getFirstUserBrand(supabase, userId)) : brandId
+      
     const usageStatus = await aiUsageService.checkUsageStatus(
-      brandId, 
+      trackingBrandId, 
       userId, 
       'ai_consultant_chat'
     )
@@ -37,43 +48,49 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Initialize Supabase client
-    const supabase = createClient()
+    let brand = null
+    let analysisData = null
 
-    // Fetch brand information including niche
-    const { data: brand, error: brandError } = await supabase
-      .from('brands')
-      .select('*')
-      .eq('id', brandId)
-      .eq('user_id', userId)
-      .single()
+    if (mode === 'brand') {
+      // Fetch specific brand information
+      const { data: brandData, error: brandError } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('id', brandId)
+        .eq('user_id', userId)
+        .single()
 
-    if (brandError || !brand) {
-      return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      if (brandError || !brandData) {
+        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      }
+      
+      brand = brandData
+      analysisData = await gatherComprehensiveMarketingData(supabase, brandId)
+    } else {
+      // Agency mode - gather data across all brands
+      analysisData = await gatherAgencyWideData(supabase, userId)
     }
-
-    // Gather comprehensive 30-day data analysis
-    const analysisData = await gatherComprehensiveMarketingData(supabase, brandId)
     
-    // Generate personalized AI response with brand context
-    const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand)
+    // Generate personalized AI response
+    const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand, mode)
 
     // Record chat usage
     await aiUsageService.recordUsage(
-      brandId,
+      trackingBrandId,
       userId,
       'ai_consultant_chat',
       {
         prompt: prompt.substring(0, 100), // Store first 100 chars for tracking
         marketingGoal,
-        brandNiche: brand.niche || 'unspecified',
+        mode,
+        brandNiche: brand?.niche || 'agency-wide',
         timestamp: new Date().toISOString()
       }
     )
 
     // Get updated usage status to return remaining uses
     const updatedStatus = await aiUsageService.checkUsageStatus(
-      brandId, 
+      trackingBrandId, 
       userId, 
       'ai_consultant_chat'
     )
@@ -328,7 +345,7 @@ function analyzeTrends(dailyStats: any[]) {
   return trends
 }
 
-async function generatePersonalizedResponse(prompt: string, analysisData: any, marketingGoal: string, userContext: any, brand: any) {
+async function generatePersonalizedResponse(prompt: string, analysisData: any, marketingGoal: string, userContext: any, brand: any, mode: string = 'brand') {
   const { analysis, campaigns, adSets, ads, dateRange } = analysisData
   const userName = userContext?.name || 'there'
   const brandName = brand?.name || 'your brand'
@@ -362,7 +379,36 @@ When providing recommendations, always consider how they apply specifically to a
 
 BRAND CONTEXT: Provide general marketing recommendations while acknowledging that industry-specific insights could be more valuable with brand niche information.`
 
-  const systemPrompt = `You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
+  const systemPrompt = mode === 'agency' ? 
+    `You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
+
+MARKETING GOAL FOCUS: ${goalContext}
+
+Your communication style:
+- Address the user as ${userName} personally
+- Be conversational and friendly, not formal  
+- Write in plain text without markdown formatting (no *, **, #, -, etc.)
+- Use simple bullet points with • when listing items
+- Provide strategic recommendations for agency growth and efficiency
+- Focus on ROI, scalability, and practical next steps for agency operations
+- Help with client management, outreach strategies, and business development
+- Keep responses comprehensive but digestible (500-700 words)
+- Never end with formal closers like "Best regards", "Sincerely", etc.
+- End naturally or with a simple encouragement
+- Do not use asterisks, dashes, or other markdown symbols
+
+Current Agency Context:
+- Total Brands: ${analysisData.brands?.length || 0}
+- Analysis Period: ${dateRange.days} days (${dateRange.from} to ${dateRange.to})
+- Total Agency Spend: $${(analysis.totalSpend || 0).toFixed(2)}
+- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x
+- Active Campaigns: ${analysis.activeCampaigns || 0}
+- Combined Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
+- Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
+
+You can help with campaign optimization across brands, lead generation strategies, outreach automation, client retention, proposal optimization, resource allocation, and overall agency growth planning.`
+
+    : `You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
 MARKETING GOAL FOCUS: ${goalContext}
 
@@ -419,14 +465,87 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
           content: prompt
         }
       ],
-      max_tokens: 1200,
+      max_tokens: mode === 'agency' ? 1500 : 1200,
       temperature: 0.7
     })
 
-    return response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${brandName}${brandNiche ? ` ${brandNiche} business` : ''} marketing performance, but I'm having trouble generating a response right now. Please try again in a moment.`
+    return response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${mode === 'agency' ? 'agency' : brandName}${brandNiche && mode === 'brand' ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
 
   } catch (error) {
     console.error('Error generating AI response:', error)
-    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${brandName} data. In the meantime, I can see you've spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
+    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${mode === 'agency' ? 'agency' : brandName} data. In the meantime, I can see ${mode === 'agency' ? 'your agency has' : 'you\'ve'} spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
+  }
+}
+
+async function getFirstUserBrand(supabase: any, userId: string) {
+  try {
+    const { data: brands } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', userId)
+      .limit(1)
+      
+    return brands?.[0]?.id || userId // fallback to userId if no brands
+  } catch (error) {
+    return userId
+  }
+}
+
+async function gatherAgencyWideData(supabase: any, userId: string) {
+  try {
+    // Get all user brands
+    const { data: brands } = await supabase
+      .from('brands')
+      .select('*')
+      .eq('user_id', userId)
+    
+    if (!brands || brands.length === 0) {
+      return { campaigns: [], analysis: { totalSpend: 0, averageROAS: 0 } }
+    }
+
+    let allCampaigns: any[] = []
+    let totalSpend = 0
+    let totalRevenue = 0
+    let totalImpressions = 0
+    let totalClicks = 0
+    
+    // Aggregate data across all brands
+    for (const brand of brands) {
+      try {
+        const brandData = await gatherComprehensiveMarketingData(supabase, brand.id)
+        allCampaigns = [...allCampaigns, ...brandData.campaigns]
+        
+        totalSpend += brandData.analysis.totalSpend || 0
+        totalRevenue += brandData.analysis.totalRevenue || 0
+        totalImpressions += brandData.analysis.totalImpressions || 0
+        totalClicks += brandData.analysis.totalClicks || 0
+      } catch (error) {
+        console.error(`Error gathering data for brand ${brand.id}:`, error)
+      }
+    }
+
+    // Calculate agency-wide metrics
+    const averageROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0
+    const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
+    const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
+
+    return {
+      campaigns: allCampaigns,
+      brands,
+      analysis: {
+        totalSpend,
+        totalRevenue,
+        averageROAS,
+        totalImpressions,
+        totalClicks,
+        averageCTR,
+        averageCPC,
+        brandCount: brands.length,
+        activeCampaigns: allCampaigns.filter(c => c.effective_status === 'ACTIVE').length
+      }
+    }
+  } catch (error) {
+    console.error('Error gathering agency-wide data:', error)
+    return { campaigns: [], analysis: { totalSpend: 0, averageROAS: 0 } }
   }
 } 

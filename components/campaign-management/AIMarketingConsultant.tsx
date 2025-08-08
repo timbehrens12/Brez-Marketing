@@ -25,7 +25,14 @@ import {
   Settings,
   TrendingDown,
   Activity,
-  PieChart
+  PieChart,
+  Building2,
+  Store,
+  ChevronDown,
+  Send,
+  FileText,
+  UserPlus,
+  Phone
 } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -38,12 +45,21 @@ interface ChatMessage {
   isLoading?: boolean
 }
 
+interface AIMode {
+  id: 'brand' | 'agency'
+  title: string
+  description: string
+  icon: React.ReactNode
+  color: string
+}
+
 interface PromptSuggestion {
   id: string
   icon: React.ReactNode
   title: string
   prompt: string
-  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting'
+  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'agency'
+  mode?: 'brand' | 'agency' | 'both'
 }
 
 interface MarketingGoal {
@@ -53,6 +69,23 @@ interface MarketingGoal {
   icon: React.ReactNode
   color: string
 }
+
+const AI_MODES: AIMode[] = [
+  {
+    id: 'brand',
+    title: 'Brand Assistant',
+    description: 'Focus on specific brand optimization and insights',
+    icon: <Store className="w-4 h-4" />,
+    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+  },
+  {
+    id: 'agency',
+    title: 'Agency Assistant',
+    description: 'Overall agency management and multi-brand insights',
+    icon: <Building2 className="w-4 h-4" />,
+    color: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+  }
+]
 
 const MARKETING_GOALS: MarketingGoal[] = [
   {
@@ -100,110 +133,176 @@ const MARKETING_GOALS: MarketingGoal[] = [
 ]
 
 const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
+  // Campaign Performance & Optimization
   {
     id: 'improve-roas',
     icon: <TrendingUp className="w-4 h-4" />,
     title: 'How can I improve my ROAS?',
     prompt: 'Analyze my last 30 days of campaign data and provide specific recommendations to improve my return on ad spend (ROAS). Focus on budget allocation, audience targeting, and creative performance.',
-    category: 'performance'
+    category: 'performance',
+    mode: 'brand'
   },
   {
     id: 'scale-winners',
     icon: <Zap className="w-4 h-4" />,
     title: 'Which campaigns should I scale?',
     prompt: 'Based on my recent performance data, identify which campaigns, ad sets, or creatives I should scale up and which ones I should pause or optimize. Provide specific scaling strategies.',
-    category: 'optimization'
+    category: 'optimization',
+    mode: 'brand'
   },
   {
     id: 'audience-insights',
     icon: <Users className="w-4 h-4" />,
     title: 'What audiences work best?',
     prompt: 'Analyze my audience performance data and identify which demographics, interests, and behavioral segments are driving the best results. Suggest new audience opportunities.',
-    category: 'audience'
+    category: 'audience',
+    mode: 'brand'
   },
   {
     id: 'creative-fatigue',
     icon: <Sparkles className="w-4 h-4" />,
     title: 'Which creatives need refreshing?',
     prompt: 'Examine my ad creative performance and identify which ones are showing signs of fatigue or declining performance. Recommend creative refresh strategies and winning elements to replicate.',
-    category: 'creative'
+    category: 'creative',
+    mode: 'brand'
   },
   {
     id: 'budget-optimization',
     icon: <Target className="w-4 h-4" />,
     title: 'How should I reallocate my budget?',
     prompt: 'Analyze my current budget distribution across campaigns and ad sets. Recommend optimal budget reallocation to maximize ROI based on performance data and trends.',
-    category: 'budget'
+    category: 'budget',
+    mode: 'brand'
   },
+
+  // Reports & Analytics
+  {
+    id: 'generate-performance-report',
+    icon: <FileText className="w-4 h-4" />,
+    title: 'Generate a performance report',
+    prompt: 'Create a comprehensive performance report for the last 30 days including key metrics, trends, insights, and actionable recommendations. Include graphs and data visualizations where helpful.',
+    category: 'reports',
+    mode: 'both'
+  },
+  {
+    id: 'weekly-summary-report',
+    icon: <BarChart3 className="w-4 h-4" />,
+    title: 'Create weekly summary report',
+    prompt: 'Generate a weekly summary report highlighting this week\'s performance vs last week, key wins, areas for improvement, and next week\'s recommendations.',
+    category: 'reports',
+    mode: 'both'
+  },
+  {
+    id: 'roi-analysis-report',
+    icon: <DollarSign className="w-4 h-4" />,
+    title: 'ROI analysis report',
+    prompt: 'Analyze return on investment across all campaigns and create a detailed ROI report with recommendations for improving profitability and scaling high-performing initiatives.',
+    category: 'reports',
+    mode: 'both'
+  },
+
+  // Lead Generation
+  {
+    id: 'lead-gen-strategy',
+    icon: <UserPlus className="w-4 h-4" />,
+    title: 'Optimize lead generation strategy',
+    prompt: 'Review my current lead generation campaigns and landing pages. Provide specific recommendations to improve lead quality, reduce cost per lead, and increase conversion rates.',
+    category: 'leadgen',
+    mode: 'brand'
+  },
+  {
+    id: 'lead-scoring-optimization',
+    icon: <Target className="w-4 h-4" />,
+    title: 'Improve lead scoring and qualification',
+    prompt: 'Analyze my lead data to help create better lead scoring criteria. Identify patterns in high-quality leads and recommend ways to optimize lead qualification processes.',
+    category: 'leadgen',
+    mode: 'brand'
+  },
+  {
+    id: 'landing-page-optimization',
+    icon: <Eye className="w-4 h-4" />,
+    title: 'Optimize landing pages for conversions',
+    prompt: 'Review landing page performance data and provide recommendations for improving conversion rates, reducing bounce rates, and enhancing user experience.',
+    category: 'leadgen',
+    mode: 'brand'
+  },
+
+  // Outreach & Client Management
+  {
+    id: 'client-outreach-strategy',
+    icon: <Phone className="w-4 h-4" />,
+    title: 'Develop client outreach strategy',
+    prompt: 'Help me create effective outreach sequences and messaging for prospective clients. Include email templates, timing recommendations, and follow-up strategies.',
+    category: 'outreach',
+    mode: 'agency'
+  },
+  {
+    id: 'client-retention-analysis',
+    icon: <Users className="w-4 h-4" />,
+    title: 'Analyze client retention patterns',
+    prompt: 'Review client data to identify patterns in client retention and churn. Provide recommendations for improving client satisfaction and reducing churn rates.',
+    category: 'outreach',
+    mode: 'agency'
+  },
+  {
+    id: 'proposal-optimization',
+    icon: <FileText className="w-4 h-4" />,
+    title: 'Optimize proposals and pitches',
+    prompt: 'Help me improve my agency proposals and pitch presentations. Analyze successful proposals and recommend improvements for winning more clients.',
+    category: 'outreach',
+    mode: 'agency'
+  },
+
+  // Agency Management
+  {
+    id: 'multi-brand-performance',
+    icon: <Building2 className="w-4 h-4" />,
+    title: 'Compare performance across brands',
+    prompt: 'Analyze performance across all my brands. Identify top performers, underperformers, and opportunities for cross-brand learnings and optimizations.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'resource-allocation',
+    icon: <Settings className="w-4 h-4" />,
+    title: 'Optimize resource allocation',
+    prompt: 'Help me optimize how I allocate time, budget, and resources across different brands and campaigns. Identify areas where I should focus more or less attention.',
+    category: 'agency',
+    mode: 'agency'
+  },
+  {
+    id: 'agency-growth-strategy',
+    icon: <TrendingUp className="w-4 h-4" />,
+    title: 'Develop agency growth strategy',
+    prompt: 'Based on my current agency performance, help me develop a growth strategy. Include recommendations for scaling successful approaches and expanding into new opportunities.',
+    category: 'agency',
+    mode: 'agency'
+  },
+
+  // Troubleshooting
   {
     id: 'performance-drops',
-    icon: <Clock className="w-4 h-4" />,
+    icon: <AlertTriangle className="w-4 h-4" />,
     title: 'Why did my performance drop?',
     prompt: 'Investigate any recent drops in my campaign performance. Analyze metrics like CTR, CPC, ROAS, and conversion rates to identify potential causes and solutions.',
-    category: 'troubleshooting'
-  },
-  {
-    id: 'cost-analysis',
-    icon: <DollarSign className="w-4 h-4" />,
-    title: 'How can I reduce my cost per conversion?',
-    prompt: 'Analyze my conversion costs across all campaigns and provide actionable strategies to lower my cost per acquisition while maintaining conversion volume.',
-    category: 'optimization'
-  },
-  {
-    id: 'competitor-analysis',
-    icon: <BarChart3 className="w-4 h-4" />,
-    title: 'How do I compete better in my market?',
-    prompt: 'Based on my campaign performance data and industry benchmarks, suggest competitive strategies for bidding, targeting, and creative approaches.',
-    category: 'performance'
-  },
-  {
-    id: 'seasonal-optimization',
-    icon: <Clock className="w-4 h-4" />,
-    title: 'How should I adjust for seasonal trends?',
-    prompt: 'Analyze my historical performance data to identify seasonal patterns and recommend adjustments for upcoming periods or current trends.',
-    category: 'optimization'
+    category: 'troubleshooting',
+    mode: 'brand'
   },
   {
     id: 'ad-fatigue',
-    icon: <AlertTriangle className="w-4 h-4" />,
+    icon: <Clock className="w-4 h-4" />,
     title: 'Are my ads experiencing fatigue?',
     prompt: 'Check my ad frequency, engagement rates, and performance trends to identify ad fatigue issues and recommend refresh strategies.',
-    category: 'troubleshooting'
-  },
-  {
-    id: 'lookalike-audiences',
-    icon: <Users className="w-4 h-4" />,
-    title: 'Should I create new lookalike audiences?',
-    prompt: 'Analyze my best-performing customer segments and conversion data to recommend new lookalike audience strategies and expansion opportunities.',
-    category: 'audience'
-  },
-  {
-    id: 'creative-insights',
-    icon: <Eye className="w-4 h-4" />,
-    title: 'What creative elements work best?',
-    prompt: 'Examine my top-performing ads to identify winning creative elements, messaging themes, and visual styles that I should replicate in new campaigns.',
-    category: 'creative'
-  },
-  {
-    id: 'bidding-strategy',
-    icon: <Settings className="w-4 h-4" />,
-    title: 'Should I change my bidding strategy?',
-    prompt: 'Review my current bidding approaches across campaigns and recommend optimal bidding strategies based on my performance goals and budget constraints.',
-    category: 'optimization'
-  },
-  {
-    id: 'underperforming-campaigns',
-    icon: <TrendingDown className="w-4 h-4" />,
-    title: 'What should I do with underperforming campaigns?',
-    prompt: 'Identify my worst-performing campaigns and provide specific recommendations: optimize, pause, or restructure based on detailed performance analysis.',
-    category: 'troubleshooting'
+    category: 'troubleshooting',
+    mode: 'brand'
   },
   {
     id: 'conversion-tracking',
     icon: <Activity className="w-4 h-4" />,
     title: 'Is my conversion tracking optimized?',
     prompt: 'Analyze my conversion data patterns and tracking setup to identify potential issues or optimization opportunities in my measurement and attribution.',
-    category: 'troubleshooting'
+    category: 'troubleshooting',
+    mode: 'brand'
   }
 ]
 
@@ -225,24 +324,28 @@ export default function AIMarketingConsultant(
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedGoal, setSelectedGoal] = useState<string>('general')
+  const [selectedMode, setSelectedMode] = useState<'brand' | 'agency'>('brand')
   const [remainingUses, setRemainingUses] = useState<number | null>(null)
   const [isLimitReached, setIsLimitReached] = useState(false)
+  const [inputMessage, setInputMessage] = useState('')
 
   // Initialize with welcome message
   useEffect(() => {
-    if (!selectedBrandId || isInitialized) return
+    if ((selectedMode === 'brand' && !selectedBrandId) || isInitialized) return
 
     const selectedGoalData = MARKETING_GOALS.find(g => g.id === selectedGoal)
+    const selectedModeData = AI_MODES.find(m => m.id === selectedMode)
+    
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your campaign data and provide personalized recommendations. Choose one of the questions below to get started!`,
+      content: `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can ${selectedMode === 'agency' ? 'analyze your entire agency performance and help with multi-brand insights, client management, and business growth' : 'analyze your campaign data and provide personalized brand recommendations'}. Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
     setMessages([welcomeMessage])
     setIsInitialized(true)
-  }, [selectedBrandId, user, isInitialized, selectedGoal])
+  }, [selectedBrandId, user, isInitialized, selectedGoal, selectedMode])
 
   // Reset conversation when goal changes
   useEffect(() => {
@@ -317,8 +420,8 @@ export default function AIMarketingConsultant(
   }, [messages])
 
   const filteredPrompts = selectedCategory === 'all' 
-    ? PROMPT_SUGGESTIONS 
-    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory)
+    ? PROMPT_SUGGESTIONS.filter(p => p.mode === selectedMode || p.mode === 'both')
+    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory && (p.mode === selectedMode || p.mode === 'both'))
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
     if (isLoading || isLimitReached) return
@@ -335,7 +438,7 @@ export default function AIMarketingConsultant(
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: 'Analyzing your campaign data...',
+      content: selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...',
       timestamp: new Date(),
       isLoading: true
     }
@@ -361,6 +464,48 @@ export default function AIMarketingConsultant(
     }
   }
 
+  const handleCustomInput = async (customPrompt: string) => {
+    if (isLoading || isLimitReached || !customPrompt.trim()) return
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: customPrompt,
+      timestamp: new Date()
+    }
+
+    // Add loading assistant message
+    const assistantMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      type: 'assistant',
+      content: selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...',
+      timestamp: new Date(),
+      isLoading: true
+    }
+
+    setMessages(prev => [...prev, userMessage, assistantMessage])
+    setIsLoading(true)
+    setInputMessage('')
+
+    try {
+      await analyzeAndRespond(customPrompt, assistantMessage.id)
+    } catch (error) {
+      console.error('Error getting AI response:', error)
+      
+      // Update the loading message with error
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessage.id 
+          ? { ...msg, content: 'Sorry, I encountered an error analyzing your data. Please try again.', isLoading: false }
+          : msg
+      ))
+      
+      toast.error('Failed to get AI response')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const analyzeAndRespond = async (prompt: string, messageId: string) => {
     try {
       const response = await fetch('/api/ai/marketing-consultant', {
@@ -369,9 +514,10 @@ export default function AIMarketingConsultant(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          brandId: selectedBrandId,
+          brandId: selectedMode === 'brand' ? selectedBrandId : null,
           prompt,
           marketingGoal: selectedGoal,
+          mode: selectedMode,
           userContext: {
             name: user?.firstName || 'there'
           }
@@ -444,14 +590,18 @@ export default function AIMarketingConsultant(
   }
 
   const categories = [
-    { id: 'all', label: 'All', count: PROMPT_SUGGESTIONS.length },
-    { id: 'performance', label: 'Performance', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'performance').length },
-    { id: 'optimization', label: 'Optimization', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'optimization').length },
-    { id: 'audience', label: 'Audience', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'audience').length },
-    { id: 'creative', label: 'Creative', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'creative').length },
-    { id: 'budget', label: 'Budget', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'budget').length },
-    { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting').length }
-  ]
+    { id: 'all', label: 'All', count: filteredPrompts.length },
+    { id: 'performance', label: 'Performance', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'performance' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'optimization', label: 'Optimization', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'optimization' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'audience', label: 'Audience', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'audience' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'creative', label: 'Creative', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'creative' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'budget', label: 'Budget', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'budget' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'reports', label: 'Reports', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'reports' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'leadgen', label: 'Lead Gen', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'leadgen' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'outreach', label: 'Outreach', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'outreach' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'agency', label: 'Agency', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'agency' && (p.mode === selectedMode || p.mode === 'both')).length },
+    { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting' && (p.mode === selectedMode || p.mode === 'both')).length }
+  ].filter(cat => cat.count > 0)
 
   // Remove loading skeleton check - always show content
   // if (loading) {
@@ -524,30 +674,41 @@ export default function AIMarketingConsultant(
   //   )
   // }
 
-  if (!selectedBrandId) {
+  if (selectedMode === 'brand' && !selectedBrandId) {
     return (
-      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1400px] flex flex-col">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
+      <Card className="bg-gradient-to-br from-[#0B0B0F] via-[#111118] to-[#0A0A0A] border-[#1E1E2F] shadow-2xl rounded-xl overflow-hidden h-[1400px] flex flex-col backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-[#1A1A2E]/80 via-[#16213E]/60 to-[#0F0F23]/80 pb-6 border-b border-[#2A2A3F]/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-indigo-500/20 rounded-2xl 
+                            flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
+                <Brain className="w-7 h-7 text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-2xl text-white font-bold tracking-tight">AI Marketing Consultant</CardTitle>
-                <p className="text-gray-400 font-medium">Personalized campaign optimization insights</p>
+                <CardTitle className="text-2xl text-white font-bold tracking-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                  AI Marketing Assistant
+                </CardTitle>
+                <p className="text-gray-300 font-medium text-sm">Your intelligent marketing optimization partner</p>
               </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-              <Brain className="w-8 h-8 text-gray-400" />
+        <CardContent className="p-8 flex-1 flex items-center justify-center">
+          <div className="text-center py-12 max-w-md">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-500/20 shadow-lg">
+              <Store className="w-10 h-10 text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Ready to Optimize Your Campaigns</h3>
-            <p className="text-gray-400 text-sm">Select a brand to start your consultation and get personalized AI recommendations</p>
+            <h3 className="text-xl font-semibold text-white mb-3">Ready to Optimize</h3>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              Switch to Agency mode for multi-brand insights, or select a brand to get personalized campaign optimization recommendations.
+            </p>
+            <Button
+              onClick={() => setSelectedMode('agency')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg transition-all duration-300"
+            >
+              <Building2 className="w-4 h-4 mr-2" />
+              Switch to Agency Mode
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -555,32 +716,59 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden h-[1400px] flex flex-col">
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
+    <Card className="bg-gradient-to-br from-[#0B0B0F] via-[#111118] to-[#0A0A0A] border-[#1E1E2F] shadow-2xl rounded-xl overflow-hidden h-[1400px] flex flex-col backdrop-blur-sm">
+      <CardHeader className="bg-gradient-to-r from-[#1A1A2E]/80 via-[#16213E]/60 to-[#0F0F23]/80 pb-6 border-b border-[#2A2A3F]/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-indigo-500/20 rounded-2xl 
+                          flex items-center justify-center border border-blue-500/30 shadow-lg backdrop-blur-sm">
+              <Brain className="w-7 h-7 text-blue-400" />
             </div>
             <div>
-              <CardTitle className="text-2xl text-white font-bold tracking-tight">AI Marketing Consultant</CardTitle>
+              <CardTitle className="text-2xl text-white font-bold tracking-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                AI Marketing Assistant
+              </CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-gray-400 font-medium">Personalized campaign optimization insights</p>
-                <Badge className="bg-white/5 text-gray-300 border-white/10 text-xs px-2 py-1">
-                  {remainingUses !== null ? `${remainingUses}/5 left today` : 'Beta'}
+                <p className="text-gray-300 font-medium text-sm">Your intelligent marketing optimization partner</p>
+                <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20 text-xs px-2 py-1">
+                  {remainingUses !== null ? `${remainingUses}/5 left today` : 'Pro'}
                 </Badge>
               </div>
             </div>
           </div>
+          
+          {/* Mode Selector */}
+          <div className="flex items-center gap-2 p-1 bg-[#0F0F23]/50 rounded-xl border border-[#2A2A3F]/50 backdrop-blur-sm">
+            {AI_MODES.map((mode) => (
+              <Button
+                key={mode.id}
+                variant={selectedMode === mode.id ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setSelectedMode(mode.id)
+                  setMessages([])
+                  setIsInitialized(false)
+                  setSelectedCategory('all')
+                }}
+                className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all duration-300 ${
+                  selectedMode === mode.id
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {mode.icon}
+                {mode.title}
+              </Button>
+            ))}
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
+      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 140px)' }}>
         {/* Marketing Goal Selection */}
-        <div className="border-b border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
+        <div className="border-b border-[#2A2A3F]/50 p-6 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
           <div className="mb-4">
-            <p className="text-sm text-gray-400 mb-3 font-medium">Marketing Goal:</p>
+            <p className="text-sm text-gray-300 mb-3 font-medium">Focus Area:</p>
             <div className="grid grid-cols-2 gap-3">
               {MARKETING_GOALS.map((goal) => (
                 <Button
@@ -590,13 +778,13 @@ export default function AIMarketingConsultant(
                   onClick={() => setSelectedGoal(goal.id)}
                   className={`h-auto p-3 text-left flex flex-col items-start gap-2 rounded-xl transition-all duration-300 min-h-[80px] w-full ${
                     selectedGoal === goal.id
-                      ? "bg-white/10 text-white border-white/20 shadow-lg"
-                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
+                      ? "bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border-blue-500/30 shadow-lg backdrop-blur-sm"
+                      : "bg-[#0F0F23]/50 border-[#2A2A3F]/50 text-gray-400 hover:text-white hover:bg-[#1A1A2E]/50 hover:border-blue-500/20"
                   }`}
                 >
                   <div className="flex items-center gap-2 w-full">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      selectedGoal === goal.id ? "bg-white/10" : "bg-white/5"
+                      selectedGoal === goal.id ? "bg-blue-500/20" : "bg-white/5"
                     }`}>
                       {goal.icon}
                     </div>
@@ -616,7 +804,7 @@ export default function AIMarketingConsultant(
         </div>
 
         {/* Chat Messages */}
-        <div className="bg-[#0f0f0f]/30" style={{ flex: '1 1 auto', maxHeight: '400px' }}>
+        <div className="bg-gradient-to-b from-[#0F0F23]/20 to-[#1A1A2E]/20" style={{ flex: '1 1 auto', maxHeight: '350px' }}>
           <ScrollArea className="h-full p-6">
             <div className="space-y-4">
               {messages.map((message) => (
@@ -625,12 +813,12 @@ export default function AIMarketingConsultant(
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-4 ${
+                    className={`max-w-[80%] rounded-2xl p-4 backdrop-blur-sm ${
                       message.type === 'user'
-                        ? 'bg-white/10 text-white border border-white/20'
+                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30 shadow-lg'
                         : message.type === 'system'
-                        ? 'bg-gray-500/10 text-gray-300 border border-gray-500/20'
-                        : 'bg-[#0f0f0f] border border-[#1a1a1a] text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-gray-600/10 to-gray-700/10 text-gray-300 border border-gray-500/20'
+                        : 'bg-gradient-to-r from-[#0F0F23]/80 to-[#1A1A2E]/60 border border-[#2A2A3F]/50 text-white shadow-lg'
                     }`}
                   >
                     {message.isLoading ? (
@@ -647,7 +835,7 @@ export default function AIMarketingConsultant(
                         ))}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-gray-400 mt-2">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
@@ -658,10 +846,39 @@ export default function AIMarketingConsultant(
           </ScrollArea>
         </div>
 
+        {/* Custom Input Field */}
+        <div className="border-b border-[#2A2A3F]/50 p-4 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleCustomInput(inputMessage)
+                  }
+                }}
+                placeholder="Ask me anything about your marketing..."
+                disabled={isLoading || isLimitReached}
+                className="w-full px-4 py-3 bg-[#0F0F23]/50 border border-[#2A2A3F]/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-[#1A1A2E]/50 transition-all duration-300"
+              />
+            </div>
+            <Button
+              onClick={() => handleCustomInput(inputMessage)}
+              disabled={isLoading || isLimitReached || !inputMessage.trim()}
+              className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
         {/* Quick Prompts */}
-        <div className="border-t border-[#1a1a1a] p-6 bg-[#0f0f0f]/50">
+        <div className="p-6 bg-gradient-to-r from-[#0F0F23]/30 to-[#1A1A2E]/30">
           <div className="mb-4">
-            <p className="text-sm text-gray-400 mb-3 font-medium">Choose a question:</p>
+            <p className="text-sm text-gray-300 mb-3 font-medium">Quick Actions:</p>
             <div className="flex gap-2 flex-wrap">
               {categories.map((category) => (
                 <Button
@@ -671,8 +888,8 @@ export default function AIMarketingConsultant(
                   onClick={() => setSelectedCategory(category.id)}
                   className={`text-xs rounded-xl transition-all duration-300 ${
                     selectedCategory === category.id
-                      ? "bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                      : "bg-[#0f0f0f] border-[#1a1a1a] text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                      : "bg-[#0F0F23]/50 border-[#2A2A3F]/50 text-gray-400 hover:text-white hover:bg-[#1A1A2E]/50 hover:border-blue-500/20"
                   }`}
                 >
                   {category.label} ({category.count})
@@ -681,7 +898,7 @@ export default function AIMarketingConsultant(
             </div>
           </div>
           
-          <div className="grid gap-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+          <div className="grid gap-3 max-h-[250px] overflow-y-auto custom-scrollbar">
             {filteredPrompts.map((prompt) => (
               <Button
                 key={prompt.id}
@@ -689,32 +906,32 @@ export default function AIMarketingConsultant(
                 size="sm"
                 onClick={() => handlePromptSelect(prompt)}
                 disabled={isLoading || isLimitReached}
-                className="justify-between h-auto p-4 text-left bg-[#0f0f0f] hover:bg-white/5 
-                         border border-[#1a1a1a] hover:border-white/10 rounded-xl transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed"
+                className="justify-between h-auto p-4 text-left bg-[#0F0F23]/50 hover:bg-[#1A1A2E]/50 
+                         border border-[#2A2A3F]/50 hover:border-blue-500/30 rounded-xl transition-all duration-300
+                         disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-gray-400">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg flex items-center justify-center text-blue-400 group-hover:text-blue-300">
                     {prompt.icon}
                   </div>
-                  <span className="text-sm text-white font-medium">{prompt.title}</span>
+                  <span className="text-sm text-white font-medium group-hover:text-blue-100">{prompt.title}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-blue-400" />
               </Button>
             ))}
           </div>
           
-          <div className="mt-4 pt-4 border-t border-[#1a1a1a] flex items-center justify-between">
-            <p className="text-xs text-gray-500">
-              💡 I analyze your last 30 days of campaign data to provide personalized recommendations
+          <div className="mt-4 pt-4 border-t border-[#2A2A3F]/50 flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              {selectedMode === 'agency' ? '🏢 Analyzing agency-wide performance data' : '💡 Analyzing brand-specific campaign data'}
             </p>
             {remainingUses !== null && (
-              <div className={`text-xs px-3 py-1 rounded-full font-medium ${
+              <div className={`text-xs px-3 py-1 rounded-full font-medium backdrop-blur-sm ${
                 remainingUses <= 1 
-                  ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
+                  ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
                   : remainingUses <= 3 
-                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                  : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                  : 'bg-green-500/20 text-green-300 border border-green-500/30'
               }`}>
                 {remainingUses} questions remaining today
               </div>
