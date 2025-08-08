@@ -283,8 +283,6 @@ export default function BlendedWidgetsTable({
             .select('budget, budget_type')
             .eq('brand_id', brand.id)
             .eq('status', 'ACTIVE')
-            .not('budget', 'is', null)
-            .gt('budget', 0)
 
           let budget = 0
           
@@ -308,13 +306,18 @@ export default function BlendedWidgetsTable({
               console.log(`[BlendedWidgets] Fallback budget query also failed:`, fallbackError)
             }
           } else {
-            // Sum up all active campaign budgets for this brand
-            budget = campaigns?.reduce((sum, campaign) => {
+            // Filter and sum up all active campaign budgets for this brand
+            const validCampaigns = campaigns?.filter(campaign => {
+              const campaignBudget = parseFloat(campaign.budget || '0')
+              return campaignBudget > 0
+            }) || []
+            
+            budget = validCampaigns.reduce((sum, campaign) => {
               const campaignBudget = parseFloat(campaign.budget || '0')
               return sum + campaignBudget
-            }, 0) || 0
+            }, 0)
             
-            console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns?.length || 0} active campaigns, total budget: $${budget}`)
+            console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns?.length || 0} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
           }
           const brandSpend = 0 // We'll use the blended spend for now
           
