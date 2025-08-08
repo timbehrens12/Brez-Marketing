@@ -1202,7 +1202,7 @@ export default function MarketingAssistantPage() {
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Page Header - Contained Width */}
       <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
@@ -1254,7 +1254,7 @@ export default function MarketingAssistantPage() {
       </div>
 
       {/* Main Content Container */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-4">
         {/* Meta Connection Status Banner */}
         <MetaConnectionStatus 
           brandId={selectedBrandId} 
@@ -1262,7 +1262,7 @@ export default function MarketingAssistantPage() {
         />
 
         {/* Main Content Grid */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Top Row - Key Metrics and Daily Report */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Metrics Overview - 2/3 width */}
@@ -1274,12 +1274,12 @@ export default function MarketingAssistantPage() {
 
             {/* Daily Report Summary - 1/3 width */}
             <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4 h-full">
-                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
+              <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3 h-full">
+                <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-2">
+                  <Clock className="w-3 h-3 text-gray-400" />
                   Daily Summary
                 </h3>
-                <div className="h-[calc(100%-2rem)]">
+                <div className="h-[calc(100%-1.5rem)] text-sm">
                   <AIDailyReport preloadedReport={preloadedData.dailyReport} />
                 </div>
               </div>
@@ -1291,7 +1291,7 @@ export default function MarketingAssistantPage() {
             {/* Campaign Management - 2/3 width */}
             <div className="lg:col-span-2">
               <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-                <div className="p-4" style={{ maxHeight: '500px', overflow: 'auto' }}>
+                <div className="p-3" style={{ maxHeight: '400px', overflow: 'auto' }}>
                   <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 </div>
               </div>
@@ -1319,26 +1319,26 @@ export default function MarketingAssistantPage() {
           </div>
 
           {/* Optional: Additional Insights Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {/* Quick Stats Cards */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Campaign Health</h3>
-              <div className="space-y-2">
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
+              <h3 className="text-xs font-semibold text-white mb-2">Campaign Health</h3>
+              <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">Active Campaigns</span>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     {preloadedData.campaigns?.filter(c => c.status === 'ACTIVE').length || 0}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">Total Spend Today</span>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     ${metaMetrics.adSpend.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">Avg. ROAS</span>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     {metaMetrics.roas.toFixed(2)}x
                   </span>
                 </div>
@@ -1346,24 +1346,24 @@ export default function MarketingAssistantPage() {
             </div>
 
             {/* Performance Highlights */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Performance Highlights</h3>
-              <div className="space-y-2">
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
+              <h3 className="text-xs font-semibold text-white mb-2">Performance Highlights</h3>
+              <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Best Performing Ad</span>
-                  <span className="text-sm font-medium text-green-400">
+                  <span className="text-xs text-gray-400">ROAS Growth</span>
+                  <span className="text-xs font-medium text-green-400">
                     {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">Conversion Rate</span>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     {((metaMetrics.conversions / metaMetrics.clicks) * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400">CTR</span>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     {metaMetrics.ctr.toFixed(2)}%
                   </span>
                 </div>
@@ -1371,19 +1371,19 @@ export default function MarketingAssistantPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Quick Actions</h3>
-              <div className="space-y-2">
-                <button className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 
-                                 transition-colors text-sm text-white">
+            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-3">
+              <h3 className="text-xs font-semibold text-white mb-2">Quick Actions</h3>
+              <div className="space-y-1.5">
+                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
+                                 transition-colors text-xs text-white">
                   View Full Report →
                 </button>
-                <button className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 
-                                 transition-colors text-sm text-white">
+                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
+                                 transition-colors text-xs text-white">
                   Export Analytics →
                 </button>
-                <button className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 
-                                 transition-colors text-sm text-white">
+                <button className="w-full text-left px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 
+                                 transition-colors text-xs text-white">
                   Schedule Report →
                 </button>
               </div>
