@@ -106,7 +106,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     requiresPlatforms: ['meta'],
     requiresData: true,
     dependencyType: 'brand',
-    frequency: '3 per brand'
+    frequency: 'Per active campaign'
   },
   {
     id: 'lead-generator',
@@ -769,6 +769,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Tool availability logic with actual usage tracking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
+    console.log(`[Agency Center] getToolAvailability called for ${tool.id} with brandId: "${brandId}"`)
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
