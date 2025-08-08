@@ -769,7 +769,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Tool availability logic with actual usage tracking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-    console.log(`[Agency Center] getToolAvailability called for ${tool.id} with brandId: "${brandId}"`)
+    console.log(`[Agency Center] 🔥 FIXED VERSION getToolAvailability called for ${tool.id} with brandId: "${brandId}"`)
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
