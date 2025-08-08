@@ -1199,116 +1199,116 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full">
-      {/* Page Header - Full Width */}
-      <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                            flex items-center justify-center border border-white/10">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Marketing Assistant</h1>
-                <p className="text-gray-400 text-sm">
-                  {lastPageRefresh ? (
+    <div className="w-full space-y-6 mb-12">
+        <>
+          {/* Page Header - Full Width */}
+          <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
+            <div className="px-12 lg:px-24 xl:px-32">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
+                    <p className="text-gray-400 text-base">
+                      {lastPageRefresh ? (
+                        <>
+                          Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </>
+                      ) : (
+                        'AI-powered marketing insights and recommendations'
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={refreshAllWidgets}
+                  disabled={isRefreshingAll || refreshCooldown}
+                  variant="outline"
+                  size="sm"
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
+                           hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
+                           duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRefreshingAll ? (
                     <>
-                      Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : refreshCooldown ? (
+                    <>
+                      <Clock className="w-4 h-4 mr-2" />
+                      Cooldown
                     </>
                   ) : (
-                    'AI-powered marketing insights and recommendations'
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                      Refresh All
+                    </>
                   )}
-                </p>
+                </Button>
               </div>
             </div>
-            
-            <Button
-              onClick={refreshAllWidgets}
-              disabled={isRefreshingAll || refreshCooldown}
-              variant="outline"
-              size="sm"
-              className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                       hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
-                       duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isRefreshingAll ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Refreshing...
-                </>
-              ) : refreshCooldown ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2" />
-                  Cooldown
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-                  Refresh All
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Meta Connection Status Banner */}
-      <div className="max-w-7xl mx-auto px-6 py-2">
-        <MetaConnectionStatus brandId={selectedBrandId} />
-      </div>
-
-      {/* Main Content with Professional Layout */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Left Sidebar - Metrics and Performance */}
-          <div className="xl:col-span-3 space-y-4">
-            {/* Blended Widgets Table - Compact */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <BlendedWidgetsTable 
-                metaMetrics={metaMetrics}
-                compact={true}
-              />
-            </div>
-            
-            {/* Performance Chart - Compact */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <PerformanceChart 
-                preloadedPerformanceData={preloadedData.performanceData}
-                compact={true}
-              />
-            </div>
           </div>
 
-          {/* Center Main Content */}
-          <div className="xl:col-span-6 space-y-6">
-            {/* Campaign Management Widget - Streamlined */}
+          {/* Meta Connection Status Banner */}
+          <MetaConnectionStatus 
+            brandId={selectedBrandId} 
+            className="px-12 lg:px-24 xl:px-32" 
+          />
+
+          {/* Main Content Grid - All widgets now show with preloaded data */}
+          <div className="px-12 lg:px-24 xl:px-32 space-y-8">
+            {/* Top Section - Blended Widgets and Advertising Report */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
+              {/* Left: Blended Widgets Table - 50% width */}
+              <div className="h-full">
+                <BlendedWidgetsTable 
+                  metaMetrics={metaMetrics}
+                  // Remove loading props
+                  // isLoadingMetrics={isLoadingMetrics}
+                  // isRefreshingData={isRefreshingData}
+                />
+                  </div>
+
+                                          {/* Right: Advertising Report - 50% width */}
+              <div className="h-full">
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              </div>
+                </div>
+
+            {/* Middle Section - Campaign Management at 100% width */}
             <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-              <div className="p-4" style={{ minHeight: '400px', maxHeight: '500px', overflow: 'auto' }}>
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} compact={true} />
+              <div className="p-6" style={{ minHeight: '600px', maxHeight: '800px', overflow: 'auto' }}>
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
               </div>
             </div>
 
-            {/* Ad Creative Breakdown - Streamlined */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} compact={true} />
+            {/* Bottom Section - Ad Creative and AI Consultant */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
+              {/* Left Column - Ad Creative and Performance Chart */}
+              <div className="space-y-6 h-full">
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                <PerformanceChart 
+                  preloadedPerformanceData={preloadedData.performanceData}
+                  // Remove loading prop
+                  // loading={isLoadingMetrics || isRefreshingData} 
+                />
+              </div>
+
+              {/* Right Column - AI Marketing Consultant */}
+              <div className="h-full">
+                <AIMarketingConsultant 
+                  // Remove loading prop
+                  // loading={isLoadingMetrics || isRefreshingData} 
+                />
+              </div>
             </div>
           </div>
-
-          {/* Right Sidebar - AI Insights */}
-          <div className="xl:col-span-3 space-y-4">
-            {/* Daily Report - Compact */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <AIDailyReport preloadedReport={preloadedData.dailyReport} compact={true} />
-            </div>
-
-            {/* AI Marketing Consultant - Compact */}
-            <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg p-4">
-              <AIMarketingConsultant compact={true} />
-            </div>
-          </div>
-        </div>
-      </div>
+        </>
     </div>
   )
 } 
