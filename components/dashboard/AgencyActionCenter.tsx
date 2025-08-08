@@ -516,12 +516,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       // Process outreach usage data and add to userUsageData
       if (!outreachResponse.error && outreachResponse.data) {
+        console.log(`[Agency Center] DEBUG: Raw outreach data:`, outreachResponse.data)
+        
         // Group outreach messages by date and count them
         const outreachByDate = outreachResponse.data.reduce((acc: any, message: any) => {
           const date = new Date(message.generated_at).toISOString().split('T')[0]
           acc[date] = (acc[date] || 0) + 1
           return acc
         }, {})
+
+        console.log(`[Agency Center] DEBUG: Outreach by date:`, outreachByDate)
 
         // Convert to format compatible with userUsageData
         const outreachUsageData = Object.entries(outreachByDate).map(([date, count]) => ({
@@ -530,11 +534,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           user_id: userId
         }))
 
+        console.log(`[Agency Center] DEBUG: Processed outreach usage data:`, outreachUsageData)
+
         // Merge with existing usage data
         setUserUsageData(prev => {
           const merged = [...(prev || []), ...outreachUsageData]
+          console.log(`[Agency Center] DEBUG: Final merged userUsageData:`, merged)
           return merged
         })
+      } else {
+        console.log(`[Agency Center] DEBUG: Outreach response error or no data:`, outreachResponse.error, outreachResponse.data)
       }
 
     } catch (error) {
@@ -795,6 +804,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             }
             return sum
           }, 0) || 0
+          
+          // DEBUG: Log all userUsageData to see what we have
+          console.log(`[Agency Center] DEBUG userUsageData:`, userUsageData)
+          console.log(`[Agency Center] DEBUG today's outreach records:`, userUsageData?.filter(record => {
+            const recordDate = new Date(record.date)
+            return recordDate >= startOfToday && record.outreach_messages
+          }))
           
           const DAILY_LIMIT = 25
           const hasUsageLeft = dailyOutreachCount < DAILY_LIMIT
