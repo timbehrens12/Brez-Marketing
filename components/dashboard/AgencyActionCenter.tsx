@@ -1013,9 +1013,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       return BASE_REUSABLE_TOOLS.map(tool => ({ ...tool, status: 'unavailable' as const }))
     }
 
-    // For agency-level tools, always check availability across all brands, not per-brand
-    return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, 'all'))
-  }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, brands, toolUsageData])
+    // Check availability based on selected brand - use actual selection instead of hardcoded 'all'
+    return BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
+  }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, brands, toolUsageData, selectedBrandId])
 
   // Helper functions for categories and status (exactly like action center)
   const getCategoryIcon = (category: string) => {
@@ -1187,7 +1187,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const currentBrands = brands
           
           if (currentConnections.length > 0) {
-            const availableTools = BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, 'all'))
+            const availableTools = BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
             const count = availableTools.filter(t => t.status === 'available').length
             setStaticAvailableCount(count)
           }
