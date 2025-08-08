@@ -144,44 +144,9 @@ export default function AIMarketingConsultantPage() {
 
   // Show the main AI Marketing Consultant interface
   return (
-    <div className="w-full min-h-screen bg-[#0A0A0A] space-y-6 mb-12">
-      {/* Page Header */}
-      <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
-        <div className="px-12 lg:px-24 xl:px-32">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">AI Agency Assistant</h1>
-                <p className="text-gray-400 text-sm">
-                  Chat with your AI assistant for help with all aspects of your agency
-                </p>
-              </div>
-            </div>
-            
-            <Button
-              onClick={() => router.push('/marketing-assistant')}
-              variant="outline"
-              size="sm"
-              className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                       hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
-                       duration-300"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-12 lg:px-24 xl:px-32">
-        <div className="w-full">
-          <AIMarketingConsultant />
-        </div>
+    <div className="w-full min-h-screen bg-[#0A0A0A] p-6">
+      <div className="w-full h-full">
+        <AIMarketingConsultant />
       </div>
     </div>
   )
