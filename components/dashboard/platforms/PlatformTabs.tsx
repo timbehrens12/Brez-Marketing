@@ -13,7 +13,7 @@ import { useSupabase } from '@/lib/hooks/useSupabase'
 import { useAuth } from '@clerk/nextjs'
 import { defaultMetrics } from "@/lib/defaultMetrics"
 import { ShoppingBag, Facebook, DollarSign, ClipboardList } from "lucide-react"
-import { useActionCenter } from '@/hooks/useActionCenter'
+
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricCard } from "@/components/metrics/MetricCard"
@@ -98,36 +98,11 @@ export function PlatformTabs({
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
   
-  // Load muted notifications for action center
   const { userId } = useAuth()
-  const [mutedNotifications, setMutedNotifications] = useState<{[key: string]: boolean}>({})
   
-  useEffect(() => {
-    if (userId) {
-      const saved = localStorage.getItem(`mutedNotifications_${userId}`)
-      if (saved) {
-        try {
-          setMutedNotifications(JSON.parse(saved))
-        } catch (error) {
-          console.error('Error loading muted notifications:', error)
-        }
-      }
-    }
-  }, [userId])
+  // Notification system removed
   
-  // Get notification counts for agency tab badge
-  const { actionCenterCounts, lastUpdated } = useActionCenter(mutedNotifications)
-  
-  // Force component re-render when notification counts change (ensures UI updates)
-  const [, setPlatformTabsRenderTrigger] = useState(0)
-  
-  // Debug: Log the counts in platform tabs to compare with header  
-  useEffect(() => {
-    if (actionCenterCounts && lastUpdated) {
-      console.log('[PlatformTabs] 📋 Has notifications:', actionCenterCounts.totalItems, 'total items')
-      setPlatformTabsRenderTrigger(prev => prev + 1) // Force re-render
-    }
-  }, [actionCenterCounts, lastUpdated])
+
   
   // Add a state to track if we've already processed the metrics to prevent continuous recalculations
   const [metricsProcessed, setMetricsProcessed] = useState(false)
@@ -299,12 +274,7 @@ export function PlatformTabs({
                       className="drop-shadow-md"
                     />
                   </div>
-                  {/* Notification badge */}
-                  {actionCenterCounts.totalItems > 0 && (
-                    <div className="absolute -top-1 -right-1 min-w-[22px] h-[22px] rounded-full bg-red-500 text-white text-[12px] font-bold flex items-center justify-center border-2 border-gray-800 z-20">
-                      {actionCenterCounts.totalItems > 99 ? '99+' : actionCenterCounts.totalItems}
-                    </div>
-                  )}
+
                 </div>
                 {activeTab === "agency" && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-400/50 rounded-full"></div>

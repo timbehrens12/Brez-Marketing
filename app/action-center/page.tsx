@@ -65,7 +65,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { PlatformConnection } from '@/types/platformConnection'
 import { useBrandContext } from '@/lib/context/BrandContext'
-import { useActionCenter } from '@/hooks/useActionCenter'
+
 
 interface TodoItem {
   id: string
@@ -209,8 +209,7 @@ export default function ActionCenterPage() {
     agency_logo_url?: string | null
   } | null>(null)
 
-  // Add action center hook to trigger notification refresh when page loads
-  const { refreshCounts } = useActionCenter()
+  // Notification system removed
 
   // Use brands from context
   const brands = contextBrands || []
@@ -1129,10 +1128,7 @@ export default function ActionCenterPage() {
         loadBrandHealthData(true) // Force refresh
       ])
 
-      // Trigger notification refresh
-      if (refreshCounts) {
-        refreshCounts()
-      }
+      // Refresh completed
 
       toast.success('Action Center refreshed successfully!', { duration: 3000 })
       console.log('[Action Center] Manual refresh completed')
@@ -1538,9 +1534,7 @@ export default function ActionCenterPage() {
       setLoadingProgress(85)
       await new Promise(resolve => setTimeout(resolve, 400))
 
-      if (refreshCounts) {
-        refreshCounts()
-      }
+      // Data loading completed
 
       // Phase 6: Finalize
       setLoadingPhase('Finalizing your dashboard...')
@@ -1559,7 +1553,7 @@ export default function ActionCenterPage() {
       console.error('[Action Center] Error during data loading:', error)
       setIsDataLoading(false)
     }
-  }, [userId, brands.length, refreshCounts, loadUserData, loadConnections, generateTodos, loadBrandHealthData])
+  }, [userId, brands.length, loadUserData, loadConnections, generateTodos, loadBrandHealthData])
 
   // Load data when component mounts
   useEffect(() => {

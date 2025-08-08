@@ -47,7 +47,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
-import { useActionCenter } from "@/hooks/useActionCenter"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
