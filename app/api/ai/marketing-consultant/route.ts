@@ -72,9 +72,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate personalized AI response
+    console.log(`[AI Marketing] About to generate response for brand ${trackingBrandId}...`)
     const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand, mode)
+    console.log(`[AI Marketing] Response generated successfully, now recording usage...`)
 
     // Record chat usage
+    console.log(`[AI Marketing] Recording usage for userId ${userId}, feature: ai_consultant_chat...`)
     await aiUsageService.recordUsage(
       trackingBrandId,
       userId,
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString()
       }
     )
+    console.log(`[AI Marketing] Usage recorded successfully!`)
 
     // Get updated usage status to return remaining uses
     console.log(`[AI Marketing] Checking updated usage status for brand ${trackingBrandId}...`)

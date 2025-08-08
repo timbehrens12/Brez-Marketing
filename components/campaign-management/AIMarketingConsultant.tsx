@@ -491,6 +491,47 @@ export default function AIMarketingConsultant(
     }
   }, [messages])
 
+  // Check initial usage status when component mounts
+  useEffect(() => {
+    const checkInitialUsage = async () => {
+      if (selectedMode === 'brand' && !selectedBrandId) return
+      
+      try {
+        const response = await fetch('/api/ai/marketing-consultant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId: selectedMode === 'brand' ? selectedBrandId : null,
+            prompt: '', // Empty prompt to just check usage
+            marketingGoal: selectedGoal,
+            mode: selectedMode,
+            checkUsageOnly: true, // Flag to indicate we only want usage info
+            userContext: {
+              name: user?.firstName || 'there'
+            }
+          }),
+        })
+
+        const data = await response.json()
+        
+        if (response.ok && data.remainingUses !== undefined) {
+          console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
+          setRemainingUses(data.remainingUses)
+          if (data.remainingUses <= 0) {
+            setIsLimitReached(true)
+          }
+        }
+      } catch (error) {
+        console.log('[AI Marketing Frontend] Failed to check initial usage:', error)
+        // Don't show error to user for this background check
+      }
+    }
+
+    checkInitialUsage()
+  }, [selectedMode, selectedBrandId, selectedGoal, user?.firstName])
+
   const filteredPrompts = selectedCategory === 'all' 
     ? PROMPT_SUGGESTIONS.filter(p => p.mode === selectedMode || p.mode === 'both')
     : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory && (p.mode === selectedMode || p.mode === 'both'))
