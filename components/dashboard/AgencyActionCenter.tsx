@@ -656,7 +656,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const response = await fetch(`/api/creative-generations?brandId=${brand.id}&userId=${userId}&limit=100`)
             if (response.ok) {
               const responseData = await response.json()
-              console.log(`[Agency Center] DEBUG: Creative Studio API response for ${brand.name}:`, responseData)
+              console.log(`[Agency Center] DEBUG: Creative Studio API response for ${brand.name}:`, JSON.stringify(responseData, null, 2))
               
               const { generations } = responseData
               
@@ -940,10 +940,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const monthlyAvailable = brandReports.monthly !== currentMonth
               
               // DEBUG: Log the brand report status
-              console.log(`[Agency Center] Brand Reports - Brand ${brand.name}:`)
+              console.log(`[Agency Center] Brand Reports DEBUG - Brand ${brand.name}:`)
+              console.log(`  Brand ID: ${brand.id}`)
               console.log(`  Daily: stored="${brandReports.daily}", today="${today}", available=${dailyAvailable}`)
               console.log(`  Monthly: stored="${brandReports.monthly}", month="${currentMonth}", available=${monthlyAvailable}`)
               console.log(`  Overall available: ${dailyAvailable || monthlyAvailable}`)
+              console.log(`  LocalStorage keys: daily="lastManualGeneration_${brand.id}", monthly="lastMonthlyGeneration_${brand.id}"`)
+              
+              // Also manually check localStorage
+              const manualDailyCheck = localStorage.getItem(`lastManualGeneration_${brand.id}`)
+              const manualMonthlyCheck = localStorage.getItem(`lastMonthlyGeneration_${brand.id}`)
+              console.log(`  Manual localStorage check: daily="${manualDailyCheck}", monthly="${manualMonthlyCheck}"`)
               
               return dailyAvailable || monthlyAvailable
             })
