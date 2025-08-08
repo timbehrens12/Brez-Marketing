@@ -180,11 +180,15 @@ interface AgencyActionCenterProps {
 export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyActionCenterProps) {
   const { userId, getToken } = useAuth()
   const router = useRouter()
-  const { brands: contextBrands } = useBrandContext()
+  const { brands: contextBrands, selectedBrandId: globalSelectedBrandId, setSelectedBrandId: setGlobalSelectedBrandId } = useBrandContext()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [taskStates, setTaskStates] = useState<TaskState>({})
   const [connections, setConnections] = useState<PlatformConnection[]>([])
-  const [selectedBrandId, setSelectedBrandId] = useState<string>('all')
+  // Use global brand selection instead of local state
+  const selectedBrandId = globalSelectedBrandId || 'all'
+  const setSelectedBrandId = (id: string) => {
+    setGlobalSelectedBrandId(id === 'all' ? null : id)
+  }
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   
@@ -769,7 +773,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Tool availability logic with actual usage tracking
   const getToolAvailability = (tool: Omit<ReusableTool, 'status'>, brandId?: string): ReusableTool => {
-    console.log(`[Agency Center] 🔥 FIXED VERSION getToolAvailability called for ${tool.id} with brandId: "${brandId}"`)
+    console.log(`[Agency Center] 🔥 FIXED VERSION getToolAvailability called for ${tool.id} with brandId: "${brandId}" (global: "${globalSelectedBrandId}")`)
     // Handle different dependency types
     switch (tool.dependencyType) {
       case 'none':
