@@ -26,6 +26,9 @@ import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBrea
 
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
 import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
+import TotalBlendedBudget from "@/components/campaign-management/TotalBlendedBudget"
+import AIPoweredAlerts from "@/components/campaign-management/AIPoweredAlerts"
+import GoalTrackingWidget from "@/components/campaign-management/GoalTrackingWidget"
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Brain, Clock } from "lucide-react"
@@ -1262,6 +1265,11 @@ export default function MarketingAssistantPage() {
 
           {/* Main Content Grid - All widgets now show with preloaded data */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-8">
+            {/* Total Blended Budget - Full width at the top */}
+            <div>
+              <TotalBlendedBudget />
+            </div>
+
             {/* Top Section - Blended Widgets and Advertising Report */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
               {/* Left: Blended Widgets Table - 50% width */}
@@ -1280,12 +1288,20 @@ export default function MarketingAssistantPage() {
               </div>
                 </div>
 
-            {/* Middle Section - Campaign Management at 100% width */}
-            <div>
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            {/* New Widgets Section - AI Alerts and Goal Tracking side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
+              {/* Left: AI-Powered Alerts */}
+              <div className="h-full">
+                <AIPoweredAlerts />
+              </div>
+
+              {/* Right: Goal Tracking */}
+              <div className="h-full">
+                <GoalTrackingWidget />
+              </div>
             </div>
 
-            {/* Bottom Section - Ad Creative and Performance Chart side by side */}
+            {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
               {/* Left: Ad Creative Breakdown */}
               <div className="h-full">
@@ -1302,6 +1318,10 @@ export default function MarketingAssistantPage() {
               </div>
             </div>
 
+            {/* Bottom Section - Campaign Management at 100% width (moved to bottom) */}
+            <div>
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </div>
 
           </div>
         </>
