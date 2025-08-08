@@ -23,7 +23,7 @@ import Image from "next/image"
 import PlatformCampaignWidget from "@/components/campaign-management/PlatformCampaignWidget"
 import AIDailyReport from "@/components/campaign-management/AIDailyReport"
 import AdCreativeBreakdown from "@/components/campaign-management/AdCreativeBreakdown"
-import AIMarketingConsultant from "@/components/campaign-management/AIMarketingConsultant"
+
 import PerformanceChart from "@/components/campaign-management/PerformanceChart"
 import BlendedWidgetsTable from "@/components/campaign-management/BlendedWidgetsTable"
 import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
@@ -1302,13 +1302,7 @@ export default function MarketingAssistantPage() {
               </div>
             </div>
 
-            {/* AI Marketing Consultant - Full Width */}
-            <div className="w-full">
-              <AIMarketingConsultant 
-                // Remove loading prop
-                // loading={isLoadingMetrics || isRefreshingData} 
-              />
-            </div>
+
           </div>
         </>
     </div>
