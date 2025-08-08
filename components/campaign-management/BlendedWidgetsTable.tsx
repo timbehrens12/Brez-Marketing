@@ -80,7 +80,7 @@ function BlendedMetricCard({
   iconColor: string
   title: string
   value: number
-  change: number
+  change: number | null
   prefix?: string
   suffix?: string
   decimals?: number
@@ -408,7 +408,7 @@ export default function BlendedWidgetsTable({
               iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
               title="Total Blended Budget Usage"
               value={budgetData.budgetUsedPercentage / 100}
-              change={0} // No change data for budget yet
+              change={null} // No change data for budget
               isPercentage={true}
               decimals={1}
               customContent={
