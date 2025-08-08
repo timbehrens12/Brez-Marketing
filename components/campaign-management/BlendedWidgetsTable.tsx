@@ -71,6 +71,7 @@ function BlendedMetricCard({
   suffix,
   decimals = 0,
   isPercentage = false,
+  customContent,
   // Remove loading prop
   // loading,
   platforms
@@ -84,6 +85,7 @@ function BlendedMetricCard({
   suffix?: string
   decimals?: number
   isPercentage?: boolean
+  customContent?: React.ReactNode
   // Remove loading prop
   // loading: boolean
   platforms: { name: string; icon: string; value: string | number; active: boolean }[]
@@ -228,6 +230,13 @@ function BlendedMetricCard({
           )}
         </div>
         
+        {/* Custom content */}
+        {customContent && (
+          <div className="mt-3">
+            {customContent}
+          </div>
+        )}
+        
         {/* Subtle background pattern on hover */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#1a1a1a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
       </div>
@@ -268,18 +277,23 @@ export default function BlendedWidgetsTable({
 
       for (const brand of brands) {
         try {
-          const { data: budgetConfig, error } = await supabase
-            .from('brand_budgets')
+          // Get active campaigns for this brand
+          const { data: campaigns, error } = await supabase
+            .from('meta_campaigns')
             .select('daily_budget')
             .eq('brand_id', brand.id)
-            .eq('user_id', userId)
-            .single()
+            .eq('status', 'ACTIVE')
+            .not('daily_budget', 'is', null)
 
           if (error && error.code !== 'PGRST116') {
-            console.log(`[BlendedWidgets] Budget query error for brand ${brand.name}:`, error)
+            console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
           }
 
-          const budget = budgetConfig?.daily_budget || 0
+          // Sum up all active campaign budgets for this brand
+          const budget = campaigns?.reduce((sum, campaign) => {
+            const campaignBudget = parseFloat(campaign.daily_budget || '0')
+            return sum + campaignBudget
+          }, 0) || 0
           const brandSpend = 0 // We'll use the blended spend for now
           
           totalBudget += budget
@@ -304,6 +318,8 @@ export default function BlendedWidgetsTable({
       }
 
       const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
+
+      console.log(`[BlendedWidgets] Budget calculation: Total Budget: $${totalBudget}, Total Spend: $${totalSpend}, Usage: ${budgetUsedPercentage.toFixed(1)}%`)
 
       setBudgetData({
         totalBudget,
@@ -346,9 +362,61 @@ export default function BlendedWidgetsTable({
 
         {/* Content */}
         <div className="flex-1 p-6 overflow-auto">
-          {/* 2-column, 4-row grid with modern cards */}
+          {/* 2-column grid with modern cards */}
           <div className="grid grid-cols-2 gap-3">
-          {/* Row 1 - Spend & ROAS */}
+          
+          {/* Row 1 - Budget Usage (spanning 2 columns) */}
+          <div className="col-span-2">
+            <BlendedMetricCard
+              icon={CreditCard}
+              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+              title="Total Blended Budget Usage"
+              value={budgetData.budgetUsedPercentage}
+              change={0} // No change data for budget yet
+              suffix="%"
+              decimals={1}
+              customContent={
+                <div className="mt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Spend: ${budgetData.totalSpend.toFixed(2)}</span>
+                    <span className="text-gray-400">Budget: ${budgetData.totalBudget.toFixed(2)}</span>
+                  </div>
+                  <div className="w-full bg-[#333] rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        budgetData.budgetUsedPercentage >= 90 ? 'bg-red-500' :
+                        budgetData.budgetUsedPercentage >= 80 ? 'bg-orange-500' :
+                        budgetData.budgetUsedPercentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              }
+              platforms={[
+                { 
+                  name: "Meta", 
+                  icon: "https://i.imgur.com/6hyyRrs.png", 
+                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
+                  active: budgetData.totalBudget > 0
+                },
+                { 
+                  name: "TikTok", 
+                  icon: "https://i.imgur.com/AXHa9UT.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                },
+                { 
+                  name: "Google Ads", 
+                  icon: "https://i.imgur.com/TavV4UJ.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                }
+              ]}
+            />
+          </div>
+          
+          {/* Row 2 - Spend & ROAS */}
           <BlendedMetricCard
             icon={DollarSign}
             iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
@@ -413,7 +481,7 @@ export default function BlendedWidgetsTable({
             ]}
           />
 
-          {/* Row 2 - Revenue & Conversions */}
+          {/* Row 3 - Revenue & Conversions */}
           <BlendedMetricCard
             icon={CreditCard}
             iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
@@ -477,7 +545,7 @@ export default function BlendedWidgetsTable({
             ]}
           />
 
-          {/* Row 3 - Impressions & Clicks */}
+          {/* Row 4 - Impressions & Clicks */}
           <BlendedMetricCard
             icon={Eye}
             iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
@@ -540,7 +608,7 @@ export default function BlendedWidgetsTable({
             ]}
           />
 
-          {/* Row 4 - CTR & CPC */}
+          {/* Row 5 - CTR & CPC */}
           <BlendedMetricCard
             icon={PercentIcon}
             iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
@@ -605,38 +673,7 @@ export default function BlendedWidgetsTable({
             ]}
           />
           
-          {/* Row 5 - Budget Usage (spanning 2 columns) */}
-          <div className="col-span-2">
-            <BlendedMetricCard
-              icon={CreditCard}
-              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-              title="Total Blended Budget Usage"
-              value={budgetData.budgetUsedPercentage}
-              change={0} // No change data for budget yet
-              suffix="%"
-              decimals={1}
-              platforms={[
-                { 
-                  name: "Meta", 
-                  icon: "https://i.imgur.com/6hyyRrs.png", 
-                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
-                  active: budgetData.totalBudget > 0
-                },
-                { 
-                  name: "TikTok", 
-                  icon: "https://i.imgur.com/AXHa9UT.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                },
-                { 
-                  name: "Google Ads", 
-                  icon: "https://i.imgur.com/TavV4UJ.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                }
-              ]}
-            />
-          </div>
+
         </div>
         </div>
       </div>
