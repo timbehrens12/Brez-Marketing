@@ -1820,6 +1820,36 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     setJustCopied(false) // Reset copy state
     
     try {
+      // 🔥 FIX: Fetch previous messages for follow-up context
+      let previousMessages = ''
+      if (isFollowUp && selectedCampaignLead?.campaign_id) {
+        try {
+          const supabase = await getSupabaseClient()
+          const { data: messages, error: messagesError } = await supabase
+            .from('outreach_messages')
+            .select('message_type, subject, content, sent_at')
+            .eq('campaign_id', selectedCampaignLead.campaign_id)
+            .eq('direction', 'outbound')
+            .order('sent_at', { ascending: false })
+            .limit(3) // Get last 3 messages
+          
+          if (!messagesError && messages && messages.length > 0) {
+            previousMessages = messages.map((msg, index) => 
+              `Previous ${msg.message_type} (${new Date(msg.sent_at).toLocaleDateString()}):
+              ${msg.subject ? `Subject: ${msg.subject}` : ''}
+              ${msg.content}
+              ---`
+            ).join('\n\n')
+            
+            console.log('📨 Retrieved previous messages for follow-up context:', messages.length)
+          } else {
+            console.log('📭 No previous messages found for this campaign')
+          }
+        } catch (error) {
+          console.error('Error fetching previous messages:', error)
+          // Continue without previous messages
+        }
+      }
       // Enhanced AI context with correct API format
       const aiContext = {
         lead: {
@@ -1866,7 +1896,18 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           call_to_action: method === 'email' ? 'schedule a brief call' : method === 'phone' ? 'book a strategy session' : 'connect for collaboration opportunities',
           urgency: lead.lead_score && lead.lead_score > 70 ? 'medium' : 'low',
           message_type: isFollowUp ? 'follow_up' : 'initial_outreach',
-          context: isFollowUp ? 'This is a follow-up message for a lead that was previously contacted but has not responded. Focus on re-engaging without being pushy.' : 'This is an initial outreach message to a new lead.'
+          context: isFollowUp ? `This is a follow-up message for a lead that was previously contacted but has not responded. 
+            
+            Previous outreach details:
+            - Last contacted: ${selectedCampaignLead?.last_contacted_at ? new Date(selectedCampaignLead.last_contacted_at).toLocaleDateString() : 'Unknown'}
+            - Previous method: ${selectedCampaignLead?.outreach_method || 'Unknown'}
+            - Days since contact: ${selectedCampaignLead?.last_contacted_at ? Math.floor((new Date().getTime() - new Date(selectedCampaignLead.last_contacted_at).getTime()) / (1000 * 60 * 60 * 24)) : 'Unknown'}
+            
+            ${previousMessages ? `PREVIOUS MESSAGES SENT:
+            ${previousMessages}
+            
+            ` : ''}Focus on re-engaging without being pushy. Reference the previous outreach and provide additional value or a different angle. Do NOT repeat the same messaging - be creative with a fresh approach.` 
+            : 'This is an initial outreach message to a new lead.'
         }
       }
 
@@ -2032,6 +2073,34 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     } catch (error) {
       console.error('Error snoozing lead:', error)
       toast.error('Failed to snooze lead. Please try again.')
+    }
+  }
+
+  // Function to save outreach message to database
+  const saveOutreachMessage = async (campaignId: string, messageType: string, subject: string, content: string) => {
+    try {
+      const supabase = await getSupabaseClient()
+      const { error } = await supabase
+        .from('outreach_messages')
+        .insert({
+          campaign_id: campaignId,
+          message_type: messageType,
+          subject: subject || null,
+          content: content,
+          direction: 'outbound',
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        })
+      
+      if (error) {
+        console.error('Error saving outreach message:', error)
+        // Don't throw - just log, as this shouldn't block the workflow
+      } else {
+        console.log('✅ Outreach message saved to database')
+      }
+    } catch (error) {
+      console.error('Error saving outreach message:', error)
+      // Don't throw - just log, as this shouldn't block the workflow
     }
   }
 
@@ -4999,10 +5068,20 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                     {justCopied ? 'Copied!' : 'Copy Message'}
                   </Button>
                   <Button
-                        onClick={() => {
+                        onClick={async () => {
+                          // Save the message to database before updating status
+                          if (generatedMessage && selectedCampaignLead?.campaign_id) {
+                            await saveOutreachMessage(
+                              selectedCampaignLead.campaign_id, 
+                              messageType, 
+                              messageSubject || '', 
+                              generatedMessage
+                            )
+                          }
+                          
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted', messageType)
                           setShowMessageComposer(false)
-                          toast.success('Lead marked as contacted!')
+                          toast.success(isFollowUpMode ? 'Follow-up sent!' : 'Lead marked as contacted!')
                         }}
                         className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white font-medium py-3 rounded-lg transition-all duration-200"
                     >
