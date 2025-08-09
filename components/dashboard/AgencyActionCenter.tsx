@@ -203,6 +203,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       optimizationAvailable: boolean
       lastOptimizationDate: string | null
       hasRequiredPlatforms: boolean
+      optimizedCampaignsCount: number
+      totalCampaignsCount: number
     }
   }>({})
 
@@ -845,11 +847,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const hasRequiredPlatforms = brandConnections.some(conn => conn.platform_type === 'meta')
 
         if (!hasRequiredPlatforms) {
-          newAvailability[brand.id] = {
-            optimizationAvailable: false,
-            lastOptimizationDate: null,
-            hasRequiredPlatforms: false
-          }
+                  newAvailability[brand.id] = {
+          optimizationAvailable: false,
+          lastOptimizationDate: null,
+          hasRequiredPlatforms: false,
+          optimizedCampaignsCount: 0,
+          totalCampaignsCount: 0
+        }
           continue
         }
 
@@ -866,7 +870,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             newAvailability[brand.id] = {
               optimizationAvailable: false,
               lastOptimizationDate: null,
-              hasRequiredPlatforms
+              hasRequiredPlatforms,
+              optimizedCampaignsCount: 0,
+              totalCampaignsCount: 0
             }
             continue
           }
@@ -910,9 +916,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const hasUsedThisWeek = weeklyRecommendations && weeklyRecommendations.length > 0
           const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
 
-          // Get the most recent recommendation date for display
+          // Get detailed campaign optimization stats for display
           let lastOptimizationDate = null
+          let optimizedCampaignsCount = 0
+          let totalCampaignsCount = campaignIds.length
+          
           if (hasUsedThisWeek) {
+            optimizedCampaignsCount = weeklyRecommendations.length
             const mostRecent = weeklyRecommendations.reduce((latest, rec) => {
               // Get the latest date between created_at and updated_at for each record
               const recLatest = new Date(rec.updated_at) > new Date(rec.created_at) ? rec.updated_at : rec.created_at
@@ -923,7 +933,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             lastOptimizationDate = new Date(finalDate).toISOString().split('T')[0]
           }
 
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Created this week: ${createdThisWeek?.length || 0}, Updated this week: ${updatedThisWeek?.length || 0}, Combined: ${weeklyRecommendations.length}, Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Campaigns checked: ${campaignIds.length}`)
+          console.log(`[Campaign Optimization] Brand ${brand.id}: Created this week: ${createdThisWeek?.length || 0}, Updated this week: ${updatedThisWeek?.length || 0}, Combined: ${weeklyRecommendations.length}, Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Optimized campaigns: ${optimizedCampaignsCount}/${totalCampaignsCount}`)
           console.log(`[Campaign Optimization] Start of week: ${startOfThisWeek.toISOString()}`)
           if (updatedThisWeek && updatedThisWeek.length > 0) {
             console.log(`[Campaign Optimization] Updated records:`, updatedThisWeek.map(r => ({ campaign_id: r.campaign_id, updated_at: r.updated_at })))
@@ -932,7 +942,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           newAvailability[brand.id] = {
             optimizationAvailable,
             lastOptimizationDate,
-            hasRequiredPlatforms
+            hasRequiredPlatforms,
+            optimizedCampaignsCount,
+            totalCampaignsCount
           }
         } catch (error) {
           console.error(`Error checking campaign optimization for brand ${brand.id}:`, error)
@@ -940,7 +952,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           newAvailability[brand.id] = {
             optimizationAvailable: hasRequiredPlatforms,
             lastOptimizationDate: null,
-            hasRequiredPlatforms
+            hasRequiredPlatforms,
+            optimizedCampaignsCount: 0,
+            totalCampaignsCount: 0
           }
         }
       }
@@ -1394,7 +1408,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-red-400'}`}>
-                          Optimization: {optimizationAvailable ? 'Available' : 'Used This Week'}
+                          Optimization: {optimizationAvailable ? 'Available' : `${availability.optimizedCampaignsCount || 0}/${availability.totalCampaignsCount || 0} Used`}
                         </div>
                         {availability?.lastOptimizationDate && (
                           <div className="text-[10px] text-gray-400">
