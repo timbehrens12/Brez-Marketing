@@ -166,6 +166,7 @@ export class AIUsageService {
         const { data: existingUsage } = await this.supabase
           .from('ai_usage_tracking')
           .select('*')
+          .eq('user_id', userId)
           .eq('brand_id', brandId)
           .eq('feature_type', featureType)
           .single()
@@ -200,9 +201,11 @@ export class AIUsageService {
           console.log('[AI Usage] Successfully updated usage tracking:', updateData)
         } else {
           // Create new record
+          console.log(`[AI Usage] Creating new usage record for userId=${userId}, brandId=${brandId}, feature=${featureType}`)
           await this.supabase
             .from('ai_usage_tracking')
             .insert({
+              user_id: userId,
               brand_id: brandId,
               feature_type: featureType,
               daily_usage_count: 1,
