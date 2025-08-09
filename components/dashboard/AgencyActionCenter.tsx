@@ -853,33 +853,54 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           continue
         }
 
-        // Check campaign optimization usage from ai_usage_tracking table
-        const today = new Date().toISOString().split('T')[0]
-        
+        // Check campaign optimization availability from ai_campaign_recommendations table
+        // This uses a weekly cooldown system that resets every Monday at midnight
         try {
-          const { data: campaignUsage } = await supabase
-            .from('ai_usage_tracking')
-            .select('last_used_at, daily_usage_date, daily_usage_count')
+          // Get all campaigns for this brand to check if any have active recommendations
+          const { data: metaCampaigns } = await supabase
+            .from('meta_campaigns')
+            .select('campaign_id')
             .eq('brand_id', brand.id)
-            .eq('feature_type', 'campaign_recommendations')
-            .single()
 
-          let optimizationAvailable: boolean = hasRequiredPlatforms
-          let lastOptimizationDate: string | null = null
-
-          if (campaignUsage && campaignUsage.last_used_at) {
-            // Check 24-hour cooldown (campaign recommendations use cooldown, not daily limit)
-            const lastUsed = new Date(campaignUsage.last_used_at)
-            const now = new Date()
-            const hoursSinceLastUse = (now.getTime() - lastUsed.getTime()) / (1000 * 60 * 60)
-            
-            // If less than 24 hours have passed, optimization is not available
-            const isAfterCooldown = hoursSinceLastUse >= 24
-            optimizationAvailable = hasRequiredPlatforms && isAfterCooldown
-            lastOptimizationDate = lastUsed.toISOString().split('T')[0]
-
-            console.log(`[Campaign Optimization] Brand ${brand.id}: Last used ${hoursSinceLastUse.toFixed(1)} hours ago, available: ${optimizationAvailable}`)
+          if (!metaCampaigns || metaCampaigns.length === 0) {
+            newAvailability[brand.id] = {
+              optimizationAvailable: false,
+              lastOptimizationDate: null,
+              hasRequiredPlatforms
+            }
+            continue
           }
+
+          const campaignIds = metaCampaigns.map(c => c.campaign_id)
+
+          // Check for active recommendations (not expired) for any campaign of this brand
+          const { data: activeRecommendations } = await supabase
+            .from('ai_campaign_recommendations')
+            .select('expires_at, created_at, campaign_id')
+            .eq('brand_id', brand.id)
+            .in('campaign_id', campaignIds)
+            .gt('expires_at', new Date().toISOString())
+
+          // Calculate next Monday midnight for comparison
+          const now = new Date()
+          const nextMonday = new Date(now)
+          const daysUntilMonday = (8 - now.getDay()) % 7 || 7
+          nextMonday.setDate(now.getDate() + daysUntilMonday)
+          nextMonday.setHours(0, 0, 0, 0)
+
+          const hasActiveRecommendation = activeRecommendations && activeRecommendations.length > 0
+          const optimizationAvailable = hasRequiredPlatforms && !hasActiveRecommendation
+
+          // Get the most recent recommendation date for display
+          let lastOptimizationDate = null
+          if (hasActiveRecommendation) {
+            const mostRecent = activeRecommendations.reduce((latest, rec) => 
+              new Date(rec.created_at) > new Date(latest.created_at) ? rec : latest
+            )
+            lastOptimizationDate = new Date(mostRecent.created_at).toISOString().split('T')[0]
+          }
+
+          console.log(`[Campaign Optimization] Brand ${brand.id}: Has active recommendations: ${hasActiveRecommendation}, Available: ${optimizationAvailable}`)
 
           newAvailability[brand.id] = {
             optimizationAvailable,
@@ -887,7 +908,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             hasRequiredPlatforms
           }
         } catch (error) {
-          // If no campaign usage record, optimization is available
+          console.error(`Error checking campaign optimization for brand ${brand.id}:`, error)
+          // If error, assume optimization is available if platform requirements are met
           newAvailability[brand.id] = {
             optimizationAvailable: hasRequiredPlatforms,
             lastOptimizationDate: null,
@@ -1310,7 +1332,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Campaign Optimization</span>
                 <span className={`text-xs font-medium ${optimizationsAvailable > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {optimizationsAvailable}/{optimizationsTotal} available
+                  {optimizationsAvailable}/{optimizationsTotal} available this week
                 </span>
               </div>
             </div>
@@ -1345,7 +1367,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-red-400'}`}>
-                          Optimization: {optimizationAvailable ? 'Available' : '24hr Cooldown'}
+                          Optimization: {optimizationAvailable ? 'Available' : 'Used This Week'}
                         </div>
                         {availability?.lastOptimizationDate && (
                           <div className="text-[10px] text-gray-400">
