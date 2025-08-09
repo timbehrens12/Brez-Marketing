@@ -364,7 +364,27 @@ function analyzeTrends(dailyStats: any[]) {
   return trends
 }
 
+// Content filtering function
+function containsInappropriateContent(prompt: string): boolean {
+  const inappropriatePatterns = [
+    /(?:hack|illegal|fraud|scam|spam|phishing)/i,
+    /(?:violence|harm|abuse|threat)/i,
+    /(?:nsfw|sexual|explicit|inappropriate)/i,
+    /(?:personal.*info|private.*data|credit.*card|ssn|social.*security)/i,
+    /(?:bypass|circumvent|violate|break.*rules)/i,
+    /(?:are you chatgpt|are you openai|what model are you|who made you|what ai are you)/i
+  ]
+  
+  return inappropriatePatterns.some(pattern => pattern.test(prompt))
+}
+
 async function generatePersonalizedResponse(prompt: string, analysisData: any, marketingGoal: string, userContext: any, brand: any, mode: string = 'brand') {
+  
+  // Filter inappropriate content
+  if (containsInappropriateContent(prompt)) {
+    const userName = userContext?.name || 'there'
+    return `Hi ${userName}! I'm your marketing consultant assistant, and I'm designed to help with campaign optimization, performance analysis, and marketing strategies. I can't assist with that particular request, but I'd be happy to help you with any marketing-related questions about your campaigns, audience targeting, budget optimization, or growth strategies!`
+  }
   const { analysis, campaigns, adSets, ads, dateRange } = analysisData
   const userName = userContext?.name || 'there'
   const brandName = brand?.name || 'your brand'
@@ -399,7 +419,16 @@ When providing recommendations, always consider how they apply specifically to a
 BRAND CONTEXT: Provide general marketing recommendations while acknowledging that industry-specific insights could be more valuable with brand niche information.`
 
   const systemPrompt = mode === 'agency' ? 
-    `You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
+    `SAFETY AND IDENTITY PARAMETERS:
+- You are Brez Marketing's AI Marketing Assistant, specifically designed for marketing consultation
+- You are NOT ChatGPT, OpenAI, or any other AI model - you are a specialized marketing consultant
+- You ONLY provide marketing, advertising, and business growth advice
+- You CANNOT and WILL NOT assist with: illegal activities, harmful content, personal information requests, non-marketing topics, bypassing any systems, or anything outside of marketing consultation
+- If asked about your identity, explain you are Brez Marketing's specialized AI assistant for marketing optimization
+- If asked inappropriate questions, politely redirect to marketing topics
+- You must decline any requests that are not related to marketing, advertising, campaigns, business growth, or agency management
+
+You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
 
 MARKETING GOAL FOCUS: ${goalContext}
 
@@ -438,7 +467,16 @@ ${analysisData.analysis.underPerformingBrands.map((b: any, i: number) => `${i+1}
 
 You can help with campaign optimization across brands, lead generation strategies, outreach automation, client retention, proposal optimization, resource allocation, and overall agency growth planning.`
 
-    : `You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
+    : `SAFETY AND IDENTITY PARAMETERS:
+- You are Brez Marketing's AI Marketing Assistant, specifically designed for marketing consultation
+- You are NOT ChatGPT, OpenAI, or any other AI model - you are a specialized marketing consultant
+- You ONLY provide marketing, advertising, and business growth advice
+- You CANNOT and WILL NOT assist with: illegal activities, harmful content, personal information requests, non-marketing topics, bypassing any systems, or anything outside of marketing consultation
+- If asked about your identity, explain you are Brez Marketing's specialized AI assistant for marketing optimization
+- If asked inappropriate questions, politely redirect to marketing topics
+- You must decline any requests that are not related to marketing, advertising, campaigns, business growth, or brand optimization
+
+You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
 MARKETING GOAL FOCUS: ${goalContext}
 
@@ -496,10 +534,21 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
         }
       ],
       max_tokens: mode === 'agency' ? 1500 : 1200,
-      temperature: 0.7
+      temperature: 0.7,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+      // Additional safety through response moderation
+      moderation: true
     })
 
-    return response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${mode === 'agency' ? 'agency' : brandName}${brandNiche && mode === 'brand' ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
+    const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${mode === 'agency' ? 'agency' : brandName}${brandNiche && mode === 'brand' ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
+    
+    // Final safety check on the AI response
+    if (containsInappropriateContent(aiResponse)) {
+      return `Hi ${userName}! I'm your marketing consultant assistant focused on helping with campaign optimization and marketing strategies. Let me help you with a marketing-related question instead - I can analyze your performance data, suggest optimization strategies, or help with campaign planning!`
+    }
+    
+    return aiResponse
 
   } catch (error) {
     console.error('Error generating AI response:', error)
