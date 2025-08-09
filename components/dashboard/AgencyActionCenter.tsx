@@ -31,6 +31,7 @@ import {
   Zap,
   Settings,
   FileText,
+  Target,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -142,6 +143,17 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['AI Backgrounds', 'Product Photography', 'Creative Generation'],
     dependencyType: 'user',
     frequency: '10 per week'
+  },
+  {
+    id: 'campaign-optimization',
+    name: 'Campaign Optimization',
+    description: 'AI-powered campaign optimization recommendations',
+    icon: Target,
+    category: 'analytics',
+    href: '/ai-marketing-consultant',
+    features: ['Performance Analysis', 'Scaling Recommendations', 'Budget Optimization'],
+    dependencyType: 'brand',
+    requiresPlatforms: ['meta']
   }
 ]
 
@@ -181,6 +193,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     [brandId: string]: {
       dailyAvailable: boolean
       monthlyAvailable: boolean
+      hasRequiredPlatforms: boolean
+    }
+  }>({})
+
+  // Campaign optimization tracking
+  const [campaignOptimizationAvailability, setCampaignOptimizationAvailability] = useState<{
+    [brandId: string]: {
+      optimizationAvailable: boolean
+      lastOptimizationDate: string | null
       hasRequiredPlatforms: boolean
     }
   }>({})
@@ -810,12 +831,82 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [userId, brands, connections, getSupabaseClient])
 
+  // Load campaign optimization availability
+  const loadCampaignOptimizationAvailability = useCallback(async () => {
+    if (!userId || !brands) return
+
+    try {
+      const supabase = await getSupabaseClient()
+      const newAvailability: typeof campaignOptimizationAvailability = {}
+
+      for (const brand of brands) {
+        // Check if brand has required platforms (Meta for campaign optimization)
+        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        const hasRequiredPlatforms = brandConnections.some(conn => conn.platform_type === 'meta')
+
+        if (!hasRequiredPlatforms) {
+          newAvailability[brand.id] = {
+            optimizationAvailable: false,
+            lastOptimizationDate: null,
+            hasRequiredPlatforms: false
+          }
+          continue
+        }
+
+        // Check when was the last time campaign optimization was used for this brand
+        // We'll track this using localStorage key similar to brand reports
+        const today = new Date().toISOString().split('T')[0]
+        const brandOptimizationKey = `lastCampaignOptimization_${brand.id}`
+        const lastOptimizationDate = localStorage.getItem(brandOptimizationKey)
+        
+        // Also check AI usage tracking for marketing consultant usage for this brand
+        try {
+          const { data: aiUsage } = await supabase
+            .from('ai_usage_tracking')
+            .select('last_used_at, daily_usage_date')
+            .eq('brand_id', brand.id)
+            .eq('feature_type', 'ai_consultant_chat')
+            .single()
+
+          const hasUsedTodayAI = aiUsage && 
+                                aiUsage.daily_usage_date === today
+
+          // Optimization is available if:
+          // 1. Has Meta connection
+          // 2. Haven't clicked optimize today for this brand specifically
+          // 3. Or haven't used AI consultant for this brand today
+          const optimizationAvailable = hasRequiredPlatforms && 
+                                       lastOptimizationDate !== today &&
+                                       !hasUsedTodayAI
+
+          newAvailability[brand.id] = {
+            optimizationAvailable,
+            lastOptimizationDate,
+            hasRequiredPlatforms
+          }
+        } catch (error) {
+          // If no AI usage record, optimization is available
+          newAvailability[brand.id] = {
+            optimizationAvailable: hasRequiredPlatforms && lastOptimizationDate !== today,
+            lastOptimizationDate,
+            hasRequiredPlatforms
+          }
+        }
+      }
+
+      setCampaignOptimizationAvailability(newAvailability)
+    } catch (error) {
+      console.error('Error loading campaign optimization availability:', error)
+    }
+  }, [userId, brands, connections, getSupabaseClient])
+
   // Load brand report availability when brands or connections change
   useEffect(() => {
     if (brands && connections && userId) {
       loadBrandReportAvailability()
+      loadCampaignOptimizationAvailability()
     }
-  }, [brands, connections, loadBrandReportAvailability])
+  }, [brands, connections, loadBrandReportAvailability, loadCampaignOptimizationAvailability])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
@@ -1190,6 +1281,85 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         )
       }
 
+      // Handle campaign optimization tool specially
+      if (tool.id === 'campaign-optimization') {
+        // Filter brands based on selectedBrandId
+        const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
+        const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
+
+        // Only show brands that have Meta connections (required for campaign optimization)
+        const brandsWithCampaigns = brandsToShow.filter((brand: any) => {
+          const availability = campaignOptimizationAvailability[brand.id]
+          return availability?.hasRequiredPlatforms
+        })
+
+        // Calculate usage numbers for all brands
+        const optimizationsUsed = brandsWithCampaigns.reduce((count, brand) => {
+          const availability = campaignOptimizationAvailability[brand.id]
+          return count + (availability?.optimizationAvailable ? 0 : 1)
+        }, 0)
+        
+        const optimizationsTotal = brandsWithCampaigns.length
+
+        return (
+          <div className="flex flex-col gap-2 w-full">
+            {/* Usage stats */}
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400">Campaign Optimization</span>
+                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-green-400' : 'text-red-400'}`}>
+                  {optimizationsUsed}/{optimizationsTotal} used today
+                </span>
+              </div>
+            </div>
+            
+            {/* Brand profile pictures in a separate row */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {brandsWithCampaigns.map((brand: any) => {
+                const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
+                const availability = campaignOptimizationAvailability[brand.id]
+                const optimizationAvailable = availability?.optimizationAvailable
+                
+                return (
+                  <div key={brand.id} className="relative group">
+                    {brand.image_url ? (
+                      <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={brand.image_url} 
+                          alt={brand.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-semibold border border-[#444] flex-shrink-0 bg-[#4A5568] text-white">
+                        {brandInitials}
+                      </div>
+                    )}
+                    {optimizationAvailable && (
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
+                    )}
+                    {/* Custom tooltip for campaign optimization */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
+                      <div className="font-medium">{brand.name}</div>
+                      <div className="flex flex-col mt-1 gap-0.5">
+                        <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                          Optimization: {optimizationAvailable ? 'Available' : 'Used Today'}
+                        </div>
+                        {availability?.lastOptimizationDate && (
+                          <div className="text-[10px] text-gray-400">
+                            Last: {availability.lastOptimizationDate}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      }
+
       // Generic brand-dependent tools - show brand profile pictures with green dots for available brands
       // Filter brands based on selectedBrandId
       const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
@@ -1294,8 +1464,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now 5 tools (lead generator + outreach tool + AI consultant + brand reports + creative studio)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(5) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now 6 tools (lead generator + outreach tool + AI consultant + brand reports + creative studio + campaign optimization)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(6) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -1314,7 +1484,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         } catch (error) {
           console.log('Using fallback count due to error:', error)
-          setStaticAvailableCount(5) // Fallback
+          setStaticAvailableCount(6) // Fallback
         }
         hasSetStaticCount.current = true
       }
