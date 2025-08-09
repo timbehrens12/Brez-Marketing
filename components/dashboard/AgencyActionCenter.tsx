@@ -108,6 +108,17 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
     dependencyType: 'user',
     frequency: '25 per day'
+  },
+  {
+    id: 'ai-consultant',
+    name: 'AI Marketing Consultant',
+    description: 'Get personalized marketing advice and strategy recommendations',
+    icon: MessageSquare,
+    category: 'ai-powered',
+    href: '/ai-marketing-consultant',
+    features: ['Strategic Insights', 'Marketing Analysis', '24/7 Availability'],
+    dependencyType: 'user',
+    frequency: '15 per day'
   }
 ]
 
@@ -148,13 +159,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   
-  // Tool usage tracking - track both lead generator and outreach tool
+  // Tool usage tracking - track lead generator, outreach tool, and AI consultant
   const [toolUsageData, setToolUsageData] = useState<{
     leadGenerator: { [userId: string]: number }
     outreachTool: { [userId: string]: number }
+    aiConsultant: { [userId: string]: number }
   }>({
     leadGenerator: {},
-    outreachTool: {}
+    outreachTool: {},
+    aiConsultant: {}
   })
 
   // Refresh functionality with cooldown
@@ -501,7 +514,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const supabase = await getSupabaseClient()
         const newToolUsageData = {
           leadGenerator: {} as { [userId: string]: number },
-          outreachTool: {} as { [userId: string]: number }
+          outreachTool: {} as { [userId: string]: number },
+          aiConsultant: {} as { [userId: string]: number }
         }
 
         // Load Lead Generator usage - check weekly usage limit
@@ -541,6 +555,50 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         } catch (error) {
           console.error('[Agency Center] Error loading outreach usage:', error)
           newToolUsageData.outreachTool[userId] = 0
+        }
+
+        // Load AI Consultant usage - use same API pattern as the AI consultant page
+        try {
+          // First get user's first brand for tracking (following the same pattern as marketing consultant API)
+          const { data: userBrands } = await supabase
+            .from('brands')
+            .select('id')
+            .eq('user_id', userId)
+            .limit(1)
+
+          if (userBrands && userBrands.length > 0) {
+            const trackingBrandId = userBrands[0].id
+            
+            const response = await fetch('/api/ai/marketing-consultant', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                brandId: trackingBrandId,
+                checkUsageOnly: true
+              }),
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              const dailyUsageCount = 15 - (data.remainingUses || 0) // Calculate used from remaining
+              
+              console.log(`[Agency Center] AI Consultant - Daily usage: ${dailyUsageCount}/15`)
+              
+              // Store usage count for this user (daily limit of 15)
+              newToolUsageData.aiConsultant[userId] = dailyUsageCount
+            } else {
+              console.warn('[Agency Center] Failed to load AI consultant usage from API')
+              newToolUsageData.aiConsultant[userId] = 0
+            }
+          } else {
+            console.warn('[Agency Center] No brands found for AI consultant usage tracking')
+            newToolUsageData.aiConsultant[userId] = 0
+          }
+        } catch (error) {
+          console.error('[Agency Center] Error loading AI consultant usage:', error)
+          newToolUsageData.aiConsultant[userId] = 0
         }
         
         setToolUsageData(newToolUsageData)
@@ -745,6 +803,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
 
+        if (tool.id === 'ai-consultant') {
+          // AI consultant has daily usage limits
+          const dailyUsage = toolUsageData.aiConsultant[userId || ''] || 0
+          const DAILY_LIMIT = 15 // 15 chats per day
+          
+          const hasUsageLeft = dailyUsage < DAILY_LIMIT
+          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyUsage}/${DAILY_LIMIT})`)
+          return { 
+            ...tool, 
+            status: hasUsageLeft ? 'available' : 'unavailable'
+          }
+        }
+
         // Default for user-dependent tools
         return { ...tool, status: 'available' }
 
@@ -783,7 +854,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'automation': return <Calendar className="h-4 w-4" />
-      case 'ai-powered': return <Settings className="h-4 w-4" />
+      case 'ai-powered': return <MessageSquare className="h-4 w-4" />
       case 'analytics': return <TrendingUp className="h-4 w-4" />
       case 'tools': return <Settings className="h-4 w-4" />
       default: return <CheckSquare className="h-4 w-4" />
@@ -835,6 +906,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'outreach-tool') {
                   const used = toolUsageData.outreachTool[userId || ''] || 0
                   const limit = 25
+                  return `${used}/${limit} per day`
+                }
+                if (tool.id === 'ai-consultant') {
+                  const used = toolUsageData.aiConsultant[userId || ''] || 0
+                  const limit = 15
                   return `${used}/${limit} per day`
                 }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
@@ -950,8 +1026,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now 2 tools (lead generator + outreach tool)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(2) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now 3 tools (lead generator + outreach tool + AI consultant)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(3) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -993,6 +1069,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           return 'Weekly Limit Reached'
         }
         if (tool.id === 'outreach-tool') {
+          return 'Daily Limit Reached'
+        }
+        if (tool.id === 'ai-consultant') {
           return 'Daily Limit Reached'
         }
         if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
