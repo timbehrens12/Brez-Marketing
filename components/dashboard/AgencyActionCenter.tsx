@@ -518,19 +518,40 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           aiConsultant: {} as { [userId: string]: number }
         }
 
-        // Load Lead Generator usage - check weekly usage limit
+        // Load Lead Generator usage - use same logic as lead generator page
         const now = new Date()
-        const startOfWeek = new Date(now)
-        startOfWeek.setDate(now.getDate() - now.getDay()) // Start of this week (Sunday)
+        const localNow = new Date()
+        const localDate = [
+          localNow.getFullYear(),
+          ('0' + (localNow.getMonth() + 1)).slice(-2),
+          ('0' + localNow.getDate()).slice(-2)
+        ].join('-')
+        
+        // Calculate start of current week (Monday at 12:00 AM) using local timezone
+        const currentDate = new Date(localNow.setHours(0, 0, 0, 0))
+        const dayOfWeek = currentDate.getDay()
+        const startOfWeek = new Date(currentDate)
+        
+        // Calculate days to subtract to get to Monday
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+        startOfWeek.setDate(currentDate.getDate() - daysToSubtract)
         startOfWeek.setHours(0, 0, 0, 0)
         
-        const { data: leadGeneratorUsage } = await supabase
-          .from('lead_generator_usage')
-          .select('id')
+        // Next reset is next Monday at 12:00 AM
+        const startOfNextWeek = new Date(startOfWeek)
+        startOfNextWeek.setDate(startOfWeek.getDate() + 7)
+        startOfNextWeek.setHours(0, 0, 0, 0)
+        
+        // Get this week's usage using the same table as lead generator page
+        const { data: usageData } = await supabase
+          .from('user_usage')
+          .select('*')
           .eq('user_id', userId)
-          .gte('created_at', startOfWeek.toISOString())
-
-        const weeklyUsageCount = leadGeneratorUsage?.length || 0
+          .gte('date', startOfWeek.toISOString().split('T')[0])
+          .lt('date', startOfNextWeek.toISOString().split('T')[0])
+        
+        // Sum up generation count for the week
+        const weeklyUsageCount = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
         
         console.log(`[Agency Center] Lead Generator - Weekly usage: ${weeklyUsageCount}/1`)
         
