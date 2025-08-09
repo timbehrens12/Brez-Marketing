@@ -523,22 +523,25 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Store usage count for this user (weekly limit of 1)
         newToolUsageData.leadGenerator[userId] = weeklyUsageCount
 
-        // Load Outreach Tool usage - check daily usage limit
-        const startOfDay = new Date(now)
-        startOfDay.setHours(0, 0, 0, 0)
-        
-        const { data: outreachUsage } = await supabase
-          .from('outreach_messages')
-          .select('id')
-          .eq('user_id', userId)
-          .gte('created_at', startOfDay.toISOString())
-
-        const dailyUsageCount = outreachUsage?.length || 0
-        
-        console.log(`[Agency Center] Outreach Tool - Daily usage: ${dailyUsageCount}/25`)
-        
-        // Store usage count for this user (daily limit of 25)
-        newToolUsageData.outreachTool[userId] = dailyUsageCount
+        // Load Outreach Tool usage - use same API as outreach tool page
+        try {
+          const response = await fetch('/api/outreach/usage')
+          if (response.ok) {
+            const data = await response.json()
+            const dailyUsageCount = data.usage?.daily?.used || 0
+            
+            console.log(`[Agency Center] Outreach Tool - Daily usage: ${dailyUsageCount}/25`)
+            
+            // Store usage count for this user (daily limit of 25)
+            newToolUsageData.outreachTool[userId] = dailyUsageCount
+          } else {
+            console.warn('[Agency Center] Failed to load outreach usage from API')
+            newToolUsageData.outreachTool[userId] = 0
+          }
+        } catch (error) {
+          console.error('[Agency Center] Error loading outreach usage:', error)
+          newToolUsageData.outreachTool[userId] = 0
+        }
         
         setToolUsageData(newToolUsageData)
       } catch (error) {
@@ -547,6 +550,39 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
 
     loadToolUsageData()
+
+    // Also listen for when the user returns to the dashboard to refresh usage
+    const handleVisibilityChange = () => {
+      if (!document.hidden && userId) {
+        console.log('[Agency Center] Dashboard visible again, refreshing usage data')
+        loadToolUsageData()
+      }
+    }
+
+    // Set up periodic refresh every 30 seconds to keep usage data fresh
+    const refreshInterval = setInterval(() => {
+      if (!document.hidden && userId) {
+        console.log('[Agency Center] Periodic refresh of usage data')
+        loadToolUsageData()
+      }
+    }, 30000) // 30 seconds
+
+    // Listen for focus events to refresh when user returns to dashboard
+    const handleFocus = () => {
+      if (userId) {
+        console.log('[Agency Center] Dashboard focused, refreshing usage data')
+        loadToolUsageData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      clearInterval(refreshInterval)
+    }
   }, [userId, getSupabaseClient])
 
   // Filter active todos
@@ -2332,21 +2368,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                   </h4>
                                   {getStatusBadge(tool)}
                                 </div>
-                                <p className="text-xs text-blue-300 mb-1">
-                                  {(() => {
-                                    if (tool.id === 'lead-generator') {
-                                      const used = toolUsageData.leadGenerator[userId || ''] || 0
-                                      const limit = 1
-                                      return `${used}/${limit} per week`
-                                    }
-                                    if (tool.id === 'outreach-tool') {
-                                      const used = toolUsageData.outreachTool[userId || ''] || 0
-                                      const limit = 25
-                                      return `${used}/${limit} per day`
-                                    }
-                                    return tool.frequency || ''
-                                  })()}
-                                </p>
+
                                 <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
                                   {tool.description}
                                 </p>
