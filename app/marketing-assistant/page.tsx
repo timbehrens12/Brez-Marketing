@@ -659,6 +659,10 @@ export default function MarketingAssistantPage() {
       // Sync fresh advertising data (this will fetch from database after syncing)
       await syncMetaInsights()
       
+      // 🔥 FIX: Fetch the fresh metrics data that was just synced
+      const freshMetaMetrics = await fetchMetaDataFromDatabase()
+      console.log('[MarketingAssistant] 🎯 Fresh meta metrics loaded:', freshMetaMetrics)
+      
       setLoadingProgress(50)
       setLoadingPhase('AI analyzing campaign performance...')
       
@@ -825,12 +829,17 @@ export default function MarketingAssistantPage() {
       
       await new Promise(resolve => setTimeout(resolve, 600))
       
-      // Phase 4: Finalize all data
+      // Phase 4: Finalize all data and update main metaMetrics state
       setPreloadedData(prev => ({
         ...prev,
-        metaMetrics: metaMetrics,
+        metaMetrics: freshMetaMetrics, // Use fresh data instead of stale state
         aiConsultantReady: true
       }))
+      
+      // 🔥 FIX: Update the main metaMetrics state with loaded data
+      // This ensures BlendedWidgetsTable gets real data instead of defaultMetrics
+      setMetaMetrics(freshMetaMetrics)
+      console.log('[MarketingAssistant] 🎯 Updated main metaMetrics state with fresh data:', freshMetaMetrics)
       
       setLoadingProgress(95)
       setLoadingPhase('Finalizing dashboard...')
@@ -907,12 +916,12 @@ export default function MarketingAssistantPage() {
       return
     }
     
-    // If no brand is selected, stop loading immediately
+    // If no brand is selected, show waiting state instead of stopping loading
     if (!selectedBrandId) {
-      console.log("[MarketingAssistant] No brand selected, stopping loading state")
-      setIsDataLoading(false)
-      setLoadingProgress(0)
-      setLoadingPhase('Please select a brand')
+      console.log("[MarketingAssistant] No brand selected, showing waiting state")
+      setIsDataLoading(true) // Keep loading state active
+      setLoadingProgress(5)
+      setLoadingPhase('Please select a brand to continue')
       return
     }
     
@@ -1147,8 +1156,8 @@ export default function MarketingAssistantPage() {
     )
   }
 
-  // Show no brand selected state - return directly without wrapper to match loading state
-  if (!selectedBrandId) {
+  // 🔥 REMOVED: No longer needed - unified loading state handles no-brand-selected case
+  if (false && !selectedBrandId) {
   return (
       <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
           {/* Background pattern */}
