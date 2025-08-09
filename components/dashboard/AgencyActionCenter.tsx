@@ -881,12 +881,31 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           startOfThisWeek.setHours(0, 0, 0, 0)
 
           // Check for any recommendations created OR updated this week for any campaign of this brand
-          const { data: weeklyRecommendations } = await supabase
+          // Query for recommendations created this week
+          const { data: createdThisWeek } = await supabase
             .from('ai_campaign_recommendations')
             .select('created_at, updated_at, campaign_id')
             .eq('brand_id', brand.id)
             .in('campaign_id', campaignIds)
-            .or(`created_at.gte.${startOfThisWeek.toISOString()},updated_at.gte.${startOfThisWeek.toISOString()}`)
+            .gte('created_at', startOfThisWeek.toISOString())
+
+          // Query for recommendations updated this week  
+          const { data: updatedThisWeek } = await supabase
+            .from('ai_campaign_recommendations')
+            .select('created_at, updated_at, campaign_id')
+            .eq('brand_id', brand.id)
+            .in('campaign_id', campaignIds)
+            .gte('updated_at', startOfThisWeek.toISOString())
+
+          // Combine results and remove duplicates
+          const allWeeklyRecommendations = [
+            ...(createdThisWeek || []),
+            ...(updatedThisWeek || [])
+          ]
+          const uniqueRecommendations = allWeeklyRecommendations.filter((rec, index, arr) => 
+            arr.findIndex(r => r.campaign_id === rec.campaign_id) === index
+          )
+          const weeklyRecommendations = uniqueRecommendations
 
           const hasUsedThisWeek = weeklyRecommendations && weeklyRecommendations.length > 0
           const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
@@ -904,7 +923,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             lastOptimizationDate = new Date(finalDate).toISOString().split('T')[0]
           }
 
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Campaigns checked: ${campaignIds.length}`)
+          console.log(`[Campaign Optimization] Brand ${brand.id}: Created this week: ${createdThisWeek?.length || 0}, Updated this week: ${updatedThisWeek?.length || 0}, Combined: ${weeklyRecommendations.length}, Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Campaigns checked: ${campaignIds.length}`)
+          console.log(`[Campaign Optimization] Start of week: ${startOfThisWeek.toISOString()}`)
+          if (updatedThisWeek && updatedThisWeek.length > 0) {
+            console.log(`[Campaign Optimization] Updated records:`, updatedThisWeek.map(r => ({ campaign_id: r.campaign_id, updated_at: r.updated_at })))
+          }
 
           newAvailability[brand.id] = {
             optimizationAvailable,
