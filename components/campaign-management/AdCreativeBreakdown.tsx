@@ -104,8 +104,14 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       })
       const campaignsData = await campaignsResponse.json()
 
-      if (!campaignsData.success) {
+      // Check for error field rather than success field, since the API doesn't return success field
+      if (campaignsData.error) {
         throw new Error(campaignsData.error || 'Failed to fetch campaigns')
+      }
+
+      // Also check if campaigns array exists
+      if (!campaignsData.campaigns) {
+        throw new Error('No campaigns data returned from API')
       }
 
       const allAds: Ad[] = []

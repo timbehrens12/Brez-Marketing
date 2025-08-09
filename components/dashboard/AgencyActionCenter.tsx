@@ -1581,7 +1581,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           return 'Daily Limit Reached'
         }
         if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
-          return 'Connect Platform'
+          return 'Open Tool'
         }
         return 'Unavailable'
       default:
