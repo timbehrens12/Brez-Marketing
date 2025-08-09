@@ -1075,16 +1075,41 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           return availability?.hasRequiredPlatforms
         })
 
-        const totalAvailableReports = brandsWithReports.reduce((count, brand) => {
+        // Calculate usage numbers for all brands
+        const dailyUsed = brandsWithReports.reduce((count, brand) => {
           const availability = brandReportAvailability[brand.id]
-          if (!availability) return count
-          return count + (availability.dailyAvailable ? 1 : 0) + (availability.monthlyAvailable ? 1 : 0)
+          return count + (availability?.dailyAvailable ? 0 : 1)
         }, 0)
+        
+        const monthlyUsed = brandsWithReports.reduce((count, brand) => {
+          const availability = brandReportAvailability[brand.id]
+          return count + (availability?.monthlyAvailable ? 0 : 1)
+        }, 0)
+        
+        const dailyTotal = brandsWithReports.length
+        const monthlyTotal = brandsWithReports.length
 
         return (
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-1">
-              {brandsWithReports.slice(0, 3).map((brand: any) => {
+          <div className="flex flex-col gap-2 w-full">
+            {/* Usage stats */}
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400">Daily Reports</span>
+                <span className={`text-xs font-medium ${dailyUsed < dailyTotal ? 'text-green-400' : 'text-red-400'}`}>
+                  {dailyUsed}/{dailyTotal} used
+                </span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-xs text-gray-400">Monthly Reports</span>
+                <span className={`text-xs font-medium ${monthlyUsed < monthlyTotal ? 'text-green-400' : 'text-red-400'}`}>
+                  {monthlyUsed}/{monthlyTotal} used
+                </span>
+              </div>
+            </div>
+            
+            {/* Brand profile pictures in a separate row */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {brandsWithReports.map((brand: any) => {
                 const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
                 const availability = brandReportAvailability[brand.id]
                 const hasAnyAvailable = availability?.dailyAvailable || availability?.monthlyAvailable
@@ -1092,7 +1117,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 return (
                   <div key={brand.id} className="relative group">
                     {brand.image_url ? (
-                      <div className="w-6 h-6 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0">
                         <img 
                           src={brand.image_url} 
                           alt={brand.name}
@@ -1100,12 +1125,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         />
                       </div>
                     ) : (
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold border border-[#444] flex-shrink-0 bg-[#4A5568] text-white">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-semibold border border-[#444] flex-shrink-0 bg-[#4A5568] text-white">
                         {brandInitials}
                       </div>
                     )}
                     {hasAnyAvailable && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1A1A1A]"></div>
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[#1A1A1A]"></div>
                     )}
                     {/* Custom tooltip for brand reports */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
@@ -1122,17 +1147,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   </div>
                 )
               })}
-              {brandsWithReports.length > 3 && (
-                <div className="w-6 h-6 rounded-full bg-[#2A2A2A] flex items-center justify-center text-[9px] font-semibold border border-[#444] text-white flex-shrink-0">
-                  +{brandsWithReports.length - 3}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-gray-400">Brand Dependent</span>
-              <span className={`text-xs font-medium ${totalAvailableReports > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {totalAvailableReports > 0 ? `${totalAvailableReports} Available` : 'No Reports Available'}
-              </span>
             </div>
           </div>
         )
@@ -2678,11 +2692,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                     </Badge>
                                   ))}
                                 </div>
-                                {tool.status === 'unavailable' && tool.requiresPlatforms && (
-                                  <p className="text-xs text-red-400 mb-2">
-                                    Requires: {tool.requiresPlatforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}
-                                  </p>
-                                )}
+
                               </div>
                             </div>
                             <div className="flex-grow"></div>
