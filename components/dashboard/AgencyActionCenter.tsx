@@ -97,6 +97,17 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
     dependencyType: 'user',
     frequency: '1 per week'
+  },
+  {
+    id: 'outreach-tool',
+    name: 'Outreach Tool',
+    description: 'Manage lead outreach campaigns and follow-ups',
+    icon: Send,
+    category: 'tools',
+    href: '/outreach-tool',
+    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
+    dependencyType: 'user',
+    frequency: '25 per day'
   }
 ]
 
@@ -137,11 +148,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   
-  // Tool usage tracking - simplified to only track lead generator
+  // Tool usage tracking - track both lead generator and outreach tool
   const [toolUsageData, setToolUsageData] = useState<{
     leadGenerator: { [userId: string]: number }
+    outreachTool: { [userId: string]: number }
   }>({
-    leadGenerator: {}
+    leadGenerator: {},
+    outreachTool: {}
   })
 
   // Refresh functionality with cooldown
@@ -487,7 +500,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       try {
         const supabase = await getSupabaseClient()
         const newToolUsageData = {
-          leadGenerator: {} as { [userId: string]: number }
+          leadGenerator: {} as { [userId: string]: number },
+          outreachTool: {} as { [userId: string]: number }
         }
 
         // Load Lead Generator usage - check weekly usage limit
@@ -508,6 +522,23 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         
         // Store usage count for this user (weekly limit of 1)
         newToolUsageData.leadGenerator[userId] = weeklyUsageCount
+
+        // Load Outreach Tool usage - check daily usage limit
+        const startOfDay = new Date(now)
+        startOfDay.setHours(0, 0, 0, 0)
+        
+        const { data: outreachUsage } = await supabase
+          .from('outreach_messages')
+          .select('id')
+          .eq('user_id', userId)
+          .gte('created_at', startOfDay.toISOString())
+
+        const dailyUsageCount = outreachUsage?.length || 0
+        
+        console.log(`[Agency Center] Outreach Tool - Daily usage: ${dailyUsageCount}/25`)
+        
+        // Store usage count for this user (daily limit of 25)
+        newToolUsageData.outreachTool[userId] = dailyUsageCount
         
         setToolUsageData(newToolUsageData)
       } catch (error) {
@@ -664,7 +695,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             status: hasGenerationsLeft ? 'available' : 'unavailable'
           }
         }
-        
+
+        if (tool.id === 'outreach-tool') {
+          // Outreach tool has daily usage limits
+          const dailyUsage = toolUsageData.outreachTool[userId || ''] || 0
+          const DAILY_LIMIT = 25 // 25 messages per day
+          
+          const hasUsageLeft = dailyUsage < DAILY_LIMIT
+          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyUsage}/${DAILY_LIMIT})`)
+          return { 
+            ...tool, 
+            status: hasUsageLeft ? 'available' : 'unavailable'
+          }
+        }
 
         // Default for user-dependent tools
         return { ...tool, status: 'available' }
@@ -747,8 +790,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           <div className="flex flex-col">
             <span className="text-xs text-gray-400">Agency Dependent</span>
             <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
-              {tool.status === 'available' ? 'Available' : 
-               tool.id === 'lead-generator' ? 'Weekly Limit Reached' : 'Unavailable'}
+              {(() => {
+                if (tool.id === 'lead-generator') {
+                  const used = toolUsageData.leadGenerator[userId || ''] || 0
+                  const limit = 1
+                  return `${used}/${limit} per week`
+                }
+                if (tool.id === 'outreach-tool') {
+                  const used = toolUsageData.outreachTool[userId || ''] || 0
+                  const limit = 25
+                  return `${used}/${limit} per day`
+                }
+                return tool.status === 'available' ? 'Available' : 'Unavailable'
+              })()}
             </span>
           </div>
         </div>
@@ -841,9 +895,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     return <Badge variant="outline">Unknown</Badge>
   }
 
-  const filteredTools = selectedCategory === 'all' 
+  const filteredTools = (selectedCategory === 'all' 
     ? reusableTools 
     : reusableTools.filter(tool => tool.category === selectedCategory)
+  ).sort((a, b) => {
+    // Sort by dependency type: user (agency-dependent) first, then brand-dependent
+    const order = { 'user': 0, 'brand': 1, 'none': 2 }
+    return order[a.dependencyType] - order[b.dependencyType]
+  })
 
   const categories = [
     { id: 'all', name: 'All Tools', count: reusableTools.length },
@@ -855,8 +914,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now only 1 tool (lead generator)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(1) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now 2 tools (lead generator + outreach tool)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(2) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -897,7 +956,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (tool.id === 'lead-generator') {
           return 'Weekly Limit Reached'
         }
-
+        if (tool.id === 'outreach-tool') {
+          return 'Daily Limit Reached'
+        }
         if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
           return 'Connect Platform'
         }
@@ -2271,11 +2332,21 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                   </h4>
                                   {getStatusBadge(tool)}
                                 </div>
-                                {tool.frequency && (
-                                  <p className="text-xs text-blue-300 mb-1">
-                                    {tool.frequency}
-                                  </p>
-                                )}
+                                <p className="text-xs text-blue-300 mb-1">
+                                  {(() => {
+                                    if (tool.id === 'lead-generator') {
+                                      const used = toolUsageData.leadGenerator[userId || ''] || 0
+                                      const limit = 1
+                                      return `${used}/${limit} per week`
+                                    }
+                                    if (tool.id === 'outreach-tool') {
+                                      const used = toolUsageData.outreachTool[userId || ''] || 0
+                                      const limit = 25
+                                      return `${used}/${limit} per day`
+                                    }
+                                    return tool.frequency || ''
+                                  })()}
+                                </p>
                                 <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
                                   {tool.description}
                                 </p>
