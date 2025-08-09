@@ -120,6 +120,17 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Strategic Insights', 'Marketing Analysis', '24/7 Availability'],
     dependencyType: 'user',
     frequency: '15 per day'
+  },
+  {
+    id: 'brand-reports',
+    name: 'Brand Reports',
+    description: 'Generate AI-powered daily and monthly performance reports',
+    icon: FileText,
+    category: 'analytics',
+    href: '/brand-report',
+    features: ['Daily Reports', 'Monthly Reports', 'Performance Insights'],
+    dependencyType: 'brand',
+    requiresPlatforms: ['meta', 'shopify']
   }
 ]
 
@@ -154,13 +165,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Brand health read state
   const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
 
-  // Brand report availability data
-  const [brandReportAvailability, setBrandReportAvailability] = useState<Array<{
-    brand: any;
-    dailyAvailable: boolean;
-    monthlyAvailable: boolean;
-  }>>([])
-  const [isLoadingReportAvailability, setIsLoadingReportAvailability] = useState(true)
+  // Brand report availability tracking
+  const [brandReportAvailability, setBrandReportAvailability] = useState<{
+    [brandId: string]: {
+      dailyAvailable: boolean
+      monthlyAvailable: boolean
+      hasRequiredPlatforms: boolean
+    }
+  }>({})
 
   // User-dependent data for tool availability
   const [userLeadsCount, setUserLeadsCount] = useState(0)
@@ -514,95 +526,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [userId, getSupabaseClient])
 
-  // Load brand report availability data
-  const loadBrandReportAvailability = useCallback(async () => {
-    if (!userId) return
-    
-    setIsLoadingReportAvailability(true)
-    
-    try {
-      const supabase = await getSupabaseClient()
-      
-      // Get all brands for this user
-      const { data: brands } = await supabase
-        .from('brands')
-        .select('id, name, image_url, niche')
-        .eq('user_id', userId)
-      
-      if (!brands?.length) {
-        setBrandReportAvailability([])
-        return
-      }
-      
-      // Get platform connections to check if brands can generate reports
-      const { data: connections } = await supabase
-        .from('platform_connections')
-        .select('brand_id, platform_type, status')
-        .in('brand_id', brands.map(b => b.id))
-        .eq('status', 'active')
-        .in('platform_type', ['meta', 'google', 'tiktok', 'shopify'])
-      
-      // Get existing reports to check what's already generated
-      const { data: existingReports } = await supabase
-        .from('brand_reports')
-        .select('brand_id, period, last_updated')
-        .in('brand_id', brands.map(b => b.id))
-      
-      const now = new Date()
-      const todayStr = now.toISOString().split('T')[0]
-      const currentHour = now.getHours()
-      const isTooEarly = currentHour < 6 // Reports only available after 6 AM
-      
-      // Calculate availability for each brand
-      const availability = brands.map(brand => {
-        // Check if brand has required platforms (at least one ad platform)
-        const hasAdPlatforms = connections?.some(conn => 
-          conn.brand_id === brand.id && 
-          ['meta', 'google', 'tiktok'].includes(conn.platform_type)
-        )
-        
-        if (!hasAdPlatforms) {
-          return {
-            brand,
-            dailyAvailable: false,
-            monthlyAvailable: false
-          }
-        }
-        
-        // Check daily report availability
-        const dailyReport = existingReports?.find(r => 
-          r.brand_id === brand.id && r.period === 'daily'
-        )
-        const dailyReportToday = dailyReport && 
-          new Date(dailyReport.last_updated).toISOString().split('T')[0] === todayStr
-        const dailyAvailable = !isTooEarly && !dailyReportToday
-        
-        // Check monthly report availability  
-        const monthlyReport = existingReports?.find(r => 
-          r.brand_id === brand.id && r.period === 'monthly'
-        )
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-        const monthlyReportThisMonth = monthlyReport && 
-          new Date(monthlyReport.last_updated).toISOString().substring(0, 7) === currentMonth
-        const monthlyAvailable = !monthlyReportThisMonth
-        
-        return {
-          brand,
-          dailyAvailable,
-          monthlyAvailable
-        }
-      }).filter(item => item.dailyAvailable || item.monthlyAvailable) // Only show brands with available reports
-      
-      setBrandReportAvailability(availability)
-      
-    } catch (error) {
-      console.error('Error loading brand report availability:', error)
-      setBrandReportAvailability([])
-    } finally {
-      setIsLoadingReportAvailability(false)
-    }
-  }, [userId, getSupabaseClient])
-
   // Load tool usage data for lead generator
   useEffect(() => {
     const loadToolUsageData = async () => {
@@ -726,7 +649,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
     }
 
-    loadToolUsageData()
+            loadToolUsageData()
+        if (brands && connections) {
+          loadBrandReportAvailability()
+        }
 
     // Also listen for when the user returns to the dashboard to refresh usage
     const handleVisibilityChange = () => {
@@ -761,6 +687,82 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       clearInterval(refreshInterval)
     }
   }, [userId, getSupabaseClient])
+
+  // Load brand report availability
+  const loadBrandReportAvailability = useCallback(async () => {
+    if (!userId || !brands) return
+
+    try {
+      const supabase = await getSupabaseClient()
+      const newAvailability: typeof brandReportAvailability = {}
+
+      for (const brand of brands) {
+        // Check if brand has required platforms
+        const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
+        const hasRequiredPlatforms = ['meta', 'shopify'].some(platform => 
+          brandConnections.some(conn => conn.platform_type === platform)
+        )
+
+        if (!hasRequiredPlatforms) {
+          newAvailability[brand.id] = {
+            dailyAvailable: false,
+            monthlyAvailable: false,
+            hasRequiredPlatforms: false
+          }
+          continue
+        }
+
+        // Check daily report availability (check if generated today)
+        const today = new Date().toISOString().split('T')[0]
+        const { data: dailyReport } = await supabase
+          .from('ai_marketing_reports')
+          .select('id')
+          .eq('brand_id', brand.id)
+          .eq('user_id', userId)
+          .eq('period_name', 'today')
+          .eq('date_range_from', today)
+          .eq('date_range_to', today)
+          .limit(1)
+
+        // Check monthly report availability (check if generated this month)
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0)
+        
+        const { data: monthlyReport } = await supabase
+          .from('ai_marketing_reports')
+          .select('id')
+          .eq('brand_id', brand.id)
+          .eq('user_id', userId)
+          .eq('period_name', 'monthly')
+          .eq('date_range_from', startOfMonth.toISOString().split('T')[0])
+          .eq('date_range_to', endOfMonth.toISOString().split('T')[0])
+          .limit(1)
+
+        // Check time restrictions for daily reports (after 6:30 AM)
+        const currentHour = new Date().getHours()
+        const currentMinutes = new Date().getMinutes()
+        const isAfter630AM = currentHour > 6 || (currentHour === 6 && currentMinutes >= 30)
+
+        newAvailability[brand.id] = {
+          dailyAvailable: hasRequiredPlatforms && isAfter630AM && !dailyReport,
+          monthlyAvailable: hasRequiredPlatforms && !monthlyReport,
+          hasRequiredPlatforms
+        }
+      }
+
+      setBrandReportAvailability(newAvailability)
+    } catch (error) {
+      console.error('Error loading brand report availability:', error)
+    }
+  }, [userId, brands, connections, getSupabaseClient])
+
+  // Load brand report availability when brands or connections change
+  useEffect(() => {
+    if (brands && connections && userId) {
+      loadBrandReportAvailability()
+    }
+  }, [brands, connections, loadBrandReportAvailability])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
@@ -1041,7 +1043,82 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
 
     if (tool.dependencyType === 'brand') {
-      // Brand-dependent tools - show brand profile pictures with green dots for available brands
+      // Handle brand reports tool specially
+      if (tool.id === 'brand-reports') {
+        // Filter brands based on selectedBrandId
+        const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
+        const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
+
+        // Only show brands that have platform connections (required for reports)
+        const brandsWithReports = brandsToShow.filter((brand: any) => {
+          const availability = brandReportAvailability[brand.id]
+          return availability?.hasRequiredPlatforms
+        })
+
+        const totalAvailableReports = brandsWithReports.reduce((count, brand) => {
+          const availability = brandReportAvailability[brand.id]
+          if (!availability) return count
+          return count + (availability.dailyAvailable ? 1 : 0) + (availability.monthlyAvailable ? 1 : 0)
+        }, 0)
+
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-1">
+              {brandsWithReports.slice(0, 3).map((brand: any) => {
+                const brandInitials = brand.name?.charAt(0)?.toUpperCase() || 'B'
+                const availability = brandReportAvailability[brand.id]
+                const hasAnyAvailable = availability?.dailyAvailable || availability?.monthlyAvailable
+                
+                return (
+                  <div key={brand.id} className="relative group">
+                    {brand.image_url ? (
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-[#444] bg-[#2A2A2A] flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={brand.image_url} 
+                          alt={brand.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold border border-[#444] flex-shrink-0 bg-[#4A5568] text-white">
+                        {brandInitials}
+                      </div>
+                    )}
+                    {hasAnyAvailable && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1A1A1A]"></div>
+                    )}
+                    {/* Custom tooltip for brand reports */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-[#1A1A1A] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 border border-[#333]">
+                      <div className="font-medium">{brand.name}</div>
+                      <div className="flex flex-col mt-1 gap-0.5">
+                        <div className={`text-[10px] ${availability?.dailyAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                          Daily: {availability?.dailyAvailable ? 'Available' : 'Used/Too Early'}
+                        </div>
+                        <div className={`text-[10px] ${availability?.monthlyAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                          Monthly: {availability?.monthlyAvailable ? 'Available' : 'Generated'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {brandsWithReports.length > 3 && (
+                <div className="w-6 h-6 rounded-full bg-[#2A2A2A] flex items-center justify-center text-[9px] font-semibold border border-[#444] text-white flex-shrink-0">
+                  +{brandsWithReports.length - 3}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400">Brand Dependent</span>
+              <span className={`text-xs font-medium ${totalAvailableReports > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {totalAvailableReports > 0 ? `${totalAvailableReports} Available` : 'No Reports Available'}
+              </span>
+            </div>
+          </div>
+        )
+      }
+
+      // Generic brand-dependent tools - show brand profile pictures with green dots for available brands
       // Filter brands based on selectedBrandId
       const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
       const brandsToShow = selectedBrandId === 'all' ? brands : (selectedBrand ? [selectedBrand] : [])
@@ -1145,8 +1222,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now 3 tools (lead generator + outreach tool + AI consultant)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(3) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now 4 tools (lead generator + outreach tool + AI consultant + brand reports)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(4) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -1324,8 +1401,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       await Promise.all([
         loadUserData(),
         generateTodos(),
-        loadBrandHealthData(true), // Force refresh with real data sync
-        loadBrandReportAvailability()
+        loadBrandHealthData(true) // Force refresh with real data sync
       ])
 
       console.log('[Agency Center] Manual refresh completed')
@@ -1855,8 +1931,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             loadUserData(),
             generateTodos(),
             // Only reload brand health if this is a manual refresh, not initial load
-            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve(),
-            loadBrandReportAvailability()
+            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
           ])
 
           // Trigger notification refresh
@@ -1898,8 +1973,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           await Promise.all([
             loadUserData(),
             generateTodos(),
-            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve(),
-            loadBrandReportAvailability()
+            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
           ])
           
           // Reset widget loading states
@@ -2424,132 +2498,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
                     <h3 className="font-medium text-white mb-1">All caught up!</h3>
                     <p className="text-[#9ca3af] text-sm">No outreach tasks need attention right now.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Brand Report Availability Widget */}
-          <div className="md:col-span-2">
-            <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[400px] flex flex-col transition-all duration-300",
-              isLoadingReportAvailability && "opacity-50 grayscale pointer-events-none"
-            )}>
-              <CardHeader className="pb-4 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                    <CardTitle className="text-white text-lg">Brand Reports</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isLoadingReportAvailability ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                        <span className="text-xs text-gray-400">Loading...</span>
-                      </div>
-                    ) : (
-                      <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {brandReportAvailability.length} Available
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <CardDescription className="text-[#9ca3af] text-sm">
-                  Generate AI-powered reports for brands with available data
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="flex-1 overflow-hidden">
-                {isLoadingReportAvailability ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-2" />
-                      <p className="text-[#9ca3af] text-sm">Loading report availability...</p>
-                    </div>
-                  </div>
-                ) : brandReportAvailability.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="text-center mb-4">
-                      <h3 className="text-white font-medium text-lg">
-                        {brandReportAvailability.length} {brandReportAvailability.length === 1 ? 'Brand' : 'Brands'} Ready
-                      </h3>
-                      <p className="text-[#9ca3af] text-sm">Hover over brand logos to see report types</p>
-                    </div>
-                    
-                    {/* Brand Avatars Grid */}
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {brandReportAvailability.map((item) => (
-                        <div
-                          key={item.brand.id}
-                          className="relative group cursor-pointer"
-                        >
-                          {/* Brand Avatar */}
-                          <div className="w-16 h-16 rounded-xl border-2 border-[#333] hover:border-[#555] transition-all duration-200 overflow-hidden bg-[#2A2A2A] flex items-center justify-center group-hover:scale-105">
-                            {item.brand.image_url ? (
-                              <img 
-                                src={item.brand.image_url} 
-                                alt={item.brand.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="text-white font-bold text-lg">
-                                {item.brand.name.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Hover Tooltip */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-                            <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-3 shadow-xl min-w-[140px]">
-                              <div className="text-center">
-                                <h4 className="text-white font-medium text-sm mb-2">{item.brand.name}</h4>
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-[#9ca3af]">Daily</span>
-                                    <span className={item.dailyAvailable ? "text-green-400" : "text-red-400"}>
-                                      {item.dailyAvailable ? "Available" : "Not Available"}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-[#9ca3af]">Monthly</span>
-                                    <span className={item.monthlyAvailable ? "text-green-400" : "text-red-400"}>
-                                      {item.monthlyAvailable ? "Available" : "Not Available"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Tooltip Arrow */}
-                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-[#333]"></div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Action Button */}
-                    <div className="text-center pt-4">
-                      <Button 
-                        onClick={() => router.push('/brand-report')}
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Generate Reports
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <FileText className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                      <h3 className="font-medium text-white mb-2">No Reports Available</h3>
-                      <p className="text-[#9ca3af] text-sm mb-4">
-                        No brands have reports ready to generate right now.
-                      </p>
-                      <p className="text-[#9ca3af] text-xs">
-                        Reports may not be available if already generated today/month or if platforms aren't connected.
-                      </p>
-                    </div>
                   </div>
                 )}
               </CardContent>
