@@ -241,6 +241,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Brand Health data state
   const [brandHealthData, setBrandHealthData] = useState<any[]>([])
   const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(true)
+  const [brandHealthTimePeriod, setBrandHealthTimePeriod] = useState<'today' | '7days'>('today')
   
   // Track overall loading state and notify parent
   useEffect(() => {
@@ -976,6 +977,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [brands, connections, loadBrandReportAvailability, loadCampaignOptimizationAvailability])
 
+  // Reload brand health data when time period changes
+  useEffect(() => {
+    if (userId && brands && connections) {
+      loadBrandHealthData(false, brandHealthTimePeriod)
+    }
+  }, [brandHealthTimePeriod]) // Only depend on time period to avoid circular dependency
+
   // Filter active todos
   const isTaskActive = (taskId: string) => {
     const state = taskStates[taskId]
@@ -1697,7 +1705,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       await Promise.all([
         loadUserData(),
         generateTodos(),
-        loadBrandHealthData(true) // Force refresh with real data sync
+        loadBrandHealthData(true, brandHealthTimePeriod) // Force refresh with real data sync
       ])
 
       console.log('[Agency Center] Manual refresh completed')
@@ -1748,7 +1756,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   }, [markTaskComplete, userId])
 
   // Load brand health data with real data and AI synopsis (exactly like action center)
-  const loadBrandHealthData = useCallback(async (forceRefresh = false) => {
+  const loadBrandHealthData = useCallback(async (forceRefresh = false, timePeriod: 'today' | '7days' = 'today') => {
     if (!userId) return
     
     // Robust loading guard to prevent any duplicate calls
@@ -1800,7 +1808,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
 
-      // Step 3: Calculate date ranges (use provided dateRange or default to today)
+      // Step 3: Calculate date ranges based on time period
       const now = new Date()
       const currentHour = now.getHours()
       const isTooEarly = currentHour < 6
@@ -1808,8 +1816,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       let fromDate: Date
       let toDate: Date
       
-      if (dateRange?.from && dateRange?.to) {
-        // Use the provided date range
+      if (timePeriod === '7days') {
+        // Last 7 days (including today)
+        toDate = new Date(now)
+        toDate.setHours(23, 59, 59, 999)
+        fromDate = new Date(now)
+        fromDate.setDate(fromDate.getDate() - 6) // 7 days total (today + 6 previous days)
+        fromDate.setHours(0, 0, 0, 0)
+      } else if (dateRange?.from && dateRange?.to) {
+        // Use the provided date range for today mode
         fromDate = new Date(dateRange.from)
         toDate = new Date(dateRange.to)
       } else {
@@ -1829,7 +1844,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         String(toDate.getMonth() + 1).padStart(2, '0') + '-' + 
         String(toDate.getDate()).padStart(2, '0')
 
-      console.log(`[Brand Health] Analyzing date range: ${fromDateStr} to ${toDateStr}`)
+      console.log(`[Brand Health] Analyzing ${timePeriod} data: ${fromDateStr} to ${toDateStr}`)
 
       // Step 4.5: Trigger fresh data sync if force refresh is requested
       if (forceRefresh) {
@@ -2227,7 +2242,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             loadUserData(),
             generateTodos(),
             // Only reload brand health if this is a manual refresh, not initial load
-            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
+            brandHealthData.length === 0 ? loadBrandHealthData(true, brandHealthTimePeriod) : Promise.resolve()
           ])
 
           // Trigger notification refresh
@@ -2269,7 +2284,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           await Promise.all([
             loadUserData(),
             generateTodos(),
-            brandHealthData.length === 0 ? loadBrandHealthData(true) : Promise.resolve()
+            brandHealthData.length === 0 ? loadBrandHealthData(true, brandHealthTimePeriod) : Promise.resolve()
           ])
           
           // Reset widget loading states
@@ -2486,6 +2501,30 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   )}
                   {!isLoadingBrandHealth && brandHealthData.length > 0 && (
                     <>
+                      {/* Time Period Toggle */}
+                      <div className="flex items-center bg-[#1a1a1a] border border-[#333] rounded-md">
+                        <button
+                          onClick={() => setBrandHealthTimePeriod('today')}
+                          className={`px-2 py-1 text-xs rounded-l-md transition-colors ${
+                            brandHealthTimePeriod === 'today'
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-400 hover:text-white hover:bg-[#333]'
+                          }`}
+                        >
+                          Today
+                        </button>
+                        <button
+                          onClick={() => setBrandHealthTimePeriod('7days')}
+                          className={`px-2 py-1 text-xs rounded-r-md transition-colors ${
+                            brandHealthTimePeriod === '7days'
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-400 hover:text-white hover:bg-[#333]'
+                          }`}
+                        >
+                          7 Days
+                        </button>
+                      </div>
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2510,9 +2549,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 </div>
               </div>
               <CardDescription className="text-[#9ca3af] text-sm">
-                Today's performance from midnight to now • Only brands with ad platforms
+                {brandHealthTimePeriod === 'today' 
+                  ? "Today's performance from midnight to now • Only brands with ad platforms"
+                  : "Last 7 days performance overview • Only brands with ad platforms"
+                }
                 <span className="text-xs text-gray-500 block mt-1">
-                  Real-time updates • Analysis available after 6 AM
+                  {brandHealthTimePeriod === 'today'
+                    ? "Real-time updates • Analysis available after 6 AM"
+                    : "Weekly performance trends • Comprehensive insights"
+                  }
                 </span>
               </CardDescription>
             </CardHeader>
@@ -2634,7 +2679,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="mb-3 p-3 bg-[#2A2A2A]/50 rounded-lg border border-[#333]">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-gray-500 font-medium">
-                            Today's Synopsis ({brand.isTooEarly ? 'Available after 6 AM' : `Since midnight`})
+                            {brandHealthTimePeriod === 'today' 
+                              ? `Today's Synopsis (${brand.isTooEarly ? 'Available after 6 AM' : 'Since midnight'})`
+                              : '7-Day Performance Summary'
+                            }
                           </span>
                           <Settings className="w-3 h-3 text-gray-500" />
                         </div>
@@ -2644,10 +2692,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       </div>
 
                       {/* Key Metrics */}
-                      {!brand.isTooEarly && brand.hasData && (
+                      {(brandHealthTimePeriod === '7days' || (!brand.isTooEarly && brand.hasData)) && (
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <div className="text-center">
-                            <p className="text-xs text-[#9ca3af]">ROAS Today</p>
+                            <p className="text-xs text-[#9ca3af]">
+                              {brandHealthTimePeriod === 'today' ? 'ROAS Today' : 'Avg ROAS'}
+                            </p>
                             <p className={cn(
                               "text-sm font-medium",
                               brand.roas >= 2 ? "text-green-400" : brand.roas >= 1 ? "text-yellow-400" : "text-red-400"
@@ -2664,7 +2714,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                             )}
                           </div>
                           <div className="text-center">
-                            <p className="text-xs text-[#9ca3af]">Spend Today</p>
+                            <p className="text-xs text-[#9ca3af]">
+                              {brandHealthTimePeriod === 'today' ? 'Spend Today' : 'Total Spend'}
+                            </p>
                             <p className="text-sm font-medium text-white">
                               ${brand.spend.toFixed(2)}
                             </p>
