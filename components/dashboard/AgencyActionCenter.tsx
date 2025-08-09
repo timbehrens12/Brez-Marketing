@@ -873,34 +873,34 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           const campaignIds = metaCampaigns.map(c => c.campaign_id)
 
-          // Check for active recommendations (not expired) for any campaign of this brand
-          const { data: activeRecommendations } = await supabase
+          // Calculate start of this week (Monday midnight)
+          const now = new Date()
+          const startOfThisWeek = new Date(now)
+          const daysFromMonday = (now.getDay() + 6) % 7 // Convert Sunday=0 to Monday=0
+          startOfThisWeek.setDate(now.getDate() - daysFromMonday)
+          startOfThisWeek.setHours(0, 0, 0, 0)
+
+          // Check for any recommendations created this week for any campaign of this brand
+          const { data: weeklyRecommendations } = await supabase
             .from('ai_campaign_recommendations')
-            .select('expires_at, created_at, campaign_id')
+            .select('created_at, campaign_id')
             .eq('brand_id', brand.id)
             .in('campaign_id', campaignIds)
-            .gt('expires_at', new Date().toISOString())
+            .gte('created_at', startOfThisWeek.toISOString())
 
-          // Calculate next Monday midnight for comparison
-          const now = new Date()
-          const nextMonday = new Date(now)
-          const daysUntilMonday = (8 - now.getDay()) % 7 || 7
-          nextMonday.setDate(now.getDate() + daysUntilMonday)
-          nextMonday.setHours(0, 0, 0, 0)
-
-          const hasActiveRecommendation = activeRecommendations && activeRecommendations.length > 0
-          const optimizationAvailable = hasRequiredPlatforms && !hasActiveRecommendation
+          const hasUsedThisWeek = weeklyRecommendations && weeklyRecommendations.length > 0
+          const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
 
           // Get the most recent recommendation date for display
           let lastOptimizationDate = null
-          if (hasActiveRecommendation) {
-            const mostRecent = activeRecommendations.reduce((latest, rec) => 
+          if (hasUsedThisWeek) {
+            const mostRecent = weeklyRecommendations.reduce((latest, rec) => 
               new Date(rec.created_at) > new Date(latest.created_at) ? rec : latest
             )
             lastOptimizationDate = new Date(mostRecent.created_at).toISOString().split('T')[0]
           }
 
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Has active recommendations: ${hasActiveRecommendation}, Available: ${optimizationAvailable}`)
+          console.log(`[Campaign Optimization] Brand ${brand.id}: Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Campaigns checked: ${campaignIds.length}`)
 
           newAvailability[brand.id] = {
             optimizationAvailable,
