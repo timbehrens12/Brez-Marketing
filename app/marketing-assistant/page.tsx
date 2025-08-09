@@ -265,6 +265,7 @@ export default function MarketingAssistantPage() {
   // Refs for tracking state
   const hasFetchedMetaData = useRef(false)
   const lastFetchedDateRange = useRef<{ from?: Date; to?: Date }>({})
+  const lastFetchedBrandId = useRef<string | null>(null)
   const hasInitialDataLoaded = useRef(false)
   const isInitialLoadInProgress = useRef(false)
 
@@ -925,27 +926,38 @@ export default function MarketingAssistantPage() {
       return
     }
     
-    // Check if we've already done the initial load for this date range
+    // Check if we've already done the initial load for this date range or brand
     const dateRangeChanged = dateRange?.from !== lastFetchedDateRange.current.from || 
                            dateRange?.to !== lastFetchedDateRange.current.to
+    const brandChanged = selectedBrandId !== lastFetchedBrandId.current
+    const shouldLoad = dateRangeChanged || brandChanged || !hasInitialDataLoaded.current
     
-    if (dateRange?.from && dateRange?.to && (dateRangeChanged || !hasInitialDataLoaded.current)) {
-      // Prevent duplicate initial loads
-      if (isInitialLoadInProgress.current && !dateRangeChanged) {
+    if (dateRange?.from && dateRange?.to && shouldLoad) {
+      // 🔥 FIX: Reset loading flags when brand or date changes to allow fresh load
+      if (dateRangeChanged || brandChanged) {
+        console.log("[MarketingAssistant] Brand/date changed, resetting loading flags", { brandChanged, dateRangeChanged })
+        isInitialLoadInProgress.current = false
+        hasInitialDataLoaded.current = false
+      }
+      
+      // Prevent duplicate initial loads (but allow brand/date changes)
+      if (isInitialLoadInProgress.current && !dateRangeChanged && !brandChanged) {
         console.log("[MarketingAssistant] Initial load already in progress, skipping duplicate call")
         return
       }
       
       console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
-      isInitialLoadInProgress.current = true
       
       // 🔥 FIX: Start loading state immediately when brand is selected
       setIsDataLoading(true)
       setLoadingProgress(0)
       setLoadingPhase('Initializing Marketing Assistant')
       
-      // Update the last fetched date range
+      isInitialLoadInProgress.current = true
+      
+      // Update the last fetched date range and brand
       lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
+      lastFetchedBrandId.current = selectedBrandId
       
       // Start the centralized loading process
       loadAllData()
