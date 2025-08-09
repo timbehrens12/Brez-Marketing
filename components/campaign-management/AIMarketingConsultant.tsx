@@ -421,6 +421,39 @@ export default function AIMarketingConsultant(
     }
   }, [selectedGoal])
 
+  // Check initial usage status on component mount
+  useEffect(() => {
+    const checkInitialUsage = async () => {
+      if (!user?.id || (selectedMode === 'brand' && !selectedBrandId)) return
+      
+      try {
+        const response = await fetch('/api/ai/marketing-consultant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: '',
+            mode: selectedMode,
+            goal: selectedGoal,
+            brandId: selectedBrandId,
+            checkUsageOnly: true
+          })
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.remainingUses !== undefined) {
+            setRemainingUses(data.remainingUses)
+            setIsLimitReached(!data.canUse)
+          }
+        }
+      } catch (error) {
+        console.error('[AI Marketing] Error checking initial usage:', error)
+      }
+    }
+    
+    checkInitialUsage()
+  }, [user?.id, selectedBrandId, selectedMode])
+
   // Listen for refresh events to reset conversation with fresh data
   useEffect(() => {
     if (selectedMode === 'brand' && !selectedBrandId) return

@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { brandId, prompt, marketingGoal, userContext, mode = 'brand' } = await request.json()
+    const { brandId, prompt, marketingGoal, userContext, mode = 'brand', checkUsageOnly = false } = await request.json()
     
-    if (!prompt) {
+    if (!checkUsageOnly && !prompt) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
     
@@ -46,6 +46,14 @@ export async function POST(request: NextRequest) {
         reason: usageStatus.reason,
         remainingUses: usageStatus.remainingUses || 0
       }, { status: 429 })
+    }
+
+    // If this is just a usage check, return the status without processing
+    if (checkUsageOnly) {
+      return NextResponse.json({
+        canUse: usageStatus.canUse,
+        remainingUses: usageStatus.remainingUses || 15
+      })
     }
 
     let brand = null
