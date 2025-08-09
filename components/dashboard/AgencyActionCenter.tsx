@@ -880,13 +880,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           startOfThisWeek.setDate(now.getDate() - daysFromMonday)
           startOfThisWeek.setHours(0, 0, 0, 0)
 
-          // Check for any recommendations created this week for any campaign of this brand
+          // Check for any recommendations created OR updated this week for any campaign of this brand
           const { data: weeklyRecommendations } = await supabase
             .from('ai_campaign_recommendations')
-            .select('created_at, campaign_id')
+            .select('created_at, updated_at, campaign_id')
             .eq('brand_id', brand.id)
             .in('campaign_id', campaignIds)
-            .gte('created_at', startOfThisWeek.toISOString())
+            .or(`created_at.gte.${startOfThisWeek.toISOString()},updated_at.gte.${startOfThisWeek.toISOString()}`)
 
           const hasUsedThisWeek = weeklyRecommendations && weeklyRecommendations.length > 0
           const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
@@ -894,10 +894,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // Get the most recent recommendation date for display
           let lastOptimizationDate = null
           if (hasUsedThisWeek) {
-            const mostRecent = weeklyRecommendations.reduce((latest, rec) => 
-              new Date(rec.created_at) > new Date(latest.created_at) ? rec : latest
-            )
-            lastOptimizationDate = new Date(mostRecent.created_at).toISOString().split('T')[0]
+            const mostRecent = weeklyRecommendations.reduce((latest, rec) => {
+              // Get the latest date between created_at and updated_at for each record
+              const recLatest = new Date(rec.updated_at) > new Date(rec.created_at) ? rec.updated_at : rec.created_at
+              const latestDate = new Date(latest.updated_at) > new Date(latest.created_at) ? latest.updated_at : latest.created_at
+              return new Date(recLatest) > new Date(latestDate) ? rec : latest
+            })
+            const finalDate = new Date(mostRecent.updated_at) > new Date(mostRecent.created_at) ? mostRecent.updated_at : mostRecent.created_at
+            lastOptimizationDate = new Date(finalDate).toISOString().split('T')[0]
           }
 
           console.log(`[Campaign Optimization] Brand ${brand.id}: Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Campaigns checked: ${campaignIds.length}`)
