@@ -131,6 +131,17 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Daily Reports', 'Monthly Reports', 'Performance Insights'],
     dependencyType: 'brand',
     requiresPlatforms: ['meta', 'shopify']
+  },
+  {
+    id: 'creative-studio',
+    name: 'Creative Studio',
+    description: 'Generate professional product images with AI backgrounds',
+    icon: Settings,
+    category: 'ai-powered',
+    href: '/ad-creative-studio',
+    features: ['AI Backgrounds', 'Product Photography', 'Creative Generation'],
+    dependencyType: 'user',
+    frequency: '10 per week'
   }
 ]
 
@@ -180,15 +191,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   
-  // Tool usage tracking - track lead generator, outreach tool, and AI consultant
+  // Tool usage tracking - track lead generator, outreach tool, AI consultant, and creative studio
   const [toolUsageData, setToolUsageData] = useState<{
     leadGenerator: { [userId: string]: number }
     outreachTool: { [userId: string]: number }
     aiConsultant: { [userId: string]: number }
+    creativeStudio: { [userId: string]: number }
   }>({
     leadGenerator: {},
     outreachTool: {},
-    aiConsultant: {}
+    aiConsultant: {},
+    creativeStudio: {}
   })
 
   // Refresh functionality with cooldown
@@ -536,7 +549,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const newToolUsageData = {
           leadGenerator: {} as { [userId: string]: number },
           outreachTool: {} as { [userId: string]: number },
-          aiConsultant: {} as { [userId: string]: number }
+          aiConsultant: {} as { [userId: string]: number },
+          creativeStudio: {} as { [userId: string]: number }
         }
 
         // Load Lead Generator usage - use same logic as lead generator page
@@ -641,6 +655,25 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         } catch (error) {
           console.error('[Agency Center] Error loading AI consultant usage:', error)
           newToolUsageData.aiConsultant[userId] = 0
+        }
+
+        // Load Creative Studio usage - check localStorage (weekly limit)
+        try {
+          const creativeUsageData = localStorage.getItem('ad-creative-usage')
+          if (creativeUsageData) {
+            const parsedData = JSON.parse(creativeUsageData)
+            const weeklyUsageCount = parsedData.current || 0
+            
+            console.log(`[Agency Center] Creative Studio - Weekly usage: ${weeklyUsageCount}/10`)
+            
+            // Store usage count for this user (weekly limit of 10)
+            newToolUsageData.creativeStudio[userId] = weeklyUsageCount
+          } else {
+            newToolUsageData.creativeStudio[userId] = 0
+          }
+        } catch (error) {
+          console.error('[Agency Center] Error loading Creative Studio usage:', error)
+          newToolUsageData.creativeStudio[userId] = 0
         }
         
         setToolUsageData(newToolUsageData)
@@ -1054,6 +1087,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   const limit = 15
                   return `${used}/${limit} used today`
                 }
+                if (tool.id === 'creative-studio') {
+                  const used = toolUsageData.creativeStudio[userId || ''] || 0
+                  const limit = 10
+                  return `${used}/${limit} used this week`
+                }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
               })()}
             </span>
@@ -1256,8 +1294,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now 4 tools (lead generator + outreach tool + AI consultant + brand reports)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(4) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now 5 tools (lead generator + outreach tool + AI consultant + brand reports + creative studio)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(5) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -1276,7 +1314,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         } catch (error) {
           console.log('Using fallback count due to error:', error)
-          setStaticAvailableCount(4) // Fallback
+          setStaticAvailableCount(5) // Fallback
         }
         hasSetStaticCount.current = true
       }
