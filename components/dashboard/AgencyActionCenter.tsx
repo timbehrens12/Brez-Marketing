@@ -853,31 +853,33 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           continue
         }
 
-        // Check when was the last time campaign optimization was used for this brand
-        // We'll track this using localStorage key similar to brand reports
+        // Check campaign optimization usage from ai_usage_tracking table
         const today = new Date().toISOString().split('T')[0]
-        const brandOptimizationKey = `lastCampaignOptimization_${brand.id}`
-        const lastOptimizationDate = localStorage.getItem(brandOptimizationKey)
         
-        // Also check AI usage tracking for marketing consultant usage for this brand
         try {
-          const { data: aiUsage } = await supabase
+          const { data: campaignUsage } = await supabase
             .from('ai_usage_tracking')
-            .select('last_used_at, daily_usage_date')
+            .select('last_used_at, daily_usage_date, daily_usage_count')
             .eq('brand_id', brand.id)
-            .eq('feature_type', 'ai_consultant_chat')
+            .eq('feature_type', 'campaign_recommendations')
             .single()
 
-          const hasUsedTodayAI = aiUsage && 
-                                aiUsage.daily_usage_date === today
+          let optimizationAvailable: boolean = hasRequiredPlatforms
+          let lastOptimizationDate: string | null = null
 
-          // Optimization is available if:
-          // 1. Has Meta connection
-          // 2. Haven't clicked optimize today for this brand specifically
-          // 3. Or haven't used AI consultant for this brand today
-          const optimizationAvailable = hasRequiredPlatforms && 
-                                       lastOptimizationDate !== today &&
-                                       !hasUsedTodayAI
+          if (campaignUsage && campaignUsage.last_used_at) {
+            // Check 24-hour cooldown (campaign recommendations use cooldown, not daily limit)
+            const lastUsed = new Date(campaignUsage.last_used_at)
+            const now = new Date()
+            const hoursSinceLastUse = (now.getTime() - lastUsed.getTime()) / (1000 * 60 * 60)
+            
+            // If less than 24 hours have passed, optimization is not available
+            const isAfterCooldown = hoursSinceLastUse >= 24
+            optimizationAvailable = hasRequiredPlatforms && isAfterCooldown
+            lastOptimizationDate = lastUsed.toISOString().split('T')[0]
+
+            console.log(`[Campaign Optimization] Brand ${brand.id}: Last used ${hoursSinceLastUse.toFixed(1)} hours ago, available: ${optimizationAvailable}`)
+          }
 
           newAvailability[brand.id] = {
             optimizationAvailable,
@@ -885,10 +887,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             hasRequiredPlatforms
           }
         } catch (error) {
-          // If no AI usage record, optimization is available
+          // If no campaign usage record, optimization is available
           newAvailability[brand.id] = {
-            optimizationAvailable: hasRequiredPlatforms && lastOptimizationDate !== today,
-            lastOptimizationDate,
+            optimizationAvailable: hasRequiredPlatforms,
+            lastOptimizationDate: null,
             hasRequiredPlatforms
           }
         }
@@ -1293,10 +1295,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           return availability?.hasRequiredPlatforms
         })
 
-        // Calculate usage numbers for all brands
-        const optimizationsUsed = brandsWithCampaigns.reduce((count, brand) => {
+        // Calculate availability numbers for all brands (24hr cooldown system)
+        const optimizationsAvailable = brandsWithCampaigns.reduce((count, brand) => {
           const availability = campaignOptimizationAvailability[brand.id]
-          return count + (availability?.optimizationAvailable ? 0 : 1)
+          return count + (availability?.optimizationAvailable ? 1 : 0)
         }, 0)
         
         const optimizationsTotal = brandsWithCampaigns.length
@@ -1307,8 +1309,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <span className="text-xs text-gray-400">Campaign Optimization</span>
-                <span className={`text-xs font-medium ${optimizationsUsed < optimizationsTotal ? 'text-green-400' : 'text-red-400'}`}>
-                  {optimizationsUsed}/{optimizationsTotal} used today
+                <span className={`text-xs font-medium ${optimizationsAvailable > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {optimizationsAvailable}/{optimizationsTotal} available
                 </span>
               </div>
             </div>
@@ -1343,7 +1345,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <div className="font-medium">{brand.name}</div>
                       <div className="flex flex-col mt-1 gap-0.5">
                         <div className={`text-[10px] ${optimizationAvailable ? 'text-green-400' : 'text-red-400'}`}>
-                          Optimization: {optimizationAvailable ? 'Available' : 'Used Today'}
+                          Optimization: {optimizationAvailable ? 'Available' : '24hr Cooldown'}
                         </div>
                         {availability?.lastOptimizationDate && (
                           <div className="text-[10px] text-gray-400">
