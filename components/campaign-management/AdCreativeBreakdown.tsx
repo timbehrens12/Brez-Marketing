@@ -118,7 +118,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
 
       for (const campaign of campaignsData.campaigns || []) {
         try {
-          const adsetsResponse = await fetch(`/api/meta/campaigns/${campaign.campaign_id}/adsets?brandId=${selectedBrandId}`, {
+          const adsetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -127,10 +127,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
           })
           const adsetsData = await adsetsResponse.json()
 
-          if (adsetsData.success && adsetsData.adsets) {
-            for (const adSet of adsetsData.adsets) {
+          if (adsetsData.success && adsetsData.adSets) {
+            for (const adSet of adsetsData.adSets) {
               try {
-                const adsResponse = await fetch(`/api/meta/campaigns/${campaign.campaign_id}/adsets/${adSet.adset_id}/ads?brandId=${selectedBrandId}`, {
+                const adsResponse = await fetch(`/api/meta/ads?brandId=${selectedBrandId}&adsetId=${adSet.adset_id}`, {
                   cache: 'no-store',
                   headers: {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
