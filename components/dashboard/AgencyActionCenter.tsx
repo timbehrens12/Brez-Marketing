@@ -28,11 +28,7 @@ import {
   Calendar,
   TrendingUp,
   // New icons for tools
-  Brain,
   Zap,
-  Target,
-  FileBarChart,
-  Palette,
   Settings,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -92,19 +88,6 @@ interface ReusableTool {
 
 const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
-    id: 'campaign-optimizer',
-    name: 'Campaign Optimizer',
-    description: 'AI-powered campaign optimization and performance insights',
-    icon: Target,
-    category: 'ai-powered',
-    href: '/marketing-assistant',
-    features: ['Performance Analysis', 'Budget Optimization', 'Ad Set Recommendations'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand',
-    frequency: 'Per active campaign'
-  },
-  {
     id: 'lead-generator',
     name: 'Lead Generator',
     description: 'Find and qualify leads using real business data',
@@ -114,54 +97,6 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
     dependencyType: 'user',
     frequency: '1 per week'
-  },
-  {
-    id: 'outreach-tool',
-    name: 'Outreach Tool',
-    description: 'Manage lead outreach campaigns and follow-ups',
-    icon: Send,
-    category: 'tools',
-    href: '/outreach-tool',
-    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
-    dependencyType: 'user'
-  },
-  {
-    id: 'marketing-assistant',
-    name: 'Marketing Assistant',
-    description: 'AI marketing insights and strategic recommendations',
-    icon: Brain,
-    category: 'ai-powered',
-    href: '/marketing-assistant',
-    features: ['Performance Analytics', 'Campaign Insights', 'AI Recommendations'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand'
-  },
-  {
-    id: 'brand-reports',
-    name: 'Brand Reports',
-    description: 'Generate comprehensive performance reports',
-    icon: FileBarChart,
-    category: 'analytics',
-    href: '/brand-report',
-    features: ['Performance Reports', 'AI-Generated Insights', 'Export Options'],
-    requiresPlatforms: ['meta'],
-    requiresData: true,
-    dependencyType: 'brand',
-    frequency: 'Daily & Monthly'
-  },
-  {
-    id: 'ad-creative-studio',
-    name: 'Ad Creative Studio',
-    description: 'AI-powered creative generation for ad campaigns',
-    icon: Palette,
-    category: 'ai-powered',
-    href: '/ad-creative-studio',
-    features: ['AI Image Generation', 'Background Replacement', 'Template Library'],
-    requiresPlatforms: [],
-    requiresData: false,
-    dependencyType: 'brand',
-    frequency: '10 per week'
   }
 ]
 
@@ -202,15 +137,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const [userUsageData, setUserUsageData] = useState<any[]>([])
   const [isLoadingUserData, setIsLoadingUserData] = useState(true)
   
-  // Tool usage tracking
+  // Tool usage tracking - simplified to only track lead generator
   const [toolUsageData, setToolUsageData] = useState<{
-    campaignOptimizer: { [brandId: string]: number }
-    brandReports: { [brandId: string]: { daily?: string, monthly?: string } }
-    creativeStudio: { [brandId: string]: { count: number, weekStart: string } }
+    leadGenerator: { [userId: string]: number }
   }>({
-    campaignOptimizer: {},
-    brandReports: {},
-    creativeStudio: {}
+    leadGenerator: {}
   })
 
   // Refresh functionality with cooldown
@@ -366,7 +297,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           description: 'These leads are ready for initial outreach',
           count: pendingLeads.length,
           action: 'Start Outreach',
-          targetPage: '/outreach-tool'
+          targetPage: '/lead-generator'
         })
       }
 
@@ -379,7 +310,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           description: 'These leads showed interest and need immediate attention',
           count: respondedLeads.length,
           action: 'View Responses',
-          targetPage: '/outreach-tool'
+          targetPage: '/lead-generator'
         })
       }
 
@@ -392,7 +323,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           description: 'These leads are qualified and ready for the next step',
           count: qualifiedLeads.length,
           action: 'Send Proposals',
-          targetPage: '/outreach-tool'
+          targetPage: '/lead-generator'
         })
       }
 
@@ -405,7 +336,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           description: 'These leads were contacted but haven\'t responded yet',
           count: needsFollowUp.length,
           action: 'Send Follow-up',
-          targetPage: '/outreach-tool'
+          targetPage: '/lead-generator'
         })
       }
 
@@ -418,7 +349,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           description: 'These leads need urgent follow-up or should be marked as rejected',
           count: goingCold.length,
           action: 'Urgent Follow-up',
-          targetPage: '/outreach-tool'
+          targetPage: '/lead-generator'
         })
       }
 
@@ -548,97 +479,36 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
   }, [userId, getSupabaseClient])
 
-  // Load tool usage data for all brands
+  // Load tool usage data for lead generator
   useEffect(() => {
     const loadToolUsageData = async () => {
-      if (!userId || brands.length === 0) return
+      if (!userId) return
 
       try {
         const supabase = await getSupabaseClient()
         const newToolUsageData = {
-          campaignOptimizer: {} as { [brandId: string]: number },
-          brandReports: {} as { [brandId: string]: { daily?: string, monthly?: string } },
-          creativeStudio: {} as { [brandId: string]: { count: number, weekStart: string } }
+          leadGenerator: {} as { [userId: string]: number }
         }
 
-        // Load Campaign Optimizer availability - Check if active campaigns have been optimized (RLS now disabled)
-        for (const brand of brands) {
-          console.log(`[Agency Center] Campaign Optimizer DEBUG - Checking brand ${brand.name} (${brand.id})`)
-          
-          // Get active campaigns for this brand
-          const { data: activeCampaigns } = await supabase
-            .from('meta_campaigns')
-            .select('campaign_id, campaign_name, status')
-            .eq('brand_id', brand.id)
-            .eq('status', 'ACTIVE')
-
-          // Get campaign optimizations for this brand
-          const { data: optimizations } = await supabase
-            .from('ai_campaign_optimizations')
-            .select('id, period_name, created_at')
-            .eq('brand_id', brand.id)
-
-          const activeCampaignCount = activeCampaigns?.length || 0
-          const optimizationCount = optimizations?.length || 0
-          
-          console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: ${activeCampaignCount} active campaigns, ${optimizationCount} optimizations run`)
-          
-          // Logic: Available if there are active campaigns that haven't been optimized
-          const hasActiveCampaigns = activeCampaignCount > 0
-          const hasBeenOptimized = optimizationCount > 0
-          const isAvailable = hasActiveCampaigns && !hasBeenOptimized
-          
-          // Store status for this brand (0 = available, 1 = unavailable)
-          newToolUsageData.campaignOptimizer[brand.id] = isAvailable ? 0 : 1
-          
-          console.log(`[Agency Center] Campaign Optimizer DEBUG - Brand ${brand.name}: Available=${isAvailable} (campaigns=${activeCampaignCount}, optimized=${hasBeenOptimized})`)
-        }
-
-        // Load brand report generation data from localStorage
-        const today = format(new Date(), 'yyyy-MM-dd')
-        const currentMonth = format(new Date(), 'yyyy-MM')
-        
-        brands.forEach(brand => {
-          const dailyKey = `lastManualGeneration_${brand.id}`
-          const monthlyKey = `lastMonthlyGeneration_${brand.id}`
-          
-          const dailyGenerated = localStorage.getItem(dailyKey)
-          const monthlyGenerated = localStorage.getItem(monthlyKey)
-          
-          newToolUsageData.brandReports[brand.id] = {
-            daily: dailyGenerated || undefined,
-            monthly: monthlyGenerated || undefined
-          }
-        })
-
-        // Load creative studio usage via API to bypass RLS
+        // Load Lead Generator usage - check weekly usage limit
         const now = new Date()
         const startOfWeek = new Date(now)
-        const dayOfWeek = now.getDay()
-        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-        startOfWeek.setDate(now.getDate() - daysToSubtract)
+        startOfWeek.setDate(now.getDate() - now.getDay()) // Start of this week (Sunday)
         startOfWeek.setHours(0, 0, 0, 0)
         
-        // Query ALL creative generations for the USER (across all brands) this week (RLS now disabled)
-        const { data: allCreativeGenerations } = await supabase
-          .from('creative_generations')
-          .select('id, created_at, status, brand_id')
+        const { data: leadGeneratorUsage } = await supabase
+          .from('lead_generator_usage')
+          .select('id')
           .eq('user_id', userId)
           .gte('created_at', startOfWeek.toISOString())
-          .eq('status', 'completed')
 
-        const totalWeeklyCreativeCount = allCreativeGenerations?.length || 0
+        const weeklyUsageCount = leadGeneratorUsage?.length || 0
         
-        console.log(`[Agency Center] Creative Studio - TOTAL USER USAGE: ${totalWeeklyCreativeCount}/10 used this week (user-based limit)`)
+        console.log(`[Agency Center] Lead Generator - Weekly usage: ${weeklyUsageCount}/1`)
         
-        // Set the SAME count for all brands (user-based limit, not per-brand)
-        for (const brand of brands) {
-          newToolUsageData.creativeStudio[brand.id] = {
-            count: totalWeeklyCreativeCount,
-            weekStart: startOfWeek.toISOString()
-          }
-        }
-
+        // Store usage count for this user (weekly limit of 1)
+        newToolUsageData.leadGenerator[userId] = weeklyUsageCount
+        
         setToolUsageData(newToolUsageData)
       } catch (error) {
         console.error('Error loading tool usage data:', error)
@@ -646,7 +516,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
 
     loadToolUsageData()
-  }, [userId, brands, getSupabaseClient])
+  }, [userId, getSupabaseClient])
 
   // Filter active todos
   const isTaskActive = (taskId: string) => {
@@ -795,194 +665,20 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
         
-        if (tool.id === 'outreach-tool') {
-          // Outreach tool needs user to have leads AND be under daily limit (25/day)
-          const hasLeads = userLeadsCount > 0 || userCampaignsCount > 0
-          
-          if (!hasLeads) {
-            console.log(`[Agency Center] ${tool.name}: Unavailable (No leads to manage)`)
-            return { ...tool, status: 'unavailable' }
-          }
-          
-          // Check daily outreach message usage (25 per day limit)
-          const today = new Date()
-          const startOfToday = new Date(today)
-          startOfToday.setHours(0, 0, 0, 0)
-          
-          // Count today's outreach messages from toolUsageData (will be loaded from database)
-          const dailyOutreachCount = userUsageData?.reduce((sum: number, record: any) => {
-            const recordDate = new Date(record.date)
-            if (recordDate >= startOfToday) {
-              return sum + (record.outreach_messages || 0)
-            }
-            return sum
-          }, 0) || 0
-          
-          // DEBUG: Log all userUsageData to see what we have
-          console.log(`[Agency Center] DEBUG userUsageData:`, userUsageData)
-          console.log(`[Agency Center] DEBUG today's outreach records:`, userUsageData?.filter(record => {
-            const recordDate = new Date(record.date)
-            return recordDate >= startOfToday && record.outreach_messages
-          }))
-          
-          const DAILY_LIMIT = 25
-          const hasUsageLeft = dailyOutreachCount < DAILY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyOutreachCount}/${DAILY_LIMIT})`)
-          return { 
-            ...tool, 
-            status: hasUsageLeft ? 'available' : 'unavailable'
-          }
-        }
-        
+
         // Default for user-dependent tools
         return { ...tool, status: 'available' }
 
       case 'brand':
         // Brand-dependent tools - check actual usage and platform requirements
         
-        // Campaign Optimizer - check AI usage tracking (USER-BASED, not per-brand)
-        if (tool.id === 'campaign-optimizer') {
-          if (!brandId || brandId === 'all') {
-            // Check if user has available uses (requires at least one brand with Meta connection)
-            const hasAnyMetaConnection = brands.some((brand: any) => {
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              return brandConnections.some(conn => conn.platform_type === 'meta')
-            })
-            
-            if (!hasAnyMetaConnection) {
-              console.log(`[Agency Center] Campaign Optimizer - No Meta connections found`)
-              return { ...tool, status: 'unavailable' }
-            }
-            
-            // Check if ANY brand has campaigns available for optimization
-            const hasAnyAvailable = brands.some((brand: any) => {
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-              if (!hasMetaConnection) return false
-              
-              // 0 = available, 1+ = unavailable
-              const brandStatus = toolUsageData.campaignOptimizer[brand.id] || 0
-              return brandStatus === 0
-            })
-            
-            console.log(`[Agency Center] Campaign Optimizer - Any brands available for optimization: ${hasAnyAvailable}`)
-            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand - must have Meta connection and user must have usage left
-            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-            const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-            if (!hasMetaConnection) {
-              console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} has no Meta connection`)
-              return { ...tool, status: 'unavailable' }
-            }
-            
-            // Check if this brand's campaigns are available for optimization
-            const brandStatus = toolUsageData.campaignOptimizer[brandId] || 0
-            const isAvailable = brandStatus === 0
-            
-            console.log(`[Agency Center] Campaign Optimizer - Brand ${brandId} - Available: ${isAvailable} (status: ${brandStatus})`)
-            return { ...tool, status: isAvailable ? 'available' : 'unavailable' }
-          }
-        }
-        
-        // Brand Reports - check localStorage for generation dates
-        if (tool.id === 'brand-reports') {
-          if (!brandId || brandId === 'all') {
-            // Check if ANY brand has available reports
-            const today = format(new Date(), 'yyyy-MM-dd')
-            const currentMonth = format(new Date(), 'yyyy-MM')
-            
-            const hasAnyAvailable = brands.some((brand: any) => {
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-              if (!hasMetaConnection) return false
-              
-              const brandReports = toolUsageData.brandReports[brand.id] || {}
-              const dailyAvailable = brandReports.daily !== today
-              const monthlyAvailable = brandReports.monthly !== currentMonth
-              
-              // DEBUG: Log the brand report status
-              try {
-                console.log(`[Agency Center] Brand Reports DEBUG - Brand ${brand.name}:`)
-                console.log(`  brandReports object:`, brandReports)
-                console.log(`  Daily stored: "${brandReports.daily}" vs today: "${today}"`)
-                console.log(`  Monthly stored: "${brandReports.monthly}" vs month: "${currentMonth}"`)
-                console.log(`  Daily available: ${dailyAvailable}, Monthly available: ${monthlyAvailable}`)
-                console.log(`  Final result: ${dailyAvailable || monthlyAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`)
-              } catch (err) {
-                console.error(`[Agency Center] Brand Reports DEBUG error:`, err)
-              }
-              
-              return dailyAvailable || monthlyAvailable
-            })
-            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand
-            const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-            const hasMetaConnection = brandConnections.some(conn => conn.platform_type === 'meta')
-            if (!hasMetaConnection) return { ...tool, status: 'unavailable' }
-            
-            const today = format(new Date(), 'yyyy-MM-dd')
-            const currentMonth = format(new Date(), 'yyyy-MM')
-            const brandReports = toolUsageData.brandReports[brandId] || {}
-            const dailyAvailable = brandReports.daily !== today
-            const monthlyAvailable = brandReports.monthly !== currentMonth
-            
-            // DEBUG: Log specific brand report status
-            console.log(`[Agency Center] Brand Reports - Specific Brand:`, {
-              brandId,
-              dailyStored: brandReports.daily,
-              monthlyStored: brandReports.monthly,
-              today,
-              currentMonth,
-              dailyAvailable,
-              monthlyAvailable,
-              finalStatus: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable'
-            })
-            
-            return { ...tool, status: (dailyAvailable || monthlyAvailable) ? 'available' : 'unavailable' }
-          }
-        }
-        
-        // Creative Studio - check weekly usage
-        if (tool.id === 'ad-creative-studio') {
-          if (!brandId || brandId === 'all') {
-            // Check if ANY brand has available uses
-            const hasAnyAvailable = brands.some((brand: any) => {
-              const creativeData = toolUsageData.creativeStudio[brand.id] || { count: 0 }
-              return creativeData.count < 10 // 10 per week
-            })
-            return { ...tool, status: hasAnyAvailable ? 'available' : 'unavailable' }
-          } else {
-            // Check specific brand
-            const creativeData = toolUsageData.creativeStudio[brandId] || { count: 0 }
-            return { ...tool, status: creativeData.count < 10 ? 'available' : 'unavailable' }
-          }
-        }
-        
-        // Marketing Assistant - always available if Meta connected
-        if (tool.id === 'marketing-assistant') {
-          if (!tool.requiresPlatforms || tool.requiresPlatforms.length === 0) {
-            return { ...tool, status: 'available' }
-          }
 
-          if (!brandId || brandId === 'all') {
-            const hasAnyBrandWithPlatforms = brands.some((brand: any) => {
-              const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
-              return tool.requiresPlatforms!.every(platform => 
-                brandConnections.some(conn => conn.platform_type === platform)
-              )
-            })
-            return { ...tool, status: hasAnyBrandWithPlatforms ? 'available' : 'unavailable' }
-          }
+        
 
-          const brandConnections = connections.filter(conn => conn.brand_id === brandId)
-          const hasRequiredPlatforms = tool.requiresPlatforms.every(platform => 
-            brandConnections.some(conn => conn.platform_type === platform)
-          )
+        
 
-          return { ...tool, status: hasRequiredPlatforms ? 'available' : 'unavailable' }
-        }
+        
+
         
         // Default brand-dependent tools
         return { ...tool, status: 'unavailable' }
@@ -1008,7 +704,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'automation': return <Calendar className="h-4 w-4" />
-      case 'ai-powered': return <Brain className="h-4 w-4" />
+      case 'ai-powered': return <Settings className="h-4 w-4" />
       case 'analytics': return <TrendingUp className="h-4 w-4" />
       case 'tools': return <Settings className="h-4 w-4" />
       default: return <CheckSquare className="h-4 w-4" />
@@ -1049,11 +745,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400">User Dependent</span>
+            <span className="text-xs text-gray-400">Agency Dependent</span>
             <span className={`text-xs font-medium ${tool.status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
               {tool.status === 'available' ? 'Available' : 
-               tool.id === 'lead-generator' ? 'Weekly Limit Reached' :
-               tool.id === 'outreach-tool' ? 'Daily Limit Reached' : 'Unavailable'}
+               tool.id === 'lead-generator' ? 'Weekly Limit Reached' : 'Unavailable'}
             </span>
           </div>
         </div>
@@ -1160,8 +855,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes
-  const [staticAvailableCount, setStaticAvailableCount] = useState(4) // Set to expected value
+  // Absolutely static count that NEVER EVER changes - now only 1 tool (lead generator)
+  const [staticAvailableCount, setStaticAvailableCount] = useState(1) // Set to expected value
   const hasSetStaticCount = useRef(false)
   
   // Set the static count ONCE after component is fully loaded
@@ -1202,9 +897,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (tool.id === 'lead-generator') {
           return 'Weekly Limit Reached'
         }
-        if (tool.id === 'outreach-tool') {
-          return 'Generate Leads First'
-        }
+
         if (tool.dependencyType === 'brand' && tool.requiresPlatforms) {
           return 'Connect Platform'
         }
@@ -2275,7 +1968,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           <span className="text-xs text-gray-500 font-medium">
                             Today's Synopsis ({brand.isTooEarly ? 'Available after 6 AM' : `Since midnight`})
                           </span>
-                          <Brain className="w-3 h-3 text-gray-500" />
+                          <Settings className="w-3 h-3 text-gray-500" />
                         </div>
                         <p className="text-xs text-[#9ca3af] leading-relaxed">
                           {brand.synopsis}
@@ -2330,17 +2023,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         </div>
                       )}
 
-                      {/* Marketing Assistant CTA */}
+                      {/* Lead Generator CTA */}
                       <div className="pt-2 border-t border-[#333]">
                         <Button
                           onClick={() => {
-                            router.push('/marketing-assistant')
+                            router.push('/lead-generator')
                           }}
                           size="sm"
                           className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white text-xs h-7 transition-all duration-200 border border-[#444] hover:border-[#555]"
                         >
-                          <Brain className="w-3 h-3 mr-1" />
-                          Open Marketing Assistant
+                          <Zap className="w-3 h-3 mr-1" />
+                          Open Lead Generator
                         </Button>
                       </div>
                     </div>
