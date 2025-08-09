@@ -831,7 +831,7 @@ export default function AIMarketingConsultant(
 
   if (selectedMode === 'brand' && !selectedBrandId) {
     return (
-      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-2xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
+      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-2xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 3rem)' }}>
         <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -871,9 +871,9 @@ export default function AIMarketingConsultant(
   }
 
   return (
-    <div className="min-h-screen flex gap-4 p-6 pb-24">
+    <div className="min-h-screen flex gap-4 p-6">
       {/* Left Column - Controls and Quick Actions (25%) */}
-      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '25%', height: 'calc(100vh - 8rem)' }}>
+      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '25%', height: 'calc(100vh - 3rem)' }}>
         <CardContent className="p-0 flex flex-col h-full">
         {/* Header with Title and Mode/Focus Controls */}
         <div className="border-b border-[#1a1a1a] p-4 bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f]">
@@ -1018,7 +1018,7 @@ export default function AIMarketingConsultant(
       </Card>
 
       {/* Right Column - Chat and Results (75%) */}
-      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '75%', height: 'calc(100vh - 8rem)' }}>
+      <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: '75%', height: 'calc(100vh - 3rem)' }}>
         <CardContent className="p-0 flex flex-col h-full">
           {/* Chat Messages */}
           <div className="bg-[#0a0a0a]/50 backdrop-blur-sm" style={{ flex: '1 1 auto', minHeight: '300px' }}>
