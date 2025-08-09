@@ -901,17 +901,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 if (tool.id === 'lead-generator') {
                   const used = toolUsageData.leadGenerator[userId || ''] || 0
                   const limit = 1
-                  return `${used}/${limit} per week`
+                  return `${used}/${limit} used this week`
                 }
                 if (tool.id === 'outreach-tool') {
                   const used = toolUsageData.outreachTool[userId || ''] || 0
                   const limit = 25
-                  return `${used}/${limit} per day`
+                  return `${used}/${limit} used today`
                 }
                 if (tool.id === 'ai-consultant') {
                   const used = toolUsageData.aiConsultant[userId || ''] || 0
                   const limit = 15
-                  return `${used}/${limit} per day`
+                  return `${used}/${limit} used today`
                 }
                 return tool.status === 'available' ? 'Available' : 'Unavailable'
               })()}

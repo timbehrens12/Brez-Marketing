@@ -895,7 +895,7 @@ export default function AIMarketingConsultant(
               {remainingUses !== null && (
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 shadow-sm">
                   <MessageCircle className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-white">{remainingUses}/15 left today</span>
+                  <span className="text-sm font-medium text-white">{15 - remainingUses}/15 used today</span>
                 </div>
               )}
             </div>

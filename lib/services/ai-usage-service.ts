@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentLocalDateString, dateToLocalDateString } from '@/lib/utils/timezone'
 
 export type AIFeatureType = 
   | 'campaign_recommendations' 
@@ -91,7 +92,7 @@ export class AIUsageService {
 
       // Check daily limits for features that have them
       if (limits.dailyLimit) {
-        const today = now.toISOString().split('T')[0]
+        const today = getCurrentLocalDateString()
         // Handle both string and Date types from database
         const usageDate = usage.daily_usage_date instanceof Date 
           ? usage.daily_usage_date.toISOString().split('T')[0]
@@ -143,7 +144,7 @@ export class AIUsageService {
   ): Promise<boolean> {
     try {
       const now = new Date()
-      const today = now.toISOString().split('T')[0]
+      const today = getCurrentLocalDateString() // Use local timezone instead of UTC
 
       // Try to insert into ai_usage_logs table (new structure)
       const { error: logError } = await this.supabase
@@ -312,7 +313,7 @@ export class AIUsageService {
 
   async resetDailyLimits(): Promise<void> {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getCurrentLocalDateString() // Use local timezone instead of UTC
       
       await this.supabase
         .from('ai_usage_tracking')

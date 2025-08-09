@@ -1845,7 +1845,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     {usageData.current} / {WEEKLY_LIMIT}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    {WEEKLY_LIMIT - usageData.current} remaining
+                    {usageData.current} used this week
                   </div>
                   {usageData.current >= WEEKLY_LIMIT ? (
                     <div className="text-red-400 text-xs font-medium">

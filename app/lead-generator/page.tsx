@@ -1885,6 +1885,14 @@ export default function LeadGeneratorPage() {
                       </div>
                     </div>
 
+                    {/* Weekly Usage Counter */}
+                    <div className="pt-3 border-t border-[#333]">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-white">{usageData.used}/{usageData.limit}</div>
+                        <div className="text-xs text-gray-500">Used this week</div>
+                      </div>
+                    </div>
+
                     {/* System Limits */}
                     <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#333]">
                       <div className="text-center">

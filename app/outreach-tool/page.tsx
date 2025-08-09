@@ -2886,7 +2886,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-300 truncate">AI Messages</div>
                     <div className="text-xs text-gray-500 truncate">
-                      {messageUsage ? `${messageUsage.daily.remaining} remaining` : 'Loading...'}
+                      {messageUsage ? `${messageUsage.daily.used} used today` : 'Loading...'}
                     </div>
                   </div>
                 </div>
