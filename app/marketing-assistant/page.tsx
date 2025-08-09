@@ -916,12 +916,12 @@ export default function MarketingAssistantPage() {
       return
     }
     
-    // If no brand is selected, show waiting state instead of stopping loading
+    // If no brand is selected, stop loading and show no-brand-selected state
     if (!selectedBrandId) {
-      console.log("[MarketingAssistant] No brand selected, showing waiting state")
-      setIsDataLoading(true) // Keep loading state active
-      setLoadingProgress(5)
-      setLoadingPhase('Please select a brand to continue')
+      console.log("[MarketingAssistant] No brand selected, stopping loading state")
+      setIsDataLoading(false)
+      setLoadingProgress(0)
+      setLoadingPhase('Please select a brand')
       return
     }
     
@@ -938,6 +938,11 @@ export default function MarketingAssistantPage() {
       
       console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
       isInitialLoadInProgress.current = true
+      
+      // 🔥 FIX: Start loading state immediately when brand is selected
+      setIsDataLoading(true)
+      setLoadingProgress(0)
+      setLoadingPhase('Initializing Marketing Assistant')
       
       // Update the last fetched date range
       lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
@@ -1156,8 +1161,8 @@ export default function MarketingAssistantPage() {
     )
   }
 
-  // 🔥 REMOVED: No longer needed - unified loading state handles no-brand-selected case
-  if (false && !selectedBrandId) {
+  // Show no brand selected state - return directly without wrapper to match loading state
+  if (!selectedBrandId) {
   return (
       <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
           {/* Background pattern */}
