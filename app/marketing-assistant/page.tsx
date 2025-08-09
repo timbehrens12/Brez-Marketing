@@ -568,9 +568,16 @@ export default function MarketingAssistantPage() {
       return
     }
 
+    // Prevent multiple simultaneous loads
+    if (isInitialLoadInProgress.current) {
+      console.log("[MarketingAssistant] Load already in progress, skipping duplicate loadAllData call")
+      return
+    }
+
     console.log('[MarketingAssistant] Starting centralized data loading...')
     setIsDataLoading(true)
     setLoadingProgress(0)
+    isInitialLoadInProgress.current = true
 
     try {
       // Phase 0: Check for data gaps and backfill if necessary
@@ -638,21 +645,18 @@ export default function MarketingAssistantPage() {
         }
       }
 
-      // Phase 1: Loading Advertising Data
+      // Phase 1: Loading and Syncing Advertising Data
       setLoadingPhase('Loading advertising data...')
       setLoadingProgress(15)
       
       await new Promise(resolve => setTimeout(resolve, 800)) // Smooth UX
-      
-      // Load advertising metrics
-      const metaData = await fetchMetaDataFromDatabase('centralized-load')
       
       setLoadingProgress(30)
       setLoadingPhase('Syncing latest performance data...')
       
       await new Promise(resolve => setTimeout(resolve, 600))
       
-      // Sync fresh advertising data
+      // Sync fresh advertising data (this will fetch from database after syncing)
       await syncMetaInsights()
       
       setLoadingProgress(50)
@@ -824,7 +828,7 @@ export default function MarketingAssistantPage() {
       // Phase 4: Finalize all data
       setPreloadedData(prev => ({
         ...prev,
-        metaMetrics: metaData || metaMetrics,
+        metaMetrics: metaMetrics,
         aiConsultantReady: true
       }))
       
@@ -855,8 +859,11 @@ export default function MarketingAssistantPage() {
       // Still show the dashboard even if some data failed
       setIsDataLoading(false)
       toast.error('Some data failed to load, but dashboard is still available')
+    } finally {
+      // Always clear the in-progress flag
+      isInitialLoadInProgress.current = false
     }
-  }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase, metaMetrics])
+  }, [selectedBrandId, dateRange, syncMetaInsights, fetchMetaDataFromDatabase])
 
   // Debug function to test midnight reset manually - remove in production
   useEffect(() => {
@@ -927,12 +934,7 @@ export default function MarketingAssistantPage() {
       lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
       
       // Start the centralized loading process
-      loadAllData().finally(() => {
-        // Clear the in-progress flag after completion
-        setTimeout(() => {
-          isInitialLoadInProgress.current = false
-        }, 2000)
-      })
+      loadAllData()
     }
   }, [selectedBrandId, dateRange, loadAllData])
 
