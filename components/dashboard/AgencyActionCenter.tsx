@@ -873,12 +873,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           const campaignIds = metaCampaigns.map(c => c.campaign_id)
 
-          // Calculate start of this week (Monday midnight)
+          // Calculate start of this week (Monday midnight UTC)
           const now = new Date()
           const startOfThisWeek = new Date(now)
           const daysFromMonday = (now.getDay() + 6) % 7 // Convert Sunday=0 to Monday=0
-          startOfThisWeek.setDate(now.getDate() - daysFromMonday)
-          startOfThisWeek.setHours(0, 0, 0, 0)
+          startOfThisWeek.setUTCDate(now.getUTCDate() - daysFromMonday)
+          startOfThisWeek.setUTCHours(0, 0, 0, 0)
 
           // Check for any recommendations created OR updated this week for any campaign of this brand
           // Query for recommendations created this week
