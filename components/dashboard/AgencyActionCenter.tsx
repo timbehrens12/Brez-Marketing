@@ -712,42 +712,62 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           continue
         }
 
-        // Check daily report availability (check if generated today)
+        // Check daily report availability using same logic as brand report page
         const today = new Date().toISOString().split('T')[0]
-        const { data: dailyReport } = await supabase
-          .from('ai_marketing_reports')
-          .select('id')
-          .eq('brand_id', brand.id)
-          .eq('user_id', userId)
-          .eq('period_name', 'today')
-          .eq('date_range_from', today)
-          .eq('date_range_to', today)
-          .limit(1)
-
-        // Check monthly report availability (check if generated this month)
-        const startOfMonth = new Date()
-        startOfMonth.setDate(1)
-        const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0)
+        const brandSpecificDailyKey = `lastManualGeneration_${brand.id}`
+        const brandLastDailyGeneration = localStorage.getItem(brandSpecificDailyKey)
         
-        const { data: monthlyReport } = await supabase
-          .from('ai_marketing_reports')
-          .select('id')
-          .eq('brand_id', brand.id)
-          .eq('user_id', userId)
-          .eq('period_name', 'monthly')
-          .eq('date_range_from', startOfMonth.toISOString().split('T')[0])
-          .eq('date_range_to', endOfMonth.toISOString().split('T')[0])
-          .limit(1)
+        // Also check database reports for today (same as brand report page)
+        try {
+          const params = new URLSearchParams({
+            brandId: brand.id,
+            userId: userId,
+            fromDate: today,
+            toDate: today,
+            periodName: 'today',
+            getAllSnapshots: 'true',
+            includeSharedBrands: 'true'
+          })
+          
+          const response = await fetch(`/api/brand-reports?${params.toString()}`)
+          let databaseDailyReports = []
+          
+          if (response.ok) {
+            const result = await response.json()
+            databaseDailyReports = result.reports || []
+          }
+          
+          const hasUsedDailyToday = brandLastDailyGeneration === today || 
+                                   databaseDailyReports.some((report: any) => 
+                                     report.snapshotTime === "manual" && 
+                                     report.createdAt.startsWith(today)
+                                   )
 
-        // Check time restrictions for daily reports (after 6:30 AM)
-        const currentHour = new Date().getHours()
-        const currentMinutes = new Date().getMinutes()
-        const isAfter630AM = currentHour > 6 || (currentHour === 6 && currentMinutes >= 30)
+          // Check monthly report availability using same logic as brand report page
+          const currentMonthKey = new Date().toISOString().slice(0, 7) // YYYY-MM format
+          const brandSpecificMonthlyKey = `lastMonthlyGeneration_${brand.id}`
+          const brandLastMonthlyGeneration = localStorage.getItem(brandSpecificMonthlyKey)
+          
+          const hasUsedMonthlyThisMonth = brandLastMonthlyGeneration === currentMonthKey
 
-        newAvailability[brand.id] = {
-          dailyAvailable: hasRequiredPlatforms && isAfter630AM && !dailyReport,
-          monthlyAvailable: hasRequiredPlatforms && !monthlyReport,
-          hasRequiredPlatforms
+          // Check time restrictions for daily reports (after 6:30 AM)
+          const currentHour = new Date().getHours()
+          const currentMinutes = new Date().getMinutes()
+          const isAfter630AM = currentHour > 6 || (currentHour === 6 && currentMinutes >= 30)
+
+          newAvailability[brand.id] = {
+            dailyAvailable: hasRequiredPlatforms && isAfter630AM && !hasUsedDailyToday,
+            monthlyAvailable: hasRequiredPlatforms && !hasUsedMonthlyThisMonth,
+            hasRequiredPlatforms
+          }
+        } catch (error) {
+          console.error(`Error checking reports for brand ${brand.id}:`, error)
+          // Fallback to unavailable if error
+          newAvailability[brand.id] = {
+            dailyAvailable: false,
+            monthlyAvailable: false,
+            hasRequiredPlatforms
+          }
         }
       }
 
