@@ -953,7 +953,8 @@ export default function MarketingAssistantPage() {
       setLoadingProgress(0)
       setLoadingPhase('Initializing Marketing Assistant')
       
-      isInitialLoadInProgress.current = true
+      // 🔥 FIX: Reset the flag right before calling loadAllData to prevent duplicate detection
+      isInitialLoadInProgress.current = false
       
       // Update the last fetched date range and brand
       lastFetchedDateRange.current = { from: dateRange.from, to: dateRange.to }
