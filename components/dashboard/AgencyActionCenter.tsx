@@ -913,16 +913,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           )
           const weeklyRecommendations = uniqueRecommendations
 
-          const hasUsedThisWeek = weeklyRecommendations && weeklyRecommendations.length > 0
+          // Calculate how many individual campaigns were optimized this week
+          const optimizedCampaignIds = weeklyRecommendations.map(rec => rec.campaign_id)
+          const optimizedCampaignsCount = optimizedCampaignIds.length
+          const totalCampaignsCount = campaignIds.length
+          
+          const hasUsedThisWeek = optimizedCampaignsCount > 0
+          // Weekly limit: if ANY optimization happened this week, no more optimizations available until next Monday
           const optimizationAvailable = hasRequiredPlatforms && !hasUsedThisWeek
 
           // Get detailed campaign optimization stats for display
           let lastOptimizationDate = null
-          let optimizedCampaignsCount = 0
-          let totalCampaignsCount = campaignIds.length
           
           if (hasUsedThisWeek) {
-            optimizedCampaignsCount = weeklyRecommendations.length
             const mostRecent = weeklyRecommendations.reduce((latest, rec) => {
               // Get the latest date between created_at and updated_at for each record
               const recLatest = new Date(rec.updated_at) > new Date(rec.created_at) ? rec.updated_at : rec.created_at
