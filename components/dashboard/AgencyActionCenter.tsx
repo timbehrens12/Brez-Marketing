@@ -1532,36 +1532,22 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandId)
   
-  // Absolutely static count that NEVER EVER changes - now 6 tools (lead generator + outreach tool + AI consultant + brand reports + creative studio + campaign optimization)
-  const [staticAvailableCount, setStaticAvailableCount] = useState(6) // Set to expected value
-  const hasSetStaticCount = useRef(false)
-  
-  // Set the static count ONCE after component is fully loaded
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!hasSetStaticCount.current) {
-        try {
-          // Calculate the count directly using current values
-          const currentConnections = connections
-          const currentBrands = brands
-          
-          if (currentConnections.length > 0) {
-            const availableTools = BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
-            const count = availableTools.filter(t => t.status === 'available').length
-            setStaticAvailableCount(count)
-          }
-        } catch (error) {
-          console.log('Using fallback count due to error:', error)
-          setStaticAvailableCount(6) // Fallback
-        }
-        hasSetStaticCount.current = true
-      }
-    }, 2000) // Wait 2 seconds for everything to load
+  // Dynamic count based on actual tool availability 
+  const availableToolsCount = useMemo(() => {
+    if (isLoadingConnections || isLoadingUserData || !connections || !brands) {
+      return 0 // Return 0 while loading
+    }
     
-    return () => clearTimeout(timeout)
-  }, []) // No dependencies - only runs once
-  
-  const availableToolsCount = staticAvailableCount
+    try {
+      const availableTools = BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, selectedBrandId))
+      const count = availableTools.filter(t => t.status === 'available').length
+      console.log('[Agency Center] Available tools count:', count, 'Available tools:', availableTools.filter(t => t.status === 'available').map(t => t.name))
+      return count
+    } catch (error) {
+      console.log('Error calculating available tools count:', error)
+      return 0 // Return 0 on error
+    }
+  }, [isLoadingConnections, isLoadingUserData, connections, brands, selectedBrandId, userLeadsCount, userCampaignsCount, userUsageData, toolUsageData])
 
   const getButtonText = (tool: ReusableTool) => {
     switch (tool.status) {
@@ -2507,7 +2493,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         onClick={markAllBrandsAsRead}
                       >
                         <div className="flex items-center gap-2">
-                          <span>{brandHealthData.length} Overviews</span>
+                          <span>{brandHealthData.length} Reports</span>
                           {brandHealthData.filter(brand => !readBrandReports[brand.id]).length > 0 && (
                             <div className="flex items-center gap-1">
                               <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
@@ -2749,7 +2735,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   ) : activeTodos.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Badge className="bg-[#2A2A2A] text-white text-xs">
-                        {`${activeTodos.length} to-do's`}
+                        {activeTodos.length}
                       </Badge>
                     </div>
                   )}
