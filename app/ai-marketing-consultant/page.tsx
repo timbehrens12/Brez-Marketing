@@ -144,10 +144,8 @@ export default function AIMarketingConsultantPage() {
 
   // Show the main AI Marketing Consultant interface
   return (
-    <div className="w-full min-h-screen bg-[#0A0A0A] p-6">
-      <div className="w-full h-full">
-        <AIMarketingConsultant />
-      </div>
+    <div className="w-full min-h-screen bg-[#0A0A0A]">
+      <AIMarketingConsultant />
     </div>
   )
 }
