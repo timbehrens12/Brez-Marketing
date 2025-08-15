@@ -2247,7 +2247,7 @@ const CampaignWidget = ({
               onClick={onSync}
               disabled={isSyncing}
               size="sm"
-              className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white border-0"
+              className="h-7 text-xs bg-gray-600 hover:bg-gray-700 text-white border-0"
             >
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Refresh Campaigns'}
@@ -2828,10 +2828,10 @@ const formatCampaignStatus = (status: string) => {
   } else if (normalizedStatus === 'REFRESHING') {
     return {
       displayText: 'Refreshing',
-      bgColor: 'bg-blue-950/30',
-      textColor: 'text-blue-500',
-      borderColor: 'border-blue-800/50',
-      dotColor: 'bg-blue-500 animate-pulse'
+      bgColor: 'bg-gray-950/30',
+      textColor: 'text-gray-400',
+      borderColor: 'border-gray-800/50',
+      dotColor: 'bg-gray-400 animate-pulse'
     };
   } else {
     return {

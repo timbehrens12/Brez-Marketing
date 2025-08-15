@@ -2729,7 +2729,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex items-center gap-2 mt-3">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full"
+                              className="h-full bg-gray-500 rounded-full"
                               style={{
                                 width: `${Math.min(100, Math.max(0, ((campaign.roas || 0) / 4) * 100))}%`
                               }}
