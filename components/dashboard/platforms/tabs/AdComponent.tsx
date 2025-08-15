@@ -672,15 +672,7 @@ export function AdComponent({
                       value = undefined;
                   }
                   
-                  // *** ADDED DEBUG LOG ***
-                  console.log(`[AdComponent DEBUG] Ad ID: ${ad.ad_id}, Metric: ${metricId}, Raw Value: ${value}, Ad Object Metrics:`, {
-                    spent: ad.spent,
-                    impressions: ad.impressions,
-                    clicks: ad.clicks,
-                    ctr: ad.ctr,
-                    reach: ad.reach,
-                    conversions: ad.conversions
-                  });
+                  // Debug log removed for production
                   
                   return (
                     <td key={metricId} className="p-2 text-right text-white">
