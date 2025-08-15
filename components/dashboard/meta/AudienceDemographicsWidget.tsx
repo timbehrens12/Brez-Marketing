@@ -32,7 +32,7 @@ const BREAKDOWN_TYPES = [
 ]
 
 // Modern professional color scheme
-const CHART_COLOR = '#3b82f6' // Single professional blue
+const CHART_COLOR = '#9ca3af' // Single professional gray
 
 export function AudienceDemographicsWidget({ 
   connectionId, 
@@ -222,7 +222,7 @@ export function AudienceDemographicsWidget({
               {data.slice(0, 8).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-400" />
+                    <div className="w-2 h-2 rounded-full bg-gray-400" />
                     <span className="text-sm text-gray-300 font-medium">{formatBreakdownValue(item.breakdown_value)}</span>
                   </div>
                   <div className="text-right">

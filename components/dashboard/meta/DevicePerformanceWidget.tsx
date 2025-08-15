@@ -138,11 +138,11 @@ export function DevicePerformanceWidget({
   const getMetricColor = () => {
     switch (getMetricForChart()) {
       case 'impressions':
-        return '#3b82f6'
+        return '#9ca3af'
       case 'spend':
-        return '#10b981'
+        return '#d1d5db'
       default:
-        return '#8b5cf6'
+        return '#6b7280'
     }
   }
 
@@ -246,7 +246,7 @@ export function DevicePerformanceWidget({
               {data.slice(0, 5).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg overflow-hidden">
                   <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-                    <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
                     <span className="text-sm text-gray-300 font-medium truncate max-w-[140px]">{formatBreakdownValue(item.breakdown_value)}</span>
                   </div>
                   <div className="text-right flex-shrink-0">
