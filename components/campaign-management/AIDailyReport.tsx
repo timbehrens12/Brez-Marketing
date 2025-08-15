@@ -496,9 +496,9 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       </div>
       
       <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
-        <div className="space-y-6 flex-1">
+        <div className="flex-1 flex flex-col space-y-6">
           {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className="flex-1 mb-6">
+          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-6' : 'flex-1'}`}>
             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-6 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
                 <p className="text-base text-gray-200 leading-relaxed tracking-wide max-w-4xl mx-auto">
