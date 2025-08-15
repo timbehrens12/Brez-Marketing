@@ -110,14 +110,14 @@ export default function BrandReportPage() {
     )
     
     // Debug logging (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Platform Check Debug:', {
-        brandId,
-        totalConnections: connections.length,
-        brandConnections: brandConnections.length,
-        hasValidPlatform
-      })
-    }
+    // if (process.env.NODE_ENV === 'development') {
+      // console.log('🔍 Platform Check Debug:', {
+        // brandId,
+        // totalConnections: connections.length,
+        // brandConnections: brandConnections.length,
+        // hasValidPlatform
+      // })
+    // }
     
     return hasValidPlatform
   }
@@ -204,13 +204,13 @@ export default function BrandReportPage() {
         const isManual = snapshotTime === "manual"
         const isToday = format(new Date(report.createdAt), 'yyyy-MM-dd') === today
         
-        console.log(`🔍 Checking daily report:`, {
-          snapshotTime,
-          isManual,
-          isToday,
-          createdAt: report.createdAt,
-          matches: isManual && isToday
-        })
+        // console.log(`🔍 Checking daily report:`, {
+          // snapshotTime,
+          // isManual,
+          // isToday,
+          // createdAt: report.createdAt,
+          // matches: isManual && isToday
+        // })
         
         return isManual && isToday
       })
@@ -342,7 +342,7 @@ export default function BrandReportPage() {
       } else {
         // Ensure connectionsData is an array
         const safeConnectionsData = Array.isArray(connectionsData) ? connectionsData : []
-        console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
+        // console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
         setConnections(safeConnectionsData)
       }
     } catch (error) {
@@ -472,7 +472,7 @@ export default function BrandReportPage() {
     }
 
     try {
-      console.log(`🔍 Loading all daily reports for brand ${brandId}, period ${periodName}`)
+      // console.log(`🔍 Loading all daily reports for brand ${brandId}, period ${periodName}`)
       
       const params = new URLSearchParams({
         brandId,
@@ -494,7 +494,7 @@ export default function BrandReportPage() {
       const result = await response.json()
       
       if (result.success && result.reports) {
-        console.log(`✅ Found ${result.reports.length} reports`)
+        // console.log(`✅ Found ${result.reports.length} reports`)
         
         // Sync localStorage with database reports for shared brands
         syncLocalStorageWithReports(brandId, result.reports)
@@ -502,7 +502,7 @@ export default function BrandReportPage() {
         return result.reports
       }
       
-      console.log('ℹ️ No reports found')
+      // console.log('ℹ️ No reports found')
       return []
     } catch (error) {
       console.error('❌ Exception loading daily reports:', error)
@@ -524,12 +524,12 @@ export default function BrandReportPage() {
       const hasMonthlyReportForPeriod = reports.some((report: any) => {
         // Access the database record through the data property
         const dbReport = report.data || report
-        console.log(`🔍 Checking report:`, {
-          periodName: dbReport.period_name,
-          date_range_from: dbReport.date_range_from,
-          currentDateRange,
-          matches: dbReport.period_name === 'last-month' && dbReport.date_range_from === currentDateRange
-        })
+        // console.log(`🔍 Checking report:`, {
+          // periodName: dbReport.period_name,
+          // date_range_from: dbReport.date_range_from,
+          // currentDateRange,
+          // matches: dbReport.period_name === 'last-month' && dbReport.date_range_from === currentDateRange
+        // })
         if (dbReport.period_name !== 'last-month') return false
         // Check if report covers the same date range we're looking at
         return dbReport.date_range_from === currentDateRange
@@ -562,29 +562,29 @@ export default function BrandReportPage() {
       
       if (hasMonthlyReportThisMonth) {
         localStorage.setItem(monthlyKey, currentMonthKey)
-        console.log(`📝 Synced monthly report availability for brand ${brandId}`)
+        // console.log(`📝 Synced monthly report availability for brand ${brandId}`)
       }
       
       if (hasDailyReportToday) {
         localStorage.setItem(dailyKey, today)
-        console.log(`📝 Synced daily report availability for brand ${brandId}`)
+        // console.log(`📝 Synced daily report availability for brand ${brandId}`)
       }
       
-      console.log(`🔍 Report sync for brand ${brandId}:`, {
-        hasMonthlyReportForPeriod,
-        hasMonthlyReportThisMonth,
-        currentDateRange,
-        reportsFound: reports.length,
-        reports: reports.map(r => {
-          const dbReport = r.data || r
-          return {
-            period_name: dbReport.period_name,
-            date_range_from: dbReport.date_range_from,
-            date_range_to: dbReport.date_range_to,
-            createdAt: r.createdAt
-          }
-        })
-      })
+      // console.log(`🔍 Report sync for brand ${brandId}:`, {
+        // hasMonthlyReportForPeriod,
+        // hasMonthlyReportThisMonth,
+        // currentDateRange,
+        // reportsFound: reports.length,
+        // reports: reports.map(r => {
+          // const dbReport = r.data || r
+          // return {
+            // period_name: dbReport.period_name,
+            // date_range_from: dbReport.date_range_from,
+            // date_range_to: dbReport.date_range_to,
+            // createdAt: r.createdAt
+          // }
+        // })
+      // })
       
     } catch (error) {
       console.warn('Failed to sync localStorage with reports:', error)
@@ -599,7 +599,7 @@ export default function BrandReportPage() {
     }
 
     try {
-      console.log('💾 Saving report to database with snapshot time:', snapshotTime)
+      // console.log('💾 Saving report to database with snapshot time:', snapshotTime)
       
       const response = await fetch('/api/brand-reports', {
         method: 'POST',
@@ -626,7 +626,7 @@ export default function BrandReportPage() {
       const result = await response.json()
       
       if (result.success) {
-        console.log('✅ Successfully saved report to database')
+        // console.log('✅ Successfully saved report to database')
         return true
         } else {
         console.error('❌ Save failed:', result.error)
@@ -640,7 +640,7 @@ export default function BrandReportPage() {
 
   // Handle period selection
   const handlePeriodSelect = (value: string) => {
-    console.log(`🔄 Period changed from ${selectedPeriod} to ${value}`)
+    // console.log(`🔄 Period changed from ${selectedPeriod} to ${value}`)
     setSelectedPeriod(value)
     setDailyReports([])
     setSelectedReport(null)
@@ -712,10 +712,10 @@ export default function BrandReportPage() {
       const fromDate = format(dateRange.from!, 'yyyy-MM-dd')
       const toDate = format(dateRange.to!, 'yyyy-MM-dd')
 
-      console.log(`🎯 Generating AI report for brand ${selectedBrandId}, snapshot: ${snapshotTime}${isAutoGenerated ? ' (auto-generated)' : ''}`)
+      // console.log(`🎯 Generating AI report for brand ${selectedBrandId}, snapshot: ${snapshotTime}${isAutoGenerated ? ' (auto-generated)' : ''}`)
 
       // Always run fresh data sync before generating reports to ensure accuracy
-      console.log('🔄 Running fresh data sync before generating report...')
+      // console.log('🔄 Running fresh data sync before generating report...')
       try {
         // Sync Meta data
         const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7; // More days for monthly, recent for daily
@@ -744,7 +744,7 @@ export default function BrandReportPage() {
           })
         })
         
-        console.log('✅ Fresh data sync completed')
+        // console.log('✅ Fresh data sync completed')
       } catch (syncError) {
         console.error('❌ Sync failed, but continuing with report generation:', syncError)
       }
@@ -754,7 +754,7 @@ export default function BrandReportPage() {
         const existingReports = await loadDailyReports(selectedBrandId, fromDate, toDate, selectedPeriod)
         const existingReport = existingReports.find((r: DailyReport) => r.snapshotTime === snapshotTime)
         if (existingReport) {
-          console.log('✅ Found existing report for this snapshot time')
+          // console.log('✅ Found existing report for this snapshot time')
           setDailyReports(existingReports)
           setSelectedReport(existingReport)
           setIsLoadingReport(false)
@@ -799,7 +799,7 @@ export default function BrandReportPage() {
           const historicalResult = await historicalResponse.json()
           if (historicalResult.success && historicalResult.reports) {
             historicalReports = historicalResult.reports
-            console.log(`📚 Found ${historicalReports.length} historical reports for comparison`)
+            // console.log(`📚 Found ${historicalReports.length} historical reports for comparison`)
           }
         }
       } catch (historicalError) {
@@ -899,13 +899,13 @@ export default function BrandReportPage() {
       }
 
       const aiResult = await aiResponse.json()
-      console.log('🔍 Full AI response:', aiResult)
+      // console.log('🔍 Full AI response:', aiResult)
 
             // Handle different response formats from the backend API
       const analysis = aiResult.report || aiResult.analysis || aiResult.result || 
         (aiResult.message && aiResult.message !== "Successfully generated AI report" ? aiResult.message : null) || 
         (typeof aiResult === 'string' ? aiResult : null);
-      console.log('🎯 Extracted analysis:', analysis);
+      // console.log('🎯 Extracted analysis:', analysis);
 
       if (!analysis) {
         console.error('AI result structure:', aiResult);
@@ -2167,7 +2167,7 @@ export default function BrandReportPage() {
       return
     }
     
-    console.log('🔄 Manual refresh triggered')
+    // console.log('🔄 Manual refresh triggered')
     
     // Set the brand-specific last generation date
     if (selectedPeriod === "today") {
@@ -2193,14 +2193,14 @@ export default function BrandReportPage() {
 
   // Effect to load reports when brand or period changes
   useEffect(() => {
-    console.log('🔄 useEffect triggered:', { selectedBrandId, selectedPeriod, dateRange })
+    // console.log('🔄 useEffect triggered:', { selectedBrandId, selectedPeriod, dateRange })
     
     // Reset state when brand changes
     setHasMonthlyReportThisMonth(false)
     setHasDailyReportToday(false)
       
     if (selectedBrandId && dateRange.from && dateRange.to && user?.id && mounted) {
-      console.log(`📊 Loading reports for brand: ${selectedBrandId}, period: ${selectedPeriod}`)
+      // console.log(`📊 Loading reports for brand: ${selectedBrandId}, period: ${selectedPeriod}`)
       setIsLoadingReport(true)
       
       const fromDate = format(dateRange.from, 'yyyy-MM-dd')
@@ -2233,9 +2233,9 @@ export default function BrandReportPage() {
             const latest = reports.sort((a: DailyReport, b: DailyReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
             setSelectedReport(latest)
             
-            console.log('✅ Loaded existing reports')
+            // console.log('✅ Loaded existing reports')
           } else {
-            console.log('ℹ️ No existing reports found')
+            // console.log('ℹ️ No existing reports found')
             setSelectedReport(null)
           }
           
@@ -2248,7 +2248,7 @@ export default function BrandReportPage() {
           setIsLoadingReport(false)
         })
     } else {
-      console.log('⏳ Waiting for brand selection or user authentication')
+      // console.log('⏳ Waiting for brand selection or user authentication')
     }
   }, [selectedBrandId, selectedPeriod, dateRange.from, dateRange.to, user?.id, mounted])
 
