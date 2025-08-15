@@ -1953,17 +1953,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       let fromDate: Date
       let toDate: Date
       
-      if (dateRange?.from && dateRange?.to) {
-        // Use the provided date range
-        fromDate = new Date(dateRange.from)
-        toDate = new Date(dateRange.to)
-      } else {
-        // Default to today
-        fromDate = new Date(now)
-        fromDate.setHours(0, 0, 0, 0)
-        toDate = new Date(now)
-        toDate.setHours(23, 59, 59, 999)
-      }
+      // Brand Health Overview ALWAYS shows today's data only - ignore dateRange picker
+      fromDate = new Date(now)
+      fromDate.setHours(0, 0, 0, 0)
+      toDate = new Date(now)
+      toDate.setHours(23, 59, 59, 999)
       
       // Format dates for queries
       const fromDateStr = fromDate.getFullYear() + '-' + 
@@ -2092,11 +2086,34 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Debug: Log deduplicated data
         // console.log(`[Brand Health] ${brand.name} - Deduplicated Meta data:`, totalMeta.length, 'records (was', filteredMetaData.length, ')')
 
-        const totalSpend = totalMeta.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-        const totalConversions = totalMeta.reduce((sum, d) => sum + (parseInt(d.conversions) || 0), 0)
-        const totalImpressions = totalMeta.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
-        const totalClicks = totalMeta.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
-        const avgROAS = totalMeta.length > 0 ? totalMeta.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / totalMeta.length : 0
+        // Validate that we only use today's data and ensure all metrics are real numbers
+        const todayStr = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+        const todayData = totalMeta.filter(d => d.date === todayStr)
+        
+        const totalSpend = todayData.reduce((sum, d) => {
+          const spend = parseFloat(d.spend) || 0
+          return sum + (spend >= 0 ? spend : 0) // Only positive values
+        }, 0)
+        
+        const totalConversions = todayData.reduce((sum, d) => {
+          const conversions = parseInt(d.conversions) || 0
+          return sum + (conversions >= 0 ? conversions : 0) // Only positive values
+        }, 0)
+        
+        const totalImpressions = todayData.reduce((sum, d) => {
+          const impressions = parseInt(d.impressions) || 0
+          return sum + (impressions >= 0 ? impressions : 0) // Only positive values
+        }, 0)
+        
+        const totalClicks = todayData.reduce((sum, d) => {
+          const clicks = parseInt(d.clicks) || 0
+          return sum + (clicks >= 0 ? clicks : 0) // Only positive values
+        }, 0)
+        
+        const avgROAS = todayData.length > 0 ? todayData.reduce((sum, d) => {
+          const roas = parseFloat(d.roas) || 0
+          return sum + (roas >= 0 ? roas : 0) // Only positive values
+        }, 0) / todayData.length : 0
 
         // For comparison, get the most recent day's data vs the rest
         const sortedMeta = [...totalMeta].sort((a, b) => b.date.localeCompare(a.date))
@@ -2108,8 +2125,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const latestDayROAS = latestDayData.length > 0 ? latestDayData.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / latestDayData.length : 0
         const previousROAS = previousData.length > 0 ? previousData.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / previousData.length : 0
 
-        // Debug: Log calculated spend values
-        // console.log(`[Brand Health] ${brand.name} - Total spend: $${totalSpend}, Latest day: $${latestDaySpend}`)
+        // Debug: Log calculated spend values  
+        console.log(`[Brand Health] ${brand.name} - Today's data: ${todayData.length} records, Spend: $${totalSpend}, Conversions: ${totalConversions}`)
+        console.log(`[Brand Health] ${brand.name} - Today's records:`, todayData)
 
         // Calculate changes
         const spendChange = previousSpend > 0 ? ((latestDaySpend - previousSpend) / previousSpend) * 100 : 0
@@ -2238,7 +2256,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }
         }
 
-        const hasData = totalMeta.length > 0 || totalOrders.length > 0
+        const hasData = todayData.length > 0 || totalOrders.length > 0
 
         // console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${totalSpend}, ROAS: ${avgROAS.toFixed(2)}`)
 
@@ -2802,22 +2820,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                 return 'Today\'s Synopsis (Available after 6 AM)'
                               }
                               
-                              if (dateRange?.from && dateRange?.to) {
-                                const from = new Date(dateRange.from)
-                                const to = new Date(dateRange.to)
-                                const today = new Date()
-                                today.setHours(0, 0, 0, 0)
-                                
-                                // Check if it's today
-                                if (from.getTime() === today.getTime() && 
-                                    to.getTime() >= today.getTime()) {
-                                  return 'Today\'s Synopsis (Since midnight)'
-                                } else {
-                                  return `Performance Synopsis (${format(from, 'MMM d')} - ${format(to, 'MMM d')})`
-                                }
-                              } else {
-                                return 'Today\'s Synopsis (Since midnight)'
-                              }
+                              // Brand Health Overview ALWAYS shows today's data only
+                              return 'Today\'s Synopsis (Since midnight)'
                             })()}
                           </span>
                           <Settings className="w-3 h-3 text-gray-500" />
