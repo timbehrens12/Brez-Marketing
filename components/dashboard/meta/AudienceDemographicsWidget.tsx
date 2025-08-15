@@ -219,7 +219,7 @@ export function AudienceDemographicsWidget({
             {/* Clean Data Table */}
             <div className="space-y-2">
               <div className="text-xs font-medium text-gray-400 mb-2">Performance Breakdown</div>
-              {data.slice(0, 5).map((item) => (
+              {data.slice(0, 8).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-blue-400" />

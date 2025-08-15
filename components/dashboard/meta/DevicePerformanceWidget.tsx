@@ -218,10 +218,11 @@ export function DevicePerformanceWidget({
                     dataKey="name" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
-                    height={60}
+                    height={70}
+                    interval={0}
                   />
                   <YAxis 
                     axisLine={false}
@@ -246,7 +247,7 @@ export function DevicePerformanceWidget({
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg overflow-hidden">
                   <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                     <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
-                    <span className="text-sm text-gray-300 font-medium truncate max-w-[120px]">{formatBreakdownValue(item.breakdown_value)}</span>
+                    <span className="text-sm text-gray-300 font-medium truncate max-w-[140px]">{formatBreakdownValue(item.breakdown_value)}</span>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-sm text-white font-medium">{item.impressions.toLocaleString()}</div>
