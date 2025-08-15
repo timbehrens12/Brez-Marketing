@@ -273,13 +273,13 @@ const CampaignWidget = ({
   // console.log(`[CW DEBUG] Received Campaigns Prop Count: ${campaigns?.length ?? 0}`);
     if (campaigns && campaigns.length > 0 && renderCount === 0) {
     // console.log(`[CW DEBUG] First Campaign Prop Metrics:`, {
-        name: campaigns[0].campaign_name,
-        id: campaigns[0].campaign_id,
-        spend: campaigns[0].spent,
-        impressions: campaigns[0].impressions,
-        clicks: campaigns[0].clicks,
-        status: campaigns[0].status
-    });
+    //     name: campaigns[0].campaign_name,
+    //     id: campaigns[0].campaign_id,
+    //     spend: campaigns[0].spent,
+    //     impressions: campaigns[0].impressions,
+    //     clicks: campaigns[0].clicks,
+    //     status: campaigns[0].status
+    // });
   }
   }
   renderCount++; // Increment render counter each time
@@ -382,12 +382,12 @@ const CampaignWidget = ({
       const testCampaign = campaigns.find(c => c.campaign_id === '120218263352990058');
       if (testCampaign) {
         // console.log('[CampaignWidget] Test campaign budget info:', {
-          campaign_id: testCampaign.campaign_id,
-          budget: testCampaign.budget,
-          adset_budget_total: testCampaign.adset_budget_total,
-          budget_type: testCampaign.budget_type,
-          budget_source: testCampaign.budget_source
-        });
+        //   campaign_id: testCampaign.campaign_id,
+        //   budget: testCampaign.budget,
+        //   adset_budget_total: testCampaign.adset_budget_total,
+        //   budget_type: testCampaign.budget_type,
+        //   budget_source: testCampaign.budget_source
+        // });
       }
     }
   }, [campaigns]);
@@ -1377,13 +1377,13 @@ const CampaignWidget = ({
     const processedCampaigns = localCampaigns.map(campaign => {
       // DEBUG LOG campaign details to diagnose zero values
       // console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
-        name: campaign.campaign_name,
-        spent: campaign.spent, 
-        impressions: campaign.impressions,
-        clicks: campaign.clicks,
-        hasDailyInsights: campaign.daily_insights?.length > 0,
-        insightsCount: campaign.daily_insights?.length || 0
-      });
+      //   name: campaign.campaign_name,
+      //   spent: campaign.spent, 
+      //   impressions: campaign.impressions,
+      //   clicks: campaign.clicks,
+      //   hasDailyInsights: campaign.daily_insights?.length > 0,
+      //   insightsCount: campaign.daily_insights?.length || 0
+      // });
       
       // ALWAYS try to aggregate metrics from daily_insights when they exist
       // This ensures we use the most detailed data available
@@ -1457,12 +1457,12 @@ const CampaignWidget = ({
 
         // Log the aggregated metrics for debugging
         // console.log(`[CW DEBUG] Campaign ${campaign.campaign_id}: Found ${insightsInRange} insights in selected date range. Aggregated metrics:`, {
-          spent: aggregatedSpent,
-          impressions: aggregatedImpressions,
-          clicks: aggregatedClicks,
-          conversions: aggregatedConversions,
-          purchaseValue: aggregatedPurchaseValue
-        });
+        //   spent: aggregatedSpent,
+        //   impressions: aggregatedImpressions,
+        //   clicks: aggregatedClicks,
+        //   conversions: aggregatedConversions,
+        //   purchaseValue: aggregatedPurchaseValue
+        // });
 
         const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
         
@@ -1507,14 +1507,14 @@ const CampaignWidget = ({
       // console.log(`[CW DEBUG] Filtered & Sorted Campaigns Count: ${filteredAndSortedCampaigns.length}`);
       if (filteredAndSortedCampaigns.length > 0) {
           // console.log(`[CW DEBUG] First Filtered & Sorted Campaign Prop Metrics:`, {
-              name: filteredAndSortedCampaigns[0].campaign_name,
-              id: filteredAndSortedCampaigns[0].campaign_id,
-              spend: filteredAndSortedCampaigns[0].spent,
-              impressions: filteredAndSortedCampaigns[0].impressions,
-              clicks: filteredAndSortedCampaigns[0].clicks,
-              status: filteredAndSortedCampaigns[0].status,
-              roas: filteredAndSortedCampaigns[0].roas
-        });
+          //     name: filteredAndSortedCampaigns[0].campaign_name,
+          //     id: filteredAndSortedCampaigns[0].campaign_id,
+          //     spend: filteredAndSortedCampaigns[0].spent,
+          //     impressions: filteredAndSortedCampaigns[0].impressions,
+          //     clicks: filteredAndSortedCampaigns[0].clicks,
+          //     status: filteredAndSortedCampaigns[0].status,
+          //     roas: filteredAndSortedCampaigns[0].roas
+          // });
       }
     }
     return filteredAndSortedCampaigns;
@@ -1561,12 +1561,12 @@ const CampaignWidget = ({
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
     // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
-      campaign_budget: campaign.budget,
-      adset_budget_total: campaign.adset_budget_total,
-      budget_type: campaign.budget_type,
-      isLoading,
-      isSyncing
-    });
+    //   campaign_budget: campaign.budget,
+    //   adset_budget_total: campaign.adset_budget_total,
+    //   budget_type: campaign.budget_type,
+    //   isLoading,
+    //   isSyncing
+    // });
     
     // If we have ad sets for this campaign (from expansion), use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
