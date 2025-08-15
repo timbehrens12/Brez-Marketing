@@ -380,9 +380,7 @@ export function MetricCard({
                                 : "text-red-500 bg-red-500/10"
                         }`}>
                           <div className="flex items-center">
-                            {displayNA ? (
-                              <span className="mr-1">ⓘ</span> // Text symbol instead of icon component
-                            ) : percentChange.isZero ? (
+                            {displayNA ? null : percentChange.isZero ? (
                               <Minus className="w-3 h-3 mr-1" />
                             ) : percentChange.isPositive ? (
                               <TrendingUp className="w-3 h-3 mr-1" />
@@ -450,7 +448,6 @@ export function MetricCard({
                   {change === null || previousValue === 0 ? (
                     <div className="flex items-center mt-2">
                       <div className="flex items-center space-x-1 rounded-full px-2 py-0.5 text-gray-500 bg-gray-500 bg-opacity-10">
-                        <span className="mr-1">ⓘ</span> {/* Text symbol instead of icon */}
                         <span>{nullChangeText}</span>
                         {/* Single tooltip for N/A */}
                         <TooltipProvider>
