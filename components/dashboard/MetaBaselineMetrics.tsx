@@ -32,12 +32,21 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const lastRefreshRef = useRef<number>(Date.now())
+  const isFetchingRef = useRef<boolean>(false)
+  const mountedRef = useRef<boolean>(true)
 
   // Function to refresh metrics with the latest data from the API
   const refreshAllMetricsDirectly = useCallback(async (forceRefresh = false) => {
-    if (!brandId) return
+    if (!brandId || !mountedRef.current) return
+    
+    // Prevent duplicate fetches
+    if (isFetchingRef.current) {
+      console.log('Skipping Meta metrics refresh - already fetching')
+      return
+    }
     
     try {
+      isFetchingRef.current = true
       setLoading(true)
       setError(null)
       
@@ -92,7 +101,10 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
         frequency: 0
       })
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
+      isFetchingRef.current = false
     }
   }, [brandId])
 
@@ -104,9 +116,14 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
   // Listen for custom refresh events
   useEffect(() => {
     const handleMetaDataRefreshed = (event: CustomEvent) => {
-      if (event.detail?.brandId === brandId) {
-        console.log('Received metaDataRefreshed event')
-        refreshAllMetricsDirectly(true)
+      if (event.detail?.brandId === brandId && mountedRef.current) {
+        console.log('Received metaDataRefreshed event for MetaBaselineMetrics')
+        // Add small delay to prevent race conditions with other components
+        setTimeout(() => {
+          if (mountedRef.current) {
+            refreshAllMetricsDirectly(true)
+          }
+        }, 100)
       }
     }
     
@@ -118,6 +135,15 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
     }
   }, [brandId, refreshAllMetricsDirectly])
+  
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      isFetchingRef.current = false
+    }
+  }, [])
 
   // Helper function to render growth indicators
   const renderGrowth = (value: number = 0) => {
