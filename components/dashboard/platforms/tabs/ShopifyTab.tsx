@@ -59,61 +59,15 @@ export function ShopifyTab({
   // State for previous period data
   const [previousMetrics, setPreviousMetrics] = useState<Partial<Metrics>>({});
   const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
-  const [hasValidData, setHasValidData] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isDataReady, setIsDataReady] = useState(false);
+  const [hasMountedOnce, setHasMountedOnce] = useState(false);
 
-  // Check if we have valid data
-  const isDataValid = metrics && 
-    (metrics.totalSales > 0 || 
-     metrics.ordersPlaced > 0 || 
-     (metrics.revenueByDay && metrics.revenueByDay.length > 0));
-
-  // Update valid data state
-  useEffect(() => {
-    if (isDataValid) {
-      setHasValidData(true);
-      setIsInitializing(false);
-    }
-  }, [isDataValid]);
-
-  // Safety timeout to prevent infinite loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 5000); // Max 5 seconds of initialization
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading state if we don't have valid data yet
   if (!connection) return <div>No Shopify connection found</div>
-  if (initialDataLoad || (isInitializing && !hasValidData)) {
-    return (
-      <div className="flex items-center justify-center p-6">
-        <Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> 
-        Loading metrics...
-      </div>
-    );
-  }
-
-  // Show loading state during refresh to prevent flickering
-  if (isLoading && !hasValidData) {
-    return (
-      <div className="flex items-center justify-center p-6">
-        <RefreshCcw className="h-8 w-8 animate-spin text-gray-400 mr-2" /> 
-        Refreshing data...
-      </div>
-    );
-  }
-
-  // Additional check - don't render if data is clearly invalid/empty
-  if (!hasValidData && (!metrics || (metrics.totalSales === 0 && metrics.ordersPlaced === 0))) {
-    return (
-      <div className="flex items-center justify-center p-6">
-        <Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> 
-        Loading Shopify data...
-      </div>
-    );
+  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading metrics...</div>
+  
+  // Prevent flash of wrong data - wait for real data to load
+  if (!hasMountedOnce || (!isDataReady && (isLoading || !metrics || metrics.totalSales === undefined))) {
+    return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading Shopify data...</div>
   }
 
   // Helper function to convert Date to ISO date string
@@ -405,6 +359,37 @@ export function ShopifyTab({
     }
   }, [brandId, dateRange, fetchPreviousMetrics]);
 
+  // Data ready state management - prevent flash of wrong data
+  useEffect(() => {
+    // Set mounted flag on first render
+    if (!hasMountedOnce) {
+      setHasMountedOnce(true);
+    }
+    
+    // Check if we have valid metrics data
+    const hasValidData = metrics && 
+                        metrics.totalSales !== undefined && 
+                        metrics.totalSales !== null &&
+                        !isLoading &&
+                        !isRefreshingData;
+    
+    if (hasValidData && !isDataReady) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        setIsDataReady(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!hasValidData && isDataReady) {
+      // Reset data ready state if data becomes invalid
+      setIsDataReady(false);
+    }
+  }, [metrics, isLoading, isRefreshingData, hasMountedOnce, isDataReady]);
+
+  // Reset data ready state when date range changes
+  useEffect(() => {
+    setIsDataReady(false);
+  }, [dateRange?.from, dateRange?.to]);
+
   // Add a function to safely dispatch refresh events with debouncing
   const safeDispatchRefresh = useCallback((reason: string) => {
     const now = Date.now();
@@ -478,10 +463,14 @@ export function ShopifyTab({
     // };
   }, [safeDispatchRefresh]); // Re-run if safeDispatchRefresh changes (e.g. brandId, dateRange)
 
-  // Simplified data loading - only when absolutely necessary
+  // Add check for empty metrics and force refresh if needed
   useEffect(() => {
-    // Only attempt to load data if we don't have valid data AND we're not already loading
-    if (!isDataValid && !isLoading && !isRefreshingData && connection && !isInitializing) {
+    // Check if metrics data is empty when it shouldn't be
+    const isEmpty = !metrics || 
+                    metrics.totalSales === 0 || 
+                    (metrics.revenueByDay && metrics.revenueByDay.length === 0);
+    
+    if (isEmpty && connection && !isLoading && !isRefreshingData) {
       // console.log('[ShopifyTab] Detected empty metrics - triggering DIRECT API call to fetch metrics');
       
       // Always use the exact date range from props - don't override with Last 30 Days

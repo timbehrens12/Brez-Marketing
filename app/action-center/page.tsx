@@ -222,23 +222,24 @@ export default function ActionCenterPage() {
   // Use brands from context
   const brands = contextBrands || []
 
-  // Stable Supabase client function - use refs to avoid dependency issues
+  // Stable Supabase client function - memoize with minimal dependencies
   const getSupabaseClient = useCallback(async () => {
     try {
-      // Get the current getToken function to avoid stale closure
-      const currentGetToken = getToken
-      const token = await currentGetToken({ template: 'supabase' })
+      const token = await getToken({ template: 'supabase' })
+      console.log('[Action Center] 🔗 Getting Supabase client...')
 
       if (token) {
+        console.log('[Action Center] ✅ Using authenticated client')
         return getAuthenticatedSupabaseClient(token)
       } else {
+        console.log('[Action Center] ⚠️ No token, using standard client')
         return getStandardSupabaseClient()
       }
     } catch (error) {
       console.error('[Action Center] ❌ Error getting client:', error)
       return getStandardSupabaseClient()
     }
-  }, []) // Empty dependency array to prevent recreation
+  }, [getToken])
 
   // Load user-dependent data for tool availability - stable version
   const loadUserData = useCallback(async () => {

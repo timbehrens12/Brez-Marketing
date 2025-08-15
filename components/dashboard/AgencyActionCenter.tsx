@@ -499,12 +499,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         supabase.from('user_usage').select('*').eq('user_id', userId)
       ])
 
-      // Get outreach message usage with proper error handling
+      // Get outreach message usage directly from database (RLS now disabled)
       const outreachResponse = await supabase
         .from('outreach_message_usage')
         .select('generated_at')
         .eq('user_id', userId)
-        .limit(100) // Add limit to prevent large queries
 
       if (!leadsResponse.error) {
         setUserLeadsCount(leadsResponse.count || 0)
@@ -516,15 +515,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       if (!usageResponse.error) {
         setUserUsageData(usageResponse.data || [])
-      }
-
-      // Handle outreach usage with error logging
-      if (outreachResponse.error) {
-        console.warn('[Agency Center] Outreach usage query failed:', outreachResponse.error)
-        // Don't set usage data if query fails - this is optional data
-      } else {
-        // Handle outreach usage data if needed
-        console.log('[Agency Center] Outreach usage loaded:', outreachResponse.data?.length || 0, 'records')
       }
 
       // Process outreach usage data and add to userUsageData
