@@ -784,6 +784,57 @@ export default function BrandReportPage() {
       const shopifyData = await shopifyResponse.json()
       const metaData = await metaResponse.json()
 
+      // Fetch demographics data for audience insights
+      let demographicsData = null
+      try {
+        const supabase = await getSupabaseClient()
+        
+        // Get Meta connection for this brand
+        const { data: metaConnection } = await supabase
+          .from('platform_connections')
+          .select('id')
+          .eq('brand_id', selectedBrandId)
+          .eq('platform_type', 'meta')
+          .eq('status', 'active')
+          .single()
+
+        if (metaConnection) {
+          // Fetch recent demographic data (last 30 days for comprehensive reporting)
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          const today = new Date().toISOString().split('T')[0]
+
+          const { data: demographics } = await supabase
+            .from('meta_demographics')
+            .select('*')
+            .eq('connection_id', metaConnection.id)
+            .gte('date_range_start', thirtyDaysAgo)
+            .lte('date_range_end', today)
+            .order('impressions', { ascending: false })
+            .limit(30)
+
+          const { data: deviceData } = await supabase
+            .from('meta_device_performance')
+            .select('*')
+            .eq('connection_id', metaConnection.id)
+            .gte('date_range_start', thirtyDaysAgo)
+            .lte('date_range_end', today)
+            .order('impressions', { ascending: false })
+            .limit(15)
+
+          if (demographics?.length > 0 || deviceData?.length > 0) {
+            demographicsData = {
+              age: demographics?.filter(d => d.breakdown_type === 'age') || [],
+              gender: demographics?.filter(d => d.breakdown_type === 'gender') || [],
+              devices: deviceData?.filter(d => d.breakdown_type === 'device') || [],
+              placements: deviceData?.filter(d => d.breakdown_type === 'placement') || []
+            }
+            // console.log('📊 Demographics data loaded for brand report')
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching demographics data for brand report:', error)
+      }
+
       // Fetch previous reports for comparison and improvement tracking
       let historicalReports = []
       try {
@@ -869,7 +920,10 @@ export default function BrandReportPage() {
         },
         platforms: {
           shopify: shopifyData,
-          meta: metaData
+          meta: {
+            ...metaData,
+            demographics: demographicsData
+          }
         },
         detailed_breakdown: detailedData,
         user: {

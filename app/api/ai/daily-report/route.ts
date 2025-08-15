@@ -118,7 +118,17 @@ function calculateDataHash(platformData: PlatformAnalysis): string {
         impressions: platformData.meta.yesterdayStats?.impressions || 0,
         clicks: platformData.meta.yesterdayStats?.clicks || 0,
         conversions: platformData.meta.yesterdayStats?.conversions || 0
-      }
+      },
+      // Include demographics data in hash to detect audience changes
+      demographics: platformData.meta.demographics ? {
+        hasAge: (platformData.meta.demographics.age?.length || 0) > 0,
+        hasGender: (platformData.meta.demographics.gender?.length || 0) > 0,
+        hasDevices: (platformData.meta.demographics.devices?.length || 0) > 0,
+        // Include top performing segments for change detection
+        topAgeSegment: platformData.meta.demographics.age?.[0]?.breakdown_value || null,
+        topGenderSegment: platformData.meta.demographics.gender?.[0]?.breakdown_value || null,
+        topDevice: platformData.meta.demographics.devices?.[0]?.breakdown_value || null
+      } : null
     },
     // Include date and hour to force hourly regeneration
     timestamp: `${today}_hour_${hour}`,
@@ -241,6 +251,13 @@ interface PlatformAnalysis {
       conversions: number
       revenue: number
     }
+    // Demographics data
+    demographics: {
+      age: any[]
+      gender: any[]
+      devices: any[]
+      placements: any[]
+    } | null
   }
   tiktok: {
     isConnected: boolean
@@ -327,7 +344,9 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
       clicks: 0,
       conversions: 0,
       revenue: 0
-    }
+    },
+    // Initialize demographics
+    demographics: null
   }
 
   if (connectedPlatforms.meta) {
@@ -617,6 +636,58 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
         .filter((c: any) => parseFloat(c.roas) > 0)
         .sort((a: any, b: any) => parseFloat(b.roas) - parseFloat(a.roas))
         .slice(0, 3)
+    }
+
+    // Fetch demographics data for audience insights
+    if (connectedPlatforms.meta) {
+      const { data: metaConnection } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+        .single()
+
+      if (metaConnection) {
+        console.log(`[AIDailyReport] Fetching demographics data for connection: ${metaConnection.id}`)
+        
+        // Fetch recent demographic data (last 30 days)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const today = new Date().toISOString().split('T')[0]
+
+        const { data: demographics } = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', metaConnection.id)
+          .gte('date_range_start', thirtyDaysAgo)
+          .lte('date_range_end', today)
+          .order('impressions', { ascending: false })
+          .limit(20)
+
+        const { data: deviceData } = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', metaConnection.id)
+          .gte('date_range_start', thirtyDaysAgo)
+          .lte('date_range_end', today)
+          .order('impressions', { ascending: false })
+          .limit(10)
+
+        if (demographics?.length > 0 || deviceData?.length > 0) {
+          metaAnalysis.demographics = {
+            age: demographics?.filter(d => d.breakdown_type === 'age') || [],
+            gender: demographics?.filter(d => d.breakdown_type === 'gender') || [],
+            devices: deviceData?.filter(d => d.breakdown_type === 'device') || [],
+            placements: deviceData?.filter(d => d.breakdown_type === 'placement') || []
+          }
+          console.log(`[AIDailyReport] Demographics data loaded:`, {
+            ageSegments: metaAnalysis.demographics.age.length,
+            genderSegments: metaAnalysis.demographics.gender.length,
+            deviceTypes: metaAnalysis.demographics.devices.length,
+            placements: metaAnalysis.demographics.placements.length
+          })
+        }
+      }
     }
   }
 
@@ -1273,6 +1344,48 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
     summaryParts.push(`Performance remains stable with ROAS holding steady week-over-week (${meta.trends.roasTrend.toFixed(1)}% change). This consistency indicates well-optimized campaigns maintaining their effectiveness despite market fluctuations.`)
   }
   
+  // Audience Demographics Analysis
+  if (meta.demographics && (meta.demographics.age.length > 0 || meta.demographics.gender.length > 0 || meta.demographics.devices.length > 0)) {
+    const demographicInsights = []
+    
+    // Age demographics analysis
+    if (meta.demographics.age.length > 0) {
+      const topAgeSegment = meta.demographics.age[0]
+      const totalAgeImpressions = meta.demographics.age.reduce((sum, segment) => sum + (parseInt(segment.impressions) || 0), 0)
+      const agePercentage = totalAgeImpressions > 0 ? ((parseInt(topAgeSegment.impressions) || 0) / totalAgeImpressions * 100) : 0
+      
+      if (agePercentage > 40) {
+        demographicInsights.push(`Your primary audience is the ${topAgeSegment.breakdown_value} age group, representing ${agePercentage.toFixed(0)}% of total impressions`)
+      } else {
+        demographicInsights.push(`Audience is well-distributed across age groups, with ${topAgeSegment.breakdown_value} leading at ${agePercentage.toFixed(0)}%`)
+      }
+    }
+    
+    // Gender demographics analysis  
+    if (meta.demographics.gender.length > 0) {
+      const topGenderSegment = meta.demographics.gender[0]
+      const totalGenderImpressions = meta.demographics.gender.reduce((sum, segment) => sum + (parseInt(segment.impressions) || 0), 0)
+      const genderPercentage = totalGenderImpressions > 0 ? ((parseInt(topGenderSegment.impressions) || 0) / totalGenderImpressions * 100) : 0
+      
+      if (genderPercentage > 60) {
+        demographicInsights.push(`with ${topGenderSegment.breakdown_value} audience dominating at ${genderPercentage.toFixed(0)}% of engagement`)
+      }
+    }
+    
+    // Device performance analysis
+    if (meta.demographics.devices.length > 0) {
+      const topDevice = meta.demographics.devices[0]
+      const totalDeviceImpressions = meta.demographics.devices.reduce((sum, device) => sum + (parseInt(device.impressions) || 0), 0)
+      const devicePercentage = totalDeviceImpressions > 0 ? ((parseInt(topDevice.impressions) || 0) / totalDeviceImpressions * 100) : 0
+      
+      demographicInsights.push(`Most engagement occurs on ${topDevice.breakdown_value} devices (${devicePercentage.toFixed(0)}%)`)
+    }
+    
+    if (demographicInsights.length > 0) {
+      summaryParts.push(`Audience analysis reveals ${demographicInsights.join(', ')}. Understanding these demographic patterns helps optimize targeting strategies and creative messaging to maximize campaign effectiveness.`)
+    }
+  }
+
   // Budget Utilization Insights
   if (meta.dailyBudget > 0) {
     const budgetUtilization = (meta.todayStats.spend / meta.dailyBudget) * 100

@@ -434,6 +434,9 @@ export async function POST(request: NextRequest) {
     const adSetHistoricalData = await fetchAdSetHistoricalData(supabase, campaignId, brandId)
     const adHistoricalData = await fetchAdHistoricalData(supabase, campaignId, brandId)
     
+    // Fetch demographics data for audience insights in optimization
+    const demographicsData = await fetchDemographicsData(supabase, brandId)
+    
     // Calculate key metrics and benchmarks with historical context
     const metrics = calculateCampaignMetrics(campaignData, adSets || [], ads || [], historicalData)
     
@@ -446,7 +449,8 @@ export async function POST(request: NextRequest) {
       historicalData,
       adSetHistoricalData,
       adHistoricalData,
-      previousRecommendations
+      previousRecommendations,
+      demographicsData
     )
 
     // Record usage and store current recommendations for future comparison
@@ -1066,6 +1070,59 @@ async function fetchAdHistoricalData(supabase: any, campaignId: string, brandId:
   return adPerformances
 }
 
+async function fetchDemographicsData(supabase: any, brandId: string) {
+  try {
+    // Get Meta connection for this brand
+    const { data: metaConnection } = await supabase
+      .from('platform_connections')
+      .select('id')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+      .single()
+
+    if (!metaConnection) {
+      return null
+    }
+
+    // Fetch recent demographic data (last 30 days for campaign optimization context)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
+
+    const { data: demographics } = await supabase
+      .from('meta_demographics')
+      .select('*')
+      .eq('connection_id', metaConnection.id)
+      .gte('date_range_start', thirtyDaysAgo)
+      .lte('date_range_end', today)
+      .order('impressions', { ascending: false })
+      .limit(20)
+
+    const { data: deviceData } = await supabase
+      .from('meta_device_performance')
+      .select('*')
+      .eq('connection_id', metaConnection.id)
+      .gte('date_range_start', thirtyDaysAgo)
+      .lte('date_range_end', today)
+      .order('impressions', { ascending: false })
+      .limit(10)
+
+    if (!demographics?.length && !deviceData?.length) {
+      return null
+    }
+
+    return {
+      age: demographics?.filter((d: any) => d.breakdown_type === 'age') || [],
+      gender: demographics?.filter((d: any) => d.breakdown_type === 'gender') || [],
+      devices: deviceData?.filter((d: any) => d.breakdown_type === 'device') || [],
+      placements: deviceData?.filter((d: any) => d.breakdown_type === 'placement') || []
+    }
+  } catch (error) {
+    console.error('Error fetching demographics data for campaign optimization:', error)
+    return null
+  }
+}
+
 function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], historicalData: HistoricalData): CampaignMetrics {
   const { spent, budget, impressions, clicks, conversions, ctr, cpc, roas } = campaign
   
@@ -1175,7 +1232,7 @@ function calculateCampaignMetrics(campaign: any, adSets: any[], ads: any[], hist
   }
 }
 
-async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData, adSetHistoricalData: AdSetPerformance[], adHistoricalData: AdPerformance[], previousRecommendations: any) {
+async function generateAIRecommendation(campaign: any, metrics: CampaignMetrics, adSets: any[], ads: any[], historicalData: HistoricalData, adSetHistoricalData: AdSetPerformance[], adHistoricalData: AdPerformance[], previousRecommendations: any, demographicsData: any) {
   // Format adset analysis
   const adSetAnalysis = adSetHistoricalData.map(adSet => 
     `AdSet: ${adSet.adset_name} (${adSet.status})
@@ -1264,6 +1321,30 @@ CAMPAIGN ASSESSMENT:
 - Key Issues: ${metrics.keyIssues.join(', ') || 'None'}
 - Strengths: ${metrics.strengths.join(', ') || 'None'}
 
+AUDIENCE DEMOGRAPHICS ANALYSIS (Last 30 Days):
+${demographicsData ? `
+Age Demographics:
+${demographicsData.age.slice(0, 5).map((segment: any) => 
+  `- ${segment.breakdown_value}: ${parseInt(segment.impressions).toLocaleString()} impressions, ${parseFloat(segment.ctr).toFixed(2)}% CTR, ${parseFloat(segment.roas || 0).toFixed(2)}x ROAS`
+).join('\n') || 'No age data available'}
+
+Gender Demographics:
+${demographicsData.gender.map((segment: any) => 
+  `- ${segment.breakdown_value}: ${parseInt(segment.impressions).toLocaleString()} impressions, ${parseFloat(segment.ctr).toFixed(2)}% CTR, ${parseFloat(segment.roas || 0).toFixed(2)}x ROAS`
+).join('\n') || 'No gender data available'}
+
+Device Performance:
+${demographicsData.devices.map((device: any) => 
+  `- ${device.breakdown_value}: ${parseInt(device.impressions).toLocaleString()} impressions, ${parseFloat(device.ctr).toFixed(2)}% CTR, ${parseFloat(device.roas || 0).toFixed(2)}x ROAS`
+).join('\n') || 'No device data available'}
+
+AUDIENCE INSIGHTS FOR OPTIMIZATION:
+- Identify top-performing demographic segments for scaling
+- Spot underperforming segments that may need creative refreshes or exclusion
+- Device-specific performance differences for budget allocation
+- Gender/age targeting opportunities based on ROAS performance
+` : 'No demographics data available - consider audience research for targeting optimization'}
+
 CRITICAL ANALYSIS REQUIREMENTS:
 1. NEVER recommend "leave as is" for campaigns with ROAS < 2.0 or zero conversions with meaningful spend (>$10)
 2. Campaigns with 0x ROAS and any spend >$5 should be paused immediately
@@ -1276,6 +1357,9 @@ CRITICAL ANALYSIS REQUIREMENTS:
 9. Analyze creative fatigue at the ad level (declining trends in high-impression ads)
 10. Evaluate targeting effectiveness at the adset level
 11. Provide specific recommendations for individual adsets and ads, not just campaign-level actions
+12. Use audience demographics to identify optimization opportunities (high-performing age/gender segments to scale, underperforming segments to exclude)
+13. Consider device performance differences when recommending budget allocation or bid adjustments
+14. Suggest targeting refinements based on demographic performance patterns
 
 Provide a comprehensive recommendation in the following JSON format:
 {

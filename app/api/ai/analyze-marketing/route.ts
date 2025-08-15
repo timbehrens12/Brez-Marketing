@@ -95,6 +95,9 @@ Generate professional business report content with proper HTML structure includi
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.2 Meta/Facebook Ads Performance</h3>
 <p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
+
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze audience composition by age, gender, and device preferences. Identify top-performing demographic segments and optimization opportunities based on engagement and conversion data.</p>
 </div>
 
 <div class="strengths-opportunities">
@@ -134,7 +137,7 @@ Response should be 400-600 words with proper HTML formatting and inline styles.
       messages: [
         {
           role: 'system',
-          content: 'You are a senior business analyst specializing in e-commerce and digital marketing. Generate properly structured HTML report content with inline styles and color-coded sections. Never include main headers or titles - only generate the content sections that will go inside a pre-styled wrapper. Always use inline CSS styles for consistent formatting. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided.'
+          content: 'You are a senior business analyst specializing in e-commerce and digital marketing with expertise in audience demographics and targeting optimization. Generate properly structured HTML report content with inline styles and color-coded sections. Never include main headers or titles - only generate the content sections that will go inside a pre-styled wrapper. Always use inline CSS styles for consistent formatting. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided. When demographics data is available, provide detailed audience analysis including age groups, gender performance, and device preferences with optimization recommendations based on engagement and conversion patterns.'
         },
         {
           role: 'user',
