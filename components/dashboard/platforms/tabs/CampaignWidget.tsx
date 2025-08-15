@@ -561,18 +561,18 @@ const CampaignWidget = ({
       
       // *** Add logging for the actual ad set data received ***
       // console.log(`[CampaignWidget] [DEBUG] Parsed ad sets data for campaign ${campaignId}:`, 
-        data.adSets ? {
-          count: data.adSets.length,
-          source: data.source || 'unknown',
-          timestamp: data.timestamp || 'unknown',
-          dateRange: data.dateRange || 'not specified',
-          firstAdSetMetrics: data.adSets[0] ? {
-            spent: data.adSets[0].spent,
-            impressions: data.adSets[0].impressions,
-            clicks: data.adSets[0].clicks,
-            reach: data.adSets[0].reach
-          } : 'no ad sets'
-        } : 'no ad sets data');
+      //   data.adSets ? {
+      //     count: data.adSets.length,
+      //     source: data.source || 'unknown',
+      //     timestamp: data.timestamp || 'unknown',
+      //     dateRange: data.dateRange || 'not specified',
+      //     firstAdSetMetrics: data.adSets[0] ? {
+      //       spent: data.adSets[0].spent,
+      //       impressions: data.adSets[0].impressions,
+      //       clicks: data.adSets[0].clicks,
+      //       reach: data.adSets[0].reach
+      //     } : 'no ad sets'
+      //   } : 'no ad sets data');
       
       if (response.ok) {
         // Check if this is a rate limit response with cached data
