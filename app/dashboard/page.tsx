@@ -769,7 +769,7 @@ export default function DashboardPage() {
       try {
         // 🔥 ENHANCED DATA REFRESH: Check for gaps AND stale historical data
         if (selectedBrandId) {
-          console.log('[Dashboard] Starting comprehensive data validation and refresh...');
+          // console.log('[Dashboard] Starting comprehensive data validation and refresh...');
           
           try {
             // 🔥 FIX: Use server-side API endpoint instead of direct client-side import
@@ -797,23 +797,23 @@ export default function DashboardPage() {
               if (refreshResult.staleDataRefreshed > 0) messages.push(`${refreshResult.staleDataRefreshed} stale days fixed`);
               if (refreshResult.totalGapsFilled > 0) messages.push(`${refreshResult.totalGapsFilled} missing days filled`);
               
-              console.log(`[Dashboard] ✅ Complete refresh done: ${messages.join(', ')}`);
+              // console.log(`[Dashboard] ✅ Complete refresh done: ${messages.join(', ')}`);
               
               // If we fixed stale data, show a helpful message
               if (refreshResult.staleDataRefreshed > 0) {
-                console.log(`[Dashboard] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`);
+                // console.log(`[Dashboard] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`);
               }
             } else {
-              console.warn(`[Dashboard] ⚠️ Complete data refresh had issues:`, refreshResult.error);
+              // console.warn(`[Dashboard] ⚠️ Complete data refresh had issues:`, refreshResult.error);
             }
           } catch (error) {
-            console.warn('[Dashboard] ⚠️ Error during enhanced data refresh:', error);
+            // console.warn('[Dashboard] ⚠️ Error during enhanced data refresh:', error);
             
             // Fallback to old system
-            console.log('[Dashboard] Falling back to standard gap detection...');
+            // console.log('[Dashboard] Falling back to standard gap detection...');
             await checkForGaps(selectedBrandId);
             if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
-              console.log(`[Dashboard] Backfilling ${backfillStatus.totalMissingDays} missing days...`);
+              // console.log(`[Dashboard] Backfilling ${backfillStatus.totalMissingDays} missing days...`);
               await performBackfill(selectedBrandId);
             }
           }
@@ -973,7 +973,7 @@ export default function DashboardPage() {
 
   // Update the fetchMetaMetrics function to remove blockers and always force refresh
   const fetchMetaMetrics = useCallback(async (initialLoad: boolean = false, forceRefresh: boolean = true) => {
-    console.log(`[fetchMetaMetrics] Called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
+    // console.log(`[fetchMetaMetrics] Called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
     // Remove the blocking condition - we always want to fetch fresh Meta data
     if (!selectedBrandId) return;
@@ -1014,8 +1014,8 @@ export default function DashboardPage() {
       const metaData = await metaResponse.json();
       
       // Log the raw data received from the API to debug doubling
-      console.log('>>> [fetchMetaMetrics] Received Meta metrics:', {
-        adSpend: metaData?.adSpend,
+      // console.log('>>> [fetchMetaMetrics] Received Meta metrics:', {
+      //   adSpend: metaData?.adSpend,
         adSpendGrowth: metaData?.adSpendGrowth,
         impressions: metaData?.impressions,
         impressionGrowth: metaData?.impressionGrowth,
@@ -1033,8 +1033,8 @@ export default function DashboardPage() {
       // });
       
       // FIX: Only update Meta-specific metrics to prevent duplication, preserve other metrics
-      console.log('>>> [fetchMetaMetrics] Previous metrics before update:', {
-        adSpendGrowth: (prev: any) => prev.adSpendGrowth,
+      // console.log('>>> [fetchMetaMetrics] Previous metrics before update:', {
+      //   adSpendGrowth: (prev: any) => prev.adSpendGrowth,
         impressionGrowth: (prev: any) => prev.impressionGrowth,
         roasGrowth: (prev: any) => prev.roasGrowth
       });
@@ -1064,8 +1064,8 @@ export default function DashboardPage() {
           dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
         };
         
-        console.log('>>> [fetchMetaMetrics] New metrics being applied:', {
-          adSpendGrowth: newMetrics.adSpendGrowth,
+        // console.log('>>> [fetchMetaMetrics] New metrics being applied:', {
+        //   adSpendGrowth: newMetrics.adSpendGrowth,
           impressionGrowth: newMetrics.impressionGrowth,
           roasGrowth: newMetrics.roasGrowth
         });
@@ -1310,7 +1310,7 @@ export default function DashboardPage() {
       // Meta resync already ensures fresh data is in the database
       // MetaTab components will fetch this data independently via their own useEffect hooks
       // No need for dashboard to also fetch Meta metrics since it would be redundant
-      console.log('>>> [fetchAllData] Meta resync completed - MetaTab components will handle their own data fetching');
+      // console.log('>>> [fetchAllData] Meta resync completed - MetaTab components will handle their own data fetching');
       
       // Dispatch event to let MetaTab components know fresh data is available
       window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 

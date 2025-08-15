@@ -1,7 +1,7 @@
 // lib/supabase/client.ts - LEGACY FILE - NOW REDIRECTS TO UNIFIED CLIENT  
 import { getStandardSupabaseClient, getServerSupabaseClient } from '@/lib/utils/unified-supabase'
 
-console.log('📦 Using unified Supabase client system')
+// console.log('📦 Using unified Supabase client system')
 
 export function getSupabaseClient() {
   if (typeof window === 'undefined') {

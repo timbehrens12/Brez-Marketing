@@ -749,7 +749,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const supabase = await getSupabaseClient()
       const newAvailability: typeof brandReportAvailability = {}
       
-      console.log(`[Brand Report Availability] Checking ${brands.length} brands:`, brands.map((b: any) => ({ id: b.id, name: b.name, isShared: !!b.shared_access })))
+      // console.log(`[Brand Report Availability] Checking ${brands.length} brands:`, brands.map((b: any) => ({ id: b.id, name: b.name, isShared: !!b.shared_access })))
 
       for (const brand of brands) {
         // Check if brand has required platforms

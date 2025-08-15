@@ -29,14 +29,14 @@ export function getStandardSupabaseClient(): SupabaseClient {
       throw new Error('Missing Supabase environment variables')
     }
     
-    console.log('📦 Creating standard Supabase client')
+    // console.log('📦 Creating standard Supabase client')
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
       }
     })
-    console.log('📦 Standard Supabase client ready')
+    // console.log('📦 Standard Supabase client ready')
   }
   
   return standardClient
@@ -61,7 +61,7 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
     throw new Error('Missing Supabase environment variables')
   }
   
-  console.log('📦 Creating authenticated Supabase client')
+  // console.log('📦 Creating authenticated Supabase client')
   
   // Clean up previous client
   if (currentAuthenticatedClient) {
@@ -81,7 +81,7 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
   })
   
   currentTokenHash = tokenHash
-  console.log('📦 Authenticated Supabase client ready')
+  // console.log('📦 Authenticated Supabase client ready')
   
   return currentAuthenticatedClient
 }
@@ -93,7 +93,7 @@ export function clearSupabaseClients() {
   standardClient = null
   currentAuthenticatedClient = null
   currentTokenHash = null
-  console.log('📦 Cleared all Supabase clients')
+  // console.log('📦 Cleared all Supabase clients')
 }
 
 /**
@@ -136,9 +136,9 @@ export function getServerSupabaseClient(): SupabaseClient {
 
 // Add debug function to check client instances
 export function debugClientInstances() {
-  console.log(`📦 Standard client exists: ${!!standardClient}`)
-  console.log(`📦 Authenticated client exists: ${!!currentAuthenticatedClient}`)
-  console.log(`📦 Current token hash: ${currentTokenHash ? 'Set' : 'None'}`)
+  // console.log(`📦 Standard client exists: ${!!standardClient}`)
+  // console.log(`📦 Authenticated client exists: ${!!currentAuthenticatedClient}`)
+  // console.log(`📦 Current token hash: ${currentTokenHash ? 'Set' : 'None'}`)
 }
 
 // Legacy exports for backward compatibility

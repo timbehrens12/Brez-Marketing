@@ -47,9 +47,9 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       
       if (saved) {
         setSelectedBrandId(saved)
-        console.log('[BrandContext] Restored brand selection from session:', saved)
+        // console.log('[BrandContext] Restored brand selection from session:', saved)
       } else {
-        console.log('[BrandContext] No brand selection in session - user must select brand manually')
+        // console.log('[BrandContext] No brand selection in session - user must select brand manually')
       }
     }
   }, [])
@@ -60,10 +60,10 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       if (id) {
         sessionStorage.setItem('selectedBrandId', id)
-        console.log('[BrandContext] Saved brand selection to session:', id)
+        // console.log('[BrandContext] Saved brand selection to session:', id)
       } else {
         sessionStorage.removeItem('selectedBrandId')
-        console.log('[BrandContext] Cleared brand selection from session')
+        // console.log('[BrandContext] Cleared brand selection from session')
       }
     }
   }
@@ -280,7 +280,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         const owned = (ownedBrands as unknown as Brand[]) || [];
         const loadedBrands = [...owned, ...sharedBrands];
         
-        console.log('Initial load - brands:', loadedBrands.length, 'owned:', owned.length, 'shared:', sharedBrands.length)
+        // console.log('Initial load - brands:', loadedBrands.length, 'owned:', owned.length, 'shared:', sharedBrands.length)
         setBrands(loadedBrands);
         
         // Validate that the selected brand still exists

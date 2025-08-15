@@ -1207,7 +1207,7 @@ export default function ActionCenterPage() {
         return
       }
 
-      console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
+      // console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
 
       // Step 3: Check if it's too early (before 6 AM)
       const now = new Date()
@@ -1230,7 +1230,7 @@ export default function ActionCenterPage() {
         String(yesterdayMidnight.getMonth() + 1).padStart(2, '0') + '-' + 
         String(yesterdayMidnight.getDate()).padStart(2, '0')
 
-      console.log(`[Brand Health] Analyzing ${isTooEarly ? 'too early' : 'today'}: ${todayDateStr} vs yesterday: ${yesterdayDateStr}`)
+      // console.log(`[Brand Health] Analyzing ${isTooEarly ? 'too early' : 'today'}: ${todayDateStr} vs yesterday: ${yesterdayDateStr}`)
 
       // Step 4.5: Trigger fresh data sync if force refresh is requested
       if (forceRefresh) {
@@ -1248,12 +1248,12 @@ export default function ActionCenterPage() {
               })
             })
             if (syncResponse.ok) {
-              console.log(`[Brand Health] ${brand.name} - Fresh sync completed`)
+              // console.log(`[Brand Health] ${brand.name} - Fresh sync completed`)
             } else {
-              console.warn(`[Brand Health] ${brand.name} - Sync failed:`, await syncResponse.text())
+              // console.warn(`[Brand Health] ${brand.name} - Sync failed:`, await syncResponse.text())
             }
           } catch (syncError) {
-            console.warn(`[Brand Health] ${brand.name} - Sync error:`, syncError)
+            // console.warn(`[Brand Health] ${brand.name} - Sync error:`, syncError)
           }
         }
         // Wait a moment for the sync to complete
@@ -1263,14 +1263,14 @@ export default function ActionCenterPage() {
 
       // Step 5: Process each brand
       const brandHealthPromises = brandsWithAdPlatforms.map(async (brand) => {
-        console.log(`[Brand Health] Processing ${brand.name}...`)
+        // console.log(`[Brand Health] Processing ${brand.name}...`)
 
         // Get brand connections
         const brandConnections = allConnections?.filter(conn => conn.brand_id === brand.id) || []
         
         // Debug: Log what we're looking for
-        console.log(`[Brand Health] ${brand.name} - Looking for Meta data on dates:`, [todayDateStr, yesterdayDateStr])
-        console.log(`[Brand Health] ${brand.name} - Brand ID:`, brand.id)
+        // console.log(`[Brand Health] ${brand.name} - Looking for Meta data on dates:`, [todayDateStr, yesterdayDateStr])
+        // console.log(`[Brand Health] ${brand.name} - Brand ID:`, brand.id)
         
         // Get Meta data from meta_campaign_daily_stats (the correct table)
         // Add cache-busting to ensure we get fresh data
@@ -1283,8 +1283,8 @@ export default function ActionCenterPage() {
           .order('created_at', { ascending: false }) // Get the most recent records first
 
         // Debug: Log what we got back
-        console.log(`[Brand Health] ${brand.name} - Meta query result:`, { metaData, metaError })
-        console.log(`[Brand Health] ${brand.name} - Meta data count:`, metaData?.length || 0)
+        // console.log(`[Brand Health] ${brand.name} - Meta query result:`, { metaData, metaError })
+        // console.log(`[Brand Health] ${brand.name} - Meta data count:`, metaData?.length || 0)
 
         // Debug: Check what Meta data exists for this brand (any date)
         const { data: allMetaData } = await supabase
@@ -1294,7 +1294,7 @@ export default function ActionCenterPage() {
           .order('date', { ascending: false })
           .limit(5)
         
-        console.log(`[Brand Health] ${brand.name} - All Meta data (last 5 days):`, allMetaData)
+        // console.log(`[Brand Health] ${brand.name} - All Meta data (last 5 days):`, allMetaData)
 
         // Get Shopify data if connected (need to check for Shopify connections separately)
         const { data: shopifyConnections } = await supabase
@@ -1331,14 +1331,14 @@ export default function ActionCenterPage() {
         const deduplicatedMeta = Array.from(metaDataByDate.values())
         
         // Debug: Log deduplication results
-        console.log(`[Brand Health] ${brand.name} - Raw Meta data:`, rawMetaData.length, 'records, deduplicated:', deduplicatedMeta.length)
+        // console.log(`[Brand Health] ${brand.name} - Raw Meta data:`, rawMetaData.length, 'records, deduplicated:', deduplicatedMeta.length)
         
         const todayMeta = deduplicatedMeta.filter(d => d.date === todayDateStr)
         const yesterdayMeta = deduplicatedMeta.filter(d => d.date === yesterdayDateStr)
 
         // Debug: Log filtered data for each day
-        console.log(`[Brand Health] ${brand.name} - Today Meta filtered (${todayDateStr}):`, todayMeta)
-        console.log(`[Brand Health] ${brand.name} - Yesterday Meta filtered (${yesterdayDateStr}):`, yesterdayMeta)
+        // console.log(`[Brand Health] ${brand.name} - Today Meta filtered (${todayDateStr}):`, todayMeta)
+        // console.log(`[Brand Health] ${brand.name} - Yesterday Meta filtered (${yesterdayDateStr}):`, yesterdayMeta)
 
         const todaySpend = todayMeta.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
         const todayConversions = todayMeta.reduce((sum, d) => sum + (parseInt(d.conversions) || 0), 0)
@@ -1350,7 +1350,7 @@ export default function ActionCenterPage() {
         const yesterdayROAS = yesterdayMeta.length > 0 ? yesterdayMeta.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / yesterdayMeta.length : 0
 
         // Debug: Log calculated spend values
-        console.log(`[Brand Health] ${brand.name} - Calculated todaySpend: $${todaySpend}, yesterdaySpend: $${yesterdaySpend}`)
+        // console.log(`[Brand Health] ${brand.name} - Calculated todaySpend: $${todaySpend}, yesterdaySpend: $${yesterdaySpend}`)
 
         // Calculate changes
         const spendChange = yesterdaySpend > 0 ? ((todaySpend - yesterdaySpend) / yesterdaySpend) * 100 : 0
@@ -1417,7 +1417,7 @@ export default function ActionCenterPage() {
                 hasShopifyData: (shopifyData?.length || 0) > 0
               }
 
-              console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)
+              // console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)
               
               const aiResponse = await fetch('/api/ai/generate-analysis', {
                 method: 'POST',
@@ -1431,7 +1431,7 @@ export default function ActionCenterPage() {
               if (aiResponse.ok) {
                 const aiResult = await aiResponse.json()
                 synopsis = aiResult.analysis || `${brand.name} performance data is being analyzed.`
-                console.log(`[Brand Health] ${brand.name} - AI synopsis generated successfully`)
+                // console.log(`[Brand Health] ${brand.name} - AI synopsis generated successfully`)
               } else {
                 throw new Error('AI synthesis failed')
               }
@@ -1439,7 +1439,7 @@ export default function ActionCenterPage() {
               synopsis = `${brand.name} has no ad activity today yet. Campaigns may be scheduled to start later or need to be activated.`
             }
           } catch (error) {
-            console.warn(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
+            // console.warn(`[Brand Health] ${brand.name} - AI synopsis generation failed:`, error)
             // Fallback to simple factual statement
             if (todaySpend === 0 && todayMeta.length === 0) {
               synopsis = `${brand.name} has no ad activity today yet. Campaigns may be scheduled to start later or need to be activated.`
@@ -1459,7 +1459,7 @@ export default function ActionCenterPage() {
 
         const hasData = todayMeta.length > 0 || todayOrders.length > 0
 
-        console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${todaySpend}, ROAS: ${todayROAS.toFixed(2)}`)
+        // console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${todaySpend}, ROAS: ${todayROAS.toFixed(2)}`)
 
         return {
           ...brand,
@@ -1484,7 +1484,7 @@ export default function ActionCenterPage() {
       })
 
       const results = await Promise.all(brandHealthPromises)
-      console.log(`[Brand Health] Processed ${results.length} brands`)
+      // console.log(`[Brand Health] Processed ${results.length} brands`)
       
       setBrandHealthData(results)
     } catch (error) {

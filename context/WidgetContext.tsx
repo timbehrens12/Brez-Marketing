@@ -146,7 +146,7 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
 
   // Debug log to check widget initialization
   useEffect(() => {
-    console.log("Current widgets:", widgets)
+    // console.log("Current widgets:", widgets)
   }, [widgets])
 
   const togglePin = (widgetId: string) => {

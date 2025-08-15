@@ -72,7 +72,7 @@ import { supabase } from '@/lib/supabase'; // Import supabase
 import { startOfDay, endOfDay } from 'date-fns'; // Import date-fns functions
 
 // Debug flag to control verbosity
-const DEBUG_LOGGING = true;
+const DEBUG_LOGGING = false; // Disabled for production
 
 // Logger for controlled output
 const logger = {
@@ -428,7 +428,7 @@ const CampaignWidget = ({
     // Log detailed debugging info about the date range
     // console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
     if (!dateRange || !dateRange.from || !dateRange.to) {
-      console.warn(`[CampaignWidget] [WARNING] Date range is missing or incomplete when fetching ad sets for campaign ${campaignId}`);
+      // console.warn(`[CampaignWidget] [WARNING] Date range is missing or incomplete when fetching ad sets for campaign ${campaignId}`);
     }
     
     // Only abort requests if forcing a refresh, otherwise let existing fetches for other campaigns complete.
@@ -497,7 +497,7 @@ const CampaignWidget = ({
         // console.log(`[CampaignWidget] [DEBUG] Adding date query params: ${dateQuery}`);
         url += dateQuery;
       } else {
-        console.warn(`[CampaignWidget] [WARNING] No date range available for ad sets fetch`);
+        // console.warn(`[CampaignWidget] [WARNING] No date range available for ad sets fetch`);
       }
       
       if (forceRefresh) {
@@ -594,7 +594,7 @@ const CampaignWidget = ({
             
             // Check if the response has date range info
             if (data.dateRange && (data.dateRange.from !== requestedDateFrom || data.dateRange.to !== requestedDateTo)) {
-              console.warn(`[CampaignWidget] [WARNING] Response date range (${data.dateRange.from} to ${data.dateRange.to}) does not match requested date range (${requestedDateFrom} to ${requestedDateTo})`);
+              // console.warn(`[CampaignWidget] [WARNING] Response date range (${data.dateRange.from} to ${data.dateRange.to}) does not match requested date range (${requestedDateFrom} to ${requestedDateTo})`);
             }
           }
           
@@ -1393,12 +1393,12 @@ const CampaignWidget = ({
         // console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
         
         // Log current date range
-        console.log(`[CW DEBUG RANGE] Current dateRange:`, {
-          from: dateRange?.from?.toISOString(),
-          to: dateRange?.to?.toISOString(),
-          fromLocal: dateRange?.from?.toString(),
-          toLocal: dateRange?.to?.toString()
-        });
+        // console.log(`[CW DEBUG RANGE] Current dateRange:`, {
+        //   from: dateRange?.from?.toISOString(),
+        //   to: dateRange?.to?.toISOString(),
+        //   fromLocal: dateRange?.from?.toString(),
+        //   toLocal: dateRange?.to?.toString()
+        // });
         
         let aggregatedSpent = 0;
         let aggregatedImpressions = 0;
@@ -1421,27 +1421,27 @@ const CampaignWidget = ({
               effectiveRangeStart.getMonth() === effectiveRangeEnd.getMonth() &&
               effectiveRangeStart.getDate() === effectiveRangeEnd.getDate()) {
             
-            console.log(`[CW DEBUG SINGLE] Detected single day range, adjusting end time`);
+            // console.log(`[CW DEBUG SINGLE] Detected single day range, adjusting end time`);
             // Create a new Date object for effectiveRangeEnd to avoid mutating the prop
             effectiveRangeEnd = new Date(effectiveRangeStart);
             effectiveRangeEnd.setHours(23, 59, 59, 999);
           }
 
           // Log all date objects in ISO format for consistent comparison across timezones
-          console.log(`[CW DEBUG DATE] Insight "${insightDateStr}" -> Parsed: ${insightDateObj.toISOString()}, Range: ${effectiveRangeStart?.toISOString()} to ${effectiveRangeEnd?.toISOString()}`);
-          console.log(`[CW DEBUG DATE] Insight metrics:`, {
-            spent: insight.spent,
-            impressions: insight.impressions, 
-            clicks: insight.clicks,
-            conversions: insight.conversions
-          });
+          // console.log(`[CW DEBUG DATE] Insight "${insightDateStr}" -> Parsed: ${insightDateObj.toISOString()}, Range: ${effectiveRangeStart?.toISOString()} to ${effectiveRangeEnd?.toISOString()}`);
+          // console.log(`[CW DEBUG DATE] Insight metrics:`, {
+          //   spent: insight.spent,
+          //   impressions: insight.impressions, 
+          //   clicks: insight.clicks,
+          //   conversions: insight.conversions
+          // });
 
           let isInRange = false;
           if (effectiveRangeStart && effectiveRangeEnd && insightDateObj >= effectiveRangeStart && insightDateObj <= effectiveRangeEnd) {
             isInRange = true;
           }
           
-          console.log(`[CW DEBUG DATE] Is "${insightDateStr}" in range? ${isInRange}`);
+          // console.log(`[CW DEBUG DATE] Is "${insightDateStr}" in range? ${isInRange}`);
           
           if (isInRange) {
             insightsInRange++;
@@ -1720,7 +1720,7 @@ const CampaignWidget = ({
 
     // -- Fallback logic if campaign.reach is missing or invalid --
     let reachValue: number = 0; // Default to 0 instead of null
-    console.warn(`[CampaignWidget] Missing or invalid campaign.reach for ${campaign.campaign_id}. Falling back to ad set calculations.`);
+    // console.warn(`[CampaignWidget] Missing or invalid campaign.reach for ${campaign.campaign_id}. Falling back to ad set calculations.`);
 
     // 2. Check expanded/loaded API data (less accurate sum)
     if (expandedCampaign === campaign.campaign_id && adSets.length > 0) {
@@ -1729,7 +1729,7 @@ const CampaignWidget = ({
         return sum + (isNaN(adSetReach) || adSetReach < 0 ? 0 : adSetReach);
       }, 0);
       reachValue = calculatedReach;
-      console.log(`Using EXPANDED/LOADED (API fetch) reach (fallback) for campaign ${campaign.campaign_id}: ${reachValue}`);
+      // console.log(`Using EXPANDED/LOADED (API fetch) reach (fallback) for campaign ${campaign.campaign_id}: ${reachValue}`);
     }
     // 3. Check proactively fetched data (less accurate sum)
     else {
@@ -1743,15 +1743,15 @@ const CampaignWidget = ({
 
         // If total reach is suspiciously high or invalid, use 0
         if (totalReach > 10000 || isNaN(totalReach)) {
-          console.warn(`Suspicious or invalid preloaded reach value (${totalReach}) for campaign ${campaign.campaign_id}. Using 0 instead.`);
+          // console.warn(`Suspicious or invalid preloaded reach value (${totalReach}) for campaign ${campaign.campaign_id}. Using 0 instead.`);
           reachValue = 0;
         } else {
           reachValue = totalReach;
-          console.log(`Using PRELOADED reach (fallback) for campaign ${campaign.campaign_id}: ${reachValue}`);
+          // console.log(`Using PRELOADED reach (fallback) for campaign ${campaign.campaign_id}: ${reachValue}`);
         }
       } else {
         // 4. Return 0 when no data is available
-        console.log(`No fallback ad set data available for campaign ${campaign.campaign_id}. Returning 0 for reach.`);
+        // console.log(`No fallback ad set data available for campaign ${campaign.campaign_id}. Returning 0 for reach.`);
         reachValue = 0;
       }
     }
@@ -1776,7 +1776,7 @@ const CampaignWidget = ({
   // Add back the proactive fetch function to load ad sets for all campaigns on page load
   const proactivelyFetchAdSets = useCallback(async (campaignsToFetch: Campaign[]): Promise<void> => {
     // --- EARLY RETURN TO DISABLE PROACTIVE FETCH --- 
-    console.log("[CW DEBUG] Proactive fetch DISABLED - returning early.");
+    // console.log("[CW DEBUG] Proactive fetch DISABLED - returning early.");
     if (true) { // Ensure code below is technically reachable for linter
       return; 
     }
@@ -1857,7 +1857,7 @@ const CampaignWidget = ({
             // Verify date range is respected
             if (data.dateRange) {
               if (data.dateRange.from !== fromDate || data.dateRange.to !== toDate) {
-                console.warn(`[CW DEBUG] Date range mismatch! Requested: ${fromDate}-${toDate}, Got: ${data.dateRange.from}-${data.dateRange.to}`);
+                // console.warn(`[CW DEBUG] Date range mismatch! Requested: ${fromDate}-${toDate}, Got: ${data.dateRange.from}-${data.dateRange.to}`);
                 // Consider skipping this data if dates don't match
               }
             }
@@ -1880,7 +1880,7 @@ const CampaignWidget = ({
               
               // Skip campaigns with suspiciously high reach values (empirical threshold)
               if (totalReach > 5000) {
-                console.warn(`[CW DEBUG] Suspiciously high reach value (${totalReach}) for campaign ${campaignId}. Skipping.`);
+                // console.warn(`[CW DEBUG] Suspiciously high reach value (${totalReach}) for campaign ${campaignId}. Skipping.`);
                 failureCount++;
                 return null;
               }
@@ -1894,14 +1894,14 @@ const CampaignWidget = ({
               return { campaignId, adSets: [], hasReachData: false, totalReach: 0 };
             }
           } else {
-            console.warn(`[CW DEBUG] Proactive fetch FAILED for ${campaignId} - Status: ${response.status}`);
+            // console.warn(`[CW DEBUG] Proactive fetch FAILED for ${campaignId} - Status: ${response.status}`);
             failureCount++;
             return null;
           }
         } catch (error) {
           clearTimeout(timeoutId);
           if ((error as Error).name === 'AbortError') {
-            console.warn(`[CW DEBUG] Proactive fetch TIMEOUT for ${campaignId}`);
+            // console.warn(`[CW DEBUG] Proactive fetch TIMEOUT for ${campaignId}`);
           } else {
             console.error(`[CW DEBUG] Proactive fetch ERROR for ${campaignId}:`, error);
           }
@@ -1973,7 +1973,7 @@ const CampaignWidget = ({
     // setAllCampaignAdSets(new Map()); 
     setAdSets([]); // Clear currently viewed ad sets
     setCampaignsWithAdSets(new Set()); // Reset fetched tracker
-    console.log("[CW DEBUG] Brand ID or Date Range changed, cleared current ad sets view and fetched tracker.");
+    // console.log("[CW DEBUG] Brand ID or Date Range changed, cleared current ad sets view and fetched tracker.");
   }, [brandId, dateRange]);
 
   // Near the end of the component, add this effect to notify the parent when reach values change:
@@ -2734,7 +2734,7 @@ const CampaignWidget = ({
                                                         if (parentCampaign) {
                                                           window.open(`https://www.facebook.com/ads/manager/account/ad_sets?act=${parentCampaign.account_id.replace('act_', '')}&selected_campaign_ids=${parentCampaign.campaign_id}&selected_ad_set_ids=${adSet.adset_id}`, '_blank');
                                                         } else {
-                                                          console.warn("Could not find parent campaign for ad set to open Meta link");
+                                                          // console.warn("Could not find parent campaign for ad set to open Meta link");
                                                         }
                                                       }}
                                                       title="View Ad Set in Meta Ads Manager"
