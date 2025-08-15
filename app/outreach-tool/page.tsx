@@ -3819,8 +3819,8 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           </div>
 
                     {/* Todo List */}
-          <div className="xl:col-span-1 flex flex-col min-h-0">
-            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl h-full flex flex-col">
+          <div className="xl:col-span-1 flex flex-col min-h-0 min-w-0">
+            <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#0f0f0f] border-[#2A2A2A] shadow-2xl h-full flex flex-col min-w-0">
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -3909,7 +3909,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             return (
                               <div
                                 key={todo.id}
-                                className={`relative p-3 rounded-lg border transition-all ${
+                                className={`relative p-2 rounded-lg border transition-all ${
                                   isCompleted 
                                     ? 'border-green-500/30 bg-green-500/5 opacity-60' 
                                     : `border-[#333] bg-[#1A1A1A]/50 hover:bg-[#2A2A2A]/50 hover:${priorityInfo[todo.priority].borderColor}`
@@ -3949,7 +3949,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       className="border-[#2A2A2A] data-[state=checked]:bg-[#1A1A1A] data-[state=checked]:border-[#333]"
                                     />
                                   </div>
-                                  <div className="flex-1 min-w-0 pr-2">
+                                  <div className="flex-1 min-w-0 pr-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className={`text-sm font-medium ${
                                         isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
@@ -3963,16 +3963,16 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       {todo.description}
                                     </p>
                                     {!isCompleted && (
-                                      <div className="flex justify-start">
+                                      <div className="flex justify-start mt-1">
                                         <Button
                                           onClick={() => {
                                             todo.filterAction()
                                           }}
                                           size="sm"
                                           variant="outline"
-                                          className="h-7 text-xs px-3 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white whitespace-nowrap"
+                                          className="h-6 text-[10px] px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white break-words text-left leading-tight w-full max-w-full"
                                         >
-                                          {todo.action}
+                                          <span className="block truncate">{todo.action}</span>
                                         </Button>
                                       </div>
                                     )}
