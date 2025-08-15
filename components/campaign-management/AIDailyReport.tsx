@@ -413,7 +413,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-3xl text-white font-bold tracking-tight">Advertising Report</CardTitle>
+                <CardTitle className="text-3xl text-white font-bold tracking-tight">Detailed Advertising Report</CardTitle>
                 <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
               </div>
             </div>
@@ -473,7 +473,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
               <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Advertising Report</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Detailed Advertising Report</h2>
               <div className="flex items-center gap-3">
                 <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
                 {report?.generatedAt && (
@@ -495,11 +495,11 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
       
-      <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111]">
-        <div className="space-y-6">
+      <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
+        <div className="space-y-6 flex-1">
           {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className="min-h-[200px] mb-6">
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-6 backdrop-blur-sm">
+          <div className="flex-1 mb-6">
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-6 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
                 <p className="text-base text-gray-200 leading-relaxed tracking-wide max-w-4xl mx-auto">
                   {report.summary}
