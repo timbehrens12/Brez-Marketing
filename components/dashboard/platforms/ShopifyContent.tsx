@@ -1,0 +1,48 @@
+"use client"
+
+import { ShopifyTab } from "./tabs/ShopifyTab"
+import { PlatformConnection } from "@/types/platformConnection"
+
+interface ShopifyContentProps {
+  brandId: string | null
+  dateRange: {
+    from: Date
+    to: Date
+  }
+  connections: PlatformConnection[]
+  metrics: any
+  isLoading: boolean
+  brands: any[]
+}
+
+export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoading, brands }: ShopifyContentProps) {
+  if (!brandId) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-400">Please select a brand to view Shopify data</p>
+      </div>
+    )
+  }
+
+  const shopifyConnection = connections?.find(c => 
+    c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === brandId
+  )
+
+  if (!shopifyConnection) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-400">No Shopify connection found for this brand</p>
+      </div>
+    )
+  }
+
+  return (
+    <ShopifyTab 
+      connection={shopifyConnection}
+      brandId={brandId}
+      dateRange={dateRange}
+      metrics={metrics}
+      isLoading={isLoading}
+    />
+  )
+}
