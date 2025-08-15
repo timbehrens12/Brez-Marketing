@@ -266,9 +266,9 @@ const CampaignWidget = ({
   // console.log(`[CW DEBUG] Received Props: isLoading=${isLoading}, isSyncing=${isSyncing}`);
     if (dateRange) {
       // console.log(`[CW DEBUG] Received Date Range Prop:`, dateRange ? { 
-        from: dateRange.from?.toISOString(), 
-        to: dateRange.to?.toISOString() 
-      } : 'undefined');
+      //   from: dateRange.from?.toISOString(), 
+      //   to: dateRange.to?.toISOString() 
+      // } : 'undefined');
     }
   // console.log(`[CW DEBUG] Received Campaigns Prop Count: ${campaigns?.length ?? 0}`);
     if (campaigns && campaigns.length > 0 && renderCount === 0) {
