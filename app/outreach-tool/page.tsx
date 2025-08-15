@@ -4014,10 +4014,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                          className="w-full justify-start text-[10px] h-6 px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          <Star className="h-3 w-3 mr-2" />
-                          High-Score Leads ({campaignLeads.filter(l => l.lead?.lead_score && l.lead.lead_score >= 80).length})
+                          <Star className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">High-Score Leads ({campaignLeads.filter(l => l.lead?.lead_score && l.lead.lead_score >= 80).length})</span>
                         </Button>
                         
                         <Button
@@ -4043,10 +4043,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                          className="w-full justify-start text-[10px] h-6 px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          <Clock className="h-3 w-3 mr-2" />
-                          Ready to Contact ({campaignLeads.filter(l => l.status === 'pending').length})
+                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">Ready to Contact ({campaignLeads.filter(l => l.status === 'pending').length})</span>
                         </Button>
 
                         <Button
@@ -4072,10 +4072,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                          className="w-full justify-start text-[10px] h-6 px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          <MessageCircle className="h-3 w-3 mr-2" />
-                          Hot Responses ({campaignLeads.filter(l => l.status === 'responded').length})
+                          <MessageCircle className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">Hot Responses ({campaignLeads.filter(l => l.status === 'responded').length})</span>
                         </Button>
 
                         <Button
@@ -4111,10 +4111,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                          className="w-full justify-start text-[10px] h-6 px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          <Calendar className="h-3 w-3 mr-2" />
-                          Today's Outreach ({(() => {
+                          <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">Today's Outreach ({(() => {
                             const today = new Date();
                             const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                             return campaignLeads.filter(l => {
@@ -4122,7 +4122,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                               const contactDate = new Date(l.last_contacted_at);
                               return contactDate >= todayStart;
                             }).length;
-                          })()})
+                          })()})</span>
                         </Button>
 
                         <Button
@@ -4150,10 +4150,10 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full justify-start text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
+                          className="w-full justify-start text-[10px] h-6 px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
-                          <RotateCcw className="h-3 w-3 mr-2" />
-                          Show All Leads ({campaignLeads.length})
+                          <RotateCcw className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">Show All Leads ({campaignLeads.length})</span>
                         </Button>
                     </div>
                   </div>

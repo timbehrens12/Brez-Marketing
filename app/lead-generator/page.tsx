@@ -1925,10 +1925,12 @@ export default function LeadGeneratorPage() {
                     <MapPin className="h-4 w-4 mr-2" />
                     Local Services
                   </TabsTrigger>
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
-                    <Globe className="h-4 w-4 mr-2" />
-                    eCommerce
-                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative flex-col gap-1 h-auto py-2">
+                    <div className="flex items-center gap-1">
+                      <Globe className="h-3 w-3" />
+                      <span className="text-xs">eCommerce</span>
+                    </div>
+                    <Badge className="bg-orange-500/20 text-orange-400 text-[10px] px-1 py-0">Coming Soon</Badge>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -2924,10 +2926,12 @@ export default function LeadGeneratorPage() {
                       <MapPin className="h-4 w-4 mr-2" />
                       Local Services
                     </TabsTrigger>
-                    <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed opacity-60" disabled>
-                      <Globe className="h-4 w-4 mr-2" />
-                      eCommerce
-                      <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                    <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed opacity-60 flex-col gap-1 h-auto py-2" disabled>
+                      <div className="flex items-center gap-1">
+                        <Globe className="h-3 w-3" />
+                        <span className="text-xs">eCommerce</span>
+                      </div>
+                      <Badge className="bg-orange-500/20 text-orange-400 text-[10px] px-1 py-0">Coming Soon</Badge>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
