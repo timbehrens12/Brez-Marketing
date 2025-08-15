@@ -30,12 +30,12 @@ export function InventorySummary({
 
   const fetchInventoryData = async (forceRefresh = false) => {
     if (!brandId) {
-      console.log('No brandId provided to InventorySummary component')
+      // console.log('No brandId provided to InventorySummary component')
       return
     }
 
     try {
-      console.log(`Fetching inventory data for brandId: ${brandId}${forceRefresh ? ' (forced refresh)' : ''}`)
+      // console.log(`Fetching inventory data for brandId: ${brandId}${forceRefresh ? ' (forced refresh)' : ''}`)
       setLoading(true)
       
       // Add cache-busting parameter and refresh flag if needed
@@ -44,7 +44,7 @@ export function InventorySummary({
       const response = await fetch(`/api/shopify/inventory?brandId=${brandId}${refreshParam}${cacheBuster}`)
       
       const responseText = await response.text()
-      console.log(`Inventory API response: ${responseText.substring(0, 200)}...`)
+      // console.log(`Inventory API response: ${responseText.substring(0, 200)}...`)
       
       let data
       try {
@@ -61,12 +61,12 @@ export function InventorySummary({
       // Check if we got empty data after a reconnection (might need retry)
       const isEmpty = data.items?.length === 0 && data.summary?.totalProducts === 0
       if (isEmpty && forceRefresh && retryCount < MAX_RETRIES) {
-        console.log(`Received empty inventory data on attempt ${retryCount + 1}, scheduling retry...`)
+        // console.log(`Received empty inventory data on attempt ${retryCount + 1}, scheduling retry...`)
         setRetryCount(prev => prev + 1)
         
         // Schedule a retry with exponential backoff
         setTimeout(() => {
-          console.log(`Retrying inventory fetch (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
+          // console.log(`Retrying inventory fetch (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
           fetchInventoryData(true)
         }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
         
@@ -76,7 +76,7 @@ export function InventorySummary({
       }
       
       // Either got data or exhausted retries, update state
-      console.log('Inventory data fetched successfully:', data)
+      // console.log('Inventory data fetched successfully:', data)
       setInventorySummary(data.summary)
       setInventoryItems(data.items || [])
       setError(null)
@@ -87,12 +87,12 @@ export function InventorySummary({
       
       // Implement retry logic for errors too
       if (retryCount < MAX_RETRIES) {
-        console.log(`Fetch error on attempt ${retryCount + 1}, scheduling retry...`)
+        // console.log(`Fetch error on attempt ${retryCount + 1}, scheduling retry...`)
         setRetryCount(prev => prev + 1)
         
         // Schedule a retry with exponential backoff
         setTimeout(() => {
-          console.log(`Retrying inventory fetch after error (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
+          // console.log(`Retrying inventory fetch after error (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
           fetchInventoryData(forceRefresh)
         }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
       } else {
@@ -115,7 +115,7 @@ export function InventorySummary({
   // Handle refresh requests
   useEffect(() => {
     if (isRefreshingData && brandId) {
-      console.log('Refreshing inventory data due to isRefreshingData change')
+      // console.log('Refreshing inventory data due to isRefreshingData change')
       fetchInventoryData(true)
     }
   }, [brandId, isRefreshingData])
@@ -123,7 +123,7 @@ export function InventorySummary({
   // Force a data load if we haven't loaded data yet and we have a brandId
   useEffect(() => {
     if (!initialLoadComplete && brandId && !loading) {
-      console.log('Forcing initial inventory data load')
+      // console.log('Forcing initial inventory data load')
       fetchInventoryData()
     }
   }, [initialLoadComplete, brandId, loading])
@@ -132,7 +132,7 @@ export function InventorySummary({
   useEffect(() => {
     const handleRefreshEvent = (event: CustomEvent) => {
       if (event.detail?.brandId === brandId) {
-        console.log('Received refreshInventory event, refreshing inventory data')
+        // console.log('Received refreshInventory event, refreshing inventory data')
         fetchInventoryData(true)
       }
     }

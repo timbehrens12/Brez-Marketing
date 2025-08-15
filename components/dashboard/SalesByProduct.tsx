@@ -109,10 +109,10 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         }
         
         if (data) {
-          console.log('Found connection ID for brand:', data.id);
+          // console.log('Found connection ID for brand:', data.id);
           setConnectionId(data.id);
         } else {
-          console.log('No active Shopify connection found for brand:', brandId);
+          // console.log('No active Shopify connection found for brand:', brandId);
           setError('No Shopify connection found');
         }
       } catch (err) {
@@ -149,7 +149,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
-      console.log('Fetching products for connection:', connectionId, 'from:', formattedFrom, 'to:', formattedTo)
+      // console.log('Fetching products for connection:', connectionId, 'from:', formattedFrom, 'to:', formattedTo)
       
       const { data: orders, error } = await supabase
         .from('shopify_orders')
@@ -166,14 +166,14 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       }
       
       if (!orders || orders.length === 0) {
-        console.log('No orders found for the selected date range')
+        // console.log('No orders found for the selected date range')
         setProducts([])
         setIsLoading(false)
         setOrdersCache([]) // Clear cache since we have no orders
         return
       }
       
-      console.log(`Found ${orders.length} orders with connection_id: ${connectionId}`)
+      // console.log(`Found ${orders.length} orders with connection_id: ${connectionId}`)
       
       // Cache the orders for emergency use by other components
       setOrdersCache(orders)
@@ -254,8 +254,8 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
-      console.log('Fetching sales data for product:', selectedProductId, 'connection:', connectionId, 'time now:', new Date().toISOString())
-      console.log('Using date range for query:', formattedFrom, 'to', formattedTo); // Add log for debugging
+      // console.log('Fetching sales data for product:', selectedProductId, 'connection:', connectionId, 'time now:', new Date().toISOString())
+      // console.log('Using date range for query:', formattedFrom, 'to', formattedTo); // Add log for debugging
       
       // Force cache bypass by adding timestamp to ensure fresh data
       const timestamp = Date.now()
@@ -276,13 +276,13 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       }
       
       if (!orders || orders.length === 0) {
-        console.log('No orders found for the selected date range')
+        // console.log('No orders found for the selected date range')
         setSalesData([])
         setIsLoading(false)
         return
       }
       
-      console.log(`Found ${orders.length} orders for product data, most recent:`, orders[0]?.created_at)
+      // console.log(`Found ${orders.length} orders for product data, most recent:`, orders[0]?.created_at)
       
       // Process orders to extract sales data for the selected product
       const salesByDate = new Map<string, { value: number, quantity: number, hour: number }>()
@@ -387,7 +387,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
           }
         })
       
-      console.log('Processed sales data:', salesArray)
+      // console.log('Processed sales data:', salesArray)
       setSalesData(salesArray)
       
     } catch (err) {
