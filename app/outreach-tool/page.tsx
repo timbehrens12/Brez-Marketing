@@ -3949,7 +3949,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                       className="border-[#2A2A2A] data-[state=checked]:bg-[#1A1A1A] data-[state=checked]:border-[#333]"
                                     />
                                   </div>
-                                  <div className="flex-1 min-w-0 pr-4">
+                                  <div className="flex-1 min-w-0 pr-2">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className={`text-sm font-medium ${
                                         isCompleted ? 'line-through text-gray-500' : 'text-gray-200'
@@ -3959,20 +3959,22 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                     </div>
                                     <p className={`text-xs ${
                                       isCompleted ? 'text-gray-600' : 'text-gray-400'
-                                    } mb-2`}>
+                                    } mb-3`}>
                                       {todo.description}
                                     </p>
                                     {!isCompleted && (
-                                      <Button
-                                        onClick={() => {
-                                          todo.filterAction()
-                                        }}
-                          size="sm"
-                                        variant="outline"
-                                        className="h-6 text-xs bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white"
-                        >
-                                        {todo.action}
-                        </Button>
+                                      <div className="flex justify-start">
+                                        <Button
+                                          onClick={() => {
+                                            todo.filterAction()
+                                          }}
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-7 text-xs px-3 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white whitespace-nowrap"
+                                        >
+                                          {todo.action}
+                                        </Button>
+                                      </div>
                                     )}
                       </div>
                     </div>

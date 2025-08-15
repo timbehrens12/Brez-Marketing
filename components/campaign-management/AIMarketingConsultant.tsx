@@ -1068,7 +1068,7 @@ export default function AIMarketingConsultant(
             </div>
             
             {/* Mode Selector */}
-            <div className="flex items-center gap-2 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
+            <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
               {AI_MODES.map((mode) => (
                 <Button
                   key={mode.id}
@@ -1080,14 +1080,14 @@ export default function AIMarketingConsultant(
                     setIsInitialized(false)
                     setSelectedCategory('all')
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-300 ${
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-300 flex-1 min-w-0 ${
                     selectedMode === mode.id
                       ? "bg-gradient-to-r from-white/10 to-gray-200/20 text-white border border-white/20 shadow-lg"
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {mode.icon}
-                  {mode.title}
+                  <span className="truncate">{mode.title}</span>
                 </Button>
               ))}
             </div>
