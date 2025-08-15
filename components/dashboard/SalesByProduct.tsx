@@ -144,7 +144,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const toDate = endOfDay(dateRange.to);
       
       // console.log('[SalesByProduct] Using date range from props:', 
-        format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
+      //   format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
       
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
@@ -249,7 +249,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const toDate = endOfDay(dateRange.to);
       
       // console.log('[SalesByProduct] Using date range from props for product data:', 
-        format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
+      //   format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
       
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(toDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")

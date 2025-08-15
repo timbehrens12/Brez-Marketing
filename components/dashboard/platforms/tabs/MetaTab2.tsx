@@ -689,10 +689,10 @@ export function MetaTab2({
       if (isInitialMount || hasDateRangeChanged) {
         if (hasDateRangeChanged) {
           // console.log("[MetaTab2] Date range changed, triggering database fetch for new date range:", {
-            from: currentFromDate, 
-            to: currentToDate,
-            previous: lastFetchedDateRange.current
-          });
+          //   from: currentFromDate, 
+          //   to: currentToDate,
+          //   previous: lastFetchedDateRange.current
+          // });
         } else {
           // console.log("[MetaTab2] Triggering initial database fetch on mount");
         }
