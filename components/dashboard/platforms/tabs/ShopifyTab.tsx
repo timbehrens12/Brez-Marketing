@@ -18,11 +18,7 @@ import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { format } from "date-fns"
-import { CartAbandonmentWidget } from "@/components/dashboard/shopify/CartAbandonmentWidget"
-import { CustomerSegmentationWidget } from "@/components/dashboard/shopify/CustomerSegmentationWidget"
-import { ProductPerformanceWidget } from "@/components/dashboard/shopify/ProductPerformanceWidget"
-import { DiscountPerformanceWidget } from "@/components/dashboard/shopify/DiscountPerformanceWidget"
-import { MarginAnalysisWidget } from "@/components/dashboard/shopify/MarginAnalysisWidget"
+// Advanced Shopify widgets removed - will be re-implemented later
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -791,40 +787,9 @@ export function ShopifyTab({
 
       {/* Enhanced Analytics Section */}
       <div className="mt-6 space-y-6">
-        {/* Cart Abandonment & Customer Segmentation Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <CartAbandonmentWidget 
-            brandId={brandId}
-            dateRange={dateRange}
-            connectionId={connection.id}
-          />
-          <CustomerSegmentationWidget 
-            brandId={brandId}
-            dateRange={dateRange}
-            connectionId={connection.id}
-          />
-        </div>
-
-        {/* Product Performance & Discount Analysis Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <ProductPerformanceWidget 
-            brandId={brandId}
-            dateRange={dateRange}
-            connectionId={connection.id}
-          />
-          <DiscountPerformanceWidget 
-            brandId={brandId}
-            dateRange={dateRange}
-            connectionId={connection.id}
-          />
-        </div>
-
-        {/* Profit Margin Analysis - Full Width */}
-        <div className="mt-6">
-          <MarginAnalysisWidget 
-            connectionId={connection.id}
-            dateRange={dateRange}
-          />
+        {/* Advanced Shopify analytics widgets will be re-implemented later */}
+        <div className="text-center py-12 text-gray-400">
+          <p className="text-sm">Advanced analytics widgets will be available soon</p>
         </div>
       </div>
     </div>
