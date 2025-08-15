@@ -824,7 +824,7 @@ export default function OutreachToolPage() {
     cleanupOldMessageCounts()
     
     return () => {
-      console.log('🧹 Component unmounting...')
+      // console.log('🧹 Component unmounting...')
     }
   }, [])
 
@@ -850,7 +850,7 @@ export default function OutreachToolPage() {
     }, 10000) // 10 second safety timeout
 
     return () => {
-      console.log('🧹 Cleaning up safety timeout')
+      // console.log('🧹 Cleaning up safety timeout')
       clearTimeout(safetyTimeout)
     }
   }, [])

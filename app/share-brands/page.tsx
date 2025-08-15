@@ -107,11 +107,11 @@ export default function ShareBrandsPage() {
         ownedBrands.some(brand => brand.id === id)
       )
       if (validSelectedIds.length !== selectedBrandIds.length) {
-        console.log('🧹 Cleaning up invalid brand selections:', {
-          before: selectedBrandIds.length,
-          after: validSelectedIds.length,
-          removed: selectedBrandIds.filter(id => !ownedBrands.some(b => b.id === id))
-        })
+        // console.log('🧹 Cleaning up invalid brand selections:', {
+          // before: selectedBrandIds.length,
+          // after: validSelectedIds.length,
+          // removed: selectedBrandIds.filter(id => !ownedBrands.some(b => b.id === id))
+        // })
         setSelectedBrandIds(validSelectedIds)
       }
     }
@@ -174,11 +174,11 @@ export default function ShareBrandsPage() {
         brandsWithInfo.some(brand => brand.id === id)
       )
       if (validSelectedIds.length !== selectedBrandIds.length) {
-        console.log('🧹 Cleaning up invalid selections during load:', {
-          before: selectedBrandIds.length,
-          after: validSelectedIds.length,
-          invalid: selectedBrandIds.filter(id => !brandsWithInfo.some(b => b.id === id))
-        })
+        // console.log('🧹 Cleaning up invalid selections during load:', {
+          // before: selectedBrandIds.length,
+          // after: validSelectedIds.length,
+          // invalid: selectedBrandIds.filter(id => !brandsWithInfo.some(b => b.id === id))
+        // })
         setSelectedBrandIds(validSelectedIds)
       }
       
@@ -318,12 +318,12 @@ export default function ShareBrandsPage() {
       
       if (uniqueValidBrandIds.length !== selectedBrandIds.length) {
         // Update the UI to reflect only valid selections
-        console.log('🧹 Cleaning up selections before API call:', {
-          original: selectedBrandIds.length,
-          cleaned: uniqueValidBrandIds.length,
-          duplicatesRemoved: selectedBrandIds.length - uniqueValidBrandIds.length,
-          invalidRemoved: selectedBrandIds.filter(id => !ownedBrands.some(b => b.id === id))
-        })
+        // console.log('🧹 Cleaning up selections before API call:', {
+          // original: selectedBrandIds.length,
+          // cleaned: uniqueValidBrandIds.length,
+          // duplicatesRemoved: selectedBrandIds.length - uniqueValidBrandIds.length,
+          // invalidRemoved: selectedBrandIds.filter(id => !ownedBrands.some(b => b.id === id))
+        // })
         setSelectedBrandIds(uniqueValidBrandIds)
       }
       

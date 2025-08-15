@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Creative ID is required' }, { status: 400 })
     }
 
-    console.log('🖼️ Fetching images for creative:', creativeId)
+    // console.log('🖼️ Fetching images for creative:', creativeId)
 
     // Get image URLs for the specific creative
     const { data, error } = await supabase.rpc('get_creative_images', {
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Creative not found' }, { status: 404 })
     }
 
-    console.log('✅ Successfully fetched images for creative')
+    // console.log('✅ Successfully fetched images for creative')
     return NextResponse.json({ 
       id: data[0].id,
       originalImageUrl: data[0].original_image_url,
