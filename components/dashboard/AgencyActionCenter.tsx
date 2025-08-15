@@ -1876,13 +1876,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     
     // Robust loading guard to prevent any duplicate calls
     if (brandHealthLoadingRef.current) {
-      console.log('[Brand Health] Already loading, skipping duplicate call')
+      // console.log('[Brand Health] Already loading, skipping duplicate call')
       return
     }
     brandHealthLoadingRef.current = true
     
     setIsLoadingBrandHealth(true)
-    console.log('[Brand Health] Starting data load...', forceRefresh ? '(FORCE REFRESH)' : '')
+    // console.log('[Brand Health] Starting data load...', forceRefresh ? '(FORCE REFRESH)' : '')
     
     try {
       const supabase = await getSupabaseClient()
@@ -1916,7 +1916,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const brands = [...(ownedBrands || []), ...sharedBrands]
 
       if (!brands?.length) {
-        console.log('[Brand Health] No brands found')
+        // console.log('[Brand Health] No brands found')
         setBrandHealthData([])
         return
       }
@@ -1938,12 +1938,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       )
 
       if (!brandsWithAdPlatforms.length) {
-        console.log('[Brand Health] No brands with ad platforms found')
+        // console.log('[Brand Health] No brands with ad platforms found')
         setBrandHealthData([])
         return
       }
 
-      console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
+      // console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
 
       // Step 3: Calculate date ranges (use provided dateRange or default to today)
       const now = new Date()
@@ -1974,11 +1974,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         String(toDate.getMonth() + 1).padStart(2, '0') + '-' + 
         String(toDate.getDate()).padStart(2, '0')
 
-      console.log(`[Brand Health] Analyzing date range: ${fromDateStr} to ${toDateStr}`)
+      // console.log(`[Brand Health] Analyzing date range: ${fromDateStr} to ${toDateStr}`)
 
       // Step 4.5: Trigger fresh data sync if force refresh is requested
       if (forceRefresh) {
-        console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
+        // console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
         for (const brand of brandsWithAdPlatforms) {
           try {
             // Trigger fresh sync for today's data for each brand
@@ -1992,7 +1992,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               })
             })
             if (syncResponse.ok) {
-              console.log(`[Brand Health] ${brand.name} - Fresh sync completed`)
+              // console.log(`[Brand Health] ${brand.name} - Fresh sync completed`)
             } else {
               console.warn(`[Brand Health] ${brand.name} - Sync failed:`, await syncResponse.text())
             }
@@ -2002,19 +2002,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
         // Wait a moment for the sync to complete
         await new Promise(resolve => setTimeout(resolve, 2000))
-        console.log('[Brand Health] Force refresh sync completed, proceeding with data load...')
+        // console.log('[Brand Health] Force refresh sync completed, proceeding with data load...')
       }
 
       // Step 5: Process each brand
       const brandHealthPromises = brandsWithAdPlatforms.map(async (brand) => {
-        console.log(`[Brand Health] Processing ${brand.name}...`)
+        // console.log(`[Brand Health] Processing ${brand.name}...`)
 
         // Get brand connections
         const brandConnections = allConnections?.filter(conn => conn.brand_id === brand.id) || []
         
         // Debug: Log what we're looking for
-        console.log(`[Brand Health] ${brand.name} - Looking for Meta data in range:`, { from: fromDateStr, to: toDateStr })
-        console.log(`[Brand Health] ${brand.name} - Brand ID:`, brand.id)
+        // console.log(`[Brand Health] ${brand.name} - Looking for Meta data in range:`, { from: fromDateStr, to: toDateStr })
+        // console.log(`[Brand Health] ${brand.name} - Brand ID:`, brand.id)
         
         // Get Meta data from meta_campaign_daily_stats (the correct table)
         // Add cache-busting to ensure we get fresh data
@@ -2041,8 +2041,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           .order('created_at', { ascending: false }) // Get the most recent records first
 
         // Debug: Log what we got back
-        console.log(`[Brand Health] ${brand.name} - Meta query result:`, { metaData, metaError })
-        console.log(`[Brand Health] ${brand.name} - Meta data count:`, metaData?.length || 0)
+        // console.log(`[Brand Health] ${brand.name} - Meta query result:`, { metaData, metaError })
+        // console.log(`[Brand Health] ${brand.name} - Meta data count:`, metaData?.length || 0)
 
         // Get Shopify data if connected (need to check for Shopify connections separately)
         const { data: shopifyConnections } = await supabase
@@ -2075,8 +2075,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         })
         
         // Debug: Log raw data count
-        console.log(`[Brand Health] ${brand.name} - Raw Meta data for range:`, rawMetaData.length, 'records')
-        console.log(`[Brand Health] ${brand.name} - Filtered to original date range:`, filteredMetaData.length, 'records')
+        // console.log(`[Brand Health] ${brand.name} - Raw Meta data for range:`, rawMetaData.length, 'records')
+        // console.log(`[Brand Health] ${brand.name} - Filtered to original date range:`, filteredMetaData.length, 'records')
         
         // Deduplicate by date - keep only the most recent record per date to prevent doubling
         const metaDataByDate = new Map()
@@ -2090,7 +2090,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const totalMeta = Array.from(metaDataByDate.values())
         
         // Debug: Log deduplicated data
-        console.log(`[Brand Health] ${brand.name} - Deduplicated Meta data:`, totalMeta.length, 'records (was', filteredMetaData.length, ')')
+        // console.log(`[Brand Health] ${brand.name} - Deduplicated Meta data:`, totalMeta.length, 'records (was', filteredMetaData.length, ')')
 
         const totalSpend = totalMeta.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
         const totalConversions = totalMeta.reduce((sum, d) => sum + (parseInt(d.conversions) || 0), 0)
@@ -2109,7 +2109,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const previousROAS = previousData.length > 0 ? previousData.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / previousData.length : 0
 
         // Debug: Log calculated spend values
-        console.log(`[Brand Health] ${brand.name} - Total spend: $${totalSpend}, Latest day: $${latestDaySpend}`)
+        // console.log(`[Brand Health] ${brand.name} - Total spend: $${totalSpend}, Latest day: $${latestDaySpend}`)
 
         // Calculate changes
         const spendChange = previousSpend > 0 ? ((latestDaySpend - previousSpend) / previousSpend) * 100 : 0
@@ -2198,7 +2198,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 hasShopifyData: (shopifyData?.length || 0) > 0
               }
 
-              console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)
+              // console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)
               
               const aiResponse = await fetch('/api/ai/generate-analysis', {
                 method: 'POST',
@@ -2212,7 +2212,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               if (aiResponse.ok) {
                 const aiResult = await aiResponse.json()
                 synopsis = aiResult.analysis || `${brand.name} performance data is being analyzed.`
-                console.log(`[Brand Health] ${brand.name} - AI synopsis generated successfully`)
+                // console.log(`[Brand Health] ${brand.name} - AI synopsis generated successfully`)
               } else {
                 throw new Error('AI synthesis failed')
               }
@@ -2240,7 +2240,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         const hasData = totalMeta.length > 0 || totalOrders.length > 0
 
-        console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${totalSpend}, ROAS: ${avgROAS.toFixed(2)}`)
+        // console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${totalSpend}, ROAS: ${avgROAS.toFixed(2)}`)
 
         return {
           ...brand,
@@ -2265,7 +2265,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       })
 
       const results = await Promise.all(brandHealthPromises)
-      console.log(`[Brand Health] Processed ${results.length} brands`)
+      // console.log(`[Brand Health] Processed ${results.length} brands`)
       setBrandHealthData(results)
       
     } catch (error) {
