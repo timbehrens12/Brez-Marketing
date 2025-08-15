@@ -91,7 +91,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   // Use preloaded report when it changes
   useEffect(() => {
     if (preloadedReport) {
-      console.log('[AIDailyReport] Using preloaded report data')
+      // console.log('[AIDailyReport] Using preloaded report data')
       setReport(preloadedReport)
       setLastRefresh(new Date())
     }
@@ -100,7 +100,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   // Auto-load report when component mounts or brand changes - only if no preloaded data
   useEffect(() => {
     if (selectedBrandId && !isFetching && !preloadedReport && !report) {
-      console.log('[AIDailyReport] No preloaded data available, fetching report...')
+      // console.log('[AIDailyReport] No preloaded data available, fetching report...')
       // Force refresh on mount to ensure latest data
       fetchDailyReport(true)
     }
@@ -117,7 +117,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       
       // Only refresh if it's for the current brand, not from this widget, and not already fetching
       if (brandId === selectedBrandId && source !== 'AIDailyReport' && !isFetching) {
-        console.log('[AIDailyReport] Refresh event triggered, updating report...', { source })
+        // console.log('[AIDailyReport] Refresh event triggered, updating report...', { source })
         
         // Shorter debounce for better responsiveness
         clearTimeout(refreshTimeout)
@@ -144,7 +144,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   const fetchDailyReport = async (forceRegenerate = false) => {
     if (!selectedBrandId || isFetching) {
-      console.log('[AIDailyReport] Skipping fetch - no brand selected or already fetching')
+      // console.log('[AIDailyReport] Skipping fetch - no brand selected or already fetching')
       return
     }
 
@@ -155,7 +155,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
     if (forceRegenerate) {
       setReport(null)
     }
-    console.log(`[AIDailyReport] Fetching daily report for brand: ${selectedBrandId}`)
+    // console.log(`[AIDailyReport] Fetching daily report for brand: ${selectedBrandId}`)
 
     try {
       const response = await fetch('/api/ai/daily-report', {
@@ -177,7 +177,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       const data = await response.json()
       
       if (data.success && data.report) {
-        console.log('[AIDailyReport] Report fetched successfully')
+        // console.log('[AIDailyReport] Report fetched successfully')
         setReport(data.report)
         setLastRefresh(new Date())
         
@@ -338,10 +338,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   // Get percentage changes for key metrics
   const getPercentageChanges = () => {
     if (!report?.todayStats || !report?.yesterdayStats) {
-      console.log('[AIDailyReport] Missing stats data:', {
-        todayStats: report?.todayStats,
-        yesterdayStats: report?.yesterdayStats
-      })
+      // console.log('[AIDailyReport] Missing stats data:', {
+        // todayStats: report?.todayStats,
+        // yesterdayStats: report?.yesterdayStats
+      // })
       return {
         spendChange: 0,
         conversionsChange: 0,
@@ -352,10 +352,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       }
     }
 
-    console.log('[AIDailyReport] Calculating percentage changes:', {
-      todayStats: report.todayStats,
-      yesterdayStats: report.yesterdayStats
-    })
+    // console.log('[AIDailyReport] Calculating percentage changes:', {
+      // todayStats: report.todayStats,
+      // yesterdayStats: report.yesterdayStats
+    // })
 
     return {
       spendChange: calculatePercentageChange(report.todayStats.spend, report.yesterdayStats.spend),

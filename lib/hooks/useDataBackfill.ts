@@ -52,12 +52,12 @@ export function useDataBackfill(): BackfillHookResult {
   const checkForGaps = useCallback(async (brandId: string, force: boolean = false) => {
     // Prevent duplicate checks for the same brand
     if (lastCheckRef.current === brandId && !force) {
-      console.log('[Backfill Hook] Skipping duplicate gap check for brand', brandId)
+      // console.log('[Backfill Hook] Skipping duplicate gap check for brand', brandId)
       return
     }
 
     if (status.isChecking || status.isBackfilling) {
-      console.log('[Backfill Hook] Already checking/backfilling, skipping')
+      // console.log('[Backfill Hook] Already checking/backfilling, skipping')
       return
     }
 
@@ -65,7 +65,7 @@ export function useDataBackfill(): BackfillHookResult {
       setStatus(prev => ({ ...prev, isChecking: true }))
       lastCheckRef.current = brandId
 
-      console.log('[Backfill Hook] Checking for data gaps for brand', brandId)
+      // console.log('[Backfill Hook] Checking for data gaps for brand', brandId)
 
       const response = await fetch(`/api/data/backfill?brandId=${brandId}&lookbackDays=60`, {
         method: 'GET',
@@ -94,9 +94,9 @@ export function useDataBackfill(): BackfillHookResult {
         }))
 
         if (hasSignificantGaps) {
-          console.log(`[Backfill Hook] Found significant gaps: ${recommendation.criticalGaps} critical gaps, ${recommendation.totalMissingDays} total missing days`)
+          // console.log(`[Backfill Hook] Found significant gaps: ${recommendation.criticalGaps} critical gaps, ${recommendation.totalMissingDays} total missing days`)
         } else {
-          console.log('[Backfill Hook] No significant data gaps detected')
+          // console.log('[Backfill Hook] No significant data gaps detected')
         }
       } else {
         throw new Error(data.error || 'Failed to check for gaps')
@@ -119,12 +119,12 @@ export function useDataBackfill(): BackfillHookResult {
 
   const performBackfill = useCallback(async (brandId: string, force: boolean = false): Promise<boolean> => {
     if (backfillInProgressRef.current) {
-      console.log('[Backfill Hook] Backfill already in progress')
+      // console.log('[Backfill Hook] Backfill already in progress')
       return false
     }
 
     if (status.isBackfilling) {
-      console.log('[Backfill Hook] Backfill already in progress (status)')
+      // console.log('[Backfill Hook] Backfill already in progress (status)')
       return false
     }
 
@@ -132,7 +132,7 @@ export function useDataBackfill(): BackfillHookResult {
       backfillInProgressRef.current = true
       setStatus(prev => ({ ...prev, isBackfilling: true }))
 
-      console.log('[Backfill Hook] Starting backfill process for brand', brandId)
+      // console.log('[Backfill Hook] Starting backfill process for brand', brandId)
 
       // Show loading toast for user feedback
       const loadingToast = toast.loading('Backfilling missing data...')
@@ -173,10 +173,10 @@ export function useDataBackfill(): BackfillHookResult {
 
         if (recordsBackfilled > 0) {
           toast.success(`✅ Backfill completed! Added ${recordsBackfilled} records across ${successfulOps} operations.`)
-          console.log(`[Backfill Hook] Backfill successful: ${recordsBackfilled} records, ${successfulOps} operations`)
+          // console.log(`[Backfill Hook] Backfill successful: ${recordsBackfilled} records, ${successfulOps} operations`)
         } else {
           toast.success('✅ Data is up to date - no backfill needed')
-          console.log('[Backfill Hook] No backfill needed')
+          // console.log('[Backfill Hook] No backfill needed')
         }
 
         return true

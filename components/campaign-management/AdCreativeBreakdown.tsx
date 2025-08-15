@@ -83,7 +83,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   // Use preloaded ads when they change
   useEffect(() => {
     if (preloadedAds && preloadedAds.length > 0) {
-      console.log('[AdCreativeBreakdown] Using preloaded ads data:', preloadedAds.length)
+      // console.log('[AdCreativeBreakdown] Using preloaded ads data:', preloadedAds.length)
       setAds(preloadedAds)
     }
   }, [preloadedAds])
@@ -93,7 +93,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
     if (!selectedBrandId) return
 
     try {
-      console.log('[AdCreativeBreakdown] Fetching ads for brand:', selectedBrandId)
+      // console.log('[AdCreativeBreakdown] Fetching ads for brand:', selectedBrandId)
       
       const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}`, {
         cache: 'no-store',
@@ -168,7 +168,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
         })
       }
       
-      console.log(`[AdCreativeBreakdown] Successfully loaded ${allAds.length} ads`)
+      // console.log(`[AdCreativeBreakdown] Successfully loaded ${allAds.length} ads`)
 
     } catch (error: any) {
       console.error('[AdCreativeBreakdown] Error:', error)
@@ -191,7 +191,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   // Initial load - only if no preloaded data
   useEffect(() => {
     if (selectedBrandId && (!preloadedAds || preloadedAds.length === 0)) {
-      console.log('[AdCreativeBreakdown] No preloaded data, fetching ads...')
+      // console.log('[AdCreativeBreakdown] No preloaded data, fetching ads...')
       fetchAds()
     }
   }, [selectedBrandId, preloadedAds])
@@ -206,7 +206,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       const { brandId, source, forceRefresh } = event.detail
       
       if (brandId === selectedBrandId && source !== 'AdCreativeBreakdown') {
-        console.log('[AdCreativeBreakdown] Global refresh triggered from other widgets, updating ads...', { source, forceRefresh })
+        // console.log('[AdCreativeBreakdown] Global refresh triggered from other widgets, updating ads...', { source, forceRefresh })
         
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {
@@ -219,7 +219,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       const { brandId, platforms, currentTab } = event.detail
       
       if (brandId === selectedBrandId && (platforms?.meta || currentTab === 'meta')) {
-        console.log('[AdCreativeBreakdown] Global refresh all triggered, updating ads...', { platforms, currentTab })
+        // console.log('[AdCreativeBreakdown] Global refresh all triggered, updating ads...', { platforms, currentTab })
         
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {
@@ -232,7 +232,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       const { brandId } = event.detail
       
       if (brandId === selectedBrandId) {
-        console.log('[AdCreativeBreakdown] New day detected, updating ads...')
+        // console.log('[AdCreativeBreakdown] New day detected, updating ads...')
         
         clearTimeout(refreshTimeout)
         refreshTimeout = setTimeout(() => {

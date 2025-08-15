@@ -73,7 +73,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   // Use preloaded performance data when it changes
   useEffect(() => {
     if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
-      console.log('[PerformanceChart] Using preloaded performance data:', preloadedPerformanceData.length)
+      // console.log('[PerformanceChart] Using preloaded performance data:', preloadedPerformanceData.length)
       setPerformanceData(preloadedPerformanceData)
     }
   }, [preloadedPerformanceData])
@@ -83,12 +83,12 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     if (!selectedBrandId) return
 
     if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
-      console.log('[PerformanceChart] Using preloaded data, skipping fetch')
+      // console.log('[PerformanceChart] Using preloaded data, skipping fetch')
       return
     }
 
     const fetchPerformanceData = async (forceRefresh = false) => {
-      console.log('[PerformanceChart] No preloaded data, fetching from API...')
+      // console.log('[PerformanceChart] No preloaded data, fetching from API...')
       // Remove loading state
       // setIsLoading(true)
       try {
@@ -108,8 +108,8 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
         if (response.ok) {
           const data = await response.json()
           
-          console.log('[PerformanceChart] API Response:', data)
-          console.log('[PerformanceChart] Weekly Performance:', data.report?.weeklyPerformance)
+          // console.log('[PerformanceChart] API Response:', data)
+          // console.log('[PerformanceChart] Weekly Performance:', data.report?.weeklyPerformance)
           
           // Transform the data to include all platforms - use same structure as AI Daily Report
           const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
@@ -156,7 +156,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   useEffect(() => {
     const handleRefresh = (event: CustomEvent) => {
       if (event.detail?.brandId === selectedBrandId) {
-        console.log('[PerformanceChart] Refresh event triggered, forcing fresh data...', { source: event.detail.source })
+        // console.log('[PerformanceChart] Refresh event triggered, forcing fresh data...', { source: event.detail.source })
         
         // Force regeneration when new data is detected
         const fetchData = async () => {
@@ -177,8 +177,8 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
             if (response.ok) {
               const data = await response.json()
               
-              console.log('[PerformanceChart] Refresh API Response:', data)
-              console.log('[PerformanceChart] Refresh Weekly Performance:', data.report?.weeklyPerformance)
+              // console.log('[PerformanceChart] Refresh API Response:', data)
+              // console.log('[PerformanceChart] Refresh Weekly Performance:', data.report?.weeklyPerformance)
               
               const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
                 day: day.day,
@@ -288,8 +288,8 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     return dataPoint
   })
   
-  console.log('[PerformanceChart] Performance Data:', performanceData)
-  console.log('[PerformanceChart] Chart Data:', chartData)
+  // console.log('[PerformanceChart] Performance Data:', performanceData)
+  // console.log('[PerformanceChart] Chart Data:', chartData)
   // Remove loading log - removed problematic console.log
 
   const platformColors = {

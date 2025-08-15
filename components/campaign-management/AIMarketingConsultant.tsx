@@ -684,14 +684,14 @@ export default function AIMarketingConsultant(
         const data = await response.json()
         
         if (response.ok && data.remainingUses !== undefined) {
-          console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
+          // console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
           setRemainingUses(data.remainingUses)
           if (data.remainingUses <= 0) {
             setIsLimitReached(true)
           }
         }
       } catch (error) {
-        console.log('[AI Marketing Frontend] Failed to check initial usage:', error)
+        // console.log('[AI Marketing Frontend] Failed to check initial usage:', error)
         // Don't show error to user for this background check
       }
     }
@@ -843,15 +843,15 @@ export default function AIMarketingConsultant(
       }
       
       // Update remaining uses
-      console.log('[AI Marketing Frontend] API Response:', data)
+      // console.log('[AI Marketing Frontend] API Response:', data)
       if (data.remainingUses !== undefined) {
-        console.log('[AI Marketing Frontend] Setting remaining uses:', data.remainingUses)
+        // console.log('[AI Marketing Frontend] Setting remaining uses:', data.remainingUses)
         setRemainingUses(data.remainingUses)
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
       } else {
-        console.log('[AI Marketing Frontend] No remainingUses in response!')
+        // console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
       
       // Clean up the response content

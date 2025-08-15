@@ -68,14 +68,14 @@ function acquireMetaFetchLock(fetchId: number | string): boolean {
 
   // If a lock is already active by another fetch, don't allow a new one
   if (window._metaFetchLock === true && !window._activeFetchIds?.has(fetchId)) {
-    console.log(`[MarketingAssistant] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
+    // console.log(`[MarketingAssistant] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
     return false;
   }
   
   window._metaFetchLock = true; // Set the global lock
   window._activeFetchIds?.add(fetchId); // Register this fetchId
   
-  console.log(`[MarketingAssistant] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
+  // console.log(`[MarketingAssistant] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
   return true;
 }
 
@@ -88,9 +88,9 @@ function releaseMetaFetchLock(fetchId: number | string): void {
   // If no other active fetches, release the global lock
   if ((window._activeFetchIds?.size ?? 0) === 0) {
     window._metaFetchLock = false;
-    console.log(`[MarketingAssistant] 🔓 Released Meta fetch lock (last fetchId: ${fetchId}). No active fetches.`);
+    // console.log(`[MarketingAssistant] 🔓 Released Meta fetch lock (last fetchId: ${fetchId}). No active fetches.`);
   } else {
-    console.log(`[MarketingAssistant] 🔒 Meta Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
+    // console.log(`[MarketingAssistant] 🔒 Meta Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
   }
 }
 
@@ -203,15 +203,15 @@ export default function MarketingAssistantPage() {
       const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
       const timeUntilMidnight = midnight.getTime() - now.getTime()
       
-      console.log('[MarketingAssistant] Setting up midnight timer:', {
-        currentTime: now.toLocaleTimeString(),
-        midnightTime: midnight.toLocaleTimeString(),
-        millisecondsUntilMidnight: timeUntilMidnight,
-        hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
-      })
+      // console.log('[MarketingAssistant] Setting up midnight timer:', {
+        // currentTime: now.toLocaleTimeString(),
+        // midnightTime: midnight.toLocaleTimeString(),
+        // millisecondsUntilMidnight: timeUntilMidnight,
+        // hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
+      // })
       
       const timeoutId = setTimeout(() => {
-        console.log('[MarketingAssistant] 🌙 MIDNIGHT REACHED - Resetting to today and forcing data refresh')
+        // console.log('[MarketingAssistant] 🌙 MIDNIGHT REACHED - Resetting to today and forcing data refresh')
         const today = new Date()
         setDateRange({
           from: today,
@@ -222,7 +222,7 @@ export default function MarketingAssistantPage() {
         hasInitialDataLoaded.current = false
         
         // Trigger full data reload for new day with today's date
-        console.log('[MarketingAssistant] 🔄 Midnight transition: Forcing fresh data load for today')
+        // console.log('[MarketingAssistant] 🔄 Midnight transition: Forcing fresh data load for today')
         loadAllData()
         
         // Dispatch event to notify other widgets about new day transition
@@ -250,7 +250,7 @@ export default function MarketingAssistantPage() {
     const currentRangeString = dateRange?.from?.toISOString().split('T')[0]
     
     if (currentRangeString !== currentDateString) {
-      console.log('[MarketingAssistant] Date range out of sync with current date - updating to today')
+      // console.log('[MarketingAssistant] Date range out of sync with current date - updating to today')
       setDateRange({
         from: now,
         to: now
@@ -307,18 +307,18 @@ export default function MarketingAssistantPage() {
     
     // Use the same locking mechanism for consistency
     if (isMetaFetchInProgress()) {
-      console.log(`[MarketingAssistant] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`)
+      // console.log(`[MarketingAssistant] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`)
       toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" })
       return
     }
     
     if (!acquireMetaFetchLock(refreshId)) {
-      console.log(`[MarketingAssistant] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`)
+      // console.log(`[MarketingAssistant] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`)
       toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" })
       return
     }
     
-    console.log("[MarketingAssistant] Syncing Meta insights data through database...")
+    // console.log("[MarketingAssistant] Syncing Meta insights data through database...")
     
     // Set loading states
     setIsLoadingMetrics(true)
@@ -332,7 +332,7 @@ export default function MarketingAssistantPage() {
       const endDate = dateToLocalDateString(dateRange.to)
       
       // Step 1: Sync fresh data from Meta API to database
-      console.log(`[MarketingAssistant] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`)
+      // console.log(`[MarketingAssistant] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`)
       const response = await fetch('/api/meta/insights/sync', {
         method: 'POST',
         headers: {
@@ -355,10 +355,10 @@ export default function MarketingAssistantPage() {
       const result = await response.json()
       
       if (result.success) {
-        console.log(`[MarketingAssistant] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`)
+        // console.log(`[MarketingAssistant] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`)
         
         // Step 2: Now fetch the refreshed data from database
-        console.log(`[MarketingAssistant] 🚀 Step 2: Fetching refreshed Meta data (refreshId: ${refreshId})`)
+        // console.log(`[MarketingAssistant] 🚀 Step 2: Fetching refreshed Meta data (refreshId: ${refreshId})`)
         await fetchMetaDataFromDatabase(refreshId)
         
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" })
@@ -386,7 +386,7 @@ export default function MarketingAssistantPage() {
           }
         }))
         
-        console.log(`[MarketingAssistant] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`)
+        // console.log(`[MarketingAssistant] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`)
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights')
       }
@@ -408,12 +408,12 @@ export default function MarketingAssistantPage() {
   // Fetch Meta data from database after sync
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      console.log("[MarketingAssistant] Skipping Meta data fetch from database: Missing brandId or dateRange")
+      // console.log("[MarketingAssistant] Skipping Meta data fetch from database: Missing brandId or dateRange")
       return
     }
 
     try {
-      console.log(`[MarketingAssistant] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`)
+      // console.log(`[MarketingAssistant] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`)
 
       // Current period params with proper timezone handling
       const params = new URLSearchParams({ brandId: selectedBrandId })
@@ -437,7 +437,7 @@ export default function MarketingAssistantPage() {
       if (isViewingYesterday) {
         params.append('force_refresh', 'true')
         params.append('reason', 'viewing-yesterday-data')
-        console.log(`[MarketingAssistant] 🔥 Forcing fresh data for yesterday (${yesterday}) to avoid stale cache`)
+        // console.log(`[MarketingAssistant] 🔥 Forcing fresh data for yesterday (${yesterday}) to avoid stale cache`)
       }
       
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to)
@@ -482,21 +482,21 @@ export default function MarketingAssistantPage() {
       const currentData = await currentResponse.json()
       const previousData = await prevResponse.json()
       
-      console.log(`[MarketingAssistant] Fetched Meta data from database for current period:`, {
-        adSpend: currentData.adSpend,
-        impressions: currentData.impressions,
-        clicks: currentData.clicks,
-        conversions: currentData.conversions,
-        roas: currentData.roas
-      })
+      // console.log(`[MarketingAssistant] Fetched Meta data from database for current period:`, {
+        // adSpend: currentData.adSpend,
+        // impressions: currentData.impressions,
+        // clicks: currentData.clicks,
+        // conversions: currentData.conversions,
+        // roas: currentData.roas
+      // })
 
-      console.log(`[MarketingAssistant] Previous period data:`, {
-        adSpend: previousData.adSpend,
-        impressions: previousData.impressions,
-        clicks: previousData.clicks,
-        conversions: previousData.conversions,
-        roas: previousData.roas
-      })
+      // console.log(`[MarketingAssistant] Previous period data:`, {
+        // adSpend: previousData.adSpend,
+        // impressions: previousData.impressions,
+        // clicks: previousData.clicks,
+        // conversions: previousData.conversions,
+        // roas: previousData.roas
+      // })
 
       // Calculate growth values locally for better accuracy
       const adSpendGrowth = calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0) ?? 0
@@ -508,16 +508,16 @@ export default function MarketingAssistantPage() {
       const cpcGrowth = calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0) ?? 0
       const cprGrowth = calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0) ?? 0
 
-      console.log(`[MarketingAssistant] Calculated growth values:`, {
-        adSpendGrowth,
-        impressionGrowth,
-        clickGrowth,
-        conversionGrowth,
-        roasGrowth,
-        ctrGrowth,
-        cpcGrowth,
-        cprGrowth
-      })
+      // console.log(`[MarketingAssistant] Calculated growth values:`, {
+        // adSpendGrowth,
+        // impressionGrowth,
+        // clickGrowth,
+        // conversionGrowth,
+        // roasGrowth,
+        // ctrGrowth,
+        // cpcGrowth,
+        // cprGrowth
+      // })
 
       // Update metaMetrics state with database data
       const newMetrics = {
@@ -552,7 +552,7 @@ export default function MarketingAssistantPage() {
       
       setMetaMetrics(newMetrics)
       
-      console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
+      // console.log(`[MarketingAssistant] ✅ Meta data updated from database (refreshId: ${refreshId || 'standalone'})`)
       
       return newMetrics // Return the data for use in centralized loading
     } catch (error) {
@@ -565,17 +565,17 @@ export default function MarketingAssistantPage() {
   // Centralized data loading coordinator - moved here after helper functions are declared
   const loadAllData = useCallback(async () => {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      console.log("[MarketingAssistant] Missing required data for loading")
+      // console.log("[MarketingAssistant] Missing required data for loading")
       return
     }
 
     // Prevent multiple simultaneous loads
     if (isInitialLoadInProgress.current) {
-      console.log("[MarketingAssistant] Load already in progress, skipping duplicate loadAllData call")
+      // console.log("[MarketingAssistant] Load already in progress, skipping duplicate loadAllData call")
       return
     }
 
-    console.log('[MarketingAssistant] Starting centralized data loading...')
+    // console.log('[MarketingAssistant] Starting centralized data loading...')
     setIsDataLoading(true)
     setLoadingProgress(0)
     isInitialLoadInProgress.current = true
@@ -585,7 +585,7 @@ export default function MarketingAssistantPage() {
       setLoadingPhase('Checking for missing data...')
       setLoadingProgress(5)
       
-      console.log('[MarketingAssistant] Validating data coverage...')
+      // console.log('[MarketingAssistant] Validating data coverage...')
       await checkForGaps(selectedBrandId)
       
       // 🔥 ENHANCED DATA REFRESH: Check for gaps AND stale historical data  
@@ -621,12 +621,12 @@ export default function MarketingAssistantPage() {
           if (refreshResult.staleDataRefreshed > 0) messages.push(`${refreshResult.staleDataRefreshed} stale days`)
           if (refreshResult.totalGapsFilled > 0) messages.push(`${refreshResult.totalGapsFilled} missing days`)
           
-          console.log(`[MarketingAssistant] ✅ Complete refresh done: ${messages.join(', ')} updated`)
+          // console.log(`[MarketingAssistant] ✅ Complete refresh done: ${messages.join(', ')} updated`)
           
           // If we fixed stale data, show helpful feedback
           if (refreshResult.staleDataRefreshed > 0) {
             setLoadingPhase(`Fixed ${refreshResult.staleDataRefreshed} days of stale data...`)
-            console.log(`[MarketingAssistant] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`)
+            // console.log(`[MarketingAssistant] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`)
             await new Promise(resolve => setTimeout(resolve, 1000)) // Let user see the message
           }
         } else {
@@ -636,12 +636,12 @@ export default function MarketingAssistantPage() {
         console.warn('[MarketingAssistant] ⚠️ Error during enhanced data refresh:', error)
         
         // Fallback to old system
-        console.log('[MarketingAssistant] Falling back to standard gap detection...')
+        // console.log('[MarketingAssistant] Falling back to standard gap detection...')
         await checkForGaps(selectedBrandId)
       if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
         setLoadingPhase(`Backfilling ${backfillStatus.totalMissingDays} missing days...`)
         setLoadingProgress(10)
-        console.log(`[MarketingAssistant] Backfilling ${backfillStatus.totalMissingDays} missing days...`)
+        // console.log(`[MarketingAssistant] Backfilling ${backfillStatus.totalMissingDays} missing days...`)
         await performBackfill(selectedBrandId)
         }
       }
@@ -662,7 +662,7 @@ export default function MarketingAssistantPage() {
       
       // 🔥 FIX: Fetch the fresh metrics data that was just synced
       const freshMetaMetrics = await fetchMetaDataFromDatabase()
-      console.log('[MarketingAssistant] 🎯 Fresh meta metrics loaded:', freshMetaMetrics)
+      // console.log('[MarketingAssistant] 🎯 Fresh meta metrics loaded:', freshMetaMetrics)
       
       setLoadingProgress(50)
       setLoadingPhase('AI analyzing campaign performance...')
@@ -676,7 +676,7 @@ export default function MarketingAssistantPage() {
         const today = new Date()
         const todayStr = dateToLocalDateString(today)
         
-        console.log(`[MarketingAssistant] Fetching campaigns for TODAY: ${todayStr} (using local timezone to match user's actual date)`)
+        // console.log(`[MarketingAssistant] Fetching campaigns for TODAY: ${todayStr} (using local timezone to match user's actual date)`)
         
         const [dailyReportResponse, campaignsResponse] = await Promise.all([
           fetch('/api/ai/daily-report', {
@@ -741,7 +741,7 @@ export default function MarketingAssistantPage() {
           setLoadingPhase('Loading creative insights...')
           await new Promise(resolve => setTimeout(resolve, 700))
           
-          console.log('[MarketingAssistant] Loading ad creatives for campaigns...')
+          // console.log('[MarketingAssistant] Loading ad creatives for campaigns...')
           
           // Use the same logic as AdCreativeBreakdown component
           for (const campaign of campaignsData.slice(0, 5)) { // Limit to first 5 campaigns for performance
@@ -811,7 +811,7 @@ export default function MarketingAssistantPage() {
               console.error('[MarketingAssistant] Error loading adsets for campaign:', campaign.campaign_id, error)
             }
           }
-          console.log('[MarketingAssistant] Loaded ad creatives:', allAds.length)
+          // console.log('[MarketingAssistant] Loaded ad creatives:', allAds.length)
         }
         
         setPreloadedData(prev => ({
@@ -840,7 +840,7 @@ export default function MarketingAssistantPage() {
       // 🔥 FIX: Update the main metaMetrics state with loaded data
       // This ensures BlendedWidgetsTable gets real data instead of defaultMetrics
       setMetaMetrics(freshMetaMetrics)
-      console.log('[MarketingAssistant] 🎯 Updated main metaMetrics state with fresh data:', freshMetaMetrics)
+      // console.log('[MarketingAssistant] 🎯 Updated main metaMetrics state with fresh data:', freshMetaMetrics)
       
       setLoadingProgress(95)
       setLoadingPhase('Finalizing dashboard...')
@@ -862,7 +862,7 @@ export default function MarketingAssistantPage() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }, 100)
       
-      console.log('[MarketingAssistant] ✅ All data loaded successfully!')
+      // console.log('[MarketingAssistant] ✅ All data loaded successfully!')
       
     } catch (error) {
       console.error('[MarketingAssistant] Error during data loading:', error)
@@ -879,7 +879,7 @@ export default function MarketingAssistantPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).debugMarketingAssistantMidnightReset = () => {
-        console.log('[MarketingAssistant] DEBUG: Manually triggering midnight reset')
+        // console.log('[MarketingAssistant] DEBUG: Manually triggering midnight reset')
         
         // Clear date range and force to today
         const today = new Date()
@@ -892,7 +892,7 @@ export default function MarketingAssistantPage() {
         hasInitialDataLoaded.current = false
         
         // Force full reload with today's date
-        console.log('[MarketingAssistant] 🔄 Debug reset: Forcing fresh data load for today')
+        // console.log('[MarketingAssistant] 🔄 Debug reset: Forcing fresh data load for today')
         loadAllData()
         
         // Dispatch new day event
@@ -904,7 +904,7 @@ export default function MarketingAssistantPage() {
           }
         }))
         
-        console.log('[MarketingAssistant] DEBUG: Midnight reset simulation complete')
+        // console.log('[MarketingAssistant] DEBUG: Midnight reset simulation complete')
       }
     }
   }, [selectedBrandId, loadAllData])
@@ -913,13 +913,13 @@ export default function MarketingAssistantPage() {
   useEffect(() => {
     // Skip if we're still in the dashboard's initial setup phase
     if (typeof window !== 'undefined' && window._dashboardInitialSetup) {
-      console.log("[MarketingAssistant] Skipping data load - dashboard still in initial setup phase")
+      // console.log("[MarketingAssistant] Skipping data load - dashboard still in initial setup phase")
       return
     }
     
     // If no brand is selected, stop loading and show no-brand-selected state
     if (!selectedBrandId) {
-      console.log("[MarketingAssistant] No brand selected, stopping loading state")
+      // console.log("[MarketingAssistant] No brand selected, stopping loading state")
       setIsDataLoading(false)
       setLoadingProgress(0)
       setLoadingPhase('Please select a brand')
@@ -935,18 +935,18 @@ export default function MarketingAssistantPage() {
     if (dateRange?.from && dateRange?.to && shouldLoad) {
       // 🔥 FIX: Reset loading flags when brand or date changes to allow fresh load
       if (dateRangeChanged || brandChanged) {
-        console.log("[MarketingAssistant] Brand/date changed, resetting loading flags", { brandChanged, dateRangeChanged })
+        // console.log("[MarketingAssistant] Brand/date changed, resetting loading flags", { brandChanged, dateRangeChanged })
         isInitialLoadInProgress.current = false
         hasInitialDataLoaded.current = false
       }
       
       // Prevent duplicate initial loads (but allow brand/date changes)
       if (isInitialLoadInProgress.current && !dateRangeChanged && !brandChanged) {
-        console.log("[MarketingAssistant] Initial load already in progress, skipping duplicate call")
+        // console.log("[MarketingAssistant] Initial load already in progress, skipping duplicate call")
         return
       }
       
-      console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
+      // console.log("[MarketingAssistant] useEffect detected change in brandId or dateRange. Starting centralized data loading.")
       
       // 🔥 FIX: Start loading state immediately when brand is selected
       setIsDataLoading(true)
@@ -976,7 +976,7 @@ export default function MarketingAssistantPage() {
       return
     }
 
-    console.log('[MarketingAssistant] 🔄 Refresh All triggered - using centralized loading system')
+    // console.log('[MarketingAssistant] 🔄 Refresh All triggered - using centralized loading system')
 
     setIsRefreshingAll(true)
     setRefreshCooldown(true)
@@ -1019,9 +1019,9 @@ export default function MarketingAssistantPage() {
   // Listen for global refresh events - updated for centralized system
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log("[MarketingAssistant] Received global refresh event:", event.detail)
+      // console.log("[MarketingAssistant] Received global refresh event:", event.detail)
       if (event.detail?.brandId === selectedBrandId) {
-        console.log("[MarketingAssistant] Global refresh event matches current brandId. Triggering refresh.")
+        // console.log("[MarketingAssistant] Global refresh event matches current brandId. Triggering refresh.")
         
         // For global refreshes, do a quick refresh without full loading screen
         if (!isRefreshingAll) {
@@ -1031,37 +1031,37 @@ export default function MarketingAssistantPage() {
           })
         }
       } else {
-        console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
+        // console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
       }
     }
 
     const handleNewDayDetected = (event: CustomEvent) => {
-      console.log("[MarketingAssistant] 🌅 New day detected event received:", event.detail)
+      // console.log("[MarketingAssistant] 🌅 New day detected event received:", event.detail)
       if (event.detail?.brandId === selectedBrandId) {
-        console.log("[MarketingAssistant] 📅 New day transition detected for current brand. Triggering full reload.")
+        // console.log("[MarketingAssistant] 📅 New day transition detected for current brand. Triggering full reload.")
         
         // For new day, trigger full reload
         hasInitialDataLoaded.current = false
         loadAllData()
       } else {
-        console.log("[MarketingAssistant] New day event not for this brand, skipping.")
+        // console.log("[MarketingAssistant] New day event not for this brand, skipping.")
       }
     }
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
-      console.log("[MarketingAssistant] Received global-refresh-all event:", event.detail)
+      // console.log("[MarketingAssistant] Received global-refresh-all event:", event.detail)
       
       // Marketing assistant should always respond to global refresh for the correct brand
       // since it's primarily Meta-focused
       if (event.detail?.brandId === selectedBrandId) {
-        console.log("[MarketingAssistant] Global refresh all - triggering comprehensive data reload")
+        // console.log("[MarketingAssistant] Global refresh all - triggering comprehensive data reload")
         if (!isRefreshingAll) {
           refreshAllWidgets()
         } else {
-          console.log("[MarketingAssistant] Already refreshing, skipping duplicate refresh")
+          // console.log("[MarketingAssistant] Already refreshing, skipping duplicate refresh")
         }
       } else {
-        console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
+        // console.log("[MarketingAssistant] Global refresh event not for this brand, skipping.")
       }
     }
 
