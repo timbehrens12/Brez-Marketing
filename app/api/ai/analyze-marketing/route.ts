@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { addSecurityHeaders, sanitizeAIInput } from '@/lib/utils/validation'
 
 // Initialize OpenAI
 const openai = new OpenAI({

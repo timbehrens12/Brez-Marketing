@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/client'
 import OpenAI from 'openai'
+import { validateRequest, leadGenerationRequestSchema, checkRateLimit, addSecurityHeaders, sanitizeString, sanitizeAIInput } from '@/lib/utils/validation'
 
 const supabase = getSupabaseServiceClient()
 
@@ -23,24 +24,30 @@ export const maxDuration = 90
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = await request.json()
-
-    // console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId })
-
-    if (!userId) {
-      console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
-      return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
+    const requestData = await request.json()
+    
+    // Validate request input
+    const validatedData = validateRequest(leadGenerationRequestSchema, requestData)
+    if (validatedData instanceof NextResponse) {
+      return addSecurityHeaders(validatedData)
     }
+    
+    const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = validatedData
 
-    if (!localDate || !localStartOfDayUTC) {
-      return NextResponse.json({ error: 'Client date information required' }, { status: 400 })
-    }
+    // Rate limiting - 2 requests per hour for lead generation
+    const rateLimitResponse = await checkRateLimit(userId, 'lead-generation', 2, 3600)
+    if (rateLimitResponse) return rateLimitResponse
 
-    // Check niche limit
-    if (niches.length < MIN_NICHES_PER_SEARCH || niches.length > MAX_NICHES_PER_SEARCH) {
-      return NextResponse.json({ 
+    // Sanitize inputs
+    const sanitizedBusinessType = sanitizeString(businessType, 100)
+    const sanitizedNiches = niches.map(niche => sanitizeString(niche, 100))
+    const sanitizedLocation = sanitizeString(location, 200)
+
+    // Check niche limit (already validated by schema, but double-check)
+    if (sanitizedNiches.length < MIN_NICHES_PER_SEARCH || sanitizedNiches.length > MAX_NICHES_PER_SEARCH) {
+      return addSecurityHeaders(NextResponse.json({ 
         error: `Invalid niche selection. Minimum ${MIN_NICHES_PER_SEARCH} and maximum ${MAX_NICHES_PER_SEARCH} niches allowed.` 
-      }, { status: 400 })
+      }, { status: 400 }))
     }
 
     // Get current date for weekly-based resets - use client's local date

@@ -2489,13 +2489,42 @@ const CampaignWidget = ({
                               </td>
                             );
                           })}
-
+                          <td className="p-3 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleCampaignExpand(campaign.campaign_id);
+                                }}
+                                title={expandedCampaign === campaign.campaign_id ? "Hide Ad Sets" : "Show Ad Sets"}
+                              >
+                                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${
+                                  expandedCampaign === campaign.campaign_id ? 'rotate-180' : ''
+                                }`} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(`https://www.facebook.com/ads/manager/account/campaigns?act=${campaign.account_id.replace('act_', '')}&selected_campaign_ids=${campaign.campaign_id}`, '_blank')
+                                }}
+                                title="View in Meta Ads Manager"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                         
                         {/* Expanded Row Content */}
                         {expandedCampaign === campaign.campaign_id && (
                           <tr className="bg-[#111] border-b border-[#333]">
-                            <td colSpan={visibleMetrics.length + 2} className="p-0">
+                            <td colSpan={visibleMetrics.length + 4} className="p-0">
                               <div className="p-4 border-t border-[#333]">
                                 <div className="flex flex-col mb-4">
                                   <div className="flex justify-between items-center mb-3">
@@ -2555,6 +2584,7 @@ const CampaignWidget = ({
                                                 </th>
                                               );
                                             })}
+                                            <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -2677,11 +2707,47 @@ const CampaignWidget = ({
                                                     </td>
                                                   );
                                                 })}
+                                                <td className="p-2 text-center">
+                                                  <div className="flex items-center justify-center gap-2">
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAdSetRowClick(adSet.adset_id, e);
+                                                      }}
+                                                      title={expandedAdSet === adSet.adset_id ? "Hide Ads" : "Show Ads"}
+                                                    >
+                                                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${
+                                                        expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
+                                                      }`} />
+                                                    </Button>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Find the campaign for the account ID
+                                                        const parentCampaign = localCampaigns.find(c => c.campaign_id === adSet.campaign_id);
+                                                        if (parentCampaign) {
+                                                          window.open(`https://www.facebook.com/ads/manager/account/ad_sets?act=${parentCampaign.account_id.replace('act_', '')}&selected_campaign_ids=${parentCampaign.campaign_id}&selected_ad_set_ids=${adSet.adset_id}`, '_blank');
+                                                        } else {
+                                                          // console.warn("Could not find parent campaign for ad set to open Meta link");
+                                                        }
+                                                      }}
+                                                      title="View Ad Set in Meta Ads Manager"
+                                                    >
+                                                      <Eye className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                  </div>
+                                                </td>
                                               </tr>
                                               {/* Ad Set expanded content */}
                                               {expandedAdSet === adSet.adset_id && (
                                                 <tr className="border-t border-[#333] bg-[#111]">
-                                                  <td colSpan={visibleMetrics.length + 2} className="p-0">
+                                                  <td colSpan={visibleMetrics.length + 4} className="p-0">
                                                     <div className="p-4 border-l-4 border-[#333] mx-2 rounded-md bg-[#111]">
                                                       <AdComponent 
                                                         brandId={brandId}

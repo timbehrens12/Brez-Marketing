@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 import crypto from 'crypto'
+import { validateRequest, aiReportRequestSchema, checkRateLimit, addSecurityHeaders, sanitizeAIInput } from '@/lib/utils/validation'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,16 +14,24 @@ export async function POST(request: NextRequest) {
     const { userId } = auth()
     
     if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Not authenticated' }, { status: 401 }))
     }
 
-    const { brandId, forceRegenerate = false, userTimezone } = await request.json()
+    // Rate limiting - 5 requests per minute for AI reports
+    const rateLimitResponse = await checkRateLimit(userId, 'ai-daily-report', 5, 60)
+    if (rateLimitResponse) return rateLimitResponse
+
+    // Validate request input
+    const requestData = await request.json()
+    const validatedData = validateRequest(aiReportRequestSchema, requestData)
+    
+    if (validatedData instanceof NextResponse) {
+      return addSecurityHeaders(validatedData)
+    }
+    
+    const { brandId, forceRegenerate, userTimezone } = validatedData
     
     console.log(`[AIDailyReport] Request received:`, { brandId: brandId ? 'present' : 'missing', forceRegenerate, userId, userTimezone })
-    
-    if (!brandId) {
-      return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
-    }
 
     // Auto-generated health report - no usage limits
 
@@ -77,15 +86,15 @@ export async function POST(request: NextRequest) {
     // Store the new report with data hash
     await storeReportData(supabase, brandId, userId, report, currentDataHash)
 
-    return NextResponse.json({
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       report,
       timestamp: new Date().toISOString()
-    })
+    }))
 
   } catch (error) {
     console.error('Error generating daily report:', error)
-    return NextResponse.json({ 
+    return addSecurityHeaders(NextResponse.json({ 
       error: 'Failed to generate daily report',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })

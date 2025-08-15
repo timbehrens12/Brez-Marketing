@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
 import crypto from 'crypto'
+import { validateRequest, campaignRecommendationRequestSchema, checkRateLimit, addSecurityHeaders, sanitizeAIInput } from '@/lib/utils/validation'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
