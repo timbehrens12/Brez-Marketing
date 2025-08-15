@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     return addSecurityHeaders(NextResponse.json({ 
       error: 'Failed to generate daily report',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    }, { status: 500 }))
   }
 }
 
