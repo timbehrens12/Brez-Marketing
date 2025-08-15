@@ -241,7 +241,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     // Rate limiting - prevent too frequent checks
     const now = Date.now()
     if (!forceRefresh && now - lastRefreshTime < 30000) {
-      console.log('[CampaignWidget] Rate limit: skipping status check (less than 30s since last)')
+      // console.log('[CampaignWidget] Rate limit: skipping status check (less than 30s since last)')
       return
     }
     
@@ -298,7 +298,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
     // Add guard to prevent infinite loops
     if (isLoadingRecommendations.current) {
-      console.log('[CampaignWidget] Already loading recommendations, skipping duplicate call')
+      // console.log('[CampaignWidget] Already loading recommendations, skipping duplicate call')
       return
     }
 
@@ -317,23 +317,23 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         const data = await response.json()
         
         if (data.success && data.recommendations) {
-          console.log('[CampaignWidget] Loading saved recommendations:', data.recommendations)
+          // console.log('[CampaignWidget] Loading saved recommendations:', data.recommendations)
           
           // Update campaigns with their saved recommendations
           const campaignsWithRecommendations = campaigns.map(campaign => {
             const recommendation = data.recommendations[campaign.campaign_id]
             if (recommendation) {
-              console.log(`[CampaignWidget] Found recommendation for ${campaign.campaign_id}:`, { 
-                action: recommendation.action, 
-                status: recommendation.status 
-              })
+              // console.log(`[CampaignWidget] Found recommendation for ${campaign.campaign_id}:`, { 
+                // action: recommendation.action, 
+                // status: recommendation.status 
+              // })
             }
             return recommendation ? { ...campaign, recommendation } : campaign
           })
           
           // Update local campaigns state with recommendations
           setLocalCampaigns(campaignsWithRecommendations)
-          console.log('[CampaignWidget] Updated campaigns with recommendations')
+          // console.log('[CampaignWidget] Updated campaigns with recommendations')
         }
       } else {
         console.error('[CampaignWidget] Failed to fetch recommendations:', response.statusText)
@@ -376,7 +376,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         }
       }
       
-      console.log('[CampaignWidget] Sending recommendation request:', requestData)
+      // console.log('[CampaignWidget] Sending recommendation request:', requestData)
       
       const response = await fetch('/api/ai/campaign-recommendations', {
           method: 'POST',
@@ -393,12 +393,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }
 
       const data = await response.json()
-      console.log('[CampaignWidget] API Response:', data)
-      console.log('[CampaignWidget] Recommendation structure:', data.recommendation)
+      // console.log('[CampaignWidget] API Response:', data)
+      // console.log('[CampaignWidget] Recommendation structure:', data.recommendation)
       
       // Check if the response indicates the recommendation is blocked
       if (data.blocked) {
-        console.log('[CampaignWidget] Recommendation blocked:', data.message)
+        // console.log('[CampaignWidget] Recommendation blocked:', data.message)
         
         // Store blocked campaign info
         setBlockedCampaigns(prev => new Map(prev.set(campaign.campaign_id, {
@@ -456,17 +456,17 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   useEffect(() => {
     const fetchCampaigns = async () => {
       if (!selectedBrandId) {
-        console.log('[CampaignWidget] No brand selected, skipping campaign fetch')
+        // console.log('[CampaignWidget] No brand selected, skipping campaign fetch')
         return
       }
 
       // Only skip if we have preloaded campaigns AND haven't been triggered by a refresh
       if (preloadedCampaigns && preloadedCampaigns.length > 0 && !refreshTrigger) {
-        console.log('[CampaignWidget] Using preloaded campaigns, skipping fetch (refreshTrigger:', refreshTrigger, ')')
+        // console.log('[CampaignWidget] Using preloaded campaigns, skipping fetch (refreshTrigger:', refreshTrigger, ')')
         return
       }
 
-      console.log('[CampaignWidget] Fetching campaigns for brand:', selectedBrandId, '(preloaded:', !!preloadedCampaigns?.length, 'refreshTrigger:', refreshTrigger, ')')
+      // console.log('[CampaignWidget] Fetching campaigns for brand:', selectedBrandId, '(preloaded:', !!preloadedCampaigns?.length, 'refreshTrigger:', refreshTrigger, ')')
       
       // Remove loading state during fetch
       // setIsRefreshing(true)
@@ -484,7 +484,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       const today = new Date()
         const todayStr = today.toISOString().split('T')[0]
       
-        console.log(`[CampaignWidget] Using date: ${todayStr} (always showing today's data)`)
+        // console.log(`[CampaignWidget] Using date: ${todayStr} (always showing today's data)`)
       
       // Build URL with date range parameters to get today's performance data
       let url = `/api/meta/campaigns?brandId=${selectedBrandId}&limit=100&sortBy=spent&sortOrder=desc&from=${todayStr}&to=${todayStr}`
@@ -506,7 +506,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }
 
       const data = await response.json()
-        console.log('[CampaignWidget] Raw campaign data received:', data)
+        // console.log('[CampaignWidget] Raw campaign data received:', data)
 
         if (data.campaigns && Array.isArray(data.campaigns)) {
           // Add platform identifier to campaigns
@@ -587,15 +587,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
       const timeUntilMidnight = midnight.getTime() - now.getTime()
       
-      console.log('[CampaignWidget] Midnight timer set:', {
-        currentTime: now.toLocaleTimeString(),
-        midnightTime: midnight.toLocaleTimeString(),
-        millisecondsUntilMidnight: timeUntilMidnight,
-        hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
-      })
+      // console.log('[CampaignWidget] Midnight timer set:', {
+        // currentTime: now.toLocaleTimeString(),
+        // midnightTime: midnight.toLocaleTimeString(),
+        // millisecondsUntilMidnight: timeUntilMidnight,
+        // hoursUntilMidnight: (timeUntilMidnight / 1000 / 60 / 60).toFixed(2)
+      // })
       
       const timeoutId = setTimeout(() => {
-        console.log('[CampaignWidget] 🌙 MIDNIGHT REACHED - Resetting campaign data')
+        // console.log('[CampaignWidget] 🌙 MIDNIGHT REACHED - Resetting campaign data')
         
         // Clear local campaigns to force a fresh fetch
         setLocalCampaigns([])
@@ -605,7 +605,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         }))
         
         // Use unified refresh mechanism instead of manual fetch
-        console.log('[CampaignWidget] Midnight reset - triggering unified refresh')
+        // console.log('[CampaignWidget] Midnight reset - triggering unified refresh')
         setRefreshTrigger(prev => prev + 1)
         
         // Also dispatch event for other widgets
@@ -634,7 +634,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       const { brandId, source } = event.detail
       
       if (brandId === selectedBrandId && source !== 'PlatformCampaignWidget') {
-        console.log('[CampaignWidget] Refresh event received, triggering campaigns refresh...', { source })
+        // console.log('[CampaignWidget] Refresh event received, triggering campaigns refresh...', { source })
         setRefreshTrigger(prev => prev + 1) // Trigger refresh
       }
     }
@@ -655,7 +655,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
     // Expose debug function to window for testing
     if (typeof window !== 'undefined') {
       (window as any).debugCampaignMidnightReset = () => {
-        console.log('[CampaignWidget] DEBUG: Manually triggering midnight reset')
+        // console.log('[CampaignWidget] DEBUG: Manually triggering midnight reset')
         
         // Clear campaigns
         setLocalCampaigns([])
@@ -680,7 +680,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       const { brandId, source } = event.detail || {}
       
       if (brandId === selectedBrandId && source !== 'CampaignWidget') {
-        console.log('[CampaignWidget] Refresh event received, triggering refresh...', { source, brandId })
+        // console.log('[CampaignWidget] Refresh event received, triggering refresh...', { source, brandId })
         
         // For any refresh event that indicates new data is available, trigger a refresh
         if (source === 'midnight-reset' || 
@@ -692,7 +692,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             event.type === 'global-refresh-all' ||
             event.type === 'newDayDetected') {
           
-          console.log('[CampaignWidget] Data refresh event detected - forcing campaign data update')
+          // console.log('[CampaignWidget] Data refresh event detected - forcing campaign data update')
           
           // Clear existing campaigns to show fresh data
           setLocalCampaigns([])
@@ -707,11 +707,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         } else {
           // For other refresh events, just check statuses if we have campaigns
           if (localCampaigns.length > 0) {
-            console.log('[CampaignWidget] Status check only for source:', source)
+            // console.log('[CampaignWidget] Status check only for source:', source)
             checkCampaignStatuses(localCampaigns, true)
           } else {
             // If no campaigns, also trigger a refresh
-            console.log('[CampaignWidget] No campaigns to check status for, triggering refresh')
+            // console.log('[CampaignWidget] No campaigns to check status for, triggering refresh')
             setRefreshTrigger(prev => prev + 1)
           }
         }
@@ -720,7 +720,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
     const handleLegacyRefresh = () => {
       if (selectedBrandId && localCampaigns.length > 0) {
-        console.log('[CampaignWidget] Legacy refresh event received, checking campaign statuses')
+        // console.log('[CampaignWidget] Legacy refresh event received, checking campaign statuses')
         checkCampaignStatuses(localCampaigns, true)
       }
     }
@@ -1007,7 +1007,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                                 {!campaign.recommendation ? (
                                   <Button
                     onClick={() => {
-                      console.log('[CampaignWidget] Generate Insights clicked for campaign:', campaign.campaign_id, 'Existing recommendation:', !!campaign.recommendation)
+                      // console.log('[CampaignWidget] Generate Insights clicked for campaign:', campaign.campaign_id, 'Existing recommendation:', !!campaign.recommendation)
                       generateRecommendation(campaign)
                     }}
                                     variant="outline"

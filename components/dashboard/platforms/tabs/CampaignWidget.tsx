@@ -262,7 +262,7 @@ const CampaignWidget = ({
   // *** DEBUG LOGGING START ***
   // Only log once per 10 renders to prevent log floods
   if (DEBUG_LOGGING && renderCount % MAX_LOGS_PER_SESSION === 0) {
-  console.log("--- CampaignWidget Render --- ");
+  // console.log("--- CampaignWidget Render --- ");
   // console.log(`[CW DEBUG] Received Props: isLoading=${isLoading}, isSyncing=${isSyncing}`);
     if (dateRange) {
       // console.log(`[CW DEBUG] Received Date Range Prop:`, dateRange ? { 
