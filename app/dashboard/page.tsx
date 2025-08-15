@@ -1016,14 +1016,14 @@ export default function DashboardPage() {
       // Log the raw data received from the API to debug doubling
       // console.log('>>> [fetchMetaMetrics] Received Meta metrics:', {
       //   adSpend: metaData?.adSpend,
-        adSpendGrowth: metaData?.adSpendGrowth,
-        impressions: metaData?.impressions,
-        impressionGrowth: metaData?.impressionGrowth,
-        clicks: metaData?.clicks,
-        clickGrowth: metaData?.clickGrowth,
-        roas: metaData?.roas,
-        roasGrowth: metaData?.roasGrowth
-      });
+      //   adSpendGrowth: metaData?.adSpendGrowth,
+      //   impressions: metaData?.impressions,
+      //   impressionGrowth: metaData?.impressionGrowth,
+      //   clicks: metaData?.clicks,
+      //   clickGrowth: metaData?.clickGrowth,
+      //   roas: metaData?.roas,
+      //   roasGrowth: metaData?.roasGrowth
+      // });
       
       // console.log('Received Meta metrics:', {
       //   adSpend: metaData.adSpend,
@@ -1035,9 +1035,9 @@ export default function DashboardPage() {
       // FIX: Only update Meta-specific metrics to prevent duplication, preserve other metrics
       // console.log('>>> [fetchMetaMetrics] Previous metrics before update:', {
       //   adSpendGrowth: (prev: any) => prev.adSpendGrowth,
-        impressionGrowth: (prev: any) => prev.impressionGrowth,
-        roasGrowth: (prev: any) => prev.roasGrowth
-      });
+      //   impressionGrowth: (prev: any) => prev.impressionGrowth,
+      //   roasGrowth: (prev: any) => prev.roasGrowth
+      // });
       
       setMetrics(prev => {
         const newMetrics = {
@@ -1066,9 +1066,9 @@ export default function DashboardPage() {
         
         // console.log('>>> [fetchMetaMetrics] New metrics being applied:', {
         //   adSpendGrowth: newMetrics.adSpendGrowth,
-          impressionGrowth: newMetrics.impressionGrowth,
-          roasGrowth: newMetrics.roasGrowth
-        });
+        //   impressionGrowth: newMetrics.impressionGrowth,
+        //   roasGrowth: newMetrics.roasGrowth
+        // });
         
         return newMetrics;
       });
