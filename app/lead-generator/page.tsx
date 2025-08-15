@@ -496,7 +496,7 @@ export default function LeadGeneratorPage() {
       
       if (error) throw error
       setNiches(data || [])
-      console.log('Loaded niches:', data?.length || 0, 'niches')
+      // console.log('Loaded niches:', data?.length || 0, 'niches')
     } catch (error) {
       console.error('Error loading niches:', error)
     }
@@ -620,7 +620,7 @@ export default function LeadGeneratorPage() {
       // No longer auto-clear leads on tab switch - let users manage their own leads
       // The previous behavior was too aggressive and cleared leads unexpectedly
       if (document.visibilityState === 'visible') {
-        console.log('👁️ Tab became visible - keeping existing leads')
+        // console.log('👁️ Tab became visible - keeping existing leads')
       }
     }
 
@@ -729,7 +729,7 @@ export default function LeadGeneratorPage() {
             .eq('user_id', userId)
             .not('id', 'in', `(${protectedLeadIds.join(',')})`)
           
-          console.log(`Protected ${protectedLeadIds.length} leads that are in outreach`)
+          // console.log(`Protected ${protectedLeadIds.length} leads that are in outreach`)
         } else {
           // No leads in outreach, safe to delete all
           await supabase
@@ -1021,19 +1021,19 @@ export default function LeadGeneratorPage() {
     setSendingLeads([...selectedLeads])
 
     try {
-      console.log('Sending leads to outreach:', { 
-        selectedLeads: selectedLeads, 
-        selectedCount: selectedLeads.length,
-        userId: userId 
-      })
+      // console.log('Sending leads to outreach:', { 
+      //   selectedLeads: selectedLeads, 
+      //   selectedCount: selectedLeads.length,
+      //   userId: userId 
+      // })
       
-      console.log('🔄 Step 1: Getting Supabase client...')
+      // console.log('🔄 Step 1: Getting Supabase client...')
       // Refresh the Supabase client to ensure we have a valid token
       const supabase = await getSupabaseClient()
-      console.log('✅ Step 1: Supabase client obtained')
+      // console.log('✅ Step 1: Supabase client obtained')
       
-      console.log('🔄 Step 2: Verifying leads exist in database...')
-      console.log('Verifying leads:', selectedLeads, 'for user:', userId)
+      // console.log('🔄 Step 2: Verifying leads exist in database...')
+      // console.log('Verifying leads:', selectedLeads, 'for user:', userId)
       
       // Verify the leads exist and belong to the current user before sending
       const { data: verifyLeads, error: verifyError } = await supabase
@@ -1042,8 +1042,8 @@ export default function LeadGeneratorPage() {
         .in('id', selectedLeads)
         .eq('user_id', userId)
 
-      console.log('✅ Step 2: Database query completed')
-      console.log('Verification result:', { verifyLeads, verifyError, count: verifyLeads?.length })
+      // console.log('✅ Step 2: Database query completed')
+      // console.log('Verification result:', { verifyLeads, verifyError, count: verifyLeads?.length })
 
       if (verifyError) {
         console.error('❌ EARLY RETURN: Error verifying leads:', verifyError)
@@ -1053,8 +1053,8 @@ export default function LeadGeneratorPage() {
 
       if (!verifyLeads || verifyLeads.length === 0) {
         console.error('❌ EARLY RETURN: No leads found in verification - Auto-refreshing leads list')
-        console.log('Expected leads:', selectedLeads)
-        console.log('Database returned:', verifyLeads)
+        // console.log('Expected leads:', selectedLeads)
+        // console.log('Database returned:', verifyLeads)
         toast.error('Selected leads no longer exist. Refreshing leads list...')
         
         // Auto-refresh the leads list and clear selection
@@ -1065,10 +1065,10 @@ export default function LeadGeneratorPage() {
 
       if (verifyLeads.length !== selectedLeads.length) {
         console.error('❌ EARLY RETURN: Lead count mismatch - Auto-refreshing leads list')
-        console.log('Expected count:', selectedLeads.length, 'Found count:', verifyLeads.length)
+        // console.log('Expected count:', selectedLeads.length, 'Found count:', verifyLeads.length)
         const foundIds = verifyLeads.map((lead: { id: string }) => lead.id)
         const missingIds = selectedLeads.filter(id => !foundIds.includes(id))
-        console.log('Missing lead IDs:', missingIds)
+        // console.log('Missing lead IDs:', missingIds)
         
         // Auto-refresh the leads list and clear selection
         toast.error(`Some leads no longer exist. Refreshing leads list...`)
@@ -1077,7 +1077,7 @@ export default function LeadGeneratorPage() {
         return
       }
       
-      console.log('✅ Step 3: Lead verification passed - proceeding to fetch')
+      // console.log('✅ Step 3: Lead verification passed - proceeding to fetch')
       
       // Add timeout to prevent hanging after tab visibility changes
       const controller = new AbortController()
@@ -1086,8 +1086,8 @@ export default function LeadGeneratorPage() {
         controller.abort()
       }, 15000) // 15 second timeout for faster feedback
       
-      console.log('🚀 Starting fetch request to /api/leads/send-to-outreach')
-      console.log('📤 Request payload:', { leadIds: selectedLeads, userId })
+      // console.log('🚀 Starting fetch request to /api/leads/send-to-outreach')
+      // console.log('📤 Request payload:', { leadIds: selectedLeads, userId })
       
       const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
@@ -1099,9 +1099,9 @@ export default function LeadGeneratorPage() {
       })
       
       clearTimeout(timeoutId)
-      console.log('✅ Fetch completed - Response received')
-      console.log('Response status:', response.status, response.statusText)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      // console.log('✅ Fetch completed - Response received')
+      // console.log('Response status:', response.status, response.statusText)
+      // console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -1114,7 +1114,7 @@ export default function LeadGeneratorPage() {
         
         if (response.status === 503 && errorData.setupRequired) {
           toast.error('🔧 Outreach system needs to be set up. Check the setup instructions at /api/setup/outreach-tables', { duration: 10000 })
-          console.log('Setup instructions available at: /api/setup/outreach-tables')
+          // console.log('Setup instructions available at: /api/setup/outreach-tables')
           return
         }
         
@@ -1135,9 +1135,9 @@ export default function LeadGeneratorPage() {
       }
 
       const data = await response.json()
-      console.log('Send to outreach success:', data)
-      console.log('Selected leads to remove:', selectedLeads)
-      console.log('Current leads count before removal:', leads.length)
+      // console.log('Send to outreach success:', data)
+      // console.log('Selected leads to remove:', selectedLeads)
+      // console.log('Current leads count before removal:', leads.length)
       
       if (data.success) {
         toast.success(`${data.message}! Created ${data.tasksCreated || data.leadsAdded || selectedLeads.length} follow-up tasks.`)
@@ -1151,7 +1151,7 @@ export default function LeadGeneratorPage() {
           const leadsToRemove = [...selectedLeads] // Create a copy to avoid state issues
           setLeads(prev => {
             const filtered = prev.filter(lead => !leadsToRemove.includes(lead.id))
-            console.log('Leads after removal:', filtered.length)
+            // console.log('Leads after removal:', filtered.length)
             return filtered
           })
           setSelectedLeads([])

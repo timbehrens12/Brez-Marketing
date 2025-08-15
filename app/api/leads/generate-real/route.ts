@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = await request.json()
 
-    console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId })
+    // console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId })
 
     if (!userId) {
       console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get niche details from database
-    console.log('Fetching niches for:', niches)
+    // console.log('Fetching niches for:', niches)
     const { data: nicheData, error: nicheError } = await supabase
       .from('lead_niches')
       .select('*')
@@ -149,12 +149,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid niche selection' }, { status: 400 })
     }
 
-    console.log('Found niches:', nicheData?.length || 0)
+    // console.log('Found niches:', nicheData?.length || 0)
 
     // Calculate total leads that will be generated (25 per generation)
     const totalLeadsToGenerate = TOTAL_LEADS_PER_GENERATION
     
-    console.log(`Starting lead generation for ${niches.length} niches × ${TOTAL_LEADS_PER_GENERATION} leads`)
+    // console.log(`Starting lead generation for ${niches.length} niches × ${TOTAL_LEADS_PER_GENERATION} leads`)
 
     // Find real businesses using Google Places API with comprehensive error handling
     let realLeads: any[] = []
@@ -177,9 +177,9 @@ export async function POST(request: NextRequest) {
       }
       
       realLeads = result.leads
-      console.log(`Found ${realLeads.length} business leads`)
+      // console.log(`Found ${realLeads.length} business leads`)
     
-    console.log(`Lead generation completed: found ${realLeads.length} valid businesses out of ${totalLeadsToGenerate} attempted`)
+    // console.log(`Lead generation completed: found ${realLeads.length} valid businesses out of ${totalLeadsToGenerate} attempted`)
     } catch (error: any) {
       console.error('Error in findRealBusinesses:', error)
       
@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
         console.error('Error inserting leads batch:', insertError)
         
         // If batch insert fails, try inserting leads one by one to save what we can
-        console.log('Attempting to save leads individually...')
+        // console.log('Attempting to save leads individually...')
         for (const lead of uniqueLeadsToInsert) {
           try {
             const { data: singleLead, error: singleError } = await supabase
@@ -286,12 +286,12 @@ export async function POST(request: NextRequest) {
             if (!singleError && singleLead && singleLead.length > 0) {
               insertedLeads.push(singleLead[0])
               savedCount++
-              console.log(`Successfully saved: ${lead.business_name}`)
+              // console.log(`Successfully saved: ${lead.business_name}`)
             } else {
-              console.log(`Failed to save ${lead.business_name}: ${singleError?.message || 'Unknown error'}`)
+              // console.log(`Failed to save ${lead.business_name}: ${singleError?.message || 'Unknown error'}`)
             }
           } catch (singleLeadError: any) {
-            console.log(`Error saving individual lead ${lead.business_name}: ${singleLeadError.message || 'Unknown error'}`)
+            // console.log(`Error saving individual lead ${lead.business_name}: ${singleLeadError.message || 'Unknown error'}`)
             continue
           }
         }
@@ -303,11 +303,11 @@ export async function POST(request: NextRequest) {
           }, { status: 500 })
         }
         
-        console.log(`Saved ${savedCount} out of ${uniqueLeadsToInsert.length} leads individually`)
+        // console.log(`Saved ${savedCount} out of ${uniqueLeadsToInsert.length} leads individually`)
       } else {
         insertedLeads = data || []
         savedCount = insertedLeads.length
-        console.log(`Successfully saved ${savedCount} leads in batch`)
+        // console.log(`Successfully saved ${savedCount} leads in batch`)
       }
     } catch (dbError: any) {
       console.error('Database connection error:', dbError)
@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
 
     // TRACK LEAD DISTRIBUTION for diversification system
     if (insertedLeads && insertedLeads.length > 0) {
-      console.log(`🔄 DIVERSIFICATION: Tracking ${insertedLeads.length} distributed leads for future diversification`)
+      // console.log(`🔄 DIVERSIFICATION: Tracking ${insertedLeads.length} distributed leads for future diversification`)
       
       const distributionEntries = insertedLeads.map((lead: any) => ({
         business_name: lead.business_name,
@@ -369,7 +369,7 @@ export async function POST(request: NextRequest) {
          }
        }
        
-       console.log(`🔄 DIVERSIFICATION: Successfully tracked ${distributionEntries.length} lead distributions`)
+       // console.log(`🔄 DIVERSIFICATION: Successfully tracked ${distributionEntries.length} lead distributions`)
     }
 
     // Update usage tracking
@@ -428,7 +428,7 @@ export async function POST(request: NextRequest) {
       console.error('Error updating niche usage:', nicheUsageUpdateError)
     }
 
-    console.log(`Lead generation complete. Returning ${savedCount} leads to frontend.`)
+    // console.log(`Lead generation complete. Returning ${savedCount} leads to frontend.`)
 
     return NextResponse.json({
       success: true,
@@ -508,14 +508,14 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       .map(item => item.place_id)
   )
   
-  console.log(`🔄 DIVERSIFICATION: Found ${recentBusinessNames.size} recently distributed leads, ${overDistributedBusinesses.size} over-distributed businesses, ${distributedPlaceIds.size} tracked place IDs to avoid`)
+  // console.log(`🔄 DIVERSIFICATION: Found ${recentBusinessNames.size} recently distributed leads, ${overDistributedBusinesses.size} over-distributed businesses, ${distributedPlaceIds.size} tracked place IDs to avoid`)
   
   // Process niches in parallel for faster execution
   const nichePromises = niches.map(async (niche, nicheIndex) => {
     // This niche gets extra leads if it's one of the first few
     const resultsPerNiche = baseLeadsPerNiche + (nicheIndex < extraLeads ? 1 : 0)
     try {
-      console.log(`Searching for ${niche.name} businesses in ${location.city}, ${location.state}`)
+      // console.log(`Searching for ${niche.name} businesses in ${location.city}, ${location.state}`)
       
       // SMART SEARCH VARIATION - Add randomization to prevent identical results
       const searchVariations = [
@@ -539,7 +539,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       // Google Places Text Search API with timeout
       const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&location=${locationBias}&radius=${searchRadius * 1609}&key=${process.env.GOOGLE_PLACES_API_KEY}`
       
-      console.log(`Google Places search: ${searchQuery} (radius: ${searchRadius}mi)`)
+      // console.log(`Google Places search: ${searchQuery} (radius: ${searchRadius}mi)`)
       
       // Add timeout for the search request
       const abortController = new AbortController()
@@ -552,7 +552,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       clearTimeout(timeoutId)
       
       if (!placesResponse.ok) {
-        console.log(`Google Places search failed for ${niche.name}: ${placesResponse.status}`)
+        // console.log(`Google Places search failed for ${niche.name}: ${placesResponse.status}`)
         return []
       }
       
@@ -563,7 +563,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
         return []
       }
       
-      console.log(`Found ${placesData.results?.length || 0} places for ${niche.name}`)
+      // console.log(`Found ${placesData.results?.length || 0} places for ${niche.name}`)
       
              // LEAD FILTERING & RANDOMIZATION
        const allPlaces = placesData.results || []
@@ -590,7 +590,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
          return true
        })
        
-               console.log(`🔄 DIVERSIFICATION: ${allPlaces.length} total places, ${availablePlaces.length} available (${allPlaces.length - availablePlaces.length} filtered out for diversification)`)
+               // console.log(`🔄 DIVERSIFICATION: ${allPlaces.length} total places, ${availablePlaces.length} available (${allPlaces.length - availablePlaces.length} filtered out for diversification)`)
         
         // INTELLIGENT FALLBACK - If too many businesses filtered out, use relaxed filtering
         let placesToProcess = []
@@ -606,16 +606,16 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           }
           
           placesToProcess = shuffledPlaces.slice(0, resultsPerNiche)
-          console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} strictly filtered businesses`)
+          // console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} strictly filtered businesses`)
           
         } else if (availablePlaces.length > 0) {
           // Some businesses available but not enough - use what we have
           placesToProcess = [...availablePlaces]
-          console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} available businesses (less than requested ${resultsPerNiche})`)
+          // console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} available businesses (less than requested ${resultsPerNiche})`)
           
         } else {
           // No businesses available with strict filtering - use relaxed filtering
-          console.log(`🔄 DIVERSIFICATION: No businesses available with strict filtering, using relaxed filtering`)
+          // console.log(`🔄 DIVERSIFICATION: No businesses available with strict filtering, using relaxed filtering`)
           
           const relaxedPlaces = allPlaces.filter((place: any) => {
             // Only filter out businesses distributed very recently (24 hours)
@@ -639,7 +639,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
               [shuffledRelaxed[i], shuffledRelaxed[j]] = [shuffledRelaxed[j], shuffledRelaxed[i]]
             }
             placesToProcess = shuffledRelaxed.slice(0, resultsPerNiche)
-            console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} businesses with relaxed 24-hour filtering`)
+            // console.log(`🔄 DIVERSIFICATION: Using ${placesToProcess.length} businesses with relaxed 24-hour filtering`)
           } else {
             // Last resort - use all available businesses but shuffle them
             const shuffledAll = [...allPlaces]
@@ -648,7 +648,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
               [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]]
             }
             placesToProcess = shuffledAll.slice(0, resultsPerNiche)
-            console.log(`🔄 DIVERSIFICATION: Last resort - using ${placesToProcess.length} randomly shuffled businesses`)
+            // console.log(`🔄 DIVERSIFICATION: Last resort - using ${placesToProcess.length} randomly shuffled businesses`)
           }
         }
       
@@ -658,7 +658,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           // Get detailed place information with timeout
           const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,business_status,rating,user_ratings_total,opening_hours,geometry&key=${process.env.GOOGLE_PLACES_API_KEY}`
           
-          console.log(`Getting place details: ${place.name || 'unknown business'}`)
+          // console.log(`Getting place details: ${place.name || 'unknown business'}`)
           
           // Add timeout for Google Places API call (increased to 8 seconds)
           const abortController = new AbortController()
@@ -671,7 +671,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           clearTimeout(timeoutId)
           
           if (!detailsResponse.ok) {
-            console.log(`Google Places API error for ${place.name || 'unknown business'}: ${detailsResponse.status} ${detailsResponse.statusText}`)
+            // console.log(`Google Places API error for ${place.name || 'unknown business'}: ${detailsResponse.status} ${detailsResponse.statusText}`)
             return null
           }
           
@@ -684,23 +684,23 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
             if (business.business_status === 'OPERATIONAL') {
               const lead = await enrichBusinessData(business, niche, location)
                           if (lead) {
-              console.log(`Added real business: ${business.name}`)
+              // console.log(`Added real business: ${business.name}`)
               return lead
             }
             }
           } else {
-            console.log(`Google Places API returned status ${detailsData.status} for ${place.name || 'unknown business'}`)
+            // console.log(`Google Places API returned status ${detailsData.status} for ${place.name || 'unknown business'}`)
           }
         } catch (detailError: any) {
           // Handle specific error types
           if (detailError.name === 'AbortError') {
-            console.log(`Timeout getting place details for ${place.name || 'unknown business'}`)
+            // console.log(`Timeout getting place details for ${place.name || 'unknown business'}`)
           } else if (detailError.message?.includes('504')) {
-            console.log(`Server timeout (504) for ${place.name || 'unknown business'} - skipping`)
+            // console.log(`Server timeout (504) for ${place.name || 'unknown business'} - skipping`)
           } else if (detailError.message?.includes('fetch failed')) {
-            console.log(`Network error for ${place.name || 'unknown business'}: ${detailError.message}`)
+            // console.log(`Network error for ${place.name || 'unknown business'}: ${detailError.message}`)
           } else {
-          console.log(`Error getting place details for ${place.name || 'unknown business'}: ${detailError.message || 'Unknown error'}`)
+          // console.log(`Error getting place details for ${place.name || 'unknown business'}: ${detailError.message || 'Unknown error'}`)
           }
           return null
         }
@@ -714,17 +714,17 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
         .filter(result => result.status === 'fulfilled' && result.value !== null)
         .map(result => (result as PromiseFulfilledResult<any>).value)
       
-      console.log(`Successfully processed ${processedBusinesses.length} businesses for ${niche.name}`)
+      // console.log(`Successfully processed ${processedBusinesses.length} businesses for ${niche.name}`)
       return processedBusinesses
       
     } catch (error: any) {
       // Handle niche-level errors gracefully
       if (error.message?.includes('504')) {
-        console.log(`Server timeout (504) searching for ${niche.name} - skipping this niche`)
+        // console.log(`Server timeout (504) searching for ${niche.name} - skipping this niche`)
       } else if (error.name === 'AbortError') {
-        console.log(`Timeout searching for ${niche.name} - skipping this niche`)
+        // console.log(`Timeout searching for ${niche.name} - skipping this niche`)
       } else {
-        console.log(`Error searching for ${niche.name}: ${error.message || 'Unknown error'} - skipping this niche`)
+        // console.log(`Error searching for ${niche.name}: ${error.message || 'Unknown error'} - skipping this niche`)
       }
       return []
     }
@@ -750,7 +750,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
     [foundBusinesses[i], foundBusinesses[j]] = [foundBusinesses[j], foundBusinesses[i]]
   }
   
-  console.log(`Final results - ${foundBusinesses.length} unique businesses across all niches`)
+  // console.log(`Final results - ${foundBusinesses.length} unique businesses across all niches`)
   
   return {
     leads: foundBusinesses
@@ -781,7 +781,7 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     }
     
     if (website && process.env.OPENAI_API_KEY) {
-      console.log(`Enriching data for ${name} using website: ${website}`)
+      // console.log(`Enriching data for ${name} using website: ${website}`)
       try {
         // Add timeout wrapper for AI enrichment (8 seconds max for better results)
         enrichedData = await Promise.race([
@@ -793,7 +793,7 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
         
         // Validate enriched data
         if (!enrichedData || typeof enrichedData !== 'object') {
-          console.log(`Invalid enriched data for ${name}, using defaults`)
+          // console.log(`Invalid enriched data for ${name}, using defaults`)
           enrichedData = {
             owner_name: null,
             email: null,
@@ -806,13 +806,13 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       } catch (enrichmentError: any) {
         // Handle specific enrichment errors
         if (enrichmentError.message?.includes('504')) {
-          console.log(`Server timeout (504) during enrichment for ${name}, using basic data`)
+          // console.log(`Server timeout (504) during enrichment for ${name}, using basic data`)
         } else if (enrichmentError.message?.includes('timeout')) {
-          console.log(`AI enrichment timeout for ${name}, using basic data`)
+          // console.log(`AI enrichment timeout for ${name}, using basic data`)
         } else if (enrichmentError.message?.includes('fetch failed')) {
-          console.log(`Network error during enrichment for ${name}, using basic data`)
+          // console.log(`Network error during enrichment for ${name}, using basic data`)
         } else {
-          console.log(`AI enrichment failed for ${name}: ${enrichmentError.message || 'Unknown error'}, using basic data`)
+          // console.log(`AI enrichment failed for ${name}: ${enrichmentError.message || 'Unknown error'}, using basic data`)
       }
         
         // Reset to default values on any error
@@ -843,15 +843,15 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       twitter_handle: enrichedData.twitter_handle
     }
     
-    console.log(`Successfully created lead for ${name}`)
+    // console.log(`Successfully created lead for ${name}`)
     return lead
     
   } catch (error: any) {
     // Handle any unexpected errors in business data enrichment
     if (error.message?.includes('504')) {
-      console.log(`Server timeout (504) processing business data for ${business.name || 'unknown business'}, skipping`)
+      // console.log(`Server timeout (504) processing business data for ${business.name || 'unknown business'}, skipping`)
     } else {
-      console.log(`Error enriching business data for ${business.name || 'unknown business'}: ${error.message || 'Unknown error'}, skipping`)
+      // console.log(`Error enriching business data for ${business.name || 'unknown business'}: ${error.message || 'Unknown error'}, skipping`)
     }
     return null
   }
@@ -863,7 +863,7 @@ async function enrichWithAI(businessName: string, websiteUrl: string, city: stri
     const websiteContent = await scrapeWebsite(websiteUrl)
     
     if (!websiteContent) {
-      console.log(`Could not scrape content from ${websiteUrl}, using basic business data`)
+      // console.log(`Could not scrape content from ${websiteUrl}, using basic business data`)
       return {
         owner_name: null,
         email: null,
@@ -918,7 +918,7 @@ IMPORTANT:
 - Look for variations like "Follow us on", "Connect with us", social media icons, etc.
 `
 
-    console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
+    // console.log(`OpenAI API call: Analyzing website content for ${businessName}`)
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
@@ -939,7 +939,7 @@ IMPORTANT:
         }
         
         const extractedData = JSON.parse(cleanedResult)
-        console.log(`AI extracted data for ${businessName}:`, extractedData)
+        // console.log(`AI extracted data for ${businessName}:`, extractedData)
         
         // Process and validate social media URLs
         const processedData = {
@@ -951,22 +951,22 @@ IMPORTANT:
           twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName)
         }
         
-        console.log(`Processed social media data for ${businessName}:`, processedData)
+        // console.log(`Processed social media data for ${businessName}:`, processedData)
         return processedData
       } catch (parseError) {
-        console.log(`Error parsing AI response for ${businessName}, using basic data`)
+        // console.log(`Error parsing AI response for ${businessName}, using basic data`)
       }
     }
 
   } catch (error: any) {
     if (error.code === 'insufficient_quota') {
-      console.log(`OpenAI quota exceeded, using basic data for ${businessName}`)
+      // console.log(`OpenAI quota exceeded, using basic data for ${businessName}`)
     } else if (error.code === 'rate_limit_exceeded') {
-      console.log(`OpenAI rate limit exceeded, using basic data for ${businessName}`)
+      // console.log(`OpenAI rate limit exceeded, using basic data for ${businessName}`)
     } else if (error.message?.includes('504')) {
-      console.log(`Server timeout (504) during AI enrichment for ${businessName}, using basic data`)
+      // console.log(`Server timeout (504) during AI enrichment for ${businessName}, using basic data`)
     } else {
-      console.log(`Error in AI enrichment for ${businessName}: ${error.message || 'Unknown error'}`)
+      // console.log(`Error in AI enrichment for ${businessName}: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -1008,15 +1008,15 @@ async function scrapeWebsite(url: string): Promise<string | null> {
 
     if (!response.ok) {
       if (response.status === 403) {
-        console.log(`Access forbidden for ${url} (403) - site may block crawlers`)
+        // console.log(`Access forbidden for ${url} (403) - site may block crawlers`)
       } else if (response.status === 404) {
-        console.log(`Page not found for ${url} (404)`)
+        // console.log(`Page not found for ${url} (404)`)
       } else if (response.status === 504) {
-        console.log(`Gateway timeout for ${url} (504) - server temporarily unavailable`)
+        // console.log(`Gateway timeout for ${url} (504) - server temporarily unavailable`)
       } else if (response.status >= 500) {
-        console.log(`Server error for ${url} (${response.status}) - ${response.statusText}`)
+        // console.log(`Server error for ${url} (${response.status}) - ${response.statusText}`)
       } else {
-        console.log(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
+        // console.log(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
       }
       return null
     }
@@ -1059,19 +1059,19 @@ async function scrapeWebsite(url: string): Promise<string | null> {
 
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.log(`Request timeout for ${url}`)
+      // console.log(`Request timeout for ${url}`)
     } else if (error.code === 'ENOTFOUND') {
-      console.log(`Domain not found for ${url}`)
+      // console.log(`Domain not found for ${url}`)
     } else if (error.code === 'ECONNREFUSED') {
-      console.log(`Connection refused for ${url}`)
+      // console.log(`Connection refused for ${url}`)
     } else if (error.code === 'ECONNRESET') {
-      console.log(`Connection reset for ${url}`)
+      // console.log(`Connection reset for ${url}`)
     } else if (error.message?.includes('504')) {
-      console.log(`Gateway timeout (504) for ${url}`)
+      // console.log(`Gateway timeout (504) for ${url}`)
     } else if (error.message?.includes('fetch failed')) {
-      console.log(`Fetch failed for ${url}: ${error.message}`)
+      // console.log(`Fetch failed for ${url}: ${error.message}`)
     } else {
-      console.log(`Error scraping ${url}: ${error.message || 'Unknown error'}`)
+      // console.log(`Error scraping ${url}: ${error.message || 'Unknown error'}`)
     }
     return null
   }
@@ -1135,7 +1135,7 @@ function processSocialMediaUrl(platform: string, rawUrl: string | null, business
           return url.startsWith('http') ? url : `https://${url}`
         } else if (url.includes('/in/')) {
           // Convert personal profile to company search - this is a fallback
-          console.log(`Found personal LinkedIn profile for ${businessName}, skipping: ${url}`)
+          // console.log(`Found personal LinkedIn profile for ${businessName}, skipping: ${url}`)
           return null
         }
       } else if (url.includes('company/')) {
@@ -1166,6 +1166,6 @@ function processSocialMediaUrl(platform: string, rawUrl: string | null, business
       break
   }
   
-  console.log(`Could not process ${platform} URL for ${businessName}: ${rawUrl}`)
+  // console.log(`Could not process ${platform} URL for ${businessName}: ${rawUrl}`)
   return null
 }
