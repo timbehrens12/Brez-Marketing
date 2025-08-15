@@ -1214,7 +1214,7 @@ const CampaignWidget = ({
     if (DEBUG_LOGGING) {
     if (event) {
       // console.log(`[CampaignWidget] Received platform refresh event:`, 
-        event instanceof CustomEvent ? event.detail : 'Non-custom event');
+      //   event instanceof CustomEvent ? event.detail : 'Non-custom event');
     } else {
       // console.log(`[CampaignWidget] Handle platform refresh called directly`);
       }
