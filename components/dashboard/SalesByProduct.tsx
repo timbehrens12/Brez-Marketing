@@ -41,7 +41,6 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   const [error, setError] = useState<string | null>(null)
   const [connectionId, setConnectionId] = useState<string | null>(null)
   const [isLoadingConnection, setIsLoadingConnection] = useState(true)
-  const [isDataReady, setIsDataReady] = useState(false)
 
   // Listen for requests to share order data with other components
   useEffect(() => {
@@ -435,31 +434,6 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     };
   }, [connectionId, selectedProductId, fetchProducts, fetchProductSalesData]);
   
-  // Data ready state management - prevent flash of wrong data
-  useEffect(() => {
-    const hasProducts = products && products.length > 0;
-    const hasValidConnection = connectionId && !isLoadingConnection;
-    const isNotLoading = !isLoading;
-    const hasSelectedProduct = selectedProductId;
-    
-    const shouldBeReady = hasProducts && hasValidConnection && isNotLoading && hasSelectedProduct;
-    
-    if (shouldBeReady && !isDataReady) {
-      // Small delay to ensure smooth loading
-      const timer = setTimeout(() => {
-        setIsDataReady(true);
-      }, 150);
-      return () => clearTimeout(timer);
-    } else if (!shouldBeReady && isDataReady) {
-      setIsDataReady(false);
-    }
-  }, [products, connectionId, isLoadingConnection, isLoading, selectedProductId, isDataReady]);
-
-  // Reset data ready when date range changes
-  useEffect(() => {
-    setIsDataReady(false);
-  }, [dateRange?.from, dateRange?.to]);
-  
   // Get the selected product details
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId)
@@ -479,41 +453,6 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
   
-  // Show loading state if data is not ready to prevent flash
-  if (!isDataReady || isLoadingConnection) {
-    return (
-      <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 shadow-md overflow-hidden">
-        <CardHeader className="p-3 pb-1.5">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium text-gray-200">
-              <div className="flex items-center gap-2">
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src="https://i.imgur.com/cnCcupx.png" 
-                    alt="Shopify logo" 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
-                <span>Sales by Product</span>
-                <ShoppingBag className="h-4 w-4" />
-              </div>
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-3 pt-0">
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-2 text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Loading product data...</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 shadow-md overflow-hidden">
       <CardHeader className="p-3 pb-1.5">
