@@ -33,7 +33,9 @@ export function getStandardSupabaseClient(): SupabaseClient {
     standardClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
-        autoRefreshToken: false
+        autoRefreshToken: false,
+        storage: undefined, // Disable storage to prevent multiple instances
+        storageKey: 'brez-supabase-standard' // Unique key to prevent conflicts
       }
     })
     // console.log('📦 Standard Supabase client ready')
@@ -76,7 +78,9 @@ export function getAuthenticatedSupabaseClient(token: string): SupabaseClient {
     },
     auth: {
       persistSession: false,
-      autoRefreshToken: false
+      autoRefreshToken: false,
+      storage: undefined, // Disable storage to prevent multiple instances
+      storageKey: 'brez-supabase-auth' // Unique key to prevent conflicts
     }
   })
   
