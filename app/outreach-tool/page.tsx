@@ -148,13 +148,13 @@ export default function OutreachToolPage() {
   // Unified Supabase client function
   const getSupabaseClient = async () => {
     try {
-      console.log('🔗 Getting Supabase client...')
+      // console.log('🔗 Getting Supabase client...')
       const token = await getToken({ template: 'supabase' })
       if (token) {
-        console.log('✅ Using authenticated client')
+        // console.log('✅ Using authenticated client')
         return getAuthenticatedSupabaseClient(token)
       } else {
-        console.log('⚠️ Using standard client (no token)')
+        // console.log('⚠️ Using standard client (no token)')
         return getStandardSupabaseClient()
       }
     } catch (error) {
@@ -310,7 +310,7 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
-      console.log('Loading campaigns for user:', userId)
+      // console.log('Loading campaigns for user:', userId)
       const supabase = await getSupabaseClient()
       
       let query = supabase
@@ -322,7 +322,7 @@ export default function OutreachToolPage() {
       const { data, error } = await query
 
       if (error) throw error
-      console.log('Loaded campaigns:', data?.length || 0)
+      // console.log('Loaded campaigns:', data?.length || 0)
       setCampaigns(data || [])
     } catch (error) {
       console.error('Error loading campaigns:', error)
@@ -335,7 +335,7 @@ export default function OutreachToolPage() {
     if (!userId) return
 
     try {
-      console.log('Loading campaign leads for user:', userId)
+      // console.log('Loading campaign leads for user:', userId)
       const supabase = await getSupabaseClient()
       
       const { data: userCampaigns, error: campaignsError } = await supabase
@@ -346,7 +346,7 @@ export default function OutreachToolPage() {
       if (campaignsError) throw campaignsError
 
       if (!userCampaigns || userCampaigns.length === 0) {
-        console.log('No campaigns found, setting empty campaign leads')
+        // console.log('No campaigns found, setting empty campaign leads')
         setCampaignLeads([])
         return
       }
@@ -365,7 +365,7 @@ export default function OutreachToolPage() {
 
       if (error) throw error
       
-      console.log('Loaded campaign leads:', data?.length || 0)
+      // console.log('Loaded campaign leads:', data?.length || 0)
       setCampaignLeads(data || [])
     } catch (error) {
       console.error('Error loading campaign leads:', error)
@@ -393,7 +393,7 @@ export default function OutreachToolPage() {
 
     try {
       setIsLoadingConnections(true)
-      console.log('Loading platform connections for user:', userId)
+      // console.log('Loading platform connections for user:', userId)
       const supabase = await getSupabaseClient()
       
       const { data, error } = await supabase
@@ -404,7 +404,7 @@ export default function OutreachToolPage() {
 
       if (error) throw error
       
-      console.log('Loaded platform connections:', data?.length || 0)
+      // console.log('Loaded platform connections:', data?.length || 0)
       setPlatformConnections(data || [])
     } catch (error) {
       console.error('Error loading platform connections:', error)
@@ -415,16 +415,16 @@ export default function OutreachToolPage() {
   }, [userId])
 
   const loadInitialData = useCallback(async () => {
-    console.log('🔄 loadInitialData called, userId:', userId)
+    // console.log('🔄 loadInitialData called, userId:', userId)
     
     if (!userId) {
-      console.log('❌ No userId in loadInitialData, stopping loading')
+      // console.log('❌ No userId in loadInitialData, stopping loading')
       setIsLoadingPage(false)
       return
     }
     
     try {
-      console.log('📡 Starting to load campaigns and leads...')
+      // console.log('📡 Starting to load campaigns and leads...')
       setIsLoadingPage(true)
       setIsLoading(true)
       
@@ -442,7 +442,7 @@ export default function OutreachToolPage() {
       )
       
       await Promise.race([loadPromises, timeoutPromise])
-      console.log('✅ Initial data loading completed')
+      // console.log('✅ Initial data loading completed')
       
     } catch (error) {
       console.error('❌ Error loading initial data:', error)
@@ -451,7 +451,7 @@ export default function OutreachToolPage() {
       setCampaigns([])
       setCampaignLeads([])
     } finally {
-      console.log('🏁 loadInitialData finally block - stopping loading')
+      // console.log('🏁 loadInitialData finally block - stopping loading')
       setIsLoadingPage(false)
       setIsLoading(false)
     }
@@ -798,7 +798,7 @@ export default function OutreachToolPage() {
 
   // Component mount tracking and cleanup
   useEffect(() => {
-    console.log('🔄 Component mounting...')
+    // console.log('🔄 Component mounting...')
     setMounted(true)
     
     // Clean up old message count tracking from localStorage (older than 2 days)
@@ -842,9 +842,9 @@ export default function OutreachToolPage() {
 
   // Safety timeout to prevent infinite loading
   useEffect(() => {
-    console.log('⏱️ Setting up safety timeout for loading')
+    // console.log('⏱️ Setting up safety timeout for loading')
     const safetyTimeout = setTimeout(() => {
-      console.log('🚨 Safety timeout triggered - forcing loading to stop')
+      // console.log('🚨 Safety timeout triggered - forcing loading to stop')
       setIsLoadingPage(false)
       setIsLoading(false)
     }, 10000) // 10 second safety timeout
@@ -857,12 +857,12 @@ export default function OutreachToolPage() {
 
   // Main initialization effect - only runs once when userId changes
   useEffect(() => {
-    console.log('🔄 Main useEffect triggered, userId:', userId)
+    // console.log('🔄 Main useEffect triggered, userId:', userId)
     if (userId) {
-      console.log('✅ Starting data load for user:', userId)
+      // console.log('✅ Starting data load for user:', userId)
       loadInitialData()
     } else {
-      console.log('❌ No userId found, stopping loading state')
+      // console.log('❌ No userId found, stopping loading state')
       setIsLoadingPage(false)
     }
   }, [userId, loadInitialData])
@@ -889,7 +889,7 @@ export default function OutreachToolPage() {
     if (lastUsageRefresh && lastUsageRefresh !== today) {
       loadMessageUsage()
       localStorage.setItem(`last-recommendation-refresh-${userId}`, today)
-      console.log('🌅 New day detected on page load - refreshing usage counters')
+      // console.log('🌅 New day detected on page load - refreshing usage counters')
     }
 
     // Load completed todos
@@ -940,7 +940,7 @@ export default function OutreachToolPage() {
           generateTodos() // Generate fresh todos for new day
           loadMessageUsage() // Refresh usage counter for new day
           localStorage.setItem(`last-recommendation-refresh-${userId}`, today)
-          console.log('🌅 New day detected - refreshing todos and usage counters')
+          // console.log('🌅 New day detected - refreshing todos and usage counters')
         }
       }
     }
@@ -1007,7 +1007,7 @@ export default function OutreachToolPage() {
   }, [selectedCampaignLead, showSmartResponse, platformConnections])
 
   const forceLoadPage = () => {
-    console.log('🔧 Force loading page override triggered')
+    // console.log('🔧 Force loading page override triggered')
     setIsLoadingPage(false)
     setIsLoading(false)
     setShowLoadingOverride(false)
@@ -1841,9 +1841,9 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
               ---`
             ).join('\n\n')
             
-            console.log('📨 Retrieved previous messages for follow-up context:', messages.length)
+            // console.log('📨 Retrieved previous messages for follow-up context:', messages.length)
           } else {
-            console.log('📭 No previous messages found for this campaign')
+            // console.log('📭 No previous messages found for this campaign')
           }
         } catch (error) {
           console.error('Error fetching previous messages:', error)
@@ -1950,7 +1950,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
             }
           }
           
-          console.log(`🚨 Rate limit error for lead ${lead.business_name}:`, reason, 'Lead ID:', lead.id)
+          // console.log(`🚨 Rate limit error for lead ${lead.business_name}:`, reason, 'Lead ID:', lead.id)
           toast.error(errorMessage)
           return
         }
@@ -1982,7 +1982,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         // Show usage info if available
         if (data.usage?.messagesRemaining) {
           const { hourly, daily } = data.usage.messagesRemaining
-          console.log(`📊 Messages remaining: ${hourly}/hour, ${daily}/day`)
+          // console.log(`📊 Messages remaining: ${hourly}/hour, ${daily}/day`)
         }
       } else {
         toast.success('Message generated (template used)')
@@ -2097,7 +2097,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
         console.error('Error saving outreach message:', error)
         // Don't throw - just log, as this shouldn't block the workflow
       } else {
-        console.log('✅ Outreach message saved to database')
+        // console.log('✅ Outreach message saved to database')
       }
     } catch (error) {
       console.error('Error saving outreach message:', error)
@@ -2117,7 +2117,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     }
 
     try {
-      console.log('🔄 Updating campaign lead status:', { campaignLeadId, newStatus, outreachMethod })
+      // console.log('🔄 Updating campaign lead status:', { campaignLeadId, newStatus, outreachMethod })
       const supabase = await getSupabaseClient()
       
       if (newStatus === 'rejected') {
@@ -2147,7 +2147,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           updateData.outreach_method = outreachMethod
         }
         
-        console.log('📤 Sending update data:', updateData)
+        // console.log('📤 Sending update data:', updateData)
         
         const { data, error } = await supabase
           .from('outreach_campaign_leads')
@@ -2165,7 +2165,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
           throw error
         }
         
-        console.log('✅ Update successful:', data)
+        // console.log('✅ Update successful:', data)
       
         // Update state locally instead of reloading to prevent page jump
         setCampaignLeads(prev => prev.map(cl => 
@@ -2668,21 +2668,21 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     const availablePlatforms = []
 
     // Debug: Log lead data to see what's available
-    console.log('🔍 Lead data for platform detection:', {
-      business_name: lead.business_name,
-      email: lead.email,
-      phone: lead.phone,
-      website: lead.website,
-      instagram_handle: lead.instagram_handle,
-      facebook_page: lead.facebook_page,
-      linkedin_profile: lead.linkedin_profile,
-      twitter_handle: lead.twitter_handle,
-      platformConnections: platformConnections
-    })
+    // console.log('🔍 Lead data for platform detection:', {
+    //   business_name: lead.business_name,
+    //   email: lead.email,
+    //   phone: lead.phone,
+    //   website: lead.website,
+    //   instagram_handle: lead.instagram_handle,
+    //   facebook_page: lead.facebook_page,
+    //   linkedin_profile: lead.linkedin_profile,
+    //   twitter_handle: lead.twitter_handle,
+    //   platformConnections: platformConnections
+    // })
 
     // Check each platform based on what the lead actually has
     if (lead.email) {
-      console.log('✅ Adding Email platform')
+      // console.log('✅ Adding Email platform')
       availablePlatforms.push({
         type: 'email',
         icon: Mail,
@@ -2692,7 +2692,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
     }
 
     if (lead.phone) {
-      console.log('✅ Adding Phone platform')
+      // console.log('✅ Adding Phone platform')
       availablePlatforms.push({
         type: 'phone',
         icon: Phone,
@@ -2703,7 +2703,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
     // Instagram - show if they have a handle (manual outreach possible)
     if (lead.instagram_handle) {
-      console.log('✅ Adding Instagram platform')
+      // console.log('✅ Adding Instagram platform')
       availablePlatforms.push({
         type: 'instagram',
         icon: Instagram,
@@ -2714,7 +2714,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
     // Facebook - show if they have a page (manual outreach possible)
     if (lead.facebook_page) {
-      console.log('✅ Adding Facebook platform')
+      // console.log('✅ Adding Facebook platform')
       availablePlatforms.push({
         type: 'facebook',
         icon: Facebook,
@@ -2725,7 +2725,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
     // LinkedIn - show if they have a profile
     if (lead.linkedin_profile) {
-      console.log('✅ Adding LinkedIn platform')
+      // console.log('✅ Adding LinkedIn platform')
       availablePlatforms.push({
         type: 'linkedin',
         icon: Linkedin,
@@ -2736,7 +2736,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
     // Twitter/X - show if they have a handle
     if (lead.twitter_handle) {
-      console.log('✅ Adding Twitter platform')
+      // console.log('✅ Adding Twitter platform')
       availablePlatforms.push({
         type: 'twitter',
         icon: Twitter,
@@ -2749,7 +2749,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
 
     // Fallback: If no platforms detected, show email and manual outreach options
     if (availablePlatforms.length === 0) {
-      console.log('⚠️ No platforms detected, adding fallbacks')
+      // console.log('⚠️ No platforms detected, adding fallbacks')
       
       // Always offer email as fallback
       availablePlatforms.push({
@@ -2776,7 +2776,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
       })
     }
 
-    console.log('🎯 Final available platforms:', availablePlatforms.map(p => p.type))
+    // console.log('🎯 Final available platforms:', availablePlatforms.map(p => p.type))
     return availablePlatforms
   }
 

@@ -20,20 +20,19 @@ export const metadata: Metadata = {
   description: "E-commerce analytics dashboard",
   icons: {
     icon: "/brand/favicon.ico",
-    shortcut: "/brand/favicon-32x32.png",
+    shortcut: "/brand/favicon.ico",
     apple: "/brand/apple-touch-icon.png",
     other: [
       {
         rel: "icon",
         type: "image/png",
-        sizes: "16x16",
-        url: "/brand/favicon-16x16.png",
+        sizes: "96x96",
+        url: "/brand/favicon-96x96.png",
       },
       {
         rel: "icon",
-        type: "image/png",
-        sizes: "32x32",
-        url: "/brand/favicon-32x32.png",
+        type: "image/svg+xml",
+        url: "/brand/favicon.svg",
       },
       {
         rel: "icon",

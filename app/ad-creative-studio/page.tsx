@@ -1117,7 +1117,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   }
 
   const updateCreativeStatus = (id: string, status: GeneratedCreative['status'], generatedImageUrl?: string) => {
-    console.log(`🔄 Updating creative ${id} status to ${status}`, { generatedImageUrl: generatedImageUrl ? 'provided' : 'none' })
+    // console.log(`🔄 Updating creative ${id} status to ${status}`, { generatedImageUrl: generatedImageUrl ? 'provided' : 'none' })
     setGeneratedCreatives(prev => {
       const updated = prev.map(creative => 
         creative.id === id 
