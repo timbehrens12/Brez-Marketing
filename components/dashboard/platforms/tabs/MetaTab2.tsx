@@ -89,14 +89,14 @@ function acquireMetaFetchLock(fetchId: number | string): boolean {
   if (typeof window === 'undefined') return true;
   
   if (window._metaFetchLock === true && !window._activeFetchIds?.has(fetchId)) {
-    console.log(`[MetaTab2] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
+
     return false;
   }
   
   window._metaFetchLock = true;
   window._activeFetchIds?.add(fetchId);
   
-  console.log(`[MetaTab2] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
+
   return true;
 }
 
@@ -107,9 +107,9 @@ function releaseMetaFetchLock(fetchId: number | string): void {
   
   if ((window._activeFetchIds?.size ?? 0) === 0) {
     window._metaFetchLock = false;
-    console.log(`[MetaTab2] 🔓 Released Meta fetch lock (last fetchId: ${fetchId}). No active fetches.`);
+
   } else {
-    console.log(`[MetaTab2] 🔒 Meta Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
+
   }
 }
 
@@ -190,7 +190,7 @@ export function MetaTab2({
     const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
     const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
     
-    console.log(`[MetaTab2] Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
+
     
     // Single day comparison
     const isSingleDay = isSameDay(fromNormalized, toNormalized);
@@ -199,7 +199,7 @@ export function MetaTab2({
       prevDay.setDate(prevDay.getDate() - 1);
       const prevDayStr = toLocalISODateString(prevDay);
       
-      console.log(`[MetaTab2] Single day detected, comparing to previous day: ${prevDayStr}`);
+
       
       return {
         prevFrom: prevDayStr,
@@ -289,12 +289,12 @@ export function MetaTab2({
   // Fetch Meta data from database after sync
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
     if (!brandId || !dateRange?.from || !dateRange?.to || !metaConnection) {
-      console.log("[MetaTab2] Skipping Meta data fetch from database: Missing brandId, dateRange, or Meta connection.");
+
       return;
     }
 
     try {
-      console.log(`[MetaTab2] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`);
+
 
       // Current period params
       const params = new URLSearchParams({ brandId: brandId });
@@ -352,23 +352,9 @@ export function MetaTab2({
       const currentData = await currentResponse.json();
       const previousData = await prevResponse.json();
       
-      console.log(`[MetaTab2] Fetched Meta data from database for CURRENT period:`, {
-        adSpend: currentData.adSpend,
-        impressions: currentData.impressions,
-        clicks: currentData.clicks,
-        conversions: currentData.conversions,
-        roas: currentData.roas,
-        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
-      });
 
-      console.log(`[MetaTab2] Fetched Meta data from database for PREVIOUS period:`, {
-        adSpend: previousData.adSpend,
-        impressions: previousData.impressions,
-        clicks: previousData.clicks,
-        conversions: previousData.conversions,
-        roas: previousData.roas,
-        dateRange: `${prevFrom} to ${prevTo}`
-      });
+
+
 
       // Update metaMetrics state with database data
       setMetaMetrics(prev => {
@@ -405,13 +391,7 @@ export function MetaTab2({
           cprGrowth: calculatePercentChange(currentData.costPerResult, previousData.costPerResult),
         };
         
-        console.log(`[MetaTab2] ✅ Updated metaMetrics state from database with percentage comparisons:`, {
-          adSpendGrowth: newMetrics.adSpendGrowth,
-          roasGrowth: newMetrics.roasGrowth,
-          clickGrowth: newMetrics.clickGrowth,
-          currentAdSpend: currentData.adSpend,
-          previousAdSpend: previousData.adSpend
-        });
+
         return newMetrics;
       });
       
@@ -426,7 +406,7 @@ export function MetaTab2({
   // Fetch campaign data
   const fetchCampaigns = useCallback(async (forceRefresh = false, skipLoadingState = false) => {
     if (!brandId || !metaConnection) {
-      console.log('[MetaTab2] Cannot fetch campaigns without brandId or Meta connection');
+
       if (!skipLoadingState) {
         setIsLoadingCampaigns(false);
       }
@@ -453,7 +433,7 @@ export function MetaTab2({
           lastFetchedCampaignDates.current.to !== localToDate;
         
         if (!forceRefresh && !isDifferentDateRange && campaigns.length > 0) {
-          console.log('[MetaTab2] Skipping campaign fetch: dates unchanged, not forcing, and campaigns exist.');
+
           if (!skipLoadingState) {
             setIsLoadingCampaigns(false);
           }
@@ -466,7 +446,7 @@ export function MetaTab2({
         url += `${url.includes('?') ? '&' : '?'}forceRefresh=true&t=${Date.now()}`;
       }
       
-      console.log(`[MetaTab2] Fetching Meta campaigns: ${url}`);
+
       const response = await fetch(url, {
         cache: 'no-store',
         headers: {
@@ -481,7 +461,7 @@ export function MetaTab2({
       
       const data = await response.json();
       setCampaigns(data.campaigns || []);
-      console.log(`[MetaTab2] Loaded ${data.campaigns?.length || 0} Meta campaigns`);
+
       
     } catch (error) {
       console.error('[MetaTab2] Error fetching campaigns:', error);
@@ -502,18 +482,18 @@ export function MetaTab2({
     const refreshId = `meta-tab2-sync-${Date.now()}`;
     
     if (isMetaFetchInProgress()) {
-      console.log(`[MetaTab2] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`);
+      // console.log(`[MetaTab2] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`);
       toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" });
       return;
     }
     
     if (!acquireMetaFetchLock(refreshId)) {
-      console.log(`[MetaTab2] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`);
+      // console.log(`[MetaTab2] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`);
       toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" });
       return;
     }
     
-    console.log("[MetaTab2] Syncing Meta insights data through database...");
+    // console.log("[MetaTab2] Syncing Meta insights data through database...");
     
     // Set ALL Meta widget loading states to true for consistent loading
     setIsLoadingAllMetaWidgets(true);
@@ -527,7 +507,7 @@ export function MetaTab2({
       const endDate = dateRange.to.toISOString().split('T')[0];
       
       // Step 1A: Sync fresh data from Meta API to database (CURRENT PERIOD)
-      console.log(`[MetaTab2] 🚀 Step 1A: Syncing CURRENT period Meta insights to database (refreshId: ${refreshId})`);
+      // console.log(`[MetaTab2] 🚀 Step 1A: Syncing CURRENT period Meta insights to database (refreshId: ${refreshId})`);
       const currentResponse = await fetch('/api/meta/insights/sync', {
         method: 'POST',
         headers: {
@@ -548,10 +528,10 @@ export function MetaTab2({
       }
       
       const currentResult = await currentResponse.json();
-      console.log(`[MetaTab2] ✅ Current period Meta insights synced - ${currentResult.count || 0} records`);
+      // console.log(`[MetaTab2] ✅ Current period Meta insights synced - ${currentResult.count || 0} records`);
 
       // Step 1B: Sync fresh PREVIOUS period data from Meta API to database  
-      console.log(`[MetaTab2] 🚀 Step 1B: Syncing PREVIOUS period Meta insights to database (refreshId: ${refreshId})`);
+      // console.log(`[MetaTab2] 🚀 Step 1B: Syncing PREVIOUS period Meta insights to database (refreshId: ${refreshId})`);
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
       
       const previousResponse = await fetch('/api/meta/insights/sync', {
@@ -574,14 +554,14 @@ export function MetaTab2({
         // Don't throw - continue with current period data
       } else {
         const previousResult = await previousResponse.json();
-        console.log(`[MetaTab2] ✅ Previous period Meta insights synced - ${previousResult.count || 0} records`);
+        // console.log(`[MetaTab2] ✅ Previous period Meta insights synced - ${previousResult.count || 0} records`);
       }
 
       if (currentResult.success) {
-        console.log(`[MetaTab2] ✅ DOUBLE SYNC completed - both current and previous periods refreshed from Meta API`);
+        // console.log(`[MetaTab2] ✅ DOUBLE SYNC completed - both current and previous periods refreshed from Meta API`);
         
         // Step 2: Fetch refreshed data from database AND campaigns in parallel
-        console.log(`[MetaTab2] 🚀 Step 2: Fetching all refreshed Meta data`);
+        // console.log(`[MetaTab2] 🚀 Step 2: Fetching all refreshed Meta data`);
         
         await Promise.all([
           fetchMetaDataFromDatabase(refreshId),
@@ -613,7 +593,7 @@ export function MetaTab2({
            }
          }));
         
-        console.log(`[MetaTab2] ✅ FULL Meta sync completed successfully`);
+        // console.log(`[MetaTab2] ✅ FULL Meta sync completed successfully`);
       } else {
         throw new Error(currentResult.error || 'Failed to sync Meta insights');
       }
@@ -687,10 +667,10 @@ export function MetaTab2({
   useEffect(() => {
     if (metaConnection && brandId && dateRange?.from && dateRange?.to) {
       setIsLoadingAllMetaWidgets(true);
-      console.log("[MetaTab2] Meta connection detected, setting unified loading state to true");
+      // console.log("[MetaTab2] Meta connection detected, setting unified loading state to true");
     } else if (!metaConnection) {
       setIsLoadingAllMetaWidgets(false);
-      console.log("[MetaTab2] Meta connection lost, clearing unified loading state");
+      // console.log("[MetaTab2] Meta connection lost, clearing unified loading state");
     }
   }, [metaConnection, brandId, dateRange?.from, dateRange?.to]);
 
@@ -708,13 +688,13 @@ export function MetaTab2({
       
       if (isInitialMount || hasDateRangeChanged) {
         if (hasDateRangeChanged) {
-          console.log("[MetaTab2] Date range changed, triggering database fetch for new date range:", {
+          // console.log("[MetaTab2] Date range changed, triggering database fetch for new date range:", {
             from: currentFromDate, 
             to: currentToDate,
             previous: lastFetchedDateRange.current
           });
         } else {
-          console.log("[MetaTab2] Triggering initial database fetch on mount");
+          // console.log("[MetaTab2] Triggering initial database fetch on mount");
         }
         
         // Update the tracking refs
@@ -733,10 +713,10 @@ export function MetaTab2({
           }, 1000);
         });
       } else {
-        console.log("[MetaTab2] Skipping automatic refresh - same date range, data already fetched. Use events for updates.");
+        // console.log("[MetaTab2] Skipping automatic refresh - same date range, data already fetched. Use events for updates.");
       }
     } else {
-      console.log("[MetaTab2] Skipping data fetch: Missing brandId, dateRange, or Meta connection");
+      // console.log("[MetaTab2] Skipping data fetch: Missing brandId, dateRange, or Meta connection");
       setIsLoadingAllMetaWidgets(false);
       setIsLoadingCampaigns(false);
       hasFetchedMetaData.current = false;
@@ -747,26 +727,26 @@ export function MetaTab2({
   // Listen for global refresh events
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log("[MetaTab2] Received global refresh event:", event.detail);
+      // console.log("[MetaTab2] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log("[MetaTab2] Global refresh event matches current brandId. Triggering Meta database sync.");
+        // console.log("[MetaTab2] Global refresh event matches current brandId. Triggering Meta database sync.");
         syncMetaInsights();
       }
     };
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
-      console.log("[MetaTab2] Received global-refresh-all event:", event.detail);
+      // console.log("[MetaTab2] Received global-refresh-all event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection && 
           (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
-        console.log("[MetaTab2] Global refresh all - triggering Meta sync");
+        // console.log("[MetaTab2] Global refresh all - triggering Meta sync");
         syncMetaInsights();
       }
     };
 
     const handleNewDayDetected = (event: CustomEvent) => {
-      console.log("[MetaTab2] 🌅 New day detected event received:", event.detail);
+      // console.log("[MetaTab2] 🌅 New day detected event received:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log("[MetaTab2] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.");
+        // console.log("[MetaTab2] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.");
         toast.info("New day detected! Refreshing all Meta data...", { 
           id: "meta-new-day-refresh-tab2",
           duration: 8000 
@@ -775,7 +755,7 @@ export function MetaTab2({
         // Force a comprehensive sync to ensure proper data separation
         syncMetaInsights();
       } else {
-        console.log("[MetaTab2] New day event not for this brand or Meta not connected, skipping.");
+        // console.log("[MetaTab2] New day event not for this brand or Meta not connected, skipping.");
       }
     };
 

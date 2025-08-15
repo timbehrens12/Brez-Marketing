@@ -1168,7 +1168,7 @@ export default function ActionCenterPage() {
     if (!userId) return
     
     setIsLoadingBrandHealth(true)
-    console.log('[Brand Health] Starting data load...', forceRefresh ? '(FORCE REFRESH)' : '')
+    // console.log('[Brand Health] Starting data load...', forceRefresh ? '(FORCE REFRESH)' : '')
     
     try {
       const supabase = await getSupabaseClient()
@@ -1180,7 +1180,7 @@ export default function ActionCenterPage() {
         .eq('user_id', userId)
 
       if (!brands?.length) {
-        console.log('[Brand Health] No brands found')
+        // console.log('[Brand Health] No brands found')
         setBrandHealthData([])
         return
       }
@@ -1202,7 +1202,7 @@ export default function ActionCenterPage() {
       )
 
       if (!brandsWithAdPlatforms.length) {
-        console.log('[Brand Health] No brands with ad platforms found')
+        // console.log('[Brand Health] No brands with ad platforms found')
         setBrandHealthData([])
         return
       }
@@ -1234,7 +1234,7 @@ export default function ActionCenterPage() {
 
       // Step 4.5: Trigger fresh data sync if force refresh is requested
       if (forceRefresh) {
-        console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
+        // console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
         for (const brand of brandsWithAdPlatforms) {
           try {
             // Trigger fresh sync for today's data for each brand
@@ -1258,7 +1258,7 @@ export default function ActionCenterPage() {
         }
         // Wait a moment for the sync to complete
         await new Promise(resolve => setTimeout(resolve, 2000))
-        console.log('[Brand Health] Force refresh sync completed, proceeding with data load...')
+        // console.log('[Brand Health] Force refresh sync completed, proceeding with data load...')
       }
 
       // Step 5: Process each brand

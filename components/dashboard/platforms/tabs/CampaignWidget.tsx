@@ -263,16 +263,16 @@ const CampaignWidget = ({
   // Only log once per 10 renders to prevent log floods
   if (DEBUG_LOGGING && renderCount % MAX_LOGS_PER_SESSION === 0) {
   console.log("--- CampaignWidget Render --- ");
-  console.log(`[CW DEBUG] Received Props: isLoading=${isLoading}, isSyncing=${isSyncing}`);
+  // console.log(`[CW DEBUG] Received Props: isLoading=${isLoading}, isSyncing=${isSyncing}`);
     if (dateRange) {
-      console.log(`[CW DEBUG] Received Date Range Prop:`, dateRange ? { 
+      // console.log(`[CW DEBUG] Received Date Range Prop:`, dateRange ? { 
         from: dateRange.from?.toISOString(), 
         to: dateRange.to?.toISOString() 
       } : 'undefined');
     }
-  console.log(`[CW DEBUG] Received Campaigns Prop Count: ${campaigns?.length ?? 0}`);
+  // console.log(`[CW DEBUG] Received Campaigns Prop Count: ${campaigns?.length ?? 0}`);
     if (campaigns && campaigns.length > 0 && renderCount === 0) {
-    console.log(`[CW DEBUG] First Campaign Prop Metrics:`, {
+    // console.log(`[CW DEBUG] First Campaign Prop Metrics:`, {
         name: campaigns[0].campaign_name,
         id: campaigns[0].campaign_id,
         spend: campaigns[0].spent,
@@ -372,7 +372,7 @@ const CampaignWidget = ({
   useEffect(() => {
     // Always update localCampaigns when campaigns prop changes significantly
     // Don't compare with localCampaigns to avoid circular dependencies
-    console.log('[CampaignWidget] Campaigns prop updated, checking for changes...');
+    // console.log('[CampaignWidget] Campaigns prop updated, checking for changes...');
     
     // Always update if the campaigns have changed
       setLocalCampaigns(campaigns);
@@ -381,7 +381,7 @@ const CampaignWidget = ({
     if (campaigns.length > 0) {
       const testCampaign = campaigns.find(c => c.campaign_id === '120218263352990058');
       if (testCampaign) {
-        console.log('[CampaignWidget] Test campaign budget info:', {
+        // console.log('[CampaignWidget] Test campaign budget info:', {
           campaign_id: testCampaign.campaign_id,
           budget: testCampaign.budget,
           adset_budget_total: testCampaign.adset_budget_total,
@@ -426,7 +426,7 @@ const CampaignWidget = ({
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
     // Log detailed debugging info about the date range
-    console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
+    // console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
     if (!dateRange || !dateRange.from || !dateRange.to) {
       console.warn(`[CampaignWidget] [WARNING] Date range is missing or incomplete when fetching ad sets for campaign ${campaignId}`);
     }
@@ -494,7 +494,7 @@ const CampaignWidget = ({
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         dateQuery = `&from=${fromDate}&to=${toDate}`;
-        console.log(`[CampaignWidget] [DEBUG] Adding date query params: ${dateQuery}`);
+        // console.log(`[CampaignWidget] [DEBUG] Adding date query params: ${dateQuery}`);
         url += dateQuery;
       } else {
         console.warn(`[CampaignWidget] [WARNING] No date range available for ad sets fetch`);
@@ -504,7 +504,7 @@ const CampaignWidget = ({
           url += `&forceRefresh=true`;
       }
       
-      console.log(`[CampaignWidget] [DEBUG] Fetching ad sets from: ${url}`);
+      // console.log(`[CampaignWidget] [DEBUG] Fetching ad sets from: ${url}`);
       
       let response = await fetch(url, { 
           signal: controller.signal,
@@ -514,8 +514,8 @@ const CampaignWidget = ({
       
       // If the regular endpoint fails, try the direct-fetch endpoint
       if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, response:`, await response.text());
-        console.log(`[CampaignWidget] Trying direct-fetch endpoint with date range...`);
+        // console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, response:`, await response.text());
+        // console.log(`[CampaignWidget] Trying direct-fetch endpoint with date range...`);
         usedDirectFetch = true;
         
         // Make sure we still include date range in the direct fetch
@@ -532,7 +532,7 @@ const CampaignWidget = ({
           });
         }
         
-        console.log(`[CampaignWidget] [DEBUG] Direct fetch body:`, directFetchBody);
+        // console.log(`[CampaignWidget] [DEBUG] Direct fetch body:`, directFetchBody);
         
         response = await fetch(`/api/meta/adsets/direct-fetch`, {
           method: 'POST',
@@ -548,7 +548,7 @@ const CampaignWidget = ({
       
       // Log the raw response for debugging
       const responseText = await response.text();
-      console.log(`[CampaignWidget] [DEBUG] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 500)}...`);
+      // console.log(`[CampaignWidget] [DEBUG] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 500)}...`);
       
       // Parse the response as JSON (safely)
       let data;
@@ -560,7 +560,7 @@ const CampaignWidget = ({
       }
       
       // *** Add logging for the actual ad set data received ***
-      console.log(`[CampaignWidget] [DEBUG] Parsed ad sets data for campaign ${campaignId}:`, 
+      // console.log(`[CampaignWidget] [DEBUG] Parsed ad sets data for campaign ${campaignId}:`, 
         data.adSets ? {
           count: data.adSets.length,
           source: data.source || 'unknown',
@@ -1055,7 +1055,7 @@ const CampaignWidget = ({
   const bulkRefreshCampaignStatuses = useCallback(async () => {
     if (!brandId) return;
     
-    console.log(`[CampaignWidget] Starting bulk refresh of all campaign statuses for brand ${brandId}`);
+    // console.log(`[CampaignWidget] Starting bulk refresh of all campaign statuses for brand ${brandId}`);
     
     const toastId = toast.loading("Refreshing campaign statuses...");
     setRefreshing(true);
@@ -1076,7 +1076,7 @@ const CampaignWidget = ({
       
       const data = await response.json();
       
-      console.log(`[CampaignWidget] Bulk refresh completed: ${data.message}`);
+      // console.log(`[CampaignWidget] Bulk refresh completed: ${data.message}`);
       
       // Force refresh the campaigns data with date range if available to ensure reach values are calculated correctly
       let url = `/api/meta/campaigns?brandId=${brandId}`;
@@ -1213,10 +1213,10 @@ const CampaignWidget = ({
     // Log the event for debugging only when debug logging is enabled
     if (DEBUG_LOGGING) {
     if (event) {
-      console.log(`[CampaignWidget] Received platform refresh event:`, 
+      // console.log(`[CampaignWidget] Received platform refresh event:`, 
         event instanceof CustomEvent ? event.detail : 'Non-custom event');
     } else {
-      console.log(`[CampaignWidget] Handle platform refresh called directly`);
+      // console.log(`[CampaignWidget] Handle platform refresh called directly`);
       }
     }
     
@@ -1265,10 +1265,10 @@ const CampaignWidget = ({
     }
     
     // When date range changes, refresh all data
-    console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
+    // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
     
     // Clear cached ad sets data for all campaigns when date range changes
-    console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
+    // console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
     setAdSets([]); // Clear all ad sets data
     setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
     
@@ -1376,7 +1376,7 @@ const CampaignWidget = ({
   const filteredCampaigns = useMemo(() => {
     const processedCampaigns = localCampaigns.map(campaign => {
       // DEBUG LOG campaign details to diagnose zero values
-      console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
+      // console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
         name: campaign.campaign_name,
         spent: campaign.spent, 
         impressions: campaign.impressions,
@@ -1390,7 +1390,7 @@ const CampaignWidget = ({
       const hasDailyInsights = campaign.daily_insights && campaign.daily_insights.length > 0;
 
       if (hasDailyInsights) {
-        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
+        // console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
         
         // Log current date range
         console.log(`[CW DEBUG RANGE] Current dateRange:`, {
@@ -1456,7 +1456,7 @@ const CampaignWidget = ({
         });
 
         // Log the aggregated metrics for debugging
-        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id}: Found ${insightsInRange} insights in selected date range. Aggregated metrics:`, {
+        // console.log(`[CW DEBUG] Campaign ${campaign.campaign_id}: Found ${insightsInRange} insights in selected date range. Aggregated metrics:`, {
           spent: aggregatedSpent,
           impressions: aggregatedImpressions,
           clicks: aggregatedClicks,
@@ -1504,9 +1504,9 @@ const CampaignWidget = ({
     });
 
     if (DEBUG_LOGGING) {
-      console.log(`[CW DEBUG] Filtered & Sorted Campaigns Count: ${filteredAndSortedCampaigns.length}`);
+      // console.log(`[CW DEBUG] Filtered & Sorted Campaigns Count: ${filteredAndSortedCampaigns.length}`);
       if (filteredAndSortedCampaigns.length > 0) {
-          console.log(`[CW DEBUG] First Filtered & Sorted Campaign Prop Metrics:`, {
+          // console.log(`[CW DEBUG] First Filtered & Sorted Campaign Prop Metrics:`, {
               name: filteredAndSortedCampaigns[0].campaign_name,
               id: filteredAndSortedCampaigns[0].campaign_id,
               spend: filteredAndSortedCampaigns[0].spent,
@@ -1560,7 +1560,7 @@ const CampaignWidget = ({
 
   // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
-    console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
+    // console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
       campaign_budget: campaign.budget,
       adset_budget_total: campaign.adset_budget_total,
       budget_type: campaign.budget_type,
@@ -1574,7 +1574,7 @@ const CampaignWidget = ({
       const activeAdSets = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE');
       const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       
-      console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
+      // console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
       
       return {
         budget: totalAdSetBudget,
@@ -1586,7 +1586,7 @@ const CampaignWidget = ({
     
     // If campaign has adset_budget_total (the preferred source from the campaigns API)
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      console.log(`[CampaignWidget] Using adset_budget_total: $${campaign.adset_budget_total}`);
+      // console.log(`[CampaignWidget] Using adset_budget_total: $${campaign.adset_budget_total}`);
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
@@ -1597,7 +1597,7 @@ const CampaignWidget = ({
     
     // If campaign has a budget field that's greater than 0, use that
     if (campaign.budget && campaign.budget > 0) {
-      console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
+      // console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
       return {
         budget: campaign.budget,
         formatted_budget: formatCurrency(campaign.budget),
@@ -1609,7 +1609,7 @@ const CampaignWidget = ({
     // Check current budgets from API
     const currentBudgetData = currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
-      console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
+      // console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
         formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
@@ -1620,7 +1620,7 @@ const CampaignWidget = ({
     
     // If we're still loading or syncing, don't show $0.00 - this is key!
     if (isLoading || isSyncing || isLoadingBudgets) {
-      console.log(`[CampaignWidget] Still loading/syncing, returning placeholder budget`);
+      // console.log(`[CampaignWidget] Still loading/syncing, returning placeholder budget`);
     return {
         budget: 0,
         formatted_budget: '...', // Show loading indicator instead of $0.00
@@ -1630,7 +1630,7 @@ const CampaignWidget = ({
     }
     
     // Last resort - return 0 but only if we're not loading
-    console.log(`[CampaignWidget] No budget data found, returning $0.00`);
+    // console.log(`[CampaignWidget] No budget data found, returning $0.00`);
     return {
       budget: 0,
       formatted_budget: formatCurrency(0),
@@ -1709,7 +1709,7 @@ const CampaignWidget = ({
         const clicks = Number(campaign.clicks) || 0;
         
         if (finalReach > 0 && spent === 0 && impressions === 0 && clicks === 0) {
-            console.log(`[CampaignWidget] Safety override: Setting reach to 0 for ${campaign.campaign_id} because all other metrics are 0 (preventing stale data)`);
+            // console.log(`[CampaignWidget] Safety override: Setting reach to 0 for ${campaign.campaign_id} because all other metrics are 0 (preventing stale data)`);
             finalReach = 0;
         }
         
@@ -1763,7 +1763,7 @@ const CampaignWidget = ({
     const clicks = Number(campaign.clicks) || 0;
     
     if (reachValue > 0 && spent === 0 && impressions === 0 && clicks === 0) {
-      console.log(`[CampaignWidget] Safety override: Setting fallback reach to 0 for ${campaign.campaign_id} because all other metrics are 0 (preventing stale data)`);
+      // console.log(`[CampaignWidget] Safety override: Setting fallback reach to 0 for ${campaign.campaign_id} because all other metrics are 0 (preventing stale data)`);
       reachValue = 0;
     }
     
@@ -1788,13 +1788,13 @@ const CampaignWidget = ({
     
     // Ensure we have a valid date range before fetching
     if (!dateRange?.from || !dateRange?.to) {
-      console.log(`[CW DEBUG] Skipping proactive fetch - missing date range`);
+      // console.log(`[CW DEBUG] Skipping proactive fetch - missing date range`);
       return;
     }
     
     const fromDate = dateRange.from.toISOString().split('T')[0];
     const toDate = dateRange.to.toISOString().split('T')[0];
-    console.log(`[CW DEBUG] Starting proactive fetch for ${campaignsToFetch.length} campaigns with date range: ${fromDate} to ${toDate}`);
+    // console.log(`[CW DEBUG] Starting proactive fetch for ${campaignsToFetch.length} campaigns with date range: ${fromDate} to ${toDate}`);
     
     setIsPreloadingAdSets(true);
     
@@ -1808,14 +1808,14 @@ const CampaignWidget = ({
       if (!isMountedRef.current) break;
       
       const batch = campaignsToFetch.slice(i, i + batchSize);
-      console.log(`[CW DEBUG] Processing batch ${Math.floor(i/batchSize) + 1} with ${batch.length} campaigns`);
+      // console.log(`[CW DEBUG] Processing batch ${Math.floor(i/batchSize) + 1} with ${batch.length} campaigns`);
       
       // Use Promise.all for parallel processing within the batch with timeout protection
       const batchResults = await Promise.all(batch.map(async (campaign) => {
         if (!isMountedRef.current) return null;
         
         const campaignId = campaign.campaign_id;
-        console.log(`[CW DEBUG] Proactively fetching ad sets for ${campaignId} with date range: ${fromDate} to ${toDate}`);
+        // console.log(`[CW DEBUG] Proactively fetching ad sets for ${campaignId} with date range: ${fromDate} to ${toDate}`);
         
         // Create AbortController for timeout
         const controller = new AbortController();
@@ -1828,7 +1828,7 @@ const CampaignWidget = ({
           // Add forceRefresh=true to ensure we get the latest data
           url += '&forceRefresh=true';
           
-          console.log(`[CW DEBUG] Fetching from: ${url}`);
+          // console.log(`[CW DEBUG] Fetching from: ${url}`);
           
           const response = await fetch(url, { 
             signal: controller.signal,
@@ -1843,7 +1843,7 @@ const CampaignWidget = ({
             const responseText = await response.text();
             
             // Debug the raw response to see what we're getting
-            console.log(`[CW DEBUG] Raw response first 200 chars: ${responseText.substring(0, 200)}...`);
+            // console.log(`[CW DEBUG] Raw response first 200 chars: ${responseText.substring(0, 200)}...`);
             
             let data;
             try {
@@ -1876,7 +1876,7 @@ const CampaignWidget = ({
             const totalReach = adSetsWithReach.reduce((sum: number, adSet: AdSet) => sum + (Number(adSet.reach) || 0), 0);
             
             if (adSetsWithReach.length > 0) {
-              console.log(`[CW DEBUG] Proactive fetch SUCCESS for ${campaignId} - ${adSetsWithReach.length}/${validAdSets.length} ad sets have reach data. Total reach: ${totalReach}`);
+              // console.log(`[CW DEBUG] Proactive fetch SUCCESS for ${campaignId} - ${adSetsWithReach.length}/${validAdSets.length} ad sets have reach data. Total reach: ${totalReach}`);
               
               // Skip campaigns with suspiciously high reach values (empirical threshold)
               if (totalReach > 5000) {
@@ -1887,10 +1887,10 @@ const CampaignWidget = ({
               
               return { campaignId, adSets: validAdSets, hasReachData: true, totalReach };
             } else if (validAdSets.length > 0) {
-              console.log(`[CW DEBUG] Proactive fetch OK for ${campaignId} but no reach data found in ${validAdSets.length} ad sets.`);
+              // console.log(`[CW DEBUG] Proactive fetch OK for ${campaignId} but no reach data found in ${validAdSets.length} ad sets.`);
               return { campaignId, adSets: validAdSets, hasReachData: false, totalReach: 0 };
             } else {
-              console.log(`[CW DEBUG] Proactive fetch OK but no ad sets found for ${campaignId}.`);
+              // console.log(`[CW DEBUG] Proactive fetch OK but no ad sets found for ${campaignId}.`);
               return { campaignId, adSets: [], hasReachData: false, totalReach: 0 };
             }
           } else {
@@ -1943,7 +1943,7 @@ const CampaignWidget = ({
         }
       }
       
-      console.log(`[CW DEBUG] Completed proactive fetch. Success: ${successCount}, Failed: ${failureCount}`);
+      // console.log(`[CW DEBUG] Completed proactive fetch. Success: ${successCount}, Failed: ${failureCount}`);
       setAllCampaignAdSets(newAdSetsMap);
       setIsPreloadingAdSets(false);
     }
@@ -1960,7 +1960,7 @@ const CampaignWidget = ({
       // Filter campaigns that don't have ad sets loaded yet
       const campaignsToFetch = campaigns.filter(c => !allCampaignAdSets.has(c.campaign_id));
       if (campaignsToFetch.length > 0) {
-        console.log(`[CW DEBUG] Triggering proactive fetch for ${campaignsToFetch.length} campaigns.`);
+        // console.log(`[CW DEBUG] Triggering proactive fetch for ${campaignsToFetch.length} campaigns.`);
         proactivelyFetchAdSets(campaignsToFetch);
       }
     }
@@ -2671,7 +2671,7 @@ const CampaignWidget = ({
                                                       // AdSet CTR is already stored as decimal in database, no conversion needed
                                                       value = calculatedCtr;
                                                       // *** ADDED DEBUG LOG ***
-                                                      console.log(`[CW DEBUG] AdSet CTR Calculation: ID=${adSet.adset_id}, Clicks=${adSet.clicks}, Impressions=${adSet.impressions}, API CTR=${adSet.ctr}, Calculated Value=${value}`);
+                                                      // console.log(`[CW DEBUG] AdSet CTR Calculation: ID=${adSet.adset_id}, Clicks=${adSet.clicks}, Impressions=${adSet.impressions}, API CTR=${adSet.ctr}, Calculated Value=${value}`);
                                                       break;
                                                     case 'cpc':
                                                       value = adSet.cpc || 0; // Use adSet

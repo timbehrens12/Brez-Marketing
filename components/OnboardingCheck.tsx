@@ -32,12 +32,9 @@ export function OnboardingCheck({ children }: { children: React.ReactNode }) {
     
     // If user should see onboarding, redirect to onboarding page
     if (shouldShowOnboarding) {
-      console.log('[OnboardingCheck] User should see onboarding after signup, redirecting...')
       router.push('/onboarding')
       return
     }
-
-    console.log('[OnboardingCheck] No onboarding needed')
   }, [user, isLoaded, router, pathname])
 
   // Don't render children until we've checked onboarding status

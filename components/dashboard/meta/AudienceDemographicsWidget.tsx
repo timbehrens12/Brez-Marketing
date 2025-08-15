@@ -60,9 +60,9 @@ export function AudienceDemographicsWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateRangeStart', startDate)
         params.append('dateRangeEnd', endDate)
-        console.log(`[Demographics Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
+        // console.log(`[Demographics Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
       } else {
-        console.log(`[Demographics Widget] 🔥 No date range provided, fetching all data`)
+        // console.log(`[Demographics Widget] 🔥 No date range provided, fetching all data`)
       }
 
       const response = await fetch(`/api/meta/demographics?${params}`)
@@ -81,7 +81,7 @@ export function AudienceDemographicsWidget({
   }
 
   useEffect(() => {
-    console.log(`[Demographics Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
+    // console.log(`[Demographics Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
     fetchData()
   }, [connectionId, selectedBreakdown, dateRange])
 

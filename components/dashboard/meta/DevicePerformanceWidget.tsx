@@ -56,9 +56,9 @@ export function DevicePerformanceWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateRangeStart', startDate)
         params.append('dateRangeEnd', endDate)
-        console.log(`[Device Performance Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
+        // console.log(`[Device Performance Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
       } else {
-        console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
+        // console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
       }
 
       const response = await fetch(`/api/meta/device-performance?${params}`)
@@ -77,7 +77,7 @@ export function DevicePerformanceWidget({
   }
 
   useEffect(() => {
-    console.log(`[Device Performance Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
+    // console.log(`[Device Performance Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
     fetchData()
   }, [connectionId, selectedBreakdown, dateRange])
 

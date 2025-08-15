@@ -230,13 +230,7 @@ export default function DashboardPage() {
   // Set loading overlay state - wait for both action center initialization AND widget loading
   useEffect(() => {
     const shouldShowOverlay = (isActionCenterLoading || isAgencyWidgetsLoading) && !hasInitiallyLoaded && activeTab === "agency"
-    console.log('[Dashboard Loading]', {
-      isActionCenterLoading,
-      isAgencyWidgetsLoading,
-      hasInitiallyLoaded,
-      activeTab,
-      shouldShowOverlay
-    })
+
     setShowLoadingOverlay(shouldShowOverlay)
   }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab])
   

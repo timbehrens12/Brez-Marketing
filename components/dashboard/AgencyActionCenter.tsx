@@ -346,13 +346,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const respondedLeads = campaignLeads.filter(cl => cl.status === 'responded')
       const qualifiedLeads = campaignLeads.filter(cl => cl.status === 'qualified')
       
-      console.log('[Agency Center] Lead counts:', {
-        pending: pendingLeads.length,
-        contacted: contactedLeads.length,
-        responded: respondedLeads.length,
-        qualified: qualifiedLeads.length,
-        total: campaignLeads.length
-      })
+
       
       // Get leads contacted more than 3 days ago (need follow-up)
       const threeDaysAgo = new Date()
@@ -370,10 +364,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         return new Date(cl.last_contacted_at) < sevenDaysAgo
       })
 
-      console.log('[Agency Center] Follow-up counts:', {
-        needsFollowUp: needsFollowUp.length,
-        goingCold: goingCold.length
-      })
+
 
       // Generate todos based on lead status (EXACT same logic as simple-todos.tsx)
       if (pendingLeads.length > 0) {
@@ -441,8 +432,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         })
       }
 
-      console.log('[Agency Center] Generated todos:', newTodos.length)
-      console.log('[Agency Center] Todos:', newTodos)
+
       setTodos(newTodos)
     } catch (error) {
       console.error('[Agency Center] Error generating todos:', error)
@@ -465,7 +455,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       // Load platform connections for all brands from context
       const brandIds = brands.map((brand: any) => brand.id)
-      console.log('[Agency Center] Loading connections for brands:', brandIds)
+
       
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('platform_connections')
@@ -476,7 +466,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       if (connectionsError) {
         console.error('[Agency Center] Error loading connections:', connectionsError)
       } else {
-        console.log('[Agency Center] Loaded connections:', connectionsData?.length || 0)
+
         setConnections(connectionsData as PlatformConnection[] || [])
       }
     } catch (error) {
@@ -529,7 +519,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       // Process outreach usage data and add to userUsageData
       if (!outreachResponse.error && outreachResponse.data) {
-        console.log(`[Agency Center] DEBUG: Raw outreach data:`, outreachResponse.data)
+
         
         // Group outreach messages by date and count them
         const outreachByDate = outreachResponse.data.reduce((acc: any, message: any) => {
@@ -538,7 +528,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           return acc
         }, {})
 
-        console.log(`[Agency Center] DEBUG: Outreach by date:`, outreachByDate)
+
 
         // Convert to format compatible with userUsageData
         const outreachUsageData = Object.entries(outreachByDate).map(([date, count]) => ({
@@ -547,16 +537,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           user_id: userId
         }))
 
-        console.log(`[Agency Center] DEBUG: Processed outreach usage data:`, outreachUsageData)
+
 
         // Merge with existing usage data
         setUserUsageData(prev => {
           const merged = [...(prev || []), ...outreachUsageData]
-          console.log(`[Agency Center] DEBUG: Final merged userUsageData:`, merged)
+
           return merged
         })
       } else {
-        console.log(`[Agency Center] DEBUG: Outreach response error or no data:`, outreachResponse.error, outreachResponse.data)
+
       }
 
     } catch (error) {
@@ -616,7 +606,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Sum up generation count for the week
         const weeklyUsageCount = usageData?.reduce((sum, record) => sum + (record.generation_count || 0), 0) || 0
         
-        console.log(`[Agency Center] Lead Generator - Weekly usage: ${weeklyUsageCount}/1`)
+
         
         // Store usage count for this user (weekly limit of 1)
         newToolUsageData.leadGenerator[userId] = weeklyUsageCount
@@ -628,7 +618,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const data = await response.json()
             const dailyUsageCount = data.usage?.daily?.used || 0
             
-            console.log(`[Agency Center] Outreach Tool - Daily usage: ${dailyUsageCount}/25`)
+
             
             // Store usage count for this user (daily limit of 25)
             newToolUsageData.outreachTool[userId] = dailyUsageCount
@@ -668,7 +658,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               const data = await response.json()
               const dailyUsageCount = 15 - (data.remainingUses || 0) // Calculate used from remaining
               
-              console.log(`[Agency Center] AI Consultant - Daily usage: ${dailyUsageCount}/15`)
+
               
               // Store usage count for this user (daily limit of 15)
               newToolUsageData.aiConsultant[userId] = dailyUsageCount
@@ -692,7 +682,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const parsedData = JSON.parse(creativeUsageData)
             const weeklyUsageCount = parsedData.current || 0
             
-            console.log(`[Agency Center] Creative Studio - Weekly usage: ${weeklyUsageCount}/10`)
+
             
             // Store usage count for this user (weekly limit of 10)
             newToolUsageData.creativeStudio[userId] = weeklyUsageCount
@@ -720,7 +710,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Set up periodic refresh every 30 seconds to keep usage data fresh
     const refreshInterval = setInterval(() => {
       if (!document.hidden && userId) {
-        console.log('[Agency Center] Periodic refresh of usage data')
+
         loadToolUsageData()
       }
     }, 15000) // 15 seconds - faster refresh for better usage sync
@@ -728,7 +718,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Listen for focus events to refresh when user returns to dashboard
     const handleFocus = () => {
       if (userId) {
-        console.log('[Agency Center] Dashboard focused, refreshing usage data')
+
         loadToolUsageData()
       }
     }
@@ -736,7 +726,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Listen for visibility change to refresh when user returns
     const handleVisibilityChange = () => {
       if (!document.hidden && userId) {
-        console.log('[Agency Center] Page became visible, refreshing usage data')
+
         loadToolUsageData()
       }
     }
@@ -846,7 +836,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const loadCampaignOptimizationAvailability = useCallback(async () => {
     if (!userId || !brands) return
 
-    console.log(`[Campaign Optimization] Loading availability for user ${userId}, checking ${brands.length} brands:`, brands.map((b: any) => ({id: b.id, name: b.name})))
+
 
     try {
       // Use service client to bypass RLS for shared brand access
@@ -857,16 +847,16 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const newAvailability: typeof campaignOptimizationAvailability = {}
 
       for (const brand of brands) {
-        console.log(`[Campaign Optimization] Processing brand ${brand.id} (${brand.name})`)
+
         
         // Check if brand has required platforms (Meta for campaign optimization)
         const brandConnections = connections.filter(conn => conn.brand_id === brand.id)
         const hasRequiredPlatforms = brandConnections.some(conn => conn.platform_type === 'meta')
 
-        console.log(`[Campaign Optimization] Brand ${brand.id}: Connections found: ${brandConnections.length}, Has Meta: ${hasRequiredPlatforms}`)
+
 
         if (!hasRequiredPlatforms) {
-          console.log(`[Campaign Optimization] Brand ${brand.id}: No Meta connections, skipping`)
+
           newAvailability[brand.id] = {
             optimizationAvailable: false,
             lastOptimizationDate: null,
@@ -877,17 +867,17 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           continue
         }
 
-        console.log(`[Campaign Optimization] Brand ${brand.id}: Has Meta connections, proceeding to check campaigns`)
+
         
         // Check campaign optimization availability from ai_campaign_recommendations table
         // This uses a weekly cooldown system that resets every Monday at midnight
         try {
-                  console.log(`[Campaign Optimization] Brand ${brand.id}: Starting campaign recommendations check`)
+
         // Get all campaigns for this brand to check if any have active recommendations
         // Use authenticated client for meta_campaigns due to RLS policy
-        console.log(`[Campaign Optimization] Brand ${brand.id}: Querying meta_campaigns for brand_id: ${brand.id} (using authenticated client)`)
+
         // Skip meta_campaigns query for now and use the anonymous supabase client for ai_campaign_recommendations directly
-        console.log(`[Campaign Optimization] Brand ${brand.id}: Skipping meta_campaigns query, checking ai_campaign_recommendations directly`)
+
         
         // Check directly for any recommendations for this brand
         const { data: allRecommendations, error: allRecsError } = await supabase
@@ -895,11 +885,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           .select('campaign_id, created_at, updated_at')
           .eq('brand_id', brand.id)
         
-        console.log(`[Campaign Optimization] Brand ${brand.id}: All recommendations query result:`, {
-          data: allRecommendations,
-          error: allRecsError,
-          count: allRecommendations?.length || 0
-        })
+
         
         if (allRecsError) {
           console.error(`[Campaign Optimization] Brand ${brand.id}: Error querying all recommendations:`, allRecsError)
@@ -915,7 +901,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
         
         if (!allRecommendations || allRecommendations.length === 0) {
-          console.log(`[Campaign Optimization] Brand ${brand.id}: No recommendations found`)
+
           newAvailability[brand.id] = {
             optimizationAvailable: hasRequiredPlatforms,
             lastOptimizationDate: null,
@@ -930,51 +916,44 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const metaCampaigns = allRecommendations.map(rec => ({ campaign_id: rec.campaign_id }))
         const campaignIds = [...new Set(allRecommendations.map(rec => rec.campaign_id))]
         
-        console.log(`[Campaign Optimization] Brand ${brand.id}: Effective campaigns from recommendations:`, {
-          data: metaCampaigns,
-          campaignIds,
-          count: metaCampaigns?.length || 0
-        })
+
 
           // We already checked for empty recommendations above, so we have data here
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Found ${campaignIds.length} unique campaigns with recommendations`)
+
 
           // Calculate start of this week (Monday midnight UTC)
           // Use a more reliable approach to avoid timezone issues
           const now = new Date()
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Current time:`, now.toISOString())
+
           
           // Use UTC methods throughout to avoid timezone confusion
           const currentUTCDay = now.getUTCDay() // 0=Sunday, 1=Monday, 2=Tuesday, etc.
-          console.log(`[Campaign Optimization] Brand ${brand.id}: now.getUTCDay():`, currentUTCDay)
-          console.log(`[Campaign Optimization] Brand ${brand.id}: now.getUTCDate():`, now.getUTCDate())
+
           
           // Calculate days since Monday (0=Monday, 1=Tuesday, etc.)
           const daysSinceMonday = (currentUTCDay + 6) % 7 // Convert Sunday=0 to Monday=0
-          console.log(`[Campaign Optimization] Brand ${brand.id}: daysSinceMonday calculation: (${currentUTCDay} + 6) % 7 = ${daysSinceMonday}`)
+
           
           // Calculate Monday of this week
           const startOfThisWeek = new Date(now)
           startOfThisWeek.setUTCDate(now.getUTCDate() - daysSinceMonday)
           startOfThisWeek.setUTCHours(0, 0, 0, 0)
           
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Start of this week (Monday):`, startOfThisWeek.toISOString())
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Days since Monday:`, daysSinceMonday)
+
 
           // Check for any recommendations created OR updated this week for any campaign of this brand
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Checking for recommendations in campaigns:`, campaignIds)
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Week start: ${startOfThisWeek.toISOString()}`)
+
           
           // Filter existing recommendations for this week
           const createdThisWeek = allRecommendations.filter(rec => 
             new Date(rec.created_at) >= startOfThisWeek
           )
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Created recommendations found:`, createdThisWeek)
+
 
           const updatedThisWeek = allRecommendations.filter(rec => 
             new Date(rec.updated_at) >= startOfThisWeek
           )
-          console.log(`[Campaign Optimization] Brand ${brand.id}: Updated recommendations found:`, updatedThisWeek)
+
 
           // Combine results and remove duplicates
           const allWeeklyRecommendations = [
@@ -1009,14 +988,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             lastOptimizationDate = new Date(finalDate).toISOString().split('T')[0]
           }
 
-          console.log(`[Campaign Optimization] Brand ${brand.id} (${brand.name}): Created this week: ${createdThisWeek?.length || 0}, Updated this week: ${updatedThisWeek?.length || 0}, Combined: ${weeklyRecommendations.length}, Used this week: ${hasUsedThisWeek}, Available: ${optimizationAvailable}, Optimized campaigns: ${optimizedCampaignsCount}/${totalCampaignsCount}`)
-          console.log(`[Campaign Optimization] Start of week: ${startOfThisWeek.toISOString()}`)
-          if (updatedThisWeek && updatedThisWeek.length > 0) {
-            console.log(`[Campaign Optimization] Updated records:`, updatedThisWeek.map(r => ({ campaign_id: r.campaign_id, updated_at: r.updated_at })))
-          }
-          if (createdThisWeek && createdThisWeek.length > 0) {
-            console.log(`[Campaign Optimization] Created records:`, createdThisWeek.map(r => ({ campaign_id: r.campaign_id, created_at: r.created_at })))
-          }
+
 
           newAvailability[brand.id] = {
             optimizationAvailable,
@@ -1039,17 +1011,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
 
       setCampaignOptimizationAvailability(newAvailability)
-      console.log(`[Campaign Optimization] Final availability for all brands:`, newAvailability)
-      
-      // Debug: Log each brand's detailed availability
-      Object.entries(newAvailability).forEach(([brandId, availability]) => {
-        console.log(`[Campaign Optimization] Brand ${brandId} final result:`, {
-          optimizationAvailable: availability.optimizationAvailable,
-          hasRequiredPlatforms: availability.hasRequiredPlatforms,
-          optimizedCampaignsCount: availability.optimizedCampaignsCount,
-          totalCampaignsCount: availability.totalCampaignsCount
-        })
-      })
+
     } catch (error) {
       console.error('Error loading campaign optimization availability:', error)
     }
@@ -1058,7 +1020,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Load brand report availability when brands or connections change
   useEffect(() => {
     if (brands && connections && userId) {
-      console.log(`[Agency Center] Loading availability data for user ${userId}, brands: ${brands.length}, connections: ${connections.length}`)
+
       loadBrandReportAvailability()
       loadCampaignOptimizationAvailability()
     }
@@ -1092,19 +1054,19 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const markTaskComplete = useCallback((taskId: string) => {
     updateTaskState(taskId, { status: 'completed' })
     
-    console.log('[Agency Center] Task marked as complete:', taskId)
+
   }, [updateTaskState])
 
   const markTaskDismissed = useCallback((taskId: string) => {
     updateTaskState(taskId, { status: 'dismissed' })
-    console.log('[Agency Center] Task dismissed:', taskId)
+
   }, [updateTaskState])
 
   const snoozeTask = useCallback((taskId: string, hours: number = 24) => {
     const snoozeUntil = new Date()
     snoozeUntil.setHours(snoozeUntil.getHours() + hours)
     updateTaskState(taskId, { status: 'snoozed', snoozeUntil })
-    console.log('[Agency Center] Task snoozed until:', taskId, snoozeUntil)
+
   }, [updateTaskState])
 
   // Get icons and colors for todos
@@ -1204,7 +1166,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           }, 0) || 0
 
           const hasGenerationsLeft = currentWeeklyUsage < WEEKLY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasGenerationsLeft ? 'Available' : 'Unavailable'} (usage: ${currentWeeklyUsage}/${WEEKLY_LIMIT})`)
+
           return { 
             ...tool, 
             status: hasGenerationsLeft ? 'available' : 'unavailable'
@@ -1217,7 +1179,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const DAILY_LIMIT = 25 // 25 messages per day
           
           const hasUsageLeft = dailyUsage < DAILY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyUsage}/${DAILY_LIMIT})`)
+
           return { 
             ...tool, 
             status: hasUsageLeft ? 'available' : 'unavailable'
@@ -1230,7 +1192,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const DAILY_LIMIT = 15 // 15 chats per day
           
           const hasUsageLeft = dailyUsage < DAILY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${dailyUsage}/${DAILY_LIMIT})`)
+
           return { 
             ...tool, 
             status: hasUsageLeft ? 'available' : 'unavailable'
@@ -1243,7 +1205,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           const WEEKLY_LIMIT = 10 // 10 generations per week
           
           const hasUsageLeft = weeklyUsage < WEEKLY_LIMIT
-          console.log(`[Agency Center] ${tool.name}: ${hasUsageLeft ? 'Available' : 'Unavailable'} (usage: ${weeklyUsage}/${WEEKLY_LIMIT})`)
+
           return { 
             ...tool, 
             status: hasUsageLeft ? 'available' : 'unavailable'
@@ -1282,16 +1244,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             return availability?.hasRequiredPlatforms && availability?.optimizationAvailable
           })
           
-          console.log('[Agency Center] Campaign Optimization availability check:', {
-            brandsToCheck: brandsToCheck?.length,
-            hasAvailableBrands,
-            availabilityData: brandsToCheck?.map((brand: any) => ({
-              brandId: brand.id,
-              name: brand.name,
-              hasRequiredPlatforms: campaignOptimizationAvailability[brand.id]?.hasRequiredPlatforms,
-              optimizationAvailable: campaignOptimizationAvailability[brand.id]?.optimizationAvailable
-            }))
-          })
+
           
           return { 
             ...tool, 
@@ -1706,7 +1659,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       // Agency center uses 'all' for tools count - brand-independent
       const availableTools = BASE_REUSABLE_TOOLS.map(tool => getToolAvailability(tool, 'all'))
       const count = availableTools.filter(t => t.status === 'available').length
-      console.log('[Agency Center] Available tools count:', count, 'Available tools:', availableTools.filter(t => t.status === 'available').map(t => t.name))
+
       return count
     } catch (error) {
       console.log('Error calculating available tools count:', error)
@@ -1763,7 +1716,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       return newReadState
     })
     
-    console.log('[Agency Center] Brand health report marked as read')
+
     
     // Show feedback
     toast.success('Report marked as read', { duration: 2000 })
@@ -1789,7 +1742,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       localStorage.setItem(`readBrandReports_${userId}`, JSON.stringify(allReadState))
     }
 
-    console.log('[Agency Center] All brand health reports marked as read')
+
     
     // Show feedback
     toast.success(`Marked ${unreadCount} reports as read`, { duration: 2000 })

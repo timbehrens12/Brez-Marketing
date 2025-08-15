@@ -45,10 +45,10 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   // Listen for requests to share order data with other components
   useEffect(() => {
     const handleRequestData = () => {
-      console.log('[SalesByProduct] Received request for product data');
+      // console.log('[SalesByProduct] Received request for product data');
       // If we have orders, share them
       if (ordersCache && ordersCache.length > 0) {
-        console.log('[SalesByProduct] Responding with cached orders:', ordersCache.length);
+        // console.log('[SalesByProduct] Responding with cached orders:', ordersCache.length);
         window.dispatchEvent(new CustomEvent('salesByProductData', {
           detail: {
             orders: ordersCache,
@@ -57,11 +57,11 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
           }
         }));
       } else {
-        console.log('[SalesByProduct] No cached orders to share, will try to fetch');
+        // console.log('[SalesByProduct] No cached orders to share, will try to fetch');
         // Attempt to fetch orders and then share them
         fetchProducts().then(() => {
           if (ordersCache && ordersCache.length > 0) {
-            console.log('[SalesByProduct] Responding with freshly fetched orders:', ordersCache.length);
+            // console.log('[SalesByProduct] Responding with freshly fetched orders:', ordersCache.length);
             window.dispatchEvent(new CustomEvent('salesByProductData', {
               detail: {
                 orders: ordersCache,
@@ -143,7 +143,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const fromDate = dateRange.from;
       const toDate = endOfDay(dateRange.to);
       
-      console.log('[SalesByProduct] Using date range from props:', 
+      // console.log('[SalesByProduct] Using date range from props:', 
         format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
       
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
@@ -248,7 +248,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const fromDate = dateRange.from;
       const toDate = endOfDay(dateRange.to);
       
-      console.log('[SalesByProduct] Using date range from props for product data:', 
+      // console.log('[SalesByProduct] Using date range from props for product data:', 
         format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
       
       const formattedFrom = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
@@ -416,7 +416,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   useEffect(() => {
     // Listen for the page-refresh event
     const handlePageRefresh = (event: any) => {
-      console.log('SalesByProduct: Received page-refresh event, refreshing product data');
+      // console.log('SalesByProduct: Received page-refresh event, refreshing product data');
       if (connectionId && selectedProductId) {
         fetchProducts();
         fetchProductSalesData();

@@ -30,8 +30,6 @@ export function SignupCompletionHandler() {
     setHasChecked(true) // Mark as checked to prevent re-running
 
     if (isNewUser && !hasOnboardingFlags) {
-      console.log('[SignupCompletion] Detected new user on dashboard, setting onboarding flag')
-      
       // Set the showOnboarding flag for new users
       user.update({
         unsafeMetadata: {
@@ -39,7 +37,6 @@ export function SignupCompletionHandler() {
           showOnboarding: true
         }
       }).then(() => {
-        console.log('[SignupCompletion] Successfully set showOnboarding flag, redirecting...')
         // Small delay to ensure metadata is updated
         setTimeout(() => {
           router.push('/onboarding')
@@ -47,8 +44,6 @@ export function SignupCompletionHandler() {
       }).catch(error => {
         console.error('[SignupCompletion] Error setting showOnboarding flag:', error)
       })
-    } else {
-      console.log('[SignupCompletion] No onboarding needed for this user')
     }
   }, [user, isLoaded, router, pathname, hasChecked])
 

@@ -77,7 +77,7 @@ export function ShopifyTab({
     const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
     const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
     
-    console.log(`[ShopifyTab] Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
+    // console.log(`[ShopifyTab] Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
     
     // Single day comparison
     const isSingleDay = isSameDay(fromNormalized, toNormalized);
@@ -86,7 +86,7 @@ export function ShopifyTab({
       prevDay.setDate(prevDay.getDate() - 1);
       const prevDayStr = toLocalISODateString(prevDay);
       
-      console.log(`[ShopifyTab] Single day detected, comparing to previous day: ${prevDayStr}`);
+      // console.log(`[ShopifyTab] Single day detected, comparing to previous day: ${prevDayStr}`);
       
       return {
         prevFrom: prevDayStr,
@@ -188,7 +188,7 @@ export function ShopifyTab({
       if (response.ok) {
         const prevData = await response.json();
         setPreviousMetrics(prevData);
-        console.log('[ShopifyTab] Fetched previous period metrics:', prevData);
+        // console.log('[ShopifyTab] Fetched previous period metrics:', prevData);
       }
     } catch (error) {
       console.error('[ShopifyTab] Error fetching previous metrics:', error);
@@ -351,7 +351,7 @@ export function ShopifyTab({
   // Fetch previous period data when date range changes
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
-      console.log('[ShopifyTab] Date range changed, fetching previous period metrics');
+      // console.log('[ShopifyTab] Date range changed, fetching previous period metrics');
       fetchPreviousMetrics();
     }
   }, [brandId, dateRange, fetchPreviousMetrics]);
@@ -362,7 +362,7 @@ export function ShopifyTab({
     // Debounce to prevent multiple refreshes within 2 seconds
     if (now - lastRefreshRef.current > 2000) {
       lastRefreshRef.current = now;
-      console.log(`[ShopifyTab] Dispatching force-shopify-refresh event (reason: ${reason})`);
+      // console.log(`[ShopifyTab] Dispatching force-shopify-refresh event (reason: ${reason})`);
       
       // Always use the exact date range from props
       const fromDate = dateRange.from;
@@ -382,7 +382,7 @@ export function ShopifyTab({
         }
       }));
     } else {
-      console.log(`[ShopifyTab] Skipped duplicate refresh (debounced) - reason: ${reason}`);
+      // console.log(`[ShopifyTab] Skipped duplicate refresh (debounced) - reason: ${reason}`);
     }
   }, [brandId, dateRange]);
 
@@ -399,7 +399,7 @@ export function ShopifyTab({
     const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
     
     if (isLast30Days) {
-      console.log('[ShopifyTab] Detected Last 30 days preset');
+      // console.log('[ShopifyTab] Detected Last 30 days preset');
       // Use a shorter timeout and the safe dispatch function
       const refreshTimeout = setTimeout(() => {
         safeDispatchRefresh('date-range-is-30-days');
@@ -414,7 +414,7 @@ export function ShopifyTab({
   useEffect(() => {
     // const handleTabVisibility = (event?: Event) => {
     //   if (document.visibilityState === 'visible') {
-    //     console.log('[ShopifyTab] Tab became visible, refreshing data');
+    //     // console.log('[ShopifyTab] Tab became visible, refreshing data');
     //     // Refresh data when tab becomes visible, with debouncing
     //     safeDispatchRefresh('tab-became-visible');
     //   }
@@ -437,7 +437,7 @@ export function ShopifyTab({
                     (metrics.revenueByDay && metrics.revenueByDay.length === 0);
     
     if (isEmpty && connection && !isLoading && !isRefreshingData) {
-      console.log('[ShopifyTab] Detected empty metrics - triggering DIRECT API call to fetch metrics');
+      // console.log('[ShopifyTab] Detected empty metrics - triggering DIRECT API call to fetch metrics');
       
       // Always use the exact date range from props - don't override with Last 30 Days
       const fromDate = dateRange.from;
@@ -449,7 +449,7 @@ export function ShopifyTab({
       
       const fetchUrl = `/api/metrics?brandId=${brandId}&from=${formattedFromDate}&to=${formattedToDate}&platform=shopify&force=true&bypass_cache=true&t=${Date.now()}`;
       
-      console.log('[ShopifyTab] Fetching metrics directly from:', fetchUrl);
+      // console.log('[ShopifyTab] Fetching metrics directly from:', fetchUrl);
       
       fetch(fetchUrl)
         .then(res => {
@@ -459,7 +459,7 @@ export function ShopifyTab({
           return res.json();
         })
         .then(data => {
-          console.log('[ShopifyTab] Direct metrics API call succeeded:', data);
+          // console.log('[ShopifyTab] Direct metrics API call succeeded:', data);
           
           // Force UI refresh
           window.dispatchEvent(new Event('refresh-metrics'));
@@ -470,7 +470,7 @@ export function ShopifyTab({
             try {
               // If the metrics still aren't showing, try to update the summary cards directly
               if (!document.querySelector('[data-testid="total-sales-value"]')?.textContent) {
-                console.log('[ShopifyTab] Attempting to directly modify DOM to show metrics');
+                // console.log('[ShopifyTab] Attempting to directly modify DOM to show metrics');
                 
                 // Use the data we just fetched to update the cards
                 const cards = document.querySelectorAll('.metric-card');
@@ -482,7 +482,7 @@ export function ShopifyTab({
                     const valueEl = salesCard.querySelector('.value');
                     if (valueEl && data.totalSales) {
                       valueEl.textContent = `$${data.totalSales.toFixed(2)}`;
-                      console.log('[ShopifyTab] Updated Total Sales card with value:', data.totalSales);
+                      // console.log('[ShopifyTab] Updated Total Sales card with value:', data.totalSales);
                     }
                   }
                   
@@ -500,12 +500,12 @@ export function ShopifyTab({
           console.error('[ShopifyTab] Direct metrics API call failed:', err);
           
           // Try to fetch metrics from a backup source - directly from Supabase
-          console.log('[ShopifyTab] Attempting to calculate metrics from backup data source');
+          // console.log('[ShopifyTab] Attempting to calculate metrics from backup data source');
           try {
             // Listen for events from SalesByProduct component which has data
             const handleSalesByProductData = (event: any) => {
               if (event.detail && event.detail.orders && event.detail.orders.length > 0) {
-                console.log('[ShopifyTab] Received backup data from SalesByProduct', event.detail);
+                // console.log('[ShopifyTab] Received backup data from SalesByProduct', event.detail);
                 
                 // Calculate metrics directly
                 const orders = event.detail.orders;
@@ -536,7 +536,7 @@ export function ShopifyTab({
   useEffect(() => {
     // When date range changes, force refresh the data
     if (connection && dateRange?.from && dateRange?.to) {
-      console.log('[ShopifyTab] Date range changed, forcing refresh');
+      // console.log('[ShopifyTab] Date range changed, forcing refresh');
       
       // Format dates as yyyy-MM-dd
       const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
@@ -547,7 +547,7 @@ export function ShopifyTab({
       const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
       
       if (isToday) {
-        console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
+        // console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
       }
       
       // Wait a moment to let other effects settle
@@ -576,7 +576,7 @@ export function ShopifyTab({
     // REMOVED: Auto-refresh on component mount/navigation
     // The user wanted to disable hard refresh when navigating between pages
     // Only refresh when explicitly clicking refresh button or changing tabs within the page
-    console.log('[ShopifyTab] Component mounted - auto-refresh disabled per user request');
+    // console.log('[ShopifyTab] Component mounted - auto-refresh disabled per user request');
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
   useEffect(() => {
@@ -596,7 +596,7 @@ export function ShopifyTab({
       });
       
       if (needsFallbackFix) {
-        console.log('[ShopifyTab] Detected empty metric cards after render, applying emergency fix');
+        // console.log('[ShopifyTab] Detected empty metric cards after render, applying emergency fix');
         
         // Try to get data from SalesByProduct
         window.dispatchEvent(new CustomEvent('requestSalesByProductData'));
@@ -640,7 +640,7 @@ export function ShopifyTab({
                 }
               });
               
-              console.log('[ShopifyTab] Emergency fix applied successfully');
+              // console.log('[ShopifyTab] Emergency fix applied successfully');
             }
           })
           .catch(err => {

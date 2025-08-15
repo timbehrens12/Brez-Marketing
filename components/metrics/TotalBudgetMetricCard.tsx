@@ -92,7 +92,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   useEffect(() => {
     // Don't auto-fetch if disableAutoFetch is true (unified loading in control)
     if (disableAutoFetch) {
-      console.log("[TotalMetaBudget] Auto-fetch disabled, skipping initial fetch");
+      // console.log("[TotalMetaBudget] Auto-fetch disabled, skipping initial fetch");
       return;
     }
     
@@ -106,7 +106,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   useEffect(() => {
     // When unified loading was true and now becomes false, fetch fresh data
     if (unifiedLoading === false && disableAutoFetch && brandId) {
-      console.log("[TotalMetaBudget] Unified loading completed, fetching fresh budget data");
+      // console.log("[TotalMetaBudget] Unified loading completed, fetching fresh budget data");
       // Use a small delay to ensure other data fetches complete first
       setTimeout(() => {
         fetchTotalBudget(true); // Force refresh to get latest data
@@ -120,7 +120,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     const handleMetaDataRefreshed = (event: CustomEvent) => {
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
-        console.log("[TotalMetaBudget] Received metaDataRefreshed event, refreshing budget data")
+        // console.log("[TotalMetaBudget] Received metaDataRefreshed event, refreshing budget data")
         fetchTotalBudget(true) // Force refresh for event-based updates
       }
     }
@@ -128,7 +128,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     const handleCampaignStatusChanged = (event: CustomEvent) => {
       // Campaign status changed, refresh budget
       if (event.detail?.brandId === brandId) {
-        console.log("[TotalMetaBudget] Received campaignStatusChanged event, refreshing budget data")
+        // console.log("[TotalMetaBudget] Received campaignStatusChanged event, refreshing budget data")
         fetchTotalBudget(true) // Force refresh for status changes
       }
     }
@@ -136,7 +136,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     const handleAdSetStatusChanged = (event: CustomEvent) => {
       // Ad set status changed, refresh budget
       if (event.detail?.brandId === brandId) {
-        console.log("[TotalMetaBudget] Received adSetStatusChanged event, refreshing budget data")
+        // console.log("[TotalMetaBudget] Received adSetStatusChanged event, refreshing budget data")
         fetchTotalBudget(true) // Force refresh for status changes
       }
     }

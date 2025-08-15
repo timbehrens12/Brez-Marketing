@@ -78,7 +78,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
   // Function to fetch reach data directly from the specialized API
   const fetchReachDirectly = useCallback(async (signal: AbortSignal) => {
     if (!dateRange?.from || !dateRange?.to || !brandId) {
-      console.log("[TotalAdSetReachCard] Cannot fetch reach: Missing date range or brand ID")
+      // console.log("[TotalAdSetReachCard] Cannot fetch reach: Missing date range or brand ID")
       setIsLoading(false); // Ensure loading stops if we can't fetch
       return
     }
@@ -93,7 +93,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       const toDateStr = dateRange.to.toISOString().split('T')[0];
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
 
-      console.log(`[TotalAdSetReachCard] Fetching Reach: Current (${fromDateStr}-${toDateStr}), Previous (${prevFrom}-${prevTo})`);
+      // console.log(`[TotalAdSetReachCard] Fetching Reach: Current (${fromDateStr}-${toDateStr}), Previous (${prevFrom}-${prevTo})`);
 
       // --- Fetch Current Period --- 
       const currentParams = new URLSearchParams({
@@ -120,7 +120,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       } else {
         const currentData = await currentResponse.json();
         currentReach = currentData.value || 0;
-        console.log(`[TotalAdSetReachCard] Current reach: ${currentReach}`);
+        // console.log(`[TotalAdSetReachCard] Current reach: ${currentReach}`);
           }
           
       if (!prevResponse.ok) {
@@ -129,7 +129,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       } else {
         const prevData = await prevResponse.json();
         prevReach = prevData.value || 0;
-        console.log(`[TotalAdSetReachCard] Previous reach: ${prevReach}`);
+        // console.log(`[TotalAdSetReachCard] Previous reach: ${prevReach}`);
       }
 
     } catch (error: any) {
@@ -167,7 +167,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
   useEffect(() => {
     // Don't auto-fetch if disableAutoFetch is true (unified loading in control)
     if (disableAutoFetch) {
-      console.log("[TotalAdSetReachCard] Auto-fetch disabled, skipping initial fetch");
+      // console.log("[TotalAdSetReachCard] Auto-fetch disabled, skipping initial fetch");
       return;
     }
     
@@ -198,7 +198,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
   // Add effect to handle manual refreshes
   useEffect(() => {
     if (isManuallyRefreshing && brandId && dateRange?.from && dateRange?.to) {
-      console.log("[TotalAdSetReachCard] Manual refresh triggered");
+      // console.log("[TotalAdSetReachCard] Manual refresh triggered");
       // Abort previous fetch if it's still running
       fetchControllerRef.current?.abort();
       
@@ -226,7 +226,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
     const handleMetaDataRefreshed = (event: CustomEvent) => {
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
-        console.log("[TotalAdSetReachCard] Received metaDataRefreshed event, refreshing reach data");
+        // console.log("[TotalAdSetReachCard] Received metaDataRefreshed event, refreshing reach data");
         
         // Abort previous fetch if it's still running
         fetchControllerRef.current?.abort();
