@@ -2126,8 +2126,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const previousROAS = previousData.length > 0 ? previousData.reduce((sum, d) => sum + (parseFloat(d.roas) || 0), 0) / previousData.length : 0
 
         // Debug: Log calculated spend values  
-        console.log(`[Brand Health] ${brand.name} - Today's data: ${todayData.length} records, Spend: $${totalSpend}, Conversions: ${totalConversions}`)
-        console.log(`[Brand Health] ${brand.name} - Today's records:`, todayData)
+        console.log(`[DEBUG] ${brand.name} - Raw meta data:`, totalMeta.length, 'records')
+        console.log(`[DEBUG] ${brand.name} - Today str:`, todayStr)
+        console.log(`[DEBUG] ${brand.name} - Today's filtered data:`, todayData.length, 'records')
+        console.log(`[DEBUG] ${brand.name} - First few today records:`, todayData.slice(0, 2))
+        console.log(`[DEBUG] ${brand.name} - Calculated spend:`, totalSpend)
 
         // Calculate changes
         const spendChange = previousSpend > 0 ? ((latestDaySpend - previousSpend) / previousSpend) * 100 : 0
