@@ -68,6 +68,21 @@ export default function MetaSyncing() {
             }, 2000)
           } else if (connection.sync_status === 'failed') {
             router.push('/settings?error=sync_failed')
+          } else if (connection.sync_status === 'in_progress') {
+            // Update steps to show actual progress
+            setSyncSteps(steps => {
+              const updatedSteps = [...steps]
+              
+              // Mark connection as complete
+              updatedSteps[0] = { ...updatedSteps[0], completed: true, inProgress: false }
+              // Mark accounts as complete  
+              updatedSteps[1] = { ...updatedSteps[1], completed: true, inProgress: false }
+              // Mark campaigns as in progress
+              updatedSteps[2] = { ...updatedSteps[2], completed: false, inProgress: true }
+              
+              return updatedSteps
+            })
+            setProgress(40) // Show meaningful progress
           }
         }
       } catch (error) {
@@ -93,31 +108,7 @@ export default function MetaSyncing() {
     return () => clearInterval(timer)
   }, [])
 
-  // Real progress tracking based on actual sync status
-  useEffect(() => {
-    if (syncStatus === 'in_progress' || syncStatus === 'pending') {
-      // Only show basic progress, don't fake completion
-      setSyncSteps(steps => {
-        const updatedSteps = [...steps]
-        
-        // Only mark connection as complete
-        updatedSteps[0] = { ...updatedSteps[0], completed: true, inProgress: false }
-        
-        // Show accounts as in progress
-        updatedSteps[1] = { ...updatedSteps[1], completed: false, inProgress: true }
-        
-        // Keep others pending
-        for (let i = 2; i < updatedSteps.length; i++) {
-          updatedSteps[i] = { ...updatedSteps[i], completed: false, inProgress: false }
-        }
-        
-        return updatedSteps
-      })
-      
-      // Show realistic progress (don't go above 20% until actually complete)
-      setProgress(20)
-    }
-  }, [syncStatus])
+  // This logic is now handled in the checkSyncStatus function above
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
