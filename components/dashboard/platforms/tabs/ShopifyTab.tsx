@@ -571,13 +571,30 @@ export function ShopifyTab({
           }
         }));
         
-        // Clear the date changing flag after a brief delay
+        // Clear the date changing flag when new data arrives or after timeout
         setTimeout(() => {
           setIsDateChanging(false);
         }, 800); // Reduced delay
+        
+        // Also clear it when the loading state changes
+        if (!isLoading && !isRefreshingData) {
+          setTimeout(() => {
+            setIsDateChanging(false);
+          }, 100);
+        }
       }
     }
   }, [dateRange, connection, brandId, lastDateRange]);
+
+  // Clear date changing flag when loading completes and we have new data
+  useEffect(() => {
+    if (!isLoading && !isRefreshingData && isDateChanging) {
+      // Wait a moment to ensure data has been updated
+      setTimeout(() => {
+        setIsDateChanging(false);
+      }, 200);
+    }
+  }, [isLoading, isRefreshingData, isDateChanging]);
 
   // Add effect to refresh data every time the component mounts (navigation)
   useEffect(() => {
@@ -658,8 +675,14 @@ export function ShopifyTab({
     }, 1000); // Give the component time to render first
   }, [brandId, dateRange]);
 
-  // Show loading state during date changes to prevent flicker
-  if (isDateChanging || (isLoading && metrics.totalSales === 0)) {
+  // Show loading state during date changes to prevent stale data display
+  // Also check if we have metrics that don't match the current date range
+  const currentDateKey = `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}`;
+  const shouldShowLoading = isDateChanging || 
+                           (isLoading && metrics.totalSales === 0) ||
+                           (lastDateRange && lastDateRange !== currentDateKey && isLoading);
+
+  if (shouldShowLoading) {
     return (
       <div className="space-y-4">
         {/* Subtle Page Indicator - Green line for Shopify */}
