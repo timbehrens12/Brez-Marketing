@@ -78,8 +78,8 @@ export async function GET(request: NextRequest) {
         console.error('[Meta Callback] Background backfill failed:', error)
       })
 
-    // Clear auth cookie
-    const response = NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?success=true&backfill=started')
+    // Clear auth cookie and redirect to syncing page
+    const response = NextResponse.redirect(`https://www.brezmarketingdashboard.com/settings/meta-syncing?brandId=${state}`)
     response.cookies.delete('meta_auth_state')
     
     return response

@@ -2024,6 +2024,24 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const adjustedToDateStr = adjustedToDate.getFullYear() + '-' + 
           String(adjustedToDate.getMonth() + 1).padStart(2, '0') + '-' + 
           String(adjustedToDate.getDate()).padStart(2, '0')
+        
+        // Trigger smart data fetching for missing data (non-blocking)
+        try {
+          fetch('/api/meta/fetch-missing-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandId: brand.id,
+              startDate: fromDateStr,
+              endDate: toDateStr,
+              platformType: 'meta'
+            })
+          }).catch(error => {
+            // console.log(`[Brand Health] ${brand.name} - Smart data fetch failed (non-blocking):`, error)
+          })
+        } catch (error) {
+          // console.log(`[Brand Health] ${brand.name} - Smart data fetch error (non-blocking):`, error)
+        }
           
         const { data: metaData, error: metaError } = await supabase
           .from('meta_campaign_daily_stats')

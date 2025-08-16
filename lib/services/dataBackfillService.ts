@@ -335,4 +335,146 @@ export class DataBackfillService {
       console.log(`[DataBackfill] Synced ${data.products.length} products for brand ${brandId}`)
     }
   }
+
+  /**
+   * Fetch missing Meta data for specific date ranges (smart fetching)
+   */
+  static async fetchMissingMetaData(brandId: string, startDate: Date, endDate: Date) {
+    console.log(`[DataBackfill] Fetching missing Meta data for brand ${brandId} from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+
+    try {
+      // Get the connection
+      const { data: connection } = await supabaseAdmin
+        .from('platform_connections')
+        .select('access_token')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+        .single()
+
+      if (!connection?.access_token) {
+        throw new Error('No active Meta connection found')
+      }
+
+      // Get account ID
+      const accountResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connection.access_token}`)
+      const accountData = await accountResponse.json()
+      
+      if (!accountData.data || accountData.data.length === 0) {
+        console.log(`[DataBackfill] No ad accounts found for brand ${brandId}`)
+        return
+      }
+
+      const adAccountId = accountData.data[0].id
+      
+      const dateRange = {
+        since: startDate.toISOString().split('T')[0],
+        until: endDate.toISOString().split('T')[0]
+      }
+
+      // Check what data is missing
+      const missingDates = await this.findMissingMetaDates(brandId, startDate, endDate)
+      
+      if (missingDates.length === 0) {
+        console.log(`[DataBackfill] No missing data found for the requested range`)
+        return
+      }
+
+      console.log(`[DataBackfill] Found ${missingDates.length} missing dates, fetching data...`)
+
+      // Fetch daily insights for missing dates
+      await this.fetchMetaDailyInsights(brandId, adAccountId, connection.access_token, dateRange)
+
+      // Update campaigns if needed
+      await this.fetchMetaCampaigns(brandId, adAccountId, connection.access_token, dateRange)
+
+      console.log(`[DataBackfill] Completed missing data fetch for brand ${brandId}`)
+
+    } catch (error) {
+      console.error(`[DataBackfill] Error fetching missing Meta data:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Find missing dates in Meta daily stats
+   */
+  private static async findMissingMetaDates(brandId: string, startDate: Date, endDate: Date): Promise<string[]> {
+    const { data: existingData } = await supabaseAdmin
+      .from('meta_campaign_daily_stats')
+      .select('date')
+      .eq('brand_id', brandId)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
+
+    const existingDates = new Set(existingData?.map(d => d.date) || [])
+    const missingDates: string[] = []
+
+    // Generate all dates in range and find missing ones
+    const currentDate = new Date(startDate)
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0]
+      if (!existingDates.has(dateStr)) {
+        missingDates.push(dateStr)
+      }
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    return missingDates
+  }
+
+  /**
+   * Public method to trigger smart data fetching
+   */
+  static async ensureDataForDateRange(brandId: string, startDate: Date, endDate: Date, platformType: 'meta' | 'shopify' = 'meta') {
+    if (platformType === 'meta') {
+      return this.fetchMissingMetaData(brandId, startDate, endDate)
+    }
+    // Could add Shopify support here in the future
+  }
+
+  /**
+   * Clear all Meta data for a brand (for testing)
+   */
+  static async clearAllMetaData(brandId: string) {
+    console.log(`[DataBackfill] Clearing all Meta data for brand ${brandId}`)
+
+    const metaTables = [
+      'meta_campaigns',
+      'meta_campaign_daily_stats',
+      'meta_campaign_daily_insights',
+      'meta_adsets',
+      'meta_adset_daily_insights', 
+      'meta_ads',
+      'meta_ad_insights',
+      'meta_device_performance',
+      'meta_demographics'
+    ]
+
+    for (const table of metaTables) {
+      try {
+        const { error } = await supabaseAdmin
+          .from(table)
+          .delete()
+          .eq('brand_id', brandId)
+
+        if (error) {
+          console.error(`[DataBackfill] Error clearing ${table}:`, error)
+        } else {
+          console.log(`[DataBackfill] Cleared ${table}`)
+        }
+      } catch (err) {
+        console.error(`[DataBackfill] Exception clearing ${table}:`, err)
+      }
+    }
+
+    // Also remove the platform connection
+    await supabaseAdmin
+      .from('platform_connections')
+      .delete()
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+
+    console.log(`[DataBackfill] Meta data cleared for brand ${brandId}`)
+  }
 }

@@ -701,6 +701,22 @@ export function MetaTab2({
         lastFetchedDateRange.current = {from: currentFromDate, to: currentToDate};
         hasFetchedMetaData.current = true;
         
+        // Trigger smart data fetching for missing date ranges
+        if (hasDateRangeChanged && brandId) {
+          fetch('/api/meta/fetch-missing-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandId,
+              startDate: currentFromDate,
+              endDate: currentToDate,
+              platformType: 'meta'
+            })
+          }).catch(error => {
+            console.log('[MetaTab2] Smart data fetch request failed (non-blocking):', error)
+          })
+        }
+        
         // Clear loading state after initial fetch to prevent infinite spinning
         Promise.all([
           fetchMetaDataFromDatabase(),
