@@ -155,6 +155,11 @@ END $$;
 
 export async function GET(request: NextRequest) {
   try {
+    // Only allow in development or for specific admin users
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'SQL endpoint disabled in production' }, { status: 403 })
+    }
+
     const supabase = createAdminClient()
     const results = []
     

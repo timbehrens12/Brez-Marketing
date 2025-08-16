@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { auth } from '@clerk/nextjs'
 
-// Completely public test endpoint
+// Secured test endpoint - requires authentication
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const { userId } = auth()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Get the brand ID from query params
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
@@ -14,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
     }
 
-    console.log('PUBLIC TEST: Testing Meta connection for brand ID:', brandId)
+    console.log('SECURED TEST: Testing Meta connection for brand ID:', brandId)
 
     // Get the access token from the database
     const supabase = createClient(
@@ -35,6 +43,17 @@ export async function GET(request: NextRequest) {
         error: 'No connections found in database',
         brandId: brandId
       }, { status: 404 })
+    }
+
+    // Verify user has access to this brand
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('user_id')
+      .eq('id', brandId)
+      .single()
+
+    if (!brand || brand.user_id !== userId) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Try to find the specific connection

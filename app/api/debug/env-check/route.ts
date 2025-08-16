@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
 
 export async function GET() {
+  // Verify authentication - only authenticated users can check env
+  const { userId } = auth()
+  
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   const envCheck = {
     hasOpenAI: !!process.env.OPENAI_API_KEY,
     hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
