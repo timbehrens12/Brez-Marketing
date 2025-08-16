@@ -3,20 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import { Loader2, CheckCircle, Clock, Database, TrendingUp } from 'lucide-react'
+import { Loader2, Clock, Database } from 'lucide-react'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-interface SyncStep {
-  id: string
-  name: string
-  description: string
-  completed: boolean
-  inProgress: boolean
-}
 
 export default function MetaSyncing() {
   const router = useRouter()
@@ -24,17 +16,7 @@ export default function MetaSyncing() {
   const brandId = searchParams.get('brandId')
   
   const [syncStatus, setSyncStatus] = useState<'in_progress' | 'completed' | 'failed' | 'pending'>('pending')
-  const [progress, setProgress] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [estimatedTime] = useState(600) // 10 minutes estimated for real data sync
-  const [syncSteps, setSyncSteps] = useState<SyncStep[]>([
-    { id: 'connection', name: 'Establishing Connection', description: 'Connecting to Meta Business API', completed: false, inProgress: false },
-    { id: 'accounts', name: 'Fetching Ad Accounts', description: 'Discovering your advertising accounts', completed: false, inProgress: false },
-    { id: 'campaigns', name: 'Syncing Campaigns', description: 'Importing campaign data and settings', completed: false, inProgress: false },
-    { id: 'insights', name: 'Historical Data (90 days)', description: 'Downloading performance metrics and analytics', completed: false, inProgress: false },
-    { id: 'demographics', name: 'Audience Data', description: 'Processing demographic insights', completed: false, inProgress: false },
-    { id: 'finalizing', name: 'Finalizing Setup', description: 'Preparing your dashboard', completed: false, inProgress: false }
-  ])
 
   // Check sync status periodically
   useEffect(() => {
@@ -58,31 +40,10 @@ export default function MetaSyncing() {
           setSyncStatus(connection.sync_status || 'pending')
           
           if (connection.sync_status === 'completed') {
-            // Mark all steps as completed
-            setSyncSteps(steps => steps.map(step => ({ ...step, completed: true, inProgress: false })))
-            setProgress(100)
-            
-            // Redirect to settings after a brief delay
-            setTimeout(() => {
-              router.push('/settings?success=meta_connected&data_synced=true')
-            }, 2000)
+            // Redirect to settings immediately  
+            router.push('/settings?success=meta_connected&data_synced=true')
           } else if (connection.sync_status === 'failed') {
             router.push('/settings?error=sync_failed')
-          } else if (connection.sync_status === 'in_progress') {
-            // Update steps to show actual progress
-            setSyncSteps(steps => {
-              const updatedSteps = [...steps]
-              
-              // Mark connection as complete
-              updatedSteps[0] = { ...updatedSteps[0], completed: true, inProgress: false }
-              // Mark accounts as complete  
-              updatedSteps[1] = { ...updatedSteps[1], completed: true, inProgress: false }
-              // Mark campaigns as in progress
-              updatedSteps[2] = { ...updatedSteps[2], completed: false, inProgress: true }
-              
-              return updatedSteps
-            })
-            setProgress(40) // Show meaningful progress
           }
         }
       } catch (error) {
@@ -133,50 +94,20 @@ export default function MetaSyncing() {
             <p className="text-gray-400 text-sm">Importing 90 days of advertising data - this may take 5-10 minutes</p>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-300">Progress</span>
-              <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              />
+          {/* Simple Loading Spinner */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto w-16 h-16 mb-6">
+              <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto" />
             </div>
             
-            {/* Time Info */}
-            <div className="flex justify-between text-xs text-gray-500">
-              <span className="flex items-center">
-                <Clock className="w-3 h-3 mr-1" />
-                Elapsed: {formatTime(elapsedTime)}
-              </span>
-              <span>Est. Total: {formatTime(estimatedTime)}</span>
+            <h3 className="text-lg font-medium text-white mb-2">Syncing Historical Data</h3>
+            <p className="text-gray-400 text-sm mb-4">Importing 90 days of advertising data, this may take 5-10 minutes</p>
+            
+            {/* Simple elapsed time */}
+            <div className="text-xs text-gray-500">
+              <Clock className="w-3 h-3 inline mr-1" />
+              Elapsed: {formatTime(elapsedTime)}
             </div>
-          </div>
-
-          {/* Steps */}
-          <div className="space-y-3 mb-8">
-            {syncSteps.map((step, index) => (
-              <div key={step.id} className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  {step.completed ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : step.inProgress ? (
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${step.completed ? 'text-green-400' : step.inProgress ? 'text-blue-400' : 'text-gray-500'}`}>
-                    {step.name}
-                  </p>
-                  <p className="text-xs text-gray-600">{step.description}</p>
-                </div>
-              </div>
-            ))}
           </div>
 
           {/* Info Message */}
