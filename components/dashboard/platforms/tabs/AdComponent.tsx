@@ -675,13 +675,13 @@ export function AdComponent({
                   
                   // *** ADDED DEBUG LOG ***
                   // console.log(`[AdComponent DEBUG] Ad ID: ${ad.ad_id}, Metric: ${metricId}, Raw Value: ${value}, Ad Object Metrics:`, {
-                    spent: ad.spent,
-                    impressions: ad.impressions,
-                    clicks: ad.clicks,
-                    ctr: ad.ctr,
-                    reach: ad.reach,
-                    conversions: ad.conversions
-                  });
+                  //   spent: ad.spent,
+                  //   impressions: ad.impressions,
+                  //   clicks: ad.clicks,
+                  //   ctr: ad.ctr,
+                  //   reach: ad.reach,
+                  //   conversions: ad.conversions
+                  // });
                   
                   return (
                     <td key={metricId} className="p-2 text-right text-white">
