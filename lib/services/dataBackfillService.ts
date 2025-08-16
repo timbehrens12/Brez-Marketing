@@ -85,11 +85,31 @@ export class DataBackfillService {
         until: endDate.toISOString().split('T')[0]
       }
 
-      // Fetch campaigns
-      await this.fetchMetaCampaigns(brandId, adAccountId, accessToken, dateRange)
+      // Fetch campaigns with timeout
+      console.log(`[DataBackfill] Step 1: Fetching campaigns...`)
+      try {
+        await Promise.race([
+          this.fetchMetaCampaigns(brandId, adAccountId, accessToken, dateRange),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Campaign fetch timeout')), 120000)) // 2 min timeout
+        ])
+        console.log(`[DataBackfill] ✅ Step 1 completed: Campaigns fetched`)
+      } catch (error) {
+        console.error(`[DataBackfill] ❌ Step 1 failed: Campaign fetch error:`, error)
+        throw error
+      }
       
-      // Fetch daily insights
-      await this.fetchMetaDailyInsights(brandId, adAccountId, accessToken, dateRange)
+      // Fetch daily insights with timeout
+      console.log(`[DataBackfill] Step 2: Fetching daily insights...`)
+      try {
+        await Promise.race([
+          this.fetchMetaDailyInsights(brandId, adAccountId, accessToken, dateRange),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Daily insights timeout')), 300000)) // 5 min timeout
+        ])
+        console.log(`[DataBackfill] ✅ Step 2 completed: Daily insights fetched`)
+      } catch (error) {
+        console.error(`[DataBackfill] ❌ Step 2 failed: Daily insights error:`, error)
+        throw error
+      }
 
     } catch (error) {
       console.error(`[DataBackfill] Meta backfill error:`, error)
@@ -112,14 +132,18 @@ export class DataBackfillService {
       console.log(`[DataBackfill] Found ${data.data.length} campaigns to sync`)
 
       for (const campaign of data.data) {
+        console.log(`[DataBackfill] Processing campaign: ${campaign.id} (${campaign.name})`)
+        
         // Get campaign insights
         const insightsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/insights?` +
           `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,cpp&` +
           `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
           `access_token=${accessToken}`
 
+        console.log(`[DataBackfill] Fetching insights for campaign ${campaign.id}...`)
         const insightsResponse = await fetch(insightsUrl)
         const insightsData = await insightsResponse.json()
+        console.log(`[DataBackfill] Campaign ${campaign.id} insights response:`, insightsData)
 
         const insights = insightsData.data?.[0] || {}
         
@@ -136,6 +160,7 @@ export class DataBackfillService {
         const revenue = insights.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
 
         // Store campaign data
+        console.log(`[DataBackfill] Storing campaign ${campaign.id} in database...`)
         await supabaseAdmin
           .from('meta_campaigns')
           .upsert({
@@ -159,6 +184,7 @@ export class DataBackfillService {
           }, {
             onConflict: 'campaign_id,brand_id'
           })
+        console.log(`[DataBackfill] ✅ Campaign ${campaign.id} stored successfully`)
       }
 
       console.log(`[DataBackfill] Synced ${data.data.length} campaigns for brand ${brandId}`)
@@ -169,14 +195,22 @@ export class DataBackfillService {
    * Fetch Meta daily insights for trend analysis
    */
   private static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    console.log(`[DataBackfill] Starting daily insights fetch for ${adAccountId} from ${dateRange.since} to ${dateRange.until}`)
+    
     const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
       `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start&` +
       `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
       `time_increment=1&` +
       `access_token=${accessToken}&limit=100`
 
+    console.log(`[DataBackfill] Daily insights URL: ${insightsUrl}`)
+    console.log(`[DataBackfill] Making request to Meta API for daily insights...`)
+    
     const response = await fetch(insightsUrl)
+    console.log(`[DataBackfill] Daily insights response status: ${response.status}`)
+    
     const data = await response.json()
+    console.log(`[DataBackfill] Daily insights response:`, data)
 
     if (data.data && data.data.length > 0) {
       console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync`)
