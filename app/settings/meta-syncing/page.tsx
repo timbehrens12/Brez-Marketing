@@ -26,7 +26,7 @@ export default function MetaSyncing() {
   const [syncStatus, setSyncStatus] = useState<'in_progress' | 'completed' | 'failed' | 'pending'>('pending')
   const [progress, setProgress] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [estimatedTime] = useState(120) // 2 minutes estimated
+  const [estimatedTime] = useState(600) // 10 minutes estimated for real data sync
   const [syncSteps, setSyncSteps] = useState<SyncStep[]>([
     { id: 'connection', name: 'Establishing Connection', description: 'Connecting to Meta Business API', completed: false, inProgress: false },
     { id: 'accounts', name: 'Fetching Ad Accounts', description: 'Discovering your advertising accounts', completed: false, inProgress: false },
@@ -93,50 +93,29 @@ export default function MetaSyncing() {
     return () => clearInterval(timer)
   }, [])
 
-  // Simulate progress and step updates
+  // Real progress tracking based on actual sync status
   useEffect(() => {
     if (syncStatus === 'in_progress' || syncStatus === 'pending') {
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = Math.min(prev + Math.random() * 3, 95) // Cap at 95% until actually complete
-          
-          // Update steps based on progress
-          setSyncSteps(steps => {
-            const updatedSteps = [...steps]
-            
-            if (newProgress > 10) {
-              updatedSteps[0] = { ...updatedSteps[0], completed: true, inProgress: false }
-            }
-            if (newProgress > 25) {
-              updatedSteps[1] = { ...updatedSteps[1], completed: true, inProgress: false }
-            }
-            if (newProgress > 40) {
-              updatedSteps[2] = { ...updatedSteps[2], completed: true, inProgress: false }
-            }
-            if (newProgress > 65) {
-              updatedSteps[3] = { ...updatedSteps[3], completed: true, inProgress: false }
-            }
-            if (newProgress > 80) {
-              updatedSteps[4] = { ...updatedSteps[4], completed: true, inProgress: false }
-            }
-            if (newProgress > 90) {
-              updatedSteps[5] = { ...updatedSteps[5], completed: true, inProgress: false }
-            }
-            
-            // Set current step as in progress
-            const nextIncompleteIndex = updatedSteps.findIndex(step => !step.completed)
-            if (nextIncompleteIndex !== -1) {
-              updatedSteps[nextIncompleteIndex] = { ...updatedSteps[nextIncompleteIndex], inProgress: true }
-            }
-            
-            return updatedSteps
-          })
-          
-          return newProgress
-        })
-      }, 2000 + Math.random() * 1000) // Vary timing to feel more realistic
-
-      return () => clearInterval(progressInterval)
+      // Only show basic progress, don't fake completion
+      setSyncSteps(steps => {
+        const updatedSteps = [...steps]
+        
+        // Only mark connection as complete
+        updatedSteps[0] = { ...updatedSteps[0], completed: true, inProgress: false }
+        
+        // Show accounts as in progress
+        updatedSteps[1] = { ...updatedSteps[1], completed: false, inProgress: true }
+        
+        // Keep others pending
+        for (let i = 2; i < updatedSteps.length; i++) {
+          updatedSteps[i] = { ...updatedSteps[i], completed: false, inProgress: false }
+        }
+        
+        return updatedSteps
+      })
+      
+      // Show realistic progress (don't go above 20% until actually complete)
+      setProgress(20)
     }
   }, [syncStatus])
 
@@ -160,7 +139,7 @@ export default function MetaSyncing() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Syncing Meta Data</h1>
-            <p className="text-gray-400 text-sm">Importing 90 days of advertising data</p>
+            <p className="text-gray-400 text-sm">Importing 90 days of advertising data - this may take 5-10 minutes</p>
           </div>
 
           {/* Progress Bar */}

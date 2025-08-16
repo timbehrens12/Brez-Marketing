@@ -66,7 +66,7 @@ export default function MetaCallback() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Syncing Meta Data</h1>
-            <p className="text-gray-400 text-sm">Importing 90 days of advertising data - this may take up to 2 minutes</p>
+            <p className="text-gray-400 text-sm">Importing 90 days of advertising data - this may take 5-10 minutes</p>
           </div>
 
           {/* Status Section */}
