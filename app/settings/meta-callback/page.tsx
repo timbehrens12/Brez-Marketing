@@ -7,7 +7,9 @@ import { createClient } from '@supabase/supabase-js'
 export default function MetaCallback() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState('Processing...')
+  const [status, setStatus] = useState('Processing connection...')
+  const [progress, setProgress] = useState(0)
+  const [currentStep, setCurrentStep] = useState('Establishing connection')
 
   useEffect(() => {
     async function handleCallback() {
@@ -21,30 +23,13 @@ export default function MetaCallback() {
           return
         }
 
-        setStatus('Exchanging code for token...')
+        setStatus('Syncing your Meta advertising data...')
+        setCurrentStep('Connecting to Meta Business API')
+        setProgress(10)
         
-        // Exchange code for token
-        const response = await fetch('/api/auth/meta/exchange', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ code, state }),
-        })
-
-        if (!response.ok) {
-          const error = await response.text()
-          throw new Error(error || 'Failed to exchange token')
-        }
-
-        const result = await response.json()
+        // Redirect to the proper callback route which handles everything
+        window.location.href = `/api/auth/meta/callback?code=${code}&state=${state}`
         
-        if (result.success) {
-          setStatus('Success! Redirecting...')
-          setTimeout(() => router.push('/settings?success=true'), 1000)
-        } else {
-          throw new Error(result.error || 'Unknown error')
-        }
       } catch (error) {
         console.error('Callback error:', error)
         setStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -52,7 +37,19 @@ export default function MetaCallback() {
       }
     }
 
+    // Simulate progress while redirecting
+    const progressTimer = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 20) {
+          return prev + 2
+        }
+        return prev
+      })
+    }, 200)
+
     handleCallback()
+    
+    return () => clearInterval(progressTimer)
   }, [searchParams, router])
 
   return (
@@ -68,25 +65,29 @@ export default function MetaCallback() {
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Connecting Meta Account</h1>
-            <p className="text-gray-400 text-sm">Setting up your Facebook & Instagram integration</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Syncing Meta Data</h1>
+            <p className="text-gray-400 text-sm">Importing 90 days of advertising data - this may take up to 2 minutes</p>
           </div>
 
           {/* Status Section */}
           <div className="mb-8">
-            {status.includes('Processing') && (
+            {status.includes('Processing') || status.includes('Syncing') && (
               <div className="space-y-6">
-                {/* Animated Dots */}
-                <div className="flex justify-center space-x-2">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                {/* Animated Spinner */}
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
                 
                 {/* Progress Bar */}
                 <div className="w-full bg-white/10 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full animate-pulse" style={{width: '65%'}}></div>
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{width: `${progress}%`}}
+                  ></div>
                 </div>
+                
+                {/* Current Step */}
+                <p className="text-sm text-blue-400 text-center">{currentStep}</p>
               </div>
             )}
             
@@ -152,6 +153,24 @@ export default function MetaCallback() {
               </div>
             </div>
           )}
+
+          {/* Info Message */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-blue-300 font-medium mb-1">Initial Data Sync</p>
+                <p className="text-xs text-blue-400/80 leading-relaxed">
+                  We're importing 90 days of campaign data, performance metrics, and audience insights. 
+                  This ensures your dashboard is ready with comprehensive analytics from day one.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Powered by */}
           <div className="flex items-center justify-center space-x-2 text-gray-500 text-xs">

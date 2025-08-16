@@ -73,10 +73,18 @@ export async function GET(request: NextRequest) {
     console.log(`[Meta Callback] Connection created successfully, triggering data backfill for brand ${state}`)
     
     // Trigger automatic data backfill in the background
-    DataBackfillService.triggerInitialBackfill(state, 'meta', tokenData.access_token)
-      .catch(error => {
-        console.error('[Meta Callback] Background backfill failed:', error)
-      })
+    try {
+      console.log(`[Meta Callback] Starting background backfill for brand ${state} with token ending in ...${tokenData.access_token.slice(-10)}`)
+      DataBackfillService.triggerInitialBackfill(state, 'meta', tokenData.access_token)
+        .then(() => {
+          console.log(`[Meta Callback] Background backfill completed successfully for brand ${state}`)
+        })
+        .catch(error => {
+          console.error('[Meta Callback] Background backfill failed:', error)
+        })
+    } catch (syncError) {
+      console.error('[Meta Callback] Error triggering backfill:', syncError)
+    }
 
     // Clear auth cookie and redirect to syncing page
     const response = NextResponse.redirect(`https://www.brezmarketingdashboard.com/settings/meta-syncing?brandId=${state}`)
