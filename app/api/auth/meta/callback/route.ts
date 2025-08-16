@@ -8,18 +8,30 @@ export async function GET(request: NextRequest) {
   console.log('Full URL:', request.url)
   
   try {
-    const { userId } = auth()
-    
-    if (!userId) {
-      console.error('No user ID found in session')
-      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=no_user')
-    }
-
     const url = new URL(request.url)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
-    const storedState = request.cookies.get('meta_auth_state')?.value
+    const storedStateRaw = request.cookies.get('meta_auth_state')?.value
     const errorParam = url.searchParams.get('error')
+    
+    // Parse stored state data
+    let storedState, userId
+    try {
+      const stateData = JSON.parse(storedStateRaw || '{}')
+      storedState = stateData.brandId
+      userId = stateData.userId
+    } catch (e) {
+      // Fallback for old format (just brandId string)
+      storedState = storedStateRaw
+      // Try to get userId from current session as fallback
+      const { userId: sessionUserId } = auth()
+      userId = sessionUserId
+    }
+    
+    if (!userId) {
+      console.error('No user ID found in session or stored state')
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=no_user')
+    }
     
     console.log('=== META CALLBACK AUTH VALIDATION ===')
     console.log('Auth params:', { 

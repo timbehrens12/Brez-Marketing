@@ -5,6 +5,13 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
+    const { userId } = await import('@clerk/nextjs').then(m => m.auth())
+    
+    if (!userId) {
+      console.error('No user ID found in auth route')
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=no_user_auth')
+    }
+    
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
     
@@ -23,9 +30,10 @@ export async function GET(request: NextRequest) {
     console.log('Starting Meta auth flow:', { brandId, stateSet: brandId })
     console.log('Auth URL:', authUrl.toString())
     
-    // Create response with proper redirect and set state cookie
+    // Create response with proper redirect and set state cookie with user info
     const response = NextResponse.redirect(authUrl.toString())
-    response.cookies.set('meta_auth_state', brandId, {
+    const stateData = JSON.stringify({ brandId, userId })
+    response.cookies.set('meta_auth_state', stateData, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
