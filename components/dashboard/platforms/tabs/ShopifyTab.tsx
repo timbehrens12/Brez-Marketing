@@ -59,6 +59,8 @@ export function ShopifyTab({
   // State for previous period data
   const [previousMetrics, setPreviousMetrics] = useState<Partial<Metrics>>({});
   const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
+  const [isDateChanging, setIsDateChanging] = useState(false);
+  const [lastDateRange, setLastDateRange] = useState<string>('');
 
   if (!connection) return <div>No Shopify connection found</div>
   if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading metrics...</div>
@@ -532,23 +534,28 @@ export function ShopifyTab({
   useEffect(() => {
     // When date range changes, force refresh the data
     if (connection && dateRange?.from && dateRange?.to) {
-      // console.log('[ShopifyTab] Date range changed, forcing refresh');
+      // Create a unique key for the current date range
+      const currentDateKey = `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}`;
       
-      // Format dates as yyyy-MM-dd
-      const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-      
-      // Check if this is "today" date range to force fresh data
-      const today = new Date();
-      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
-      
-      if (isToday) {
-        // console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
-      }
-      
-      // Wait a moment to let other effects settle
-      setTimeout(() => {
-        // Dispatch force refresh event with formatted dates
+      // Check if date range actually changed
+      if (currentDateKey !== lastDateRange) {
+        // console.log('[ShopifyTab] Date range changed, forcing refresh');
+        setIsDateChanging(true);
+        setLastDateRange(currentDateKey);
+        
+        // Format dates as yyyy-MM-dd
+        const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
+        const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
+        
+        // Check if this is "today" date range to force fresh data
+        const today = new Date();
+        const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+        
+        if (isToday) {
+          // console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
+        }
+        
+        // Immediate dispatch without timeout to reduce flicker
         window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
           detail: { 
             brandId, 
@@ -563,9 +570,14 @@ export function ShopifyTab({
             reason: isToday ? 'today-refresh' : 'date-range-change'
           }
         }));
-      }, 300);
+        
+        // Clear the date changing flag after a brief delay
+        setTimeout(() => {
+          setIsDateChanging(false);
+        }, 1000);
+      }
     }
-  }, [dateRange, connection, brandId]);
+  }, [dateRange, connection, brandId, lastDateRange]);
 
   // Add effect to refresh data every time the component mounts (navigation)
   useEffect(() => {
@@ -645,6 +657,23 @@ export function ShopifyTab({
       }
     }, 1000); // Give the component time to render first
   }, [brandId, dateRange]);
+
+  // Show loading state during date changes to prevent flicker
+  if (isDateChanging || (isLoading && metrics.totalSales === 0)) {
+    return (
+      <div className="space-y-4">
+        {/* Subtle Page Indicator - Green line for Shopify */}
+        <div className="mb-4">
+          <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-500/30 to-transparent rounded-full"></div>
+        </div>
+        
+        <div className="flex items-center justify-center p-8">
+          <Activity className="h-6 w-6 animate-spin text-green-500 mr-2" />
+          <span className="text-gray-600">Updating data for new date range...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
