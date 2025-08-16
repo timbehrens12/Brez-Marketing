@@ -163,7 +163,7 @@ export function AdComponent({
       }
       
       let url = `/api/meta/ads/direct-fetch`;
-      console.log(`[AdComponent] Fetching ads for ad set ${adsetId}`);
+      // console.log(`[AdComponent] Fetching ads for ad set ${adsetId}`);
       
       // Use POST for better reliability and to match CampaignWidget pattern
       const response = await fetch(url, {
@@ -224,7 +224,7 @@ export function AdComponent({
           }
         }
         
-        console.log(`[AdComponent] Loaded ${data.ads?.length || 0} ads from ${data.source || 'unknown'}`);
+        // console.log(`[AdComponent] Loaded ${data.ads?.length || 0} ads from ${data.source || 'unknown'}`);
         
         if (isMountedRef.current) {
           // Ensure valid array
@@ -271,10 +271,10 @@ export function AdComponent({
   useEffect(() => {
     // Date range has changed, refresh data
     if (dateRange?.from && dateRange?.to) {
-      console.log(`[AdComponent] Date range changed, refreshing ads for ad set ${adsetId}`);
+      // console.log(`[AdComponent] Date range changed, refreshing ads for ad set ${adsetId}`);
       fetchAds(false);
     }
-  }, [dateRange, fetchAds, adsetId]);
+  }, [dateRange?.from, dateRange?.to, adsetId]); // Remove fetchAds from dependencies to prevent infinite loops
   
   // Format values based on type
   const formatValue = (value: number | undefined | null, format: string) => {
@@ -301,7 +301,7 @@ export function AdComponent({
   const refreshAdStatus = useCallback(async (adId: string, force: boolean = false): Promise<void> => {
     if (!brandId || !adId || !isMountedRef.current) return;
     
-    console.log(`[AdComponent] Refreshing status for ad ${adId}`);
+    // console.log(`[AdComponent] Refreshing status for ad ${adId}`);
     
     try {
       const response = await fetch(`/api/meta/ad-status-check`, {
@@ -320,7 +320,7 @@ export function AdComponent({
       
       if (response.ok) {
         const statusData = await response.json();
-        console.log(`[AdComponent] Status refresh successful for ad ${adId}`);
+        // console.log(`[AdComponent] Status refresh successful for ad ${adId}`);
         
         if (statusData.status) {
           // Update the local ads state
@@ -351,12 +351,12 @@ export function AdComponent({
     // Apply throttling to prevent multiple status checks
     const key = `check-ad-statuses-${adsetId}`;
     if (!forceRefresh && !throttle(key, 15000)) {
-      console.log(`[AdComponent] Throttled ad status check - skipping`);
+      // console.log(`[AdComponent] Throttled ad status check - skipping`);
       return;
     }
     
     // Log what we're doing
-    console.log(`[AdComponent] Checking statuses for ${adsToCheck.length} ads, forceRefresh: ${forceRefresh}`);
+    // console.log(`[AdComponent] Checking statuses for ${adsToCheck.length} ads, forceRefresh: ${forceRefresh}`);
     
     // Filter out ads with invalid ad_id values
     const validAds = adsToCheck.filter(ad => 
@@ -384,7 +384,7 @@ export function AdComponent({
     const batchSize = forceRefresh ? Math.min(5, prioritizedAds.length) : Math.min(2, prioritizedAds.length);
     const adsToProcess = prioritizedAds.slice(0, batchSize);
     
-    console.log(`[AdComponent] Processing ${adsToProcess.length} ads for status check`);
+    // console.log(`[AdComponent] Processing ${adsToProcess.length} ads for status check`);
     
     let updatedCount = 0;
     
@@ -401,7 +401,7 @@ export function AdComponent({
         }
         
         // Only log in debug mode
-        console.log(`[AdComponent] Checking status for ad: ${ad.ad_id}`);
+        // console.log(`[AdComponent] Checking status for ad: ${ad.ad_id}`);
         
         refreshAdStatus(ad.ad_id, forceRefresh);
       }, index * (forceRefresh ? 500 : 2000)); // Increase delay between requests to reduce rate limiting
@@ -425,7 +425,7 @@ export function AdComponent({
   useEffect(() => {
     const handleAdSetStatusChanged = (event: any) => {
       if (event.detail?.adsetId === adsetId) {
-        console.log(`[AdComponent] Ad set ${adsetId} status changed, refreshing ads`);
+        // console.log(`[AdComponent] Ad set ${adsetId} status changed, refreshing ads`);
         fetchAds(true);
       }
     };
@@ -674,7 +674,7 @@ export function AdComponent({
                   }
                   
                   // *** ADDED DEBUG LOG ***
-                  console.log(`[AdComponent DEBUG] Ad ID: ${ad.ad_id}, Metric: ${metricId}, Raw Value: ${value}, Ad Object Metrics:`, {
+                  // console.log(`[AdComponent DEBUG] Ad ID: ${ad.ad_id}, Metric: ${metricId}, Raw Value: ${value}, Ad Object Metrics:`, {
                     spent: ad.spent,
                     impressions: ad.impressions,
                     clicks: ad.clicks,

@@ -59,8 +59,6 @@ export function ShopifyTab({
   // State for previous period data
   const [previousMetrics, setPreviousMetrics] = useState<Partial<Metrics>>({});
   const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
-  const [isDateChanging, setIsDateChanging] = useState(false);
-  const [lastDateRange, setLastDateRange] = useState<string>('');
 
   if (!connection) return <div>No Shopify connection found</div>
   if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading metrics...</div>
@@ -195,11 +193,9 @@ export function ShopifyTab({
     }
   }, [brandId, dateRange]);
 
-  // Create safe metrics - only clear data if we're actively changing dates AND loading
-  const shouldClearData = isDateChanging && (isLoading || isRefreshingData);
   const safeMetrics: SafeMetrics = {
     ...metrics,
-    revenueByDay: (shouldClearData ? [] : (metrics.revenueByDay || [])).map(d => {
+    revenueByDay: (metrics.revenueByDay || []).map(d => {
       // Ensure we have a proper date string in ISO format
       let dateStr = d.date;
       if (typeof dateStr === 'object' && dateStr !== null) {
@@ -232,7 +228,7 @@ export function ShopifyTab({
         revenue: d.amount || 0
       };
     }),
-    topProducts: (shouldClearData ? [] : (metrics.topProducts || [])).map(product => ({
+    topProducts: (metrics.topProducts || []).map(product => ({
       id: product.id,
       name: product.title || '',
       quantity: product.quantity || 0,
@@ -242,13 +238,13 @@ export function ShopifyTab({
       newCustomers: metrics.customerSegments?.newCustomers || 0,
       returningCustomers: metrics.customerSegments?.returningCustomers || 0
     },
-    dailyData: (shouldClearData ? [] : (metrics.dailyData || [])).map(d => ({
+    dailyData: (metrics.dailyData || []).map(d => ({
       date: d.date,
       orders: d.orders || 0,
       revenue: d.revenue || 0,
       value: d.revenue || 0 // Add this for MetricCard compatibility
     })),
-    salesData: (shouldClearData ? [] : (metrics.salesData || [])).filter(item => {
+    salesData: (metrics.salesData || []).filter(item => {
       if (!item.date) {
         console.error('Missing date in sales data item');
         return false;
@@ -270,7 +266,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    ordersData: (shouldClearData ? [] : (metrics.ordersData || [])).filter(item => {
+    ordersData: (metrics.ordersData || []).filter(item => {
       if (!item.date) {
         console.error('Missing date in orders data item');
         return false;
@@ -292,7 +288,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    aovData: (shouldClearData ? [] : (metrics.aovData || [])).filter(item => {
+    aovData: (metrics.aovData || []).filter(item => {
       if (!item.date) {
         console.error('Missing date in AOV data item');
         return false;
@@ -314,7 +310,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    unitsSoldData: (shouldClearData ? [] : (metrics.unitsSoldData || [])).filter(item => {
+    unitsSoldData: (metrics.unitsSoldData || []).filter(item => {
       if (!item.date) {
         console.error('Missing date in units sold data item');
         return false;
@@ -536,28 +532,23 @@ export function ShopifyTab({
   useEffect(() => {
     // When date range changes, force refresh the data
     if (connection && dateRange?.from && dateRange?.to) {
-      // Create a unique key for the current date range
-      const currentDateKey = `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}`;
+      // console.log('[ShopifyTab] Date range changed, forcing refresh');
       
-      // Check if date range actually changed
-      if (currentDateKey !== lastDateRange) {
-        // console.log('[ShopifyTab] Date range changed, forcing refresh');
-        setIsDateChanging(true);
-        setLastDateRange(currentDateKey);
-        
-        // Format dates as yyyy-MM-dd
-        const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-        const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-        
-        // Check if this is "today" date range to force fresh data
-        const today = new Date();
-        const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
-        
-        if (isToday) {
-          // console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
-        }
-        
-        // Immediate dispatch without timeout to reduce flicker
+      // Format dates as yyyy-MM-dd
+      const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      // Check if this is "today" date range to force fresh data
+      const today = new Date();
+      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+      
+      if (isToday) {
+        // console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
+      }
+      
+      // Wait a moment to let other effects settle
+      setTimeout(() => {
+        // Dispatch force refresh event with formatted dates
         window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
           detail: { 
             brandId, 
@@ -572,37 +563,9 @@ export function ShopifyTab({
             reason: isToday ? 'today-refresh' : 'date-range-change'
           }
         }));
-        
-        // Clear the date changing flag when new data arrives or after timeout
-        setTimeout(() => {
-          setIsDateChanging(false);
-        }, 300); // Much shorter delay
-        
-        // Also clear it when the loading state changes
-        if (!isLoading && !isRefreshingData) {
-          setTimeout(() => {
-            setIsDateChanging(false);
-          }, 100);
-        }
-      }
+      }, 300);
     }
-  }, [dateRange, connection, brandId, lastDateRange]);
-
-  // Clear date changing flag when loading completes and we have new data
-  useEffect(() => {
-    if (!isLoading && !isRefreshingData && isDateChanging) {
-      // Clear immediately when loading is done
-      setIsDateChanging(false);
-    }
-  }, [isLoading, isRefreshingData, isDateChanging]);
-
-  // Also clear date changing flag when we get actual metric data
-  useEffect(() => {
-    if (isDateChanging && metrics && metrics.totalSales > 0) {
-      // We have real data, stop showing as date changing
-      setIsDateChanging(false);
-    }
-  }, [isDateChanging, metrics]);
+  }, [dateRange, connection, brandId]);
 
   // Add effect to refresh data every time the component mounts (navigation)
   useEffect(() => {
@@ -682,27 +645,6 @@ export function ShopifyTab({
       }
     }, 1000); // Give the component time to render first
   }, [brandId, dateRange]);
-
-  // Show loading state only when truly necessary to prevent excessive delays
-  const currentDateKey = `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}`;
-  const shouldShowFullLoading = (isDateChanging && (isLoading || isRefreshingData)) || 
-                               (isLoading && metrics.totalSales === 0);
-
-  if (shouldShowFullLoading) {
-    return (
-      <div className="space-y-4">
-        {/* Subtle Page Indicator - Green line for Shopify */}
-        <div className="mb-4">
-          <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-500/30 to-transparent rounded-full"></div>
-        </div>
-        
-        <div className="flex items-center justify-center p-8">
-          <Activity className="h-6 w-6 animate-spin text-green-500 mr-2" />
-          <span className="text-gray-600">Updating data for new date range...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

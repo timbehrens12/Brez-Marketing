@@ -85,6 +85,26 @@ export function AudienceDemographicsWidget({
     fetchData()
   }, [connectionId, selectedBreakdown, dateRange])
 
+  // Listen for refresh events
+  useEffect(() => {
+    if (!connectionId) return
+
+    const handleRefresh = () => {
+      fetchData()
+    }
+
+    // Listen to global refresh events
+    window.addEventListener('global-refresh-all', handleRefresh)
+    window.addEventListener('force-meta-refresh', handleRefresh)
+    window.addEventListener('metaDataRefreshed', handleRefresh)
+
+    return () => {
+      window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('force-meta-refresh', handleRefresh)
+      window.removeEventListener('metaDataRefreshed', handleRefresh)
+    }
+  }, [connectionId])
+
   const formatBreakdownValue = (value: string) => {
     if (selectedBreakdown === 'age_gender') {
       const [age, gender] = value.split('_')

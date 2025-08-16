@@ -166,7 +166,7 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with reduced cooldown
+  // Create a controlled setDateRange with cooldown
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
@@ -175,10 +175,10 @@ export default function DashboardPage() {
     setIsDateRangeLoading(true)
     setDateRange(range)
     
-    // Set a shorter cooldown period to reduce delay
+    // Set a minimum cooldown period
     setTimeout(() => {
       setIsDateRangeLoading(false)
-    }, 500) // Reduced to 500ms for faster response
+    }, 1500) // 1.5 second minimum cooldown
   }, [isDateRangeLoading])
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)

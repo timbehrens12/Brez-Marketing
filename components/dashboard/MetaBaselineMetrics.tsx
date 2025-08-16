@@ -41,7 +41,7 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
     
     // Prevent duplicate fetches
     if (isFetchingRef.current) {
-      console.log('Skipping Meta metrics refresh - already fetching')
+      // console.log('Skipping Meta metrics refresh - already fetching')
       return
     }
     
@@ -54,13 +54,13 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
       // to prevent excessive API calls, unless force refresh is requested
       const now = Date.now()
       if (!forceRefresh && now - lastRefreshRef.current < 3000) {
-        console.log('Skipping refresh - too soon since last refresh')
+        // console.log('Skipping refresh - too soon since last refresh')
         setLoading(false)
         return
       }
       
       lastRefreshRef.current = now
-      console.log('Refreshing Meta metrics directly')
+      // console.log('Refreshing Meta metrics directly')
       
       const data = await fetchMetaMetrics(brandId)
       

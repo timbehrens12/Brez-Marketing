@@ -134,7 +134,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
 
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('[TotalAdSetReachCard] Fetch aborted');
+        // console.log('[TotalAdSetReachCard] Fetch aborted');
         return; // Don't update state or set error if aborted
       }
       console.error("[TotalAdSetReachCard] Error fetching reach data:", error);
