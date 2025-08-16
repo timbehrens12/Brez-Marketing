@@ -318,11 +318,11 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
     if (disabled) return; // Prevent changes when disabled
     
     // Prevent rapid preset selections
-    const now = Date.now();
-    if (lastPresetClickRef.current && (now - lastPresetClickRef.current) < 300) {
+    const nowTimestamp = Date.now();
+    if (lastPresetClickRef.current && (nowTimestamp - lastPresetClickRef.current) < 300) {
       return; // Ignore clicks within 300ms
     }
-    lastPresetClickRef.current = now;
+    lastPresetClickRef.current = nowTimestamp;
     
     // Get the date range from the preset
     const newRange = preset.getDate()
