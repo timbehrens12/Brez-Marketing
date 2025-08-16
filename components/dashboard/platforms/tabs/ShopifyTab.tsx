@@ -195,9 +195,10 @@ export function ShopifyTab({
     }
   }, [brandId, dateRange]);
 
+  // Create safe metrics but clear data arrays when date is changing to prevent stale data display
   const safeMetrics: SafeMetrics = {
     ...metrics,
-    revenueByDay: (metrics.revenueByDay || []).map(d => {
+    revenueByDay: (isDateChanging ? [] : (metrics.revenueByDay || [])).map(d => {
       // Ensure we have a proper date string in ISO format
       let dateStr = d.date;
       if (typeof dateStr === 'object' && dateStr !== null) {
@@ -230,7 +231,7 @@ export function ShopifyTab({
         revenue: d.amount || 0
       };
     }),
-    topProducts: (metrics.topProducts || []).map(product => ({
+    topProducts: (isDateChanging ? [] : (metrics.topProducts || [])).map(product => ({
       id: product.id,
       name: product.title || '',
       quantity: product.quantity || 0,
@@ -240,13 +241,13 @@ export function ShopifyTab({
       newCustomers: metrics.customerSegments?.newCustomers || 0,
       returningCustomers: metrics.customerSegments?.returningCustomers || 0
     },
-    dailyData: (metrics.dailyData || []).map(d => ({
+    dailyData: (isDateChanging ? [] : (metrics.dailyData || [])).map(d => ({
       date: d.date,
       orders: d.orders || 0,
       revenue: d.revenue || 0,
       value: d.revenue || 0 // Add this for MetricCard compatibility
     })),
-    salesData: (metrics.salesData || []).filter(item => {
+    salesData: (isDateChanging ? [] : (metrics.salesData || [])).filter(item => {
       if (!item.date) {
         console.error('Missing date in sales data item');
         return false;
@@ -268,7 +269,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    ordersData: (metrics.ordersData || []).filter(item => {
+    ordersData: (isDateChanging ? [] : (metrics.ordersData || [])).filter(item => {
       if (!item.date) {
         console.error('Missing date in orders data item');
         return false;
@@ -290,7 +291,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    aovData: (metrics.aovData || []).filter(item => {
+    aovData: (isDateChanging ? [] : (metrics.aovData || [])).filter(item => {
       if (!item.date) {
         console.error('Missing date in AOV data item');
         return false;
@@ -312,7 +313,7 @@ export function ShopifyTab({
         return false;
       }
     }),
-    unitsSoldData: (metrics.unitsSoldData || []).filter(item => {
+    unitsSoldData: (isDateChanging ? [] : (metrics.unitsSoldData || [])).filter(item => {
       if (!item.date) {
         console.error('Missing date in units sold data item');
         return false;
