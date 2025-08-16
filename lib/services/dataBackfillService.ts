@@ -57,7 +57,7 @@ export class DataBackfillService {
             last_synced_at: new Date().toISOString()
           })
           .eq('brand_id', brandId)
-          .eq('platform_type', platformType)
+          .eq('platform_type', 'meta')
       } else {
         // Mark sync as failed for real errors
         await supabaseAdmin
@@ -67,7 +67,7 @@ export class DataBackfillService {
             last_synced_at: new Date().toISOString()
           })
           .eq('brand_id', brandId)
-          .eq('platform_type', platformType)
+          .eq('platform_type', 'meta')
       }
     }
   }
@@ -112,7 +112,7 @@ export class DataBackfillService {
           last_synced_at: new Date().toISOString()
         })
         .eq('brand_id', brandId)
-        .eq('platform_type', platformType)
+        .eq('platform_type', 'meta')
       
       try {
         await Promise.race([
