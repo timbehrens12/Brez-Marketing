@@ -214,6 +214,7 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
   const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
   const [activePreset, setActivePreset] = React.useState<string | null>(null)
+  const lastPresetClickRef = React.useRef<number>(0)
   
   // Get current date for comparison
   const today = new Date()
@@ -316,6 +317,13 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
   const handlePresetSelect = (preset: typeof presets[0]) => {
     if (disabled) return; // Prevent changes when disabled
     
+    // Prevent rapid preset selections
+    const now = Date.now();
+    if (lastPresetClickRef.current && (now - lastPresetClickRef.current) < 300) {
+      return; // Ignore clicks within 300ms
+    }
+    lastPresetClickRef.current = now;
+    
     // Get the date range from the preset
     const newRange = preset.getDate()
     
@@ -339,8 +347,8 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
       // Keep the special marker using type assertion
       (newRange as any)._preset = 'yesterday';
       
-      console.log(`Setting yesterday preset with special marker - exact same date for both`);
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
+      // console.log(`Setting yesterday preset with special marker - exact same date for both`);
+      // console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
     }
     else if (preset.value === 'thisWeek') {
       // Additional validation for this week preset
@@ -353,18 +361,18 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
       newRange.from = startOfDay(startDate);
       newRange.to = endOfDay(today);
       
-      console.log(`Setting this week preset with explicit date calculation`);
-      console.log(`Date range: ${format(newRange.from, 'yyyy-MM-dd')} to ${format(newRange.to, 'yyyy-MM-dd')}`);
+      // console.log(`Setting this week preset with explicit date calculation`);
+      // console.log(`Date range: ${format(newRange.from, 'yyyy-MM-dd')} to ${format(newRange.to, 'yyyy-MM-dd')}`);
     }
     
     // Set the active preset
     setActivePreset(preset.value)
     
-    // Important: explicitly log what we're setting to help with debugging
-    console.log(`Setting date range from preset ${preset.value}: `, {
-      from: format(newRange.from, 'yyyy-MM-dd'),
-      to: format(newRange.to, 'yyyy-MM-dd')
-    });
+    // Important: explicitly log what we're setting to help with debugging (reduced logging)
+    // console.log(`Setting date range from preset ${preset.value}: `, {
+    //   from: format(newRange.from, 'yyyy-MM-dd'),
+    //   to: format(newRange.to, 'yyyy-MM-dd')
+    // });
     
     setTempDateRange(newRange)
     setSelectionStep('complete')

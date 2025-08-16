@@ -574,7 +574,7 @@ export function ShopifyTab({
         // Clear the date changing flag after a brief delay
         setTimeout(() => {
           setIsDateChanging(false);
-        }, 1000);
+        }, 800); // Reduced delay
       }
     }
   }, [dateRange, connection, brandId, lastDateRange]);
