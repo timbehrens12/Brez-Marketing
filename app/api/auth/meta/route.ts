@@ -13,17 +13,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=missing_brand_id')
     }
 
+    // Set state cookie for validation in callback
+    const response = NextResponse.redirect('temp')
+    response.cookies.set('meta_auth_state', brandId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 600 // 10 minutes
+    })
+
     const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
     authUrl.searchParams.append('client_id', process.env.META_APP_ID!)
-    authUrl.searchParams.append('redirect_uri', 'https://www.brezmarketingdashboard.com/settings/meta-callback')
+    authUrl.searchParams.append('redirect_uri', 'https://www.brezmarketingdashboard.com/api/auth/meta/callback')
     authUrl.searchParams.append('state', brandId)
     authUrl.searchParams.append('response_type', 'code')
     authUrl.searchParams.append('config_id', process.env.META_CONFIG_ID!)
 
-    console.log('Starting Meta auth flow:', { brandId })
+    console.log('Starting Meta auth flow:', { brandId, stateSet: brandId })
     console.log('Auth URL:', authUrl.toString())
     
-    return NextResponse.redirect(authUrl.toString())
+    // Update the redirect URL to the actual auth URL
+    const finalResponse = NextResponse.redirect(authUrl.toString())
+    finalResponse.cookies.set('meta_auth_state', brandId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 600 // 10 minutes
+    })
+    
+    return finalResponse
 
   } catch (error) {
     console.error('Auth error:', error)

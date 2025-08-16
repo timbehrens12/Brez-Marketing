@@ -19,18 +19,48 @@ export async function GET(request: NextRequest) {
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     const storedState = request.cookies.get('meta_auth_state')?.value
+    const errorParam = url.searchParams.get('error')
     
+    console.log('=== META CALLBACK AUTH VALIDATION ===')
     console.log('Auth params:', { 
       code: code ? `${code.substring(0, 10)}...` : null,
       state,
       storedState,
-      userId
+      userId,
+      error: errorParam,
+      hasCode: !!code,
+      hasState: !!state,
+      hasStoredState: !!storedState,
+      statesMatch: state === storedState
     })
 
-    if (!code || !state || !storedState || state !== storedState) {
-      console.error('Invalid auth params')
-      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=invalid_state')
+    // Check for OAuth errors first
+    if (errorParam) {
+      console.error('OAuth error from Meta:', errorParam)
+      return NextResponse.redirect(`https://www.brezmarketingdashboard.com/settings?error=oauth_${errorParam}`)
     }
+
+    if (!code) {
+      console.error('Missing authorization code')
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=missing_code')
+    }
+
+    if (!state) {
+      console.error('Missing state parameter')
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=missing_state')
+    }
+
+    if (!storedState) {
+      console.error('Missing stored state cookie')
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=missing_stored_state')
+    }
+
+    if (state !== storedState) {
+      console.error('State mismatch:', { received: state, stored: storedState })
+      return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=state_mismatch')
+    }
+
+    console.log('✅ Auth validation passed')
 
     // Exchange code for token
     const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
