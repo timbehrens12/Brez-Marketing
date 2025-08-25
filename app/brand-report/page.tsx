@@ -21,7 +21,6 @@ import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
 import { Footer } from "@/components/Footer"
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
-import { GridOverlay } from "@/components/GridOverlay"
 
 interface PlatformConnection {
   id: string
@@ -111,14 +110,14 @@ export default function BrandReportPage() {
     )
     
     // Debug logging (can be removed in production)
-    // if (process.env.NODE_ENV === 'development') {
-      // console.log('🔍 Platform Check Debug:', {
-        // brandId,
-        // totalConnections: connections.length,
-        // brandConnections: brandConnections.length,
-        // hasValidPlatform
-      // })
-    // }
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Platform Check Debug:', {
+        brandId,
+        totalConnections: connections.length,
+        brandConnections: brandConnections.length,
+        hasValidPlatform
+      })
+    }
     
     return hasValidPlatform
   }
@@ -205,13 +204,13 @@ export default function BrandReportPage() {
         const isManual = snapshotTime === "manual"
         const isToday = format(new Date(report.createdAt), 'yyyy-MM-dd') === today
         
-        // console.log(`🔍 Checking daily report:`, {
-          // snapshotTime,
-          // isManual,
-          // isToday,
-          // createdAt: report.createdAt,
-          // matches: isManual && isToday
-        // })
+        console.log(`🔍 Checking daily report:`, {
+          snapshotTime,
+          isManual,
+          isToday,
+          createdAt: report.createdAt,
+          matches: isManual && isToday
+        })
         
         return isManual && isToday
       })
@@ -343,7 +342,7 @@ export default function BrandReportPage() {
       } else {
         // Ensure connectionsData is an array
         const safeConnectionsData = Array.isArray(connectionsData) ? connectionsData : []
-        // console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
+        console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
         setConnections(safeConnectionsData)
       }
     } catch (error) {
@@ -473,7 +472,7 @@ export default function BrandReportPage() {
     }
 
     try {
-      // console.log(`🔍 Loading all daily reports for brand ${brandId}, period ${periodName}`)
+      console.log(`🔍 Loading all daily reports for brand ${brandId}, period ${periodName}`)
       
       const params = new URLSearchParams({
         brandId,
@@ -495,7 +494,7 @@ export default function BrandReportPage() {
       const result = await response.json()
       
       if (result.success && result.reports) {
-        // console.log(`✅ Found ${result.reports.length} reports`)
+        console.log(`✅ Found ${result.reports.length} reports`)
         
         // Sync localStorage with database reports for shared brands
         syncLocalStorageWithReports(brandId, result.reports)
@@ -503,7 +502,7 @@ export default function BrandReportPage() {
         return result.reports
       }
       
-      // console.log('ℹ️ No reports found')
+      console.log('ℹ️ No reports found')
       return []
     } catch (error) {
       console.error('❌ Exception loading daily reports:', error)
@@ -525,12 +524,12 @@ export default function BrandReportPage() {
       const hasMonthlyReportForPeriod = reports.some((report: any) => {
         // Access the database record through the data property
         const dbReport = report.data || report
-        // console.log(`🔍 Checking report:`, {
-          // periodName: dbReport.period_name,
-          // date_range_from: dbReport.date_range_from,
-          // currentDateRange,
-          // matches: dbReport.period_name === 'last-month' && dbReport.date_range_from === currentDateRange
-        // })
+        console.log(`🔍 Checking report:`, {
+          periodName: dbReport.period_name,
+          date_range_from: dbReport.date_range_from,
+          currentDateRange,
+          matches: dbReport.period_name === 'last-month' && dbReport.date_range_from === currentDateRange
+        })
         if (dbReport.period_name !== 'last-month') return false
         // Check if report covers the same date range we're looking at
         return dbReport.date_range_from === currentDateRange
@@ -563,29 +562,29 @@ export default function BrandReportPage() {
       
       if (hasMonthlyReportThisMonth) {
         localStorage.setItem(monthlyKey, currentMonthKey)
-        // console.log(`📝 Synced monthly report availability for brand ${brandId}`)
+        console.log(`📝 Synced monthly report availability for brand ${brandId}`)
       }
       
       if (hasDailyReportToday) {
         localStorage.setItem(dailyKey, today)
-        // console.log(`📝 Synced daily report availability for brand ${brandId}`)
+        console.log(`📝 Synced daily report availability for brand ${brandId}`)
       }
       
-      // console.log(`🔍 Report sync for brand ${brandId}:`, {
-        // hasMonthlyReportForPeriod,
-        // hasMonthlyReportThisMonth,
-        // currentDateRange,
-        // reportsFound: reports.length,
-        // reports: reports.map(r => {
-          // const dbReport = r.data || r
-          // return {
-            // period_name: dbReport.period_name,
-            // date_range_from: dbReport.date_range_from,
-            // date_range_to: dbReport.date_range_to,
-            // createdAt: r.createdAt
-          // }
-        // })
-      // })
+      console.log(`🔍 Report sync for brand ${brandId}:`, {
+        hasMonthlyReportForPeriod,
+        hasMonthlyReportThisMonth,
+        currentDateRange,
+        reportsFound: reports.length,
+        reports: reports.map(r => {
+          const dbReport = r.data || r
+          return {
+            period_name: dbReport.period_name,
+            date_range_from: dbReport.date_range_from,
+            date_range_to: dbReport.date_range_to,
+            createdAt: r.createdAt
+          }
+        })
+      })
       
     } catch (error) {
       console.warn('Failed to sync localStorage with reports:', error)
@@ -600,7 +599,7 @@ export default function BrandReportPage() {
     }
 
     try {
-      // console.log('💾 Saving report to database with snapshot time:', snapshotTime)
+      console.log('💾 Saving report to database with snapshot time:', snapshotTime)
       
       const response = await fetch('/api/brand-reports', {
         method: 'POST',
@@ -627,7 +626,7 @@ export default function BrandReportPage() {
       const result = await response.json()
       
       if (result.success) {
-        // console.log('✅ Successfully saved report to database')
+        console.log('✅ Successfully saved report to database')
         return true
         } else {
         console.error('❌ Save failed:', result.error)
@@ -641,7 +640,7 @@ export default function BrandReportPage() {
 
   // Handle period selection
   const handlePeriodSelect = (value: string) => {
-    // console.log(`🔄 Period changed from ${selectedPeriod} to ${value}`)
+    console.log(`🔄 Period changed from ${selectedPeriod} to ${value}`)
     setSelectedPeriod(value)
     setDailyReports([])
     setSelectedReport(null)
@@ -713,10 +712,10 @@ export default function BrandReportPage() {
       const fromDate = format(dateRange.from!, 'yyyy-MM-dd')
       const toDate = format(dateRange.to!, 'yyyy-MM-dd')
 
-      // console.log(`🎯 Generating AI report for brand ${selectedBrandId}, snapshot: ${snapshotTime}${isAutoGenerated ? ' (auto-generated)' : ''}`)
+      console.log(`🎯 Generating AI report for brand ${selectedBrandId}, snapshot: ${snapshotTime}${isAutoGenerated ? ' (auto-generated)' : ''}`)
 
       // Always run fresh data sync before generating reports to ensure accuracy
-      // console.log('🔄 Running fresh data sync before generating report...')
+      console.log('🔄 Running fresh data sync before generating report...')
       try {
         // Sync Meta data
         const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7; // More days for monthly, recent for daily
@@ -745,7 +744,7 @@ export default function BrandReportPage() {
           })
         })
         
-        // console.log('✅ Fresh data sync completed')
+        console.log('✅ Fresh data sync completed')
       } catch (syncError) {
         console.error('❌ Sync failed, but continuing with report generation:', syncError)
       }
@@ -755,7 +754,7 @@ export default function BrandReportPage() {
         const existingReports = await loadDailyReports(selectedBrandId, fromDate, toDate, selectedPeriod)
         const existingReport = existingReports.find((r: DailyReport) => r.snapshotTime === snapshotTime)
         if (existingReport) {
-          // console.log('✅ Found existing report for this snapshot time')
+          console.log('✅ Found existing report for this snapshot time')
           setDailyReports(existingReports)
           setSelectedReport(existingReport)
           setIsLoadingReport(false)
@@ -772,104 +771,18 @@ export default function BrandReportPage() {
 
       const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
 
-      // Calculate previous period dates for comparison
-      const currentStart = new Date(fromDate)
-      const currentEnd = new Date(toDate)
-      const periodDays = Math.round((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      
-      // Calculate previous period (same duration, shifted back)
-      const previousStart = new Date(currentStart)
-      previousStart.setDate(previousStart.getDate() - periodDays)
-      const previousEnd = new Date(currentEnd)
-      previousEnd.setDate(previousEnd.getDate() - periodDays)
-      
-      const previousFromDate = format(previousStart, 'yyyy-MM-dd')
-      const previousToDate = format(previousEnd, 'yyyy-MM-dd')
-      
-      const previousParams = new URLSearchParams({
-        brandId: selectedBrandId,
-        from: previousFromDate,
-        to: previousToDate,
-        t: Date.now().toString()
-      })
-
-      // Fetch current and previous period data for comparison
-      const [shopifyResponse, metaResponse, previousShopifyResponse, previousMetaResponse] = await Promise.all([
+      // Fetch all the data needed for the report
+      const [shopifyResponse, metaResponse] = await Promise.all([
         fetch(`/api/metrics?${params.toString()}`),
-        fetch(`/api/metrics/meta?${params.toString()}`),
-        fetch(`/api/metrics?${previousParams.toString()}`),
-        fetch(`/api/metrics/meta?${previousParams.toString()}`)
+        fetch(`/api/metrics/meta?${params.toString()}`)
       ])
 
       if (!shopifyResponse.ok || !metaResponse.ok) {
-        throw new Error("Failed to fetch current metrics data")
+        throw new Error("Failed to fetch metrics data")
       }
 
       const shopifyData = await shopifyResponse.json()
       const metaData = await metaResponse.json()
-      
-      // Previous period data (optional - don't fail if unavailable)
-      let previousShopifyData = null
-      let previousMetaData = null
-      
-      if (previousShopifyResponse.ok) {
-        previousShopifyData = await previousShopifyResponse.json()
-      }
-      
-      if (previousMetaResponse.ok) {
-        previousMetaData = await previousMetaResponse.json()
-      }
-
-      // Fetch demographics data for audience insights
-      let demographicsData = null
-      try {
-        const supabase = await getSupabaseClient()
-        
-        // Get Meta connection for this brand
-        const { data: metaConnection } = await supabase
-          .from('platform_connections')
-          .select('id')
-          .eq('brand_id', selectedBrandId)
-          .eq('platform_type', 'meta')
-          .eq('status', 'active')
-          .single()
-
-        if (metaConnection) {
-          // Fetch recent demographic data (last 30 days for comprehensive reporting)
-          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          const today = new Date().toISOString().split('T')[0]
-
-          const { data: demographics } = await supabase
-            .from('meta_demographics')
-            .select('*')
-            .eq('connection_id', metaConnection.id)
-            .gte('date_range_start', thirtyDaysAgo)
-            .lte('date_range_end', today)
-            .order('impressions', { ascending: false })
-            .limit(30)
-
-          const { data: deviceData } = await supabase
-            .from('meta_device_performance')
-            .select('*')
-            .eq('connection_id', metaConnection.id)
-            .gte('date_range_start', thirtyDaysAgo)
-            .lte('date_range_end', today)
-            .order('impressions', { ascending: false })
-            .limit(15)
-
-          if (demographics?.length > 0 || deviceData?.length > 0) {
-            demographicsData = {
-              age: demographics?.filter(d => d.breakdown_type === 'age') || [],
-              gender: demographics?.filter(d => d.breakdown_type === 'gender') || [],
-              devices: deviceData?.filter(d => d.breakdown_type === 'device') || [],
-              placements: deviceData?.filter(d => d.breakdown_type === 'placement') || []
-            }
-            // console.log('📊 Demographics data loaded for brand report')
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching demographics data for brand report:', error)
-      }
 
       // Fetch previous reports for comparison and improvement tracking
       let historicalReports = []
@@ -886,7 +799,7 @@ export default function BrandReportPage() {
           const historicalResult = await historicalResponse.json()
           if (historicalResult.success && historicalResult.reports) {
             historicalReports = historicalResult.reports
-            // console.log(`📚 Found ${historicalReports.length} historical reports for comparison`)
+            console.log(`📚 Found ${historicalReports.length} historical reports for comparison`)
           }
         }
       } catch (historicalError) {
@@ -956,21 +869,7 @@ export default function BrandReportPage() {
         },
         platforms: {
           shopify: shopifyData,
-          meta: {
-            ...metaData,
-            demographics: demographicsData
-          }
-        },
-        previous_period: {
-          date_range: {
-            from: previousFromDate,
-            to: previousToDate,
-            period_days: periodDays
-          },
-          platforms: {
-            shopify: previousShopifyData,
-            meta: previousMetaData
-          }
+          meta: metaData
         },
         detailed_breakdown: detailedData,
         user: {
@@ -982,7 +881,7 @@ export default function BrandReportPage() {
           note: "Use this historical data to identify trends, track improvements, evaluate recommendation effectiveness, and provide comparative analysis."
         },
         formatting_instructions: {
-          style: "Create a comprehensive, detailed marketing report with HISTORICAL COMPARISON and IMPROVEMENT TRACKING. Be verbose and educational - even with limited data, provide thorough analysis and context. Structure: 1. Executive Summary (detailed overview with context and period-over-period changes), 2. Performance Overview (analyze all available metrics with explanations and historical comparison), 3. DAILY/MONTHLY COMPARISON SECTION (mandatory - compare current period performance vs previous equivalent period with specific metrics, percentage changes, and trend analysis), 4. Historical Performance Analysis (compare current metrics to previous periods, identify trends, track improvement/decline), 5. Shopify E-commerce Analysis (detailed store performance, customer behavior, conversion insights with historical context), 6. Meta/Facebook Ads Analysis (campaign performance, targeting effectiveness, creative analysis with trend analysis), 7. Performance Trends Analysis (analyze patterns from detailed breakdown data and historical reports), 8. Recommendation Effectiveness Review (evaluate previous recommendations and their outcomes), 9. Customer & Market Insights (demographic analysis, behavioral patterns, changes over time), 10. Competitive Positioning & Opportunities, 11. Technical & Strategic Issues Identified, 12. Detailed Actionable Recommendations (specific, step-by-step strategies based on what has/hasn't worked historically). CRITICAL: Always include a dedicated comparison section that shows current vs previous period with specific numbers, percentages, and trend indicators (↑↓). For daily reports, compare today vs yesterday. For monthly reports, compare current month vs previous month. Show exact metrics like 'Revenue: $1,234 (↑15% vs previous period)', 'Orders: 45 (↓8% vs previous period)', etc. For each section: provide context, explain metrics significance, include industry benchmarks when relevant, compare to historical performance, track recommendation implementation success, suggest improvements based on historical data, and educate on best practices. Use professional marketing terminology and make recommendations specific and actionable. When historical data is available, always compare current performance to previous periods and explain what changes mean for the business."
+          style: "Create a comprehensive, detailed marketing report with HISTORICAL COMPARISON and IMPROVEMENT TRACKING. Be verbose and educational - even with limited data, provide thorough analysis and context. Structure: 1. Executive Summary (detailed overview with context and period-over-period changes), 2. Performance Overview (analyze all available metrics with explanations and historical comparison), 3. Historical Performance Analysis (compare current metrics to previous periods, identify trends, track improvement/decline), 4. Shopify E-commerce Analysis (detailed store performance, customer behavior, conversion insights with historical context), 5. Meta/Facebook Ads Analysis (campaign performance, targeting effectiveness, creative analysis with trend analysis), 6. Performance Trends Analysis (analyze patterns from detailed breakdown data and historical reports), 7. Recommendation Effectiveness Review (evaluate previous recommendations and their outcomes), 8. Customer & Market Insights (demographic analysis, behavioral patterns, changes over time), 9. Competitive Positioning & Opportunities, 10. Technical & Strategic Issues Identified, 11. Detailed Actionable Recommendations (specific, step-by-step strategies based on what has/hasn't worked historically). For each section: provide context, explain metrics significance, include industry benchmarks when relevant, compare to historical performance, track recommendation implementation success, suggest improvements based on historical data, and educate on best practices. Use professional marketing terminology and make recommendations specific and actionable. When historical data is available, always compare current performance to previous periods and explain what changes mean for the business."
         }
       }
 
@@ -1000,13 +899,13 @@ export default function BrandReportPage() {
       }
 
       const aiResult = await aiResponse.json()
-      // console.log('🔍 Full AI response:', aiResult)
+      console.log('🔍 Full AI response:', aiResult)
 
             // Handle different response formats from the backend API
       const analysis = aiResult.report || aiResult.analysis || aiResult.result || 
         (aiResult.message && aiResult.message !== "Successfully generated AI report" ? aiResult.message : null) || 
         (typeof aiResult === 'string' ? aiResult : null);
-      // console.log('🎯 Extracted analysis:', analysis);
+      console.log('🎯 Extracted analysis:', analysis);
 
       if (!analysis) {
         console.error('AI result structure:', aiResult);
@@ -1898,30 +1797,17 @@ export default function BrandReportPage() {
             <div class="report-footer">
               <div class="footer-left">
                 <div class="footer-agency-logo">
-                  ${(() => {
-                    // For shared brands, use the brand owner's agency info
-                    const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
-                    const isSharedBrand = selectedBrand?.shared_access
-                    const logoUrl = isSharedBrand ? selectedBrand.agency_info?.logo_url : agencySettings.agency_logo_url
-                    const agencyName = isSharedBrand ? selectedBrand.agency_info?.name : agencySettings.agency_name
-                    
-                    return logoUrl 
-                      ? `<img src="${logoUrl}" alt="Agency Logo" />`
-                      : `<span>${(agencyName || agencySettings.agency_name).slice(0, 2).toUpperCase()}</span>`
-                  })()}
+                  ${agencySettings.agency_logo_url 
+                    ? `<img src="${agencySettings.agency_logo_url}" alt="Agency Logo" />`
+                    : `<span>${agencySettings.agency_name.slice(0, 2).toUpperCase()}</span>`
+                  }
                 </div>
                 <div class="footer-agency-info">
                   <div class="footer-agency-name">
-                    ${(() => {
-                      // For shared brands, use the brand owner's agency info
-                      const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
-                      const isSharedBrand = selectedBrand?.shared_access
-                      const agencyName = isSharedBrand ? selectedBrand.agency_info?.name : agencySettings.agency_name
-                      
-                      return (agencyName && agencyName.trim() !== 'Brez Marketing Assistant') 
-                        ? agencyName 
-                        : "Marketing Intelligence"
-                    })()}
+                    ${agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' 
+                      ? agencySettings.agency_name 
+                      : "Marketing Intelligence"
+                    }
                   </div>
                   <div class="footer-agency-tagline">
                     Professional Marketing Analytics
@@ -2281,7 +2167,7 @@ export default function BrandReportPage() {
       return
     }
     
-    // console.log('🔄 Manual refresh triggered')
+    console.log('🔄 Manual refresh triggered')
     
     // Set the brand-specific last generation date
     if (selectedPeriod === "today") {
@@ -2307,14 +2193,14 @@ export default function BrandReportPage() {
 
   // Effect to load reports when brand or period changes
   useEffect(() => {
-    // console.log('🔄 useEffect triggered:', { selectedBrandId, selectedPeriod, dateRange })
+    console.log('🔄 useEffect triggered:', { selectedBrandId, selectedPeriod, dateRange })
     
     // Reset state when brand changes
     setHasMonthlyReportThisMonth(false)
     setHasDailyReportToday(false)
       
     if (selectedBrandId && dateRange.from && dateRange.to && user?.id && mounted) {
-      // console.log(`📊 Loading reports for brand: ${selectedBrandId}, period: ${selectedPeriod}`)
+      console.log(`📊 Loading reports for brand: ${selectedBrandId}, period: ${selectedPeriod}`)
       setIsLoadingReport(true)
       
       const fromDate = format(dateRange.from, 'yyyy-MM-dd')
@@ -2347,9 +2233,9 @@ export default function BrandReportPage() {
             const latest = reports.sort((a: DailyReport, b: DailyReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
             setSelectedReport(latest)
             
-            // console.log('✅ Loaded existing reports')
+            console.log('✅ Loaded existing reports')
           } else {
-            // console.log('ℹ️ No existing reports found')
+            console.log('ℹ️ No existing reports found')
             setSelectedReport(null)
           }
           
@@ -2362,14 +2248,14 @@ export default function BrandReportPage() {
           setIsLoadingReport(false)
         })
     } else {
-      // console.log('⏳ Waiting for brand selection or user authentication')
+      console.log('⏳ Waiting for brand selection or user authentication')
     }
   }, [selectedBrandId, selectedPeriod, dateRange.from, dateRange.to, user?.id, mounted])
 
   // Show loading state with enhanced progress display
   if (isLoadingPage) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -2417,7 +2303,7 @@ export default function BrandReportPage() {
   // Show no brand selected state - return directly without wrapper to match loading state
   if (!selectedBrandId) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -2469,9 +2355,8 @@ export default function BrandReportPage() {
   }
 
     return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col relative">
-      <GridOverlay />
-      <div className="flex-1 p-4 pb-6 relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
+      <div className="flex-1 p-4 pb-6">
         <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
@@ -2837,7 +2722,8 @@ export default function BrandReportPage() {
         </div>
       </div>
 
-      {/* Footer is handled by layout - no need for page-specific footer */}
+      {/* Footer */}
+      <Footer />
         
       {/* Secret Dev Panel Activator */}
       <div 
