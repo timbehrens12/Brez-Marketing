@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { addSecurityHeaders, sanitizeAIInput } from '@/lib/utils/validation'
 
+// Set maximum duration for this API route (90 seconds for AI processing)
+export const maxDuration = 90
+
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -145,9 +148,9 @@ Response should be 400-600 words with proper HTML formatting and inline styles.
           content: prompt
         }
       ],
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 4000
     })
     
     const report = chatCompletion.choices[0].message.content
