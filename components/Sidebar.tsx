@@ -50,10 +50,10 @@ const navItems: NavItem[] = [
     description: "Chat with AI assistant"
   },
   { 
-    name: "Critical Brands", 
-    href: "/critical-brands", 
+    name: "Brand Report", 
+    href: "/brand-report", 
     icon: FileBarChart,
-    description: "Monitor critical brand performance"
+    description: "Brand analytics"
   },
   { 
     name: "Ad Creative Studio", 
@@ -482,4 +482,3 @@ export function Sidebar({ className }: SidebarProps) {
     </TooltipProvider>
   )
 }
-
