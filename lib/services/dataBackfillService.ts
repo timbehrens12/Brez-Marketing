@@ -1,0 +1,364 @@
+import { createClient } from '@supabase/supabase-js'
+import { ShopifyBulkService } from './shopifyBulkService'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+)
+
+export class DataBackfillService {
+  /**
+   * Triggers automatic data backfill when a platform is first connected
+   * For Shopify: Uses bulk operations for full historical import + immediate mini-sync
+   */
+  static async triggerInitialBackfill(
+    brandId: string, 
+    platformType: 'meta' | 'shopify', 
+    accessToken: string,
+    connectionId?: string,
+    shop?: string
+  ) {
+    console.log(`[DataBackfill] Starting initial backfill for ${platformType} on brand ${brandId}`)
+    
+    try {
+      // Mark the connection as syncing
+      await supabaseAdmin
+        .from('platform_connections')
+        .update({ 
+          sync_status: 'in_progress',
+          last_synced_at: new Date().toISOString()
+        })
+        .eq('brand_id', brandId)
+        .eq('platform_type', platformType)
+
+      if (platformType === 'meta') {
+        await this.backfillMetaData(brandId, accessToken)
+        
+        // Mark sync as completed for Meta (synchronous)
+        await supabaseAdmin
+          .from('platform_connections')
+          .update({ 
+            sync_status: 'completed',
+            last_synced_at: new Date().toISOString()
+          })
+          .eq('brand_id', brandId)
+          .eq('platform_type', platformType)
+          
+      } else if (platformType === 'shopify' && connectionId && shop) {
+        // Use new bulk operations service for full historical import
+        await ShopifyBulkService.startFullHistoricalImport(brandId, shop, accessToken, connectionId)
+        
+        // Note: Sync status will be updated to 'bulk_importing' by the bulk service
+        // Final 'completed' status will be set when all bulk jobs finish
+        
+      } else if (platformType === 'shopify') {
+        // Fallback to old method if connection details missing
+        await this.backfillShopifyDataLegacy(brandId, accessToken)
+        
+        await supabaseAdmin
+          .from('platform_connections')
+          .update({ 
+            sync_status: 'completed',
+            last_synced_at: new Date().toISOString()
+          })
+          .eq('brand_id', brandId)
+          .eq('platform_type', platformType)
+      }
+
+      console.log(`[DataBackfill] Initiated backfill for ${platformType} on brand ${brandId}`)
+    } catch (error) {
+      console.error(`[DataBackfill] Error during ${platformType} backfill:`, error)
+      
+      // Mark sync as failed
+      await supabaseAdmin
+        .from('platform_connections')
+        .update({ 
+          sync_status: 'failed',
+          last_synced_at: new Date().toISOString()
+        })
+        .eq('brand_id', brandId)
+        .eq('platform_type', platformType)
+    }
+  }
+
+  /**
+   * Backfill Meta Ads data for the last 90 days
+   */
+  private static async backfillMetaData(brandId: string, accessToken: string) {
+    console.log(`[DataBackfill] Starting Meta data backfill for brand ${brandId}`)
+
+    try {
+      // Get account ID first
+      const accountResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}`)
+      const accountData = await accountResponse.json()
+      
+      if (!accountData.data || accountData.data.length === 0) {
+        console.log(`[DataBackfill] No ad accounts found for brand ${brandId}`)
+        return
+      }
+
+      const adAccountId = accountData.data[0].id
+      console.log(`[DataBackfill] Found ad account: ${adAccountId}`)
+
+      // Calculate date range (last 90 days)
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(endDate.getDate() - 90)
+      
+      const dateRange = {
+        since: startDate.toISOString().split('T')[0],
+        until: endDate.toISOString().split('T')[0]
+      }
+
+      // Fetch campaigns
+      await this.fetchMetaCampaigns(brandId, adAccountId, accessToken, dateRange)
+      
+      // Fetch daily insights
+      await this.fetchMetaDailyInsights(brandId, adAccountId, accessToken, dateRange)
+
+    } catch (error) {
+      console.error(`[DataBackfill] Meta backfill error:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Fetch Meta campaigns and store in database
+   */
+  private static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?` + 
+      `fields=id,name,status,objective,daily_budget,lifetime_budget,created_time,updated_time&` +
+      `access_token=${accessToken}&limit=100`
+
+    const response = await fetch(campaignsUrl)
+    const data = await response.json()
+
+    if (data.data && data.data.length > 0) {
+      console.log(`[DataBackfill] Found ${data.data.length} campaigns to sync`)
+
+      for (const campaign of data.data) {
+        // Get campaign insights
+        const insightsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/insights?` +
+          `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,cpp&` +
+          `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
+          `access_token=${accessToken}`
+
+        const insightsResponse = await fetch(insightsUrl)
+        const insightsData = await insightsResponse.json()
+
+        const insights = insightsData.data?.[0] || {}
+        
+        // Extract metrics
+        const spend = parseFloat(insights.spend || '0')
+        const impressions = parseInt(insights.impressions || '0')
+        const clicks = parseInt(insights.clicks || '0')
+        const ctr = parseFloat(insights.ctr || '0')
+        const cpm = parseFloat(insights.cpm || '0')
+        
+        // Extract conversions
+        const actions = insights.actions || []
+        const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
+        const revenue = insights.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
+
+        // Store campaign data
+        await supabaseAdmin
+          .from('meta_campaigns')
+          .upsert({
+            campaign_id: campaign.id,
+            brand_id: brandId,
+            name: campaign.name,
+            status: campaign.status,
+            objective: campaign.objective,
+            daily_budget: campaign.daily_budget ? parseFloat(campaign.daily_budget) / 100 : null,
+            lifetime_budget: campaign.lifetime_budget ? parseFloat(campaign.lifetime_budget) / 100 : null,
+            spent: spend,
+            impressions: impressions,
+            clicks: clicks,
+            purchases: parseInt(purchases),
+            revenue: parseFloat(revenue),
+            ctr: ctr,
+            cpm: cpm,
+            created_time: campaign.created_time,
+            updated_time: campaign.updated_time,
+            last_synced_at: new Date().toISOString()
+          }, {
+            onConflict: 'campaign_id,brand_id'
+          })
+      }
+
+      console.log(`[DataBackfill] Synced ${data.data.length} campaigns for brand ${brandId}`)
+    }
+  }
+
+  /**
+   * Fetch Meta daily insights for trend analysis
+   */
+  private static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
+      `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start&` +
+      `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
+      `time_increment=1&` +
+      `access_token=${accessToken}&limit=100`
+
+    const response = await fetch(insightsUrl)
+    const data = await response.json()
+
+    if (data.data && data.data.length > 0) {
+      console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync`)
+
+      for (const insight of data.data) {
+        const actions = insight.actions || []
+        const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
+        const revenue = insight.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
+
+        await supabaseAdmin
+          .from('meta_campaign_daily_stats')
+          .upsert({
+            brand_id: brandId,
+            date: insight.date_start,
+            spend: parseFloat(insight.spend || '0'),
+            impressions: parseInt(insight.impressions || '0'),
+            clicks: parseInt(insight.clicks || '0'),
+            purchases: parseInt(purchases),
+            revenue: parseFloat(revenue),
+            ctr: parseFloat(insight.ctr || '0'),
+            cpm: parseFloat(insight.cpm || '0'),
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'brand_id,date'
+          })
+      }
+
+      console.log(`[DataBackfill] Synced ${data.data.length} daily insights for brand ${brandId}`)
+    }
+  }
+
+  /**
+   * Legacy Shopify backfill method (90 days) - used as fallback
+   */
+  private static async backfillShopifyDataLegacy(brandId: string, accessToken: string) {
+    console.log(`[DataBackfill] Starting Shopify data backfill for brand ${brandId}`)
+
+    try {
+      // Get shop domain from connection
+      const { data: connection } = await supabaseAdmin
+        .from('platform_connections')
+        .select('shop, metadata')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'shopify')
+        .single()
+
+      if (!connection?.shop) {
+        console.error(`[DataBackfill] No shop found for brand ${brandId}`)
+        return
+      }
+
+      const shopDomain = connection.shop
+      
+      // Calculate date range (last 90 days)
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(endDate.getDate() - 90)
+
+      // Fetch orders
+      await this.fetchShopifyOrders(brandId, shopDomain, accessToken, startDate, endDate)
+      
+      // Fetch products  
+      await this.fetchShopifyProducts(brandId, shopDomain, accessToken)
+
+    } catch (error) {
+      console.error(`[DataBackfill] Shopify backfill error:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Fetch Shopify orders and store in database
+   */
+  private static async fetchShopifyOrders(brandId: string, shopDomain: string, accessToken: string, startDate: Date, endDate: Date) {
+    const ordersUrl = `https://${shopDomain}/admin/api/2023-10/orders.json?` +
+      `status=any&created_at_min=${startDate.toISOString()}&created_at_max=${endDate.toISOString()}&limit=250`
+
+    const response = await fetch(ordersUrl, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken
+      }
+    })
+
+    const data = await response.json()
+
+    if (data.orders && data.orders.length > 0) {
+      console.log(`[DataBackfill] Found ${data.orders.length} orders to sync`)
+
+      for (const order of data.orders) {
+        await supabaseAdmin
+          .from('shopify_orders')
+          .upsert({
+            order_id: order.id.toString(),
+            brand_id: brandId,
+            order_number: order.order_number,
+            total_price: parseFloat(order.total_price || '0'),
+            subtotal_price: parseFloat(order.subtotal_price || '0'),
+            total_tax: parseFloat(order.total_tax || '0'),
+            currency: order.currency,
+            financial_status: order.financial_status,
+            fulfillment_status: order.fulfillment_status,
+            customer_email: order.customer?.email,
+            customer_first_name: order.customer?.first_name,
+            customer_last_name: order.customer?.last_name,
+            line_items_count: order.line_items?.length || 0,
+            created_at: order.created_at,
+            updated_at: order.updated_at,
+            processed_at: order.processed_at,
+            last_synced_at: new Date().toISOString()
+          }, {
+            onConflict: 'order_id,brand_id'
+          })
+      }
+
+      console.log(`[DataBackfill] Synced ${data.orders.length} orders for brand ${brandId}`)
+    }
+  }
+
+  /**
+   * Fetch Shopify products and store in database
+   */
+  private static async fetchShopifyProducts(brandId: string, shopDomain: string, accessToken: string) {
+    const productsUrl = `https://${shopDomain}/admin/api/2023-10/products.json?limit=250`
+
+    const response = await fetch(productsUrl, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken
+      }
+    })
+
+    const data = await response.json()
+
+    if (data.products && data.products.length > 0) {
+      console.log(`[DataBackfill] Found ${data.products.length} products to sync`)
+
+      for (const product of data.products) {
+        await supabaseAdmin
+          .from('shopify_products')
+          .upsert({
+            product_id: product.id.toString(),
+            brand_id: brandId,
+            title: product.title,
+            handle: product.handle,
+            product_type: product.product_type,
+            vendor: product.vendor,
+            status: product.status,
+            created_at: product.created_at,
+            updated_at: product.updated_at,
+            published_at: product.published_at,
+            last_synced_at: new Date().toISOString()
+          }, {
+            onConflict: 'product_id,brand_id'
+          })
+      }
+
+      console.log(`[DataBackfill] Synced ${data.products.length} products for brand ${brandId}`)
+    }
+  }
+}

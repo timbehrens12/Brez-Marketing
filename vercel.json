@@ -1,0 +1,10 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/shopify-bulk",
+      "schedule": "*/3 * * * *"
+    }
+  ],
+  "redirects": [],
+  "rewrites": []
+}
