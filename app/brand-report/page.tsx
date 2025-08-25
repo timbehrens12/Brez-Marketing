@@ -2397,44 +2397,33 @@ export default function BrandReportPage() {
     )
   }
 
-  // If we have a selected report, render it directly without any container
-  if (selectedReport) {
     return (
-      <div 
-        dangerouslySetInnerHTML={{ 
-          __html: selectedReport.content
-        }}
-      />
-    )
-  }
-
-  return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
       <div className="flex-1 p-4 pb-6">
         <div className="max-w-[1400px] mx-auto space-y-6">
-          {/* Enhanced Header */}
-          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                              flex items-center justify-center border border-white/10">
-                  <BarChart4 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    {mounted ? `${greeting}, ${userFirstName}! 👋` : "Loading..."}
-                  </h1>
-                  <p className="text-lg text-gray-300">
-                    Brand Performance Reports
-                  </p>
-                </div>
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                            flex items-center justify-center border border-white/10">
+                <BarChart4 className="w-6 h-6 text-white" />
               </div>
-              
-              <div className="flex items-center gap-6">
-                {/* Modern Report Availability Cards */}
-                {selectedBrandId && brands.find(b => b.id === selectedBrandId) && (
-                  <div className="flex gap-3">
-                    {(() => {
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  {mounted ? `${greeting}, ${userFirstName}! 👋` : "Loading..."}
+                </h1>
+                <p className="text-lg text-gray-300">
+                  Brand Performance Reports
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              {/* Modern Report Availability Cards */}
+              {selectedBrandId && brands.find(b => b.id === selectedBrandId) && (
+                <div className="flex gap-3">
+                  {(() => {
                     const todayAvailability = getRefreshAvailability("today")
                     const monthlyAvailability = getRefreshAvailability("last-month")
                     
@@ -2706,9 +2695,9 @@ export default function BrandReportPage() {
           </div>
         </div>
 
-        {/* Main Report Content */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
-            {isLoadingReport ? (
+                  {/* Main Report Content */}
+          {isLoadingReport ? (
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
               <div className="flex flex-col items-center justify-center p-24 space-y-6">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
@@ -2730,16 +2719,24 @@ export default function BrandReportPage() {
                   </div>
                 </div>
               </div>
-            ) : (
-            <div className="flex flex-col items-center justify-center p-24 space-y-8">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
-                  <BarChart4 className="h-12 w-12 text-gray-400" />
+            </div>
+          ) : selectedReport ? (
+            <div 
+              dangerouslySetInnerHTML={{ 
+                __html: selectedReport.content
+              }}
+            />
+          ) : (
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+              <div className="flex flex-col items-center justify-center p-24 space-y-8">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
+                    <BarChart4 className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-white" />
+                  </div>
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-white" />
-                </div>
-              </div>
               <div className="text-center space-y-4">
                 <h3 className="text-2xl font-bold text-white">
                   {!selectedBrandId 
@@ -2773,7 +2770,8 @@ export default function BrandReportPage() {
                 )}
               </div>
             </div>
-          </div>
+          )}
+        </div>
         </div>
       </div>
 

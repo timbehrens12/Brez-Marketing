@@ -73,7 +73,7 @@ ${JSON.stringify(platforms.shopify, null, 2)}
 **Meta Advertising Data**:
 ${JSON.stringify(platforms.meta, null, 2)}
 
-Generate a professional business report with proper HTML structure and inline styles for a dark theme. Use the following format:
+Generate a professional business report with the following sections:
 
 1. EXECUTIVE SUMMARY
 Brief overview of overall performance, highlighting key achievements and areas of concern.
@@ -82,9 +82,9 @@ Brief overview of overall performance, highlighting key achievements and areas o
 Summary of key metrics with specific numbers and percentages from the data.
 
 3. CHANNEL ANALYSIS
-3.1 Shopify Performance - Analyze revenue, orders, customer behavior
-3.2 Meta/Facebook Ads Performance - Analyze ad spend, CTR, conversions
-3.3 Audience Demographics Analysis - Age, gender, device preferences
+- Shopify Performance: Analyze revenue, orders, customer behavior
+- Meta/Facebook Ads Performance: Analyze ad spend, CTR, conversions
+- Audience Demographics Analysis: Age, gender, device preferences
 
 4. STRENGTHS & OPPORTUNITIES
 What's working well and areas for improvement.
@@ -96,12 +96,14 @@ Performance issues and areas of concern with specific data.
 4-5 specific, actionable recommendations for improvement.
 
 **FORMATTING REQUIREMENTS:**
-- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>
-- Apply inline styles for dark theme: headers in #e5e7eb, text in #d1d5db
-- Use <strong> tags for emphasis on key metrics
+- Use <h2> for main sections (e.g., <h2>1. EXECUTIVE SUMMARY</h2>)
+- Use <h3> for subsections
+- Use <p> for paragraphs
+- Use <ul> and <li> for bullet points
+- Use <strong> for emphasis on key metrics
 - Include specific numbers from the actual data provided
 - Make content comprehensive but well-organized (400-600 words)
-- Use proper spacing and structure
+- Do NOT include any styling, CSS, or wrapper elements
     `
     
     console.log('Sending prompt to OpenAI...')
@@ -111,7 +113,7 @@ Performance issues and areas of concern with specific data.
       messages: [
         {
           role: 'system',
-          content: 'You are a senior business analyst specializing in e-commerce and digital marketing with expertise in audience demographics and targeting optimization. Generate properly structured HTML report content with inline styles and color-coded sections. Never include main headers or titles - only generate the content sections that will go inside a pre-styled wrapper. Always use inline CSS styles for consistent formatting. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided. When demographics data is available, provide detailed audience analysis including age groups, gender performance, and device preferences with optimization recommendations based on engagement and conversion patterns.'
+          content: 'You are a senior business analyst specializing in e-commerce and digital marketing. Generate ONLY the content sections of the report using simple HTML tags like <h2>, <h3>, <p>, <ul>, <li>, and <strong>. Do NOT include any <style> tags, CSS, headers, footers, or wrapper divs. Do NOT create a complete HTML document. Just generate the raw content sections that will be inserted into a pre-styled template. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided.'
         },
         {
           role: 'user',
