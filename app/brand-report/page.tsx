@@ -2733,13 +2733,10 @@ export default function BrandReportPage() {
                   className="p-8"
                   dangerouslySetInnerHTML={{ 
                     __html: selectedReport.content
-                      // Only remove asterisks and markdown formatting - no styling changes
+                      // Clean up any remaining markdown formatting
                       .replace(/\*\*/g, '')
                       .replace(/\*/g, '')
                       .replace(/#{1,6}\s*/g, '')
-                      // Basic line break conversion only
-                      .replace(/\n\n/g, '<br><br>')
-                      .replace(/\n/g, '<br>')
                   }}
                 />
               </div>
