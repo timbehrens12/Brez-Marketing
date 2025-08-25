@@ -2696,8 +2696,8 @@ export default function BrandReportPage() {
         </div>
 
         {/* Main Report Content */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
-          {isLoadingReport ? (
+        {isLoadingReport ? (
+          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
             <div className="flex flex-col items-center justify-center p-24 space-y-6">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
@@ -2719,19 +2719,21 @@ export default function BrandReportPage() {
                 </div>
               </div>
             </div>
-                  ) : selectedReport ? (
+          </div>
+        ) : selectedReport ? (
           <div 
             dangerouslySetInnerHTML={{ 
               __html: selectedReport.content
             }}
           />
         ) : (
+          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
                   <BarChart4 className="h-12 w-12 text-gray-400" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-full flex items-center justify-center">
                   <Zap className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -2757,7 +2759,7 @@ export default function BrandReportPage() {
                       <span>AI-Powered Analysis</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-white/60 rounded-full"></div>
                       <span>Multi-Platform Data</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -2768,11 +2770,10 @@ export default function BrandReportPage() {
                 )}
               </div>
             </div>
+          </div>
           )}
         </div>
-        </div>
       </div>
-
 
         
       {/* Secret Dev Panel Activator */}
