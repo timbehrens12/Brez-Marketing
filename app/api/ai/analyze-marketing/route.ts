@@ -73,35 +73,65 @@ ${JSON.stringify(platforms.shopify, null, 2)}
 **Meta Advertising Data**:
 ${JSON.stringify(platforms.meta, null, 2)}
 
-Generate a professional business report with proper HTML structure and inline styles for a dark theme. Use the following format:
+**CRITICAL FORMATTING REQUIREMENTS:**
+- DO NOT include any main headers, titles, or "MARKETING INSIGHTS" text
+- DO NOT include "OFFICIAL DOCUMENT" or similar headers
+- Generate ONLY the content sections that will go inside a pre-styled wrapper
+- Start directly with the first content section
+- Use proper HTML structure with clear sections and headings
 
-1. EXECUTIVE SUMMARY
-Brief overview of overall performance, highlighting key achievements and areas of concern.
+Generate professional business report content with proper HTML structure including:
 
-2. PERFORMANCE OVERVIEW  
-Summary of key metrics with specific numbers and percentages from the data.
+<div class="executive-summary">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">1. EXECUTIVE SUMMARY</h2>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Provide a brief overview of overall performance, highlighting key achievements and areas of concern.</p>
+</div>
 
-3. CHANNEL ANALYSIS
-3.1 Shopify Performance - Analyze revenue, orders, customer behavior
-3.2 Meta/Facebook Ads Performance - Analyze ad spend, CTR, conversions
-3.3 Audience Demographics Analysis - Age, gender, device preferences
+<div class="performance-overview">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">2. PERFORMANCE OVERVIEW</h2>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Summary of key metrics with specific numbers and percentages.</p>
+</div>
 
-4. STRENGTHS & OPPORTUNITIES
-What's working well and areas for improvement.
+<div class="channel-analysis">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">3. CHANNEL ANALYSIS</h2>
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.1 Shopify Performance</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze revenue metrics, order metrics, and customer behavior insights with specific data.</p>
 
-5. WHAT'S NOT WORKING
-Performance issues and areas of concern with specific data.
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.2 Meta/Facebook Ads Performance</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
 
-6. ACTIONABLE RECOMMENDATIONS
-4-5 specific, actionable recommendations for improvement.
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze audience composition by age, gender, and device preferences. Identify top-performing demographic segments and optimization opportunities based on engagement and conversion data.</p>
+</div>
 
-**FORMATTING REQUIREMENTS:**
-- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>
-- Apply inline styles for dark theme: headers in #e5e7eb, text in #d1d5db
-- Use <strong> tags for emphasis on key metrics
-- Include specific numbers from the actual data provided
-- Make content comprehensive but well-organized (400-600 words)
-- Use proper spacing and structure
+<div class="strengths-opportunities">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">4. STRENGTHS & OPPORTUNITIES</h2>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Identify what's working well and areas for improvement.</p>
+</div>
+
+<div class="issues">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">5. WHAT'S NOT WORKING</h2>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Identify performance issues and areas of concern with specific data points.</p>
+</div>
+
+<div class="recommendations">
+<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">6. ACTIONABLE RECOMMENDATIONS</h2>
+<ul style="margin: 0 0 1.5rem 2rem; line-height: 1.7; list-style: disc;">
+<li style="margin-bottom: 0.75rem; color: #d1d5db;">Provide 4-5 specific, actionable recommendations</li>
+</ul>
+</div>
+
+**CRITICAL FORMATTING RULES:**
+- Use the exact styled structure shown above with inline styles
+- Use <strong style="color: #f9fafb; font-weight: 700;"> for emphasis on key numbers/metrics
+- Use professional dark theme: light gray (#e5e7eb) for headers, lighter gray (#d1d5db) for text
+- Include specific numbers and percentages from the actual data provided
+- Use <ul> and <li> with proper styling for bullet point lists
+- Keep content structured and readable, NOT one big paragraph
+- Make the report comprehensive but well-organized
+- Use proper spacing with margin styles as shown
+
+Response should be 400-600 words with proper HTML formatting and inline styles.
     `
     
     console.log('Sending prompt to OpenAI...')
@@ -371,20 +401,20 @@ Performance issues and areas of concern with specific data.
               <!-- Hamburger-style Stacked Info -->
               <div class="info-stack">
                 <div class="info-item">
-                  <span class="info-label">Period</span>
+                  <span class="info-label">PERIOD</span>
                   <span class="info-value">${date_range.period_name}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Generated</span>
+                  <span class="info-label">GENERATED</span>
                   <span class="info-value">${format(new Date(), 'MMM d, yyyy')}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Report ID</span>
+                  <span class="info-label">REPORT ID</span>
                   <span class="info-value monospace">${reportId}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Generated by</span>
-                  <span class="info-value">${user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'Unknown User'}</span>
+                  <span class="info-label">GENERATED BY</span>
+                  <span class="info-value">${user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'Tim Behrens'}</span>
                 </div>
               </div>
             </div>
@@ -398,7 +428,7 @@ Performance issues and areas of concern with specific data.
                 }
               </div>
               <div class="brand-info">
-                <div class="brand-label">Brand</div>
+                <div class="brand-label">BRAND</div>
                 <div class="brand-name">${brandName}</div>
               </div>
             </div>
@@ -418,7 +448,7 @@ Performance issues and areas of concern with specific data.
                 <span>BM</span>
               </div>
               <div class="footer-agency-info">
-                <div class="footer-agency-name">Marketing Intelligence</div>
+                <div class="footer-agency-name">Brez Marketing</div>
                 <div class="footer-agency-tagline">Professional Marketing Analytics</div>
               </div>
             </div>

@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
-
+import { Footer } from "@/components/Footer"
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
 
 interface PlatformConnection {
@@ -2696,8 +2696,8 @@ export default function BrandReportPage() {
         </div>
 
         {/* Main Report Content */}
-        {isLoadingReport ? (
-          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+          {isLoadingReport ? (
             <div className="flex flex-col items-center justify-center p-24 space-y-6">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
@@ -2719,39 +2719,28 @@ export default function BrandReportPage() {
                 </div>
               </div>
             </div>
-          </div>
-        ) : selectedReport ? (
-          (() => {
-            // Parse the report content and remove the duplicate header
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(selectedReport.content, 'text/html');
-            
-            // Find and REMOVE the report header to prevent duplication
-            const reportHeader = htmlDoc.querySelector('.report-header');
-            if (reportHeader) {
-              reportHeader.remove();
-            }
-            
-            // Get the modified content
-            const reportWrapper = htmlDoc.querySelector('.report-wrapper');
-            const modifiedContent = reportWrapper ? reportWrapper.outerHTML : selectedReport.content;
-            
-            return (
-              <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: modifiedContent
-                }}
-              />
-            );
-          })()
-        ) : (
-          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+          ) : selectedReport ? (
+            <div className="p-8 flex justify-center">
+              <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
+                <div 
+                  className="p-8"
+                  dangerouslySetInnerHTML={{ 
+                    __html: selectedReport.content
+                      // Clean up any remaining markdown formatting
+                      .replace(/\*\*/g, '')
+                      .replace(/\*/g, '')
+                      .replace(/#{1,6}\s*/g, '')
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
                   <BarChart4 className="h-12 w-12 text-gray-400" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-full flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <Zap className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -2777,7 +2766,7 @@ export default function BrandReportPage() {
                       <span>AI-Powered Analysis</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-white/60 rounded-full"></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                       <span>Multi-Platform Data</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -2788,11 +2777,13 @@ export default function BrandReportPage() {
                 )}
               </div>
             </div>
-          </div>
           )}
+        </div>
         </div>
       </div>
 
+      {/* Footer */}
+      <Footer />
         
       {/* Secret Dev Panel Activator */}
       <div 
