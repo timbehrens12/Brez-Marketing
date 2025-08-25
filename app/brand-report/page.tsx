@@ -2696,6 +2696,13 @@ export default function BrandReportPage() {
         </div>
 
         {/* Main Report Content */}
+        {selectedReport ? (
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: selectedReport.content
+            }}
+          />
+        ) : (
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
           {isLoadingReport ? (
             <div className="flex flex-col items-center justify-center p-24 space-y-6">
@@ -2719,13 +2726,7 @@ export default function BrandReportPage() {
                 </div>
               </div>
             </div>
-                  ) : selectedReport ? (
-          <div 
-            dangerouslySetInnerHTML={{ 
-              __html: selectedReport.content
-            }}
-          />
-        ) : (
+          ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
@@ -2770,7 +2771,7 @@ export default function BrandReportPage() {
             </div>
           )}
         </div>
-        </div>
+        )}
       </div>
 
       {/* Footer */}
