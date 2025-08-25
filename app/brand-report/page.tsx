@@ -1020,11 +1020,13 @@ export default function BrandReportPage() {
           <div class="hourly-timeline">
         `
         
-        const maxRevenue = Math.max(...(data.shopify?.map((d: any) => d.total_revenue || 0) || [1]))
+        const shopifyData = Array.isArray(data.shopify) ? data.shopify : []
+        const maxRevenue = Math.max(...(shopifyData.map((d: any) => d.total_revenue || 0).concat([1])))
         
         hours.forEach(hour => {
-          const hourData = data.shopify?.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
-          const adData = data.meta?.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
+          const hourData = shopifyData.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
+          const metaData = Array.isArray(data.meta) ? data.meta : []
+          const adData = metaData.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
           
           const revenue = hourData.total_revenue || 0
           const adSpend = adData.spend || 0
