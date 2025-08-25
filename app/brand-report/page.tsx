@@ -2731,7 +2731,15 @@ export default function BrandReportPage() {
               <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
                 <div 
                   className="p-8"
-                  dangerouslySetInnerHTML={{ __html: selectedReport.content }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: selectedReport.content
+                      .replace(/\n\n/g, '</p><p class="mb-4">')
+                      .replace(/\n/g, '<br>')
+                      .replace(/^/, '<p class="mb-4">')
+                      .replace(/$/, '</p>')
+                      .replace(/(<p class="mb-4">)(\d+\.\s*[A-Z\s&]+)(<\/p>)/g, '<h3 class="text-lg font-bold mb-3 text-white">$2</h3>')
+                      .replace(/(<p class="mb-4">)(3\.\d+\s*[A-Za-z\/\s]+)(<\/p>)/g, '<h4 class="text-md font-semibold mb-2 text-gray-300">$2</h4>')
+                  }}
                 />
               </div>
             </div>
