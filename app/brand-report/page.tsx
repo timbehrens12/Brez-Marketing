@@ -936,15 +936,8 @@ export default function BrandReportPage() {
             </div>
           `
         } else if (detailedData.type === 'hourly') {
-          // Daily hourly timeline
-          return `
-            <div class="performance-chart-section">
-              <h3>Hourly Performance Timeline - ${format(dateRange.from!, 'MMMM d, yyyy')}</h3>
-              <div class="hourly-chart">
-                ${generateHourlyTimelineChart(detailedData)}
-              </div>
-            </div>
-          `
+          // Skip hourly timeline for now - causes issues
+          return ''
         }
         return ''
       }

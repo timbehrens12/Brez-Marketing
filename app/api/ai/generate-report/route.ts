@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are a professional marketing analyst. Generate comprehensive marketing performance reports with detailed sections: EXECUTIVE SUMMARY, PERFORMANCE OVERVIEW, CHANNEL ANALYSIS, STRENGTHS & OPPORTUNITIES, WHAT\'S NOT WORKING, and ACTIONABLE RECOMMENDATIONS.'
+          content: 'You are a professional marketing analyst. Generate a clean, structured marketing performance report in PLAIN TEXT format (no markdown, no hashtags, no special formatting). Use this EXACT structure:\n\n1. EXECUTIVE SUMMARY\n[Content]\n\n2. PERFORMANCE OVERVIEW\n[Content]\n\n3. CHANNEL ANALYSIS\n3.1 Shopify Performance\n[Content]\n3.2 Meta/Facebook Ads Performance\n[Content]\n\n4. STRENGTHS & OPPORTUNITIES\n[Content]\n\n5. WHAT\'S NOT WORKING\n[Content]\n\n6. ACTIONABLE RECOMMENDATIONS\n[Numbered list of recommendations]\n\nUse simple text formatting only. No markdown syntax, no hashtags, no special characters for formatting.'
         },
         {
           role: 'user',
