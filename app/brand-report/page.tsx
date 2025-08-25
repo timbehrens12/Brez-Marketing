@@ -885,13 +885,19 @@ export default function BrandReportPage() {
         }
       }
 
-      // Send data to AI for analysis
+      // Send data to AI for analysis in the expected format
+      const requestBody = {
+        enrichedData: dataForAi,
+        period: selectedPeriod,
+        brandId: selectedBrandId
+      }
+      
       const aiResponse = await fetch('/api/ai/generate-report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataForAi)
+        body: JSON.stringify(requestBody)
       })
 
       if (!aiResponse.ok) {
