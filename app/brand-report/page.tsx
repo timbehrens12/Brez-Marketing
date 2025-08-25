@@ -885,20 +885,13 @@ export default function BrandReportPage() {
         }
       }
 
-      // Send data to AI for analysis in the expected format
-      const requestBody = {
-        enrichedData: dataForAi,
-        period: selectedPeriod,
-        brandId: selectedBrandId,
-        customPrompt: `Generate a comprehensive marketing performance report using the provided data: ${JSON.stringify(dataForAi)}`
-      }
-      
-      const aiResponse = await fetch('/api/ai/generate-report', {
+      // Send data to AI for analysis
+      const aiResponse = await fetch('/api/ai/analyze-marketing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(dataForAi)
       })
 
       if (!aiResponse.ok) {
@@ -2727,15 +2720,20 @@ export default function BrandReportPage() {
               </div>
             </div>
           ) : selectedReport ? (
-            <div 
-              dangerouslySetInnerHTML={{ 
-                __html: selectedReport.content
-                  // Clean up any remaining markdown formatting
-                  .replace(/\*\*/g, '')
-                  .replace(/\*/g, '')
-                  .replace(/#{1,6}\s*/g, '')
-              }}
-            />
+            <div className="p-8 flex justify-center">
+              <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
+                <div 
+                  className="p-8"
+                  dangerouslySetInnerHTML={{ 
+                    __html: selectedReport.content
+                      // Clean up any remaining markdown formatting
+                      .replace(/\*\*/g, '')
+                      .replace(/\*/g, '')
+                      .replace(/#{1,6}\s*/g, '')
+                  }}
+                />
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
