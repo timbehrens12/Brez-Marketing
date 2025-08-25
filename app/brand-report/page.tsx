@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
-import { Footer } from "@/components/Footer"
+
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
 
 interface PlatformConnection {
@@ -2695,48 +2695,46 @@ export default function BrandReportPage() {
           </div>
         </div>
 
-                  {/* Main Report Content */}
+        {/* Main Report Content */}
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
           {isLoadingReport ? (
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
-              <div className="flex flex-col items-center justify-center p-24 space-y-6">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
-                  <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-                    <BarChart4 className="w-8 h-8 text-white" />
-                  </div>
+            <div className="flex flex-col items-center justify-center p-24 space-y-6">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                  <BarChart4 className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-white text-center space-y-3">
-                  <h3 className="text-xl font-bold">
-                    {selectedReport ? "Refreshing your snapshot" : "Generating your marketing snapshot"}
-                  </h3>
-                  <p className="text-gray-400 max-w-md">
-                    {selectedReport ? "Loading latest performance data..." : "Analyzing your marketing data across all platforms..."}
-                  </p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                    <span>This may take a moment</span>
-                  </div>
+              </div>
+              <div className="text-white text-center space-y-3">
+                <h3 className="text-xl font-bold">
+                  {selectedReport ? "Refreshing your snapshot" : "Generating your marketing snapshot"}
+                </h3>
+                <p className="text-gray-400 max-w-md">
+                  {selectedReport ? "Loading latest performance data..." : "Analyzing your marketing data across all platforms..."}
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                  <span>This may take a moment</span>
                 </div>
               </div>
             </div>
-          ) : selectedReport ? (
-            <div 
-              dangerouslySetInnerHTML={{ 
-                __html: selectedReport.content
-              }}
-            />
-          ) : (
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
-              <div className="flex flex-col items-center justify-center p-24 space-y-8">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
-                    <BarChart4 className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-white" />
-                  </div>
+                  ) : selectedReport ? (
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: selectedReport.content
+            }}
+          />
+        ) : (
+            <div className="flex flex-col items-center justify-center p-24 space-y-8">
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
+                  <BarChart4 className="h-12 w-12 text-gray-400" />
                 </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-white" />
+                </div>
+              </div>
               <div className="text-center space-y-4">
                 <h3 className="text-2xl font-bold text-white">
                   {!selectedBrandId 
@@ -2775,8 +2773,7 @@ export default function BrandReportPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <Footer />
+
         
       {/* Secret Dev Panel Activator */}
       <div 
