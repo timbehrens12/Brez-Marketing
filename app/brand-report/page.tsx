@@ -2409,31 +2409,31 @@ export default function BrandReportPage() {
     }
 
     return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
-      <div className="flex-1 p-4 pb-6">
-        <div className="max-w-[1400px] mx-auto space-y-6">
-        {/* Enhanced Header */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                            flex items-center justify-center border border-white/10">
-                <BarChart4 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">
-                  {mounted ? `${greeting}, ${userFirstName}! 👋` : "Loading..."}
-                </h1>
-                <p className="text-lg text-gray-300">
-                  Brand Performance Reports
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              {/* Modern Report Availability Cards */}
-              {selectedBrandId && brands.find(b => b.id === selectedBrandId) && (
-                <div className="flex gap-3">
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
+        <div className="flex-1 p-4 pb-6">
+          <div className="max-w-[1400px] mx-auto space-y-6">
+            {/* Enhanced Header */}
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                                flex items-center justify-center border border-white/10">
+                    <BarChart4 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-white">
+                      {mounted ? `${greeting}, ${userFirstName}! 👋` : "Loading..."}
+                    </h1>
+                    <p className="text-lg text-gray-300">
+                      Brand Performance Reports
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  {/* Modern Report Availability Cards */}
+                  {selectedBrandId && brands.find(b => b.id === selectedBrandId) && (
+                    <div className="flex gap-3">
                   {(() => {
                     const todayAvailability = getRefreshAvailability("today")
                     const monthlyAvailability = getRefreshAvailability("last-month")
