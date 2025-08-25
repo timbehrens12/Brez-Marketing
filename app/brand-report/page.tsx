@@ -889,7 +889,8 @@ export default function BrandReportPage() {
       const requestBody = {
         enrichedData: dataForAi,
         period: selectedPeriod,
-        brandId: selectedBrandId
+        brandId: selectedBrandId,
+        customPrompt: `Generate a comprehensive marketing performance report using the provided data: ${JSON.stringify(dataForAi)}`
       }
       
       const aiResponse = await fetch('/api/ai/generate-report', {
