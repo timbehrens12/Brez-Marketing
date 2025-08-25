@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
 
+// Set maximum duration for this API route (90 seconds for AI processing)
+export const maxDuration = 90
+
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -141,16 +144,16 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are a business analyst providing insights based on ecommerce and marketing data'
+          content: 'You are a professional marketing analyst. Generate comprehensive marketing performance reports with detailed sections: EXECUTIVE SUMMARY, PERFORMANCE OVERVIEW, CHANNEL ANALYSIS, STRENGTHS & OPPORTUNITIES, WHAT\'S NOT WORKING, and ACTIONABLE RECOMMENDATIONS.'
         },
         {
           role: 'user',
           content: body.customPrompt
         }
       ],
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 4000
     })
     
     // Extract the generated text
