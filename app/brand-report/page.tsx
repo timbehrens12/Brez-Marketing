@@ -1863,7 +1863,55 @@ export default function BrandReportPage() {
     }
   }
 
+  // Reset usage function - clears all reports and resets rate limiting
+  const handleResetUsage = async () => {
+    if (!selectedBrandId || !user?.id) {
+      toast({
+        title: "Reset Error",
+        description: "Missing brand or user information",
+        variant: "destructive",
+      })
+      return
+    }
 
+    try {
+      setIsLoadingReport(true)
+      
+      // Clear all reports for this brand
+      const clearResponse = await fetch(`/api/brand-reports/clear?brandId=${selectedBrandId}&userId=${user.id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!clearResponse.ok) {
+        throw new Error('Failed to clear reports')
+      }
+      
+      // Reset rate limiting
+      localStorage.removeItem(`lastManualGeneration_${selectedBrandId}`)
+      setLastManualGeneration(null)
+      
+      // Clear current state
+      setDailyReports([])
+      setSelectedReport(null)
+      setHasDailyReportToday(false)
+      setHasMonthlyReportThisMonth(false)
+      
+      toast({
+        title: "Usage Reset",
+        description: "All reports cleared and usage reset successfully",
+        variant: "default",
+      })
+    } catch (error) {
+      console.error('Error resetting usage:', error)
+      toast({
+        title: "Reset Error",
+        description: "Failed to reset usage. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingReport(false)
+    }
+  }
 
   // Export the report to PDF
   const exportToPdf = async () => {
@@ -2626,6 +2674,17 @@ export default function BrandReportPage() {
                   </Button>
                 )
               })()}
+
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="bg-red-600 border-red-500 text-white hover:bg-red-700 hover:text-white rounded-xl transition-all duration-300 h-11"
+                onClick={handleResetUsage}
+                disabled={isLoadingReport || !selectedBrandId}
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
+                Reset Usage
+              </Button>
 
               <Button 
                 variant="outline" 
