@@ -168,8 +168,8 @@ Response should be 400-600 words with proper HTML formatting and inline styles.
     const formattedReport = `
       <style>
         .report-content {
-          padding: 2.5rem;
-          background: #000000;
+          padding: 2rem;
+          background: transparent;
           color: #ffffff;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }

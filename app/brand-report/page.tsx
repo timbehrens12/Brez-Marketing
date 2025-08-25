@@ -2720,11 +2720,15 @@ export default function BrandReportPage() {
               </div>
             </div>
           ) : selectedReport ? (
-            <div 
-              dangerouslySetInnerHTML={{ 
-                __html: selectedReport.content
-              }}
-            />
+            <div className="p-8 flex justify-center">
+              <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
+                <div 
+                  dangerouslySetInnerHTML={{ 
+                    __html: selectedReport.content
+                  }}
+                />
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
