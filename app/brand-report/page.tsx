@@ -2703,30 +2703,30 @@ export default function BrandReportPage() {
             }}
           />
         ) : (
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
-          {isLoadingReport ? (
-            <div className="flex flex-col items-center justify-center p-24 space-y-6">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
-                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-                  <BarChart4 className="w-8 h-8 text-white" />
+          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+            {isLoadingReport ? (
+              <div className="flex flex-col items-center justify-center p-24 space-y-6">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full border-4 border-white/10"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+                  <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                    <BarChart4 className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="text-white text-center space-y-3">
+                  <h3 className="text-xl font-bold">
+                    {selectedReport ? "Refreshing your snapshot" : "Generating your marketing snapshot"}
+                  </h3>
+                  <p className="text-gray-400 max-w-md">
+                    {selectedReport ? "Loading latest performance data..." : "Analyzing your marketing data across all platforms..."}
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                    <span>This may take a moment</span>
+                  </div>
                 </div>
               </div>
-              <div className="text-white text-center space-y-3">
-                <h3 className="text-xl font-bold">
-                  {selectedReport ? "Refreshing your snapshot" : "Generating your marketing snapshot"}
-                </h3>
-                <p className="text-gray-400 max-w-md">
-                  {selectedReport ? "Loading latest performance data..." : "Analyzing your marketing data across all platforms..."}
-                </p>
-                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                  <span>This may take a moment</span>
-                </div>
-              </div>
-            </div>
-          ) : (
+            ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
@@ -2769,9 +2769,10 @@ export default function BrandReportPage() {
                 )}
               </div>
             </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
+        </div>
       </div>
 
       {/* Footer */}

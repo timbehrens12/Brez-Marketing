@@ -147,12 +147,6 @@ Performance issues and areas of concern with specific data.
           margin: 0;
           padding: 0;
           display: block !important;
-          color: #ffffff !important;
-          box-sizing: border-box;
-        }
-        
-        .report-wrapper * {
-          box-sizing: border-box;
         }
         
         .report-container {
@@ -260,8 +254,7 @@ Performance issues and areas of concern with specific data.
         
         .report-content {
           padding: 2.5rem;
-          background: #000000 !important;
-          color: #ffffff !important;
+          background: #000000;
         }
         
         .content-section {
