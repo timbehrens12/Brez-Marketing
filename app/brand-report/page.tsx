@@ -2719,22 +2719,13 @@ export default function BrandReportPage() {
                 </div>
               </div>
             </div>
-          ) : selectedReport ? (
-            <div className="p-8 flex justify-center">
-              <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
-                <div 
-                  className="p-8"
-                  dangerouslySetInnerHTML={{ 
-                    __html: selectedReport.content
-                      // Clean up any remaining markdown formatting
-                      .replace(/\*\*/g, '')
-                      .replace(/\*/g, '')
-                      .replace(/#{1,6}\s*/g, '')
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
+                  ) : selectedReport ? (
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: selectedReport.content
+            }}
+          />
+        ) : (
             <div className="flex flex-col items-center justify-center p-24 space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
