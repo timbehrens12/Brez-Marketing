@@ -2397,6 +2397,17 @@ export default function BrandReportPage() {
     )
   }
 
+    // If we have a selected report, render it directly without any container
+    if (selectedReport) {
+      return (
+        <div 
+          dangerouslySetInnerHTML={{ 
+            __html: selectedReport.content
+          }}
+        />
+      )
+    }
+
     return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
       <div className="flex-1 p-4 pb-6">
@@ -2696,14 +2707,7 @@ export default function BrandReportPage() {
         </div>
 
         {/* Main Report Content */}
-        {selectedReport ? (
-          <div 
-            dangerouslySetInnerHTML={{ 
-              __html: selectedReport.content
-            }}
-          />
-        ) : (
-          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl overflow-hidden">
             {isLoadingReport ? (
               <div className="flex flex-col items-center justify-center p-24 space-y-6">
                 <div className="relative">
@@ -2769,9 +2773,7 @@ export default function BrandReportPage() {
                 )}
               </div>
             </div>
-            )}
           </div>
-        )}
         </div>
       </div>
 
