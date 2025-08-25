@@ -719,7 +719,7 @@ export default function BrandReportPage() {
       try {
         // Sync Meta data
         const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7; // More days for monthly, recent for daily
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/meta/sync`, {
+        await fetch('/api/meta/sync', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -886,7 +886,7 @@ export default function BrandReportPage() {
       }
 
       // Send data to AI for analysis
-      const aiResponse = await fetch('/api/ai/analyze-marketing', {
+      const aiResponse = await fetch('/api/ai/generate-report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
