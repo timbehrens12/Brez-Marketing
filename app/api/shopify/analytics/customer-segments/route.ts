@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
 
     // Apply date range filter if provided
     if (from) {
-      ordersQuery = ordersQuery.gte('created_at', from)
+      ordersQuery = ordersQuery.gte('created_at', from + 'T00:00:00Z')
     }
     if (to) {
-      ordersQuery = ordersQuery.lte('created_at', to)
+      ordersQuery = ordersQuery.lte('created_at', to + 'T23:59:59Z')
     }
 
     const { data: ordersData, error: ordersError } = await ordersQuery
