@@ -5,13 +5,16 @@ import { ShopifyBulkService } from '@/lib/services/shopifyBulkService'
 // Shopify sync endpoint for brand reports and cron jobs
 export async function POST(request: NextRequest) {
   try {
-    const { brandId, force_refresh } = await request.json()
+    const { brandId, force_refresh, dateRange } = await request.json()
     
     if (!brandId) {
       return NextResponse.json({ error: 'brandId is required' }, { status: 400 })
     }
 
     console.log(`[Shopify Sync] Starting sync for brand ${brandId}${force_refresh ? ' (forced)' : ''}`)
+    if (dateRange) {
+      console.log(`[Shopify Sync] Date range requested: ${dateRange.from} to ${dateRange.to}`)
+    }
 
     const supabase = createClient()
 
@@ -44,13 +47,38 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`[Shopify Sync] Syncing connection ${connection.id} for shop ${connection.shop}`)
         
-        // Trigger immediate sync for recent data
-        await ShopifyBulkService.immediateRecentSync(
-          brandId,
-          connection.shop,
-          connection.access_token,
-          connection.id
-        )
+        // If date range is specified, sync that specific range, otherwise sync recent data
+        if (dateRange?.from && dateRange?.to) {
+          console.log(`[Shopify Sync] Syncing historical data for range: ${dateRange.from} to ${dateRange.to}`)
+          
+          // Call the historical backfill API for the specific date range
+          const backfillResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/shopify/historical-backfill`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandId,
+              startDate: dateRange.from,
+              endDate: dateRange.to,
+              forceRefresh: force_refresh || false
+            })
+          })
+          
+          if (!backfillResponse.ok) {
+            throw new Error(`Historical sync failed: ${backfillResponse.status}`)
+          }
+          
+          const backfillResult = await backfillResponse.json()
+          console.log(`[Shopify Sync] Historical sync result:`, backfillResult)
+          
+        } else {
+          // Default: sync recent data only
+          await ShopifyBulkService.immediateRecentSync(
+            brandId,
+            connection.shop,
+            connection.access_token,
+            connection.id
+          )
+        }
         
         // Update connection sync status
         await supabase

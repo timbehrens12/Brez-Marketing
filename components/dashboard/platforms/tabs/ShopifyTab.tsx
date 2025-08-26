@@ -663,7 +663,7 @@ export function ShopifyTab({
         duration: 15000 
       });
 
-      // Trigger fresh Shopify sync
+      // Trigger fresh Shopify sync with date range
       const syncResponse = await fetch('/api/cron/shopify-sync', {
         method: 'POST',
         headers: {
@@ -672,7 +672,11 @@ export function ShopifyTab({
         body: JSON.stringify({
           brandId,
           force_refresh: true,
-          full_sync: true
+          full_sync: true,
+          dateRange: {
+            from: format(dateRange.from, 'yyyy-MM-dd'),
+            to: format(dateRange.to, 'yyyy-MM-dd')
+          }
         }),
       });
 
@@ -697,9 +701,11 @@ export function ShopifyTab({
           body: JSON.stringify({
             brandId,
             force_refresh: true,
-            dateFrom: prevFrom,
-            dateTo: prevTo,
-            comparison_sync: true
+            comparison_sync: true,
+            dateRange: {
+              from: prevFrom,
+              to: prevTo
+            }
           }),
         });
         

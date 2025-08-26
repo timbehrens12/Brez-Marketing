@@ -166,24 +166,45 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      // 2. BACKGROUND: Start complete historical sync using working API (don't wait)
+      // 2. IMMEDIATE: Start complete historical sync and WAIT for it to ensure data is ready
       console.log('[Shopify Callback] Starting complete historical data sync...')
-      fetch(`${APP_URL}/api/shopify/historical-backfill`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          brandId,
-          forceRefresh: true // Complete refresh for new connections
+      try {
+        const historicalResponse = await fetch(`${APP_URL}/api/shopify/historical-backfill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            brandId,
+            forceRefresh: true // Complete refresh for new connections
+          })
         })
-      }).then(async (res) => {
-        const result = await res.json()
-        if (result.success) {
-          const totalOrders = result.results?.reduce((sum: number, r: any) => sum + (r.ordersAdded || 0), 0) || 0
-          console.log(`[Shopify Callback] ✅ Complete historical sync completed: ${totalOrders} orders synced`)
-        } else {
-          console.error('[Shopify Callback] ❌ Historical sync failed:', result.error)
+        
+        if (historicalResponse.ok) {
+          const result = await historicalResponse.json()
+          if (result.success) {
+            const totalOrders = result.results?.reduce((sum: number, r: any) => sum + (r.ordersAdded || 0), 0) || 0
+            console.log(`[Shopify Callback] ✅ Complete historical sync completed: ${totalOrders} orders synced`)
+            
+            // Update connection status to show historical sync is complete
+            await supabase
+              .from('platform_connections')
+              .update({
+                sync_status: 'completed',
+                metadata: {
+                  ...{}, // existing metadata
+                  historical_sync_completed: true,
+                  total_orders_synced: totalOrders,
+                  full_sync_completed_at: new Date().toISOString()
+                }
+              })
+              .eq('id', connectionId)
+              
+          } else {
+            console.error('[Shopify Callback] ❌ Historical sync failed:', result.error)
+          }
         }
-      }).catch(err => console.error('[Shopify Callback] Historical sync request failed:', err))
+      } catch (err) {
+        console.error('[Shopify Callback] Historical sync request failed:', err)
+      }
 
       // 3. BACKGROUND: Trigger inventory sync (don't wait)
       fetch(`${APP_URL}/api/shopify/inventory/sync`, {
