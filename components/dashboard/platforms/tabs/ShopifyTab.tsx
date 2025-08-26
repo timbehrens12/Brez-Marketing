@@ -764,36 +764,6 @@ export function ShopifyTab({
     }
   }, [brandId, connection, dateRange]);
 
-  // Helper function to get previous period dates (similar to Meta)
-  const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
-    const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-    const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
-    
-    // Single day comparison
-    const isSingleDay = isSameDay(fromNormalized, toNormalized);
-    if (isSingleDay) {
-      const prevDay = new Date(fromNormalized);
-      prevDay.setDate(prevDay.getDate() - 1);
-      const prevDayStr = format(prevDay, 'yyyy-MM-dd');
-      return { prevFrom: prevDayStr, prevTo: prevDayStr };
-    }
-    
-    // Default: equivalent previous period
-    const currentRange = toNormalized.getTime() - fromNormalized.getTime();
-    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
-    
-    const prevFrom = new Date(fromNormalized);
-    prevFrom.setDate(prevFrom.getDate() - daysInRange);
-    
-    const prevTo = new Date(toNormalized);
-    prevTo.setDate(prevTo.getDate() - daysInRange);
-    
-    return {
-      prevFrom: format(prevFrom, 'yyyy-MM-dd'),
-      prevTo: format(prevTo, 'yyyy-MM-dd')
-    };
-  };
-
   // Listen for external refresh events from GlobalRefreshButton
   useEffect(() => {
     let cancelled = false;
