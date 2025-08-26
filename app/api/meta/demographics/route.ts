@@ -1,165 +1,196 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { auth } from '@clerk/nextjs'
+import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = auth()
-    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // Get query parameters
     const { searchParams } = new URL(request.url)
-    const connectionId = searchParams.get('connectionId')
-    const breakdownType = searchParams.get('breakdownType') || 'age' // Default to age
-    const dateRangeStart = searchParams.get('dateRangeStart')
-    const dateRangeEnd = searchParams.get('dateRangeEnd')
+    const brandId = searchParams.get('brandId')
+    const fromDate = searchParams.get('from')
+    const toDate = searchParams.get('to')
 
-    if (!connectionId) {
-      return NextResponse.json({ error: 'Connection ID is required' }, { status: 400 })
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Verify user has access to this connection through brand access
+    const supabase = createClient()
+
+    // Get Meta platform connection for this brand
     const { data: connection } = await supabase
       .from('platform_connections')
-      .select(`
-        id,
-        brand_id,
-        brands!inner (
-          id,
-          user_id
-        )
-      `)
-      .eq('id', connectionId)
+      .select('id')
+      .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
+      .eq('status', 'active')
       .single()
 
     if (!connection) {
-      return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
+      console.log('No Meta connection found for brand')
+      return NextResponse.json({ 
+        demographics: { age: [], gender: [], ageGender: [] },
+        devicePerformance: { device: [], placement: [], platform: [] },
+        insights: {},
+        success: true
+      })
     }
 
-    // Check if user owns the brand or has access through brand_access
-    const { data: brandAccess } = await supabase
-      .from('brand_access')
-      .select('id')
-      .eq('brand_id', connection.brand_id)
-      .eq('user_id', userId)
-      .single()
+    const connectionId = connection.id
 
-    const isOwner = connection.brands.user_id === userId
-    const hasAccess = brandAccess?.id
+    // Set default date range if not provided (last 30 days)
+    const defaultToDate = new Date().toISOString().split('T')[0]
+    const defaultFromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    const startDate = fromDate || defaultFromDate
+    const endDate = toDate || defaultToDate
 
-    if (!isOwner && !hasAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // Build the query
-    let query = supabase
+    // Fetch demographic data
+    const { data: ageData } = await supabase
       .from('meta_demographics')
       .select('*')
       .eq('connection_id', connectionId)
-      .eq('breakdown_type', breakdownType)
-      .order('breakdown_value')
+      .eq('breakdown_type', 'age')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
 
-    // Apply date range filter using flexible overlap logic
-    // Find records where the stored date range overlaps with the requested range
-    if (dateRangeStart && dateRangeEnd) {
-      query = query
-        .lte('date_range_start', dateRangeEnd)    // Record starts before or on request end
-        .gte('date_range_end', dateRangeStart)    // Record ends after or on request start
-      console.log(`[Demographics API] 🔥 Using flexible overlap filter: ${dateRangeStart} to ${dateRangeEnd}`)
-    } else {
-      console.log(`[Demographics API] 🔥 No date range provided, fetching all data`)
-    }
-
-    console.log(`[Demographics API] 🔥 Query params: { connectionId: '${connectionId}', breakdownType: '${breakdownType}', dateRangeStart: '${dateRangeStart}', dateRangeEnd: '${dateRangeEnd}' }`)
-
-    const { data: demographics, error } = await query
-
-    console.log(`[Demographics API] 🔥 Query result: ${demographics?.length || 0} records found`)
-    console.log(`[Demographics API] 🔥 Raw records sample:`, demographics?.slice(0, 3))
-    
-    // Debug: Always check what data exists for this connection and breakdown type
-    const { data: allData } = await supabase
+    const { data: genderData } = await supabase
       .from('meta_demographics')
       .select('*')
       .eq('connection_id', connectionId)
-      .eq('breakdown_type', breakdownType)
-      .order('date_range_start', { ascending: false })
-      .limit(10)
-    
-    console.log(`[Demographics API] 🔥 ALL DATA for connectionId ${connectionId}, breakdown ${breakdownType}:`, {
-      count: allData?.length || 0,
-      dateRanges: allData?.map(d => `${d.date_range_start} to ${d.date_range_end}`),
-      requestedRange: `${dateRangeStart} to ${dateRangeEnd}`,
-      sample: allData?.slice(0, 2)
+      .eq('breakdown_type', 'gender')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
+
+    const { data: ageGenderData } = await supabase
+      .from('meta_demographics')
+      .select('*')
+      .eq('connection_id', connectionId)
+      .eq('breakdown_type', 'age_gender')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
+
+    // Fetch device performance data
+    const { data: deviceData } = await supabase
+      .from('meta_device_performance')
+      .select('*')
+      .eq('connection_id', connectionId)
+      .eq('breakdown_type', 'device')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
+
+    const { data: placementData } = await supabase
+      .from('meta_device_performance')
+      .select('*')
+      .eq('connection_id', connectionId)
+      .eq('breakdown_type', 'placement')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
+
+    const { data: platformData } = await supabase
+      .from('meta_device_performance')
+      .select('*')
+      .eq('connection_id', connectionId)
+      .eq('breakdown_type', 'platform')
+      .gte('date_range_start', startDate)
+      .lte('date_range_end', endDate)
+
+    // Aggregate demographic insights
+    const demographics = {
+      age: ageData || [],
+      gender: genderData || [],
+      ageGender: ageGenderData || []
+    }
+
+    // Aggregate device performance insights
+    const devicePerformance = {
+      device: deviceData || [],
+      placement: placementData || [],
+      platform: platformData || []
+    }
+
+    // Calculate insights for AI analysis
+    const insights = {
+      topAgeGroups: demographics.age
+        .sort((a: any, b: any) => b.impressions - a.impressions)
+        .slice(0, 5)
+        .map((item: any) => ({ 
+          age: item.breakdown_value, 
+          impressions: item.impressions, 
+          spend: item.spend,
+          ctr: item.ctr,
+          conversions: item.conversions 
+        })),
+      
+      genderDistribution: demographics.gender
+        .map((item: any) => ({ 
+          gender: item.breakdown_value, 
+          impressions: item.impressions, 
+          spend: item.spend, 
+          ctr: item.ctr,
+          conversions: item.conversions 
+        })),
+      
+      topDevices: devicePerformance.device
+        .sort((a: any, b: any) => b.impressions - a.impressions)
+        .slice(0, 5)
+        .map((item: any) => ({ 
+          device: item.breakdown_value, 
+          impressions: item.impressions, 
+          ctr: item.ctr,
+          spend: item.spend,
+          conversions: item.conversions 
+        })),
+      
+      bestPlacements: devicePerformance.placement
+        .sort((a: any, b: any) => b.ctr - a.ctr)
+        .slice(0, 5)
+        .map((item: any) => ({ 
+          placement: item.breakdown_value, 
+          ctr: item.ctr, 
+          spend: item.spend,
+          impressions: item.impressions,
+          conversions: item.conversions 
+        })),
+      
+      platformBreakdown: devicePerformance.platform
+        .map((item: any) => ({ 
+          platform: item.breakdown_value, 
+          impressions: item.impressions, 
+          spend: item.spend, 
+          ctr: item.ctr,
+          conversions: item.conversions 
+        }))
+    }
+
+    console.log(`[Meta Demographics API] Data gathered for brand ${brandId}:`, {
+      ageGroups: demographics.age.length,
+      genderData: demographics.gender.length,
+      deviceTypes: devicePerformance.device.length,
+      placements: devicePerformance.placement.length,
+      platforms: devicePerformance.platform.length,
+      dateRange: `${startDate} to ${endDate}`
     })
-    
-    if (demographics?.length === 0 && allData?.length > 0) {
-      console.log(`[Demographics API] 🔥 NO OVERLAP: Stored ranges don't overlap with requested range`)
-      console.log(`[Demographics API] 🔥 Stored date ranges:`, allData.map(d => `${d.date_range_start} to ${d.date_range_end}`))
-    }
-
-    if (error) {
-      console.error('Error fetching Meta demographics:', error)
-      return NextResponse.json({ error: 'Failed to fetch demographic data' }, { status: 500 })
-    }
-
-    // Aggregate data by breakdown_value
-    const aggregatedData = demographics.reduce((acc: any, record: any) => {
-      const key = record.breakdown_value
-      if (!acc[key]) {
-        acc[key] = {
-          breakdown_value: key,
-          impressions: 0,
-          clicks: 0,
-          spend: 0,
-          reach: 0,
-          total_records: 0
-        }
-      }
-      
-      acc[key].impressions += record.impressions || 0
-      acc[key].clicks += record.clicks || 0
-      acc[key].spend += parseFloat(record.spend || '0')
-      acc[key].reach += record.reach || 0
-      acc[key].total_records += 1
-      
-      return acc
-    }, {})
-
-    // Convert to array and calculate averages for rate metrics
-    const result = Object.values(aggregatedData).map((item: any) => ({
-      ...item,
-      cpm: item.impressions > 0 ? (item.spend / item.impressions * 1000) : 0,
-      cpc: item.clicks > 0 ? (item.spend / item.clicks) : 0,
-      ctr: item.impressions > 0 ? (item.clicks / item.impressions * 100) : 0,
-      spend: parseFloat(item.spend.toFixed(2))
-    }))
-
-    console.log(`[Demographics API] 🔥 Aggregated result:`, result)
-    console.log(`[Demographics API] 🔥 Aggregation summary: ${demographics?.length || 0} raw records → ${result.length} aggregated records`)
-    console.log(`[Demographics API] 🔥 Total aggregated spend: $${result.reduce((sum, item) => sum + item.spend, 0).toFixed(2)}`)
-    console.log(`[Demographics API] 🔥 Total aggregated impressions: ${result.reduce((sum, item) => sum + item.impressions, 0)}`)
 
     return NextResponse.json({
+      demographics,
+      devicePerformance,
+      insights,
       success: true,
-      data: result,
-      breakdown_type: breakdownType,
-      total_records: demographics.length
+      dateRange: { from: startDate, to: endDate }
     })
 
   } catch (error) {
-    console.error('Error in Meta demographics API:', error)
+    console.error('Error fetching Meta demographics data:', error)
     return NextResponse.json({ 
-      error: 'Internal server error' 
+      error: 'Failed to fetch demographics data',
+      demographics: { age: [], gender: [], ageGender: [] },
+      devicePerformance: { device: [], placement: [], platform: [] },
+      insights: {},
+      success: false
     }, { status: 500 })
   }
 }

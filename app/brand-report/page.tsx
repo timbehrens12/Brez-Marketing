@@ -772,10 +772,16 @@ export default function BrandReportPage() {
 
       const selectedBrand = brands.find(brand => brand.id === selectedBrandId)
 
-      // Fetch all the data needed for the report
-      const [shopifyResponse, metaResponse] = await Promise.all([
+      // Fetch all the data needed for the report including additional insights
+      const [shopifyResponse, metaResponse, demographicsResponse, locationResponse, repeatCustomersResponse] = await Promise.all([
         fetch(`/api/metrics?${params.toString()}`),
-        fetch(`/api/metrics/meta?${params.toString()}`)
+        fetch(`/api/metrics/meta?${params.toString()}`),
+        // Fetch Meta demographics and device data
+        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => ({ ok: false })),
+        // Fetch Shopify location data
+        fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}`).catch(() => ({ ok: false })),
+        // Fetch repeat customer analysis
+        fetch(`/api/shopify/analytics/repeat-customers?brandId=${selectedBrandId}`).catch(() => ({ ok: false }))
       ])
 
       if (!shopifyResponse.ok || !metaResponse.ok) {
@@ -784,6 +790,35 @@ export default function BrandReportPage() {
 
       const shopifyData = await shopifyResponse.json()
       const metaData = await metaResponse.json()
+      
+      // Parse additional data sources
+      let demographicsData = null
+      let locationData = null
+      let repeatCustomersData = null
+      
+      try {
+        if (demographicsResponse.ok) {
+          demographicsData = await demographicsResponse.json()
+        }
+      } catch (error) {
+        console.warn('Failed to fetch demographics data:', error)
+      }
+      
+      try {
+        if (locationResponse.ok) {
+          locationData = await locationResponse.json()
+        }
+      } catch (error) {
+        console.warn('Failed to fetch location data:', error)
+      }
+      
+      try {
+        if (repeatCustomersResponse.ok) {
+          repeatCustomersData = await repeatCustomersResponse.json()
+        }
+      } catch (error) {
+        console.warn('Failed to fetch repeat customers data:', error)
+      }
 
       // Fetch previous reports for comparison and improvement tracking
       let historicalReports = []
@@ -872,6 +907,11 @@ export default function BrandReportPage() {
           shopify: shopifyData,
           meta: metaData
         },
+        additional_insights: {
+          demographics: demographicsData,
+          customer_location: locationData,
+          repeat_customers: repeatCustomersData
+        },
         detailed_breakdown: detailedData,
         user: {
           greeting
@@ -882,7 +922,7 @@ export default function BrandReportPage() {
           note: "Use this historical data to identify trends, track improvements, evaluate recommendation effectiveness, and provide comparative analysis."
         },
         formatting_instructions: {
-          style: "Create a comprehensive, detailed marketing report with HISTORICAL COMPARISON and IMPROVEMENT TRACKING. Be verbose and educational - even with limited data, provide thorough analysis and context. Structure: 1. Executive Summary (detailed overview with context and period-over-period changes), 2. Performance Overview (analyze all available metrics with explanations and historical comparison), 3. Historical Performance Analysis (compare current metrics to previous periods, identify trends, track improvement/decline), 4. Shopify E-commerce Analysis (detailed store performance, customer behavior, conversion insights with historical context), 5. Meta/Facebook Ads Analysis (campaign performance, targeting effectiveness, creative analysis with trend analysis), 6. Performance Trends Analysis (analyze patterns from detailed breakdown data and historical reports), 7. Recommendation Effectiveness Review (evaluate previous recommendations and their outcomes), 8. Customer & Market Insights (demographic analysis, behavioral patterns, changes over time), 9. Competitive Positioning & Opportunities, 10. Technical & Strategic Issues Identified, 11. Detailed Actionable Recommendations (specific, step-by-step strategies based on what has/hasn't worked historically). For each section: provide context, explain metrics significance, include industry benchmarks when relevant, compare to historical performance, track recommendation implementation success, suggest improvements based on historical data, and educate on best practices. Use professional marketing terminology and make recommendations specific and actionable. When historical data is available, always compare current performance to previous periods and explain what changes mean for the business."
+          style: "Create a comprehensive, detailed marketing report following the EXACT structure of the first report format with additional insights. Use the professional structure: 1. EXECUTIVE SUMMARY (comprehensive overview highlighting key achievements and areas of concern), 2. PERFORMANCE OVERVIEW (detailed metrics with specific numbers and percentages), 3. CHANNEL ANALYSIS with subsections: 3.1 Shopify Performance (revenue, orders, customer behavior with location analysis), 3.2 Meta/Facebook Ads Performance (ad spend, impressions, clicks, conversions), 3.3 Audience Demographics Analysis (age groups, gender performance, device preferences with specific data), 3.4 Geographic Performance Analysis (customer locations, regional revenue, market opportunities), 3.5 Repeat Customer Analysis (retention rates, purchase frequency, lifetime value), 4. STRENGTHS & OPPORTUNITIES (what's working well and areas for improvement), 5. WHAT'S NOT WORKING (performance issues and concerns with specific data points), 6. ACTIONABLE RECOMMENDATIONS (4-6 specific, actionable recommendations). Include specific numbers, percentages, and data points throughout. When demographics data is available, provide detailed analysis of top-performing age groups, gender segments, and device types. When location data is available, analyze geographic distribution and regional performance. When repeat customer data is available, provide insights on customer retention and lifetime value. Make the report comprehensive but well-organized with flowing paragraphs rather than bullet points except in recommendations section."
         }
       }
 

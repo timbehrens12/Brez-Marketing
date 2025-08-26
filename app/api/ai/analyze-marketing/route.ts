@@ -102,6 +102,12 @@ Generate professional business report content with proper HTML structure includi
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
 <p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze audience composition by age, gender, and device preferences. Identify top-performing demographic segments and optimization opportunities based on engagement and conversion data.</p>
+
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.4 Geographic Performance Analysis</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze customer distribution by location, regional revenue performance, and identify geographic market opportunities and expansion potential.</p>
+
+<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.5 Repeat Customer Analysis</h3>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze customer retention rates, repeat purchase behavior, lifetime value trends, and identify opportunities to improve customer loyalty and repeat business.</p>
 </div>
 
 <div class="strengths-opportunities">
@@ -141,7 +147,7 @@ Response should be 400-600 words with proper HTML formatting and inline styles.
       messages: [
         {
           role: 'system',
-          content: 'You are a senior business analyst specializing in e-commerce and digital marketing with expertise in audience demographics and targeting optimization. Generate properly structured HTML report content with inline styles and color-coded sections. Never include main headers or titles - only generate the content sections that will go inside a pre-styled wrapper. Always use inline CSS styles for consistent formatting. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided. When demographics data is available, provide detailed audience analysis including age groups, gender performance, and device preferences with optimization recommendations based on engagement and conversion patterns.'
+          content: 'You are a senior business analyst specializing in e-commerce and digital marketing with expertise in audience demographics, geographic analysis, customer retention, and targeting optimization. Generate properly structured HTML report content with inline styles and color-coded sections. Never include main headers or titles - only generate the content sections that will go inside a pre-styled wrapper. Always use inline CSS styles for consistent formatting. Focus on data-driven insights and actionable recommendations with specific numbers from the data provided. When demographics data is available, provide detailed audience analysis including age groups, gender performance, and device preferences. When location data is available, analyze geographic distribution and regional opportunities. When repeat customer data is available, provide insights on retention rates, lifetime value, and loyalty optimization. Use the exact structure requested with comprehensive analysis for each section.'
         },
         {
           role: 'user',
