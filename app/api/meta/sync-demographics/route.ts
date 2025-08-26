@@ -76,10 +76,9 @@ export async function POST(request: NextRequest) {
       // Import the real Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // Calculate date range - sync recent data to match current dashboard usage
+      // Calculate date range - use only today to avoid timeouts
       const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 30) // Reduced to 30 days for faster sync
+      const startDate = new Date() // Same as endDate - only fetch today's data
       
       console.log(`[Meta Demographics Sync] 🔥 SYNC DATE RANGE: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]} (${Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days)`)
       console.log(`[Meta Demographics Sync] Fetching real Meta demographic data from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)

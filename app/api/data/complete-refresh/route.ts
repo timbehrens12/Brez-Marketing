@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const { 
       brandId, 
-      lookbackDays = 60,
+      lookbackDays = 1, // Changed to 1 day to avoid timeouts
       mode = 'standard' // 'standard', 'deep', or 'comprehensive'
     } = await request.json()
     
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     let result: any
 
     if (mode === 'comprehensive') {
-      // One-time comprehensive cleanup (up to 1 year)
-      const maxDays = Math.min(lookbackDays, 365) // Cap at 1 year for safety
+      // One-time comprehensive cleanup (limited to prevent timeouts)
+      const maxDays = Math.min(lookbackDays, 7) // Cap at 7 days to prevent timeouts
       result = await performOneTimeHistoricalCleanup(brandId, maxDays)
       
       if (result.success) {
