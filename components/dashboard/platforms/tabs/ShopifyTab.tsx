@@ -765,32 +765,33 @@ export function ShopifyTab({
   //   }
   // }, [brandId, dateRange, connection, syncShopifyData]);
 
-  // Listen for external refresh events from GlobalRefreshButton
-  useEffect(() => {
-    let cancelled = false;
-    
-    const handleExternalRefresh = async (event: any) => {
-      if (cancelled) return;
-      
-      // Trigger fresh data sync like Meta page
-      await syncShopifyData('external-refresh');
-      
-      // Also trigger the existing refresh logic
-      safeDispatchRefresh('external-refresh-button');
-    };
-    
-    // Listen for refresh events from GlobalRefreshButton
-    window.addEventListener('force-shopify-refresh', handleExternalRefresh);
-    window.addEventListener('global-refresh-all', handleExternalRefresh);
-    window.addEventListener('refresh-all-widgets', handleExternalRefresh);
-    
-    return () => {
-      cancelled = true;
-      window.removeEventListener('force-shopify-refresh', handleExternalRefresh);
-      window.removeEventListener('global-refresh-all', handleExternalRefresh);
-      window.removeEventListener('refresh-all-widgets', handleExternalRefresh);
-    };
-  }, [brandId, safeDispatchRefresh]);
+  // TEMPORARILY DISABLED: Listen for external refresh events from GlobalRefreshButton
+  // This was causing infinite loops - need to investigate what's triggering the events
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   
+  //   const handleExternalRefresh = async (event: any) => {
+  //     if (cancelled) return;
+  //     
+  //     // Trigger fresh data sync like Meta page
+  //     await syncShopifyData('external-refresh');
+  //     
+  //     // NOTE: Removed safeDispatchRefresh call to prevent infinite loop
+  //     // The sync itself already triggers UI updates via data changes
+  //   };
+  //   
+  //   // Listen for refresh events from GlobalRefreshButton
+  //   window.addEventListener('force-shopify-refresh', handleExternalRefresh);
+  //   window.addEventListener('global-refresh-all', handleExternalRefresh);
+  //   window.addEventListener('refresh-all-widgets', handleExternalRefresh);
+  //   
+  //   return () => {
+  //     cancelled = true;
+  //     window.removeEventListener('force-shopify-refresh', handleExternalRefresh);
+  //     window.removeEventListener('global-refresh-all', handleExternalRefresh);
+  //     window.removeEventListener('refresh-all-widgets', handleExternalRefresh);
+  //   };
+  // }, [brandId, safeDispatchRefresh, syncShopifyData]);
 
   useEffect(() => {
     // This effect runs once on mount, after the component has rendered
