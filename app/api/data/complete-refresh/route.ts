@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const { 
       brandId, 
-      lookbackDays = 1, // Changed to 1 day to avoid timeouts
+      lookbackDays = 3, // Changed to 3 days to have some data while avoiding timeouts
       mode = 'standard' // 'standard', 'deep', or 'comprehensive'
     } = await request.json()
     

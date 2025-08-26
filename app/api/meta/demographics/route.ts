@@ -191,58 +191,68 @@ export async function GET(request: NextRequest) {
       platform: platformData || []
     }
 
-    // Calculate insights for AI analysis
+    // Calculate insights for AI analysis (handle empty data gracefully)
     const insights = {
-      topAgeGroups: demographics.age
-        .sort((a: any, b: any) => b.impressions - a.impressions)
-        .slice(0, 5)
-        .map((item: any) => ({ 
-          age: item.breakdown_value, 
-          impressions: item.impressions, 
-          spend: item.spend,
-          ctr: item.ctr,
-          conversions: item.conversions 
-        })),
+      topAgeGroups: demographics.age && demographics.age.length > 0 
+        ? demographics.age
+            .sort((a: any, b: any) => (b.impressions || 0) - (a.impressions || 0))
+            .slice(0, 5)
+            .map((item: any) => ({ 
+              age: item.breakdown_value, 
+              impressions: item.impressions || 0, 
+              spend: item.spend || 0,
+              ctr: item.ctr || 0,
+              conversions: item.conversions || 0 
+            }))
+        : [],
       
-      genderDistribution: demographics.gender
-        .map((item: any) => ({ 
-          gender: item.breakdown_value, 
-          impressions: item.impressions, 
-          spend: item.spend, 
-          ctr: item.ctr,
-          conversions: item.conversions 
-        })),
+      genderDistribution: demographics.gender && demographics.gender.length > 0 
+        ? demographics.gender
+            .map((item: any) => ({ 
+              gender: item.breakdown_value, 
+              impressions: item.impressions || 0, 
+              spend: item.spend || 0, 
+              ctr: item.ctr || 0,
+              conversions: item.conversions || 0 
+            }))
+        : [],
       
-      topDevices: devicePerformance.device
-        .sort((a: any, b: any) => b.impressions - a.impressions)
-        .slice(0, 5)
-        .map((item: any) => ({ 
-          device: item.breakdown_value, 
-          impressions: item.impressions, 
-          ctr: item.ctr,
-          spend: item.spend,
-          conversions: item.conversions 
-        })),
+      topDevices: devicePerformance.device && devicePerformance.device.length > 0 
+        ? devicePerformance.device
+            .sort((a: any, b: any) => (b.impressions || 0) - (a.impressions || 0))
+            .slice(0, 5)
+            .map((item: any) => ({ 
+              device: item.breakdown_value, 
+              impressions: item.impressions || 0, 
+              ctr: item.ctr || 0,
+              spend: item.spend || 0,
+              conversions: item.conversions || 0 
+            }))
+        : [],
       
-      bestPlacements: devicePerformance.placement
-        .sort((a: any, b: any) => b.ctr - a.ctr)
-        .slice(0, 5)
-        .map((item: any) => ({ 
-          placement: item.breakdown_value, 
-          ctr: item.ctr, 
-          spend: item.spend,
-          impressions: item.impressions,
-          conversions: item.conversions 
-        })),
+      bestPlacements: devicePerformance.placement && devicePerformance.placement.length > 0 
+        ? devicePerformance.placement
+            .sort((a: any, b: any) => (b.ctr || 0) - (a.ctr || 0))
+            .slice(0, 5)
+            .map((item: any) => ({ 
+              placement: item.breakdown_value, 
+              ctr: item.ctr || 0, 
+              spend: item.spend || 0,
+              impressions: item.impressions || 0,
+              conversions: item.conversions || 0 
+            }))
+        : [],
       
-      platformBreakdown: devicePerformance.platform
-        .map((item: any) => ({ 
-          platform: item.breakdown_value, 
-          impressions: item.impressions, 
-          spend: item.spend, 
-          ctr: item.ctr,
-          conversions: item.conversions 
-        }))
+      platformBreakdown: devicePerformance.platform && devicePerformance.platform.length > 0 
+        ? devicePerformance.platform
+            .map((item: any) => ({ 
+              platform: item.breakdown_value, 
+              impressions: item.impressions || 0, 
+              spend: item.spend || 0, 
+              ctr: item.ctr || 0,
+              conversions: item.conversions || 0 
+            }))
+        : []
     }
 
     console.log(`[Meta Demographics API] Data gathered:`, {
@@ -256,7 +266,7 @@ export async function GET(request: NextRequest) {
       connectionId: finalConnectionId
     })
 
-    // If breakdownType is specified (legacy format), return just that data in the old format
+    // If breakdownType is specified (legacy format), return data in expected widget format
     if (breakdownType) {
       let responseData = []
       if (breakdownType === 'age') responseData = ageData || []
@@ -266,7 +276,13 @@ export async function GET(request: NextRequest) {
       else if (breakdownType === 'placement') responseData = placementData || []
       else if (breakdownType === 'platform') responseData = platformData || []
 
-      return NextResponse.json(responseData)
+      console.log(`[Meta Demographics API] Legacy format - ${breakdownType}: ${responseData.length} records`)
+
+      return NextResponse.json({
+        data: responseData,
+        success: true,
+        dateRange: { from: startDate, to: endDate }
+      })
     }
 
     // New format - return comprehensive data

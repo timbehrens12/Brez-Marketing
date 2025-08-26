@@ -1240,14 +1240,12 @@ export default function ActionCenterPage() {
         // console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
         for (const brand of brandsWithAdPlatforms) {
           try {
-            // Trigger fresh sync for today's data for each brand
-            const syncResponse = await fetch('/api/meta/backfill', {
+            // Trigger fresh sync for recent data for each brand
+            const syncResponse = await fetch('/api/meta/sync-demographics', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                brandId: brand.id,
-                dateFrom: todayDateStr,
-                dateTo: todayDateStr
+                brandId: brand.id
               })
             })
             if (syncResponse.ok) {

@@ -1375,21 +1375,19 @@ export default function DashboardPage() {
               <p>Missing or incomplete Meta data for {yesterdayStr}.</p>
               <button 
                 onClick={() => {
-                  fetch('/api/meta/backfill', {
+                  fetch('/api/meta/sync-demographics', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      brandId: selectedBrandId,
-                      dateFrom: yesterdayStr,
-                      dateTo: yesterdayStr
+                      brandId: selectedBrandId
                     })
                   })
                   .then(response => response.json())
                   .then(data => {
                     if (data.success) {
                       toast({
-                        title: "Data Fixed",
-                        description: `Successfully backfilled ${data.count} records for ${yesterdayStr}`,
+                        title: "Data Synced",
+                        description: "Successfully synced recent Meta data",
                         variant: "default"
                       });
                       
@@ -1400,7 +1398,7 @@ export default function DashboardPage() {
                 }}
                 className="bg-blue-600 text-white rounded px-3 py-1 text-sm"
               >
-                Fix Data Now
+                Sync Recent Data
               </button>
             </div>
           ),
