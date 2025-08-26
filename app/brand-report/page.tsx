@@ -745,6 +745,17 @@ export default function BrandReportPage() {
           })
         })
         
+        // Sync Meta demographics data
+        await fetch('/api/meta/sync-demographics', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            brandId: selectedBrandId
+          })
+        })
+        
         console.log('✅ Fresh data sync completed')
       } catch (syncError) {
         console.error('❌ Sync failed, but continuing with report generation:', syncError)
@@ -776,8 +787,8 @@ export default function BrandReportPage() {
       const [shopifyResponse, metaResponse, demographicsResponse, locationResponse, repeatCustomersResponse] = await Promise.all([
         fetch(`/api/metrics?${params.toString()}`),
         fetch(`/api/metrics/meta?${params.toString()}`),
-        // Fetch Meta demographics and device data
-        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => ({ ok: false })),
+        // Fetch Meta demographics and device data (comprehensive format)
+        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`).catch(() => ({ ok: false })),
         // Fetch Shopify location data
         fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}`).catch(() => ({ ok: false })),
         // Fetch repeat customer analysis
@@ -799,6 +810,16 @@ export default function BrandReportPage() {
       try {
         if (demographicsResponse.ok) {
           demographicsData = await demographicsResponse.json()
+          console.log('✅ Demographics data fetched for report:', {
+            hasAgeData: demographicsData?.demographics?.age?.length > 0,
+            hasGenderData: demographicsData?.demographics?.gender?.length > 0,
+            hasDeviceData: demographicsData?.devicePerformance?.device?.length > 0,
+            totalDataPoints: (demographicsData?.demographics?.age?.length || 0) + 
+                           (demographicsData?.demographics?.gender?.length || 0) + 
+                           (demographicsData?.devicePerformance?.device?.length || 0)
+          })
+        } else {
+          console.warn('Demographics response not ok:', demographicsResponse.status)
         }
       } catch (error) {
         console.warn('Failed to fetch demographics data:', error)
