@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
 
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
+import { GridOverlay } from "@/components/GridOverlay"
 
 interface PlatformConnection {
   id: string
@@ -2398,7 +2399,9 @@ export default function BrandReportPage() {
   }
 
     return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] flex flex-col">
+    <div className="w-full min-h-screen bg-[#0A0A0A] animate-in fade-in duration-300 relative">
+      <GridOverlay />
+      <div className="relative z-10 flex flex-col min-h-screen">
       <div className="flex-1 p-4 pb-6">
         <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
@@ -2799,6 +2802,7 @@ export default function BrandReportPage() {
           DEV MODE
         </div>
       )}
+      </div>
     </div>
   )
 } 
