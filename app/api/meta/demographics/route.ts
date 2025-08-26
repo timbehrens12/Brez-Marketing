@@ -11,92 +11,171 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const connectionId = searchParams.get('connectionId')
     const fromDate = searchParams.get('from')
     const toDate = searchParams.get('to')
+    const dateRangeStart = searchParams.get('dateRangeStart')
+    const dateRangeEnd = searchParams.get('dateRangeEnd')
+    const breakdownType = searchParams.get('breakdownType')
 
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    // Support both new format (brandId) and legacy format (connectionId)
+    if (!brandId && !connectionId) {
+      return NextResponse.json({ error: 'Brand ID or Connection ID is required' }, { status: 400 })
     }
 
     const supabase = createClient()
 
-    // Get Meta platform connection for this brand
-    const { data: connection } = await supabase
-      .from('platform_connections')
-      .select('id')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
+    let finalConnectionId: string
 
-    if (!connection) {
-      console.log('No Meta connection found for brand')
-      return NextResponse.json({ 
-        demographics: { age: [], gender: [], ageGender: [] },
-        devicePerformance: { device: [], placement: [], platform: [] },
-        insights: {},
-        success: true
-      })
+    if (connectionId) {
+      // Legacy format - connectionId provided directly
+      finalConnectionId = connectionId
+    } else {
+      // New format - brandId provided, need to look up connectionId
+      const { data: connection } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+        .single()
+
+      if (!connection) {
+        console.log('No Meta connection found for brand')
+        return NextResponse.json({ 
+          demographics: { age: [], gender: [], ageGender: [] },
+          devicePerformance: { device: [], placement: [], platform: [] },
+          insights: {},
+          success: true
+        })
+      }
+
+      finalConnectionId = connection.id
     }
-
-    const connectionId = connection.id
 
     // Set default date range if not provided (last 30 days)
     const defaultToDate = new Date().toISOString().split('T')[0]
     const defaultFromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
-    const startDate = fromDate || defaultFromDate
-    const endDate = toDate || defaultToDate
+    // Support both date formats
+    const startDate = fromDate || dateRangeStart || defaultFromDate
+    const endDate = toDate || dateRangeEnd || defaultToDate
 
-    // Fetch demographic data
-    const { data: ageData } = await supabase
-      .from('meta_demographics')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'age')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
+    // If breakdownType is specified (legacy format), filter by that specific type
+    let ageData = null, genderData = null, ageGenderData = null
+    let deviceData = null, placementData = null, platformData = null
 
-    const { data: genderData } = await supabase
-      .from('meta_demographics')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'gender')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
+    if (breakdownType) {
+      // Legacy format - fetch only specific breakdown type
+      if (breakdownType === 'age') {
+        const { data } = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'age')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        ageData = data
+      } else if (breakdownType === 'gender') {
+        const { data } = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'gender')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        genderData = data
+      } else if (breakdownType === 'age_gender') {
+        const { data } = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'age_gender')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        ageGenderData = data
+      } else if (breakdownType === 'device') {
+        const { data } = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'device')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        deviceData = data
+      } else if (breakdownType === 'placement') {
+        const { data } = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'placement')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        placementData = data
+      } else if (breakdownType === 'platform') {
+        const { data } = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'platform')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+        platformData = data
+      }
+    } else {
+      // New format - fetch all demographic and device data
+      const [ageResult, genderResult, ageGenderResult, deviceResult, placementResult, platformResult] = await Promise.all([
+        supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'age')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate),
+        supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'gender')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate),
+        supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'age_gender')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate),
+        supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'device')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate),
+        supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'placement')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate),
+        supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('connection_id', finalConnectionId)
+          .eq('breakdown_type', 'platform')
+          .gte('date_range_start', startDate)
+          .lte('date_range_end', endDate)
+      ])
 
-    const { data: ageGenderData } = await supabase
-      .from('meta_demographics')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'age_gender')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
-
-    // Fetch device performance data
-    const { data: deviceData } = await supabase
-      .from('meta_device_performance')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'device')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
-
-    const { data: placementData } = await supabase
-      .from('meta_device_performance')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'placement')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
-
-    const { data: platformData } = await supabase
-      .from('meta_device_performance')
-      .select('*')
-      .eq('connection_id', connectionId)
-      .eq('breakdown_type', 'platform')
-      .gte('date_range_start', startDate)
-      .lte('date_range_end', endDate)
+      ageData = ageResult.data
+      genderData = genderResult.data
+      ageGenderData = ageGenderResult.data
+      deviceData = deviceResult.data
+      placementData = placementResult.data
+      platformData = platformResult.data
+    }
 
     // Aggregate demographic insights
     const demographics = {
@@ -166,15 +245,31 @@ export async function GET(request: NextRequest) {
         }))
     }
 
-    console.log(`[Meta Demographics API] Data gathered for brand ${brandId}:`, {
+    console.log(`[Meta Demographics API] Data gathered:`, {
       ageGroups: demographics.age.length,
       genderData: demographics.gender.length,
       deviceTypes: devicePerformance.device.length,
       placements: devicePerformance.placement.length,
       platforms: devicePerformance.platform.length,
-      dateRange: `${startDate} to ${endDate}`
+      dateRange: `${startDate} to ${endDate}`,
+      breakdownType: breakdownType || 'all',
+      connectionId: finalConnectionId
     })
 
+    // If breakdownType is specified (legacy format), return just that data in the old format
+    if (breakdownType) {
+      let responseData = []
+      if (breakdownType === 'age') responseData = ageData || []
+      else if (breakdownType === 'gender') responseData = genderData || []
+      else if (breakdownType === 'age_gender') responseData = ageGenderData || []
+      else if (breakdownType === 'device') responseData = deviceData || []
+      else if (breakdownType === 'placement') responseData = placementData || []
+      else if (breakdownType === 'platform') responseData = platformData || []
+
+      return NextResponse.json(responseData)
+    }
+
+    // New format - return comprehensive data
     return NextResponse.json({
       demographics,
       devicePerformance,
