@@ -51,24 +51,34 @@ export async function POST(request: NextRequest) {
         if (dateRange?.from && dateRange?.to) {
           console.log(`[Shopify Sync] Syncing historical data for range: ${dateRange.from} to ${dateRange.to}`)
           
-          // Call the historical backfill API for the specific date range
-          const backfillResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'}/api/shopify/historical-backfill`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          // Import and call the backfill function directly to avoid auth issues
+          const { backfillHistoricalData } = await import('../../../shopify/historical-backfill/route')
+          
+          try {
+            const startDate = new Date(dateRange.from)
+            const endDate = new Date(dateRange.to)
+            
+            const backfillResult = await backfillHistoricalData(
               brandId,
-              startDate: dateRange.from,
-              endDate: dateRange.to,
-              forceRefresh: force_refresh || false
-            })
-          })
-          
-          if (!backfillResponse.ok) {
-            throw new Error(`Historical sync failed: ${backfillResponse.status}`)
+              connection.shop,
+              connection.access_token,
+              connection.id,
+              startDate,
+              endDate,
+              force_refresh || false
+            )
+            
+            console.log(`[Shopify Sync] Historical sync result:`, backfillResult)
+            
+            if (!backfillResult.success) {
+              throw new Error(backfillResult.error || 'Historical sync failed')
+            }
+            
+          } catch (backfillError) {
+            console.error(`[Shopify Sync] Backfill error for ${dateRange.from} to ${dateRange.to}:`, backfillError)
+            console.error(`[Shopify Sync] Full error details:`, JSON.stringify(backfillError, null, 2))
+            throw backfillError
           }
-          
-          const backfillResult = await backfillResponse.json()
-          console.log(`[Shopify Sync] Historical sync result:`, backfillResult)
           
         } else {
           // Default: sync recent data only

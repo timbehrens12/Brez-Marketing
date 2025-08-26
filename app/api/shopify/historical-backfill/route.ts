@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 /**
  * Backfill historical data for a specific connection and date range
  */
-async function backfillHistoricalData(
+export async function backfillHistoricalData(
   brandId: string,
   shop: string,
   accessToken: string,
