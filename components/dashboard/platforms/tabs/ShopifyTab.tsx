@@ -713,7 +713,7 @@ export function ShopifyTab({
         duration: 3000 
       });
 
-      // Trigger data refresh
+      // Trigger data refresh for all components
       window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', { 
         detail: { 
           brandId, 
@@ -721,6 +721,17 @@ export function ShopifyTab({
           forceRefresh: true
         }
       }));
+      
+      // Also dispatch specific events for enhanced widgets
+      window.dispatchEvent(new CustomEvent('refresh-all-widgets', { 
+        detail: { 
+          brandId, 
+          timestamp: Date.now(),
+          source: 'shopify-sync'
+        }
+      }));
+      
+      console.log(`[ShopifyTab] Dispatched refresh events for brand ${brandId}`);
 
     } catch (error) {
       console.error('Failed to sync Shopify data:', error);

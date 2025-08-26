@@ -65,6 +65,9 @@ export function CustomerSegmentationWidget({
 
       if (result.success) {
         setData(result.data)
+        console.log('[CustomerSegmentationWidget] Successfully loaded data:', result.data);
+      } else {
+        console.log('[CustomerSegmentationWidget] No data received:', result);
       }
     } catch (error) {
       console.error('Error fetching customer segmentation:', error)
@@ -79,18 +82,25 @@ export function CustomerSegmentationWidget({
 
   // Listen for refresh events
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (event?: any) => {
+      console.log('[CustomerSegmentationWidget] Received refresh event:', event?.type);
       fetchSegmentData()
     }
 
     window.addEventListener('refresh-all-widgets', handleRefresh)
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
+    window.addEventListener('global-refresh-all', handleRefresh)
+    
+    // Also refresh when specific Shopify sync events occur
+    window.addEventListener('shopify-sync-completed', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+      window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchSegmentData])
 

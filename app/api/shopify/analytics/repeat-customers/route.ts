@@ -41,6 +41,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
     }
 
+    // Debug logging to check what data we're getting
+    console.log(`[Repeat Customers API] Fetched ${ordersData?.length || 0} orders for brand ${brandId}`)
+    if (from || to) {
+      console.log(`[Repeat Customers API] Date range filter: ${from} to ${to}`)
+    }
+    if (ordersData && ordersData.length > 0) {
+      console.log(`[Repeat Customers API] Sample order:`, {
+        id: ordersData[0].id,
+        customer_id: ordersData[0].customer_id,
+        customer_email: ordersData[0].customer_email,
+        total_price: ordersData[0].total_price,
+        created_at: ordersData[0].created_at
+      })
+    }
+
     // Get real address data from shopify_sales_by_region (populated by webhooks)
     const { data: addressData, error: addressError } = await supabase
       .from('shopify_sales_by_region')

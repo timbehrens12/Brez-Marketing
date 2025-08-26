@@ -79,6 +79,9 @@ export function RepeatCustomersWidget({
 
       if (result.success) {
         setData(result.data)
+        console.log('[RepeatCustomersWidget] Successfully loaded data:', result.data);
+      } else {
+        console.log('[RepeatCustomersWidget] No data received:', result);
       }
     } catch (error) {
       console.error('Error fetching repeat customer data:', error)
@@ -93,18 +96,25 @@ export function RepeatCustomersWidget({
 
   // Listen for refresh events
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (event?: any) => {
+      console.log('[RepeatCustomersWidget] Received refresh event:', event?.type);
       fetchRepeatData()
     }
 
     window.addEventListener('refresh-all-widgets', handleRefresh)
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
+    window.addEventListener('global-refresh-all', handleRefresh)
+    
+    // Also refresh when specific Shopify sync events occur
+    window.addEventListener('shopify-sync-completed', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+      window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchRepeatData])
 
