@@ -1210,19 +1210,65 @@ export default function DashboardPage() {
             });
           }
           
-          const syncOrdersResponse = await fetch('/api/shopify/sync', {
+          const syncOrdersResponse = await fetch('/api/cron/shopify-sync', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ connectionId: shopifyConnection.id })
+            body: JSON.stringify({ 
+              brandId: selectedBrandId,
+              force_refresh: true,
+              full_sync: true
+            })
           })
           
           if (!syncOrdersResponse.ok) {
             // console.error('Failed to sync orders data:', await syncOrdersResponse.text())
           } else {
             // Wait for the sync to complete
-            await new Promise(resolve => setTimeout(resolve, 5000))
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            
+            // Also sync comparison period data
+            try {
+              const getPreviousPeriodDates = (from: Date, to: Date) => {
+                const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+                const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+                
+                const currentRange = toNormalized.getTime() - fromNormalized.getTime();
+                const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
+                
+                const prevFrom = new Date(fromNormalized);
+                prevFrom.setDate(prevFrom.getDate() - daysInRange);
+                
+                const prevTo = new Date(toNormalized);
+                prevTo.setDate(prevTo.getDate() - daysInRange);
+                
+                return {
+                  prevFrom: format(prevFrom, 'yyyy-MM-dd'),
+                  prevTo: format(prevTo, 'yyyy-MM-dd')
+                };
+              };
+              
+              const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+              
+              await fetch('/api/cron/shopify-sync', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  brandId: selectedBrandId,
+                  force_refresh: true,
+                  dateFrom: prevFrom,
+                  dateTo: prevTo,
+                  comparison_sync: true
+                })
+              });
+              
+              // console.log(`[Dashboard] Shopify comparison period synced: ${prevFrom} to ${prevTo}`);
+            } catch (compError) {
+              // console.warn('Shopify comparison sync failed:', compError);
+            }
           }
         } catch (error) {
           // console.error('Error syncing orders data:', error)

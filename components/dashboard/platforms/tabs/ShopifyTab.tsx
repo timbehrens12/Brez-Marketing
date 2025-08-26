@@ -23,6 +23,7 @@ import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidge
 import { AbandonedCartWidget } from "@/components/shopify/AbandonedCartWidget"
 
 import { format } from "date-fns"
+import { toast } from "sonner"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -647,6 +648,152 @@ export function ShopifyTab({
 
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
+  // Trigger fresh sync on mount and date changes (like MetaTab2)
+  const hasFetchedShopifyData = useRef(false);
+  const lastFetchedDateRange = useRef({from: '', to: ''});
+
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to && connection) {
+      const currentFromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const currentToDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      // Check if this is initial mount or if date range has changed
+      const isInitialMount = !hasFetchedShopifyData.current;
+      const hasDateRangeChanged = 
+        lastFetchedDateRange.current.from !== currentFromDate || 
+        lastFetchedDateRange.current.to !== currentToDate;
+      
+      if (isInitialMount || hasDateRangeChanged) {
+        console.log(`[ShopifyTab] ${isInitialMount ? 'Initial mount' : 'Date range changed'} - triggering fresh sync`);
+        
+        // Update the tracking refs
+        lastFetchedDateRange.current = {from: currentFromDate, to: currentToDate};
+        hasFetchedShopifyData.current = true;
+        
+        // Trigger fresh sync to ensure we have the latest data
+        syncShopifyData('mount-or-date-change');
+      }
+    } else {
+      // Reset tracking if requirements not met
+      hasFetchedShopifyData.current = false;
+      lastFetchedDateRange.current = {from: '', to: ''};
+    }
+  }, [brandId, dateRange, connection, syncShopifyData]);
+
+  // Fresh data sync function (like Meta's syncMetaInsights)
+  const syncShopifyData = useCallback(async (refreshId?: string) => {
+    if (!brandId || !connection) {
+      return;
+    }
+
+    try {
+      console.log(`[ShopifyTab] 🔄 Starting fresh Shopify data sync for brand ${brandId}`);
+      
+      // Show toast for sync
+      toast.loading("Syncing fresh Shopify data...", { 
+        id: "shopify-sync-toast",
+        duration: 15000 
+      });
+
+      // Trigger fresh Shopify sync
+      const syncResponse = await fetch('/api/cron/shopify-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          force_refresh: true,
+          full_sync: true
+        }),
+      });
+
+      if (!syncResponse.ok) {
+        throw new Error(`Shopify sync failed: ${syncResponse.status}`);
+      }
+
+      const syncResult = await syncResponse.json();
+      console.log(`✅ Shopify sync completed:`, syncResult);
+
+      // Also sync comparison period data for the previous period
+      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+      
+      try {
+        console.log(`[ShopifyTab] 🔄 Syncing comparison period: ${prevFrom} to ${prevTo}`);
+        
+        await fetch('/api/cron/shopify-sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId,
+            force_refresh: true,
+            dateFrom: prevFrom,
+            dateTo: prevTo,
+            comparison_sync: true
+          }),
+        });
+        
+        console.log(`✅ Comparison period sync completed`);
+      } catch (compError) {
+        console.warn('Comparison period sync failed:', compError);
+      }
+
+      toast.success("Shopify data synced successfully", { 
+        id: "shopify-sync-toast",
+        duration: 3000 
+      });
+
+      // Trigger data refresh
+      window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', { 
+        detail: { 
+          brandId, 
+          timestamp: Date.now(),
+          forceRefresh: true
+        }
+      }));
+
+    } catch (error) {
+      console.error('Failed to sync Shopify data:', error);
+      toast.error("Failed to sync Shopify data", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 5000,
+        id: "shopify-sync-toast"
+      });
+    }
+  }, [brandId, connection, dateRange]);
+
+  // Helper function to get previous period dates (similar to Meta)
+  const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
+    const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    
+    // Single day comparison
+    const isSingleDay = isSameDay(fromNormalized, toNormalized);
+    if (isSingleDay) {
+      const prevDay = new Date(fromNormalized);
+      prevDay.setDate(prevDay.getDate() - 1);
+      const prevDayStr = format(prevDay, 'yyyy-MM-dd');
+      return { prevFrom: prevDayStr, prevTo: prevDayStr };
+    }
+    
+    // Default: equivalent previous period
+    const currentRange = toNormalized.getTime() - fromNormalized.getTime();
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
+    
+    const prevFrom = new Date(fromNormalized);
+    prevFrom.setDate(prevFrom.getDate() - daysInRange);
+    
+    const prevTo = new Date(toNormalized);
+    prevTo.setDate(prevTo.getDate() - daysInRange);
+    
+    return {
+      prevFrom: format(prevFrom, 'yyyy-MM-dd'),
+      prevTo: format(prevTo, 'yyyy-MM-dd')
+    };
+  };
+
   // Listen for external refresh events from GlobalRefreshButton
   useEffect(() => {
     let cancelled = false;
@@ -654,7 +801,10 @@ export function ShopifyTab({
     const handleExternalRefresh = async (event: any) => {
       if (cancelled) return;
       
-      // Trigger the same refresh logic that the component uses internally
+      // Trigger fresh data sync like Meta page
+      await syncShopifyData('external-refresh');
+      
+      // Also trigger the existing refresh logic
       safeDispatchRefresh('external-refresh-button');
     };
     
