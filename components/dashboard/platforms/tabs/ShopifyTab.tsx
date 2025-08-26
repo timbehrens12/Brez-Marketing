@@ -648,38 +648,6 @@ export function ShopifyTab({
 
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
-  // Trigger fresh sync on mount and date changes (like MetaTab2)
-  const hasFetchedShopifyData = useRef(false);
-  const lastFetchedDateRange = useRef({from: '', to: ''});
-
-  useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to && connection) {
-      const currentFromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const currentToDate = format(dateRange.to, 'yyyy-MM-dd');
-      
-      // Check if this is initial mount or if date range has changed
-      const isInitialMount = !hasFetchedShopifyData.current;
-      const hasDateRangeChanged = 
-        lastFetchedDateRange.current.from !== currentFromDate || 
-        lastFetchedDateRange.current.to !== currentToDate;
-      
-      if (isInitialMount || hasDateRangeChanged) {
-        console.log(`[ShopifyTab] ${isInitialMount ? 'Initial mount' : 'Date range changed'} - triggering fresh sync`);
-        
-        // Update the tracking refs
-        lastFetchedDateRange.current = {from: currentFromDate, to: currentToDate};
-        hasFetchedShopifyData.current = true;
-        
-        // Trigger fresh sync to ensure we have the latest data
-        syncShopifyData('mount-or-date-change');
-      }
-    } else {
-      // Reset tracking if requirements not met
-      hasFetchedShopifyData.current = false;
-      lastFetchedDateRange.current = {from: '', to: ''};
-    }
-  }, [brandId, dateRange, connection, syncShopifyData]);
-
   // Fresh data sync function (like Meta's syncMetaInsights)
   const syncShopifyData = useCallback(async (refreshId?: string) => {
     if (!brandId || !connection) {
@@ -763,6 +731,38 @@ export function ShopifyTab({
       });
     }
   }, [brandId, connection, dateRange]);
+
+  // Trigger fresh sync on mount and date changes (like MetaTab2)
+  const hasFetchedShopifyData = useRef(false);
+  const lastFetchedDateRange = useRef({from: '', to: ''});
+
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to && connection) {
+      const currentFromDate = format(dateRange.from, 'yyyy-MM-dd');
+      const currentToDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      // Check if this is initial mount or if date range has changed
+      const isInitialMount = !hasFetchedShopifyData.current;
+      const hasDateRangeChanged = 
+        lastFetchedDateRange.current.from !== currentFromDate || 
+        lastFetchedDateRange.current.to !== currentToDate;
+      
+      if (isInitialMount || hasDateRangeChanged) {
+        console.log(`[ShopifyTab] ${isInitialMount ? 'Initial mount' : 'Date range changed'} - triggering fresh sync`);
+        
+        // Update the tracking refs
+        lastFetchedDateRange.current = {from: currentFromDate, to: currentToDate};
+        hasFetchedShopifyData.current = true;
+        
+        // Trigger fresh sync to ensure we have the latest data
+        syncShopifyData('mount-or-date-change');
+      }
+    } else {
+      // Reset tracking if requirements not met
+      hasFetchedShopifyData.current = false;
+      lastFetchedDateRange.current = {from: '', to: ''};
+    }
+  }, [brandId, dateRange, connection, syncShopifyData]);
 
   // Listen for external refresh events from GlobalRefreshButton
   useEffect(() => {
