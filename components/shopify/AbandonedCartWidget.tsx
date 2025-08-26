@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingCart, DollarSign, MapPin, RefreshCcw, Package } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { format } from "date-fns"
 
 interface AbandonedCartData {
   overview: {
@@ -56,12 +57,14 @@ interface AbandonedCartData {
 
 interface AbandonedCartWidgetProps {
   brandId: string
+  dateRange?: { from: Date; to: Date }
   isLoading?: boolean
   isRefreshingData?: boolean
 }
 
 export function AbandonedCartWidget({ 
   brandId, 
+  dateRange,
   isLoading = false, 
   isRefreshingData = false 
 }: AbandonedCartWidgetProps) {
@@ -69,12 +72,25 @@ export function AbandonedCartWidget({
   const [error, setError] = useState<string | null>(null)
   const [isWidgetLoading, setIsWidgetLoading] = useState(true)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!brandId) return
     
     try {
       setError(null)
-      const response = await fetch(`/api/shopify/analytics/abandoned-carts?brandId=${brandId}`)
+      setIsWidgetLoading(true)
+      
+      // Build URL with date range if provided
+      let url = `/api/shopify/analytics/abandoned-carts?brandId=${brandId}`
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = format(dateRange.from, 'yyyy-MM-dd')
+        const toDate = format(dateRange.to, 'yyyy-MM-dd')
+        url += `&from=${fromDate}&to=${toDate}`
+      }
+      
+      // Add cache busting
+      url += `&t=${Date.now()}`
+      
+      const response = await fetch(url)
       const result = await response.json()
       
       if (!response.ok) {
@@ -92,11 +108,28 @@ export function AbandonedCartWidget({
     } finally {
       setIsWidgetLoading(false)
     }
-  }
+  }, [brandId, dateRange])
 
   useEffect(() => {
     fetchData()
-  }, [brandId])
+  }, [fetchData])
+
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchData()
+    }
+
+    window.addEventListener('refresh-all-widgets', handleRefresh)
+    window.addEventListener('force-shopify-refresh', handleRefresh)
+    window.addEventListener('shopifyDataRefreshed', handleRefresh)
+
+    return () => {
+      window.removeEventListener('refresh-all-widgets', handleRefresh)
+      window.removeEventListener('force-shopify-refresh', handleRefresh)
+      window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+    }
+  }, [fetchData])
 
   const showLoading = isLoading || isWidgetLoading || isRefreshingData
 

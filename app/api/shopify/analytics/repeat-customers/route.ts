@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -19,11 +21,20 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
 
     // Get orders data to calculate repeat customer metrics
-    const { data: ordersData, error: ordersError } = await supabase
+    let ordersQuery = supabase
       .from('shopify_orders')
       .select('id, total_price, customer_id, customer_email, customer_first_name, customer_last_name, created_at')
       .eq('brand_id', brandId)
-      .order('created_at', { ascending: true })
+
+    // Apply date range filter if provided
+    if (from) {
+      ordersQuery = ordersQuery.gte('created_at', from)
+    }
+    if (to) {
+      ordersQuery = ordersQuery.lte('created_at', to)
+    }
+
+    const { data: ordersData, error: ordersError } = await ordersQuery.order('created_at', { ascending: true })
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError)

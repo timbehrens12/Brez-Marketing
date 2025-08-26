@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
 
     // Get orders with shipping addresses to calculate customer segments by location
-    const { data: ordersData, error: ordersError } = await supabase
+    let ordersQuery = supabase
       .from('shopify_orders')
       .select(`
         id,
@@ -31,6 +33,16 @@ export async function GET(request: NextRequest) {
         created_at
       `)
       .eq('brand_id', brandId)
+
+    // Apply date range filter if provided
+    if (from) {
+      ordersQuery = ordersQuery.gte('created_at', from)
+    }
+    if (to) {
+      ordersQuery = ordersQuery.lte('created_at', to)
+    }
+
+    const { data: ordersData, error: ordersError } = await ordersQuery
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError)

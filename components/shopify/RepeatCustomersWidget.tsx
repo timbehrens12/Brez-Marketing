@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Repeat, Users, TrendingUp, Calendar } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface RepeatCustomersWidgetProps {
   brandId: string
+  dateRange?: { from: Date; to: Date }
   isLoading?: boolean
   isRefreshingData?: boolean
 }
@@ -48,33 +50,63 @@ interface RepeatCustomerData {
 
 export function RepeatCustomersWidget({ 
   brandId, 
+  dateRange,
   isLoading = false, 
   isRefreshingData = false 
 }: RepeatCustomersWidgetProps) {
   const [data, setData] = useState<RepeatCustomerData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchRepeatData = useCallback(async () => {
     if (!brandId) return
 
-    const fetchRepeatData = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/shopify/analytics/repeat-customers?brandId=${brandId}`)
-        const result = await response.json()
-
-        if (result.success) {
-          setData(result.data)
-        }
-      } catch (error) {
-        console.error('Error fetching repeat customer data:', error)
-      } finally {
-        setLoading(false)
+    try {
+      setLoading(true)
+      
+      // Build URL with date range if provided
+      let url = `/api/shopify/analytics/repeat-customers?brandId=${brandId}`
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = format(dateRange.from, 'yyyy-MM-dd')
+        const toDate = format(dateRange.to, 'yyyy-MM-dd')
+        url += `&from=${fromDate}&to=${toDate}`
       }
+      
+      // Add cache busting
+      url += `&t=${Date.now()}`
+      
+      const response = await fetch(url)
+      const result = await response.json()
+
+      if (result.success) {
+        setData(result.data)
+      }
+    } catch (error) {
+      console.error('Error fetching repeat customer data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [brandId, dateRange])
+
+  useEffect(() => {
+    fetchRepeatData()
+  }, [fetchRepeatData])
+
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchRepeatData()
     }
 
-    fetchRepeatData()
-  }, [brandId])
+    window.addEventListener('refresh-all-widgets', handleRefresh)
+    window.addEventListener('force-shopify-refresh', handleRefresh)
+    window.addEventListener('shopifyDataRefreshed', handleRefresh)
+
+    return () => {
+      window.removeEventListener('refresh-all-widgets', handleRefresh)
+      window.removeEventListener('force-shopify-refresh', handleRefresh)
+      window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+    }
+  }, [fetchRepeatData])
 
   const isDataLoading = loading || isLoading || isRefreshingData
 

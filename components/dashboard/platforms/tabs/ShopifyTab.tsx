@@ -765,33 +765,33 @@ export function ShopifyTab({
   //   }
   // }, [brandId, dateRange, connection, syncShopifyData]);
 
-  // TEMPORARILY DISABLED: Listen for external refresh events from GlobalRefreshButton
-  // This was causing infinite loops - need to investigate what's triggering the events
-  // useEffect(() => {
-  //   let cancelled = false;
-  //   
-  //   const handleExternalRefresh = async (event: any) => {
-  //     if (cancelled) return;
-  //     
-  //     // Trigger fresh data sync like Meta page
-  //     await syncShopifyData('external-refresh');
-  //     
-  //     // NOTE: Removed safeDispatchRefresh call to prevent infinite loop
-  //     // The sync itself already triggers UI updates via data changes
-  //   };
-  //   
-  //   // Listen for refresh events from GlobalRefreshButton
-  //   window.addEventListener('force-shopify-refresh', handleExternalRefresh);
-  //   window.addEventListener('global-refresh-all', handleExternalRefresh);
-  //   window.addEventListener('refresh-all-widgets', handleExternalRefresh);
-  //   
-  //   return () => {
-  //     cancelled = true;
-  //     window.removeEventListener('force-shopify-refresh', handleExternalRefresh);
-  //     window.removeEventListener('global-refresh-all', handleExternalRefresh);
-  //     window.removeEventListener('refresh-all-widgets', handleExternalRefresh);
-  //   };
-  // }, [brandId, safeDispatchRefresh, syncShopifyData]);
+  // Listen for external refresh events from GlobalRefreshButton (with proper controls)
+  useEffect(() => {
+    let cancelled = false;
+    
+    const handleExternalRefresh = async (event: any) => {
+      if (cancelled) return;
+      
+      console.log('[ShopifyTab] Handling external refresh event:', event.type);
+      
+      // Only sync data, don't dispatch more events to avoid loops
+      if (typeof syncShopifyData === 'function') {
+        await syncShopifyData('external-refresh');
+      }
+    };
+    
+    // Listen for refresh events from GlobalRefreshButton
+    window.addEventListener('global-refresh-all', handleExternalRefresh);
+    window.addEventListener('refresh-all-widgets', handleExternalRefresh);
+    
+    // Note: Removed 'force-shopify-refresh' to prevent self-triggering loops
+    
+    return () => {
+      cancelled = true;
+      window.removeEventListener('global-refresh-all', handleExternalRefresh);
+      window.removeEventListener('refresh-all-widgets', handleExternalRefresh);
+    };
+  }, [syncShopifyData]); // Only depend on syncShopifyData function
 
   useEffect(() => {
     // This effect runs once on mount, after the component has rendered
@@ -1020,6 +1020,7 @@ export function ShopifyTab({
           {/* Customer Segmentation by Location */}
           <CustomerSegmentationWidget 
             brandId={brandId}
+            dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
@@ -1027,6 +1028,7 @@ export function ShopifyTab({
           {/* Abandoned Cart Analysis */}
           <AbandonedCartWidget 
             brandId={brandId}
+            dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
@@ -1036,6 +1038,7 @@ export function ShopifyTab({
         <div className="mt-6">
           <RepeatCustomersWidget 
             brandId={brandId}
+            dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />

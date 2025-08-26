@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Users, TrendingUp, Globe } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface CustomerSegmentationWidgetProps {
   brandId: string
+  dateRange?: { from: Date; to: Date }
   isLoading?: boolean
   isRefreshingData?: boolean
 }
@@ -34,33 +36,63 @@ interface SegmentData {
 
 export function CustomerSegmentationWidget({ 
   brandId, 
+  dateRange,
   isLoading = false, 
   isRefreshingData = false 
 }: CustomerSegmentationWidgetProps) {
   const [data, setData] = useState<SegmentData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchSegmentData = useCallback(async () => {
     if (!brandId) return
 
-    const fetchSegmentData = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/shopify/analytics/customer-segments?brandId=${brandId}`)
-        const result = await response.json()
-
-        if (result.success) {
-          setData(result.data)
-        }
-      } catch (error) {
-        console.error('Error fetching customer segmentation:', error)
-      } finally {
-        setLoading(false)
+    try {
+      setLoading(true)
+      
+      // Build URL with date range if provided
+      let url = `/api/shopify/analytics/customer-segments?brandId=${brandId}`
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = format(dateRange.from, 'yyyy-MM-dd')
+        const toDate = format(dateRange.to, 'yyyy-MM-dd')
+        url += `&from=${fromDate}&to=${toDate}`
       }
+      
+      // Add cache busting
+      url += `&t=${Date.now()}`
+      
+      const response = await fetch(url)
+      const result = await response.json()
+
+      if (result.success) {
+        setData(result.data)
+      }
+    } catch (error) {
+      console.error('Error fetching customer segmentation:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [brandId, dateRange])
+
+  useEffect(() => {
+    fetchSegmentData()
+  }, [fetchSegmentData])
+
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchSegmentData()
     }
 
-    fetchSegmentData()
-  }, [brandId])
+    window.addEventListener('refresh-all-widgets', handleRefresh)
+    window.addEventListener('force-shopify-refresh', handleRefresh)
+    window.addEventListener('shopifyDataRefreshed', handleRefresh)
+
+    return () => {
+      window.removeEventListener('refresh-all-widgets', handleRefresh)
+      window.removeEventListener('force-shopify-refresh', handleRefresh)
+      window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+    }
+  }, [fetchSegmentData])
 
   const isDataLoading = loading || isLoading || isRefreshingData
 
