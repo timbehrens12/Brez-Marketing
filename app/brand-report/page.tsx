@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { useAgency } from "@/contexts/AgencyContext"
-import { Footer } from "@/components/Footer"
+
 import { getAuthenticatedSupabaseClient, getStandardSupabaseClient } from "@/lib/utils/unified-supabase"
 
 interface PlatformConnection {
@@ -2777,8 +2777,7 @@ export default function BrandReportPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <Footer />
+
         
       {/* Secret Dev Panel Activator */}
       <div 
