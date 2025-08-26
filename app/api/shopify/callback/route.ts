@@ -166,14 +166,24 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      // 2. BACKGROUND: Start full historical import (don't wait)
-      console.log('[Shopify Callback] Starting background historical import...')
-      ShopifyBulkService.startFullHistoricalImport(
-        brandId, 
-        shop, 
-        access_token,
-        connectionId
-      ).catch(err => console.error('[Shopify Callback] Background import failed:', err))
+      // 2. BACKGROUND: Start complete historical sync using working API (don't wait)
+      console.log('[Shopify Callback] Starting complete historical data sync...')
+      fetch(`${APP_URL}/api/shopify/historical-backfill`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          brandId,
+          forceRefresh: true // Complete refresh for new connections
+        })
+      }).then(async (res) => {
+        const result = await res.json()
+        if (result.success) {
+          const totalOrders = result.results?.reduce((sum: number, r: any) => sum + (r.ordersAdded || 0), 0) || 0
+          console.log(`[Shopify Callback] ✅ Complete historical sync completed: ${totalOrders} orders synced`)
+        } else {
+          console.error('[Shopify Callback] ❌ Historical sync failed:', result.error)
+        }
+      }).catch(err => console.error('[Shopify Callback] Historical sync request failed:', err))
 
       // 3. BACKGROUND: Trigger inventory sync (don't wait)
       fetch(`${APP_URL}/api/shopify/inventory/sync`, {
