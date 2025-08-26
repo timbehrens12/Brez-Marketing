@@ -66,6 +66,8 @@ export function CustomerSegmentationWidget({
       if (result.success) {
         setData(result.data)
         console.log('[CustomerSegmentationWidget] Successfully loaded data:', result.data);
+        console.log('[CustomerSegmentationWidget] Top locations count:', result.data.topLocations?.length || 0);
+        console.log('[CustomerSegmentationWidget] Total customers:', result.data.overview?.totalCustomers || 0);
       } else {
         console.log('[CustomerSegmentationWidget] No data received:', result);
       }

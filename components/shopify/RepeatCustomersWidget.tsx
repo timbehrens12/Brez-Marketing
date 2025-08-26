@@ -80,6 +80,9 @@ export function RepeatCustomersWidget({
       if (result.success) {
         setData(result.data)
         console.log('[RepeatCustomersWidget] Successfully loaded data:', result.data);
+        console.log('[RepeatCustomersWidget] Total customers:', result.data.overview?.totalCustomers || 0);
+        console.log('[RepeatCustomersWidget] Repeat customers:', result.data.overview?.repeatCustomers || 0);
+        console.log('[RepeatCustomersWidget] Top repeaters count:', result.data.topRepeaters?.length || 0);
       } else {
         console.log('[RepeatCustomersWidget] No data received:', result);
       }

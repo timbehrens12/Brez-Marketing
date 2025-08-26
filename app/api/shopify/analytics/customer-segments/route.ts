@@ -77,9 +77,14 @@ export async function GET(request: NextRequest) {
 
     // Create a map of order_id to address
     const addressMap = new Map()
+    console.log(`[Customer Segments API] Fetched ${addressData?.length || 0} address records`);
     addressData?.forEach(addr => {
       addressMap.set(parseInt(addr.order_id), addr)
     })
+    
+    if (addressData && addressData.length > 0) {
+      console.log(`[Customer Segments API] Sample address:`, addressData[0]);
+    }
 
     // Group orders by location and calculate customer segments
     const locationStats = {} as Record<string, any>

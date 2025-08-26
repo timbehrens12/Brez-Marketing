@@ -76,8 +76,20 @@ export async function GET(request: NextRequest) {
     // Calculate repeat customer metrics
     const customerOrderHistory = new Map()
     
-    ordersData?.forEach(order => {
+    console.log(`[Repeat Customers API] Processing ${ordersData?.length || 0} orders...`);
+    
+    ordersData?.forEach((order, index) => {
       // Use customer_id if available, otherwise use email, otherwise use order_id as unique identifier
+      if (index < 3) { // Log first 3 orders for debugging
+        console.log(`[Repeat Customers API] Order ${index + 1}:`, {
+          id: order.id,
+          customer_id: order.customer_id,
+          customer_email: order.customer_email,
+          customer_name: `${order.customer_first_name || ''} ${order.customer_last_name || ''}`.trim(),
+          total_price: order.total_price,
+          created_at: order.created_at
+        });
+      }
       const customerId = order.customer_id || order.customer_email || `order_${order.id}`
       if (!customerId) return
       
