@@ -40,8 +40,8 @@ export function PlatformConnections({ brandId }: { brandId: string }) {
     
     try {
       toast({
-        title: "Starting Historical Backfill",
-        description: "Filling gaps in your Shopify data for the last 30 days...",
+        title: "Starting Complete Historical Sync",
+        description: "Syncing ALL historical data from Shopify. This may take a few minutes...",
       })
       
       const response = await fetch('/api/shopify/historical-backfill', {
@@ -49,7 +49,7 @@ export function PlatformConnections({ brandId }: { brandId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           brandId,
-          forceRefresh: false // Only add missing data, don't overwrite existing
+          forceRefresh: true // Force complete refresh to ensure all data is synced
         })
       })
       
@@ -59,8 +59,8 @@ export function PlatformConnections({ brandId }: { brandId: string }) {
         const totalOrders = result.results?.reduce((sum: number, r: any) => sum + (r.ordersAdded || 0), 0) || 0
         
         toast({
-          title: "Backfill Completed!",
-          description: `Successfully filled gaps with ${totalOrders} orders. Your widgets will refresh automatically.`,
+          title: "Complete Sync Finished!",
+          description: `Successfully synced ${totalOrders} orders from Shopify. All historical data is now up to date!`,
         })
         
         // Trigger widget refresh
@@ -73,8 +73,8 @@ export function PlatformConnections({ brandId }: { brandId: string }) {
     } catch (error) {
       console.error('Backfill error:', error)
       toast({
-        title: "Backfill Failed",
-        description: error instanceof Error ? error.message : "Failed to complete historical backfill",
+        title: "Sync Failed",
+        description: error instanceof Error ? error.message : "Failed to complete historical sync",
         variant: "destructive"
       })
     } finally {
@@ -109,7 +109,7 @@ export function PlatformConnections({ brandId }: { brandId: string }) {
               ) : (
                 <Calendar className="h-4 w-4" />
               )}
-              {isBackfilling ? 'Filling Gaps...' : 'Fill Data Gaps'}
+              {isBackfilling ? 'Syncing All Data...' : 'Sync All Historical Data'}
             </Button>
           )}
         </div>

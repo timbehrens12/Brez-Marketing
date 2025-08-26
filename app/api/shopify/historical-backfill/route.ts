@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Default to last 30 days if no dates provided
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // Default to ALL historical data (2 years back) if no dates provided
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000)
     const end = endDate ? new Date(endDate) : new Date()
 
     console.log(`[Shopify Historical Backfill] Starting backfill for brand ${brandId}`)
@@ -145,7 +145,7 @@ async function backfillHistoricalData(
     let allOrders: any[] = []
     let pageInfo = { hasNextPage: true, cursor: null }
     let pageCount = 0
-    const maxPages = 20 // Safety limit to prevent infinite loops
+    const maxPages = 200 // Increased limit to get ALL historical data
 
     while (pageInfo.hasNextPage && pageCount < maxPages) {
       pageCount++
