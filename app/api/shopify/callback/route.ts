@@ -127,24 +127,24 @@ export async function GET(request: NextRequest) {
 
     // Trigger immediate mini-sync for instant dashboard population
     try {
-      console.log('[Shopify Callback] Starting immediate sync for instant UX...')
+      // Starting immediate sync
       
       // Import services dynamically to avoid circular imports
       const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
       const { ShopifyBulkService } = await import('@/lib/services/shopifyBulkService')
       
       // 1. IMMEDIATE: Start mini-sync (recent data) and WAIT for it
-      console.log('[Shopify Callback] Running immediate recent data sync...')
-      console.log(`[Shopify Callback] Sync params: brandId=${brandId}, shop=${shop}, connectionId=${connectionId}`)
+      // Running immediate recent data sync
+      // Sync params configured
       
       const syncStartTime = Date.now()
       await ShopifyBulkService.immediateRecentSync(brandId, shop, access_token, connectionId)
       const syncDuration = Date.now() - syncStartTime
       
-      console.log(`[Shopify Callback] ✅ Immediate sync completed in ${syncDuration}ms`)
+      // Immediate sync completed
       
       // 1.5. IMMEDIATE: Sync inventory/products for inventory widgets
-      console.log('[Shopify Callback] Starting inventory sync for widgets...')
+      // Starting inventory sync
       try {
         const inventoryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
           method: 'POST',
@@ -153,12 +153,12 @@ export async function GET(request: NextRequest) {
         })
         
         if (inventoryResponse.ok) {
-          console.log('[Shopify Callback] ✅ Inventory sync completed')
+          // Inventory sync completed
         } else {
-          console.log('[Shopify Callback] ⚠️ Inventory sync failed, but continuing...')
+          // Inventory sync failed, continuing
         }
       } catch (inventoryError) {
-        console.log('[Shopify Callback] ⚠️ Inventory sync error, but continuing...', inventoryError)
+        // Inventory sync error, continuing
       }
       
       // Verify data was actually inserted
@@ -169,16 +169,16 @@ export async function GET(request: NextRequest) {
         .limit(5)
       
       if (verifyError) {
-        console.error('[Shopify Callback] ❌ Error verifying inserted data:', verifyError)
+        // Error verifying inserted data
       } else {
-        console.log(`[Shopify Callback] ✅ Verification: Found ${verifyOrders?.length || 0} orders in database`)
+        // Verification: Found orders in database
         if (verifyOrders?.length) {
-          console.log('[Shopify Callback] Sample orders:', verifyOrders.map(o => `#${o.id} ($${o.total_price})`))
+          // Sample orders logged
         }
       }
       
       // 2. BACKGROUND: Start new queue-based sync architecture
-      console.log('[Shopify Callback] Starting queue-based sync architecture...')
+      // Starting queue-based sync architecture
       try {
         const connectedResponse = await fetch(`${APP_URL}/api/shopify/connected/${brandId}`, {
           method: 'POST',
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
         
         if (connectedResponse.ok) {
           const result = await connectedResponse.json()
-          console.log(`[Shopify Callback] ✅ Queue-based sync initiated:`, result)
+          // Queue-based sync initiated
           
           // Update connection status to show v2 sync is active
           await supabase
@@ -214,10 +214,10 @@ export async function GET(request: NextRequest) {
             
         } else {
           const errorText = await connectedResponse.text()
-          console.error('[Shopify Callback] ❌ Queue-based sync failed:', errorText)
+          // Queue-based sync failed
         }
       } catch (err) {
-        console.error('[Shopify Callback] Queue-based sync request failed:', err)
+        // Queue-based sync request failed
       }
 
       // 3. BACKGROUND: Trigger inventory sync (don't wait)
@@ -225,10 +225,10 @@ export async function GET(request: NextRequest) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionId, forceRefresh: true })
-      }).catch(err => console.error('[Shopify Callback] Inventory sync failed:', err))
+      }).catch(err => { /* Inventory sync failed */ })
 
     } catch (syncError) {
-      console.error('[Shopify Callback] Error in immediate sync:', syncError)
+      // Error in immediate sync
       // Continue anyway - sync failure shouldn't block the redirect
     }
 
@@ -239,8 +239,8 @@ export async function GET(request: NextRequest) {
       
       // Process analytics in background (don't block redirect)
       ShopifyAnalyticsService.processAllAnalytics(brandId!, connectionId!)
-        .then(() => console.log('[Shopify Callback] Analytics processing completed'))
-        .catch(err => console.error('[Shopify Callback] Analytics processing failed:', err))
+        .then(() => { /* Analytics processing completed */ })
+        .catch(err => { /* Analytics processing failed */ })
         
     } catch (analyticsError) {
       console.error('[Shopify Callback] Error starting analytics processing:', analyticsError)
