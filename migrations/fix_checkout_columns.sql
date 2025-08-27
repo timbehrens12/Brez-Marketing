@@ -21,6 +21,14 @@ ADD COLUMN IF NOT EXISTS country TEXT;
 ALTER TABLE shopify_checkouts
 ADD COLUMN IF NOT EXISTS city TEXT;
 
+-- Add missing country_code column to shopify_abandoned_checkouts
+ALTER TABLE shopify_abandoned_checkouts
+ADD COLUMN IF NOT EXISTS country_code TEXT;
+
+-- Add missing connection_id column to shopify_checkouts
+ALTER TABLE shopify_checkouts
+ADD COLUMN IF NOT EXISTS connection_id UUID REFERENCES platform_connections(id);
+
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_shopify_abandoned_checkouts_checkout_id 
 ON shopify_abandoned_checkouts(checkout_id);

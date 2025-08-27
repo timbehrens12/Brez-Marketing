@@ -7,10 +7,16 @@ export async function POST() {
   try {
     console.log('[Test Worker] Triggering worker manually...')
     
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    
+    // Ensure VERCEL_URL has protocol
+    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    }
+    
     const workerUrl = `${baseUrl}/api/worker/shopify`
+    
+    console.log(`[Test Worker] Calling worker at: ${workerUrl}`)
     
     const response = await fetch(workerUrl, {
       method: 'POST',
@@ -46,9 +52,13 @@ export async function POST() {
 export async function GET() {
   try {
     // Get queue status
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    
+    // Ensure VERCEL_URL has protocol
+    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    }
+    
     const statusUrl = `${baseUrl}/api/worker/shopify`
     
     const response = await fetch(statusUrl, {

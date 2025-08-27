@@ -104,10 +104,16 @@ export async function POST(
 
     // Step 5: Immediately trigger worker to start processing jobs
     try {
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+      
+      // Ensure VERCEL_URL has protocol
+      if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
+        baseUrl = `https://${process.env.VERCEL_URL}`
+      }
+      
       const workerUrl = `${baseUrl}/api/worker/shopify`
+      
+      console.log(`[Shopify Connected] Calling worker at: ${workerUrl}`)
       
       const workerResponse = await fetch(workerUrl, {
         method: 'POST',
@@ -120,7 +126,15 @@ export async function POST(
         })
       })
       
-      const workerResult = await workerResponse.json()
+      let workerResult
+      try {
+        workerResult = await workerResponse.json()
+      } catch (parseError) {
+        const responseText = await workerResponse.text()
+        console.error(`[Shopify Connected] Failed to parse worker response as JSON. Status: ${workerResponse.status}, Response: ${responseText.substring(0, 500)}`)
+        throw new Error(`Worker API returned invalid JSON. Status: ${workerResponse.status}`)
+      }
+      
       console.log(`[Shopify Connected] Worker processing initiated:`, workerResult)
       
     } catch (workerError) {

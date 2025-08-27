@@ -18,10 +18,16 @@ export async function GET(request: NextRequest) {
     console.log('[Cron Queue] Starting scheduled queue processing...')
     
     // Call the worker API to process jobs
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    
+    // Ensure VERCEL_URL has protocol
+    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    }
+    
     const workerUrl = `${baseUrl}/api/worker/shopify`
+    
+    console.log(`[Cron Queue] Calling worker at: ${workerUrl}`)
     
     const response = await fetch(workerUrl, {
       method: 'POST',
@@ -34,10 +40,17 @@ export async function GET(request: NextRequest) {
       })
     })
     
-    const result = await response.json()
+    let result
+    try {
+      result = await response.json()
+    } catch (parseError) {
+      const responseText = await response.text()
+      console.error(`[Cron Queue] Failed to parse worker response as JSON. Status: ${response.status}, Response: ${responseText.substring(0, 500)}`)
+      throw new Error(`Worker API returned invalid JSON. Status: ${response.status}`)
+    }
     
     if (!response.ok) {
-      throw new Error(`Worker API failed: ${result.error}`)
+      throw new Error(`Worker API failed: ${result.error || 'Unknown error'}`)
     }
     
     console.log('[Cron Queue] Queue processing completed:', result)

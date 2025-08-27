@@ -12,9 +12,10 @@ export async function POST(request: NextRequest) {
     
     // Check for authorization (optional - add API key if needed)
     const authHeader = request.headers.get('authorization')
+    const internalCall = request.headers.get('x-internal-call') === 'true'
     const cronSecret = process.env.CRON_SECRET
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!internalCall && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
