@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
     console.log('[Cron Queue] Starting scheduled queue processing...')
     
     // Call the worker API to process jobs
-    const workerUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/worker/shopify`
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const workerUrl = `${baseUrl}/api/worker/shopify`
     
     const response = await fetch(workerUrl, {
       method: 'POST',

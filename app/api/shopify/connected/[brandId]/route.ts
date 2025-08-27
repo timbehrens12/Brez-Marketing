@@ -104,7 +104,10 @@ export async function POST(
 
     // Step 5: Immediately trigger worker to start processing jobs
     try {
-      const workerUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/worker/shopify`
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      const workerUrl = `${baseUrl}/api/worker/shopify`
       
       const workerResponse = await fetch(workerUrl, {
         method: 'POST',

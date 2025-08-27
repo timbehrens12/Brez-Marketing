@@ -7,7 +7,10 @@ export async function POST() {
   try {
     console.log('[Test Worker] Triggering worker manually...')
     
-    const workerUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/worker/shopify`
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const workerUrl = `${baseUrl}/api/worker/shopify`
     
     const response = await fetch(workerUrl, {
       method: 'POST',
@@ -43,7 +46,10 @@ export async function POST() {
 export async function GET() {
   try {
     // Get queue status
-    const statusUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/worker/shopify`
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const statusUrl = `${baseUrl}/api/worker/shopify`
     
     const response = await fetch(statusUrl, {
       method: 'GET',

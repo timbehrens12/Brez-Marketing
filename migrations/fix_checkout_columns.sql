@@ -13,6 +13,14 @@ ADD COLUMN IF NOT EXISTS checkout_id TEXT;
 ALTER TABLE shopify_abandoned_checkouts
 ADD COLUMN IF NOT EXISTS city TEXT;
 
+-- Add missing country column to shopify_abandoned_checkouts
+ALTER TABLE shopify_abandoned_checkouts
+ADD COLUMN IF NOT EXISTS country TEXT;
+
+-- Add missing city column to shopify_checkouts
+ALTER TABLE shopify_checkouts
+ADD COLUMN IF NOT EXISTS city TEXT;
+
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_shopify_abandoned_checkouts_checkout_id 
 ON shopify_abandoned_checkouts(checkout_id);
