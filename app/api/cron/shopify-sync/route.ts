@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'brandId is required' }, { status: 400 })
     }
 
-    console.log(`[Shopify Sync] Starting sync for brand ${brandId}${force_refresh ? ' (forced)' : ''}`)
+    // Starting sync for brand
     if (dateRange) {
-      console.log(`[Shopify Sync] Date range requested: ${dateRange.from} to ${dateRange.to}`)
+      // Date range requested
     }
 
     const supabase = createClient()
@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
       .eq('status', 'active')
 
     if (connectionError) {
-      console.error('[Shopify Sync] Error fetching connections:', connectionError)
+      // Error fetching connections
       return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 })
     }
 
     if (!connections || connections.length === 0) {
-      console.log('[Shopify Sync] No active Shopify connections found for brand')
+      // No active Shopify connections found
       return NextResponse.json({ 
         success: true, 
         message: 'No Shopify connections to sync',
@@ -45,22 +45,22 @@ export async function POST(request: NextRequest) {
     // Sync each connection
     for (const connection of connections) {
       try {
-        console.log(`[Shopify Sync] Syncing connection ${connection.id} for shop ${connection.shop}`)
+        // Syncing connection for shop
         
         // If date range is specified, sync that specific range, otherwise sync recent data
         if (dateRange?.from && dateRange?.to) {
-          console.log(`[Shopify Sync] Syncing historical data for range: ${dateRange.from} to ${dateRange.to}`)
+          // Syncing historical data for range
           
           // Use the new V2 historical backfill system
-          console.log(`[Shopify Sync] Using V2 queue system for historical sync`)
+          // Using V2 queue system
           
           // For now, skip the historical import as we're transitioning to V2
           // The new system will handle this via background jobs
-          console.log(`[Shopify Sync] Skipping historical import - V2 system will handle this`)
+          // V2 system will handle historical import
           
           // V2 system will handle historical sync via background jobs
           // Mark this as successful for now
-          console.log(`[Shopify Sync] V2 historical sync queued successfully`)
+          // V2 historical sync queued
           
         } else {
           // Default: sync recent data only
@@ -89,10 +89,10 @@ export async function POST(request: NextRequest) {
           message: 'Sync completed'
         })
         
-        console.log(`[Shopify Sync] Completed sync for shop ${connection.shop}`)
+        // Completed sync for shop
         
       } catch (connectionError) {
-        console.error(`[Shopify Sync] Error syncing connection ${connection.id}:`, connectionError)
+        // Error syncing connection
         
         syncResults.push({
           connectionId: connection.id,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     const successCount = syncResults.filter(r => r.status === 'success').length
     const errorCount = syncResults.filter(r => r.status === 'error').length
 
-    console.log(`[Shopify Sync] Completed brand sync: ${successCount} success, ${errorCount} errors`)
+    // Completed brand sync
 
     return NextResponse.json({
       success: true,
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[Shopify Sync] Error in sync process:', error)
+    // Error in sync process
     return NextResponse.json({ 
       success: false,
       error: 'Internal server error' 

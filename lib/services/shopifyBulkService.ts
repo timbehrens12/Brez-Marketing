@@ -218,20 +218,21 @@ export class ShopifyBulkService {
       // Fetch abandoned checkouts data
       await this.syncAbandonedCheckouts(shop, accessToken, brandId, connectionId, connectionData?.user_id)
       
-      // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
-      await supabase
-        .from('platform_connections')
-        .update({ 
-          sync_status: 'syncing', // ✅ KEEP AS SYNCING - queue jobs still running!
-          last_synced_at: new Date().toISOString(),
-          metadata: {
-            mini_sync_completed: true,
-            mini_sync_orders: successCount,
-            mini_sync_errors: errorCount,
-            queue_jobs_running: true // Add flag to indicate background jobs running
-          }
-        })
-        .eq('id', connectionId)
+          // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
+    await supabase
+      .from('platform_connections')
+      .update({
+        sync_status: 'syncing', // ✅ KEEP AS SYNCING - historical sync still running!
+        last_synced_at: new Date().toISOString(),
+        metadata: {
+          mini_sync_completed: true,
+          mini_sync_orders: successCount,
+          mini_sync_errors: errorCount,
+          historical_sync_queued: true, // Indicate historical jobs are queued
+          sync_stage: 'historical_import' // Current stage
+        }
+      })
+      .eq('id', connectionId)
         
       console.log(`[Mini-sync] Updated connection status to syncing (queue jobs still running)`)
       

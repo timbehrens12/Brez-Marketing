@@ -655,7 +655,7 @@ export function ShopifyTab({
     }
 
     try {
-      console.log(`[ShopifyTab] 🔄 Starting fresh Shopify data sync for brand ${brandId}`);
+      // Starting fresh Shopify data sync
       
       // Show toast for sync
       toast.loading("Syncing fresh Shopify data...", { 
@@ -685,13 +685,13 @@ export function ShopifyTab({
       }
 
       const syncResult = await syncResponse.json();
-      console.log(`✅ Shopify sync completed:`, syncResult);
+      // Shopify sync completed
 
       // Also sync comparison period data for the previous period
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
       
       try {
-        console.log(`[ShopifyTab] 🔄 Syncing comparison period: ${prevFrom} to ${prevTo}`);
+        // Syncing comparison period
         
         await fetch('/api/cron/shopify-sync', {
           method: 'POST',
@@ -709,9 +709,9 @@ export function ShopifyTab({
           }),
         });
         
-        console.log(`✅ Comparison period sync completed`);
+        // Comparison period sync completed
       } catch (compError) {
-        console.warn('Comparison period sync failed:', compError);
+        // Comparison period sync failed
       }
 
       toast.success("Shopify data synced successfully", { 
@@ -737,10 +737,10 @@ export function ShopifyTab({
         }
       }));
       
-      console.log(`[ShopifyTab] Dispatched refresh events for brand ${brandId}`);
+      // Dispatched refresh events
 
     } catch (error) {
-      console.error('Failed to sync Shopify data:', error);
+      // Failed to sync Shopify data
       toast.error("Failed to sync Shopify data", {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
         duration: 5000,
@@ -765,7 +765,7 @@ export function ShopifyTab({
         lastFetchedDateRange.current.to !== currentToDate;
       
       if (isInitialMount || hasDateRangeChanged) {
-        console.log(`[ShopifyTab] ${isInitialMount ? 'Initial mount' : 'Date range changed'} - triggering fresh sync`);
+        // Triggering fresh sync
         
         // Update the tracking refs
         lastFetchedDateRange.current = {from: currentFromDate, to: currentToDate};

@@ -201,17 +201,31 @@ export class ShopifyQueueService {
    * Queue historical sync for a brand
    */
   static async queueHistoricalSync(brandId: string) {
-    console.log(`[Queue] Queuing historical sync for brand ${brandId}`)
-    
-    // For now, return a mock response since we need the full connection setup
-    // In production, this would queue actual bulk jobs
-    return {
-      jobs: [
-        { id: 'bulk-orders', type: 'bulk_orders', status: 'queued' },
-        { id: 'bulk-customers', type: 'bulk_customers', status: 'queued' },
-        { id: 'bulk-products', type: 'bulk_products', status: 'queued' }
-      ],
-      estimated_completion: '5-10 minutes'
+    // Queue ACTUAL jobs for historical sync
+    try {
+      // Create ETL job records for tracking
+      const recentJob = await this.createEtlJob(brandId, 'recent_sync', 'recent_sync')
+      const ordersJob = await this.createEtlJob(brandId, 'orders', 'bulk_orders')
+      const customersJob = await this.createEtlJob(brandId, 'customers', 'bulk_customers')
+      const productsJob = await this.createEtlJob(brandId, 'products', 'bulk_products')
+      
+      // Queue the actual jobs
+      await this.addJob('recent_sync', { brandId, etlJobId: recentJob })
+      await this.addJob('bulk_orders', { brandId, etlJobId: ordersJob })
+      await this.addJob('bulk_customers', { brandId, etlJobId: customersJob })
+      await this.addJob('bulk_products', { brandId, etlJobId: productsJob })
+      
+      return {
+        jobs: [
+          { id: recentJob, type: 'recent_sync', status: 'queued' },
+          { id: ordersJob, type: 'bulk_orders', status: 'queued' },
+          { id: customersJob, type: 'bulk_customers', status: 'queued' },
+          { id: productsJob, type: 'bulk_products', status: 'queued' }
+        ],
+        estimated_completion: '5-10 minutes'
+      }
+    } catch (error) {
+      throw new Error(`Failed to queue historical sync: ${error}`)
     }
   }
 

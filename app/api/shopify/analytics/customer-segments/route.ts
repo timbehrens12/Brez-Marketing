@@ -45,23 +45,17 @@ export async function GET(request: NextRequest) {
     const { data: ordersData, error: ordersError } = await ordersQuery
 
     if (ordersError) {
-      console.error('Error fetching orders:', ordersError)
+      // Error fetching orders
       return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
     }
 
     // Debug logging to check what data we're getting
-    console.log(`[Customer Segments API] Fetched ${ordersData?.length || 0} orders for brand ${brandId}`)
+    // Fetched orders for brand
     if (from || to) {
-      console.log(`[Customer Segments API] Date range filter: ${from} to ${to}`)
+      // Date range filter applied
     }
     if (ordersData && ordersData.length > 0) {
-      console.log(`[Customer Segments API] Sample order:`, {
-        id: ordersData[0].id,
-        customer_id: ordersData[0].customer_id,
-        customer_email: ordersData[0].customer_email,
-        total_price: ordersData[0].total_price,
-        created_at: ordersData[0].created_at
-      })
+      // Sample order logged
     }
 
     // Get real address data from shopify_sales_by_region (populated by webhooks)
@@ -71,19 +65,19 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
 
     if (addressError) {
-      console.error('Error fetching regional sales data:', addressError)
+      // Error fetching regional sales data
       return NextResponse.json({ error: 'Failed to fetch regional sales data' }, { status: 500 })
     }
 
     // Create a map of order_id to address
     const addressMap = new Map()
-    console.log(`[Customer Segments API] Fetched ${addressData?.length || 0} address records`);
+    // Fetched address records
     addressData?.forEach(addr => {
       addressMap.set(parseInt(addr.order_id), addr)
     })
     
     if (addressData && addressData.length > 0) {
-      console.log(`[Customer Segments API] Sample address:`, addressData[0]);
+      // Sample address logged
     }
 
     // Group orders by location and calculate customer segments
@@ -174,7 +168,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Customer segments API error:', error)
+    // Customer segments API error
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
