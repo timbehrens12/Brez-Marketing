@@ -284,6 +284,3 @@ export class ShopifyQueueService {
     return data?.last_complete_at || null
   }
 }
-
-// Export for use in job processors
-export { shopifyQueue }
