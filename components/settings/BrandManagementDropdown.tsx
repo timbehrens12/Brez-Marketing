@@ -89,8 +89,8 @@ export function BrandManagementDropdown({
     
     // Always trigger loading state for shopify_connected param (this means user just connected)
     if (shopifyConnectedParam) {
-      console.log(`[Brand Dropdown] 🚀 Shopify connected param detected! Starting sync loading state for brand ${brand.id}`)
-      console.log(`[Brand Dropdown] 🚀 Current connection status:`, connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify'))
+      // Shopify connected param detected
+      // Current connection status checked
       setIsShopifySyncing(true)
       setIsConnecting(true)
       setIsExpanded(true) // Force expansion when syncing
@@ -102,19 +102,19 @@ export function BrandManagementDropdown({
       const checkForSyncCompletion = async () => {
         try {
           checkCount++
-          console.log(`[Brand Dropdown] Checking V2 sync status (${checkCount}/${maxChecks})`)
+          // Checking V2 sync status
           
           // Check V2 sync status first
           const statusResponse = await fetch(`/api/sync/${brand.id}/status`)
           if (statusResponse.ok) {
             const statusData = await statusResponse.json()
-            console.log('[Brand Dropdown] V2 sync status:', statusData)
+            // V2 sync status retrieved
             
             // Check if historical sync is complete
             const isHistoricalComplete = statusData.shopify?.overall_status === 'completed'
             
             if (isHistoricalComplete) {
-              console.log('[Brand Dropdown] V2 historical sync completed, stopping sync state')
+              // V2 historical sync completed
               setIsShopifySyncing(false)
               setIsConnecting(false)
               // Clear the URL params
@@ -131,7 +131,7 @@ export function BrandManagementDropdown({
           // Fallback: check for actual data in database (old method)
           const response = await fetch(`/api/metrics/brand-aggregate?brandId=${brand.id}`)
           const data = await response.json()
-          console.log(`[Brand Dropdown] Brand metrics response:`, data)
+          // Brand metrics response received
           
           // If we have Shopify data or hit max checks, stop syncing
           const hasShopifyData = data.shopify && (
@@ -142,7 +142,7 @@ export function BrandManagementDropdown({
           
           // Only redirect if we have data OR we've reached max checks
           if (hasShopifyData || checkCount >= maxChecks) {
-            console.log(`[Brand Dropdown] ${hasShopifyData ? 'Data found' : 'Max checks reached'}, stopping sync state`)
+            // Sync state evaluation complete
             setIsShopifySyncing(false)
             setIsConnecting(false)
             // Clear the URL params
@@ -154,7 +154,7 @@ export function BrandManagementDropdown({
             }, 500)
           }
         } catch (error) {
-          console.error('[Brand Dropdown] Error checking sync status:', error)
+          // Error checking sync status
           if (checkCount >= maxChecks) {
             setIsShopifySyncing(false)
             setIsConnecting(false)
@@ -186,7 +186,7 @@ export function BrandManagementDropdown({
       (new Date().getTime() - new Date(shopifyConnection.last_synced_at).getTime()) < 1 * 60 * 1000 // 1 minute
     
     if (isRecentConnection && !shopifyConnectedParam) {
-      console.log(`[Brand Dropdown] Recent connection detected, checking if still syncing`)
+      // Recent connection detected
       // Only start loading state if we're not already in sync mode and connection is very recent
       if (!isShopifySyncing) {
         setIsShopifySyncing(true)
@@ -211,7 +211,7 @@ export function BrandManagementDropdown({
   // Debug logging for sync state
   React.useEffect(() => {
     if (isShopifySyncing && isConnecting) {
-      console.log(`[Brand Dropdown] 🎯 Currently showing sync state for ${brand.name}`)
+      // Currently showing sync state
     }
   }, [isShopifySyncing, isConnecting, brand.name])
 

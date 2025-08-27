@@ -34,14 +34,7 @@ export async function GET(request: NextRequest) {
     const yesterdayStartOfDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
     const yesterdayEndOfDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
     
-    console.log('🕐 TIMEZONE DEBUGGING - Brand Aggregate API:');
-    console.log(`📅 Today local: ${today.toString()}`);
-    console.log(`📅 Yesterday local: ${yesterday.toString()}`);
-    console.log(`🌅 Today start of day local: ${todayStartOfDay.toString()}`);
-    console.log(`🌅 Today start of day UTC: ${todayStartOfDay.toISOString()}`);
-    console.log(`🌆 Today end of day local: ${todayEndOfDay.toString()}`);
-    console.log(`🌆 Today end of day UTC: ${todayEndOfDay.toISOString()}`);
-    console.log(`🏠 Server timezone offset: ${new Date().getTimezoneOffset()} minutes`);
+    // Timezone debugging for brand aggregate
     
     // Step 1: Get Shopify sales for today + yesterday for this brand (to be more helpful)
     const { data: shopifyConnections } = await supabase
@@ -87,19 +80,15 @@ export async function GET(request: NextRequest) {
       const yesterdaySales = yesterdayOrders?.reduce((sum, order) => 
         sum + (parseFloat(order.total_price) || 0), 0) || 0
         
-      console.log(`📊 Brand Aggregate API - Today orders found: ${todayOrders?.length || 0} totaling $${todaySales.toFixed(2)}`);
-      console.log(`📊 Brand Aggregate API - Yesterday orders found: ${yesterdayOrders?.length || 0} totaling $${yesterdaySales.toFixed(2)}`);
+      // Brand aggregate orders summary
       
       if (todayOrders?.length) {
-        console.log(`📝 Today's orders timestamps:`);
-        todayOrders.slice(0, 3).forEach((order: any, i: number) => {
-          console.log(`   ${i + 1}. $${order.total_price} at ${order.created_at}`);
-        });
+        // Today's orders timestamps logged
       }
         
       // Use today's sales, but if zero, show yesterday's as "recent sales"
       shopifySales = todaySales > 0 ? todaySales : yesterdaySales
-      console.log(`💰 Brand Aggregate API - Final shopifySales value: $${shopifySales.toFixed(2)} (using ${todaySales > 0 ? 'today' : 'yesterday'} data)`);
+      // Final shopify sales value calculated
     }
 
     // Step 2: Get Meta ad data for today for this brand
@@ -155,7 +144,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error fetching brand aggregate metrics:', error)
+    // Error fetching brand aggregate metrics
     return NextResponse.json({ 
       error: 'Failed to fetch brand metrics' 
     }, { status: 500 })

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const platform = searchParams.get('platform')
   const timezone = searchParams.get('timezone') || 'America/Chicago' // Default to Chicago
 
-  console.log('Received metrics request:', { from, to, brandId, platform, timezone })
+  // Received metrics request
 
   if (!from || !to || !brandId) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
@@ -31,13 +31,10 @@ export async function GET(request: Request) {
       // Adjust the end date to include the full day (up to 23:59:59)
       adjustedToDate = endOfDay(toDate);
       
-      console.log('Date range parsed successfully:');
-      console.log(`From: ${format(fromDate, 'yyyy-MM-dd HH:mm:ss')}`);
-      console.log(`To (original): ${format(toDate, 'yyyy-MM-dd HH:mm:ss')}`);
-      console.log(`To (adjusted): ${format(adjustedToDate, 'yyyy-MM-dd HH:mm:ss')}`);
+      // Date range parsed successfully
       
     } catch (error) {
-      console.error('Error parsing date parameters:', error);
+      // Error parsing date parameters
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
     
@@ -51,7 +48,7 @@ export async function GET(request: Request) {
       .single()
 
     if (!connection) {
-      console.log('No active connection found')
+      // No active connection found
       return NextResponse.json({
         totalSales: 0,
         ordersPlaced: 0,
@@ -69,7 +66,7 @@ export async function GET(request: Request) {
       })
     }
 
-    console.log('Found connection:', connection)
+    // Found connection
 
     // Format dates for database query
     // Use PostgreSQL's timezone-aware queries to handle user's timezone properly
@@ -80,7 +77,7 @@ export async function GET(request: Request) {
     let formattedFromDate = fromDateStr;
     let formattedToDate = toDateStr;
     
-    console.log('🕐 TIMEZONE DEBUGGING - Metrics API:');
+    // Timezone debugging
     console.log(`📅 Original request dates: from=${from}, to=${to}`);
     console.log(`🌍 User timezone: ${timezone}`);
     console.log(`🏠 Server timezone offset: ${new Date().getTimezoneOffset()} minutes`);
@@ -482,7 +479,7 @@ export async function GET(request: Request) {
     console.log(`📊 Sales data points: ${metrics.salesData?.length || 0}`);
     console.log(`📊 Orders data points: ${metrics.ordersData?.length || 0}`);
     console.log(`💵 AOV data points: ${metrics.aovData?.length || 0}`);
-    console.log(`📦 Units data points: ${metrics.unitsSoldData?.length || 0}`);
+    // Units data points logged;
 
     // Add previous period date range to the response for UI display
     metrics.previousPeriod = {
