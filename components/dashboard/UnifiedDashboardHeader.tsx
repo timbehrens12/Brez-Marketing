@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { GlobalRefreshButton } from "@/components/dashboard/GlobalRefreshButton"
-import { SyncStatusWidget } from "@/components/shopify/SyncStatusWidget"
+// import { SyncStatusWidget } from "@/components/shopify/SyncStatusWidget" // Disabled until V2 integration
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ClipboardList } from "lucide-react"
 import Image from "next/image"
@@ -413,8 +413,8 @@ export function UnifiedDashboardHeader({
           />
         </div>
 
-        {/* Sync Status Widget - Only show during active sync operations */}
-        {selectedBrandId && activePlatforms.shopify && (
+        {/* Sync Status Widget - Disabled until V2 integration complete */}
+        {false && selectedBrandId && activePlatforms.shopify && (
           <div className="mt-4">
             <SyncStatusWidget 
               brandId={selectedBrandId}
