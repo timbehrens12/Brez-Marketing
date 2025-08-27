@@ -20,6 +20,8 @@ export default authMiddleware({
     "/api/auth/meta(.*)",
     "/settings/meta-callback",
     "/api/cron/meta-sync",
+    "/api/cron/process-queue",
+    "/api/worker/shopify",
     "/api/reports/refresh"
   ],
   ignoredRoutes: [
