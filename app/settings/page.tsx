@@ -2563,9 +2563,9 @@ export default function SettingsPage() {
           <DialogHeader className="text-center pb-6">
             <div className="mx-auto mb-4 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
               <img 
-                src="https://cdn.shopify.com/s/files/1/0446/6937/files/shopify_logo.png" 
+                src="https://i.imgur.com/vpbcX3n.png" 
                 alt="Shopify" 
-                className="w-12 h-8 object-contain"
+                className="w-10 h-10 object-contain"
               />
             </div>
             <DialogTitle className="text-2xl font-bold text-white mb-2">
