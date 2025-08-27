@@ -147,7 +147,7 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { data, error } = await supabase
-      .from('control.etl_job')
+      .from('etl_job')
       .insert({
         brand_id: brandId,
         entity: entity,
@@ -183,8 +183,8 @@ export class ShopifyQueueService {
   ): Promise<void> {
     const supabase = createClient()
     
-    const { error } = await supabase
-      .from('control.etl_job')
+    const { error } =     await supabase
+      .from('etl_job')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
@@ -221,10 +221,12 @@ export class ShopifyQueueService {
   static async getSyncStatus(brandId: string): Promise<any> {
     const supabase = createClient()
     
-    // Use database function to access control schema
-    const { data: jobs, error } = await supabase.rpc('get_etl_jobs_for_brand', {
-      brand_id_param: brandId
-    })
+    // Get ETL jobs directly from public schema
+    const { data: jobs, error } = await supabase
+      .from('etl_job')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('[Queue] Error fetching sync status:', error)
