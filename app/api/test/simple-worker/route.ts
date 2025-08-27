@@ -1,18 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Simple test that calls the worker API directly
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Get the base URL
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-    
-    // Ensure VERCEL_URL has protocol
-    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
-      baseUrl = `https://${process.env.VERCEL_URL}`
-    }
-    
+    // Get the current request URL to ensure we call the same deployment
+    const requestUrl = new URL(request.url)
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
     const workerUrl = `${baseUrl}/api/worker/shopify`
     
     console.log(`[Simple Worker Test] Calling worker at: ${workerUrl}`)
@@ -70,16 +65,11 @@ export async function GET() {
 /**
  * Test POST to worker API
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Get the base URL
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-    
-    // Ensure VERCEL_URL has protocol
-    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
-      baseUrl = `https://${process.env.VERCEL_URL}`
-    }
-    
+    // Get the current request URL to ensure we call the same deployment
+    const requestUrl = new URL(request.url)
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
     const workerUrl = `${baseUrl}/api/worker/shopify`
     
     console.log(`[Simple Worker Test POST] Calling worker at: ${workerUrl}`)

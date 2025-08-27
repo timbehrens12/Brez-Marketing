@@ -16,17 +16,15 @@ export async function GET(request: NextRequest) {
     
     console.log('[Cron Queue] Starting scheduled queue processing...')
     
-    // Call the worker API to process jobs
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-    
-    // Ensure VERCEL_URL has protocol
-    if (process.env.VERCEL_URL && !baseUrl.startsWith('http')) {
-      baseUrl = `https://${process.env.VERCEL_URL}`
-    }
-    
+    // Get the current request URL to ensure we call the same deployment
+    const requestUrl = new URL(request.url)
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
     const workerUrl = `${baseUrl}/api/worker/shopify`
     
-    console.log(`[Cron Queue] Calling worker at: ${workerUrl}`)
+    console.log(`[Cron Queue] Request URL: ${request.url}`)
+    console.log(`[Cron Queue] Base URL: ${baseUrl}`)
+    console.log(`[Cron Queue] Worker URL: ${workerUrl}`)
+    console.log(`[Cron Queue] VERCEL_URL: ${process.env.VERCEL_URL}`)
     
     const response = await fetch(workerUrl, {
       method: 'POST',
