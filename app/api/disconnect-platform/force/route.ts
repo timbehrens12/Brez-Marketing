@@ -51,12 +51,19 @@ export async function POST(request: Request) {
 
         // For Shopify, delete related data in parallel for speed
         if (platformType === 'shopify') {
-          console.log(`Force deleting all Shopify data for ${connections.length} connections`)
-          
-          // Delete only the key tables that have foreign key constraints
-          const connectionIds = connections.map(c => c.id)
+          console.log(`Force deleting ALL Shopify data for brand ${brandId}`)
           
           try {
+            // Get ALL connection IDs for this brand/platform (including historical ones)
+            const { data: allConnections } = await adminSupabase
+              .from('platform_connections')
+              .select('id')
+              .eq('brand_id', brandId)
+              .eq('platform_type', platformType)
+            
+            const allConnectionIds = allConnections?.map(c => c.id) || []
+            console.log(`🗑️ Found ${allConnectionIds.length} total connections for this brand:`, allConnectionIds)
+            
             // Delete ALL tables with foreign key constraints to platform_connections
             const tablesToDelete = [
               'shopify_orders', 'shopify_customers', 'shopify_sales_by_region',
@@ -65,11 +72,10 @@ export async function POST(request: Request) {
               'shopify_repeat_customers', 'shopify_customer_journey', 'shopify_content_performance',
               'shopify_email_performance', 'shopify_search_analytics', 'shopify_cart_analytics',
               'shopify_customer_management', 'shopify_payment_settings', 'shopify_shipping_zones',
-              'shopify_shop_configuration', 'shopify_tax_settings', 'shopify_products',
-              'shopify_inventory', 'shopify_variants', 'shopify_collections'
+              'shopify_shop_configuration', 'shopify_tax_settings', 'shopify_inventory'
             ]
             
-            console.log(`🗑️ Will delete from ${tablesToDelete.length} tables for connection IDs:`, connectionIds)
+            console.log(`🗑️ Will delete from ${tablesToDelete.length} tables for ALL connection IDs`)
             
             // Delete in batches to avoid overwhelming the database
             const batchSize = 5
@@ -81,7 +87,7 @@ export async function POST(request: Request) {
                     const { data, error, count } = await adminSupabase
                       .from(table)
                       .delete()
-                      .in('connection_id', connectionIds)
+                      .in('connection_id', allConnectionIds)
                       .select('*', { count: 'exact' })
                     
                     if (error) {
@@ -95,6 +101,24 @@ export async function POST(request: Request) {
                 })
               )
             }
+            
+            // Also delete products by brand_id (different foreign key structure)
+            try {
+              const { data, error, count } = await adminSupabase
+                .from('shopify_products')
+                .delete()
+                .eq('brand_id', brandId)
+                .select('*', { count: 'exact' })
+              
+              if (error) {
+                console.log(`⚠️ Failed to delete shopify_products:`, error.message)
+              } else {
+                console.log(`✅ Deleted ${count || 0} rows from shopify_products (by brand_id)`)
+              }
+            } catch (err) {
+              console.log(`⚠️ Exception deleting shopify_products:`, err)
+            }
+            
             console.log(`✅ Completed Shopify data deletion`)
           } catch (error) {
             console.log(`⚠️ Some deletions failed, continuing...`, error)
