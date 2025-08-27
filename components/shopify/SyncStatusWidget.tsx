@@ -55,29 +55,63 @@ export function SyncStatusWidget({
 
   const fetchSyncStatus = async () => {
     try {
-      const params = new URLSearchParams()
-      if (brandId) params.append('brandId', brandId)
-      if (connectionId) params.append('connectionId', connectionId)
-      
-      const response = await fetch(`/api/shopify/sync/status?${params}`)
-      const data = await response.json()
-      
-      if (connectionId) {
-        setSyncStatuses(data.syncStatus ? [data.syncStatus] : [])
+      // Use the new V2 sync status API if brandId is available
+      if (brandId) {
+        const response = await fetch(`/api/sync/${brandId}/status`)
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Check if sync is actually active
+          const isActive = data.shopify?.overall_status === 'syncing' || data.shopify?.overall_status === 'partial'
+          
+          if (isActive) {
+            // Convert V2 format to widget format
+            const mockStatus: SyncStatus = {
+              connectionId: 'v2-sync',
+              brandId: brandId,
+              shop: 'Shopify Store',
+              overallStatus: 'bulk_importing',
+              lastSyncedAt: data.shopify.last_update,
+              miniSyncCompleted: true,
+              bulkJobs: data.shopify.milestones?.map((m: any) => ({
+                id: m.entity,
+                type: m.entity,
+                status: m.status,
+                recordsProcessed: m.progress?.rows_written || 0,
+                createdAt: new Date().toISOString(),
+                completedAt: m.status === 'completed' ? new Date().toISOString() : undefined
+              })) || [],
+              progress: {
+                totalJobs: data.shopify.milestones?.length || 0,
+                completedJobs: data.shopify.milestones?.filter((m: any) => m.status === 'completed').length || 0,
+                failedJobs: data.shopify.milestones?.filter((m: any) => m.status === 'failed').length || 0,
+                runningJobs: data.shopify.milestones?.filter((m: any) => m.status === 'running').length || 0,
+                percentComplete: Math.round((data.shopify.milestones?.filter((m: any) => m.status === 'completed').length || 0) / (data.shopify.milestones?.length || 1) * 100)
+              }
+            }
+            setSyncStatuses([mockStatus])
+          } else {
+            // No active sync, hide widget
+            setSyncStatuses([])
+          }
+        } else {
+          // API error, hide widget
+          setSyncStatuses([])
+        }
       } else {
+        // Fallback to old API for legacy support
+        const params = new URLSearchParams()
+        if (connectionId) params.append('connectionId', connectionId)
+        
+        const response = await fetch(`/api/shopify/sync/status?${params}`)
+        const data = await response.json()
+        
         setSyncStatuses(data.syncStatuses || [])
-      }
-      
-      // Check if any sync completed and trigger callback
-      const hasCompletedSync = data.syncStatuses?.some((status: SyncStatus) => 
-        status.overallStatus === 'completed' && onComplete
-      )
-      if (hasCompletedSync) {
-        onComplete?.()
       }
       
     } catch (error) {
       console.error('Error fetching sync status:', error)
+      setSyncStatuses([]) // Hide widget on error
     } finally {
       setLoading(false)
     }

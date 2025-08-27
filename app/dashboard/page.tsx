@@ -48,7 +48,6 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { SignupCompletionHandler } from "@/components/SignupCompletionHandler"
-import { SyncProgressWidget } from "@/components/shopify/SyncProgressWidget"
 import { GridOverlay } from "@/components/GridOverlay"
 
 import { Button } from "@/components/ui/button"
@@ -1898,18 +1897,6 @@ export default function DashboardPage() {
     <DashboardErrorBoundary>
       <SignupCompletionHandler />
       {renderContent()}
-      {/* Sync Progress Widget - shows only when sync is active */}
-      {selectedBrandId && (
-        <SyncProgressWidget 
-          brandId={selectedBrandId}
-          onSyncComplete={() => {
-            // Refresh dashboard when sync completes
-            if (activeTab === 'shopify') {
-              window.dispatchEvent(new CustomEvent('force-shopify-refresh'))
-            }
-          }}
-        />
-      )}
     </DashboardErrorBoundary>
   )
 }
