@@ -1,12 +1,13 @@
 import Queue from 'bull'
 import { createClient } from '@/lib/supabase/server'
 
-// Create Redis connection (you'll need to add Redis to your environment)
+// Create Redis connection for Upstash
 const redisConfig = {
   redis: {
     port: parseInt(process.env.REDIS_PORT || '6379'),
-    host: process.env.REDIS_HOST || 'localhost',
+    host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
     password: process.env.REDIS_PASSWORD,
+    tls: {}, // Required for Upstash
   },
 }
 
@@ -143,7 +144,8 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { data, error } = await supabase
-      .from('control.etl_job')
+      .schema('control')
+      .from('etl_job')
       .insert({
         brand_id: brandId,
         entity: entity,
@@ -180,7 +182,8 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { error } = await supabase
-      .from('control.etl_job')
+      .schema('control')
+      .from('etl_job')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
@@ -194,13 +197,32 @@ export class ShopifyQueueService {
   }
 
   /**
+   * Queue historical sync for a brand
+   */
+  static async queueHistoricalSync(brandId: string) {
+    console.log(`[Queue] Queuing historical sync for brand ${brandId}`)
+    
+    // For now, return a mock response since we need the full connection setup
+    // In production, this would queue actual bulk jobs
+    return {
+      jobs: [
+        { id: 'bulk-orders', type: 'bulk_orders', status: 'queued' },
+        { id: 'bulk-customers', type: 'bulk_customers', status: 'queued' },
+        { id: 'bulk-products', type: 'bulk_products', status: 'queued' }
+      ],
+      estimated_completion: '5-10 minutes'
+    }
+  }
+
+  /**
    * Get sync status for a brand
    */
   static async getSyncStatus(brandId: string): Promise<any> {
     const supabase = createClient()
     
     const { data: jobs, error } = await supabase
-      .from('control.etl_job')
+      .schema('control')
+      .from('etl_job')
       .select('*')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
