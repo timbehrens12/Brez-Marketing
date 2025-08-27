@@ -65,19 +65,34 @@ export async function POST(request: Request) {
               'shopify_repeat_customers', 'shopify_customer_journey', 'shopify_content_performance',
               'shopify_email_performance', 'shopify_search_analytics', 'shopify_cart_analytics',
               'shopify_customer_management', 'shopify_payment_settings', 'shopify_shipping_zones',
-              'shopify_shop_configuration', 'shopify_tax_settings'
+              'shopify_shop_configuration', 'shopify_tax_settings', 'shopify_products',
+              'shopify_inventory', 'shopify_variants', 'shopify_collections'
             ]
+            
+            console.log(`🗑️ Will delete from ${tablesToDelete.length} tables for connection IDs:`, connectionIds)
             
             // Delete in batches to avoid overwhelming the database
             const batchSize = 5
             for (let i = 0; i < tablesToDelete.length; i += batchSize) {
               const batch = tablesToDelete.slice(i, i + batchSize)
               await Promise.all(
-                batch.map(table => 
-                  adminSupabase.from(table).delete().in('connection_id', connectionIds)
-                    .then(() => console.log(`✅ Deleted ${table}`))
-                    .catch(err => console.log(`⚠️ Failed to delete ${table}:`, err.message))
-                )
+                batch.map(async table => {
+                  try {
+                    const { data, error, count } = await adminSupabase
+                      .from(table)
+                      .delete()
+                      .in('connection_id', connectionIds)
+                      .select('*', { count: 'exact' })
+                    
+                    if (error) {
+                      console.log(`⚠️ Failed to delete ${table}:`, error.message)
+                    } else {
+                      console.log(`✅ Deleted ${count || 0} rows from ${table}`)
+                    }
+                  } catch (err) {
+                    console.log(`⚠️ Exception deleting ${table}:`, err)
+                  }
+                })
               )
             }
             console.log(`✅ Completed Shopify data deletion`)
