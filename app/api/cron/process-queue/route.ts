@@ -6,12 +6,11 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify this is a legitimate cron call
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
+    // Verify this is a legitimate cron call (Vercel cron jobs have specific user agent)
+    const userAgent = request.headers.get('user-agent') || ''
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.log('[Cron Queue] Unauthorized access attempt')
+    if (!userAgent.includes('vercel-cron')) {
+      console.log('[Cron Queue] Unauthorized access attempt - not from Vercel cron')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
@@ -33,8 +32,7 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-call': 'true',
-        'Authorization': authHeader || `Bearer ${cronSecret}` // Pass through auth
+        'x-internal-call': 'true'
       },
       body: JSON.stringify({
         maxJobs: 5 // Process up to 5 jobs per cron run

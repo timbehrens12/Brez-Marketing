@@ -13,9 +13,15 @@ export async function POST(request: NextRequest) {
     const internalCall = request.headers.get('x-internal-call') === 'true'
     const cronSecret = process.env.CRON_SECRET
     
+    console.log(`[Worker API] Auth check: internalCall=${internalCall}, cronSecret=${!!cronSecret}, authHeader=${authHeader?.substring(0, 20)}...`)
+    
+    // Allow internal calls or valid cron secret
     if (!internalCall && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      console.log(`[Worker API] Authorization failed`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log(`[Worker API] Authorization passed`)
 
     // Get the number of jobs to process (default: 10)
     const body = await request.json().catch(() => ({}))
@@ -131,8 +137,15 @@ export async function POST(request: NextRequest) {
 /**
  * GET endpoint to check queue status
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    console.log('[Worker API] GET request for queue status...')
+    
+    // Check for authorization for GET requests too
+    const internalCall = request.headers.get('x-internal-call') === 'true'
+    
+    console.log(`[Worker API] GET Auth check: internalCall=${internalCall}`)
+    
     // Import dependencies inside try block to catch import errors
     const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
     
