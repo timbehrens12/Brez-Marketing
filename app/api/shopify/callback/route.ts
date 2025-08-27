@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
         throw new Error('Missing brandId or connectionId in state for manual install')
       }
     } catch (error) {
-      console.error('[Shopify Callback] Invalid state parameter:', error)
       return NextResponse.json({ error: 'Invalid state parameter' }, { status: 400 })
     }
 
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Shopify app not configured' }, { status: 500 })
     }
 
-    console.log('[Shopify Callback] Processing OAuth callback for shop:', shop)
+    // Processing OAuth callback
 
     // Exchange authorization code for access token
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -53,14 +52,13 @@ export async function GET(request: NextRequest) {
     })
 
         if (!tokenResponse.ok) {
-      console.error('[Shopify Callback] Token exchange failed:', await tokenResponse.text())
       return NextResponse.json({ error: 'Failed to exchange authorization code' }, { status: 400 })
         }
 
         const tokenData = await tokenResponse.json()
     const { access_token, scope } = tokenData
 
-    console.log('[Shopify Callback] Successfully obtained access token for shop:', shop)
+    // Access token obtained successfully
 
     // Get shop information
     const shopInfoResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
@@ -70,7 +68,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (!shopInfoResponse.ok) {
-      console.error('[Shopify Callback] Failed to fetch shop info')
       return NextResponse.json({ error: 'Failed to fetch shop information' }, { status: 400 })
     }
 
@@ -79,7 +76,6 @@ export async function GET(request: NextRequest) {
 
     // For automated installs, just return success without database operations
     if (isAutomated) {
-      console.log('[Shopify Callback] Automated install completed successfully for shop:', shop)
       return NextResponse.json({ 
         message: 'Automated install successful',
         shop: shop,
@@ -98,7 +94,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (fetchError || !existingConnection) {
-      console.error('[Shopify Callback] Connection not found:', fetchError)
+      // Connection not found
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
 
@@ -126,11 +122,8 @@ export async function GET(request: NextRequest) {
       .eq('id', connectionId)
 
     if (updateError) {
-      console.error('[Shopify Callback] Error updating connection:', updateError)
       return NextResponse.json({ error: 'Failed to save connection' }, { status: 500 })
     }
-
-    console.log('[Shopify Callback] Successfully saved connection for shop:', shop)
 
     // Trigger immediate mini-sync for instant dashboard population
     try {
