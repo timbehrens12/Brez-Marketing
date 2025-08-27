@@ -218,12 +218,10 @@ export class ShopifyQueueService {
   static async getSyncStatus(brandId: string): Promise<any> {
     const supabase = createClient()
     
-    const { data: jobs, error } = await supabase
-      .from('control.etl_job')
-      .select('*')
-      .eq('brand_id', brandId)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    // Use database function to access control schema
+    const { data: jobs, error } = await supabase.rpc('get_etl_jobs_for_brand', {
+      brand_id_param: brandId
+    })
 
     if (error) {
       console.error('[Queue] Error fetching sync status:', error)

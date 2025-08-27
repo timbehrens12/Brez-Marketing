@@ -150,6 +150,24 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Shopify Callback] ✅ Immediate sync completed in ${syncDuration}ms`)
       
+      // 1.5. IMMEDIATE: Sync inventory/products for inventory widgets
+      console.log('[Shopify Callback] Starting inventory sync for widgets...')
+      try {
+        const inventoryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ connectionId })
+        })
+        
+        if (inventoryResponse.ok) {
+          console.log('[Shopify Callback] ✅ Inventory sync completed')
+        } else {
+          console.log('[Shopify Callback] ⚠️ Inventory sync failed, but continuing...')
+        }
+      } catch (inventoryError) {
+        console.log('[Shopify Callback] ⚠️ Inventory sync error, but continuing...', inventoryError)
+      }
+      
       // Verify data was actually inserted
       const { data: verifyOrders, error: verifyError } = await supabase
         .from('shopify_orders')
