@@ -4,10 +4,24 @@ import { Redis } from '@upstash/redis';
 let redis: Redis | null = null;
 
 try {
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL || '',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  });
+  // Check for Upstash REST API format first
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  } 
+  // Fall back to standard Redis config (construct REST URL from host/password)
+  else if (process.env.REDIS_HOST && process.env.REDIS_PASSWORD) {
+    const redisHost = process.env.REDIS_HOST.replace('https://', '').replace('http://', '');
+    redis = new Redis({
+      url: `https://${redisHost}`,
+      token: process.env.REDIS_PASSWORD,
+    });
+    console.log('[Rate Limiter] Using Redis config from REDIS_HOST/REDIS_PASSWORD');
+  } else {
+    console.warn('[Rate Limiter] No Redis config found, using memory cache only');
+  }
 } catch (error) {
   console.error('Failed to initialize Redis client for rate limiting:', error);
 }

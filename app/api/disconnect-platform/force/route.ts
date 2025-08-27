@@ -57,15 +57,32 @@ export async function POST(request: Request) {
           const connectionIds = connections.map(c => c.id)
           
           try {
-            // Delete the most critical tables first in parallel
-            await Promise.all([
-              adminSupabase.from('shopify_sales_by_region').delete().in('connection_id', connectionIds),
-              adminSupabase.from('shopify_orders').delete().in('connection_id', connectionIds),
-              adminSupabase.from('shopify_customers').delete().in('connection_id', connectionIds)
-            ])
-            console.log(`✅ Deleted critical Shopify data`)
+            // Delete ALL tables with foreign key constraints to platform_connections
+            const tablesToDelete = [
+              'shopify_orders', 'shopify_customers', 'shopify_sales_by_region',
+              'shopify_abandoned_checkouts', 'shopify_analytics_events', 'shopify_bulk_jobs',
+              'shopify_clv_analytics', 'shopify_customer_segments', 'shopify_shipping_analytics',
+              'shopify_repeat_customers', 'shopify_customer_journey', 'shopify_content_performance',
+              'shopify_email_performance', 'shopify_search_analytics', 'shopify_cart_analytics',
+              'shopify_customer_management', 'shopify_payment_settings', 'shopify_shipping_zones',
+              'shopify_shop_configuration', 'shopify_tax_settings'
+            ]
+            
+            // Delete in batches to avoid overwhelming the database
+            const batchSize = 5
+            for (let i = 0; i < tablesToDelete.length; i += batchSize) {
+              const batch = tablesToDelete.slice(i, i + batchSize)
+              await Promise.all(
+                batch.map(table => 
+                  adminSupabase.from(table).delete().in('connection_id', connectionIds)
+                    .then(() => console.log(`✅ Deleted ${table}`))
+                    .catch(err => console.log(`⚠️ Failed to delete ${table}:`, err.message))
+                )
+              )
+            }
+            console.log(`✅ Completed Shopify data deletion`)
           } catch (error) {
-            console.log(`⚠️ Some deletions failed, continuing...`)
+            console.log(`⚠️ Some deletions failed, continuing...`, error)
           }
         }
 
