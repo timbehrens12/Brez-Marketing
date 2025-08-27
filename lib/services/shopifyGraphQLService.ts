@@ -154,14 +154,11 @@ export class ShopifyGraphQLService {
                     firstName
                     lastName
                     phone
-                    acceptsMarketing
+                    acceptsEmailMarketing
                     createdAt
                     updatedAt
                     numberOfOrders
-                    totalSpentV2 {
-                      amount
-                      currencyCode
-                    }
+                    totalSpent
                     lastOrder {
                       id
                       name
