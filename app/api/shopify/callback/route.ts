@@ -166,44 +166,44 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      // 2. IMMEDIATE: Start complete historical sync and WAIT for it to ensure data is ready
-      console.log('[Shopify Callback] Starting complete historical data sync...')
+      // 2. BACKGROUND: Start new queue-based sync architecture
+      console.log('[Shopify Callback] Starting queue-based sync architecture...')
       try {
-        const historicalResponse = await fetch(`${APP_URL}/api/shopify/historical-backfill`, {
+        const connectedResponse = await fetch(`${APP_URL}/api/shopify/connected/${brandId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            brandId,
-            forceRefresh: true // Complete refresh for new connections
+            shop,
+            accessToken: access_token,
+            connectionId
           })
         })
         
-        if (historicalResponse.ok) {
-          const result = await historicalResponse.json()
-          if (result.success) {
-            const totalOrders = result.results?.reduce((sum: number, r: any) => sum + (r.ordersAdded || 0), 0) || 0
-            console.log(`[Shopify Callback] ✅ Complete historical sync completed: ${totalOrders} orders synced`)
+        if (connectedResponse.ok) {
+          const result = await connectedResponse.json()
+          console.log(`[Shopify Callback] ✅ Queue-based sync initiated:`, result)
+          
+          // Update connection status to show v2 sync is active
+          await supabase
+            .from('platform_connections')
+            .update({
+              sync_status: 'syncing',
+              metadata: {
+                ...{}, // existing metadata
+                v2_architecture: true,
+                queue_sync_initiated: true,
+                sync_architecture: 'queue_based_v2',
+                sync_initiated_at: new Date().toISOString()
+              }
+            })
+            .eq('id', connectionId)
             
-            // Update connection status to show historical sync is complete
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                metadata: {
-                  ...{}, // existing metadata
-                  historical_sync_completed: true,
-                  total_orders_synced: totalOrders,
-                  full_sync_completed_at: new Date().toISOString()
-                }
-              })
-              .eq('id', connectionId)
-              
-          } else {
-            console.error('[Shopify Callback] ❌ Historical sync failed:', result.error)
-          }
+        } else {
+          const errorText = await connectedResponse.text()
+          console.error('[Shopify Callback] ❌ Queue-based sync failed:', errorText)
         }
       } catch (err) {
-        console.error('[Shopify Callback] Historical sync request failed:', err)
+        console.error('[Shopify Callback] Queue-based sync request failed:', err)
       }
 
       // 3. BACKGROUND: Trigger inventory sync (don't wait)
