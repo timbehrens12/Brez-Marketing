@@ -154,11 +154,14 @@ export class ShopifyGraphQLService {
                     firstName
                     lastName
                     phone
-                    acceptsEmailMarketing
+                    acceptsMarketing
                     createdAt
                     updatedAt
                     numberOfOrders
-                    totalSpent
+                    totalSpentV2 {
+                      amount
+                      currencyCode
+                    }
                     lastOrder {
                       id
                       name
@@ -273,7 +276,6 @@ export class ShopifyGraphQLService {
                           inventoryQuantity
                           price
                           compareAtPrice
-                          requiresShipping
                           taxable
                           inventoryPolicy
                           createdAt
