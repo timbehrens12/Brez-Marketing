@@ -40,7 +40,7 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
       case 'in_progress':
         return {
           icon: <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />,
-          text: 'Loading 90 days of historical data...',
+          text: 'Syncing all historical data (3-7 minutes)...',
           className: 'bg-blue-500/10 border-blue-500/20 text-blue-300'
         }
       case 'completed':
@@ -71,7 +71,7 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
       </span>
       {status === 'in_progress' && (
         <span className="text-xs opacity-75">
-          This may take a few minutes
+          Stay on this page until complete
         </span>
       )}
     </div>

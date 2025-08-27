@@ -419,15 +419,37 @@ export function BrandManagementDropdown({
                     {/* Show syncing state if actively connecting, regardless of connection status */}
                     {isShopifySyncing && isConnecting ? (
                       <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          disabled
-                          className="text-black text-xs py-1 px-2 rounded-md shadow-lg bg-blue-200 opacity-75"
-                        >
-                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                          Syncing
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                disabled
+                                className="text-black text-xs py-1 px-2 rounded-md shadow-lg bg-blue-200 opacity-75"
+                              >
+                                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                Syncing
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm">
+                              <div className="space-y-2">
+                                <p className="font-medium">🔄 Importing Your Shopify Data</p>
+                                <div className="text-sm space-y-1">
+                                  <p>• Loading recent orders & customers (30 seconds)</p>
+                                  <p>• Importing historical data (2-5 minutes)</p>
+                                  <p>• Processing products & analytics</p>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  ⏱️ Total time: ~3-7 minutes depending on store size
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  You'll be redirected when complete
+                                </p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </>
                     ) : shopifyConnection ? (
                       <>
