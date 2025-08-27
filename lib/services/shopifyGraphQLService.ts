@@ -105,11 +105,8 @@ export class ShopifyGraphQLService {
                             }
                           }
                           vendor
-                          grams
                           requiresShipping
                           taxable
-                          giftCard
-                          fulfillmentService
                           fulfillmentStatus
                         }
                       }
@@ -157,19 +154,15 @@ export class ShopifyGraphQLService {
                     firstName
                     lastName
                     phone
-                    acceptsMarketing
+                    acceptsEmailMarketing
                     createdAt
                     updatedAt
-                    ordersCount
-                    totalSpentV2 {
-                      amount
-                      currencyCode
-                    }
+                    numberOfOrders
+                    totalSpent
                     lastOrder {
                       id
                       name
                     }
-                    marketingOptInLevel
                     emailMarketingConsent {
                       marketingState
                       marketingOptInLevel
@@ -260,7 +253,6 @@ export class ShopifyGraphQLService {
                     productType
                     handle
                     status
-                    publishedScope
                     tags
                     createdAt
                     updatedAt
@@ -281,13 +273,9 @@ export class ShopifyGraphQLService {
                           inventoryQuantity
                           price
                           compareAtPrice
-                          weight
-                          weightUnit
                           requiresShipping
                           taxable
-                          inventoryManagement
                           inventoryPolicy
-                          fulfillmentService
                           createdAt
                           updatedAt
                         }
