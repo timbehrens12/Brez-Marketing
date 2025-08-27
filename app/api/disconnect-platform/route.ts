@@ -47,14 +47,38 @@ export async function POST(request: Request) {
           
           // Check if it's a foreign key constraint error  
           if (connectionError.code === '23503' || (connectionError.message && connectionError.message.includes('foreign key constraint'))) {
-            return NextResponse.json(
-              { 
-                error: 'Cannot disconnect platform. There is still related data that must be removed first. Use force disconnect to remove all data.',
-                hasRelatedData: true,
-                details: connectionError.message
-              },
-              { status: 409 }
-            )
+            console.log('🚨 Foreign key constraint detected - automatically calling force delete')
+            
+            // Don't return 409 - instead automatically call force delete
+            try {
+              const forceResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/disconnect-platform/force`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brandId, platformType }),
+              })
+              
+              if (forceResponse.ok) {
+                console.log('✅ Force delete completed successfully after FK constraint')
+                return NextResponse.json({ success: true, forcedDelete: true })
+              } else {
+                const forceError = await forceResponse.json()
+                console.error('❌ Force delete failed:', forceError)
+                return NextResponse.json(
+                  { error: 'Force delete failed: ' + forceError.error },
+                  { status: 500 }
+                )
+              }
+            } catch (forceErr) {
+              console.error('❌ Error calling force delete:', forceErr)
+              return NextResponse.json(
+                { 
+                  error: 'Cannot disconnect platform. There is still related data that must be removed first. Use force disconnect to remove all data.',
+                  hasRelatedData: true,
+                  details: connectionError.message
+                },
+                { status: 409 }
+              )
+            }
           }
           
           return NextResponse.json(
