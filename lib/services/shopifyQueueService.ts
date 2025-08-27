@@ -53,7 +53,10 @@ export class ShopifyQueueService {
   ): Promise<void> {
     const defaultOptions = {
       attempts: 3,
-      backoff: 'exponential',
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
       removeOnComplete: 10,
       removeOnFail: 10,
     }
