@@ -533,9 +533,10 @@ export function BrandManagementDropdown({
                     <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-gray-400">
                       <p className="mb-1">
-                        <span className="font-medium text-gray-300">Shopify Integration:</span> Install our app in your Shopify admin to sync orders, customers, and product data.
+                        <span className="font-medium text-gray-300">API Connection:</span> Connect our API to your Shopify store to automatically sync orders, customers, and product data.
                       </p>
-                      <p>Supports real-time analytics and automated reporting.</p>
+                      <p className="text-amber-400 text-xs mb-1">⚠️ Requires: Store admin access or brand owner credentials to authorize read-only permissions.</p>
+                      <p>Provides real-time analytics with secure, automated data reporting.</p>
                     </div>
                   </div>
                 </div>

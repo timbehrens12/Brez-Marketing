@@ -2561,18 +2561,18 @@ export default function SettingsPage() {
       >
         <DialogContent className="sm:max-w-lg bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0f0f0f] border border-[#333] text-white shadow-2xl">
           <DialogHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-[#96BF48] to-[#7EA83A] rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="mx-auto mb-4 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
               <img 
-                src="/shopify-icon.png" 
+                src="https://cdn.shopify.com/s/files/1/0446/6937/files/shopify_logo.png" 
                 alt="Shopify" 
-                className="w-10 h-10 object-contain"
+                className="w-12 h-8 object-contain"
               />
             </div>
             <DialogTitle className="text-2xl font-bold text-white mb-2">
               Connect Your Shopify Store
             </DialogTitle>
             <DialogDescription className="text-gray-400 text-base leading-relaxed">
-              Enter your store URL to begin the secure connection process.
+              Connect our API to automatically sync your store data with read-only permissions.
             </DialogDescription>
           </DialogHeader>
 

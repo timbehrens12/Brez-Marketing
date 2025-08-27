@@ -449,8 +449,6 @@ export default function DashboardPage() {
       if (cancelled || isInitialSetup) return;
       
       const brandId = event.detail.brandId
-      // console.log('🎯 Selected brand:', brandId)
-      
       // Only set initialDataLoad if we haven't started loading yet
       if (!cancelled && !initialLoadStarted.current) {
         initialLoadStarted.current = true;
@@ -458,7 +456,6 @@ export default function DashboardPage() {
       }
 
       try {
-        // console.log('🔍 Fetching platform connections...')
         // Fetch platform connections from Supabase for the selected brand
         const { data: connections, error } = await getSupabaseClient()
           .from('platform_connections')
@@ -467,13 +464,10 @@ export default function DashboardPage() {
           .eq('status', 'active')
 
         if (error) {
-          // console.error('❌ Error fetching connections:', error)
           return
         }
 
         if (cancelled) return;
-
-        // console.log('✅ Platform connections fetched:', connections)
 
         // Update platforms state based on connections from database
         const hasShopify = connections.some((c: any) => 

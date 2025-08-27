@@ -44,9 +44,7 @@ export async function POST(request: NextRequest) {
       grant_options: 'per-user'
     }).toString()
 
-    console.log('[Shopify Install] Generated auth URL for shop:', shopDomain)
-    console.log('[Shopify Install] Auth URL:', authUrl)
-    console.log('[Shopify Install] Callback URL:', `${APP_URL}/api/shopify/callback`)
+    // Auth URL generated for Shopify OAuth flow
 
     return NextResponse.json({ 
       authUrl,

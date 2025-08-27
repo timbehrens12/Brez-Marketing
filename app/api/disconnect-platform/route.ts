@@ -8,7 +8,7 @@ export async function POST(request: Request) {
       const { brandId, platformType } = await request.json()
 
       try {
-        console.log('Disconnecting platform:', { brandId, platformType, userId })
+        // Disconnect platform request
         
         // First, check if the connection exists - but don't use .single() since there might be multiple
         const { data: connections, error: connectionQueryError } = await supabase
@@ -18,7 +18,6 @@ export async function POST(request: Request) {
           .eq('platform_type', platformType)
 
         if (connectionQueryError) {
-          console.error('Error finding connections:', connectionQueryError)
           return NextResponse.json(
             { error: 'Error querying connections' },
             { status: 500 }
@@ -26,14 +25,11 @@ export async function POST(request: Request) {
         }
 
         if (!connections || connections.length === 0) {
-          console.error('No connections found for:', { brandId, platformType })
           return NextResponse.json(
             { error: 'Connection not found' },
             { status: 404 }
           )
         }
-
-        console.log(`Found ${connections.length} connections to disconnect`)
 
         // Try to delete the connections directly - if there are foreign key constraints, return 409
         const { error: connectionError } = await supabase
@@ -43,19 +39,14 @@ export async function POST(request: Request) {
           .eq('platform_type', platformType)
 
         if (connectionError) {
-          console.error('Error deleting connections:', connectionError)
-          
           // Check if it's a foreign key constraint error  
           if (connectionError.code === '23503' || (connectionError.message && connectionError.message.includes('foreign key constraint'))) {
-            console.log('🚨 Foreign key constraint detected - automatically calling force delete')
-            
-            // Don't return 409 - instead automatically call force delete
-            console.log('🚨 FK constraint detected - returning 409 for frontend to handle force delete')
+            // Silently handle the constraint - frontend will handle force delete automatically
             return NextResponse.json(
               { 
                 error: 'Cannot disconnect platform. There is still related data that must be removed first. Use force disconnect to remove all data.',
                 hasRelatedData: true,
-                details: connectionError.message
+                silent: true // Flag to suppress frontend error display
               },
               { status: 409 }
             )
@@ -69,7 +60,6 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true })
       } catch (error) {
-        console.error('Error disconnecting platform:', error)
         return NextResponse.json(
           { error: 'Failed to disconnect platform: ' + (error instanceof Error ? error.message : String(error)) },
           { status: 500 }

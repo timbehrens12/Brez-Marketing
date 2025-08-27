@@ -22,9 +22,7 @@ export default function ShopifyInstallPage() {
     setError(null)
 
     try {
-      console.log('[Install] Starting OAuth flow for shop:', shop)
-      console.log('[Install] Current URL:', window.location.href)
-      console.log('[Install] User agent:', navigator.userAgent)
+      // Starting Shopify OAuth flow
       
       // Start OAuth flow
       const response = await fetch('/api/shopify/install', {
@@ -36,25 +34,18 @@ export default function ShopifyInstallPage() {
       })
 
       const data = await response.json()
-      console.log('[Install] API response:', data)
 
       if (response.ok && data.authUrl) {
-        console.log('[Install] Redirecting to OAuth URL:', data.authUrl)
-        
         // Force redirect using top-level window to break out of any iframe
         if (window.top && window.top !== window) {
-          console.log('[Install] Detected iframe, using top-level redirect')
           window.top.location.href = data.authUrl
         } else {
-          console.log('[Install] Using normal redirect')
           window.location.href = data.authUrl
         }
       } else {
-        console.error('[Install] API error:', data)
         setError(data.error || 'Failed to start installation')
       }
     } catch (err) {
-      console.error('[Install] Fetch error:', err)
       setError('Installation failed. Please try again.')
     } finally {
       setIsInstalling(false)
