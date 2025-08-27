@@ -72,6 +72,9 @@ export class ShopifyWorker {
       
       console.log(`[Worker] Recent sync completed for brand ${brandId}`)
       
+      // Check if ALL jobs are now complete and update connection status
+      await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
+      
     } catch (error) {
       console.error(`[Worker] Recent sync failed for brand ${brandId}:`, error)
       
@@ -298,6 +301,9 @@ export class ShopifyWorker {
         }
         
         console.log(`[Worker] Bulk operation ${bulkOperationId} processing completed:`, results)
+        
+        // Check if ALL jobs are now complete and update connection status
+        await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
       }
       
     } catch (error) {
@@ -312,6 +318,71 @@ export class ShopifyWorker {
       }
       
       throw error
+    }
+  }
+
+  /**
+   * Check if all jobs are complete and update connection sync status
+   */
+  static async checkAndUpdateOverallSyncStatus(brandId: string, connectionId: string): Promise<void> {
+    try {
+      console.log(`[Worker] Checking overall sync status for brand ${brandId}`)
+      
+      // Get sync status from queue service (same logic as API)
+      const status = await ShopifyQueueService.getSyncStatus(brandId)
+      const milestones = status.shopify.milestones
+      
+      if (!milestones.length) {
+        console.log(`[Worker] No milestones found for brand ${brandId}`)
+        return
+      }
+      
+      // Check if all milestones are completed (same logic as sync status API)
+      const allCompleted = milestones.every((m: any) => m.status === 'completed')
+      const anyFailed = milestones.some((m: any) => m.status === 'failed')
+      
+      if (allCompleted) {
+        console.log(`[Worker] All jobs complete for brand ${brandId}, updating connection to completed`)
+        
+        const supabase = createClient()
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'completed',
+            metadata: {
+              queue_jobs_running: false,
+              all_jobs_completed: true,
+              sync_completed_at: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', connectionId)
+          
+        console.log(`[Worker] ✅ Updated connection ${connectionId} status to completed`)
+        
+      } else if (anyFailed) {
+        console.log(`[Worker] Some jobs failed for brand ${brandId}, updating connection to failed`)
+        
+        const supabase = createClient()
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'failed',
+            metadata: {
+              queue_jobs_running: false,
+              some_jobs_failed: true,
+              sync_failed_at: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', connectionId)
+          
+      } else {
+        console.log(`[Worker] Jobs still running for brand ${brandId}, keeping syncing status`)
+      }
+      
+    } catch (error) {
+      console.error(`[Worker] Error checking overall sync status:`, error)
     }
   }
 

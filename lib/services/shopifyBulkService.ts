@@ -218,21 +218,22 @@ export class ShopifyBulkService {
       // Fetch abandoned checkouts data
       await this.syncAbandonedCheckouts(shop, accessToken, brandId, connectionId, connectionData?.user_id)
       
-      // Update connection to mark mini-sync as completed
+      // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
       await supabase
         .from('platform_connections')
         .update({ 
-          sync_status: 'completed',
+          sync_status: 'syncing', // ✅ KEEP AS SYNCING - queue jobs still running!
           last_synced_at: new Date().toISOString(),
           metadata: {
             mini_sync_completed: true,
             mini_sync_orders: successCount,
-            mini_sync_errors: errorCount
+            mini_sync_errors: errorCount,
+            queue_jobs_running: true // Add flag to indicate background jobs running
           }
         })
         .eq('id', connectionId)
         
-      console.log(`[Mini-sync] Updated connection status to completed`)
+      console.log(`[Mini-sync] Updated connection status to syncing (queue jobs still running)`)
       
     } catch (error) {
       console.error(`[Mini-sync] FATAL ERROR in immediate sync:`, error)
