@@ -102,6 +102,29 @@ export async function POST(
 
     console.log(`[Shopify Connected] Queue-based sync initiated for brand ${brandId}`)
 
+    // Step 5: Immediately trigger worker to start processing jobs
+    try {
+      const workerUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/worker/shopify`
+      
+      const workerResponse = await fetch(workerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-call': 'true'
+        },
+        body: JSON.stringify({
+          maxJobs: 10 // Process all queued jobs
+        })
+      })
+      
+      const workerResult = await workerResponse.json()
+      console.log(`[Shopify Connected] Worker processing initiated:`, workerResult)
+      
+    } catch (workerError) {
+      console.error(`[Shopify Connected] Failed to trigger worker:`, workerError)
+      // Don't fail the whole request if worker trigger fails
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Shopify sync initiated with queue-based architecture',
