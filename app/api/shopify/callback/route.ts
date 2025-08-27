@@ -189,7 +189,10 @@ export async function GET(request: NextRequest) {
       try {
         const connectedResponse = await fetch(`${APP_URL}/api/shopify/connected/${brandId}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-internal-call': 'true'
+          },
           body: JSON.stringify({ 
             shop,
             accessToken: access_token,

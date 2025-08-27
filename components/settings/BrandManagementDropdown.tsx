@@ -96,18 +96,41 @@ export function BrandManagementDropdown({
       setIsExpanded(true) // Force expansion when syncing
       
       let checkCount = 0
-      const maxChecks = 6 // 12 seconds max (2 sec intervals) - much shorter since sync is fast
+      const maxChecks = 30 // 60 seconds max (2 sec intervals) - allow time for historical sync
       
-      // Start checking for actual data in database
-      const checkForData = async () => {
+      // Check for actual sync completion using V2 status API
+      const checkForSyncCompletion = async () => {
         try {
           checkCount++
-          console.log(`[Brand Dropdown] Checking for synced data (${checkCount}/${maxChecks})`)
+          console.log(`[Brand Dropdown] Checking V2 sync status (${checkCount}/${maxChecks})`)
           
-          // Check if we have any Shopify orders for this brand
+          // Check V2 sync status first
+          const statusResponse = await fetch(`/api/sync/${brand.id}/status`)
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json()
+            console.log('[Brand Dropdown] V2 sync status:', statusData)
+            
+            // Check if historical sync is complete
+            const isHistoricalComplete = statusData.shopify?.overall_status === 'completed'
+            
+            if (isHistoricalComplete) {
+              console.log('[Brand Dropdown] V2 historical sync completed, stopping sync state')
+              setIsShopifySyncing(false)
+              setIsConnecting(false)
+              // Clear the URL params
+              const newUrl = window.location.pathname
+              window.history.replaceState({}, '', newUrl)
+              // Redirect to dashboard
+              setTimeout(() => {
+                window.location.href = '/dashboard'
+              }, 500)
+              return
+            }
+          }
+          
+          // Fallback: check for actual data in database (old method)
           const response = await fetch(`/api/metrics/brand-aggregate?brandId=${brand.id}`)
           const data = await response.json()
-          
           console.log(`[Brand Dropdown] Brand metrics response:`, data)
           
           // If we have Shopify data or hit max checks, stop syncing
@@ -117,6 +140,7 @@ export function BrandManagementDropdown({
             data.shopify.totalRevenue > 0
           )
           
+          // Only redirect if we have data OR we've reached max checks
           if (hasShopifyData || checkCount >= maxChecks) {
             console.log(`[Brand Dropdown] ${hasShopifyData ? 'Data found' : 'Max checks reached'}, stopping sync state`)
             setIsShopifySyncing(false)
@@ -127,10 +151,10 @@ export function BrandManagementDropdown({
             // Redirect to dashboard
             setTimeout(() => {
               window.location.href = '/dashboard'
-            }, 500) // Small delay to show completion
+            }, 500)
           }
         } catch (error) {
-          console.error('[Brand Dropdown] Error checking for data:', error)
+          console.error('[Brand Dropdown] Error checking sync status:', error)
           if (checkCount >= maxChecks) {
             setIsShopifySyncing(false)
             setIsConnecting(false)
@@ -140,15 +164,15 @@ export function BrandManagementDropdown({
       
       // Start checking after 2 seconds (give initial sync time), then every 2 seconds
       const timeoutId = setTimeout(() => {
-        checkForData()
-        const intervalId = setInterval(checkForData, 2000)
+        checkForSyncCompletion()
+        const intervalId = setInterval(checkForSyncCompletion, 2000)
         
         // Clear interval after max time
         setTimeout(() => {
           clearInterval(intervalId)
           setIsShopifySyncing(false)
           setIsConnecting(false)
-        }, 15000) // 15 seconds total max
+        }, 60000) // 60 seconds total max for historical sync
       }, 2000)
       
       return () => clearTimeout(timeoutId)

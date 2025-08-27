@@ -14,8 +14,11 @@ export async function POST(
   { params }: { params: { brandId: string } }
 ) {
   try {
+    // Check for internal server call (from callback) vs external user call
     const { userId } = auth()
-    if (!userId) {
+    const internalCall = request.headers.get('x-internal-call') === 'true'
+    
+    if (!userId && !internalCall) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
