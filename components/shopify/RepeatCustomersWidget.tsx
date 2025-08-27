@@ -79,15 +79,12 @@ export function RepeatCustomersWidget({
 
       if (result.success) {
         setData(result.data)
-        console.log('[RepeatCustomersWidget] Successfully loaded data:', result.data);
-        console.log('[RepeatCustomersWidget] Total customers:', result.data.overview?.totalCustomers || 0);
-        console.log('[RepeatCustomersWidget] Repeat customers:', result.data.overview?.repeatCustomers || 0);
-        console.log('[RepeatCustomersWidget] Top repeaters count:', result.data.topRepeaters?.length || 0);
+        // Repeat customers data loaded successfully
       } else {
-        console.log('[RepeatCustomersWidget] No data received:', result);
+        // No repeat customers data received
       }
     } catch (error) {
-      console.error('Error fetching repeat customer data:', error)
+      // Error fetching repeat customer data
     } finally {
       setLoading(false)
     }
@@ -100,7 +97,7 @@ export function RepeatCustomersWidget({
   // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event?: any) => {
-      console.log('[RepeatCustomersWidget] Received refresh event:', event?.type);
+      // Refresh event received
       fetchRepeatData()
     }
 

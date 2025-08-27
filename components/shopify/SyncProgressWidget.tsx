@@ -55,7 +55,7 @@ export function SyncProgressWidget({ brandId, onSyncComplete }: SyncProgressWidg
         return isActive
       }
     } catch (error) {
-      console.error('[Sync Progress] Error fetching status:', error)
+      // Error fetching sync progress status
     }
     return false
   }

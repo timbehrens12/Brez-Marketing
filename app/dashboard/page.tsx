@@ -134,7 +134,7 @@ function formatDate(date: Date | undefined): string {
 const MAX_LOADING_TIME = 30000; // 30 seconds maximum loading time
 
 export default function DashboardPage() {
-  // console.log('[Dashboard] Component render started')
+
   
   // Log each hook call to identify which one causes the error
   // console.log('[Dashboard] Calling useAuth')

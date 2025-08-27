@@ -65,7 +65,7 @@ export function ShippingAnalysisWidget({
           setData(result.data)
         }
       } catch (error) {
-        console.error('Error fetching shipping analysis:', error)
+        // Error fetching shipping analysis
       } finally {
         setLoading(false)
       }

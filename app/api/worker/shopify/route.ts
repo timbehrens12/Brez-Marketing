@@ -6,9 +6,9 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Worker API] Starting job processing...')
+    // Starting job processing
     
-    console.log(`[Worker API] TEMP: ALL AUTH COMPLETELY DISABLED FOR DEBUGGING`)
+    // Auth disabled for debugging
     
     // COMPLETELY REMOVE ALL AUTH CHECKS
     // const authHeader = request.headers.get('authorization')
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const maxJobs = body.maxJobs || 10
     
-    console.log(`[Worker API] Processing up to ${maxJobs} jobs...`)
+    // Processing jobs
     
     // Import dependencies inside try block to catch import errors
     const { ShopifyWorker } = await import('@/lib/workers/shopifyWorker')
@@ -33,14 +33,14 @@ export async function POST(request: NextRequest) {
     const waitingJobs = await shopifyQueue.getWaiting()
     const activeJobs = await shopifyQueue.getActive()
     
-    console.log(`[Worker API] Found ${waitingJobs.length} waiting jobs, ${activeJobs.length} active jobs`)
+    // Found waiting and active jobs
     
     // Process waiting jobs
     for (let i = 0; i < Math.min(waitingJobs.length, maxJobs); i++) {
       const job = waitingJobs[i]
       
       try {
-        console.log(`[Worker API] Processing job ${job.id} (${job.name})`)
+        // Processing job
         
         // Process the job based on its type
         switch (job.name) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             await ShopifyWorker.processPollBulk(job)
             break
           default:
-            console.warn(`[Worker API] Unknown job type: ${job.name}`)
+            // Unknown job type
             continue
         }
         
@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
           brandId: job.data.brandId
         })
         
-        console.log(`[Worker API] Job ${job.id} completed successfully`)
+        // Job completed successfully
         
       } catch (error) {
-        console.error(`[Worker API] Job ${job.id} failed:`, error)
+        // Job failed
         
         // Mark job as failed
         await job.moveToFailed({ message: error instanceof Error ? error.message : 'Unknown error' })
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       failed: failed.length
     }
     
-    console.log(`[Worker API] Processing complete. Processed: ${processedCount}, Queue stats:`, stats)
+    // Processing complete
     
     return NextResponse.json({
       success: true,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('[Worker API] Error processing jobs:', error)
+    // Error processing jobs
     
     return NextResponse.json({
       success: false,
@@ -131,9 +131,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[Worker API] GET request for queue status...')
+    // GET request for queue status
     
-    console.log(`[Worker API] GET TEMP: ALL AUTH COMPLETELY DISABLED FOR DEBUGGING`)
+    // GET auth disabled for debugging
     
     // COMPLETELY REMOVE ALL AUTH CHECKS
     // const internalCall = request.headers.get('x-internal-call') === 'true'
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('[Worker API] Error getting queue status:', error)
+    // Error getting queue status
     
     return NextResponse.json({
       success: false,

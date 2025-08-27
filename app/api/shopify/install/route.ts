@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[Shopify Install] Error:', error)
     return NextResponse.json({ 
       error: 'Failed to start installation process' 
     }, { status: 500 })

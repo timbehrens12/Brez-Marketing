@@ -110,7 +110,7 @@ export function SyncStatusWidget({
       }
       
     } catch (error) {
-      console.error('Error fetching sync status:', error)
+      // Error fetching sync status
       setSyncStatuses([]) // Hide widget on error
     } finally {
       setLoading(false)

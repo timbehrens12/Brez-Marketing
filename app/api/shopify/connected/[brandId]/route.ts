@@ -31,7 +31,7 @@ export async function POST(
       }, { status: 400 })
     }
 
-    console.log(`[Shopify Connected] Starting queue-based sync for brand ${brandId}, shop ${shop}`)
+    // Starting queue-based sync
 
     const supabase = createClient()
 
@@ -46,7 +46,7 @@ export async function POST(
       .single()
 
     if (connectionError || !connection) {
-      console.error('[Shopify Connected] Connection not found:', connectionError)
+      // Connection not found
       return NextResponse.json({ 
         error: 'Shopify connection not found or inactive' 
       }, { status: 404 })
@@ -100,7 +100,7 @@ export async function POST(
       })
       .eq('id', connectionId)
 
-    console.log(`[Shopify Connected] Queue-based sync initiated for brand ${brandId}`)
+    // Queue-based sync initiated
 
     // Step 5: Immediately trigger worker to start processing jobs
     try {
@@ -113,7 +113,7 @@ export async function POST(
       
       const workerUrl = `${baseUrl}/api/worker/shopify`
       
-      console.log(`[Shopify Connected] Calling worker at: ${workerUrl}`)
+      // Calling worker API
       
       const workerResponse = await fetch(workerUrl, {
         method: 'POST',
@@ -132,17 +132,17 @@ export async function POST(
       } catch (parseError) {
         try {
           const responseText = await workerResponse.clone().text()
-          console.error(`[Shopify Connected] Failed to parse worker response as JSON. Status: ${workerResponse.status}, Response: ${responseText.substring(0, 500)}`)
+          // Failed to parse worker response
         } catch (textError) {
-          console.error(`[Shopify Connected] Failed to read response as text or JSON. Status: ${workerResponse.status}`)
+          // Failed to read worker response
         }
         throw new Error(`Worker API returned invalid JSON. Status: ${workerResponse.status}`)
       }
       
-      console.log(`[Shopify Connected] Worker processing initiated:`, workerResult)
+      // Worker processing initiated
       
     } catch (workerError) {
-      console.error(`[Shopify Connected] Failed to trigger worker:`, workerError)
+      // Failed to trigger worker
       // Don't fail the whole request if worker trigger fails
     }
 

@@ -72,7 +72,7 @@ export function CustomerBehaviorWidget({
         setError('No customer behavior data available')
       }
     } catch (err) {
-      console.error('Error fetching customer behavior data:', err)
+      // Error fetching customer behavior data
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setIsWidgetLoading(false)

@@ -103,7 +103,7 @@ export function AbandonedCartWidget({
         setError('No abandoned cart data available')
       }
     } catch (err) {
-      console.error('Error fetching abandoned cart data:', err)
+      // Error fetching abandoned cart data
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setIsWidgetLoading(false)

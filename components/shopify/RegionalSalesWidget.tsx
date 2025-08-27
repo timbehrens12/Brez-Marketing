@@ -77,7 +77,7 @@ export function RegionalSalesWidget({
           setData(result.data)
         }
       } catch (error) {
-        console.error('Error fetching regional sales:', error)
+        // Error fetching regional sales
       } finally {
         setLoading(false)
       }

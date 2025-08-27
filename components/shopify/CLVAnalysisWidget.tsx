@@ -59,7 +59,7 @@ export function CLVAnalysisWidget({
           setData(result.data)
         }
       } catch (error) {
-        console.error('Error fetching CLV analysis:', error)
+        // Error fetching CLV analysis
       } finally {
         setLoading(false)
       }

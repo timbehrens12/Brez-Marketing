@@ -366,7 +366,7 @@ export function UnifiedDashboardHeader({
                   }}
                 >
                   <Image 
-                    src="https://i.imgur.com/vpbcX3n.png" 
+                    src="https://i.imgur.com/cnCcupx.png" 
                     alt="Shopify" 
                     width={20} 
                     height={20} 

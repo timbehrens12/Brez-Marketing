@@ -65,14 +65,12 @@ export function CustomerSegmentationWidget({
 
       if (result.success) {
         setData(result.data)
-        console.log('[CustomerSegmentationWidget] Successfully loaded data:', result.data);
-        console.log('[CustomerSegmentationWidget] Top locations count:', result.data.topLocations?.length || 0);
-        console.log('[CustomerSegmentationWidget] Total customers:', result.data.overview?.totalCustomers || 0);
+        // Customer segmentation data loaded successfully
       } else {
-        console.log('[CustomerSegmentationWidget] No data received:', result);
+        // No customer segmentation data received
       }
     } catch (error) {
-      console.error('Error fetching customer segmentation:', error)
+      // Error fetching customer segmentation
     } finally {
       setLoading(false)
     }
@@ -85,7 +83,7 @@ export function CustomerSegmentationWidget({
   // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event?: any) => {
-      console.log('[CustomerSegmentationWidget] Received refresh event:', event?.type);
+      // Refresh event received
       fetchSegmentData()
     }
 

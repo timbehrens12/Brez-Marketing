@@ -2563,7 +2563,7 @@ export default function SettingsPage() {
           <DialogHeader className="text-center pb-6">
             <div className="mx-auto mb-4 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
               <img 
-                src="https://i.imgur.com/vpbcX3n.png" 
+                src="https://i.imgur.com/cnCcupx.png" 
                 alt="Shopify" 
                 className="w-10 h-10 object-contain"
               />
