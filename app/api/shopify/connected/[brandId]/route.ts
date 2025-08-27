@@ -130,8 +130,12 @@ export async function POST(
       try {
         workerResult = await workerResponse.json()
       } catch (parseError) {
-        const responseText = await workerResponse.text()
-        console.error(`[Shopify Connected] Failed to parse worker response as JSON. Status: ${workerResponse.status}, Response: ${responseText.substring(0, 500)}`)
+        try {
+          const responseText = await workerResponse.clone().text()
+          console.error(`[Shopify Connected] Failed to parse worker response as JSON. Status: ${workerResponse.status}, Response: ${responseText.substring(0, 500)}`)
+        } catch (textError) {
+          console.error(`[Shopify Connected] Failed to read response as text or JSON. Status: ${workerResponse.status}`)
+        }
         throw new Error(`Worker API returned invalid JSON. Status: ${workerResponse.status}`)
       }
       

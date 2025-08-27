@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-internal-call': 'true',
         'Authorization': authHeader || `Bearer ${cronSecret}` // Pass through auth
       },
       body: JSON.stringify({
@@ -42,10 +43,16 @@ export async function GET(request: NextRequest) {
     
     let result
     try {
+      // Clone response before reading to avoid "Body is unusable" error
+      const responseClone = response.clone()
       result = await response.json()
     } catch (parseError) {
-      const responseText = await response.text()
-      console.error(`[Cron Queue] Failed to parse worker response as JSON. Status: ${response.status}, Response: ${responseText.substring(0, 500)}`)
+      try {
+        const responseText = await response.clone().text()
+        console.error(`[Cron Queue] Failed to parse worker response as JSON. Status: ${response.status}, Response: ${responseText.substring(0, 500)}`)
+      } catch (textError) {
+        console.error(`[Cron Queue] Failed to read response as text or JSON. Status: ${response.status}`)
+      }
       throw new Error(`Worker API returned invalid JSON. Status: ${response.status}`)
     }
     

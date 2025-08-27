@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ShopifyWorker } from '@/lib/workers/shopifyWorker'
-import { shopifyQueue } from '@/lib/services/shopifyQueueService'
 
 /**
  * Manual worker endpoint for processing Shopify queue jobs
@@ -24,6 +22,10 @@ export async function POST(request: NextRequest) {
     const maxJobs = body.maxJobs || 10
     
     console.log(`[Worker API] Processing up to ${maxJobs} jobs...`)
+    
+    // Import dependencies inside try block to catch import errors
+    const { ShopifyWorker } = await import('@/lib/workers/shopifyWorker')
+    const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
     
     // Process waiting jobs
     let processedCount = 0
@@ -131,6 +133,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
+    // Import dependencies inside try block to catch import errors
+    const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
+    
     const waiting = await shopifyQueue.getWaiting()
     const active = await shopifyQueue.getActive()
     const completed = await shopifyQueue.getCompleted()
