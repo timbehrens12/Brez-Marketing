@@ -28,10 +28,18 @@ export async function GET() {
     console.log(`[Simple Worker Test] Response status: ${response.status}`)
     
     let result
+    let responseText = ''
+    
     try {
+      // Clone response first to avoid "Body has already been consumed"
+      const responseClone = response.clone()
       result = await response.json()
     } catch (parseError) {
-      const responseText = await response.clone().text()
+      try {
+        responseText = await response.text()
+      } catch (textError) {
+        responseText = 'Failed to read response body'
+      }
       console.error(`[Simple Worker Test] Failed to parse response: ${responseText.substring(0, 500)}`)
       return NextResponse.json({
         success: false,
@@ -90,10 +98,18 @@ export async function POST() {
     console.log(`[Simple Worker Test POST] Response status: ${response.status}`)
     
     let result
+    let responseText = ''
+    
     try {
+      // Clone response first to avoid "Body has already been consumed"
+      const responseClone = response.clone()
       result = await response.json()
     } catch (parseError) {
-      const responseText = await response.clone().text()
+      try {
+        responseText = await response.text()
+      } catch (textError) {
+        responseText = 'Failed to read response body'
+      }
       console.error(`[Simple Worker Test POST] Failed to parse response: ${responseText.substring(0, 500)}`)
       return NextResponse.json({
         success: false,

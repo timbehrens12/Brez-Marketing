@@ -8,23 +8,12 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Worker API] Starting job processing...')
     
-    // Check for authorization (optional - add API key if needed)
-    const authHeader = request.headers.get('authorization')
-    const internalCall = request.headers.get('x-internal-call') === 'true'
-    const cronSecret = process.env.CRON_SECRET
+    console.log(`[Worker API] TEMP: ALL AUTH COMPLETELY DISABLED FOR DEBUGGING`)
     
-    console.log(`[Worker API] Auth check: internalCall=${internalCall}, cronSecret=${!!cronSecret}, authHeader=${authHeader?.substring(0, 20)}...`)
-    
-    // TEMPORARILY DISABLE AUTH CHECK FOR DEBUGGING
-    console.log(`[Worker API] TEMP: Skipping authorization check for debugging`)
-    
-    // Allow internal calls or valid cron secret
-    // if (!internalCall && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    //   console.log(`[Worker API] Authorization failed`)
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
-    
-    console.log(`[Worker API] Authorization passed (temp disabled)`)
+    // COMPLETELY REMOVE ALL AUTH CHECKS
+    // const authHeader = request.headers.get('authorization')
+    // const internalCall = request.headers.get('x-internal-call') === 'true'
+    // const cronSecret = process.env.CRON_SECRET
 
     // Get the number of jobs to process (default: 10)
     const body = await request.json().catch(() => ({}))
@@ -144,11 +133,10 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[Worker API] GET request for queue status...')
     
-    // Check for authorization for GET requests too
-    const internalCall = request.headers.get('x-internal-call') === 'true'
+    console.log(`[Worker API] GET TEMP: ALL AUTH COMPLETELY DISABLED FOR DEBUGGING`)
     
-    console.log(`[Worker API] GET Auth check: internalCall=${internalCall}`)
-    console.log(`[Worker API] GET TEMP: Skipping authorization check for debugging`)
+    // COMPLETELY REMOVE ALL AUTH CHECKS
+    // const internalCall = request.headers.get('x-internal-call') === 'true'
     
     // Import dependencies inside try block to catch import errors
     const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
