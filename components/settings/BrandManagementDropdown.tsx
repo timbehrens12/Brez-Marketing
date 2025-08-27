@@ -422,15 +422,17 @@ export function BrandManagementDropdown({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                disabled
-                                className="text-black text-xs py-1 px-2 rounded-md shadow-lg bg-blue-200 opacity-75"
-                              >
-                                <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                                Syncing
-                              </Button>
+                              <div className="inline-block">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  disabled
+                                  className="text-black text-xs py-1 px-2 rounded-md shadow-lg bg-blue-200 opacity-75 pointer-events-none"
+                                >
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                  Syncing
+                                </Button>
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-sm">
                               <div className="space-y-2">
