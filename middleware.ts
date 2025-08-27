@@ -22,6 +22,8 @@ export default authMiddleware({
     "/api/cron/meta-sync",
     "/api/cron/process-queue",
     "/api/worker/shopify",
+    "/api/cron(.*)",
+    "/api/worker(.*)",
     "/api/reports/refresh"
   ],
   ignoredRoutes: [
