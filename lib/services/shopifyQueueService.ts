@@ -144,8 +144,7 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { data, error } = await supabase
-      .schema('control')
-      .from('etl_job')
+      .from('control.etl_job')
       .insert({
         brand_id: brandId,
         entity: entity,
@@ -182,8 +181,7 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { error } = await supabase
-      .schema('control')
-      .from('etl_job')
+      .from('control.etl_job')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
@@ -221,8 +219,7 @@ export class ShopifyQueueService {
     const supabase = createClient()
     
     const { data: jobs, error } = await supabase
-      .schema('control')
-      .from('etl_job')
+      .from('control.etl_job')
       .select('*')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
