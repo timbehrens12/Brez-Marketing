@@ -119,42 +119,7 @@ export async function POST(request: Request) {
               console.log(`⚠️ Exception deleting shopify_products:`, err)
             }
             
-            // FINAL CLEANUP: Use raw SQL to catch any remaining orphaned records
-            try {
-              console.log(`🧹 Final cleanup: removing any remaining shopify data linked to this brand`)
-              
-              // Execute raw SQL to delete any shopify_orders that reference platform_connections for this brand
-              const { data: sqlResult, error: sqlError } = await adminSupabase
-                .rpc('exec_sql', {
-                  sql: `
-                    DELETE FROM shopify_orders 
-                    WHERE connection_id IN (
-                      SELECT id FROM platform_connections 
-                      WHERE brand_id = '${brandId}' AND platform_type = 'shopify'
-                    );
-                  `
-                })
-              
-              if (sqlError) {
-                console.log(`⚠️ SQL cleanup failed:`, sqlError.message)
-                
-                // Try the direct approach with admin privileges
-                const { error: directError } = await adminSupabase
-                  .from('shopify_orders')
-                  .delete()
-                  .eq('brand_id', brandId) // Try brand_id if it exists
-                
-                if (directError) {
-                  console.log(`⚠️ Direct cleanup also failed:`, directError.message)
-                } else {
-                  console.log(`✅ Direct cleanup succeeded`)
-                }
-              } else {
-                console.log(`✅ SQL cleanup successful:`, sqlResult)
-              }
-            } catch (cleanupErr) {
-              console.log(`⚠️ Final cleanup failed:`, cleanupErr)
-            }
+            console.log(`✅ Standard cleanup completed - force delete should resolve FK constraints`)
             
             console.log(`✅ Completed Shopify data deletion`)
           } catch (error) {
