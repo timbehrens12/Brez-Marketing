@@ -424,11 +424,8 @@ export class ShopifyWorker {
           connectionId
         )
         
-        // Promote staging data to production
-        await ShopifyGraphQLService.promoteToProduction(
-          entity as 'orders' | 'customers' | 'products',
-          brandId
-        )
+        // DATA PROCESSED - Results already saved directly to production tables
+        console.log(`[Worker] ✅ ${entity} data processed and saved to production tables`)
         
         // Update ETL job
         if (etlJobId) {

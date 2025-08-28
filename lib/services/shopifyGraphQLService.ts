@@ -583,24 +583,30 @@ export class ShopifyGraphQLService {
       }
     }
     
-    // Insert into staging tables
+    // Insert directly to production tables (bypass staging)
     if (orders.length > 0) {
       const { error: ordersError } = await supabase
-        .from('stage.shopify_orders')
-        .upsert(orders, { onConflict: 'order_id' })
-      
+        .from('shopify_orders')
+        .upsert(orders, { onConflict: 'id' })
+
       if (ordersError) {
-        console.error('[GraphQL] Error inserting orders:', ordersError)
+        console.error('[GraphQL] Error inserting orders to production:', ordersError)
+      } else {
+        console.log(`[GraphQL] ✅ Inserted ${orders.length} orders to production`)
+        ordersProcessed += orders.length
       }
     }
-    
+
     if (lineItems.length > 0) {
       const { error: lineItemsError } = await supabase
-        .from('stage.shopify_line_items')
-        .upsert(lineItems, { onConflict: 'order_id,line_item_id' })
-      
+        .from('shopify_line_items')
+        .upsert(lineItems, { onConflict: 'line_item_id' })
+
       if (lineItemsError) {
-        console.error('[GraphQL] Error inserting line items:', lineItemsError)
+        console.error('[GraphQL] Error inserting line items to production:', lineItemsError)
+      } else {
+        console.log(`[GraphQL] ✅ Inserted ${lineItems.length} line items to production`)
+        lineItemsProcessed += lineItems.length
       }
     }
     
@@ -661,11 +667,14 @@ export class ShopifyGraphQLService {
     
     if (customers.length > 0) {
       const { error } = await supabase
-        .from('stage.shopify_customers')
-        .upsert(customers, { onConflict: 'customer_id' })
-      
+        .from('shopify_customers')
+        .upsert(customers, { onConflict: 'id' })
+
       if (error) {
-        console.error('[GraphQL] Error inserting customers:', error)
+        console.error('[GraphQL] Error inserting customers to production:', error)
+      } else {
+        console.log(`[GraphQL] ✅ Inserted ${customers.length} customers to production`)
+        customersProcessed += customers.length
       }
     }
     
@@ -718,11 +727,14 @@ export class ShopifyGraphQLService {
     
     if (products.length > 0) {
       const { error } = await supabase
-        .from('stage.shopify_products')
-        .upsert(products, { onConflict: 'product_id' })
-      
+        .from('shopify_products')
+        .upsert(products, { onConflict: 'id' })
+
       if (error) {
-        console.error('[GraphQL] Error inserting products:', error)
+        console.error('[GraphQL] Error inserting products to production:', error)
+      } else {
+        console.log(`[GraphQL] ✅ Inserted ${products.length} products to production`)
+        productsProcessed += products.length
       }
     }
     
