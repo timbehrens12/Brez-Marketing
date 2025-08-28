@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Also trigger inventory sync immediately
     try {
       console.log(`[Restart Sync] Triggering inventory sync...`)
-      const inventoryResponse = await fetch(`${APP_URL}/api/shopify/inventory/sync`, {
+      const inventoryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionId: connection.id })
