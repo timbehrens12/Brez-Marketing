@@ -151,24 +151,24 @@ function generateSummary(milestones: any[]): string {
     const totalCount = milestones.length
 
     if (completedCount === totalCount) {
-      return 'Complete Shopify historical data is fully synced and up to date'
+      return '✅ Complete Shopify historical data synced! All order history, customers, and products available.'
     }
 
     const runningItems = milestones.filter(m => m.status === 'running')
     if (runningItems.length > 0) {
       const runningEntity = runningItems[0].entity
-      const entityName = runningEntity === 'orders' ? 'order history' :
-                        runningEntity === 'customers' ? 'customer data' :
-                        runningEntity === 'products' ? 'product catalog' : runningEntity
-      return `Importing complete ${entityName} history...`
+      const entityName = runningEntity === 'orders' ? 'complete order history' :
+                        runningEntity === 'customers' ? 'complete customer database' :
+                        runningEntity === 'products' ? 'complete product catalog' : runningEntity
+      return `📊 Importing ${entityName} from 2010 onwards...`
     }
 
-    return `Syncing complete historical data... (${completedCount}/${totalCount} complete)`
+    return `🔄 Syncing complete historical data (${completedCount}/${totalCount} complete)...`
   }
 
   if (recentSync?.status === 'running') {
-    return 'Connecting to Shopify and preparing full historical sync...'
+    return '🚀 Starting complete Shopify historical data sync (2010 onwards)...'
   }
 
-  return 'Starting complete Shopify historical data sync...'
+  return '⚡ Preparing complete Shopify historical sync...'
 }

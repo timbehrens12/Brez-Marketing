@@ -125,111 +125,48 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save connection' }, { status: 500 })
     }
 
-    // Trigger immediate mini-sync for instant dashboard population
+    // Start FULL HISTORICAL DATA SYNC immediately
     try {
-      // Starting immediate sync
-      
-      // Import services dynamically to avoid circular imports
-      const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
-      const { ShopifyBulkService } = await import('@/lib/services/shopifyBulkService')
-      
-      // 1. IMMEDIATE: Start mini-sync (recent data) and WAIT for it
-      // Running immediate recent data sync
-      // Sync params configured
-      
-      const syncStartTime = Date.now()
-      await ShopifyBulkService.immediateRecentSync(brandId, shop, access_token, connectionId)
-      const syncDuration = Date.now() - syncStartTime
-      
-      // Immediate sync completed
-      
-      // 1.5. IMMEDIATE: Sync inventory/products for inventory widgets
-      // Starting inventory sync
-      try {
-        const inventoryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ connectionId })
-        })
-        
-        if (inventoryResponse.ok) {
-          // Inventory sync completed
-        } else {
-          // Inventory sync failed, continuing
-        }
-      } catch (inventoryError) {
-        // Inventory sync error, continuing
-      }
-      
-      // Verify data was actually inserted
-      const { data: verifyOrders, error: verifyError } = await supabase
-        .from('shopify_orders')
-        .select('id, total_price, created_at')
-        .eq('connection_id', connectionId)
-        .limit(5)
-      
-      if (verifyError) {
-        // Error verifying inserted data
-      } else {
-        // Verification: Found orders in database
-        if (verifyOrders?.length) {
-          // Sample orders logged
-        }
-      }
-      
-      // 2. BACKGROUND: Start new queue-based sync architecture
-      // Starting queue-based sync architecture
-      try {
-        const connectedResponse = await fetch(`${APP_URL}/api/shopify/connected/${brandId}`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-internal-call': 'true'
-          },
-          body: JSON.stringify({ 
-            shop,
-            accessToken: access_token,
-            connectionId
-          })
-        })
-        
-        if (connectedResponse.ok) {
-          const result = await connectedResponse.json()
-          // Queue-based sync initiated
-          
-          // Update connection status to show v2 sync is active
-          await supabase
-            .from('platform_connections')
-            .update({
-              sync_status: 'syncing',
-              metadata: {
-                ...{}, // existing metadata
-                v2_architecture: true,
-                queue_sync_initiated: true,
-                sync_architecture: 'queue_based_v2',
-                sync_initiated_at: new Date().toISOString()
-              }
-            })
-            .eq('id', connectionId)
-            
-        } else {
-          const errorText = await connectedResponse.text()
-          // Queue-based sync failed
-        }
-      } catch (err) {
-        // Queue-based sync request failed
-      }
+      console.log(`[Shopify Callback] Starting FULL historical data sync for shop: ${shop}`)
 
-      // 3. BACKGROUND: Trigger inventory sync (don't wait)
-      fetch(`${APP_URL}/api/shopify/inventory/sync`, {
+      // Update connection status to show we're starting sync
+      await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: 'syncing',
+          metadata: {
+            full_historical_sync: true,
+            sync_started_at: new Date().toISOString(),
+            sync_architecture: 'full_historical_v3'
+          }
+        })
+        .eq('id', connectionId)
+
+      // Start the new queue-based FULL historical sync
+      const connectedResponse = await fetch(`${APP_URL}/api/shopify/connected/${brandId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connectionId, forceRefresh: true })
-      }).catch(err => { /* Inventory sync failed */ })
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-call': 'true'
+        },
+        body: JSON.stringify({
+          shop,
+          accessToken: access_token,
+          connectionId
+        })
+      })
+
+      if (connectedResponse.ok) {
+        const result = await connectedResponse.json()
+        console.log(`[Shopify Callback] Full historical sync initiated successfully:`, result)
+      } else {
+        const errorText = await connectedResponse.text()
+        console.error(`[Shopify Callback] Failed to initiate full historical sync:`, errorText)
+      }
 
     } catch (syncError) {
-      // Error in immediate sync
-      // Continue anyway - sync failure shouldn't block the redirect
+      console.error(`[Shopify Callback] Error starting full historical sync:`, syncError)
+      // Don't block redirect for sync errors
     }
 
     // Trigger analytics processing for the new Shopify features

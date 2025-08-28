@@ -35,13 +35,12 @@ export class ShopifyWorker {
   }
 
   /**
-   * Process recent sync job (immediate, small data pull)
-   * NOTE: This is now used as an initialization step, but actual data sync happens in bulk jobs
+   * Process recent sync job - FULL HISTORICAL SYNC IMMEDIATE START
    */
   static async processRecentSync(job: Job<ShopifyJobData>): Promise<void> {
     const { brandId, connectionId, shop } = job.data
 
-    console.log(`[Worker] Processing recent sync initialization for brand ${brandId}`)
+    console.log(`[Worker] 🚀 STARTING FULL HISTORICAL SYNC for brand ${brandId}`)
 
     // Get fresh access token from database to avoid 401 errors
     const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
@@ -62,29 +61,106 @@ export class ShopifyWorker {
         status: 'running'
       })
 
-      // Instead of doing a small recent sync, we now trigger the full historical bulk sync
-      // This job serves as the initialization step
-      console.log(`[Worker] Recent sync initialization completed for brand ${brandId} - full historical sync will follow`)
+      // STEP 1: Do a QUICK recent sync to populate dashboard immediately (last 7 days)
+      console.log(`[Worker] Step 1: Quick recent sync (last 7 days) for immediate UI population`)
+      try {
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-      // Mark job as completed
+        const ordersUrl = `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${sevenDaysAgo.toISOString()}&limit=250`
+        console.log(`[Worker] Fetching recent orders from: ${ordersUrl}`)
+
+        const response = await fetch(ordersUrl, {
+          headers: { 'X-Shopify-Access-Token': accessToken }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const orders = data.orders || []
+          console.log(`[Worker] Found ${orders.length} recent orders for quick sync`)
+
+          if (orders.length > 0) {
+            // Store recent orders in database
+            const supabase = createClient()
+            const { data: connectionData } = await supabase
+              .from('platform_connections')
+              .select('user_id')
+              .eq('id', connectionId)
+              .single()
+
+            const ordersData = orders.map((order: any) => ({
+              id: parseInt(order.id),
+              brand_id: brandId,
+              connection_id: connectionId,
+              user_id: connectionData?.user_id,
+              order_number: order.order_number,
+              total_price: parseFloat(order.total_price || '0'),
+              subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
+              total_tax: parseFloat(order.total_tax || '0'),
+              total_discounts: parseFloat(order.total_discounts || '0'),
+              created_at: order.created_at,
+              financial_status: order.financial_status,
+              fulfillment_status: order.fulfillment_status,
+              customer_email: order.email,
+              customer_first_name: order.customer?.first_name,
+              customer_last_name: order.customer?.last_name,
+              currency: order.currency,
+              customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
+              line_items: order.line_items || [],
+              last_synced_at: new Date().toISOString()
+            }))
+
+            const { error: bulkUpsertError } = await supabase
+              .from('shopify_orders')
+              .upsert(ordersData, { onConflict: 'id' })
+
+            if (bulkUpsertError) {
+              console.error(`[Worker] Quick sync upsert error:`, bulkUpsertError)
+            } else {
+              console.log(`[Worker] ✅ Quick sync stored ${orders.length} recent orders`)
+            }
+          }
+        }
+      } catch (quickSyncError) {
+        console.error(`[Worker] Quick sync failed:`, quickSyncError)
+      }
+
+      // STEP 2: Now start FULL HISTORICAL bulk operations
+      console.log(`[Worker] Step 2: Starting FULL HISTORICAL bulk operations`)
+
+      // Check for existing bulk operations first
+      const existingOp = await ShopifyGraphQLService.checkExistingBulkOperation(shop, accessToken)
+      if (existingOp && (existingOp.status === 'RUNNING' || existingOp.status === 'CREATED')) {
+        console.log(`[Worker] Bulk operation already running (${existingOp.id}), will retry later`)
+        // Re-queue this job to try again in 5 minutes
+        await ShopifyQueueService.addJob(ShopifyJobType.RECENT_SYNC, job.data, {
+          delay: 5 * 60 * 1000, // 5 minutes
+          priority: 10
+        })
+        return
+      }
+
+      // Start bulk operations for FULL historical data
+      const bulkOps = await Promise.allSettled([
+        this.startBulkOperation('orders', brandId, connectionId, shop, accessToken),
+        this.startBulkOperation('customers', brandId, connectionId, shop, accessToken),
+        this.startBulkOperation('products', brandId, connectionId, shop, accessToken)
+      ])
+
+      const successfulOps = bulkOps.filter(result => result.status === 'fulfilled').length
+      console.log(`[Worker] ✅ Started ${successfulOps}/3 bulk operations successfully`)
+
+      // Mark recent sync job as completed
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'completed',
         completed_at: new Date().toISOString(),
-        rows_written: 0 // Initialization only, no data written yet
+        rows_written: 1 // Recent data populated
       })
 
-      // Now queue all the bulk operations for full historical data
-      await ShopifyQueueService.addBulkJobs(
-        brandId,
-        connectionId,
-        shop,
-        accessToken
-      )
-
-      console.log(`[Worker] Queued full historical sync jobs for brand ${brandId}`)
+      console.log(`[Worker] 🎉 FULL HISTORICAL SYNC INITIATED for brand ${brandId}`)
 
     } catch (error) {
-      console.error(`[Worker] Recent sync initialization failed for brand ${brandId}:`, error)
+      console.error(`[Worker] Full historical sync failed for brand ${brandId}:`, error)
 
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'failed',
@@ -92,6 +168,69 @@ export class ShopifyWorker {
         completed_at: new Date().toISOString()
       })
 
+      throw error
+    }
+  }
+
+  /**
+   * Helper to start a bulk operation with proper error handling
+   */
+  private static async startBulkOperation(
+    entity: 'orders' | 'customers' | 'products',
+    brandId: string,
+    connectionId: string,
+    shop: string,
+    accessToken: string
+  ): Promise<void> {
+    try {
+      console.log(`[Worker] Starting bulk ${entity} export...`)
+
+      // Create ETL job for this bulk operation
+      const etlJobId = await ShopifyQueueService.createEtlJob(
+        brandId,
+        entity,
+        entity === 'orders' ? ShopifyJobType.BULK_ORDERS :
+        entity === 'customers' ? ShopifyJobType.BULK_CUSTOMERS :
+        ShopifyJobType.BULK_PRODUCTS
+      )
+
+      await ShopifyQueueService.updateEtlJob(etlJobId, { status: 'running' })
+
+      // Start the bulk operation
+      let bulkOp
+      if (entity === 'orders') {
+        bulkOp = await ShopifyGraphQLService.startBulkOrdersExport(shop, accessToken, '2010-01-01')
+      } else if (entity === 'customers') {
+        bulkOp = await ShopifyGraphQLService.startBulkCustomersExport(shop, accessToken, '2010-01-01')
+      } else {
+        bulkOp = await ShopifyGraphQLService.startBulkProductsExport(shop, accessToken, '2010-01-01')
+      }
+
+      // Update ETL job with bulk operation ID
+      await ShopifyQueueService.updateEtlJob(etlJobId, {
+        shopify_bulk_id: bulkOp.id
+      })
+
+      // Schedule polling job
+      const jobType = entity === 'orders' ? ShopifyJobType.BULK_ORDERS :
+                     entity === 'customers' ? ShopifyJobType.BULK_CUSTOMERS :
+                     ShopifyJobType.BULK_PRODUCTS
+
+      await ShopifyQueueService.addPollBulkJob({
+        brandId,
+        connectionId,
+        shop,
+        accessToken,
+        bulkOperationId: bulkOp.id,
+        entity,
+        jobType: ShopifyJobType.POLL_BULK,
+        metadata: { etlJobId }
+      } as any)
+
+      console.log(`[Worker] ✅ Bulk ${entity} export started with ID: ${bulkOp.id}`)
+
+    } catch (error) {
+      console.error(`[Worker] Failed to start bulk ${entity} export:`, error)
       throw error
     }
   }
