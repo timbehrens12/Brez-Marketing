@@ -29,13 +29,14 @@ export function InventorySummary({
 
   const fetchInventoryData = async (forceRefresh = false) => {
     if (!brandId) {
-      // console.log('No brandId provided to InventorySummary component')
       return
     }
 
     try {
-      // console.log(`Fetching inventory data for brandId: ${brandId}${forceRefresh ? ' (forced refresh)' : ''}`)
-      setLoading(true)
+      // Don't set loading immediately to prevent flashing
+      if (!initialLoadComplete) {
+        setLoading(true)
+      }
       
       // Add cache-busting parameter and refresh flag if needed
       const refreshParam = forceRefresh ? '&refresh=true' : ''
@@ -43,7 +44,6 @@ export function InventorySummary({
       const response = await fetch(`/api/shopify/inventory?brandId=${brandId}${refreshParam}${cacheBuster}`)
       
       const responseText = await response.text()
-      // console.log(`Inventory API response: ${responseText.substring(0, 200)}...`)
       
       let data
       try {
@@ -60,27 +60,25 @@ export function InventorySummary({
       // Check if we got empty data after a reconnection (might need retry)
       const isEmpty = data.items?.length === 0 && data.summary?.totalProducts === 0
       if (isEmpty && forceRefresh && retryCount < MAX_RETRIES) {
-        // console.log(`Received empty inventory data on attempt ${retryCount + 1}, scheduling retry...`)
         setRetryCount(prev => prev + 1)
         
         // Schedule a retry with exponential backoff
         setTimeout(() => {
-          // console.log(`Retrying inventory fetch (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
           fetchInventoryData(true)
         }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
         
-        // Don't update state yet, wait for retry
-        setLoading(false)
+        // Don't update loading state during retry
         return
       }
       
-      // Either got data or exhausted retries, update state
-      // console.log('Inventory data fetched successfully:', data)
-      setInventorySummary(data.summary)
-      setInventoryItems(data.items || [])
-      setError(null)
-      setInitialLoadComplete(true)
-      setRetryCount(0) // Reset retry counter on success
+      // Only update state if we have valid data or exhausted retries
+      if (!isEmpty || retryCount >= MAX_RETRIES) {
+        setInventorySummary(data.summary)
+        setInventoryItems(data.items || [])
+        setError(null)
+        setInitialLoadComplete(true)
+        setRetryCount(0) // Reset retry counter on success
+      }
     } catch (err) {
       console.error('Error fetching inventory data:', err)
       

@@ -583,30 +583,28 @@ export class ShopifyGraphQLService {
       }
     }
     
-    // Insert directly to production tables (bypass staging)
+    // Insert directly into production tables for immediate visibility
     if (orders.length > 0) {
       const { error: ordersError } = await supabase
         .from('shopify_orders')
         .upsert(orders, { onConflict: 'id' })
-
+      
       if (ordersError) {
-        console.error('[GraphQL] Error inserting orders to production:', ordersError)
+        console.error('[GraphQL] Error inserting orders:', ordersError)
       } else {
-        console.log(`[GraphQL] ✅ Inserted ${orders.length} orders to production`)
-        ordersProcessed += orders.length
+        console.log(`[GraphQL] ✅ Stored ${orders.length} orders directly in production table`)
       }
     }
-
+    
     if (lineItems.length > 0) {
       const { error: lineItemsError } = await supabase
         .from('shopify_line_items')
-        .upsert(lineItems, { onConflict: 'line_item_id' })
-
+        .upsert(lineItems, { onConflict: 'order_id,line_item_id' })
+      
       if (lineItemsError) {
-        console.error('[GraphQL] Error inserting line items to production:', lineItemsError)
+        console.error('[GraphQL] Error inserting line items:', lineItemsError)
       } else {
-        console.log(`[GraphQL] ✅ Inserted ${lineItems.length} line items to production`)
-        lineItemsProcessed += lineItems.length
+        console.log(`[GraphQL] ✅ Stored ${lineItems.length} line items directly in production table`)
       }
     }
     
@@ -669,12 +667,11 @@ export class ShopifyGraphQLService {
       const { error } = await supabase
         .from('shopify_customers')
         .upsert(customers, { onConflict: 'id' })
-
+      
       if (error) {
-        console.error('[GraphQL] Error inserting customers to production:', error)
+        console.error('[GraphQL] Error inserting customers:', error)
       } else {
-        console.log(`[GraphQL] ✅ Inserted ${customers.length} customers to production`)
-        customersProcessed += customers.length
+        console.log(`[GraphQL] ✅ Stored ${customers.length} customers directly in production table`)
       }
     }
     
@@ -726,15 +723,15 @@ export class ShopifyGraphQLService {
     }
     
     if (products.length > 0) {
+      // Store directly in production table for immediate visibility
       const { error } = await supabase
         .from('shopify_products')
-        .upsert(products, { onConflict: 'id' })
-
+        .upsert(products, { onConflict: 'product_id' })
+      
       if (error) {
-        console.error('[GraphQL] Error inserting products to production:', error)
+        console.error('[GraphQL] Error inserting products:', error)
       } else {
-        console.log(`[GraphQL] ✅ Inserted ${products.length} products to production`)
-        productsProcessed += products.length
+        console.log(`[GraphQL] ✅ Stored ${products.length} products directly in production table`)
       }
     }
     

@@ -150,16 +150,16 @@ function generateSummary(milestones: any[]): string {
     const totalCount = milestones.length
 
     if (completedCount === totalCount) {
-      return '✅ All Shopify data synced successfully!'
+      return '✅ Complete Shopify historical data synced! All order history, customers, and products from 2010 onwards are now available.'
     }
 
     // Keep showing "syncing" status until ALL data is synced
-    return '🔄 Syncing historical data from 2010 onwards (may take 5-15 minutes)...'
+    return '🔄 Syncing complete Shopify historical data (2010 onwards - NO QUICK SYNC)...'
   }
 
   if (recentSync?.status === 'running') {
-    return '🚀 Syncing historical data from 2010 onwards (may take 5-15 minutes)...'
+    return '🚀 Starting complete Shopify historical data sync (2010 onwards - NO QUICK SYNC)...'
   }
 
-  return '⚡ Starting historical data sync from 2010 onwards...'
+  return '⚡ Preparing complete Shopify historical sync (2010 onwards)...'
 }
