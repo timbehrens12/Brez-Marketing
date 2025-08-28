@@ -332,9 +332,11 @@ export class ShopifyGraphQLService {
    */
   private static async executeBulkOperation(
     shop: string,
-    accessToken: string, 
+    accessToken: string,
     mutation: string
   ): Promise<BulkOperationResult> {
+    console.log(`[GraphQL] Executing bulk operation for shop: ${shop}`)
+
     const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
       method: 'POST',
       headers: {
@@ -343,27 +345,37 @@ export class ShopifyGraphQLService {
       },
       body: JSON.stringify({ query: mutation })
     })
-    
+
+    console.log(`[GraphQL] Bulk operation request status: ${response.status}`)
+
     if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.status} - ${response.statusText}`)
+      const errorText = await response.text()
+      console.error(`[GraphQL] Request failed:`, errorText)
+      throw new Error(`GraphQL request failed: ${response.status} - ${errorText}`)
     }
-    
+
     const data = await response.json()
-    
+    console.log(`[GraphQL] Response received:`, JSON.stringify(data, null, 2))
+
     if (data.errors) {
+      console.error(`[GraphQL] GraphQL errors:`, data.errors)
       throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`)
     }
-    
+
     if (data.data?.bulkOperationRunQuery?.userErrors?.length > 0) {
+      console.error(`[GraphQL] Bulk operation user errors:`, data.data.bulkOperationRunQuery.userErrors)
       throw new Error(`Bulk operation errors: ${JSON.stringify(data.data.bulkOperationRunQuery.userErrors)}`)
     }
-    
+
     const bulkOp = data.data?.bulkOperationRunQuery?.bulkOperation
-    
+
     if (!bulkOp) {
+      console.error(`[GraphQL] No bulk operation returned:`, data)
       throw new Error('No bulk operation returned from GraphQL')
     }
-    
+
+    console.log(`[GraphQL] ✅ Bulk operation created: ${bulkOp.id} (${bulkOp.status})`)
+
     return {
       id: bulkOp.id,
       status: bulkOp.status,
@@ -439,18 +451,27 @@ export class ShopifyGraphQLService {
     brandId: string,
     connectionId: string
   ): Promise<{ ordersProcessed: number; lineItemsProcessed: number; customersProcessed: number; productsProcessed: number }> {
-    console.log(`[GraphQL] Processing bulk results for ${entity} from ${downloadUrl}`)
-    
+    console.log(`[GraphQL] 🔄 Processing bulk results for ${entity} from ${downloadUrl}`)
+
     // Download the JSONL file
     const response = await fetch(downloadUrl)
     if (!response.ok) {
+      console.error(`[GraphQL] ❌ Failed to download bulk results: ${response.status}`)
       throw new Error(`Failed to download bulk results: ${response.status}`)
     }
-    
+
     const jsonlData = await response.text()
+    console.log(`[GraphQL] 📄 Downloaded ${jsonlData.length} characters of data`)
+
     const lines = jsonlData.trim().split('\n').filter(line => line.trim())
-    
-    console.log(`[GraphQL] Processing ${lines.length} lines of ${entity} data`)
+    console.log(`[GraphQL] 📊 Processing ${lines.length} lines of ${entity} data`)
+
+    if (lines.length === 0) {
+      console.warn(`[GraphQL] ⚠️ No data lines found in bulk operation results`)
+    } else {
+      // Show sample of first few lines for debugging
+      console.log(`[GraphQL] 🔍 Sample data:`, lines.slice(0, 3).map(line => line.substring(0, 200) + '...'))
+    }
     
     let ordersProcessed = 0
     let lineItemsProcessed = 0

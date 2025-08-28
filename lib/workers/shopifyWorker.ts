@@ -119,26 +119,108 @@ export class ShopifyWorker {
             } else {
               console.log(`[Worker] ✅ Quick sync stored ${orders.length} recent orders`)
             }
+          } else {
+            console.log(`[Worker] ⚠️ No recent orders found in the last 7 days`)
           }
+        } else {
+          console.error(`[Worker] Quick sync API error: ${response.status} - ${response.statusText}`)
         }
       } catch (quickSyncError) {
         console.error(`[Worker] Quick sync failed:`, quickSyncError)
       }
 
+      // FALLBACK: If quick sync didn't get data, try fetching more historical data via REST API
+      console.log(`[Worker] Step 1.5: Checking if we need to fetch more historical data via REST API`)
+      try {
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+        const historicalOrdersUrl = `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${thirtyDaysAgo.toISOString()}&limit=250`
+        console.log(`[Worker] Fetching 30-day historical orders from: ${historicalOrdersUrl}`)
+
+        const historicalResponse = await fetch(historicalOrdersUrl, {
+          headers: { 'X-Shopify-Access-Token': accessToken }
+        })
+
+        if (historicalResponse.ok) {
+          const historicalData = await historicalResponse.json()
+          const historicalOrders = historicalData.orders || []
+          console.log(`[Worker] Found ${historicalOrders.length} orders in last 30 days`)
+
+          if (historicalOrders.length > 0) {
+            // Store historical orders in database
+            const supabase = createClient()
+            const { data: connectionData } = await supabase
+              .from('platform_connections')
+              .select('user_id')
+              .eq('id', connectionId)
+              .single()
+
+            const historicalOrdersData = historicalOrders.map((order: any) => ({
+              id: parseInt(order.id),
+              brand_id: brandId,
+              connection_id: connectionId,
+              user_id: connectionData?.user_id,
+              order_number: order.order_number,
+              total_price: parseFloat(order.total_price || '0'),
+              subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
+              total_tax: parseFloat(order.total_tax || '0'),
+              total_discounts: parseFloat(order.total_discounts || '0'),
+              created_at: order.created_at,
+              financial_status: order.financial_status,
+              fulfillment_status: order.fulfillment_status,
+              customer_email: order.email,
+              customer_first_name: order.customer?.first_name,
+              customer_last_name: order.customer?.last_name,
+              currency: order.currency,
+              customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
+              line_items: order.line_items || [],
+              last_synced_at: new Date().toISOString()
+            }))
+
+            const { error: historicalUpsertError } = await supabase
+              .from('shopify_orders')
+              .upsert(historicalOrdersData, { onConflict: 'id' })
+
+            if (historicalUpsertError) {
+              console.error(`[Worker] Historical sync upsert error:`, historicalUpsertError)
+            } else {
+              console.log(`[Worker] ✅ Historical sync stored ${historicalOrders.length} orders from last 30 days`)
+            }
+          }
+        }
+      } catch (historicalSyncError) {
+        console.error(`[Worker] Historical sync failed:`, historicalSyncError)
+      }
+
       // STEP 2: Now start FULL HISTORICAL bulk operations
       console.log(`[Worker] Step 2: Starting FULL HISTORICAL bulk operations`)
 
-      // Check for existing bulk operations first
+      // Check for existing bulk operations with better deduplication
+      console.log(`[Worker] Checking for existing bulk operations...`)
       const existingOp = await ShopifyGraphQLService.checkExistingBulkOperation(shop, accessToken)
+
       if (existingOp && (existingOp.status === 'RUNNING' || existingOp.status === 'CREATED')) {
-        console.log(`[Worker] Bulk operation already running (${existingOp.id}), will retry later`)
-        // Re-queue this job to try again in 5 minutes
+        console.log(`[Worker] ⚠️ Bulk operation already running (${existingOp.id}), delaying this sync`)
+
+        // Mark this job as failed with specific error for tracking
+        await ShopifyQueueService.updateEtlJob(etlJobId, {
+          status: 'failed',
+          error_message: `Bulk operation already in progress: ${existingOp.id}. Will retry later.`,
+          completed_at: new Date().toISOString()
+        })
+
+        // Re-queue this job to try again in 5 minutes with lower priority
         await ShopifyQueueService.addJob(ShopifyJobType.RECENT_SYNC, job.data, {
           delay: 5 * 60 * 1000, // 5 minutes
-          priority: 10
+          priority: 5 // Lower priority so other jobs can run first
         })
+
+        console.log(`[Worker] Re-queued sync job for ${brandId} to run in 5 minutes`)
         return
       }
+
+      console.log(`[Worker] ✅ No existing bulk operations found, proceeding with sync`)
 
       // Start bulk operations for FULL historical data
       const bulkOps = await Promise.allSettled([
@@ -622,22 +704,31 @@ export class ShopifyWorker {
   static async getFreshAccessToken(connectionId: string): Promise<{ accessToken?: string; error?: string }> {
     try {
       const supabase = createClient()
-      
+
+      // Use maybeSingle() instead of single() to handle multiple/no results gracefully
       const { data: connection, error } = await supabase
         .from('platform_connections')
         .select('access_token')
         .eq('id', connectionId)
-        .single()
-      
+        .eq('status', 'active')
+        .maybeSingle()
+
       if (error) {
         console.error('[Worker] Error fetching connection:', error)
         return { error: error.message }
       }
-      
-      if (!connection?.access_token) {
+
+      if (!connection) {
+        console.error('[Worker] No active connection found for ID:', connectionId)
+        return { error: 'No active connection found' }
+      }
+
+      if (!connection.access_token) {
+        console.error('[Worker] No access token found in connection:', connectionId)
         return { error: 'No access token found in connection' }
       }
-      
+
+      console.log(`[Worker] Retrieved access token for connection: ${connectionId}`)
       return { accessToken: connection.access_token }
     } catch (error) {
       console.error('[Worker] Error getting fresh access token:', error)

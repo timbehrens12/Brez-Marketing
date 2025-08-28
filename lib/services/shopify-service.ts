@@ -124,24 +124,7 @@ export async function registerShopifyWebhooks(shop: string, accessToken: string)
             webhook: {
               topic: webhook.topic,
               address: webhook.address,
-              format: 'json',
-              fields: [
-                'id',
-                'created_at',
-                'updated_at',
-                'email',
-                'total_price',
-                'subtotal_price',
-                'total_tax',
-                'total_discounts',
-                'financial_status',
-                'fulfillment_status',
-                'currency',
-                'customer',
-                'line_items',
-                'shipping_address',
-                'billing_address'
-              ]
+              format: 'json'
             }
           })
         })

@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     // Import services dynamically
     const { createClient } = await import('@/lib/supabase/server')
     const { ShopifyQueueService } = await import('@/lib/services/shopifyQueueService')
+    const { ShopifyGraphQLService } = await import('@/lib/services/shopifyGraphQLService')
 
     const supabase = createClient()
 
@@ -33,6 +34,28 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Restart Sync] Found connection for shop: ${connection.shop}`)
 
+    // CHECK FOR EXISTING BULK OPERATIONS FIRST
+    console.log(`[Restart Sync] Checking for existing bulk operations...`)
+    const existingOp = await ShopifyGraphQLService.checkExistingBulkOperation(connection.shop, connection.access_token)
+
+    if (existingOp && (existingOp.status === 'RUNNING' || existingOp.status === 'CREATED')) {
+      console.log(`[Restart Sync] ⚠️ Found existing bulk operation: ${existingOp.id} (${existingOp.status})`)
+
+      return NextResponse.json({
+        success: false,
+        error: `Bulk operation already in progress: ${existingOp.id}`,
+        existingOperation: existingOp,
+        message: 'Please wait for the current bulk operation to complete before starting a new sync'
+      }, { status: 409 })
+    }
+
+    // Clear any old ETL jobs first
+    console.log(`[Restart Sync] Clearing old ETL jobs...`)
+    await supabase
+      .from('etl_job')
+      .delete()
+      .eq('brand_id', brandId)
+
     // Update connection status to show full historical sync
     await supabase
       .from('platform_connections')
@@ -42,7 +65,8 @@ export async function POST(request: NextRequest) {
           full_historical_sync: true,
           sync_started_at: new Date().toISOString(),
           sync_architecture: 'full_historical_v3',
-          restarted: true
+          restarted: true,
+          cleared_old_jobs: true
         },
         updated_at: new Date().toISOString()
       })
@@ -65,7 +89,9 @@ export async function POST(request: NextRequest) {
       connectionId: connection.id,
       shop: connection.shop,
       syncType: 'FULL_HISTORICAL',
-      expectedData: 'All orders, customers, and products from 2010 onwards'
+      expectedData: 'All orders, customers, and products from 2010 onwards',
+      clearedOldJobs: true,
+      noExistingBulkOperations: true
     })
 
   } catch (error) {
