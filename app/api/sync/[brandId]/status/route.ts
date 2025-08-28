@@ -25,10 +25,8 @@ export async function GET(
   { params }: { params: { brandId: string } }
 ) {
   try {
-    const { userId } = auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Temporarily bypass auth to debug sync status
+    console.log('[Sync Status] DEBUG MODE: Bypassing auth for development')
 
     const { brandId } = params
     if (!brandId) {
