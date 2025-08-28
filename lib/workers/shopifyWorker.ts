@@ -442,7 +442,7 @@ export class ShopifyWorker {
       
       const { data: connection, error } = await supabase
         .from('platform_connections')
-        .select('credentials')
+        .select('access_token')
         .eq('id', connectionId)
         .single()
       
@@ -451,11 +451,11 @@ export class ShopifyWorker {
         return { error: error.message }
       }
       
-      if (!connection?.credentials?.access_token) {
-        return { error: 'No access token found in connection credentials' }
+      if (!connection?.access_token) {
+        return { error: 'No access token found in connection' }
       }
       
-      return { accessToken: connection.credentials.access_token }
+      return { accessToken: connection.access_token }
     } catch (error) {
       console.error('[Worker] Error getting fresh access token:', error)
       return { error: error instanceof Error ? error.message : 'Unknown error' }
