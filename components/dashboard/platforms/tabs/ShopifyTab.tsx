@@ -21,6 +21,7 @@ import { CustomerSegmentationWidget } from "@/components/shopify/CustomerSegment
 
 import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidget"
 import { AbandonedCartWidget } from "@/components/shopify/AbandonedCartWidget"
+import { SyncStatusIndicator } from "@/components/ui/SyncStatusIndicator"
 
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -901,6 +902,9 @@ export function ShopifyTab({
       <div className="mb-4">
         <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-500/30 to-transparent rounded-full"></div>
       </div>
+
+      {/* Sync Status Indicator */}
+      <SyncStatusIndicator brandId={brandId} className="mb-4" />
 
       {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (

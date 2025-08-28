@@ -96,7 +96,7 @@ export function BrandManagementDropdown({
       setIsExpanded(true) // Force expansion when syncing
       
       let checkCount = 0
-      const maxChecks = 30 // 60 seconds max (2 sec intervals) - allow time for historical sync
+      const maxChecks = 90 // 180 seconds max (2 sec intervals) - allow more time for complete historical sync
       
       // Check for actual sync completion using V2 status API
       const checkForSyncCompletion = async () => {
@@ -140,18 +140,21 @@ export function BrandManagementDropdown({
             data.shopify.totalRevenue > 0
           )
           
-          // Only redirect if we have data OR we've reached max checks
-          if (hasShopifyData || checkCount >= maxChecks) {
+          // Check if bulk sync jobs are actually complete (not just started)
+          const bulkSyncComplete = data.shopify?.overall_status === 'completed' || 
+                                  (data.shopify?.overall_status !== 'syncing' && 
+                                   data.shopify?.overall_status !== 'partial' && 
+                                   hasShopifyData)
+          
+          // Only stop syncing indicator if bulk sync is complete AND we have data OR we've reached max checks
+          if ((bulkSyncComplete && hasShopifyData) || checkCount >= maxChecks) {
             // Sync state evaluation complete
             setIsShopifySyncing(false)
             setIsConnecting(false)
-            // Clear the URL params
+            // Clear the URL params but DON'T redirect - let user stay on current page
             const newUrl = window.location.pathname
             window.history.replaceState({}, '', newUrl)
-            // Redirect to dashboard
-            setTimeout(() => {
-              window.location.href = '/dashboard'
-            }, 500)
+            // NO REDIRECT - user stays on current page to see sync completion
           }
         } catch (error) {
           // Error checking sync status
@@ -172,7 +175,7 @@ export function BrandManagementDropdown({
           clearInterval(intervalId)
           setIsShopifySyncing(false)
           setIsConnecting(false)
-        }, 60000) // 60 seconds total max for historical sync
+        }, 180000) // 180 seconds total max for complete historical sync
       }, 2000)
       
       return () => clearTimeout(timeoutId)

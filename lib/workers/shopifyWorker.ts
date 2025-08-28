@@ -38,9 +38,15 @@ export class ShopifyWorker {
    * Process recent sync job (immediate, small data pull)
    */
   static async processRecentSync(job: Job<ShopifyJobData>): Promise<void> {
-    const { brandId, connectionId, shop, accessToken } = job.data
+    const { brandId, connectionId, shop } = job.data
     
     console.log(`[Worker] Processing recent sync for brand ${brandId}`)
+    
+    // Get fresh access token from database to avoid 401 errors
+    const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+    if (tokenError || !accessToken) {
+      throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
+    }
     
     // Create ETL job record
     const etlJobId = await ShopifyQueueService.createEtlJob(
@@ -92,7 +98,13 @@ export class ShopifyWorker {
    * Process bulk orders export
    */
   static async processBulkOrders(job: Job<ShopifyJobData>): Promise<void> {
-    const { brandId, connectionId, shop, accessToken } = job.data
+    const { brandId, connectionId, shop } = job.data
+    
+    // Get fresh access token from database to avoid 401 errors
+    const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+    if (tokenError || !accessToken) {
+      throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
+    }
     
     console.log(`[Worker] Starting bulk orders export for brand ${brandId}`)
     
@@ -145,7 +157,13 @@ export class ShopifyWorker {
    * Process bulk customers export
    */
   static async processBulkCustomers(job: Job<ShopifyJobData>): Promise<void> {
-    const { brandId, connectionId, shop, accessToken } = job.data
+    const { brandId, connectionId, shop } = job.data
+    
+    // Get fresh access token from database to avoid 401 errors
+    const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+    if (tokenError || !accessToken) {
+      throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
+    }
     
     console.log(`[Worker] Starting bulk customers export for brand ${brandId}`)
     
@@ -193,7 +211,13 @@ export class ShopifyWorker {
    * Process bulk products export
    */
   static async processBulkProducts(job: Job<ShopifyJobData>): Promise<void> {
-    const { brandId, connectionId, shop, accessToken } = job.data
+    const { brandId, connectionId, shop } = job.data
+    
+    // Get fresh access token from database to avoid 401 errors
+    const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+    if (tokenError || !accessToken) {
+      throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
+    }
     
     console.log(`[Worker] Starting bulk products export for brand ${brandId}`)
     
@@ -241,7 +265,13 @@ export class ShopifyWorker {
    * Poll bulk operation status and process results when complete
    */
   static async processPollBulk(job: Job<BulkJobData>): Promise<void> {
-    const { brandId, connectionId, shop, accessToken, bulkOperationId, entity, metadata } = job.data
+    const { brandId, connectionId, shop, bulkOperationId, entity, metadata } = job.data
+    
+    // Get fresh access token from database to avoid 401 errors
+    const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+    if (tokenError || !accessToken) {
+      throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
+    }
     const etlJobId = metadata?.etlJobId
     
     console.log(`[Worker] Polling bulk operation ${bulkOperationId} for ${entity}`)
@@ -400,6 +430,36 @@ export class ShopifyWorker {
       console.log('[Worker] Cleanup completed')
     } catch (error) {
       console.error('[Worker] Cleanup failed:', error)
+    }
+  }
+}
+
+  /**
+   * Get fresh access token from database to avoid 401 errors
+   */
+  static async getFreshAccessToken(connectionId: string): Promise<{ accessToken?: string; error?: string }> {
+    try {
+      const supabase = createClient()
+      
+      const { data: connection, error } = await supabase
+        .from('platform_connections')
+        .select('credentials')
+        .eq('id', connectionId)
+        .single()
+      
+      if (error) {
+        console.error('[Worker] Error fetching connection:', error)
+        return { error: error.message }
+      }
+      
+      if (!connection?.credentials?.access_token) {
+        return { error: 'No access token found in connection credentials' }
+      }
+      
+      return { accessToken: connection.credentials.access_token }
+    } catch (error) {
+      console.error('[Worker] Error getting fresh access token:', error)
+      return { error: error instanceof Error ? error.message : 'Unknown error' }
     }
   }
 }

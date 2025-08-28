@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
+    const clearCache = url.searchParams.get('clearCache') === 'true'
     
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
@@ -141,6 +142,10 @@ export async function GET(request: NextRequest) {
         google: { revenue: 0, spend: 0, roas: 0, conversions: 0 },
         tiktok: { revenue: 0, spend: 0, roas: 0, conversions: 0 }
       }
+    }, {
+      headers: clearCache ? 
+        { 'Cache-Control': 'no-cache, no-store, must-revalidate' } :
+        { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' }
     })
 
   } catch (error) {
