@@ -849,6 +849,14 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({})
   
+  // Disconnect warning dialog state
+  const [disconnectDialog, setDisconnectDialog] = useState<{
+    open: boolean
+    platform: 'shopify' | 'meta' | null
+    brandId: string
+    brandName: string
+  }>({ open: false, platform: null, brandId: '', brandName: '' })
+  
   // Shopify connection dialog state
   const [shopifyConnectionDialog, setShopifyConnectionDialog] = useState<{
     open: boolean
@@ -1265,6 +1273,24 @@ export default function SettingsPage() {
 
   // Handle platform disconnect
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
+    // Show warning dialog first
+    const brandName = brands.find(b => b.id === brandId)?.name || 'this brand'
+    
+    setDisconnectDialog({
+      open: true,
+      platform,
+      brandId,
+      brandName
+    })
+  }
+
+  // Confirm disconnect after dialog
+  const confirmDisconnect = async () => {
+    const { platform, brandId } = disconnectDialog
+    if (!platform) return
+    
+    setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })
+    
     const key = `${platform}-${brandId}`
     setDisconnectingPlatforms(prev => ({ ...prev, [key]: true }))
     
@@ -2701,6 +2727,74 @@ export default function SettingsPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disconnect Warning Dialog */}
+      <Dialog 
+        open={disconnectDialog.open} 
+        onOpenChange={(open) => !open && setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
+      >
+        <DialogContent className="sm:max-w-md bg-[#0A0A0A] border-red-500/30">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              ⚠️ PERMANENT DATA DELETION WARNING
+            </DialogTitle>
+            <DialogDescription className="text-gray-300">
+              This action cannot be undone and will permanently delete all data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+              <p className="text-white font-medium mb-3">
+                Disconnecting {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'} from "{disconnectDialog.brandName}" will:
+              </p>
+              
+              <div className="space-y-2 text-sm text-gray-300">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400">🗑️</span>
+                  <span>DELETE ALL {disconnectDialog.platform?.toUpperCase()} DATA from our database</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400">📊</span>
+                  <span>Remove all analytics, insights, and historical data</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400">📈</span>
+                  <span>Clear all performance metrics and reports</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400">🔄</span>
+                  <span>Cannot be recovered once deleted</span>
+                </div>
+              </div>
+              
+              <div className="mt-3 p-2 bg-red-800/30 rounded border border-red-600/50">
+                <p className="text-red-200 text-sm font-medium">
+                  This action is PERMANENT and IRREVERSIBLE.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
+                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDisconnect}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Yes, Delete All Data
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </TooltipProvider>

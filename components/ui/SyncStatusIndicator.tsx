@@ -34,12 +34,15 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
     return null
   }
 
-  // Don't show if sync completed and enough time has passed
-  if (status === 'completed' && lastSynced && !shouldHideData) {
-    const syncDate = new Date(lastSynced)
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-    if (syncDate < tenMinutesAgo) {
-      return null
+  // Hide banner if sync is completed (don't wait 10 minutes)
+  if (status === 'completed') {
+    // Hide immediately after completion, unless it just completed (give 5 seconds to see)
+    if (lastSynced) {
+      const syncDate = new Date(lastSynced)
+      const fiveSecondsAgo = new Date(Date.now() - 5 * 1000)
+      if (syncDate < fiveSecondsAgo) {
+        return null
+      }
     }
   }
 
