@@ -154,11 +154,14 @@ export class ShopifyGraphQLService {
                     firstName
                     lastName
                     phone
-                    acceptsEmailMarketing
+                    acceptsMarketing
                     createdAt
                     updatedAt
-                    numberOfOrders
-                    totalSpent
+                    ordersCount
+                    totalSpentV2 {
+                      amount
+                      currencyCode
+                    }
                     lastOrder {
                       id
                       name
@@ -355,6 +358,55 @@ export class ShopifyGraphQLService {
       status: bulkOp.status,
       createdAt: bulkOp.createdAt
     }
+  }
+
+  /**
+   * Cancel existing bulk operation
+   */
+  static async cancelBulkOperation(
+    shop: string,
+    accessToken: string,
+    operationId: string
+  ): Promise<boolean> {
+    const mutation = `
+      mutation {
+        bulkOperationCancel(id: "${operationId}") {
+          bulkOperation {
+            id
+            status
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `
+
+    const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: mutation })
+    })
+
+    if (!response.ok) {
+      throw new Error(`GraphQL request failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.errors) {
+      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`)
+    }
+
+    if (data.data?.bulkOperationCancel?.userErrors?.length > 0) {
+      throw new Error(`Bulk operation cancel errors: ${JSON.stringify(data.data.bulkOperationCancel.userErrors)}`)
+    }
+
+    return true
   }
 
   /**
@@ -601,9 +653,9 @@ export class ShopifyGraphQLService {
             updated_at: customer.updatedAt,
             orders_count: customer.ordersCount || 0,
             total_spent: parseFloat(customer.totalSpentV2?.amount || '0'),
+            currency: customer.totalSpentV2?.currencyCode || 'USD',
             last_order_id: customer.lastOrder?.id?.replace('gid://shopify/Order/', ''),
             last_order_name: customer.lastOrder?.name,
-            currency: customer.totalSpentV2?.currencyCode || 'USD',
             marketing_opt_in_level: customer.marketingOptInLevel,
             email_marketing_consent: customer.emailMarketingConsent?.marketingState,
             sms_marketing_consent: customer.smsMarketingConsent?.marketingState,

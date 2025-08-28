@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { auth } from '@clerk/nextjs/server'
+import { ShopifyQueueService } from '@/lib/services/shopifyQueueService'
 
 // Trigger data sync for a Shopify store
 export async function POST(request: NextRequest) {
@@ -11,10 +12,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { shop, brandId } = await request.json()
+    const { shop, brandId, action } = await request.json()
 
     if (!shop || !brandId) {
       return NextResponse.json({ error: 'Shop and brandId are required' }, { status: 400 })
+    }
+
+    // Handle cleanup action
+    if (action === 'clear_failed_jobs') {
+      console.log('[Shopify Sync] Clearing failed jobs for brand:', brandId)
+      try {
+        await ShopifyQueueService.clearFailedJobs()
+        return NextResponse.json({ success: true, message: 'Failed jobs cleared' })
+      } catch (error) {
+        console.error('[Shopify Sync] Error clearing jobs:', error)
+        return NextResponse.json({ error: 'Failed to clear jobs' }, { status: 500 })
+      }
     }
 
     console.log('[Shopify Sync] Starting data sync for shop:', shop)
@@ -74,7 +87,40 @@ export async function POST(request: NextRequest) {
       try {
         const supabase = createClient()
         console.log('[Shopify Sync] Starting actual data fetch for shop:', shop)
-        
+
+        // First, clear any existing bulk operations
+        try {
+          const clearResponse = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': connection.access_token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              query: `
+                mutation {
+                  bulkOperationCancel(id: "gid://shopify/BulkOperation/5989097767194") {
+                    bulkOperation {
+                      id
+                      status
+                    }
+                    userErrors {
+                      field
+                      message
+                    }
+                  }
+                }
+              `
+            })
+          })
+
+          if (clearResponse.ok) {
+            console.log('[Shopify Sync] Attempted to cancel existing bulk operation')
+          }
+        } catch (clearError) {
+          console.warn('[Shopify Sync] Could not cancel existing bulk operation:', clearError)
+        }
+
         // Fetch orders from Shopify API
         const ordersResponse = await fetch(`https://${shop}/admin/api/2024-01/orders.json?limit=250&status=any`, {
           headers: {

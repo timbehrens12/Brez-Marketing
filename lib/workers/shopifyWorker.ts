@@ -120,7 +120,21 @@ export class ShopifyWorker {
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'running'
       })
-      
+
+      // Check if there's an existing bulk operation and cancel it
+      try {
+        const existingBulkOp = await ShopifyGraphQLService.getCurrentBulkOperation(shop, accessToken)
+        if (existingBulkOp && existingBulkOp.id !== job.data.bulkOperationId) {
+          console.log(`[Worker] Found existing bulk operation ${existingBulkOp.id}, canceling it first`)
+          await ShopifyGraphQLService.cancelBulkOperation(shop, accessToken, existingBulkOp.id)
+
+          // Wait a bit for the cancellation to take effect
+          await new Promise(resolve => setTimeout(resolve, 5000))
+        }
+      } catch (cancelError) {
+        console.warn(`[Worker] Could not cancel existing bulk operation:`, cancelError)
+      }
+
       // Start bulk export
       const bulkOp = await ShopifyGraphQLService.startBulkOrdersExport(shop, accessToken)
       
@@ -177,13 +191,27 @@ export class ShopifyWorker {
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'running'
       })
-      
+
+      // Check if there's an existing bulk operation and cancel it
+      try {
+        const existingBulkOp = await ShopifyGraphQLService.getCurrentBulkOperation(shop, accessToken)
+        if (existingBulkOp && existingBulkOp.id !== job.data.bulkOperationId) {
+          console.log(`[Worker] Found existing bulk operation ${existingBulkOp.id}, canceling it first`)
+          await ShopifyGraphQLService.cancelBulkOperation(shop, accessToken, existingBulkOp.id)
+
+          // Wait a bit for the cancellation to take effect
+          await new Promise(resolve => setTimeout(resolve, 5000))
+        }
+      } catch (cancelError) {
+        console.warn(`[Worker] Could not cancel existing bulk operation:`, cancelError)
+      }
+
       const bulkOp = await ShopifyGraphQLService.startBulkCustomersExport(shop, accessToken)
-      
+
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         shopify_bulk_id: bulkOp.id
       })
-      
+
       await ShopifyQueueService.addPollBulkJob({
         ...job.data,
         bulkOperationId: bulkOp.id,
@@ -191,9 +219,9 @@ export class ShopifyWorker {
         jobType: ShopifyJobType.POLL_BULK,
         metadata: { etlJobId }
       } as BulkJobData)
-      
+
       console.log(`[Worker] Bulk customers export started with ID ${bulkOp.id}`)
-      
+
     } catch (error) {
       console.error(`[Worker] Bulk customers export failed:`, error)
       
@@ -231,7 +259,21 @@ export class ShopifyWorker {
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'running'
       })
-      
+
+      // Check if there's an existing bulk operation and cancel it
+      try {
+        const existingBulkOp = await ShopifyGraphQLService.getCurrentBulkOperation(shop, accessToken)
+        if (existingBulkOp && existingBulkOp.id !== job.data.bulkOperationId) {
+          console.log(`[Worker] Found existing bulk operation ${existingBulkOp.id}, canceling it first`)
+          await ShopifyGraphQLService.cancelBulkOperation(shop, accessToken, existingBulkOp.id)
+
+          // Wait a bit for the cancellation to take effect
+          await new Promise(resolve => setTimeout(resolve, 5000))
+        }
+      } catch (cancelError) {
+        console.warn(`[Worker] Could not cancel existing bulk operation:`, cancelError)
+      }
+
       const bulkOp = await ShopifyGraphQLService.startBulkProductsExport(shop, accessToken)
       
       await ShopifyQueueService.updateEtlJob(etlJobId, {

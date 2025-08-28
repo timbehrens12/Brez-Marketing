@@ -3,7 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 
 // Create Redis connection for Upstash
 const redisConfig = {
-  redis: {
+  redis: process.env.REDIS_URL ? {
+    url: process.env.REDIS_URL,
+    tls: {} // Required for Upstash
+  } : {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
     password: process.env.REDIS_PASSWORD,
@@ -59,6 +62,9 @@ export class ShopifyQueueService {
       },
       removeOnComplete: 10,
       removeOnFail: 10,
+      timeout: 300000, // 5 minutes timeout
+      lockDuration: 300000, // 5 minutes lock duration
+      lockRenewTime: 60000, // Renew lock every minute
     }
 
     await shopifyQueue.add(jobType, data, { ...defaultOptions, ...options })
@@ -304,7 +310,7 @@ export class ShopifyQueueService {
    */
   static async getCursor(brandId: string, entity: string): Promise<string | null> {
     const supabase = createClient()
-    
+
     const { data, error } = await supabase
       .from('control.etl_cursor')
       .select('last_complete_at')
@@ -318,5 +324,44 @@ export class ShopifyQueueService {
     }
 
     return data?.last_complete_at || null
+  }
+
+  /**
+   * Clear all failed jobs and reset queue
+   */
+  static async clearFailedJobs(): Promise<void> {
+    try {
+      console.log('[Queue] Clearing all failed jobs...')
+
+      // Clear all failed jobs
+      await shopifyQueue.clean(0, 'failed')
+      await shopifyQueue.clean(0, 'active')
+      await shopifyQueue.clean(0, 'waiting')
+      await shopifyQueue.clean(0, 'delayed')
+
+      console.log('[Queue] All failed jobs cleared')
+
+      // Reset ETL jobs to pending status
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('etl_job')
+        .update({
+          status: 'pending',
+          error_message: null,
+          completed_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .in('status', ['running', 'failed'])
+
+      if (error) {
+        console.error('[Queue] Error resetting ETL jobs:', error)
+      } else {
+        console.log('[Queue] ETL jobs reset to pending status')
+      }
+
+    } catch (error) {
+      console.error('[Queue] Error clearing failed jobs:', error)
+      throw error
+    }
   }
 }
