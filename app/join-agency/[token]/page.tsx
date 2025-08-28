@@ -305,7 +305,7 @@ export default function JoinAgencyPage() {
                   </Button>
                 ) : !userId ? (
                   <Button 
-                    onClick={() => router.push('/sign-in')}
+                    onClick={() => router.push('/login')}
                     className="flex-1 bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black"
                   >
                     Sign In to Accept

@@ -16,6 +16,7 @@ export function OnboardingCheck({ children }: { children: React.ReactNode }) {
     const skipOnboardingPaths = [
       '/onboarding',
       '/sign-in',
+      '/login',
       '/sign-up',
       '/privacy',
       '/terms',

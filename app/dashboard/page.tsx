@@ -1723,10 +1723,10 @@ export default function DashboardPage() {
   const renderContent = () => {
   // Skip loading state - removed per user request
 
-  // If auth is loaded and user is not signed in, redirect to sign-in page
+  // If auth is loaded and user is not signed in, redirect to login page
   if (isLoaded && !userId) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/sign-in'
+      window.location.href = '/login'
     }
     return null // Removed loading state per user request
   }

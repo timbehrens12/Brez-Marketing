@@ -146,7 +146,7 @@ export default function OnboardingPage() {
   // Redirect if not authenticated and clear the showOnboarding flag
   useEffect(() => {
     if (isLoaded && !user) {
-      router.push('/sign-in')
+      router.push('/login')
       return
     }
 

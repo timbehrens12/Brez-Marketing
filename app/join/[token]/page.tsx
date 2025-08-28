@@ -499,7 +499,7 @@ export default function JoinPage() {
                 </p>
                 <div className="flex gap-2 justify-center pt-2">
                   <Button 
-                    onClick={() => router.push('/sign-in')}
+                    onClick={() => router.push('/login')}
                     className="bg-white hover:bg-gray-100 text-black text-sm px-4 py-2 h-auto"
                   >
                     Sign In

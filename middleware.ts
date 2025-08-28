@@ -11,6 +11,7 @@ export default authMiddleware({
     "/terms",
     "/dashboard",
     "/sign-in(.*)",
+    "/login(.*)",
     "/sign-up(.*)",
     "/join(.*)",
     "/api/join(.*)",
