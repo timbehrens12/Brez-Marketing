@@ -105,14 +105,11 @@ export class ShopifyBulkService {
       const orders = data.orders || []
       
       console.log(`[Mini-sync] Found ${orders.length} recent orders`)
-      console.log(`[Mini-sync] Raw Shopify response:`, JSON.stringify(data, null, 2))
       
       if (orders.length === 0) {
         console.log(`[Mini-sync] No recent orders found, sync complete`)
         return
       }
-      
-      console.log(`[Mini-sync] First order sample:`, JSON.stringify(orders[0], null, 2))
       
       // Store recent orders for immediate dashboard population
       const { data: connectionData, error: connectionError } = await supabase
@@ -127,41 +124,46 @@ export class ShopifyBulkService {
       
       console.log(`[Mini-sync] Got connection data for user: ${connectionData?.user_id}`)
       
-      let successCount = 0
-      let errorCount = 0
+      // Prepare batch data for faster bulk insert
+      const ordersData = orders.map(order => ({
+        id: parseInt(order.id),
+        brand_id: brandId,
+        connection_id: connectionId,
+        user_id: connectionData?.user_id,
+        order_number: order.order_number,
+        total_price: parseFloat(order.total_price || '0'),
+        subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
+        total_tax: parseFloat(order.total_tax || '0'),
+        total_discounts: parseFloat(order.total_discounts || '0'),
+        created_at: order.created_at,
+        financial_status: order.financial_status,
+        fulfillment_status: order.fulfillment_status,
+        customer_email: order.email,
+        customer_first_name: order.customer?.first_name,
+        customer_last_name: order.customer?.last_name,
+        currency: order.currency,
+        customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
+        line_items: order.line_items || [],
+        line_items_count: order.line_items?.length || 0,
+        last_synced_at: new Date().toISOString()
+      }))
       
+      // Bulk upsert - much faster than individual operations
+      const { error: bulkUpsertError } = await supabase
+        .from('shopify_orders')
+        .upsert(ordersData, { onConflict: 'id' })
+      
+      if (bulkUpsertError) {
+        console.error(`[Mini-sync] Bulk upsert error:`, bulkUpsertError)
+        throw bulkUpsertError
+      }
+      
+      console.log(`[Mini-sync] Bulk stored ${orders.length} orders`)
+      
+      // Skip regional data and abandoned checkouts for speed - let historical sync handle these
+      /*
       for (const order of orders) {
         try {
-          const orderData = {
-            id: parseInt(order.id),
-            brand_id: brandId,
-            connection_id: connectionId,
-            user_id: connectionData?.user_id,
-            order_number: order.order_number,
-            total_price: parseFloat(order.total_price || '0'),
-            subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
-            total_tax: parseFloat(order.total_tax || '0'),
-            total_discounts: parseFloat(order.total_discounts || '0'),
-            created_at: order.created_at,
-            financial_status: order.financial_status,
-            fulfillment_status: order.fulfillment_status,
-            customer_email: order.email,
-            customer_first_name: order.customer?.first_name,
-            customer_last_name: order.customer?.last_name,
-            currency: order.currency,
-            customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
-            line_items: order.line_items || [],
-            line_items_count: order.line_items?.length || 0,
-            last_synced_at: new Date().toISOString()
-          }
-          
-          const { data: upsertData, error: upsertError } = await supabase
-            .from('shopify_orders')
-            .upsert(orderData, { onConflict: 'id' })
-            .select('id')
-          
-          if (upsertError) {
-            console.error(`[Mini-sync] Database upsert error for order ${order.id}:`, upsertError)
             console.error(`[Mini-sync] Order data that failed:`, JSON.stringify(orderData, null, 2))
             throw new Error(`Database upsert error: ${upsertError.message}`)
           }
@@ -213,12 +215,9 @@ export class ShopifyBulkService {
         }
       }
       
-      console.log(`[Mini-sync] Complete! Success: ${successCount}, Errors: ${errorCount}`)
+      */
       
-      // Fetch abandoned checkouts data
-      await this.syncAbandonedCheckouts(shop, accessToken, brandId, connectionId, connectionData?.user_id)
-      
-          // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
+      // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
     await supabase
       .from('platform_connections')
       .update({
@@ -226,8 +225,8 @@ export class ShopifyBulkService {
         last_synced_at: new Date().toISOString(),
         metadata: {
           mini_sync_completed: true,
-          mini_sync_orders: successCount,
-          mini_sync_errors: errorCount,
+          mini_sync_orders: orders.length,
+          mini_sync_errors: 0,
           historical_sync_queued: true, // Indicate historical jobs are queued
           sync_stage: 'historical_import' // Current stage
         }
