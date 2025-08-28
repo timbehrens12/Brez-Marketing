@@ -26,7 +26,11 @@ export async function GET(request: NextRequest) {
     console.log(`[Cron Queue] PUBLIC Worker URL: ${workerUrl}`)
     console.log(`[Cron Queue] VERCEL_URL: ${process.env.VERCEL_URL}`)
     
-    const response = await fetch(workerUrl, {
+    // Use external domain to bypass potential internal routing issues
+    const externalWorkerUrl = workerUrl.replace(requestUrl.host, 'www.brezmarketingdashboard.com')
+    console.log(`[Cron Queue] EXTERNAL Worker URL: ${externalWorkerUrl}`)
+    
+    const response = await fetch(externalWorkerUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
