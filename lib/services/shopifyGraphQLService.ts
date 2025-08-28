@@ -25,10 +25,10 @@ export class ShopifyGraphQLService {
   /**
    * Start bulk orders export with line items
    */
-  static async startBulkOrdersExport(
+    static async startBulkOrdersExport(
     shop: string,
     accessToken: string,
-    sinceDate: string = '2000-01-01'
+    sinceDate: string = '2010-01-01' // Go back 14+ years to get ALL historical data
   ): Promise<BulkOperationResult> {
     const mutation = `
       mutation {
@@ -148,9 +148,9 @@ export class ShopifyGraphQLService {
    * Start bulk customers export
    */
   static async startBulkCustomersExport(
-    shop: string, 
+    shop: string,
     accessToken: string,
-    sinceDate: string = '2000-01-01'
+    sinceDate: string = '2010-01-01' // Go back 14+ years to get ALL historical data
   ): Promise<BulkOperationResult> {
     const mutation = `
       mutation {
@@ -248,9 +248,9 @@ export class ShopifyGraphQLService {
    * Start bulk products export
    */
   static async startBulkProductsExport(
-    shop: string, 
+    shop: string,
     accessToken: string,
-    sinceDate: string = '2000-01-01'
+    sinceDate: string = '2010-01-01' // Go back 14+ years to get ALL historical data
   ): Promise<BulkOperationResult> {
     const mutation = `
       mutation {

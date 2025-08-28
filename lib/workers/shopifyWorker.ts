@@ -36,60 +36,62 @@ export class ShopifyWorker {
 
   /**
    * Process recent sync job (immediate, small data pull)
+   * NOTE: This is now used as an initialization step, but actual data sync happens in bulk jobs
    */
   static async processRecentSync(job: Job<ShopifyJobData>): Promise<void> {
     const { brandId, connectionId, shop } = job.data
-    
-    console.log(`[Worker] Processing recent sync for brand ${brandId}`)
-    
+
+    console.log(`[Worker] Processing recent sync initialization for brand ${brandId}`)
+
     // Get fresh access token from database to avoid 401 errors
     const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
     if (tokenError || !accessToken) {
       throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
     }
-    
+
     // Create ETL job record
     const etlJobId = await ShopifyQueueService.createEtlJob(
       brandId,
       'recent_sync',
       ShopifyJobType.RECENT_SYNC
     )
-    
+
     try {
       // Update job status to running
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'running'
       })
-      
-      // Use existing immediate recent sync (last 3 days)
-      await ShopifyBulkService.immediateRecentSync(
-        brandId,
-        shop,
-        accessToken,
-        connectionId
-      )
-      
+
+      // Instead of doing a small recent sync, we now trigger the full historical bulk sync
+      // This job serves as the initialization step
+      console.log(`[Worker] Recent sync initialization completed for brand ${brandId} - full historical sync will follow`)
+
       // Mark job as completed
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'completed',
         completed_at: new Date().toISOString(),
-        rows_written: 1 // We don't track exact count for recent sync
+        rows_written: 0 // Initialization only, no data written yet
       })
-      
-      console.log(`[Worker] Recent sync completed for brand ${brandId}`)
-      
-      // Check if ALL jobs are now complete and update connection status
-      await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
-      
+
+      // Now queue all the bulk operations for full historical data
+      await ShopifyQueueService.addBulkJobs(
+        brandId,
+        connectionId,
+        shop,
+        accessToken
+      )
+
+      console.log(`[Worker] Queued full historical sync jobs for brand ${brandId}`)
+
     } catch (error) {
-      console.error(`[Worker] Recent sync failed for brand ${brandId}:`, error)
-      
+      console.error(`[Worker] Recent sync initialization failed for brand ${brandId}:`, error)
+
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'failed',
         error_message: error instanceof Error ? error.message : 'Unknown error',
         completed_at: new Date().toISOString()
       })
-      
+
       throw error
     }
   }

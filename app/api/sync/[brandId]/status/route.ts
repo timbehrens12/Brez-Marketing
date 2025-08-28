@@ -99,14 +99,14 @@ export async function GET(
  */
 function getMilestoneLabel(entity: string, status: string): string {
   const labels: Record<string, string> = {
-    'recent_sync': 'Recent updates',
-    'orders': 'Historical orders',
-    'customers': 'Customer data',
-    'products': 'Product catalog'
+    'recent_sync': 'Connection Setup',
+    'orders': 'All Order History',
+    'customers': 'All Customer Data',
+    'products': 'Complete Product Catalog'
   }
-  
+
   const baseLabel = labels[entity] || entity
-  
+
   // Add status indicators
   switch (status) {
     case 'completed':
@@ -145,27 +145,30 @@ function generateSummary(milestones: any[]): string {
   const orders = milestones.find(m => m.entity === 'orders')
   const customers = milestones.find(m => m.entity === 'customers')
   const products = milestones.find(m => m.entity === 'products')
-  
+
   if (recentSync?.status === 'completed') {
     const completedCount = milestones.filter(m => m.status === 'completed').length
     const totalCount = milestones.length
-    
+
     if (completedCount === totalCount) {
-      return 'Shopify data is fully synced and up to date'
+      return 'Complete Shopify historical data is fully synced and up to date'
     }
-    
+
     const runningItems = milestones.filter(m => m.status === 'running')
     if (runningItems.length > 0) {
       const runningEntity = runningItems[0].entity
-      return `Recent data is live. Importing ${runningEntity} in the background...`
+      const entityName = runningEntity === 'orders' ? 'order history' :
+                        runningEntity === 'customers' ? 'customer data' :
+                        runningEntity === 'products' ? 'product catalog' : runningEntity
+      return `Importing complete ${entityName} history...`
     }
-    
-    return `Recent data is live. Background import in progress (${completedCount}/${totalCount} complete)`
+
+    return `Syncing complete historical data... (${completedCount}/${totalCount} complete)`
   }
-  
+
   if (recentSync?.status === 'running') {
-    return 'Connecting to Shopify and syncing recent data...'
+    return 'Connecting to Shopify and preparing full historical sync...'
   }
-  
-  return 'Shopify sync starting...'
+
+  return 'Starting complete Shopify historical data sync...'
 }

@@ -1,9 +1,18 @@
-// Add this function to register webhooks
-export async function registerShopifyWebhooks(shop: string, accessToken: string) {
+// Test webhook registration function
+export async function testWebhookRegistration(shop: string, accessToken: string) {
   try {
-    console.log(`[Webhooks] Registering webhooks for shop: ${shop}`)
+    console.log(`[Test] Testing webhook registration for shop: ${shop}`)
 
-    // Register order creation webhook
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+
+    // Test with a single webhook first
+    const testWebhook = {
+      topic: 'orders/create',
+      address: `${baseUrl}/api/webhooks/shopify/orders`
+    }
+
+    console.log(`[Test] Attempting to register:`, testWebhook)
+
     const response = await fetch(`https://${shop}/admin/api/2024-01/webhooks.json`, {
       method: 'POST',
       headers: {
@@ -12,28 +21,152 @@ export async function registerShopifyWebhooks(shop: string, accessToken: string)
       },
       body: JSON.stringify({
         webhook: {
-          topic: 'orders/create',
-          address: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`,
-          format: 'json'
+          topic: testWebhook.topic,
+          address: testWebhook.address,
+          format: 'json',
+          fields: [
+            'id',
+            'created_at',
+            'updated_at',
+            'email',
+            'total_price',
+            'subtotal_price',
+            'total_tax',
+            'total_discounts',
+            'financial_status',
+            'fulfillment_status',
+            'currency',
+            'customer',
+            'line_items',
+            'shipping_address',
+            'billing_address'
+          ]
         }
       })
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('[Webhooks] Failed to register webhook:', error)
+    const responseText = await response.text()
+    console.log(`[Test] Response status: ${response.status}`)
+    console.log(`[Test] Response body:`, responseText)
 
-      // Don't throw error for webhook registration - it's not critical for sync
-      // Just log it and continue
-      return null
+    if (!response.ok) {
+      try {
+        const error = JSON.parse(responseText)
+        console.error(`[Test] Failed to register webhook:`, error)
+        return { success: false, error }
+      } catch (e) {
+        console.error(`[Test] Failed to register webhook (non-JSON response):`, responseText)
+        return { success: false, error: responseText }
+      }
     }
 
-    const result = await response.json()
-    console.log(`[Webhooks] Successfully registered webhook:`, result)
-    return result
+    const result = JSON.parse(responseText)
+    console.log(`[Test] Successfully registered webhook:`, result)
+    return { success: true, result }
   } catch (error) {
-    console.error('[Webhooks] Error registering webhook:', error)
+    console.error('[Test] Error testing webhook registration:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+// Add this function to register webhooks
+export async function registerShopifyWebhooks(shop: string, accessToken: string) {
+  try {
+    console.log(`[Webhooks] Registering webhooks for shop: ${shop}`)
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+
+    // Define webhooks to register
+    const webhooks = [
+      {
+        topic: 'orders/create',
+        address: `${baseUrl}/api/webhooks/shopify/orders`
+      },
+      {
+        topic: 'orders/updated',
+        address: `${baseUrl}/api/webhooks/shopify/orders`
+      },
+      {
+        topic: 'orders/cancelled',
+        address: `${baseUrl}/api/webhooks/shopify/orders`
+      },
+      {
+        topic: 'customers/create',
+        address: `${baseUrl}/api/webhooks/shopify/customers`
+      },
+      {
+        topic: 'customers/update',
+        address: `${baseUrl}/api/webhooks/shopify/customers`
+      },
+      {
+        topic: 'products/create',
+        address: `${baseUrl}/api/webhooks/shopify/products`
+      },
+      {
+        topic: 'products/update',
+        address: `${baseUrl}/api/webhooks/shopify/products`
+      }
+    ]
+
+    const results = []
+
+    for (const webhook of webhooks) {
+      try {
+        console.log(`[Webhooks] Registering ${webhook.topic}...`)
+
+        const response = await fetch(`https://${shop}/admin/api/2024-01/webhooks.json`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Access-Token': accessToken
+          },
+          body: JSON.stringify({
+            webhook: {
+              topic: webhook.topic,
+              address: webhook.address,
+              format: 'json',
+              fields: [
+                'id',
+                'created_at',
+                'updated_at',
+                'email',
+                'total_price',
+                'subtotal_price',
+                'total_tax',
+                'total_discounts',
+                'financial_status',
+                'fulfillment_status',
+                'currency',
+                'customer',
+                'line_items',
+                'shipping_address',
+                'billing_address'
+              ]
+            }
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          console.error(`[Webhooks] Failed to register ${webhook.topic}:`, error)
+          // Continue with other webhooks even if one fails
+          continue
+        }
+
+        const result = await response.json()
+        console.log(`[Webhooks] Successfully registered ${webhook.topic}:`, result.webhook?.id)
+        results.push(result)
+      } catch (error) {
+        console.error(`[Webhooks] Error registering ${webhook.topic}:`, error)
+        // Continue with other webhooks even if one fails
+      }
+    }
+
+    console.log(`[Webhooks] Registered ${results.length} out of ${webhooks.length} webhooks successfully`)
+    return results
+  } catch (error) {
+    console.error('[Webhooks] Error registering webhooks:', error)
     // Don't throw error for webhook registration - it's not critical for sync
-    return null
+    return []
   }
 } 
