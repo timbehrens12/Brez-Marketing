@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    console.log('[Cron Queue] Starting scheduled queue processing...')
+    console.log('[Cron Queue] Starting scheduled queue processing v2.1...')
     
     // Get the current request URL to ensure we call the same deployment
     const requestUrl = new URL(request.url)
