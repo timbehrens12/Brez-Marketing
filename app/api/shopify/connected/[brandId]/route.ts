@@ -17,12 +17,13 @@ export async function POST(
     // Check for internal server call (from callback) vs external user call
     const { userId } = auth()
     const internalCall = request.headers.get('x-internal-call') === 'true'
-    
+
     if (!userId && !internalCall) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { brandId } = params
+    // Fix for Next.js 15: await params before using properties
+    const { brandId } = await params
     const { shop, accessToken, connectionId } = await request.json()
 
     if (!brandId || !shop || !accessToken || !connectionId) {

@@ -28,7 +28,8 @@ export async function GET(
     // Temporarily bypass auth to debug sync status
     console.log('[Sync Status] DEBUG MODE: Bypassing auth for development')
 
-    const { brandId } = params
+    // Fix for Next.js 15: await params before using properties
+    const { brandId } = await params
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }

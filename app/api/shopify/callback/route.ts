@@ -3,14 +3,16 @@ import { createClient } from '@/lib/supabase/server'
 
 const SHOPIFY_CLIENT_ID = process.env.SHOPIFY_CLIENT_ID
 const SHOPIFY_CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ||
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+                  'http://localhost:3000')
 
 export async function GET(request: NextRequest) {
   try {
-  const { searchParams } = new URL(request.url)
-  const code = searchParams.get('code')
-  const shop = searchParams.get('shop')
-  const state = searchParams.get('state')
+    const { searchParams } = new URL(request.url)
+    const code = searchParams.get('code')
+    const shop = searchParams.get('shop')
+    const state = searchParams.get('state')
 
     if (!code || !shop || !state) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
