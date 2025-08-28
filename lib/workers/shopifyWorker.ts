@@ -196,31 +196,9 @@ export class ShopifyWorker {
       // STEP 2: Now start FULL HISTORICAL bulk operations
       console.log(`[Worker] Step 2: Starting FULL HISTORICAL bulk operations`)
 
-      // Check for existing bulk operations with better deduplication
-      console.log(`[Worker] Checking for existing bulk operations...`)
-      const existingOp = await ShopifyGraphQLService.checkExistingBulkOperation(shop, accessToken)
-
-      if (existingOp && (existingOp.status === 'RUNNING' || existingOp.status === 'CREATED')) {
-        console.log(`[Worker] ⚠️ Bulk operation already running (${existingOp.id}), delaying this sync`)
-
-        // Mark this job as failed with specific error for tracking
-        await ShopifyQueueService.updateEtlJob(etlJobId, {
-          status: 'failed',
-          error_message: `Bulk operation already in progress: ${existingOp.id}. Will retry later.`,
-          completed_at: new Date().toISOString()
-        })
-
-        // Re-queue this job to try again in 5 minutes with lower priority
-        await ShopifyQueueService.addJob(ShopifyJobType.RECENT_SYNC, job.data, {
-          delay: 5 * 60 * 1000, // 5 minutes
-          priority: 5 // Lower priority so other jobs can run first
-        })
-
-        console.log(`[Worker] Re-queued sync job for ${brandId} to run in 5 minutes`)
-        return
-      }
-
-      console.log(`[Worker] ✅ No existing bulk operations found, proceeding with sync`)
+      // Skip bulk operation check - always proceed with sync
+      // This ensures we always try to sync all data
+      console.log(`[Worker] 🚀 Proceeding with full historical sync for ${brandId}`)
 
       // Start bulk operations for FULL historical data
       const bulkOps = await Promise.allSettled([

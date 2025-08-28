@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Test endpoint to restart Shopify FULL HISTORICAL sync for a brand
+ * Also available at GET /api/test/restart-sync for easy testing
  */
 export async function POST(request: NextRequest) {
   try {
@@ -80,6 +81,40 @@ export async function POST(request: NextRequest) {
       connection.access_token
     )
 
+    // Also trigger inventory sync immediately
+    try {
+      console.log(`[Restart Sync] Triggering inventory sync...`)
+      const inventoryResponse = await fetch(`${APP_URL}/api/shopify/inventory/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: connection.id })
+      })
+
+      if (inventoryResponse.ok) {
+        console.log(`[Restart Sync] ✅ Inventory sync initiated`)
+      } else {
+        const errorText = await inventoryResponse.text()
+        console.log(`[Restart Sync] ⚠️ Inventory sync failed:`, errorText)
+      }
+    } catch (inventoryError) {
+      console.log(`[Restart Sync] ⚠️ Inventory sync request failed:`, inventoryError)
+    }
+
+    // Test webhook registration
+    try {
+      console.log(`[Restart Sync] Testing webhook registration...`)
+      const { testWebhookRegistration } = await import('@/lib/services/shopify-service')
+      const webhookResult = await testWebhookRegistration(connection.shop, connection.access_token)
+
+      if (webhookResult.success) {
+        console.log(`[Restart Sync] ✅ Webhook registration successful`)
+      } else {
+        console.log(`[Restart Sync] ⚠️ Webhook registration failed:`, webhookResult.error)
+      }
+    } catch (webhookError) {
+      console.log(`[Restart Sync] ⚠️ Webhook test failed:`, webhookError)
+    }
+
     console.log(`[Restart Sync] ✅ FULL HISTORICAL SYNC initiated for brand ${brandId}`)
 
     return NextResponse.json({
@@ -91,7 +126,8 @@ export async function POST(request: NextRequest) {
       syncType: 'FULL_HISTORICAL',
       expectedData: 'All orders, customers, and products from 2010 onwards',
       clearedOldJobs: true,
-      noExistingBulkOperations: true
+      noExistingBulkOperations: true,
+      inventorySyncTriggered: true
     })
 
   } catch (error) {

@@ -1,13 +1,13 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { connectionId } = body
-    
+
     console.log('Shopify inventory sync route hit:', { connectionId })
-    
+
     if (!connectionId) {
       console.error('Missing connectionId')
       return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
@@ -15,11 +15,13 @@ export async function POST(request: Request) {
 
     // Get connection details
     console.log('Fetching connection details')
+    const supabase = createClient()
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('id', connectionId)
-      .single()
+      .eq('status', 'active')
+      .maybeSingle()
 
     if (connectionError || !connection) {
       console.error('Error fetching connection:', connectionError)
@@ -196,24 +198,23 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Inventory sync error:', error)
-    
-    // Update sync status to failed
-    if (request.body) {
-      try {
-        const body = await request.json()
-        if (body.connectionId) {
-          console.log('Updating sync status to failed')
-          await supabase
-            .from('platform_connections')
-            .update({ sync_status: 'failed' })
-            .eq('id', body.connectionId)
-        }
-      } catch (parseError) {
-        console.error('Error parsing request body:', parseError)
+
+    // Try to update sync status to failed if we have a connectionId
+    try {
+      const body = await request.json().catch(() => ({}))
+      if (body.connectionId) {
+        console.log('Updating sync status to failed')
+        const supabase = createClient()
+        await supabase
+          .from('platform_connections')
+          .update({ sync_status: 'failed' })
+          .eq('id', body.connectionId)
       }
+    } catch (updateError) {
+      console.error('Error updating sync status:', updateError)
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Inventory sync failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
