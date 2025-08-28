@@ -12,10 +12,21 @@ export interface BulkOperationResult {
 
 export class ShopifyGraphQLService {
   /**
+   * Check if a bulk operation is already running
+   */
+  static async checkExistingBulkOperation(
+    shop: string,
+    accessToken: string
+  ): Promise<BulkOperationResult | null> {
+    const existingOp = await this.getCurrentBulkOperation(shop, accessToken)
+    return existingOp
+  }
+
+  /**
    * Start bulk orders export with line items
    */
   static async startBulkOrdersExport(
-    shop: string, 
+    shop: string,
     accessToken: string,
     sinceDate: string = '2000-01-01'
   ): Promise<BulkOperationResult> {
@@ -358,55 +369,6 @@ export class ShopifyGraphQLService {
       status: bulkOp.status,
       createdAt: bulkOp.createdAt
     }
-  }
-
-  /**
-   * Cancel existing bulk operation
-   */
-  static async cancelBulkOperation(
-    shop: string,
-    accessToken: string,
-    operationId: string
-  ): Promise<boolean> {
-    const mutation = `
-      mutation {
-        bulkOperationCancel(id: "${operationId}") {
-          bulkOperation {
-            id
-            status
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `
-
-    const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ query: mutation })
-    })
-
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    if (data.errors) {
-      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`)
-    }
-
-    if (data.data?.bulkOperationCancel?.userErrors?.length > 0) {
-      throw new Error(`Bulk operation cancel errors: ${JSON.stringify(data.data.bulkOperationCancel.userErrors)}`)
-    }
-
-    return true
   }
 
   /**

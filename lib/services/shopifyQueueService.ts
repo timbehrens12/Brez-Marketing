@@ -3,14 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 
 // Create Redis connection for Upstash
 const redisConfig = {
-  redis: process.env.REDIS_URL ? {
-    url: process.env.REDIS_URL,
-    tls: {} // Required for Upstash
-  } : {
+  redis: {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
     password: process.env.REDIS_PASSWORD,
-    tls: {}, // Required for Upstash
+    tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined, // Only enable TLS for Upstash
+    retryDelayOnFailover: 100,
+    enableReadyCheck: false,
+    maxRetriesPerRequest: 3,
+    lazyConnect: true,
   },
 }
 
@@ -55,21 +56,25 @@ export class ShopifyQueueService {
     options: any = {}
   ): Promise<void> {
     const defaultOptions = {
-      attempts: 3,
+      attempts: 5, // Increased retry attempts
       backoff: {
         type: 'exponential',
-        delay: 2000,
+        delay: 5000, // Start with 5 seconds
       },
-      removeOnComplete: 10,
-      removeOnFail: 10,
-      timeout: 300000, // 5 minutes timeout
-      lockDuration: 300000, // 5 minutes lock duration
-      lockRenewTime: 60000, // Renew lock every minute
+      removeOnComplete: 20,
+      removeOnFail: 20,
+      timeout: 30 * 60 * 1000, // 30 minute timeout per job
+      stallInterval: 60000, // Check for stalled jobs every minute
+      maxStalledCount: 3, // Allow 3 stalled attempts before failing
     }
 
-    await shopifyQueue.add(jobType, data, { ...defaultOptions, ...options })
-    
-    console.log(`[Queue] Added ${jobType} job for brand ${data.brandId}`)
+    try {
+      await shopifyQueue.add(jobType, data, { ...defaultOptions, ...options })
+      console.log(`[Queue] Added ${jobType} job for brand ${data.brandId}`)
+    } catch (error) {
+      console.error(`[Queue] Failed to add ${jobType} job:`, error)
+      throw error
+    }
   }
 
   /**
@@ -310,7 +315,7 @@ export class ShopifyQueueService {
    */
   static async getCursor(brandId: string, entity: string): Promise<string | null> {
     const supabase = createClient()
-
+    
     const { data, error } = await supabase
       .from('control.etl_cursor')
       .select('last_complete_at')
@@ -324,44 +329,5 @@ export class ShopifyQueueService {
     }
 
     return data?.last_complete_at || null
-  }
-
-  /**
-   * Clear all failed jobs and reset queue
-   */
-  static async clearFailedJobs(): Promise<void> {
-    try {
-      console.log('[Queue] Clearing all failed jobs...')
-
-      // Clear all failed jobs
-      await shopifyQueue.clean(0, 'failed')
-      await shopifyQueue.clean(0, 'active')
-      await shopifyQueue.clean(0, 'waiting')
-      await shopifyQueue.clean(0, 'delayed')
-
-      console.log('[Queue] All failed jobs cleared')
-
-      // Reset ETL jobs to pending status
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('etl_job')
-        .update({
-          status: 'pending',
-          error_message: null,
-          completed_at: null,
-          updated_at: new Date().toISOString()
-        })
-        .in('status', ['running', 'failed'])
-
-      if (error) {
-        console.error('[Queue] Error resetting ETL jobs:', error)
-      } else {
-        console.log('[Queue] ETL jobs reset to pending status')
-      }
-
-    } catch (error) {
-      console.error('[Queue] Error clearing failed jobs:', error)
-      throw error
-    }
   }
 }

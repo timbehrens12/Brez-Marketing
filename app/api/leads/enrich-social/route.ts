@@ -67,6 +67,7 @@ async function searchWithSerpAPI(businessName: string, city?: string, state?: st
   const location = city && state ? ` ${city} ${state}` : ''
   const queries = [
     `"${businessName}"${location} instagram`,
+    `"${businessName}"${location} instagram`,
     `"${businessName}"${location} facebook`,
     `"${businessName}"${location} linkedin`,
     `"${businessName}"${location} twitter`,

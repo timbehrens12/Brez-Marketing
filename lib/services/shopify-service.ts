@@ -1,8 +1,10 @@
 // Add this function to register webhooks
 export async function registerShopifyWebhooks(shop: string, accessToken: string) {
   try {
+    console.log(`[Webhooks] Registering webhooks for shop: ${shop}`)
+
     // Register order creation webhook
-    const response = await fetch(`https://${shop}/admin/api/2023-04/webhooks.json`, {
+    const response = await fetch(`https://${shop}/admin/api/2024-01/webhooks.json`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -16,15 +18,22 @@ export async function registerShopifyWebhooks(shop: string, accessToken: string)
         }
       })
     })
-    
+
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(`Failed to register webhook: ${JSON.stringify(error)}`)
+      console.error('[Webhooks] Failed to register webhook:', error)
+
+      // Don't throw error for webhook registration - it's not critical for sync
+      // Just log it and continue
+      return null
     }
-    
-    return await response.json()
+
+    const result = await response.json()
+    console.log(`[Webhooks] Successfully registered webhook:`, result)
+    return result
   } catch (error) {
-    console.error('Error registering webhook:', error)
-    throw error
+    console.error('[Webhooks] Error registering webhook:', error)
+    // Don't throw error for webhook registration - it's not critical for sync
+    return null
   }
 } 
