@@ -28,6 +28,8 @@ export default authMiddleware({
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",
+    "/api/worker(.*)",
+    "/api/cron(.*)",
     "/_next(.*)"
   ],
   beforeAuth: (req: NextRequest) => {
