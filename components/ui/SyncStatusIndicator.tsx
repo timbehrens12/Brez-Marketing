@@ -53,7 +53,7 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
       case 'pending':
         return {
           icon: <Database className="w-4 h-4 text-blue-400" />,
-          text: 'Connection added - Preparing to load recent data...',
+          text: 'Preparing to sync all historical data (2010 onwards)...',
           className: 'bg-blue-500/10 border-blue-500/20 text-blue-300'
         }
       case 'in_progress':

@@ -78,29 +78,28 @@ export function InventorySummary({
         setError(null)
         setInitialLoadComplete(true)
         setRetryCount(0) // Reset retry counter on success
+        setLoading(false) // Only set loading false when we have final data
       }
     } catch (err) {
       console.error('Error fetching inventory data:', err)
       
       // Implement retry logic for errors too
       if (retryCount < MAX_RETRIES) {
-        // console.log(`Fetch error on attempt ${retryCount + 1}, scheduling retry...`)
         setRetryCount(prev => prev + 1)
         
         // Schedule a retry with exponential backoff
         setTimeout(() => {
-          // console.log(`Retrying inventory fetch after error (attempt ${retryCount + 1} of ${MAX_RETRIES})`)
           fetchInventoryData(forceRefresh)
         }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
       } else {
         // Exhausted retries, show error
-      setError('Failed to load inventory data')
-      setInventorySummary(null)
-      setInventoryItems([])
-      toast.error(`Error loading inventory data: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        setError('Failed to load inventory data')
+        setInventorySummary(null)
+        setInventoryItems([])
+        setInitialLoadComplete(true)
+        setLoading(false) // Only set loading false when we give up
+        toast.error(`Error loading inventory data: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -149,7 +148,8 @@ export function InventorySummary({
     }
   }, [brandId])
 
-  const isDataLoading = isLoading || loading
+  // Only show loading if we haven't completed initial load AND we don't have data
+  const isDataLoading = (isLoading || loading) && !initialLoadComplete
 
   // Group inventory items by product and sum quantities
   const productInventory = inventoryItems.reduce((acc, item) => {
