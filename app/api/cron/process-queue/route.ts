@@ -19,18 +19,18 @@ export async function GET(request: NextRequest) {
     // Get the current request URL to ensure we call the same deployment
     const requestUrl = new URL(request.url)
     const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
-    const workerUrl = `${baseUrl}/api/test-simple`
+    const workerUrl = `${baseUrl}/api/public-worker`
     
     console.log(`[Cron Queue] Request URL: ${request.url}`)
     console.log(`[Cron Queue] Base URL: ${baseUrl}`)
-    console.log(`[Cron Queue] TEST SIMPLE URL: ${workerUrl}`)
+    console.log(`[Cron Queue] PUBLIC Worker URL: ${workerUrl}`)
     console.log(`[Cron Queue] VERCEL_URL: ${process.env.VERCEL_URL}`)
     
     const response = await fetch(workerUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-call': 'true'
+        'User-Agent': 'vercel-cron/1.0'
       },
       body: JSON.stringify({
         maxJobs: 5 // Process up to 5 jobs per cron run
