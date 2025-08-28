@@ -61,137 +61,8 @@ export class ShopifyWorker {
         status: 'running'
       })
 
-      // STEP 1: Do a QUICK recent sync to populate dashboard immediately (last 7 days)
-      console.log(`[Worker] Step 1: Quick recent sync (last 7 days) for immediate UI population`)
-      try {
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-        const ordersUrl = `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${sevenDaysAgo.toISOString()}&limit=250`
-        console.log(`[Worker] Fetching recent orders from: ${ordersUrl}`)
-
-        const response = await fetch(ordersUrl, {
-          headers: { 'X-Shopify-Access-Token': accessToken }
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          const orders = data.orders || []
-          console.log(`[Worker] Found ${orders.length} recent orders for quick sync`)
-
-          if (orders.length > 0) {
-            // Store recent orders in database
-            const supabase = createClient()
-            const { data: connectionData } = await supabase
-              .from('platform_connections')
-              .select('user_id')
-              .eq('id', connectionId)
-              .single()
-
-            const ordersData = orders.map((order: any) => ({
-              id: parseInt(order.id),
-              brand_id: brandId,
-              connection_id: connectionId,
-              user_id: connectionData?.user_id,
-              order_number: order.order_number,
-              total_price: parseFloat(order.total_price || '0'),
-              subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
-              total_tax: parseFloat(order.total_tax || '0'),
-              total_discounts: parseFloat(order.total_discounts || '0'),
-              created_at: order.created_at,
-              financial_status: order.financial_status,
-              fulfillment_status: order.fulfillment_status,
-              customer_email: order.email,
-              customer_first_name: order.customer?.first_name,
-              customer_last_name: order.customer?.last_name,
-              currency: order.currency,
-              customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
-              line_items: order.line_items || [],
-              last_synced_at: new Date().toISOString()
-            }))
-
-            const { error: bulkUpsertError } = await supabase
-              .from('shopify_orders')
-              .upsert(ordersData, { onConflict: 'id' })
-
-            if (bulkUpsertError) {
-              console.error(`[Worker] Quick sync upsert error:`, bulkUpsertError)
-            } else {
-              console.log(`[Worker] ✅ Quick sync stored ${orders.length} recent orders`)
-            }
-          } else {
-            console.log(`[Worker] ⚠️ No recent orders found in the last 7 days`)
-          }
-        } else {
-          console.error(`[Worker] Quick sync API error: ${response.status} - ${response.statusText}`)
-        }
-      } catch (quickSyncError) {
-        console.error(`[Worker] Quick sync failed:`, quickSyncError)
-      }
-
-      // FALLBACK: If quick sync didn't get data, try fetching more historical data via REST API
-      console.log(`[Worker] Step 1.5: Checking if we need to fetch more historical data via REST API`)
-      try {
-        const thirtyDaysAgo = new Date()
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-        const historicalOrdersUrl = `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${thirtyDaysAgo.toISOString()}&limit=250`
-        console.log(`[Worker] Fetching 30-day historical orders from: ${historicalOrdersUrl}`)
-
-        const historicalResponse = await fetch(historicalOrdersUrl, {
-          headers: { 'X-Shopify-Access-Token': accessToken }
-        })
-
-        if (historicalResponse.ok) {
-          const historicalData = await historicalResponse.json()
-          const historicalOrders = historicalData.orders || []
-          console.log(`[Worker] Found ${historicalOrders.length} orders in last 30 days`)
-
-          if (historicalOrders.length > 0) {
-            // Store historical orders in database
-            const supabase = createClient()
-            const { data: connectionData } = await supabase
-              .from('platform_connections')
-              .select('user_id')
-              .eq('id', connectionId)
-              .single()
-
-            const historicalOrdersData = historicalOrders.map((order: any) => ({
-              id: parseInt(order.id),
-              brand_id: brandId,
-              connection_id: connectionId,
-              user_id: connectionData?.user_id,
-              order_number: order.order_number,
-              total_price: parseFloat(order.total_price || '0'),
-              subtotal_price: parseFloat(order.subtotal_price || order.total_price || '0'),
-              total_tax: parseFloat(order.total_tax || '0'),
-              total_discounts: parseFloat(order.total_discounts || '0'),
-              created_at: order.created_at,
-              financial_status: order.financial_status,
-              fulfillment_status: order.fulfillment_status,
-              customer_email: order.email,
-              customer_first_name: order.customer?.first_name,
-              customer_last_name: order.customer?.last_name,
-              currency: order.currency,
-              customer_id: order.customer?.id ? parseInt(order.customer.id) : null,
-              line_items: order.line_items || [],
-              last_synced_at: new Date().toISOString()
-            }))
-
-            const { error: historicalUpsertError } = await supabase
-              .from('shopify_orders')
-              .upsert(historicalOrdersData, { onConflict: 'id' })
-
-            if (historicalUpsertError) {
-              console.error(`[Worker] Historical sync upsert error:`, historicalUpsertError)
-            } else {
-              console.log(`[Worker] ✅ Historical sync stored ${historicalOrders.length} orders from last 30 days`)
-            }
-          }
-        }
-      } catch (historicalSyncError) {
-        console.error(`[Worker] Historical sync failed:`, historicalSyncError)
-      }
+      // SKIP QUICK SYNC - GO STRAIGHT TO FULL HISTORICAL BULK OPERATIONS
+      console.log(`[Worker] ⏭️ SKIPPING quick sync - proceeding directly to FULL HISTORICAL bulk operations`)
 
       // STEP 2: Now start FULL HISTORICAL bulk operations
       console.log(`[Worker] Step 2: Starting FULL HISTORICAL bulk operations`)
@@ -210,14 +81,14 @@ export class ShopifyWorker {
       const successfulOps = bulkOps.filter(result => result.status === 'fulfilled').length
       console.log(`[Worker] ✅ Started ${successfulOps}/3 bulk operations successfully`)
 
-      // Mark recent sync job as completed
+      // Mark recent sync job as completed (no rows written since we skipped quick sync)
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'completed',
         completed_at: new Date().toISOString(),
-        rows_written: 1 // Recent data populated
+        rows_written: 0 // No rows written (skipped quick sync)
       })
 
-      console.log(`[Worker] 🎉 FULL HISTORICAL SYNC INITIATED for brand ${brandId}`)
+      console.log(`[Worker] 🎉 FULL HISTORICAL SYNC INITIATED for brand ${brandId} (2010 onwards - NO QUICK SYNC)`)
 
     } catch (error) {
       console.error(`[Worker] Full historical sync failed for brand ${brandId}:`, error)

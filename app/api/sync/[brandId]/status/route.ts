@@ -98,10 +98,10 @@ export async function GET(
  */
 function getMilestoneLabel(entity: string, status: string): string {
   const labels: Record<string, string> = {
-    'recent_sync': 'Connection Setup',
-    'orders': 'All Order History',
-    'customers': 'All Customer Data',
-    'products': 'Complete Product Catalog'
+    'recent_sync': 'Starting Full Historical Sync',
+    'orders': 'All Order History (2010 onwards)',
+    'customers': 'All Customer Data (2010 onwards)',
+    'products': 'Complete Product Catalog (2010 onwards)'
   }
 
   const baseLabel = labels[entity] || entity
@@ -150,16 +150,16 @@ function generateSummary(milestones: any[]): string {
     const totalCount = milestones.length
 
     if (completedCount === totalCount) {
-      return '✅ Complete Shopify historical data synced! All order history, customers, and products available.'
+      return '✅ Complete Shopify historical data synced! All order history, customers, and products from 2010 onwards are now available.'
     }
 
     // Keep showing "syncing" status until ALL data is synced
-    return '🔄 Syncing complete Shopify historical data (2010 onwards)...'
+    return '🔄 Syncing complete Shopify historical data (2010 onwards - NO QUICK SYNC)...'
   }
 
   if (recentSync?.status === 'running') {
-    return '🚀 Starting complete Shopify historical data sync (2010 onwards)...'
+    return '🚀 Starting complete Shopify historical data sync (2010 onwards - NO QUICK SYNC)...'
   }
 
-  return '⚡ Preparing complete Shopify historical sync...'
+  return '⚡ Preparing complete Shopify historical sync (2010 onwards)...'
 }
