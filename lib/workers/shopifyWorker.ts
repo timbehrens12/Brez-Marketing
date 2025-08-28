@@ -432,7 +432,6 @@ export class ShopifyWorker {
       console.error('[Worker] Cleanup failed:', error)
     }
   }
-}
 
   /**
    * Get fresh access token from database to avoid 401 errors
