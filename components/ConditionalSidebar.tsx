@@ -5,7 +5,7 @@ import { Sidebar } from './Sidebar'
 
 export function ConditionalSidebar() {
   const pathname = usePathname();
-  const noSidebarPages = ['/pricing', '/privacy', '/terms', '/data-security'];
+  const noSidebarPages = ['/', '/pricing', '/privacy', '/terms', '/data-security'];
   
   if (noSidebarPages.includes(pathname)) {
     return null;

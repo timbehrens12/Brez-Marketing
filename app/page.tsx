@@ -178,9 +178,9 @@ export default function HomePage() {
             alt="Brez Marketing"
             className="h-12 w-auto"
           />
-          <Link href="/login">
+          <Link href="/dashboard">
             <Button className="bg-white text-black hover:bg-gray-100">
-              Sign In
+              Go to Dashboard
             </Button>
           </Link>
         </div>
