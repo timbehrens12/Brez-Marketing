@@ -26,6 +26,7 @@ export default authMiddleware({
     "/api/cron(.*)",
     "/api/worker(.*)",
     "/api/public-worker",
+    "/api/test-simple",
     "/api/reports/refresh"
   ],
   ignoredRoutes: [
@@ -33,6 +34,7 @@ export default authMiddleware({
     "/api/worker(.*)",
     "/api/cron(.*)",
     "/api/public-worker",
+    "/api/test-simple",
     "/_next(.*)"
   ],
   beforeAuth: (req: NextRequest) => {
@@ -41,7 +43,8 @@ export default authMiddleware({
     // EXPLICITLY ALLOW WORKER AND CRON ROUTES
     if (url.pathname.includes('/api/worker') || 
         url.pathname.includes('/api/cron') ||
-        url.pathname.includes('/api/public-worker')) {
+        url.pathname.includes('/api/public-worker') ||
+        url.pathname.includes('/api/test-simple')) {
       console.log(`[Middleware] BYPASSING AUTH for ${url.pathname}`)
       return NextResponse.next()
     }
