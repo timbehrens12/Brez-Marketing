@@ -442,14 +442,14 @@ export function BrandManagementDropdown({
                                 <p className="font-medium">🔄 Importing Your Shopify Data</p>
                                 <div className="text-sm space-y-1">
                                   <p>• Loading recent orders & customers (30 seconds)</p>
-                                  <p>• Importing historical data (2-5 minutes)</p>
+                                  <p>• Loading recent data (3 days), then historical sync continues in background (10 minutes)</p>
                                   <p>• Processing products & analytics</p>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-2">
-                                  ⏱️ Total time: ~3-7 minutes depending on store size
+                                  ⏱️ Recent data loads in ~30 seconds, full historical sync continues in background
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                  You'll be redirected when complete
+                                <p className="text-xs text-green-400 mt-1">
+                                  Stay on this page to see sync progress
                                 </p>
                               </div>
                             </TooltipContent>

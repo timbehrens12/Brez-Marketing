@@ -53,19 +53,19 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
       case 'pending':
         return {
           icon: <Database className="w-4 h-4 text-blue-400" />,
-          text: 'Connection added - Preparing to load data...',
+          text: 'Connection added - Preparing to load recent data...',
           className: 'bg-blue-500/10 border-blue-500/20 text-blue-300'
         }
       case 'in_progress':
         return {
           icon: <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />,
-          text: 'Syncing all historical data (3-7 minutes)...',
+          text: 'Loading recent data (last 3 days). Full historical sync will continue in background over next 10 minutes...',
           className: 'bg-blue-500/10 border-blue-500/20 text-blue-300'
         }
       case 'completed':
         return {
           icon: <CheckCircle className="w-4 h-4 text-green-400" />,
-          text: hasAnyData ? 'Data loaded successfully! Refresh to view.' : 'Connection ready - No historical data found.',
+          text: hasAnyData ? 'Recent data loaded! Historical data is syncing silently in background.' : 'Connection ready - No recent data found. Historical sync running in background.',
           className: 'bg-green-500/10 border-green-500/20 text-green-300'
         }
       case 'failed':
