@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     // Get the current request URL to ensure we call the same deployment
     const requestUrl = new URL(request.url)
     const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
-    const workerUrl = `${baseUrl}/api/worker/shopify`
+    const workerUrl = `${baseUrl}/api/public-worker`
     
     console.log(`[Cron Queue] Request URL: ${request.url}`)
     console.log(`[Cron Queue] Base URL: ${baseUrl}`)
-    console.log(`[Cron Queue] Worker URL: ${workerUrl}`)
+    console.log(`[Cron Queue] PUBLIC Worker URL: ${workerUrl}`)
     console.log(`[Cron Queue] VERCEL_URL: ${process.env.VERCEL_URL}`)
     
     const response = await fetch(workerUrl, {

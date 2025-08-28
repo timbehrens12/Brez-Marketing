@@ -2,6 +2,7 @@ import { authMiddleware } from "@clerk/nextjs"
 import { NextRequest, NextResponse } from "next/server"
 
 export default authMiddleware({
+  debug: true, // Enable debug logging
   publicRoutes: [
     "/",
     "/review",
@@ -24,19 +25,29 @@ export default authMiddleware({
     "/api/worker/shopify",
     "/api/cron(.*)",
     "/api/worker(.*)",
+    "/api/public-worker",
     "/api/reports/refresh"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",
     "/api/worker(.*)",
     "/api/cron(.*)",
+    "/api/public-worker",
     "/_next(.*)"
   ],
   beforeAuth: (req: NextRequest) => {
+    const url = new URL(req.url)
+    
+    // EXPLICITLY ALLOW WORKER AND CRON ROUTES
+    if (url.pathname.includes('/api/worker') || 
+        url.pathname.includes('/api/cron') ||
+        url.pathname.includes('/api/public-worker')) {
+      console.log(`[Middleware] BYPASSING AUTH for ${url.pathname}`)
+      return NextResponse.next()
+    }
+    
     // 🔒 SECURITY: Block debug/admin endpoints in production
     if (process.env.NODE_ENV === 'production') {
-      const url = new URL(req.url)
-      
       if (url.pathname.startsWith('/api/debug/') || 
           url.pathname.startsWith('/api/sql/') ||
           url.pathname === '/api/clear-data') {
