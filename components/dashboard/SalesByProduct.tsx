@@ -431,12 +431,14 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     // Listen for Shopify refresh events
     window.addEventListener('force-shopify-refresh', handlePageRefresh);
     window.addEventListener('global-refresh-all', handlePageRefresh);
+    window.addEventListener('force-widget-refresh', handlePageRefresh);
     
     return () => {
       window.removeEventListener('page-refresh', handlePageRefresh);
       window.removeEventListener('metaDataRefreshed', handlePageRefresh);
       window.removeEventListener('force-shopify-refresh', handlePageRefresh);
       window.removeEventListener('global-refresh-all', handlePageRefresh);
+      window.removeEventListener('force-widget-refresh', handlePageRefresh);
     };
   }, [connectionId, selectedProductId, fetchProducts, fetchProductSalesData]);
   
@@ -485,7 +487,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       </CardHeader>
       
       <CardContent className="p-3 pt-2">
-        {isLoadingConnection ? (
+        {isLoadingConnection || isRefreshing ? (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full bg-gray-700" />
             <Skeleton className="h-[120px] w-full bg-gray-700" />

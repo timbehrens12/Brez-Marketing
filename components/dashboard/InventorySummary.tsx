@@ -124,12 +124,14 @@ export function InventorySummary({
     window.addEventListener('force-shopify-refresh', handleRefreshEvent as EventListener)
     window.addEventListener('global-refresh-all', handleRefreshEvent as EventListener)
     window.addEventListener('refresh-all-widgets', handleRefreshEvent as EventListener)
+    window.addEventListener('force-widget-refresh', handleRefreshEvent as EventListener)
     
     return () => {
       window.removeEventListener('refreshInventory', handleRefreshEvent as EventListener)
       window.removeEventListener('force-shopify-refresh', handleRefreshEvent as EventListener)
       window.removeEventListener('global-refresh-all', handleRefreshEvent as EventListener)
       window.removeEventListener('refresh-all-widgets', handleRefreshEvent as EventListener)
+      window.removeEventListener('force-widget-refresh', handleRefreshEvent as EventListener)
     }
   }, [brandId])
 
