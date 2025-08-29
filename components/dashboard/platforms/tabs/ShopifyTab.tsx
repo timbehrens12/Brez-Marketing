@@ -242,25 +242,41 @@ export function ShopifyTab({
   };
 
   // Fetch previous period data
-  const fetchPreviousMetrics = useCallback(async () => {
+  // Add ref to track last comparison fetch to prevent excessive calls
+  const lastComparisonFetchRef = useRef<number>(0);
+  const comparisonCacheRef = useRef<string>('');
+
+  const fetchPreviousMetrics = useCallback(async (force: boolean = false) => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
       return;
     }
 
+    const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+    const cacheKey = `${brandId}-${prevFrom}-${prevTo}`;
+    const now = Date.now();
+    
+    // Smart debouncing: Only fetch if forced, cache key changed, or 5+ seconds passed
+    if (!force && comparisonCacheRef.current === cacheKey && (now - lastComparisonFetchRef.current) < 5000) {
+      console.log('[ShopifyTab] Skipping comparison fetch - too recent');
+      return;
+    }
+
+    console.log('[ShopifyTab] Fetching fresh comparison data...');
     setIsLoadingPrevious(true);
+    lastComparisonFetchRef.current = now;
+    comparisonCacheRef.current = cacheKey;
+
     try {
-      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
-      
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(`/api/metrics?brandId=${brandId}&from=${prevFrom}&to=${prevTo}&platform=shopify&timezone=${encodeURIComponent(userTimezone)}&force=true&bypass_cache=true&t=${Date.now()}`);
       
       if (response.ok) {
         const prevData = await response.json();
         setPreviousMetrics(prevData);
-
+        console.log('[ShopifyTab] ✅ Comparison data updated:', { totalSales: prevData.totalSales, ordersPlaced: prevData.ordersPlaced });
       }
     } catch (error) {
-      // Handle error silently
+      console.error('[ShopifyTab] Error fetching comparison data:', error);
     } finally {
       // CRITICAL FIX: Delay clearing isLoadingPrevious to prevent race condition
       // This gives the parent time to update the main metrics before we show data
@@ -423,10 +439,19 @@ export function ShopifyTab({
   // Fetch previous period data when date range changes
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
-
-      fetchPreviousMetrics();
+      // Force fetch on date changes
+      fetchPreviousMetrics(true);
     }
   }, [brandId, dateRange, fetchPreviousMetrics]);
+
+  // 🔄 DYNAMIC COMPARISON REFRESH: Update comparison data when main metrics change
+  useEffect(() => {
+    // Only refresh comparison if we have valid main metrics and they've changed
+    if (brandId && dateRange?.from && dateRange?.to && metrics.totalSales !== undefined) {
+      console.log('[ShopifyTab] Main metrics updated, refreshing comparison data...');
+      fetchPreviousMetrics();
+    }
+  }, [metrics.totalSales, metrics.ordersPlaced, metrics.averageOrderValue, brandId, dateRange, fetchPreviousMetrics]);
 
   // Add a function to safely dispatch refresh events with debouncing
   const safeDispatchRefresh = useCallback((reason: string) => {
