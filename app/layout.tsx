@@ -359,14 +359,26 @@ export default function RootLayout({
                 }
               })
 
-              // Suppress favicon 404 errors during initial load
+              // Suppress favicon 404 errors and disconnect-platform 409 errors during initial load
               const originalFetch = window.fetch
               window.fetch = function(input, init) {
                 const url = typeof input === 'string' ? input : input.url
                 if (url && url.includes('favicon.ico')) {
                   return Promise.resolve(new Response(null, { status: 200 }))
                 }
-                return originalFetch.apply(this, arguments)
+                
+                // Call original fetch and suppress console logging for expected 409s
+                const fetchPromise = originalFetch.apply(this, arguments)
+                
+                // If this is a disconnect-platform request, handle 409s silently
+                if (url && url.includes('/api/disconnect-platform') && !url.includes('/force')) {
+                  return fetchPromise.catch(error => {
+                    // Re-throw the error but suppress console output
+                    throw error
+                  })
+                }
+                
+                return fetchPromise
               }
 
               // Override console.warn to suppress GoTrueClient warnings
