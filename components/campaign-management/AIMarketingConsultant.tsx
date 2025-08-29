@@ -56,7 +56,7 @@ interface PromptSuggestion {
   icon: React.ReactNode
   title: string
   prompt: string
-  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'seasonal' | 'email-sms'
+  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'seasonal' | 'email-sms' | 'focus' | 'analysis'
 }
 
 
@@ -75,7 +75,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'What upcoming holidays should I advertise for?',
     prompt: 'Based on the current date and my business type, recommend upcoming holiday opportunities, seasonal events, and marketing moments I should prepare campaigns for. Include timeline recommendations for when to start planning and launching each campaign.',
     category: 'seasonal',
-    mode: 'both'
+
   },
   {
     id: 'black-friday-strategy',
@@ -83,7 +83,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Create Black Friday campaign strategy',
     prompt: 'Help me develop a comprehensive Black Friday and Cyber Monday marketing strategy. Include pre-launch, launch day, and post-holiday tactics, budget recommendations, creative concepts, and audience targeting strategies.',
     category: 'seasonal',
-    mode: 'both'
+
   },
   {
     id: 'back-to-school-marketing',
@@ -91,7 +91,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Back-to-school marketing opportunities',
     prompt: 'Identify back-to-school marketing opportunities for my business. Suggest campaign themes, timing, target audiences, and creative concepts that align with the back-to-school season.',
     category: 'seasonal',
-    mode: 'both'
+
   },
   {
     id: 'seasonal-content-calendar',
@@ -99,7 +99,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Create seasonal content calendar',
     prompt: 'Help me create a 3-month seasonal marketing calendar identifying key holidays, events, and opportunities to advertise. Include suggested campaign types, budget allocation, and creative themes for each opportunity.',
     category: 'seasonal',
-    mode: 'both'
+
   },
 
   // SMS & Email Marketing (NEW)
@@ -193,7 +193,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Generate a performance report',
     prompt: 'Create a comprehensive performance report for the last 30 days including key metrics, trends, insights, and actionable recommendations. Include graphs and data visualizations where helpful.',
     category: 'reports',
-    mode: 'both'
+
   },
   {
     id: 'weekly-summary-report',
@@ -201,7 +201,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Create weekly summary report',
     prompt: 'Generate a weekly summary report highlighting this week\'s performance vs last week, key wins, areas for improvement, and next week\'s recommendations.',
     category: 'reports',
-    mode: 'both'
+
   },
   {
     id: 'roi-analysis-report',
@@ -209,7 +209,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'ROI analysis report',
     prompt: 'Analyze return on investment across all campaigns and create a detailed ROI report with recommendations for improving profitability and scaling high-performing initiatives.',
     category: 'reports',
-    mode: 'both'
+
   },
 
   // Lead Generation
@@ -326,7 +326,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on General Optimization',
     prompt: 'Help me with general campaign performance and ROI improvement. Analyze my overall marketing effectiveness and provide optimization recommendations.',
     category: 'focus',
-    mode: 'both'
+
   },
   {
     id: 'focus-holiday-campaign',
@@ -334,7 +334,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on Holiday Campaign',
     prompt: 'Help me plan and optimize holiday campaigns including Black Friday, Christmas, and seasonal promotions. Provide timing, creative, and budget recommendations.',
     category: 'focus',
-    mode: 'both'
+
   },
   {
     id: 'focus-lead-generation',
@@ -342,7 +342,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on Lead Generation',
     prompt: 'Focus on capturing and qualifying leads. Analyze my lead generation funnels and provide recommendations to improve lead quality, reduce cost per lead, and increase conversion rates.',
     category: 'focus',
-    mode: 'both'
+
   },
   {
     id: 'focus-product-launch',
@@ -350,7 +350,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on Product Launch',
     prompt: 'Help me launch new products or services. Provide campaign strategies, creative concepts, and audience targeting recommendations for product launches.',
     category: 'focus',
-    mode: 'both'
+
   },
   {
     id: 'focus-brand-awareness',
@@ -358,7 +358,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on Brand Awareness',
     prompt: 'Focus on building brand recognition and reach. Help me create campaigns that increase brand visibility and engagement across my target audience.',
     category: 'focus',
-    mode: 'both'
+
   },
   {
     id: 'focus-customer-retention',
@@ -366,7 +366,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Focus on Customer Retention',
     prompt: 'Focus on retargeting and customer lifetime value. Help me create strategies to retain existing customers and increase their lifetime value.',
     category: 'focus',
-    mode: 'both'
+
   },
 
   // Additional Useful Quick Actions
@@ -376,7 +376,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Quick Performance Analysis',
     prompt: 'Give me a quick overview of my current campaign performance. Highlight the most important metrics, trends, and immediate action items.',
     category: 'analysis',
-    mode: 'both'
+
   },
   {
     id: 'creative-review',
@@ -384,7 +384,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Review My Creative Assets',
     prompt: 'Analyze my ad creative performance. Identify which creatives are working well and which ones need to be refreshed or optimized.',
     category: 'creative',
-    mode: 'both'
+
   },
   {
     id: 'budget-recommendation',
@@ -392,7 +392,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Budget Allocation Advice',
     prompt: 'Review my current budget distribution and provide recommendations for optimal budget reallocation to maximize ROI.',
     category: 'budget',
-    mode: 'both'
+
   },
   {
     id: 'competitor-insights',
@@ -400,7 +400,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Competitor Analysis',
     prompt: 'Based on my industry and performance data, provide insights on competitor strategies and opportunities for competitive advantage.',
     category: 'analysis',
-    mode: 'both'
+
   },
   {
     id: 'automation-opportunities',
@@ -408,7 +408,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Automation Recommendations',
     prompt: 'Identify opportunities to automate my marketing workflows. Suggest tools, processes, and strategies to improve efficiency and scale.',
     category: 'optimization',
-    mode: 'both'
+
   },
   {
     id: 'market-trends',
@@ -416,7 +416,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Current Market Trends',
     prompt: 'Analyze current market trends in my industry and provide recommendations on how to adapt my marketing strategy accordingly.',
     category: 'analysis',
-    mode: 'both'
+
   },
   {
     id: 'conversion-optimization',
@@ -424,7 +424,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Optimize Conversion Funnel',
     prompt: 'Review my conversion funnel from awareness to purchase. Identify bottlenecks and provide specific recommendations to improve conversion rates.',
     category: 'optimization',
-    mode: 'both'
+
   },
   {
     id: 'content-strategy',
@@ -432,7 +432,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Content Strategy Review',
     prompt: 'Analyze my content performance and provide recommendations for a comprehensive content marketing strategy.',
     category: 'creative',
-    mode: 'both'
+
   }
 ]
 
@@ -586,8 +586,9 @@ I can help with literally anything marketing-related - scaling strategies, creat
   // Check initial usage status when component mounts
   useEffect(() => {
     const checkInitialUsage = async () => {
+      // Only check usage if we have both user and selectedBrandId
+      if (!user?.firstName || !selectedBrandId) return
 
-      
       try {
         const response = await fetch('/api/ai/marketing-consultant', {
           method: 'POST',
@@ -598,7 +599,6 @@ I can help with literally anything marketing-related - scaling strategies, creat
             brandId: selectedBrandId,
             prompt: '', // Empty prompt to just check usage
             marketingGoal: 'general', // Default to general since we removed the focus selector
-            mode: 'brand',
             checkUsageOnly: true, // Flag to indicate we only want usage info
             userContext: {
               name: user?.firstName || 'there'
@@ -629,7 +629,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
     : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory)
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
-    if (isLoading || isLimitReached) return
+    if (isLoading || isLimitReached || !selectedBrandId) return
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -643,7 +643,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: selectedBrandId ? 'Analyzing your campaign data...' : 'Analyzing your agency data...',
+      content: 'Analyzing your campaign data...',
       timestamp: new Date(),
       isLoading: true
     }
@@ -670,7 +670,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
   }
 
   const handleCustomInput = async (customPrompt: string) => {
-    if (isLoading || isLimitReached || !customPrompt.trim()) return
+    if (isLoading || isLimitReached || !customPrompt.trim() || !selectedBrandId) return
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -735,7 +735,6 @@ I can help with literally anything marketing-related - scaling strategies, creat
           brandId: selectedBrandId,
           prompt,
           marketingGoal: 'general', // Default to general since we removed the focus selector
-          mode: 'brand',
           userContext: {
             name: user?.firstName || 'there'
           },
@@ -743,7 +742,6 @@ I can help with literally anything marketing-related - scaling strategies, creat
             role: msg.type === 'user' ? 'user' : 'assistant',
             content: msg.content
           })),
-
         }),
       })
 
@@ -942,7 +940,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
             </div>
 
             <div className="w-full">
-              <BrandSelector />
+              <BrandSelector onSelect={() => {}} />
             </div>
 
             <div className="text-xs text-gray-500 text-center max-w-sm">
