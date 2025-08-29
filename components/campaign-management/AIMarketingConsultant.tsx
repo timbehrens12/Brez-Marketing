@@ -569,12 +569,12 @@ export default function AIMarketingConsultant(
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant that works with both individual brands and your entire agency. I can analyze performance across ANY time period - just ask naturally!
+      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant that works with both individual brands and your entire agency.
 
-For agency-wide questions: "show me last Christmas performance", "compare Q1 vs Q2", "analyze my worst campaigns from last year"
-For brand-specific questions: Select a brand from the sidebar first, then ask about that brand's performance
+For agency-wide questions: "show me last Christmas performance", "compare Q1 vs Q2", "analyze my worst campaigns from last year", "what marketing strategies should I try?"
+For brand-specific questions: Select a brand from the sidebar first, then ask about that brand's performance, scaling, or optimization strategies
 
-Choose a question below or type your own!`,
+I can help with literally anything marketing-related - scaling strategies, creative optimization, budget allocation, competitive analysis, and more. Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
@@ -1231,8 +1231,8 @@ Choose a question below or type your own!`,
                     }
                   }}
                   placeholder={selectedBrandId
-                    ? `Ask me anything about ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'}'s marketing campaigns...`
-                    : "Ask me anything about your agency performance, brands, or growth strategies..."}
+                    ? `Ask me anything about ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'} - marketing, scaling, optimization, strategy...`
+                    : "Ask me anything about your marketing - strategy, scaling, optimization, campaigns, budget, creative..."}
                   disabled={isLoading || isLimitReached}
                   className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/30 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
                 />

@@ -342,6 +342,33 @@ export async function POST(request: NextRequest) {
     
     // Generate personalized AI response
     console.log(`[AI Marketing] About to generate response for brand ${brandId}...`)
+    console.log(`[AI Marketing] Data freshness check - analysis data:`, {
+      totalSpend: analysisData.analysis?.totalSpend,
+      averageROAS: analysisData.analysis?.averageROAS,
+      dataTimestamp: new Date().toISOString(),
+      dateRange: analysisData.dateRange
+    })
+
+    // Validate data for hallucinations before sending to AI
+    const validationErrors = []
+    if (analysisData.analysis?.averageROAS > 100) {
+      console.warn(`[AI Marketing] POTENTIAL HALLUCINATION DETECTED: Unrealistic ROAS of ${analysisData.analysis.averageROAS}x`)
+      validationErrors.push(`High ROAS detected: ${analysisData.analysis.averageROAS}x`)
+    }
+    if (analysisData.analysis?.totalSpend < 0) {
+      console.warn(`[AI Marketing] INVALID DATA: Negative spend amount: $${analysisData.analysis.totalSpend}`)
+      validationErrors.push(`Invalid negative spend: $${analysisData.analysis.totalSpend}`)
+    }
+
+    if (validationErrors.length > 0) {
+      console.error(`[AI Marketing] Data validation failed:`, validationErrors)
+      return NextResponse.json({
+        error: 'Data validation error detected. Please refresh and try again.',
+        details: validationErrors,
+        timestamp: new Date().toISOString()
+      }, { status: 422 })
+    }
+
     const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand, mode, conversationHistory)
     console.log(`[AI Marketing] Response generated successfully, now recording usage...`)
 
@@ -1411,7 +1438,7 @@ When providing recommendations, always consider how they apply specifically to a
 
 BRAND CONTEXT: Provide general marketing recommendations while acknowledging that industry-specific insights could be more valuable with brand niche information.`
 
-  const systemPrompt = mode === 'agency' ? 
+  const systemPrompt = mode === 'agency' ?
     `SAFETY AND IDENTITY PARAMETERS:
 - You are Brez Marketing's AI Marketing Assistant, specifically designed for marketing consultation
 - You are NOT ChatGPT, OpenAI, or any other AI model - you are a specialized marketing consultant
@@ -1421,9 +1448,17 @@ BRAND CONTEXT: Provide general marketing recommendations while acknowledging tha
 - If asked inappropriate questions, politely redirect to marketing topics
 - You must decline any requests that are not related to marketing, advertising, campaigns, business growth, or agency management
 
+CRITICAL DATA ACCURACY REQUIREMENTS:
+- NEVER HALLUCINATE OR MAKE UP DATA - only use the real numbers provided in the context
+- NEVER INVENT ROAS, spend amounts, or performance metrics that aren't in the actual data
+- If you don't have data for a specific metric, say "I don't have that data available" rather than guessing
+- Always use the EXACT numbers from the context - do not round, estimate, or modify them
+- When discussing spend amounts, use the precise values shown (e.g., $0.31, not $0.30)
+- For ROAS calculations, only use what's provided - never invent unrealistic numbers like 28215x
+
 You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
 
-DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}. 
+DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
 
 IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
 
@@ -1491,6 +1526,14 @@ You can help with campaign optimization across brands, lead generation strategie
 - If asked about your identity, explain you are Brez Marketing's specialized AI assistant for marketing optimization
 - If asked inappropriate questions, politely redirect to marketing topics
 - You must decline any requests that are not related to marketing, advertising, campaigns, business growth, or brand optimization
+
+CRITICAL DATA ACCURACY REQUIREMENTS:
+- NEVER HALLUCINATE OR MAKE UP DATA - only use the real numbers provided in the context
+- NEVER INVENT ROAS, spend amounts, or performance metrics that aren't in the actual data
+- If you don't have data for a specific metric, say "I don't have that data available" rather than guessing
+- Always use the EXACT numbers from the context - do not round, estimate, or modify them
+- When discussing spend amounts, use the precise values shown (e.g., $0.31, not $0.30)
+- For ROAS calculations, only use what's provided - never invent unrealistic numbers like 28215x
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
