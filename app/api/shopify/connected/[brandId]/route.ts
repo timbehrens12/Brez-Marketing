@@ -93,9 +93,8 @@ export async function POST(
               ordersData.orders.map(order => ({
                 brand_id: brandId,
                 connection_id: connectionId,
-                order_id: order.id.toString(),
                 order_number: order.order_number,
-                email: order.email || order.customer?.email,
+                customer_email: order.email || order.customer?.email,
                 created_at: order.created_at,
                 updated_at: order.updated_at,
                 total_price: parseFloat(order.total_price),
@@ -106,10 +105,9 @@ export async function POST(
                 fulfillment_status: order.fulfillment_status,
                 financial_status: order.financial_status,
                 currency: order.currency,
-                customer_id: order.customer?.id?.toString(),
                 raw_data: order
               })),
-              { onConflict: 'order_id' }
+              { onConflict: 'order_number' }
             )
 
           if (ordersError) {
@@ -245,10 +243,20 @@ export async function POST(
           if (inventoryItems.length > 0) {
             const { error: inventoryError } = await supabase
               .from('shopify_inventory')
-              .upsert(inventoryItems, { onConflict: 'variant_id' })
+              .upsert(inventoryItems)
 
             if (inventoryError) {
               console.error('[Connected] Failed to save inventory:', inventoryError)
+              // Try individual inserts as fallback
+              console.log('[Connected] Trying individual inventory inserts...')
+              for (const item of inventoryItems.slice(0, 10)) { // Limit to first 10 to avoid too many requests
+                const { error: singleError } = await supabase
+                  .from('shopify_inventory')
+                  .insert(item)
+                if (singleError && !singleError.message.includes('duplicate key')) {
+                  console.error('[Connected] Single inventory insert failed:', singleError)
+                }
+              }
             } else {
               console.log(`[Connected] ✅ Saved ${inventoryItems.length} inventory items to database`)
             }
