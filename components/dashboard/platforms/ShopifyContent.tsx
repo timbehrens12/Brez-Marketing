@@ -24,16 +24,34 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       console.log('[ShopifyContent] Page loaded/brand changed - forcing fresh data refresh')
       
       // Small delay to ensure components are mounted
-      const timer = setTimeout(() => {
-        console.log('[ShopifyContent] Page loaded - triggering widget refresh')
+      const timer = setTimeout(async () => {
+        console.log('[ShopifyContent] Page loaded - triggering NUCLEAR SYNC')
         
-        // Force widget refresh without date manipulation to prevent flickering
+        // NUCLEAR OPTION: Hard refresh from Shopify API
+        try {
+          const syncResponse = await fetch('/api/shopify/hard-refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brandId })
+          })
+          
+          const syncResult = await syncResponse.json()
+          if (syncResponse.ok) {
+            console.log(`🔥 [ShopifyContent] NUCLEAR SYNC SUCCESS: ${syncResult.newOrders} new orders found!`)
+          } else {
+            console.error('🔥 [ShopifyContent] NUCLEAR SYNC FAILED:', syncResult.error)
+          }
+        } catch (syncError) {
+          console.error('🔥 [ShopifyContent] NUCLEAR SYNC ERROR:', syncError)
+        }
+
+        // Force widget refresh after sync
         window.dispatchEvent(new CustomEvent('force-widget-refresh', {
           detail: { 
             brandId, 
             timestamp: Date.now(), 
             forceRefresh: true,
-            source: 'shopify-page-navigation'
+            source: 'shopify-page-navigation-post-nuclear'
           }
         }))
       }, 100)
