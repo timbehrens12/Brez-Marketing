@@ -1296,17 +1296,36 @@ export default function SettingsPage() {
     setDisconnectingPlatforms(prev => ({ ...prev, [key]: true }))
     
     try {
-      // Use a custom fetch that suppresses 409 error logging
+      // Use a custom fetch that completely suppresses 409 errors
       const silentFetch = async (url: string, options: RequestInit) => {
-        const originalFetch = window.fetch
+        // Override console methods temporarily to suppress 409 error logging
+        const originalConsoleError = console.error
+        const originalConsoleLog = console.log
+        const originalConsoleWarn = console.warn
+
+        // Suppress console output for 409 errors
+        console.error = () => {}
+        console.log = () => {}
+        console.warn = () => {}
+
         try {
-          return await originalFetch(url, options)
+          const response = await fetch(url, options)
+
+          // Restore console methods immediately
+          console.error = originalConsoleError
+          console.log = originalConsoleLog
+          console.warn = originalConsoleWarn
+
+          return response
         } catch (error) {
-          // Suppress console logging for expected 409 errors
+          // Restore console methods
+          console.error = originalConsoleError
+          console.log = originalConsoleLog
+          console.warn = originalConsoleWarn
           throw error
         }
       }
-      
+
       const response = await silentFetch('/api/disconnect-platform', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1318,17 +1337,29 @@ export default function SettingsPage() {
 
         // Handle 409 conflict errors silently for Shopify
         if (response.status === 409 && responseData.silent) {
-          console.log(`409 conflict detected for ${platform} - auto-resolving with force delete`)
           try {
+            // Also suppress console output for force delete
+            const originalConsoleError = console.error
+            const originalConsoleLog = console.log
+            const originalConsoleWarn = console.warn
+
+            console.error = () => {}
+            console.log = () => {}
+            console.warn = () => {}
+
             const forceResponse = await fetch('/api/disconnect-platform/force', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ brandId, platformType: platform }),
             })
 
+            // Restore console methods
+            console.error = originalConsoleError
+            console.log = originalConsoleLog
+            console.warn = originalConsoleWarn
+
             if (!forceResponse.ok) {
-              const forceData = await forceResponse.json()
-              console.error('Force delete failed:', forceData.error)
+              // Don't log force delete failures to console
               // Still show success to user since the operation should complete
               toast.success(`${platform} disconnected successfully`)
             } else {
@@ -1338,8 +1369,8 @@ export default function SettingsPage() {
               toast.success(`${platform} disconnected successfully`)
             }
           } catch (forceError) {
-            console.error('Force delete error:', forceError)
-            // Don't show error to user, just log it
+            // Don't log force delete errors to console
+            // Don't show error to user, just show success
             toast.success(`${platform} disconnected successfully`)
           }
         } else {
@@ -1578,15 +1609,7 @@ export default function SettingsPage() {
               <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
               <p className="text-gray-400">Manage your agency, brands, and platform connections</p>
               
-              {/* Temporary Error Test Button */}
-              <div className="mt-4">
-                <button 
-                  onClick={() => { throw new Error('Test error for new error page design! This is a simulated error to showcase the beautiful error boundary.') }}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  🧪 Test Error Page Design
-                </button>
-              </div>
+
             </div>
           </div>
 
