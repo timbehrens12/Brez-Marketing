@@ -1332,6 +1332,7 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
   return {
     totalSpend,
     totalRevenue,
+    metaOnlyRevenue, // Meta-specific revenue for accurate ROAS
     averageROAS,
     totalImpressions,
     totalClicks,
@@ -1845,9 +1846,9 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
         
         console.log(`[AI Marketing Consultant] Brand ${brand.name} data:`, {
           totalSpend: brandData.analysis.totalSpend,
-          metaRevenue: brandData.analysis.totalRevenue,
+          metaRevenue: brandData.analysis.metaOnlyRevenue || 0, // Use Meta-only revenue
           shopifyRevenue: (brandData.shopifyData?.metrics as any)?.totalRevenue || 0,
-          combinedRevenue: (brandData.analysis.totalRevenue || 0) + ((brandData.shopifyData?.metrics as any)?.totalRevenue || 0),
+          combinedRevenue: (brandData.analysis.totalRevenue || 0), // This is already Meta + Shopify
           campaignCount: brandData.campaigns?.length || 0,
           dailyStatsCount: brandData.dailyStats?.length || 0
         })
@@ -1862,21 +1863,23 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
         allCampaigns = [...allCampaigns, ...campaignsWithBrand]
         
         totalSpend += brandData.analysis.totalSpend || 0
-        totalRevenue += brandData.analysis.totalRevenue || 0  // Meta revenue
-        totalRevenue += (brandData.shopifyData?.metrics as any)?.totalRevenue || 0  // Add Shopify revenue
+        // Use Meta-only revenue for agency ROAS calculation
+        const brandMetaRevenue = brandData.analysis.metaOnlyRevenue || 0
+        totalRevenue += brandMetaRevenue  // Only Meta revenue for ROAS
+        const brandShopifyRevenue = (brandData.shopifyData?.metrics as any)?.totalRevenue || 0
         totalImpressions += brandData.analysis.totalImpressions || 0
         totalClicks += brandData.analysis.totalClicks || 0
         
         // Track individual brand performance
-        const brandTotalRevenue = (brandData.analysis.totalRevenue || 0) + ((brandData.shopifyData?.metrics as any)?.totalRevenue || 0)
         brandPerformance.push({
           brand_name: brand.name,
           brand_id: brand.id,
           spend: brandData.analysis.totalSpend || 0,
-          revenue: brandTotalRevenue,
-          metaRevenue: brandData.analysis.totalRevenue || 0,
-          shopifyRevenue: (brandData.shopifyData?.metrics as any)?.totalRevenue || 0,
-          roas: (brandData.analysis.totalSpend > 0) ? (brandTotalRevenue / brandData.analysis.totalSpend) : 0,
+          revenue: brandMetaRevenue, // Use Meta-only revenue for ROAS
+          metaRevenue: brandMetaRevenue, // Correct Meta revenue
+          shopifyRevenue: brandShopifyRevenue, // Separate Shopify revenue
+          totalRevenue: brandMetaRevenue + brandShopifyRevenue, // Combined for business metrics
+          roas: (brandData.analysis.totalSpend > 0) ? (brandMetaRevenue / brandData.analysis.totalSpend) : 0,
           activeCampaigns: brandData.analysis.activecampaigns || 0,
           topPerformers: brandData.analysis.topPerformers || [],
           underPerformers: brandData.analysis.underPerformers || []
