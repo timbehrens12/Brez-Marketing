@@ -172,8 +172,7 @@ export function InventorySummary({
           value={inventorySummary?.totalInventory || 0}
           change={0}
           data={[]}
-          loading={isDataLoading}
-          refreshing={isRefreshingData}
+          refreshing={isDataLoading || isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
           brandId={brandId}
@@ -230,8 +229,7 @@ export function InventorySummary({
           value={inventorySummary?.outOfStockItems || 0}
           change={0}
           data={[]}
-          loading={isDataLoading}
-          refreshing={isRefreshingData}
+          refreshing={isDataLoading || isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
           brandId={brandId}
@@ -243,8 +241,7 @@ export function InventorySummary({
           value={inventorySummary?.lowStockItems || 0}
           change={0}
           data={[]}
-          loading={isDataLoading}
-          refreshing={isRefreshingData}
+          refreshing={isDataLoading || isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
           brandId={brandId}
