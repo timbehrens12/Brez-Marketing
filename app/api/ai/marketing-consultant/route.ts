@@ -519,6 +519,10 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
     // Fetch Meta demographic and device data for audience insights
     const metaInsightsData = await gatherMetaInsights(supabase, brandId, fromDate, toDate)
 
+    // Fetch available optimizations and reports for the brand
+    const brandOptimizations = await gatherBrandOptimizations(supabase, brandId)
+    const availableReports = await gatherAvailableReports(supabase, brandId)
+
     // Calculate aggregated metrics using the same logic as the dashboard
     const analysis = analyzeCampaignData(campaignArray, [], [], dailyStatsArray, shopifyData)
 
@@ -535,10 +539,12 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
     return {
       campaigns: campaignArray,
       adSets: [], // Not needed for AI analysis
-      ads: [], // Not needed for AI analysis  
+      ads: [], // Not needed for AI analysis
       dailyStats: dailyStatsArray,
       shopifyData,
       metaInsightsData,
+      brandOptimizations,
+      availableReports,
       analysis,
       dateRange: {
         from: fromDate,
@@ -1504,6 +1510,26 @@ IMPORTANT: You are in AGENCY MODE - all spend totals represent COMBINED data acr
 2. If they seem confused by higher numbers, explain you're showing combined totals
 3. Provide per-brand breakdowns when requested
 
+NAVIGATION & CALL-TO-ACTION GUIDANCE:
+- If users ask how to add/connect brands, direct them to the Lead Generation page (/lead-generator) or Settings page (/settings)
+- If users ask about generating reports, mention the Brand Report feature (/brand-report) where they can create and send automated reports
+- If users ask about creative assets, mention the Ad Creative Studio (/ad-creative-studio)
+- If users ask about campaign optimization, mention the Campaign Management page (/campaign-management)
+- If users ask about analytics, mention the Analytics dashboard (/analytics)
+- If users ask about action center or tasks, mention the Action Center (/action-center)
+- If users need help with Meta/Shopify connections, mention the Settings page (/settings)
+- Always provide clickable page links when suggesting navigation
+- If users don't have any brands connected, proactively suggest they visit /lead-generator to get started
+
+AGENCY OPTIMIZATION & REPORTING ACCESS:
+- You have access to available campaign optimizations across all brands that can be suggested to users
+- You can suggest generating monthly/quarterly reports for individual brands using the Brand Report feature
+- You can recommend sending automated reports to brand owners or stakeholders
+- If you see optimization opportunities across brands, suggest specific actions users can take
+- Always mention available reports or optimizations when relevant to user questions
+- You can generate and send reports automatically when users request them for specific brands
+- When users ask for reports, offer to generate them immediately using current data
+
 MARKETING GOAL FOCUS: ${goalContext}
 
 Your communication style:
@@ -1543,6 +1569,13 @@ Current Agency Context:
 - Combined Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
 - Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
 
+=== AGENCY OPTIMIZATIONS & REPORTS ===
+${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available Across Brands:
+${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.brand_name} - ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available across brands'}
+
+${analysisData.availableReports?.length > 0 ? `Reports Available Across Brands:
+${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.brand_name} - ${report.period} report (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available across brands'}
+
 ${analysisData.analysis?.topPerformingBrands?.length > 0 ? `
 Top Performing Brands:
 ${analysisData.analysis.topPerformingBrands.map((b: any, i: number) => `${i+1}. ${b.brand_name}: ${b.roas.toFixed(2)}x ROAS, $${b.spend.toFixed(0)} spent`).join('\n')}
@@ -1579,11 +1612,31 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
-DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}. 
+DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
 
 IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
 
 You can analyze ANY time period the user requests naturally. If they ask about spending, performance, or metrics WITHOUT specifying a timeframe (like "how much have I spent on ads?"), ask them to clarify the time period they want to analyze (e.g., "For what time period? Last month, last quarter, this year?"). If they mention a specific time period, I'll automatically pull that data.
+
+NAVIGATION & CALL-TO-ACTION GUIDANCE:
+- If users ask how to add/connect brands, direct them to the Lead Generation page (/lead-generator) or Settings page (/settings)
+- If users ask about generating reports, mention the Brand Report feature (/brand-report) where they can create and send automated reports
+- If users ask about creative assets, mention the Ad Creative Studio (/ad-creative-studio)
+- If users ask about campaign optimization, mention the Campaign Management page (/campaign-management)
+- If users ask about analytics, mention the Analytics dashboard (/analytics)
+- If users ask about action center or tasks, mention the Action Center (/action-center)
+- If users need help with Meta/Shopify connections, mention the Settings page (/settings)
+- Always provide clickable page links when suggesting navigation
+- If users don't have any brands connected, proactively suggest they visit /lead-generator to get started
+
+BRAND OPTIMIZATION & REPORTING ACCESS:
+- You have access to available campaign optimizations that can be suggested to users
+- You can suggest generating monthly/quarterly reports using the Brand Report feature
+- You can recommend sending automated reports to brand owners or stakeholders
+- If you see optimization opportunities, suggest specific actions users can take
+- Always mention available reports or optimizations when relevant to user questions
+- You can generate and send reports automatically when users request them
+- When users ask for reports, offer to generate them immediately using current data
 
 MARKETING GOAL FOCUS: ${goalContext}
 
@@ -1624,6 +1677,13 @@ Current Context:
 - Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
 - Total Campaigns: ${campaigns.length}
 - Active Campaigns: ${analysis.activecampaigns || 0}
+
+=== AVAILABLE OPTIMIZATIONS & REPORTS ===
+${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available:
+${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available'}
+
+${analysisData.availableReports?.length > 0 ? `Reports Available:
+${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.period} report for ${report.brand_name || brandName} (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available'}
 
 SHOPIFY DATA AVAILABLE: ${analysisData.shopifyData?.metrics?.totalOrders > 0 ? `YES - ${analysisData.shopifyData.metrics.totalOrders} orders, $${analysisData.shopifyData.metrics.totalRevenue.toFixed(2)} revenue for the requested period` : 'NO SALES DATA for this period'}
 ${dateRange?.from === dateRange?.to && analysisData.shopifyData?.metrics?.totalOrders > 0 ? `- SHOPIFY SALES FOR ${dateRange.from}: $${(analysisData.shopifyData?.metrics?.totalRevenue || 0).toFixed(2)} from ${analysisData.shopifyData?.metrics?.totalOrders || 0} orders` : ''}
@@ -1925,6 +1985,9 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
       topCustomers: []
     }
     
+    // Fetch agency-wide optimizations and reports
+    const agencyOptimizationsAndReports = await gatherAgencyOptimizationsAndReports(supabase, userId)
+
     // Aggregate data across all brands
     console.log(`[AI Marketing Consultant] Agency mode: Processing ${brands.length} brands with date range:`, customDateRange)
     
@@ -2094,6 +2157,8 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
       brands,
       brandPerformance,
       shopifyData: aggregatedShopifyData,
+      brandOptimizations: agencyOptimizationsAndReports.optimizations,
+      availableReports: agencyOptimizationsAndReports.reports,
       analysis: {
         totalSpend,
         totalRevenue,
@@ -2126,11 +2191,254 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
   } catch (error) {
     console.error('[AI Marketing Consultant] CRITICAL ERROR in gatherAgencyWideData:', error)
     console.error('[AI Marketing Consultant] Stack trace:', (error as Error).stack)
-    return { 
-      campaigns: [], 
+    return {
+      campaigns: [],
       brands: [],
       analysis: { totalSpend: 0, averageROAS: 0 },
       dateRange: { from: 'N/A', to: 'N/A', days: 30 }
     }
   }
+}
+
+// Function to gather available campaign optimizations for a brand
+async function gatherBrandOptimizations(supabase: any, brandId: string) {
+  try {
+    console.log(`[AI Marketing Consultant] Fetching optimizations for brand ${brandId}...`)
+
+    const { data: optimizations, error } = await supabase
+      .from('ai_campaign_recommendations')
+      .select('*')
+      .eq('brand_id', brandId)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.log(`[AI Marketing Consultant] Error fetching optimizations:`, error)
+      return []
+    }
+
+    console.log(`[AI Marketing Consultant] Found ${optimizations?.length || 0} optimizations for brand ${brandId}`)
+    return optimizations || []
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error gathering brand optimizations:', error)
+    return []
+  }
+}
+
+// Function to gather available reports for a brand
+async function gatherAvailableReports(supabase: any, brandId: string) {
+  try {
+    console.log(`[AI Marketing Consultant] Fetching available reports for brand ${brandId}...`)
+
+    const { data: reports, error } = await supabase
+      .from('brand_reports')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('last_updated', { ascending: false })
+
+    if (error) {
+      console.log(`[AI Marketing Consultant] Error fetching reports:`, error)
+      return []
+    }
+
+    console.log(`[AI Marketing Consultant] Found ${reports?.length || 0} reports for brand ${brandId}`)
+    return reports || []
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error gathering available reports:', error)
+    return []
+  }
+}
+
+// Function to gather agency-wide optimizations and reports
+async function gatherAgencyOptimizationsAndReports(supabase: any, userId: string) {
+  try {
+    console.log(`[AI Marketing Consultant] Fetching agency-wide optimizations and reports for user ${userId}...`)
+
+    // Get all user brands
+    const { data: ownedBrands } = await supabase
+      .from('brands')
+      .select('id, name')
+      .eq('user_id', userId)
+
+    const { data: sharedAccess } = await supabase
+      .from('brand_access')
+      .select('brand_id')
+      .eq('user_id', userId)
+      .is('revoked_at', null)
+
+    let sharedBrands: any[] = []
+    if (sharedAccess && sharedAccess.length > 0) {
+      const sharedBrandIds = sharedAccess.map((access: any) => access.brand_id)
+      const { data: sharedBrandDetails } = await supabase
+        .from('brands')
+        .select('id, name')
+        .in('id', sharedBrandIds)
+      sharedBrands = sharedBrandDetails || []
+    }
+
+    const allBrands = [...(ownedBrands || []), ...sharedBrands]
+    const brandIds = allBrands.map(b => b.id)
+
+    if (brandIds.length === 0) {
+      return { optimizations: [], reports: [] }
+    }
+
+    // Fetch optimizations for all brands
+    const { data: optimizations, error: optError } = await supabase
+      .from('ai_campaign_recommendations')
+      .select('*')
+      .in('brand_id', brandIds)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+
+    // Fetch reports for all brands
+    const { data: reports, error: reportError } = await supabase
+      .from('brand_reports')
+      .select('*')
+      .in('brand_id', brandIds)
+      .order('last_updated', { ascending: false })
+
+    if (optError) console.log(`[AI Marketing Consultant] Error fetching agency optimizations:`, optError)
+    if (reportError) console.log(`[AI Marketing Consultant] Error fetching agency reports:`, reportError)
+
+    // Add brand names to the results
+    const brandMap = new Map(allBrands.map(b => [b.id, b.name]))
+
+    const optimizationsWithNames = (optimizations || []).map(opt => ({
+      ...opt,
+      brand_name: brandMap.get(opt.brand_id) || 'Unknown Brand'
+    }))
+
+    const reportsWithNames = (reports || []).map(report => ({
+      ...report,
+      brand_name: brandMap.get(report.brand_id) || 'Unknown Brand'
+    }))
+
+    console.log(`[AI Marketing Consultant] Found ${optimizationsWithNames.length} optimizations and ${reportsWithNames.length} reports across ${brandIds.length} brands`)
+
+    return {
+      optimizations: optimizationsWithNames,
+      reports: reportsWithNames
+    }
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error gathering agency optimizations and reports:', error)
+    return { optimizations: [], reports: [] }
+  }
+}
+
+// Function to generate and send a brand report
+async function generateAndSendBrandReport(supabase: any, brandId: string, brandName: string, userId: string, period: 'daily' | 'monthly' = 'monthly') {
+  try {
+    console.log(`[AI Marketing Consultant] Generating ${period} report for brand ${brandName} (${brandId})...`)
+
+    // Get current date and calculate date range
+    const today = new Date()
+    const currentMonth = today.getMonth()
+    const currentYear = today.getFullYear()
+
+    let dateRangeStart: Date
+    let dateRangeEnd: Date
+
+    if (period === 'monthly') {
+      // First day of current month
+      dateRangeStart = new Date(currentYear, currentMonth, 1)
+      // Last day of current month
+      dateRangeEnd = new Date(currentYear, currentMonth + 1, 0)
+    } else {
+      // Today
+      dateRangeStart = new Date(today)
+      dateRangeEnd = new Date(today)
+    }
+
+    // Gather data for the report
+    const reportData = await gatherComprehensiveMarketingData(
+      supabase,
+      brandId,
+      {
+        from: dateRangeStart.toISOString().split('T')[0],
+        to: dateRangeEnd.toISOString().split('T')[0]
+      }
+    )
+
+    // Generate report content
+    const reportContent = generateReportContent(brandName, period, reportData, dateRangeStart, dateRangeEnd)
+
+    // Save report to database
+    const { data: savedReport, error: saveError } = await supabase
+      .from('brand_reports')
+      .upsert({
+        brand_id: brandId,
+        period,
+        report_content: reportContent,
+        date_range_start: dateRangeStart.toISOString().split('T')[0],
+        date_range_end: dateRangeEnd.toISOString().split('T')[0],
+        last_updated: new Date().toISOString()
+      }, {
+        onConflict: 'brand_id,period'
+      })
+      .select()
+      .single()
+
+    if (saveError) {
+      console.error('[AI Marketing Consultant] Error saving report:', saveError)
+      return { success: false, message: 'Failed to save report' }
+    }
+
+    // TODO: Send report to stakeholders (email integration would go here)
+
+    console.log(`[AI Marketing Consultant] Successfully generated and saved ${period} report for ${brandName}`)
+    return {
+      success: true,
+      message: `Generated ${period} report for ${brandName} (${dateRangeStart.toLocaleDateString()} - ${dateRangeEnd.toLocaleDateString()})`,
+      reportId: savedReport.id
+    }
+  } catch (error) {
+    console.error('[AI Marketing Consultant] Error generating report:', error)
+    return { success: false, message: 'Failed to generate report' }
+  }
+}
+
+// Helper function to generate report content
+function generateReportContent(brandName: string, period: string, data: any, startDate: Date, endDate: Date) {
+  const analysis = data.analysis || {}
+  const shopifyData = data.shopifyData || {}
+
+  return `
+# ${brandName} - ${period.charAt(0).toUpperCase() + period.slice(1)} Marketing Report
+**Report Period:** ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}
+**Generated:** ${new Date().toLocaleString()}
+
+## 📊 Campaign Performance Summary
+- **Total Spend:** $${(analysis.totalSpend || 0).toFixed(2)}
+- **Average ROAS:** ${(analysis.averageROAS || 0).toFixed(2)}x
+- **Total Impressions:** ${(analysis.totalImpressions || 0).toLocaleString()}
+- **Average CTR:** ${(analysis.averageCTR || 0).toFixed(2)}%
+- **Active Campaigns:** ${analysis.activecampaigns || 0}
+
+## 💰 Sales Performance
+- **Total Revenue:** $${(shopifyData.metrics?.totalRevenue || 0).toFixed(2)}
+- **Total Orders:** ${shopifyData.metrics?.totalOrders || 0}
+- **Average Order Value:** $${(shopifyData.metrics?.averageOrderValue || 0).toFixed(2)}
+- **Total Customers:** ${shopifyData.metrics?.totalCustomers || 0}
+
+## 📈 Key Insights
+${analysis.topPerformers?.length > 0 ? `### Top Performing Campaigns:
+${analysis.topPerformers.slice(0, 3).map((c: any, i: number) =>
+  `${i+1}. ${c.campaign_name} - ${c.roas?.toFixed(1)}x ROAS, $${c.spend?.toFixed(0)} spent`
+).join('\n')}` : ''}
+
+${analysis.underPerformers?.length > 0 ? `### Underperforming Campaigns:
+${analysis.underPerformers.slice(0, 3).map((c: any, i: number) =>
+  `${i+1}. ${c.campaign_name} - ${c.roas?.toFixed(1)}x ROAS, $${c.spend?.toFixed(0)} spent`
+).join('\n')}` : ''}
+
+## 🎯 Recommendations
+Based on the current performance data, here are suggested next steps:
+1. ${analysis.averageROAS > 2 ? 'Continue optimizing high-performing campaigns' : 'Review and optimize underperforming campaigns'}
+2. ${shopifyData.metrics?.totalRevenue > 0 ? 'Consider increasing ad spend on successful campaigns' : 'Focus on improving conversion rates'}
+3. Monitor customer acquisition costs and lifetime value
+
+---
+*This report was automatically generated by Brez Marketing AI*
+  `.trim()
 } 
