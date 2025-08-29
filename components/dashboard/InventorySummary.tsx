@@ -135,8 +135,8 @@ export function InventorySummary({
     }
   }, [brandId])
 
-  // Only show loading if we haven't completed initial load AND we don't have data
-  const isDataLoading = (isLoading || loading) && !initialLoadComplete
+  // Show loading if we haven't completed initial load AND we don't have data, OR if refreshing
+  const isDataLoading = ((isLoading || loading) && !initialLoadComplete) || isRefreshingData
 
   // Group inventory items by product and sum quantities
   const productInventory = inventoryItems.reduce((acc, item) => {
