@@ -89,7 +89,8 @@ export function CustomerSegmentationWidget({
   // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event?: any) => {
-      // Refresh event received
+      console.log('[CustomerSegmentation] Refresh event received:', event?.detail?.source || 'unknown')
+      // Force refresh regardless of cache state
       fetchSegmentData()
     }
 
@@ -97,7 +98,6 @@ export function CustomerSegmentationWidget({
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
-    window.addEventListener('force-shopify-database-refresh', handleRefresh)
     
     // Also refresh when specific Shopify sync events occur
     window.addEventListener('shopify-sync-completed', handleRefresh)
@@ -107,7 +107,6 @@ export function CustomerSegmentationWidget({
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
-      window.removeEventListener('force-shopify-database-refresh', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchSegmentData])

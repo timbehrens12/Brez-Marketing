@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const to = searchParams.get('to')
   const brandId = searchParams.get('brandId')
   const platform = searchParams.get('platform')
-  const timezone = searchParams.get('timezone') || 'America/Los_Angeles' // Default to Pacific
+  const timezone = searchParams.get('timezone') || 'America/Chicago' // Default to Chicago
 
   // Received metrics request
 
@@ -291,20 +291,9 @@ export async function GET(request: Request) {
     const prevTotalSales = prevOrders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
     const prevOrdersPlaced = prevOrders?.length || 0;
     const prevAverageOrderValue = prevOrdersPlaced ? prevTotalSales / prevOrdersPlaced : 0;
-    const prevUnitsSold = prevOrders?.reduce((sum: number, order: any) => {
-      if (!order.line_items || !Array.isArray(order.line_items)) {
-        console.log(`Warning: Missing or invalid line_items for previous period order ${order.id}`);
-        return sum;
-      }
-      return sum + order.line_items.reduce((itemSum: number, item: any) => {
-        const quantity = parseInt(item.quantity || '0', 10);
-        if (isNaN(quantity)) {
-          console.log(`Warning: Invalid quantity for item in previous period order ${order.id}: ${item.quantity}`);
-          return itemSum;
-        }
-        return itemSum + quantity;
-      }, 0);
-    }, 0) || 0;
+    const prevUnitsSold = prevOrders?.reduce((sum: number, order: any) => 
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
+    ) || 0;
 
     // Calculate growth percentages
     const calculateGrowth = (current: number, previous: number): number => {
@@ -461,13 +450,10 @@ export async function GET(request: Request) {
           }
           
           // SIMPLE FIX: Just use the original UTC timestamp for charts
-          const unitsCount = order.line_items && Array.isArray(order.line_items) 
-            ? order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
-            : 0;
-          console.log(`📦 Units data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at} (${unitsCount} units)`);
+          console.log(`📦 Units data point - Order ${order.order_number}: Using UTC timestamp ${order.created_at} (${order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)} units)`);
           return {
             date: order.created_at, // Use original UTC timestamp
-            value: unitsCount
+            value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
           };
         } catch (error) {
           console.error('Error processing units sold data for order:', order.id, error);

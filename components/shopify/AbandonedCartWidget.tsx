@@ -124,7 +124,9 @@ export function AbandonedCartWidget({
 
   // Listen for refresh events
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (event?: any) => {
+      console.log('[AbandonedCart] Refresh event received:', event?.detail?.source || 'unknown')
+      // Force refresh regardless of cache state
       fetchData()
     }
 
@@ -132,7 +134,6 @@ export function AbandonedCartWidget({
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
-    window.addEventListener('force-shopify-database-refresh', handleRefresh)
     window.addEventListener('shopify-sync-completed', handleRefresh)
 
     return () => {
@@ -140,7 +141,6 @@ export function AbandonedCartWidget({
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
-      window.removeEventListener('force-shopify-database-refresh', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchData])

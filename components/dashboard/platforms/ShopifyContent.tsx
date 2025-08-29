@@ -21,29 +21,39 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
   // Trigger refresh when Shopify content is mounted/brandId changes
   useEffect(() => {
     if (brandId) {
-      console.log('[ShopifyContent] Page loaded/brand changed - triggering fresh data refresh like date change')
+      console.log('[ShopifyContent] Page loaded/brand changed - forcing fresh data refresh')
       
       // Small delay to ensure components are mounted
       const timer = setTimeout(() => {
-        // Trigger database-level refresh (like date changes do)
-        window.dispatchEvent(new CustomEvent('force-shopify-database-refresh', {
+        // FORCE DATE RANGE REFRESH - This is what actually triggers fresh data!
+        window.dispatchEvent(new CustomEvent('force-date-range-refresh', {
           detail: { 
             brandId, 
             timestamp: Date.now(), 
-            forceRefresh: true, 
-            source: 'shopify-page-load' 
+            forceRefresh: true,
+            source: 'shopify-page-navigation'
           }
         }))
         
-        // Also trigger widget refresh
-        window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
-          detail: { 
-            brandId, 
-            timestamp: Date.now(), 
-            forceRefresh: true, 
-            source: 'shopify-page-load' 
-          }
-        }))
+        // Also dispatch other events for completeness
+        const refreshEvents = [
+          'force-shopify-refresh',
+          'shopify-sync-completed', 
+          'refresh-all-widgets',
+          'global-refresh-all'
+        ]
+        
+        refreshEvents.forEach(eventName => {
+          window.dispatchEvent(new CustomEvent(eventName, {
+            detail: { 
+              brandId, 
+              timestamp: Date.now(), 
+              forceRefresh: true, 
+              forceCacheBust: true,
+              source: 'shopify-page-navigation' 
+            }
+          }))
+        })
       }, 100)
       
       return () => clearTimeout(timer)

@@ -626,6 +626,37 @@ export default function DashboardPage() {
     };
   }, [selectedBrandId, dateRange]); // Re-run when brand or date range changes
 
+  // Listen for forced date range refresh events (triggered by refresh button)
+  useEffect(() => {
+    const handleForceDateRefresh = (event: any) => {
+      if (event.detail?.brandId === selectedBrandId) {
+        console.log('[Dashboard] Force date range refresh triggered - simulating date change')
+        
+        // Force a date range "change" by temporarily setting to a different value then back
+        const currentRange = dateRange
+        
+        // Temporarily change to yesterday
+        const yesterday = {
+          from: subDays(currentRange.from, 1),
+          to: subDays(currentRange.to, 1)
+        }
+        
+        setDateRange(yesterday)
+        
+        // Then immediately change back to trigger fresh data load
+        setTimeout(() => {
+          setDateRange(currentRange)
+        }, 100)
+      }
+    }
+
+    window.addEventListener('force-date-range-refresh', handleForceDateRefresh)
+    
+    return () => {
+      window.removeEventListener('force-date-range-refresh', handleForceDateRefresh)
+    }
+  }, [selectedBrandId, dateRange])
+
   // Load widget data when connections change
   useEffect(() => {
     // Skip during initial setup to prevent cascading renders
