@@ -2,9 +2,15 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MapPin, Users, TrendingUp, Globe } from 'lucide-react'
+import { MapPin, Users, TrendingUp, Globe, Info } from 'lucide-react'
 import { format } from 'date-fns'
 import { createDebouncedRefresh } from '@/lib/utils/debounce'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface CustomerSegmentationWidgetProps {
   brandId: string
@@ -210,9 +216,19 @@ export function CustomerSegmentationWidget({
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-sm text-gray-400">Total Revenue</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-gray-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Total revenue from all orders in the selected date range</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="text-xl font-bold text-white">
-              {formatCurrency(data.overview.totalClv)}
+              {formatCurrency(data.overview.totalRevenue)}
             </div>
           </div>
 
@@ -220,6 +236,16 @@ export function CustomerSegmentationWidget({
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-purple-400" />
               <span className="text-sm text-gray-400">Avg CLV</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-gray-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Customer Lifetime Value - Average total spending per customer across all time</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="text-xl font-bold text-white">
               {formatCurrency(data.overview.averageClv)}
@@ -239,7 +265,22 @@ export function CustomerSegmentationWidget({
 
         {/* Top Locations */}
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Top Performing Locations</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold text-white">Top Performing Locations</h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-gray-500" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-sm">
+                    <p>Only shows orders with shipping addresses.</p>
+                    <p>Location revenue may be less than total revenue if some orders lack address data.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="space-y-3">
             {data.topLocations.slice(0, 6).map((location, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-[#222] rounded-lg border border-[#333]">
@@ -274,13 +315,30 @@ export function CustomerSegmentationWidget({
         {/* Segment Tiers */}
         {Object.keys(data.segmentTiers).length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Customer Value Tiers</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-semibold text-white">Customer Value Tiers</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-gray-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-sm">
+                      <p><strong>High Value:</strong> CLV ≥ $1,000</p>
+                      <p><strong>Medium Value:</strong> CLV $300-$999</p>
+                      <p><strong>Low Value:</strong> CLV &lt; $300</p>
+                      <p className="mt-2 text-xs text-gray-300">CLV = Customer Lifetime Value (total spent across all time)</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {Object.entries(data.segmentTiers).map(([tier, stats]) => (
                 <div key={tier} className="bg-[#222] rounded-lg p-4 border border-[#333]">
                   <div className="text-sm font-medium text-white capitalize mb-2">{tier} Value</div>
                   <div className="text-lg font-bold text-white">{stats.count}</div>
-                  <div className="text-xs text-gray-400">{formatCurrency(stats.totalClv)} total</div>
+                  <div className="text-xs text-gray-400">{formatCurrency(stats.revenue)} total</div>
                 </div>
               ))}
             </div>
