@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Users, TrendingUp, Globe } from 'lucide-react'
 import { format } from 'date-fns'
+import { createDebouncedRefresh } from '@/lib/utils/debounce'
 
 interface CustomerSegmentationWidgetProps {
   brandId: string
@@ -55,6 +56,7 @@ export function CustomerSegmentationWidget({
         const fromDate = format(dateRange.from, 'yyyy-MM-dd')
         const toDate = format(dateRange.to, 'yyyy-MM-dd')
         url += `&from=${fromDate}&to=${toDate}`
+        console.log(`[CustomerSegmentation] 📅 Fetching data for date range: ${fromDate} to ${toDate}`)
       }
       
       // Add cache busting to ensure fresh data
@@ -71,7 +73,9 @@ export function CustomerSegmentationWidget({
 
       if (result.success) {
         setData(result.data)
-        console.log(`[CustomerSegmentation] Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, $${result.data?.overview?.totalRevenue || 0} revenue`)
+        const fromStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : 'all-time'
+        const toStr = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'all-time'
+        console.log(`[CustomerSegmentation] ✅ Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, $${result.data?.overview?.totalRevenue || 0} revenue (${fromStr} to ${toStr})`)
       } else {
         console.warn('[CustomerSegmentation] No data received')
       }
@@ -82,25 +86,31 @@ export function CustomerSegmentationWidget({
     }
   }, [brandId, dateRange])
 
+  // Create debounced refresh handler
+  const debouncedRefresh = useMemo(
+    () => createDebouncedRefresh(fetchSegmentData, 300),
+    [fetchSegmentData]
+  )
+
   useEffect(() => {
     fetchSegmentData()
   }, [fetchSegmentData])
 
-  // Listen for refresh events
+  // Listen for refresh events with debouncing
   useEffect(() => {
     const handleRefresh = (event?: any) => {
-      console.log('[CustomerSegmentation] Refresh event received:', event?.detail?.source || 'unknown')
-      // Force refresh regardless of cache state
-      fetchSegmentData()
+      const eventSource = event?.detail?.source || event?.type || 'unknown'
+      console.log('[CustomerSegmentation] Refresh event received:', eventSource)
+      // Use debounced refresh to prevent spam
+      debouncedRefresh(eventSource)
     }
 
     window.addEventListener('refresh-all-widgets', handleRefresh)
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
-    
-    // Also refresh when specific Shopify sync events occur
     window.addEventListener('shopify-sync-completed', handleRefresh)
+    window.addEventListener('force-widget-refresh', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
@@ -108,8 +118,9 @@ export function CustomerSegmentationWidget({
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
+      window.removeEventListener('force-widget-refresh', handleRefresh)
     }
-  }, [fetchSegmentData])
+  }, [debouncedRefresh])
 
   const isDataLoading = loading || isLoading || isRefreshingData
 

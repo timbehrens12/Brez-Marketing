@@ -141,25 +141,27 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         );
         
         if (shopifyConnection) {
-          // First: Trigger FORCE FRESH SYNC to get absolute latest data from Shopify
-          const syncPromise = fetch('/api/shopify/force-fresh-sync', {
+          // First: Trigger manual sync to get latest data from Shopify
+          const syncPromise = fetch('/api/shopify/manual-sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              brandId
+              shop: shopifyConnection.shop,
+              brandId,
+              connectionId: shopifyConnection.id,
+              forceRefresh: true,
+              skipWebhooks: false
             })
-          }).then(async response => {
-            const result = await response.json()
+          }).then(response => {
             if (response.ok) {
-              console.log('[GlobalRefresh] ✅ Force fresh sync completed:', result);
-              console.log(`[GlobalRefresh] 📊 Processed ${result.ordersProcessed}/${result.totalOrdersFromShopify} orders`);
+              console.log('[GlobalRefresh] ✅ Shopify manual sync completed successfully');
               return true;
             } else {
-              console.warn('[GlobalRefresh] ⚠️ Force fresh sync failed:', result);
+              console.warn('[GlobalRefresh] ⚠️ Shopify manual sync failed, continuing with widget refresh');
               return false;
             }
           }).catch(error => {
-            console.error('[GlobalRefresh] ❌ Force fresh sync error:', error);
+            console.error('[GlobalRefresh] ❌ Shopify manual sync error:', error);
             return false;
           });
 

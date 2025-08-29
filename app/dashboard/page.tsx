@@ -626,27 +626,30 @@ export default function DashboardPage() {
     };
   }, [selectedBrandId, dateRange]); // Re-run when brand or date range changes
 
+  // Force refresh counter to trigger widget re-renders without changing date range
+  const [refreshCounter, setRefreshCounter] = useState(0)
+
   // Listen for forced date range refresh events (triggered by refresh button)
   useEffect(() => {
     const handleForceDateRefresh = (event: any) => {
       if (event.detail?.brandId === selectedBrandId) {
-        console.log('[Dashboard] Force date range refresh triggered - simulating date change')
+        console.log('[Dashboard] Force date range refresh triggered - incrementing refresh counter')
         
-        // Force a date range "change" by temporarily setting to a different value then back
-        const currentRange = dateRange
+        // Instead of changing date range (which causes flickering), increment refresh counter
+        // This forces widgets to re-render with the same date range but fresh data
+        setRefreshCounter(prev => prev + 1)
         
-        // Temporarily change to yesterday
-        const yesterday = {
-          from: subDays(currentRange.from, 1),
-          to: subDays(currentRange.to, 1)
-        }
-        
-        setDateRange(yesterday)
-        
-        // Then immediately change back to trigger fresh data load
+        // Also dispatch a single consolidated refresh event
         setTimeout(() => {
-          setDateRange(currentRange)
-        }, 100)
+          window.dispatchEvent(new CustomEvent('force-widget-refresh', {
+            detail: { 
+              brandId: selectedBrandId, 
+              timestamp: Date.now(),
+              refreshCounter: refreshCounter + 1,
+              source: 'dashboard-force-refresh'
+            }
+          }))
+        }, 50)
       }
     }
 
@@ -655,7 +658,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('force-date-range-refresh', handleForceDateRefresh)
     }
-  }, [selectedBrandId, dateRange])
+  }, [selectedBrandId, refreshCounter])
 
   // Load widget data when connections change
   useEffect(() => {

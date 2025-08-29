@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Repeat, Users, TrendingUp, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
+import { createDebouncedRefresh } from '@/lib/utils/debounce'
 
 interface RepeatCustomersWidgetProps {
   brandId: string
