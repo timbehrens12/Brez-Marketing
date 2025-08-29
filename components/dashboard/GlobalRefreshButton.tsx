@@ -163,40 +163,21 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
             return false;
           });
 
-          // Second: After sync attempt, always refresh all widgets
-          syncPromise.then(() => {
-            console.log('[GlobalRefresh] 🔄 Forcing complete Shopify data refresh');
+          // Second: After nuclear sync completes, refresh widgets with fresh data
+          syncPromise.then((syncSuccess) => {
+            console.log('🔥 [GlobalRefresh] NUCLEAR SYNC COMPLETED - Refreshing widgets with fresh data');
             
-            // FORCE DATE RANGE REFRESH - This is what actually works!
-            // Simulate the date change that forces widgets to fetch fresh data
-            window.dispatchEvent(new CustomEvent('force-date-range-refresh', {
+            // Single comprehensive refresh event after sync is complete
+            window.dispatchEvent(new CustomEvent('force-widget-refresh', {
               detail: { 
                 brandId, 
                 timestamp: Date.now(), 
                 forceRefresh: true,
-                source: 'global-refresh-button-date-trick'
+                source: 'global-refresh-post-nuclear',
+                syncCompleted: true,
+                syncSuccess
               }
-            }));
-            
-            // Also dispatch other events for completeness
-            const refreshEvents = [
-              'force-shopify-refresh',
-              'shopify-sync-completed', 
-              'refresh-all-widgets',
-              'global-refresh-all'
-            ]
-            
-            refreshEvents.forEach(eventName => {
-              window.dispatchEvent(new CustomEvent(eventName, {
-                detail: { 
-                  brandId, 
-                  timestamp: Date.now(), 
-                  forceRefresh: true,
-                  forceCacheBust: true,
-                  source: 'global-refresh-button' 
-                }
-              }))
-            })
+            }))
           });
         } else {
           console.warn('[GlobalRefresh] No active Shopify connection found for brand:', brandId);

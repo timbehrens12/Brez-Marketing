@@ -25,10 +25,16 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       
       // Small delay to ensure components are mounted
       const timer = setTimeout(async () => {
-        console.log('[ShopifyContent] Page loaded - triggering NUCLEAR SYNC')
+        console.log('[ShopifyContent] Page loaded - starting NUCLEAR SYNC SEQUENCE')
         
-        // NUCLEAR OPTION: Hard refresh from Shopify API
+        // STEP 1: Block widget loading during sync
+        window.dispatchEvent(new CustomEvent('shopify-sync-starting', {
+          detail: { brandId, source: 'page-navigation' }
+        }))
+        
+        // STEP 2: NUCLEAR OPTION - Hard refresh from Shopify API  
         try {
+          console.log('🔥 [ShopifyContent] NUCLEAR SYNC STARTING...')
           const syncResponse = await fetch('/api/shopify/hard-refresh', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -38,6 +44,7 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
           const syncResult = await syncResponse.json()
           if (syncResponse.ok) {
             console.log(`🔥 [ShopifyContent] NUCLEAR SYNC SUCCESS: ${syncResult.newOrders} new orders found!`)
+            console.log(`🔥 [ShopifyContent] Total processed: ${syncResult.ordersProcessed} orders`)
           } else {
             console.error('🔥 [ShopifyContent] NUCLEAR SYNC FAILED:', syncResult.error)
           }
@@ -45,13 +52,15 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
           console.error('🔥 [ShopifyContent] NUCLEAR SYNC ERROR:', syncError)
         }
 
-        // Force widget refresh after sync
+        // STEP 3: Now that sync is complete, refresh widgets with fresh data
+        console.log('🔥 [ShopifyContent] NUCLEAR SYNC COMPLETE - Refreshing widgets with fresh data')
         window.dispatchEvent(new CustomEvent('force-widget-refresh', {
           detail: { 
             brandId, 
             timestamp: Date.now(), 
             forceRefresh: true,
-            source: 'shopify-page-navigation-post-nuclear'
+            source: 'shopify-page-navigation-post-nuclear',
+            syncCompleted: true
           }
         }))
       }, 100)
