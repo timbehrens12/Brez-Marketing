@@ -169,7 +169,7 @@ export async function POST(
                 updated_at: customer.updated_at,
                 orders_count: customer.orders_count || 0,
                 total_spent: parseFloat(customer.total_spent || 0),
-                tags: customer.tags,
+                tags: customer.tags ? (Array.isArray(customer.tags) ? customer.tags : customer.tags.split(',').map(t => t.trim())) : [],
                 state: customer.state,
                 currency: customer.currency,
                 accepts_marketing: customer.accepts_marketing || false,
