@@ -97,7 +97,7 @@ export function BrandManagementDropdown({
       setIsExpanded(true) // Force expansion when syncing
       
       let checkCount = 0
-      const maxChecks = 90 // 180 seconds max (2 sec intervals) - allow more time for complete historical sync
+      const maxChecks = 30 // 60 seconds max (2 sec intervals) - data usually syncs within 10-20 seconds
       
       // Check for actual sync completion using V2 status API
       const checkForSyncCompletion = async () => {
@@ -176,7 +176,7 @@ export function BrandManagementDropdown({
           clearInterval(intervalId)
           setIsShopifySyncing(false)
           setIsConnecting(false)
-        }, 180000) // 180 seconds total max for complete historical sync
+        }, 60000) // 60 seconds total max since data syncs quickly
       }, 2000)
       
       return () => clearTimeout(timeoutId)

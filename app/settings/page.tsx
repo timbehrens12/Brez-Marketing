@@ -2585,19 +2585,19 @@ export default function SettingsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 text-white shadow-2xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-700/10 via-slate-600/10 to-slate-700/10"></div>
+        <DialogContent className="sm:max-w-xl bg-gradient-to-br from-[#1a1a1a] via-[#0f0f0f] to-[#1a1a1a] border border-[#333] text-white shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#333]/10 via-[#444]/10 to-[#333]/10"></div>
           
           <DialogHeader className="text-center pb-6 relative z-10">
             <div className="mx-auto mb-4 relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-700/40 to-slate-600/40 rounded-2xl flex items-center justify-center border border-slate-600/50 shadow-xl">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#333] to-[#444] rounded-2xl flex items-center justify-center border border-[#555] shadow-xl">
                 <img
                   src="https://i.imgur.com/cnCcupx.png"
                   alt="Shopify"
                   className="w-10 h-10 object-contain drop-shadow-lg"
                 />
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-400 rounded-full animate-pulse"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#666] rounded-full animate-pulse"></div>
             </div>
             <DialogTitle className="text-2xl font-bold text-white mb-2">
               Connect Your Shopify Store
@@ -2609,58 +2609,58 @@ export default function SettingsPage() {
 
           <form onSubmit={handleShopifyConnect} className="space-y-4 relative z-10">
             {/* What You'll Get Section */}
-            <div className="bg-gradient-to-br from-slate-800/80 via-slate-800/80 to-slate-700/80 border border-slate-600/50 rounded-xl p-4 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border border-[#333] rounded-xl p-4 backdrop-blur-sm">
               <h4 className="text-base font-bold text-white mb-3 flex items-center gap-2">
-                <div className="w-6 h-6 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-6 h-6 bg-[#333] rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 Unlock Powerful Ecommerce Insights
               </h4>
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/40">
-                  <div className="w-8 h-8 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded-lg border border-[#333]">
+                  <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-white font-medium text-xs">Real-time Sales Analytics</p>
-                    <p className="text-slate-400 text-xs">Live revenue & order tracking</p>
+                    <p className="text-gray-400 text-xs">Live revenue & order tracking</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/40">
-                  <div className="w-8 h-8 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded-lg border border-[#333]">
+                  <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-white font-medium text-xs">Product Performance</p>
-                    <p className="text-slate-400 text-xs">Top sellers & inventory alerts</p>
+                    <p className="text-gray-400 text-xs">Top sellers & inventory alerts</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/40">
-                  <div className="w-8 h-8 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded-lg border border-[#333]">
+                  <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-white font-medium text-xs">Customer Intelligence</p>
-                    <p className="text-slate-400 text-xs">Behavior patterns & segmentation</p>
+                    <p className="text-gray-400 text-xs">Behavior patterns & segmentation</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/40">
-                  <div className="w-8 h-8 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded-lg border border-[#333]">
+                  <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-white font-medium text-xs">Automated Reports</p>
-                    <p className="text-slate-400 text-xs">Daily insights & recommendations</p>
+                    <p className="text-gray-400 text-xs">Daily insights & recommendations</p>
                   </div>
                 </div>
               </div>
@@ -2669,15 +2669,15 @@ export default function SettingsPage() {
             {/* Store URL Input */}
             <div className="space-y-3">
               <Label htmlFor="shopify-url" className="text-white font-semibold text-base flex items-center gap-2">
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-6m-2-4h6m2 0V9a2 2 0 00-2-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 00-2 2v8a2 2 0 002 2h2m0 0h6" />
                 </svg>
                 Your Shopify Store URL
               </Label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <div className="w-6 h-6 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-6 h-6 bg-[#333] rounded-lg flex items-center justify-center">
+                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
                   </div>
@@ -2688,74 +2688,74 @@ export default function SettingsPage() {
                   placeholder="your-store.myshopify.com"
                   value={shopifyStoreUrl}
                   onChange={(e) => setShopifyStoreUrl(e.target.value)}
-                  className="pl-12 pr-4 bg-slate-800/60 border-slate-600/50 text-white placeholder-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/50 h-12 text-base rounded-xl transition-all duration-300 hover:bg-slate-700/60 backdrop-blur-sm group-hover:border-slate-500/70"
+                  className="pl-12 pr-4 bg-[#0f0f0f] border-[#333] text-white placeholder-gray-400 focus:border-[#444] focus:ring-2 focus:ring-[#444]/50 h-12 text-base rounded-xl transition-all duration-300 hover:bg-[#1a1a1a] backdrop-blur-sm group-hover:border-[#444]"
                   disabled={isConnectingShopify}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-[#666] rounded-full animate-pulse"></div>
                 </div>
               </div>
             </div>
 
             {/* Security & Process Information */}
             <div className="space-y-3">
-              <div className="bg-gradient-to-r from-slate-800/60 via-slate-700/60 to-slate-800/60 border border-slate-600/50 rounded-xl p-3">
+              <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                    <Shield className="w-3 h-3 text-slate-300" />
+                  <div className="w-6 h-6 bg-[#333] rounded-lg flex items-center justify-center">
+                    <Shield className="w-3 h-3 text-gray-300" />
                   </div>
-                  <h4 className="text-xs font-semibold text-slate-200">Enterprise-Grade Security</h4>
+                  <h4 className="text-xs font-semibold text-gray-200">Enterprise-Grade Security</h4>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center">
-                    <div className="w-5 h-5 bg-slate-700/60 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <svg className="w-2.5 h-2.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-5 h-5 bg-[#333] rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
-                    <p className="text-slate-200 font-medium">OAuth 2.0</p>
-                    <p className="text-slate-400">Secure Authentication</p>
+                    <p className="text-gray-200 font-medium">OAuth 2.0</p>
+                    <p className="text-gray-400">Secure Authentication</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-5 h-5 bg-slate-700/60 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <svg className="w-2.5 h-2.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-5 h-5 bg-[#333] rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </div>
-                    <p className="text-slate-200 font-medium">Read-Only Access</p>
-                    <p className="text-slate-400">No Store Changes</p>
+                    <p className="text-gray-200 font-medium">Read-Only Access</p>
+                    <p className="text-gray-400">No Store Changes</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-5 h-5 bg-slate-700/60 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <svg className="w-2.5 h-2.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-5 h-5 bg-[#333] rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     </div>
-                    <p className="text-slate-200 font-medium">SOC 2 Compliant</p>
-                    <p className="text-slate-400">Enterprise Security</p>
+                    <p className="text-gray-200 font-medium">SOC 2 Compliant</p>
+                    <p className="text-gray-400">Enterprise Security</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-3">
+              <div className="bg-[#0f0f0f] border border-[#333] rounded-xl p-3">
                 <h4 className="text-xs font-semibold text-white mb-2 flex items-center gap-2">
-                  <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   Connection Process
                 </h4>
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-5 h-5 bg-slate-700/60 border border-slate-600/50 rounded-full flex items-center justify-center text-slate-300 font-bold text-xs">1</div>
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <div className="w-5 h-5 bg-[#333] border border-[#444] rounded-full flex items-center justify-center text-gray-300 font-bold text-xs">1</div>
                     <span>Secure redirect to Shopify for authorization</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-5 h-5 bg-slate-700/60 border border-slate-600/50 rounded-full flex items-center justify-center text-slate-300 font-bold text-xs">2</div>
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <div className="w-5 h-5 bg-[#333] border border-[#444] rounded-full flex items-center justify-center text-gray-300 font-bold text-xs">2</div>
                     <span>Read-only permissions granted (no store modifications)</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-5 h-5 bg-slate-700/60 border border-slate-600/50 rounded-full flex items-center justify-center text-slate-300 font-bold text-xs">3</div>
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <div className="w-5 h-5 bg-[#333] border border-[#444] rounded-full flex items-center justify-center text-gray-300 font-bold text-xs">3</div>
                     <span>Instant data sync and analytics activation</span>
                   </div>
                 </div>
@@ -2768,14 +2768,14 @@ export default function SettingsPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShopifyConnectionDialog(prev => ({ ...prev, open: false }))}
-                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
+                className="flex-1 border-[#333] bg-[#0f0f0f] text-gray-300 hover:bg-[#1a1a1a] hover:text-white hover:border-[#444] h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
                 disabled={isConnectingShopify}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 hover:from-slate-500 hover:via-slate-400 hover:to-slate-500 text-white font-bold h-12 rounded-xl shadow-xl hover:shadow-slate-500/25 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
+                className="flex-1 bg-gradient-to-r from-[#333] via-[#444] to-[#333] hover:from-[#444] hover:via-[#555] hover:to-[#444] text-white font-bold h-12 rounded-xl shadow-xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
                 disabled={isConnectingShopify || !shopifyStoreUrl.trim()}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -2803,8 +2803,8 @@ export default function SettingsPage() {
         open={disconnectDialog.open} 
         onOpenChange={(open) => !open && setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
       >
-        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 text-white shadow-2xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-700/10 via-slate-600/10 to-slate-700/10"></div>
+        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-[#1a1a1a] via-[#0f0f0f] to-[#1a1a1a] border border-[#333] text-white shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#333]/10 via-[#444]/10 to-[#333]/10"></div>
           
           <DialogHeader className="text-center pb-6 relative z-10">
             <div className="mx-auto mb-4 relative">
@@ -2860,16 +2860,16 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-slate-800/60 via-slate-700/60 to-slate-800/60 border border-slate-600/50 rounded-xl p-4">
+            <div className="bg-gradient-to-r from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-xl p-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-slate-700/60 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-[#333] rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h4 className="text-slate-200 font-semibold">Good News: Data Can Be Restored</h4>
+                <h4 className="text-gray-200 font-semibold">Good News: Data Can Be Restored</h4>
               </div>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-gray-300 text-sm leading-relaxed">
                 You can reconnect your {disconnectDialog.platform} account anytime to restore data sync. 
                 Historical data will be re-imported automatically upon reconnection.
               </p>
@@ -2879,7 +2879,7 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 onClick={() => setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
-                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
+                className="flex-1 border-[#333] bg-[#0f0f0f] text-gray-300 hover:bg-[#1a1a1a] hover:text-white hover:border-[#444] h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
               >
                 Cancel - Keep Data Safe
               </Button>
