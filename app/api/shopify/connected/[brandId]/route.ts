@@ -17,7 +17,7 @@ export async function POST(
     // Check for internal server call (from callback) vs external user call
     const { userId } = auth()
     const internalCall = request.headers.get('x-internal-call') === 'true'
-
+    
     if (!userId && !internalCall) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -101,11 +101,25 @@ export async function POST(
                 subtotal_price: parseFloat(order.subtotal_price),
                 total_tax: parseFloat(order.total_tax),
                 total_discounts: parseFloat(order.total_discounts || 0),
-                total_line_items_price: parseFloat(order.total_line_items_price),
+                // REMOVED: total_line_items_price field (doesn't exist in schema)
                 fulfillment_status: order.fulfillment_status,
                 financial_status: order.financial_status,
                 currency: order.currency,
-                raw_data: order
+                customer_id: order.customer?.id,
+                customer_first_name: order.customer?.first_name,
+                customer_last_name: order.customer?.last_name,
+                line_items: order.line_items,
+                shipping_lines: order.shipping_lines,
+                discount_codes: order.discount_codes,
+                tags: order.tags,
+                note: order.note,
+                browser_ip: order.browser_ip,
+                gateway: order.gateway,
+                processed_at: order.processed_at,
+                closed_at: order.closed_at,
+                line_items_count: order.line_items?.length || 0,
+                bulk_imported: true,
+                last_synced_at: new Date().toISOString()
               })),
               { onConflict: 'order_number' }
             )
@@ -156,7 +170,13 @@ export async function POST(
                 orders_count: customer.orders_count || 0,
                 total_spent: parseFloat(customer.total_spent || 0),
                 tags: customer.tags,
-                raw_data: customer
+                state: customer.state,
+                currency: customer.currency,
+                accepts_marketing: customer.accepts_marketing || false,
+                verified_email: customer.verified_email || false,
+                tax_exempt: customer.tax_exempt || false,
+                bulk_imported: true,
+                last_synced_at: new Date().toISOString()
               })),
               { onConflict: 'customer_id' }
             )
@@ -200,6 +220,7 @@ export async function POST(
                 connection_id: connectionId,
                 product_id: product.id.toString(),
                 title: product.title,
+                body_html: product.body_html,
                 handle: product.handle,
                 product_type: product.product_type,
                 vendor: product.vendor,
@@ -207,8 +228,13 @@ export async function POST(
                 created_at: product.created_at,
                 updated_at: product.updated_at,
                 published_at: product.published_at,
+                published_scope: product.published_scope,
+                template_suffix: product.template_suffix,
                 tags: product.tags,
-                raw_data: product
+                options: product.options,
+                images: product.images,
+                bulk_imported: true,
+                synced_at: new Date().toISOString()
               })),
               { onConflict: 'product_id' }
             )
