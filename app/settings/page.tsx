@@ -1303,39 +1303,26 @@ export default function SettingsPage() {
       
       if (!response.ok) {
         const responseData = await response.json()
-        if (response.status === 409) {
-          // Got 409 error, automatically forcing delete
-          // Temporarily auto-force delete to bypass dialog issues
-          const forceDelete = true // confirm(
-          //   `There are still related records for this ${platform} connection. ` +
-          //   `Would you like to force delete it? This may result in orphaned data.`
-          // )
+        if (response.status === 409 && responseData.silent) {
+          // Expected 409 - platform has related data, auto-force delete silently
+          const forceResponse = await fetch('/api/disconnect-platform/force', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brandId, platformType: platform }),
+          })
           
-          if (forceDelete) {
-            // Calling force delete API
-            // Use the force delete API endpoint instead of direct database access
-            const forceResponse = await fetch('/api/disconnect-platform/force', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ brandId, platformType: platform }),
-            })
-            // Force delete response logged
-            
-            if (!forceResponse.ok) {
-              const forceData = await forceResponse.json()
-              throw new Error(`Force delete failed: ${forceData.error}`)
-            }
-            
-            await loadConnections()
-            refreshBrands()
-            
-            // Dispatch custom event to notify other components
-            window.dispatchEvent(new CustomEvent('brandDataRefreshed'))
-            
-            toast.success(`${platform} disconnected successfully (forced)`)
-          } else {
-            toast.error(`Disconnect cancelled. Please delete related data first.`)
+          if (!forceResponse.ok) {
+            const forceData = await forceResponse.json()
+            throw new Error(`Force delete failed: ${forceData.error}`)
           }
+          
+          await loadConnections()
+          refreshBrands()
+          
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new CustomEvent('brandDataRefreshed'))
+          
+          toast.success(`${platform} disconnected successfully`)
         } else {
           throw new Error(responseData.error || 'Failed to disconnect platform')
         }
@@ -1349,7 +1336,6 @@ export default function SettingsPage() {
         toast.success(`${platform} disconnected successfully`)
       }
     } catch (error) {
-      console.error(`Error disconnecting ${platform}:`, error)
       toast.error(`Failed to disconnect ${platform}: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setDisconnectingPlatforms(prev => ({ ...prev, [key]: false }))
@@ -2816,13 +2802,13 @@ export default function SettingsPage() {
             <DialogTitle className="text-2xl font-bold text-white mb-2">
               Disconnect {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'}
             </DialogTitle>
-            <DialogDescription className="text-slate-300 text-base">
+            <DialogDescription className="text-gray-300 text-base">
               This will permanently remove all {disconnectDialog.platform} data from "{disconnectDialog.brandName}"
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6 relative z-10">
-            <div className="bg-gradient-to-br from-slate-800/80 via-slate-800/80 to-slate-700/80 border border-slate-600/50 rounded-2xl p-6 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-6 backdrop-blur-sm">
               <p className="text-white font-bold mb-4 text-lg">
                 Disconnecting {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'} from "{disconnectDialog.brandName}" will:
               </p>

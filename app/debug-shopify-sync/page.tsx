@@ -8,8 +8,7 @@ function DebugShopifySyncContent() {
   const searchParams = useSearchParams()
   const brandId = searchParams.get('brandId')
 
-  console.log(`🔍 [DEBUG-PAGE] Shopify Sync Debug page loaded`)
-  console.log(`🔍 [DEBUG-PAGE] Brand ID: ${brandId || 'ALL'}`)
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">
