@@ -7,12 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import {
   Brain,
   MessageCircle,
@@ -34,7 +29,6 @@ import {
   PieChart,
   Building2,
   Store,
-  ChevronDown,
   Send,
   FileText,
   UserPlus,
@@ -55,13 +49,7 @@ interface ChatMessage {
   isLoading?: boolean
 }
 
-interface AIMode {
-  id: 'brand' | 'agency'
-  title: string
-  description: string
-  icon: React.ReactNode
-  color: string
-}
+
 
 interface PromptSuggestion {
   id: string
@@ -72,77 +60,13 @@ interface PromptSuggestion {
   mode?: 'brand' | 'agency' | 'both'
 }
 
-interface MarketingGoal {
-  id: string
-  title: string
-  description: string
-  icon: React.ReactNode
-  color: string
-}
-
-const AI_MODES: AIMode[] = [
-  {
-    id: 'agency',
-    title: 'Agency Assistant',
-    description: 'Overall agency management and multi-brand insights',
-    icon: <Building2 className="w-4 h-4" />,
-    color: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-  },
-  {
-    id: 'brand',
-    title: 'Brand Assistant',
-    description: 'Focus on specific brand optimization and insights',
-    icon: <Store className="w-4 h-4" />,
-    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-  }
-]
 
 
 
-const MARKETING_GOALS: MarketingGoal[] = [
-  {
-    id: 'general',
-    title: 'General Optimization',
-    description: 'Overall campaign performance and ROI improvement',
-    icon: <TrendingUp className="w-4 h-4" />,
-    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-  },
-  {
-    id: 'holiday',
-    title: 'Holiday Campaign',
-    description: 'Black Friday, Christmas, seasonal promotions',
-    icon: <Sparkles className="w-4 h-4" />,
-    color: 'bg-red-500/10 text-red-400 border-red-500/30'
-  },
-  {
-    id: 'lead-gen',
-    title: 'Lead Generation',
-    description: 'Focus on capturing and qualifying leads',
-    icon: <Target className="w-4 h-4" />,
-    color: 'bg-green-500/10 text-green-400 border-green-500/30'
-  },
-  {
-    id: 'product-launch',
-    title: 'Product Launch',
-    description: 'Introducing new products or services',
-    icon: <Zap className="w-4 h-4" />,
-    color: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-  },
-  {
-    id: 'brand-awareness',
-    title: 'Brand Awareness',
-    description: 'Building brand recognition and reach',
-    icon: <Eye className="w-4 h-4" />,
-    color: 'bg-orange-500/10 text-orange-400 border-orange-500/30'
-  },
-  {
-    id: 'retention',
-    title: 'Customer Retention',
-    description: 'Retargeting and customer lifetime value',
-    icon: <Settings className="w-4 h-4" />,
-    color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
-  }
-]
+
+
+
+
 
 const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
   // Seasonal & Holiday Marketing (NEW)
@@ -497,6 +421,122 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     prompt: 'Analyze my conversion data patterns and tracking setup to identify potential issues or optimization opportunities in my measurement and attribution.',
     category: 'troubleshooting',
     mode: 'brand'
+  },
+
+  // Marketing Focus Quick Actions
+  {
+    id: 'focus-general-optimization',
+    icon: <TrendingUp className="w-4 h-4" />,
+    title: 'Focus on General Optimization',
+    prompt: 'Help me with general campaign performance and ROI improvement. Analyze my overall marketing effectiveness and provide optimization recommendations.',
+    category: 'focus',
+    mode: 'both'
+  },
+  {
+    id: 'focus-holiday-campaign',
+    icon: <Sparkles className="w-4 h-4" />,
+    title: 'Focus on Holiday Campaign',
+    prompt: 'Help me plan and optimize holiday campaigns including Black Friday, Christmas, and seasonal promotions. Provide timing, creative, and budget recommendations.',
+    category: 'focus',
+    mode: 'both'
+  },
+  {
+    id: 'focus-lead-generation',
+    icon: <Target className="w-4 h-4" />,
+    title: 'Focus on Lead Generation',
+    prompt: 'Focus on capturing and qualifying leads. Analyze my lead generation funnels and provide recommendations to improve lead quality, reduce cost per lead, and increase conversion rates.',
+    category: 'focus',
+    mode: 'both'
+  },
+  {
+    id: 'focus-product-launch',
+    icon: <Zap className="w-4 h-4" />,
+    title: 'Focus on Product Launch',
+    prompt: 'Help me launch new products or services. Provide campaign strategies, creative concepts, and audience targeting recommendations for product launches.',
+    category: 'focus',
+    mode: 'both'
+  },
+  {
+    id: 'focus-brand-awareness',
+    icon: <Eye className="w-4 h-4" />,
+    title: 'Focus on Brand Awareness',
+    prompt: 'Focus on building brand recognition and reach. Help me create campaigns that increase brand visibility and engagement across my target audience.',
+    category: 'focus',
+    mode: 'both'
+  },
+  {
+    id: 'focus-customer-retention',
+    icon: <Settings className="w-4 h-4" />,
+    title: 'Focus on Customer Retention',
+    prompt: 'Focus on retargeting and customer lifetime value. Help me create strategies to retain existing customers and increase their lifetime value.',
+    category: 'focus',
+    mode: 'both'
+  },
+
+  // Additional Useful Quick Actions
+  {
+    id: 'quick-analysis',
+    icon: <BarChart3 className="w-4 h-4" />,
+    title: 'Quick Performance Analysis',
+    prompt: 'Give me a quick overview of my current campaign performance. Highlight the most important metrics, trends, and immediate action items.',
+    category: 'analysis',
+    mode: 'both'
+  },
+  {
+    id: 'creative-review',
+    icon: <Sparkles className="w-4 h-4" />,
+    title: 'Review My Creative Assets',
+    prompt: 'Analyze my ad creative performance. Identify which creatives are working well and which ones need to be refreshed or optimized.',
+    category: 'creative',
+    mode: 'both'
+  },
+  {
+    id: 'budget-recommendation',
+    icon: <DollarSign className="w-4 h-4" />,
+    title: 'Budget Allocation Advice',
+    prompt: 'Review my current budget distribution and provide recommendations for optimal budget reallocation to maximize ROI.',
+    category: 'budget',
+    mode: 'both'
+  },
+  {
+    id: 'competitor-insights',
+    icon: <TrendingUp className="w-4 h-4" />,
+    title: 'Competitor Analysis',
+    prompt: 'Based on my industry and performance data, provide insights on competitor strategies and opportunities for competitive advantage.',
+    category: 'analysis',
+    mode: 'both'
+  },
+  {
+    id: 'automation-opportunities',
+    icon: <Activity className="w-4 h-4" />,
+    title: 'Automation Recommendations',
+    prompt: 'Identify opportunities to automate my marketing workflows. Suggest tools, processes, and strategies to improve efficiency and scale.',
+    category: 'optimization',
+    mode: 'both'
+  },
+  {
+    id: 'market-trends',
+    icon: <TrendingUp className="w-4 h-4" />,
+    title: 'Current Market Trends',
+    prompt: 'Analyze current market trends in my industry and provide recommendations on how to adapt my marketing strategy accordingly.',
+    category: 'analysis',
+    mode: 'both'
+  },
+  {
+    id: 'conversion-optimization',
+    icon: <Target className="w-4 h-4" />,
+    title: 'Optimize Conversion Funnel',
+    prompt: 'Review my conversion funnel from awareness to purchase. Identify bottlenecks and provide specific recommendations to improve conversion rates.',
+    category: 'optimization',
+    mode: 'both'
+  },
+  {
+    id: 'content-strategy',
+    icon: <FileText className="w-4 h-4" />,
+    title: 'Content Strategy Review',
+    prompt: 'Analyze my content performance and provide recommendations for a comprehensive content marketing strategy.',
+    category: 'creative',
+    mode: 'both'
   }
 ]
 
@@ -517,44 +557,37 @@ export default function AIMarketingConsultant(
   const [isInitialized, setIsInitialized] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [selectedGoal, setSelectedGoal] = useState<string>('general')
-  const [selectedMode, setSelectedMode] = useState<'brand' | 'agency'>('agency')
+
   const [remainingUses, setRemainingUses] = useState<number | null>(null)
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
 
   // Initialize with welcome message
   useEffect(() => {
-    if ((selectedMode === 'brand' && !selectedBrandId) || isInitialized) return
+    if (isInitialized) return
 
-    const selectedGoalData = MARKETING_GOALS.find(g => g.id === selectedGoal)
-    const selectedModeData = AI_MODES.find(m => m.id === selectedMode)
-    
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: selectedMode === 'agency' 
-        ? `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your entire agency performance across ANY time period - just ask naturally! Try questions like "show me last Christmas performance" or "compare Q1 vs Q2" or "analyze my worst campaigns from last year". Choose a question below or type your own!`
-        : `👋 Hi ${user?.firstName || 'there'}! I'm your ${selectedModeData?.title} focused on ${selectedGoalData?.title.toLowerCase() || 'general optimization'}. I can analyze your campaign data across ANY time period - just ask naturally! Try questions like "show me last 6 months" or "how did Black Friday perform?" or "analyze my best campaigns from 2023". Choose a question below or type your own!`,
+      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant that works with both individual brands and your entire agency. I can analyze performance across ANY time period - just ask naturally!
+
+For agency-wide questions: "show me last Christmas performance", "compare Q1 vs Q2", "analyze my worst campaigns from last year"
+For brand-specific questions: Select a brand from the sidebar first, then ask about that brand's performance
+
+Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
     setMessages([welcomeMessage])
     setIsInitialized(true)
-  }, [selectedBrandId, user, isInitialized, selectedGoal, selectedMode])
+  }, [user, isInitialized])
 
-  // Reset conversation when goal changes
-  useEffect(() => {
-    if (isInitialized) {
-      setMessages([])
-      setIsInitialized(false)
-    }
-  }, [selectedGoal])
+
 
   // Check initial usage status on component mount
   useEffect(() => {
     const checkInitialUsage = async () => {
-      if (!user?.id || (selectedMode === 'brand' && !selectedBrandId)) return
+      if (!user?.id) return
       
       try {
         const response = await fetch('/api/ai/marketing-consultant', {
@@ -562,8 +595,8 @@ export default function AIMarketingConsultant(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: '',
-            mode: selectedMode,
-            goal: selectedGoal,
+            mode: selectedBrandId ? 'brand' : 'agency',
+            goal: 'general', // Default to general since we removed the focus selector
             brandId: selectedBrandId,
             checkUsageOnly: true
           })
@@ -582,24 +615,20 @@ export default function AIMarketingConsultant(
     }
     
     checkInitialUsage()
-  }, [user?.id, selectedBrandId, selectedMode])
+  }, [user?.id, selectedBrandId])
 
   // Listen for refresh events to reset conversation with fresh data
   useEffect(() => {
-    if (selectedMode === 'brand' && !selectedBrandId) return
-
     let refreshTimeout: NodeJS.Timeout
 
     const handleRefreshEvent = (event: CustomEvent) => {
       const { brandId, source } = event.detail
-      
-      // For brand mode, only refresh if it's for the current brand
-      // For agency mode, refresh on any brand update
-      const shouldRefresh = selectedMode === 'agency' || 
-                           (selectedMode === 'brand' && brandId === selectedBrandId)
-      
+
+      // Refresh if it's for the selected brand or for agency-wide updates
+      const shouldRefresh = !selectedBrandId || brandId === selectedBrandId
+
       if (shouldRefresh && source !== 'AIMarketingConsultant') {
-        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source, mode: selectedMode })
+        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source, brandId: selectedBrandId })
         
         // Clear existing conversation and reset
         clearTimeout(refreshTimeout)
@@ -611,13 +640,12 @@ export default function AIMarketingConsultant(
           setIsLimitReached(false)
           
           // Re-initialize with fresh welcome message
-          const selectedGoalData = MARKETING_GOALS.find(g => g.id === selectedGoal)
           const welcomeMessage: ChatMessage = {
             id: 'welcome-refresh',
             type: 'system',
-            content: selectedMode === 'agency'
-              ? `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`
-              : `🔄 Data updated! I'm now analyzing your latest campaign performance. I can provide fresh insights based on your most recent ${selectedGoalData?.title.toLowerCase() || 'general optimization'} data. Ask me anything about your current performance!`,
+            content: selectedBrandId
+              ? `🔄 Data updated! I'm now analyzing your latest campaign performance for ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'}. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`
+              : `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`,
             timestamp: new Date()
           }
           
@@ -640,7 +668,7 @@ export default function AIMarketingConsultant(
       window.removeEventListener('newDayDetected', handleRefreshEvent as EventListener)
       window.removeEventListener('force-meta-refresh', handleRefreshEvent as EventListener)
     }
-  }, [selectedBrandId, selectedGoal, selectedMode, user])
+  }, [selectedBrandId, user, brands])
 
   // Auto-scroll to bottom of chat container when new messages arrive
   useEffect(() => {
@@ -662,7 +690,7 @@ export default function AIMarketingConsultant(
   // Check initial usage status when component mounts
   useEffect(() => {
     const checkInitialUsage = async () => {
-      if (selectedMode === 'brand' && !selectedBrandId) return
+
       
       try {
         const response = await fetch('/api/ai/marketing-consultant', {
@@ -671,10 +699,10 @@ export default function AIMarketingConsultant(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            brandId: selectedMode === 'brand' ? selectedBrandId : null,
+            brandId: selectedBrandId,
             prompt: '', // Empty prompt to just check usage
-            marketingGoal: selectedGoal,
-            mode: selectedMode,
+            marketingGoal: 'general', // Default to general since we removed the focus selector
+            mode: selectedBrandId ? 'brand' : 'agency',
             checkUsageOnly: true, // Flag to indicate we only want usage info
             userContext: {
               name: user?.firstName || 'there'
@@ -698,11 +726,11 @@ export default function AIMarketingConsultant(
     }
 
     checkInitialUsage()
-  }, [selectedMode, selectedBrandId, selectedGoal, user?.firstName])
+  }, [selectedBrandId, user?.firstName])
 
-  const filteredPrompts = selectedCategory === 'all' 
-    ? PROMPT_SUGGESTIONS.filter(p => p.mode === selectedMode || p.mode === 'both')
-    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory && (p.mode === selectedMode || p.mode === 'both'))
+  const filteredPrompts = selectedCategory === 'all'
+    ? PROMPT_SUGGESTIONS.filter(p => p.mode === 'brand' || p.mode === 'agency' || p.mode === 'both')
+    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory && (p.mode === 'brand' || p.mode === 'agency' || p.mode === 'both'))
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
     if (isLoading || isLimitReached) return
@@ -719,7 +747,7 @@ export default function AIMarketingConsultant(
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...',
+      content: selectedBrandId ? 'Analyzing your campaign data...' : 'Analyzing your agency data...',
       timestamp: new Date(),
       isLoading: true
     }
@@ -764,7 +792,7 @@ export default function AIMarketingConsultant(
     if (isSimpleResponse) {
       loadingMessage = 'Thinking...'
     } else if (isAnalysisRequest) {
-      loadingMessage = selectedMode === 'agency' ? 'Analyzing your agency data...' : 'Analyzing your campaign data...'
+      loadingMessage = selectedBrandId ? 'Analyzing your campaign data...' : 'Analyzing your agency data...'
     } else {
       loadingMessage = 'Thinking...'
     }
@@ -808,10 +836,10 @@ export default function AIMarketingConsultant(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          brandId: selectedMode === 'brand' ? selectedBrandId : null,
+          brandId: selectedBrandId,
           prompt,
-          marketingGoal: selectedGoal,
-          mode: selectedMode,
+          marketingGoal: 'general', // Default to general since we removed the focus selector
+          mode: selectedBrandId ? 'brand' : 'agency',
           userContext: {
             name: user?.firstName || 'there'
           },
@@ -894,17 +922,20 @@ export default function AIMarketingConsultant(
 
   const categories = [
     { id: 'all', label: 'All', count: filteredPrompts.length },
-    { id: 'seasonal', label: 'Seasonal', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'seasonal' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'performance', label: 'Performance', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'performance' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'optimization', label: 'Optimization', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'optimization' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'audience', label: 'Audience', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'audience' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'creative', label: 'Creative', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'creative' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'budget', label: 'Budget', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'budget' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'reports', label: 'Reports', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'reports' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'leadgen', label: 'Lead Gen', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'leadgen' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'outreach', label: 'Outreach', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'outreach' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'agency', label: 'Agency', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'agency' && (p.mode === selectedMode || p.mode === 'both')).length },
-    { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting' && (p.mode === selectedMode || p.mode === 'both')).length }
+    { id: 'focus', label: 'Focus Areas', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'focus').length },
+    { id: 'analysis', label: 'Quick Analysis', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'analysis').length },
+    { id: 'performance', label: 'Performance', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'performance').length },
+    { id: 'optimization', label: 'Optimization', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'optimization').length },
+    { id: 'creative', label: 'Creative', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'creative').length },
+    { id: 'audience', label: 'Audience', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'audience').length },
+    { id: 'budget', label: 'Budget', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'budget').length },
+    { id: 'reports', label: 'Reports', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'reports').length },
+    { id: 'leadgen', label: 'Lead Gen', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'leadgen').length },
+    { id: 'outreach', label: 'Outreach', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'outreach').length },
+    { id: 'seasonal', label: 'Seasonal', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'seasonal').length },
+    { id: 'email-sms', label: 'Email/SMS', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'email-sms').length },
+    { id: 'agency', label: 'Agency', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'agency').length },
+    { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting').length }
   ].filter(cat => cat.count > 0)
 
   // Remove loading skeleton check - always show content
@@ -978,7 +1009,7 @@ export default function AIMarketingConsultant(
   //   )
   // }
 
-  if (selectedMode === 'brand' && !selectedBrandId) {
+  if (!selectedBrandId && brands.length > 0) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-2xl max-w-2xl w-full">
@@ -1068,72 +1099,7 @@ export default function AIMarketingConsultant(
               )}
             </div>
             
-            {/* Mode Selector */}
-            <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-inner">
-              {AI_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={selectedMode === mode.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedMode(mode.id)
-                    setMessages([])
-                    setIsInitialized(false)
-                    setSelectedCategory('all')
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-300 flex-1 min-w-0 ${
-                    selectedMode === mode.id
-                      ? "bg-gradient-to-r from-white/10 to-gray-200/20 text-white border border-white/20 shadow-lg"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {mode.icon}
-                  <span className="truncate">{mode.title}</span>
-                </Button>
-              ))}
-            </div>
 
-            {/* Focus Area Dropdown - Bigger */}
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-gray-400 font-medium">Marketing Focus:</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-white/5 hover:border-white/10 rounded-lg h-12 px-4 justify-start"
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                        {MARKETING_GOALS.find(g => g.id === selectedGoal)?.icon}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <span className="font-medium text-white">{MARKETING_GOALS.find(g => g.id === selectedGoal)?.title}</span>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72 bg-[#0a0a0a] border-[#1a1a1a] rounded-xl shadow-2xl">
-                  {MARKETING_GOALS.map((goal) => (
-                    <DropdownMenuItem
-                      key={goal.id}
-                      onClick={() => setSelectedGoal(goal.id)}
-                      className="focus:bg-white/5 cursor-pointer p-4 rounded-lg m-1"
-                    >
-                      <div className="flex items-start gap-3 w-full">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                          {goal.icon}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-white">{goal.title}</div>
-                          <div className="text-xs text-gray-400 mt-1 leading-relaxed">{goal.description}</div>
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
 
 
           </div>
@@ -1161,7 +1127,22 @@ export default function AIMarketingConsultant(
               ))}
             </div>
           </div>
-          
+
+          {/* Brand Selector - Show when needed */}
+          {!selectedBrandId && brands.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-400 mb-3 font-semibold">Select Brand for Brand-Specific Questions:</p>
+              <div className="max-w-full">
+                <BrandSelector
+                  onSelect={setSelectedBrandId}
+                  selectedBrandId={selectedBrandId}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-2">Leave unselected for agency-wide questions</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto">
             {filteredPrompts.slice(0, 12).map((prompt) => (
               <Button
@@ -1249,9 +1230,9 @@ export default function AIMarketingConsultant(
                       handleCustomInput(inputMessage)
                     }
                   }}
-                  placeholder={selectedMode === 'agency' 
-                    ? "Ask me anything about your agency performance, brands, or growth strategies..." 
-                    : "Ask me anything about your marketing campaigns..."}
+                  placeholder={selectedBrandId
+                    ? `Ask me anything about ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'}'s marketing campaigns...`
+                    : "Ask me anything about your agency performance, brands, or growth strategies..."}
                   disabled={isLoading || isLimitReached}
                   className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/30 focus:bg-white/5 transition-all duration-300 text-sm shadow-inner"
                 />
