@@ -335,46 +335,68 @@ export class ShopifyGraphQLService {
     accessToken: string,
     mutation: string
   ): Promise<BulkOperationResult> {
-    console.log(`[GraphQL] Executing bulk operation for shop: ${shop}`)
+    const graphqlId = `graphql_${Date.now()}`
+    
+    console.log(`🔗 [GRAPHQL-${graphqlId}] ===== EXECUTING BULK OPERATION =====`)
+    console.log(`🔗 [GRAPHQL-${graphqlId}] Shop: ${shop}`)
+    console.log(`🔗 [GRAPHQL-${graphqlId}] Access Token: ${accessToken ? 'PRESENT' : 'MISSING'}`)
+    console.log(`🔗 [GRAPHQL-${graphqlId}] Token Length: ${accessToken?.length || 0} chars`)
+    console.log(`🔗 [GRAPHQL-${graphqlId}] Mutation Length: ${mutation.length} chars`)
 
-    const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+    const requestUrl = `https://${shop}/admin/api/2024-01/graphql.json`
+    console.log(`📡 [GRAPHQL-${graphqlId}] Making request to: ${requestUrl}`)
+
+    const requestBody = JSON.stringify({ query: mutation })
+    console.log(`📡 [GRAPHQL-${graphqlId}] Request body size: ${requestBody.length} chars`)
+
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'X-Shopify-Access-Token': accessToken,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ query: mutation })
+      body: requestBody
     })
 
-    console.log(`[GraphQL] Bulk operation request status: ${response.status}`)
+    console.log(`📡 [GRAPHQL-${graphqlId}] Response received - Status: ${response.status}`)
+    console.log(`📡 [GRAPHQL-${graphqlId}] Response headers:`, Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`[GraphQL] Request failed:`, errorText)
+      console.error(`❌ [GRAPHQL-${graphqlId}] HTTP request failed:`)
+      console.error(`❌ [GRAPHQL-${graphqlId}] Status: ${response.status}`)
+      console.error(`❌ [GRAPHQL-${graphqlId}] Status Text: ${response.statusText}`)
+      console.error(`❌ [GRAPHQL-${graphqlId}] Error Response:`, errorText)
       throw new Error(`GraphQL request failed: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
-    console.log(`[GraphQL] Response received:`, JSON.stringify(data, null, 2))
+    console.log(`📄 [GRAPHQL-${graphqlId}] Response data received:`)
+    console.log(`📄 [GRAPHQL-${graphqlId}] Response size: ${JSON.stringify(data).length} chars`)
+    console.log(`📄 [GRAPHQL-${graphqlId}] Full response:`, JSON.stringify(data, null, 2))
 
     if (data.errors) {
-      console.error(`[GraphQL] GraphQL errors:`, data.errors)
+      console.error(`❌ [GRAPHQL-${graphqlId}] GraphQL errors found:`, data.errors)
       throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`)
     }
 
     if (data.data?.bulkOperationRunQuery?.userErrors?.length > 0) {
-      console.error(`[GraphQL] Bulk operation user errors:`, data.data.bulkOperationRunQuery.userErrors)
+      console.error(`❌ [GRAPHQL-${graphqlId}] Bulk operation user errors:`, data.data.bulkOperationRunQuery.userErrors)
       throw new Error(`Bulk operation errors: ${JSON.stringify(data.data.bulkOperationRunQuery.userErrors)}`)
     }
 
     const bulkOp = data.data?.bulkOperationRunQuery?.bulkOperation
 
     if (!bulkOp) {
-      console.error(`[GraphQL] No bulk operation returned:`, data)
+      console.error(`❌ [GRAPHQL-${graphqlId}] No bulk operation returned in response:`)
+      console.error(`❌ [GRAPHQL-${graphqlId}] Full data structure:`, JSON.stringify(data, null, 2))
       throw new Error('No bulk operation returned from GraphQL')
     }
 
-    console.log(`[GraphQL] ✅ Bulk operation created: ${bulkOp.id} (${bulkOp.status})`)
+    console.log(`✅ [GRAPHQL-${graphqlId}] Bulk operation created successfully:`)
+    console.log(`📋 [GRAPHQL-${graphqlId}] - Operation ID: ${bulkOp.id}`)
+    console.log(`📋 [GRAPHQL-${graphqlId}] - Status: ${bulkOp.status}`)
+    console.log(`📋 [GRAPHQL-${graphqlId}] - Created At: ${bulkOp.createdAt}`)
 
     return {
       id: bulkOp.id,
@@ -523,26 +545,45 @@ export class ShopifyGraphQLService {
     brandId: string,
     connectionId: string
   ): Promise<{ ordersProcessed: number; lineItemsProcessed: number; customersProcessed: number; productsProcessed: number }> {
-    console.log(`[GraphQL] 🔄 Processing bulk results for ${entity} from ${downloadUrl}`)
+    const processId = `process_${entity}_${Date.now()}`
+    
+    console.log(`📥 [PROCESS-${processId}] ===== PROCESSING BULK RESULTS =====`)
+    console.log(`📥 [PROCESS-${processId}] Entity: ${entity.toUpperCase()}`)
+    console.log(`📥 [PROCESS-${processId}] Brand ID: ${brandId}`)
+    console.log(`📥 [PROCESS-${processId}] Connection ID: ${connectionId}`)
+    console.log(`📥 [PROCESS-${processId}] Download URL: ${downloadUrl}`)
 
     // Download the JSONL file
+    console.log(`⬇️ [PROCESS-${processId}] Downloading JSONL file...`)
+    const downloadStart = Date.now()
     const response = await fetch(downloadUrl)
+    const downloadTime = Date.now() - downloadStart
+    
+    console.log(`📡 [PROCESS-${processId}] Download response status: ${response.status}`)
+    console.log(`⏱️ [PROCESS-${processId}] Download time: ${downloadTime}ms`)
+    
     if (!response.ok) {
-      console.error(`[GraphQL] ❌ Failed to download bulk results: ${response.status}`)
+      console.error(`❌ [PROCESS-${processId}] Failed to download bulk results:`)
+      console.error(`❌ [PROCESS-${processId}] Status: ${response.status}`)
+      console.error(`❌ [PROCESS-${processId}] Status Text: ${response.statusText}`)
       throw new Error(`Failed to download bulk results: ${response.status}`)
     }
 
     const jsonlData = await response.text()
-    console.log(`[GraphQL] 📄 Downloaded ${jsonlData.length} characters of data`)
+    console.log(`📄 [PROCESS-${processId}] Downloaded ${jsonlData.length} characters of JSONL data`)
 
     const lines = jsonlData.trim().split('\n').filter(line => line.trim())
-    console.log(`[GraphQL] 📊 Processing ${lines.length} lines of ${entity} data`)
+    console.log(`📊 [PROCESS-${processId}] Found ${lines.length} data lines to process`)
 
     if (lines.length === 0) {
-      console.warn(`[GraphQL] ⚠️ No data lines found in bulk operation results`)
+      console.warn(`⚠️ [PROCESS-${processId}] WARNING: No data lines found in bulk operation results`)
+      console.warn(`⚠️ [PROCESS-${processId}] Raw data sample: ${jsonlData.substring(0, 500)}...`)
     } else {
       // Show sample of first few lines for debugging
-      console.log(`[GraphQL] 🔍 Sample data:`, lines.slice(0, 3).map(line => line.substring(0, 200) + '...'))
+      console.log(`🔍 [PROCESS-${processId}] Sample data lines:`)
+      lines.slice(0, 3).forEach((line, idx) => {
+        console.log(`🔍 [PROCESS-${processId}] Line ${idx + 1}: ${line.substring(0, 200)}...`)
+      })
     }
     
     let ordersProcessed = 0
@@ -550,25 +591,58 @@ export class ShopifyGraphQLService {
     let customersProcessed = 0
     let productsProcessed = 0
     
+    console.log(`💾 [PROCESS-${processId}] Initializing database connection...`)
     const supabase = createClient()
     
     // Process in batches
     const BATCH_SIZE = 100
+    const totalBatches = Math.ceil(lines.length / BATCH_SIZE)
+    console.log(`📦 [PROCESS-${processId}] Processing ${lines.length} lines in ${totalBatches} batches of ${BATCH_SIZE}`)
+    
+    const processingStart = Date.now()
+    
     for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1
       const batch = lines.slice(i, i + BATCH_SIZE)
       
-      if (entity === 'orders') {
-        const { orders, lineItems } = await this.processOrdersBatch(batch, brandId, connectionId, supabase)
-        ordersProcessed += orders
-        lineItemsProcessed += lineItems
-      } else if (entity === 'customers') {
-        const customers = await this.processCustomersBatch(batch, brandId, connectionId, supabase)
-        customersProcessed += customers
-      } else if (entity === 'products') {
-        const products = await this.processProductsBatch(batch, brandId, connectionId, supabase)
-        productsProcessed += products
+      console.log(`📦 [PROCESS-${processId}] Processing batch ${batchNum}/${totalBatches} (${batch.length} items)...`)
+      const batchStart = Date.now()
+      
+      try {
+        if (entity === 'orders') {
+          console.log(`📊 [PROCESS-${processId}] Processing orders batch ${batchNum}...`)
+          const { orders, lineItems } = await this.processOrdersBatch(batch, brandId, connectionId, supabase, processId)
+          ordersProcessed += orders
+          lineItemsProcessed += lineItems
+          console.log(`✅ [PROCESS-${processId}] Batch ${batchNum}: +${orders} orders, +${lineItems} line items`)
+        } else if (entity === 'customers') {
+          console.log(`👥 [PROCESS-${processId}] Processing customers batch ${batchNum}...`)
+          const customers = await this.processCustomersBatch(batch, brandId, connectionId, supabase, processId)
+          customersProcessed += customers
+          console.log(`✅ [PROCESS-${processId}] Batch ${batchNum}: +${customers} customers`)
+        } else if (entity === 'products') {
+          console.log(`📦 [PROCESS-${processId}] Processing products batch ${batchNum}...`)
+          const products = await this.processProductsBatch(batch, brandId, connectionId, supabase, processId)
+          productsProcessed += products
+          console.log(`✅ [PROCESS-${processId}] Batch ${batchNum}: +${products} products`)
+        }
+        
+        const batchTime = Date.now() - batchStart
+        console.log(`⏱️ [PROCESS-${processId}] Batch ${batchNum} completed in ${batchTime}ms`)
+      } catch (batchError) {
+        console.error(`❌ [PROCESS-${processId}] Batch ${batchNum} failed:`, batchError)
+        throw batchError
       }
     }
+    
+    const totalProcessingTime = Date.now() - processingStart
+    console.log(`🎉 [PROCESS-${processId}] ===== BULK PROCESSING COMPLETED =====`)
+    console.log(`📊 [PROCESS-${processId}] Final counts:`)
+    console.log(`📊 [PROCESS-${processId}] - Orders: ${ordersProcessed}`)
+    console.log(`📊 [PROCESS-${processId}] - Line Items: ${lineItemsProcessed}`)
+    console.log(`📊 [PROCESS-${processId}] - Customers: ${customersProcessed}`)
+    console.log(`📊 [PROCESS-${processId}] - Products: ${productsProcessed}`)
+    console.log(`⏱️ [PROCESS-${processId}] Total processing time: ${totalProcessingTime}ms`)
     
     return { ordersProcessed, lineItemsProcessed, customersProcessed, productsProcessed }
   }
@@ -580,7 +654,8 @@ export class ShopifyGraphQLService {
     batch: string[],
     brandId: string,
     connectionId: string,
-    supabase: any
+    supabase: any,
+    processId?: string
   ): Promise<{ orders: number; lineItems: number }> {
     const orders: any[] = []
     const lineItems: any[] = []
@@ -655,31 +730,54 @@ export class ShopifyGraphQLService {
       }
     }
     
+    const logPrefix = processId ? `[PROCESS-${processId}]` : '[BATCH-ORDERS]'
+    
     // Insert directly into production tables for immediate visibility
     if (orders.length > 0) {
+      console.log(`💾 ${logPrefix} Inserting ${orders.length} orders into shopify_orders table...`)
+      const insertStart = Date.now()
+      
       const { error: ordersError } = await supabase
         .from('shopify_orders')
         .upsert(orders, { onConflict: 'id' })
       
+      const insertTime = Date.now() - insertStart
+      
       if (ordersError) {
-        console.error('[GraphQL] Error inserting orders:', ordersError)
+        console.error(`❌ ${logPrefix} Error inserting orders:`, ordersError)
+        console.error(`❌ ${logPrefix} Orders error details:`, JSON.stringify(ordersError, null, 2))
+        console.error(`❌ ${logPrefix} Sample order data:`, JSON.stringify(orders[0], null, 2))
       } else {
-        console.log(`[GraphQL] ✅ Stored ${orders.length} orders directly in production table`)
+        console.log(`✅ ${logPrefix} Successfully stored ${orders.length} orders in production table`)
+        console.log(`⏱️ ${logPrefix} Orders insert time: ${insertTime}ms`)
       }
+    } else {
+      console.log(`⚠️ ${logPrefix} No orders to insert in this batch`)
     }
     
     if (lineItems.length > 0) {
+      console.log(`💾 ${logPrefix} Inserting ${lineItems.length} line items into shopify_line_items table...`)
+      const insertStart = Date.now()
+      
       const { error: lineItemsError } = await supabase
         .from('shopify_line_items')
         .upsert(lineItems, { onConflict: 'order_id,line_item_id' })
       
+      const insertTime = Date.now() - insertStart
+      
       if (lineItemsError) {
-        console.error('[GraphQL] Error inserting line items:', lineItemsError)
+        console.error(`❌ ${logPrefix} Error inserting line items:`, lineItemsError)
+        console.error(`❌ ${logPrefix} Line items error details:`, JSON.stringify(lineItemsError, null, 2))
+        console.error(`❌ ${logPrefix} Sample line item data:`, JSON.stringify(lineItems[0], null, 2))
       } else {
-        console.log(`[GraphQL] ✅ Stored ${lineItems.length} line items directly in production table`)
+        console.log(`✅ ${logPrefix} Successfully stored ${lineItems.length} line items in production table`)
+        console.log(`⏱️ ${logPrefix} Line items insert time: ${insertTime}ms`)
       }
+    } else {
+      console.log(`⚠️ ${logPrefix} No line items to insert in this batch`)
     }
     
+    console.log(`📊 ${logPrefix} Batch summary: ${orders.length} orders, ${lineItems.length} line items`)
     return { orders: orders.length, lineItems: lineItems.length }
   }
 
@@ -690,7 +788,8 @@ export class ShopifyGraphQLService {
     batch: string[],
     brandId: string,
     connectionId: string,
-    supabase: any
+    supabase: any,
+    processId?: string
   ): Promise<number> {
     const customers: any[] = []
     
@@ -735,18 +834,31 @@ export class ShopifyGraphQLService {
       }
     }
     
+    const logPrefix = processId ? `[PROCESS-${processId}]` : '[BATCH-CUSTOMERS]'
+    
     if (customers.length > 0) {
+      console.log(`💾 ${logPrefix} Inserting ${customers.length} customers into shopify_customers table...`)
+      const insertStart = Date.now()
+      
       const { error } = await supabase
         .from('shopify_customers')
         .upsert(customers, { onConflict: 'id' })
       
+      const insertTime = Date.now() - insertStart
+      
       if (error) {
-        console.error('[GraphQL] Error inserting customers:', error)
+        console.error(`❌ ${logPrefix} Error inserting customers:`, error)
+        console.error(`❌ ${logPrefix} Customers error details:`, JSON.stringify(error, null, 2))
+        console.error(`❌ ${logPrefix} Sample customer data:`, JSON.stringify(customers[0], null, 2))
       } else {
-        console.log(`[GraphQL] ✅ Stored ${customers.length} customers directly in production table`)
+        console.log(`✅ ${logPrefix} Successfully stored ${customers.length} customers in production table`)
+        console.log(`⏱️ ${logPrefix} Customers insert time: ${insertTime}ms`)
       }
+    } else {
+      console.log(`⚠️ ${logPrefix} No customers to insert in this batch`)
     }
     
+    console.log(`📊 ${logPrefix} Customers batch summary: ${customers.length} customers processed`)
     return customers.length
   }
 
@@ -757,7 +869,8 @@ export class ShopifyGraphQLService {
     batch: string[],
     brandId: string,
     connectionId: string,
-    supabase: any
+    supabase: any,
+    processId?: string
   ): Promise<number> {
     const products: any[] = []
     
@@ -794,19 +907,32 @@ export class ShopifyGraphQLService {
       }
     }
     
+    const logPrefix = processId ? `[PROCESS-${processId}]` : '[BATCH-PRODUCTS]'
+    
     if (products.length > 0) {
+      console.log(`💾 ${logPrefix} Inserting ${products.length} products into shopify_products table...`)
+      const insertStart = Date.now()
+      
       // Store directly in production table for immediate visibility
       const { error } = await supabase
         .from('shopify_products')
         .upsert(products, { onConflict: 'product_id' })
       
+      const insertTime = Date.now() - insertStart
+      
       if (error) {
-        console.error('[GraphQL] Error inserting products:', error)
+        console.error(`❌ ${logPrefix} Error inserting products:`, error)
+        console.error(`❌ ${logPrefix} Products error details:`, JSON.stringify(error, null, 2))
+        console.error(`❌ ${logPrefix} Sample product data:`, JSON.stringify(products[0], null, 2))
       } else {
-        console.log(`[GraphQL] ✅ Stored ${products.length} products directly in production table`)
+        console.log(`✅ ${logPrefix} Successfully stored ${products.length} products in production table`)
+        console.log(`⏱️ ${logPrefix} Products insert time: ${insertTime}ms`)
       }
+    } else {
+      console.log(`⚠️ ${logPrefix} No products to insert in this batch`)
     }
     
+    console.log(`📊 ${logPrefix} Products batch summary: ${products.length} products processed`)
     return products.length
   }
 

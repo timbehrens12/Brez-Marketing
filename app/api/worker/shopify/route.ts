@@ -5,80 +5,114 @@ import { NextRequest, NextResponse } from 'next/server'
  * This replaces the background worker for Vercel compatibility
  */
 export async function POST(request: NextRequest) {
+  const workerApiId = `worker_api_${Date.now()}`
+  
+  console.log(`🔧 [WORKER-API-${workerApiId}] ===== WORKER API CALLED =====`)
+  console.log(`🔧 [WORKER-API-${workerApiId}] Timestamp: ${new Date().toISOString()}`)
+  console.log(`🔧 [WORKER-API-${workerApiId}] Request URL: ${request.url}`)
+  
   try {
-    // Starting job processing
+    console.log(`🔧 [WORKER-API-${workerApiId}] Starting job processing...`)
     
     // Auth disabled for debugging
+    const internalCall = request.headers.get('x-internal-call') === 'true'
+    console.log(`🔧 [WORKER-API-${workerApiId}] Internal call: ${internalCall}`)
     
-    // COMPLETELY REMOVE ALL AUTH CHECKS
-    // const authHeader = request.headers.get('authorization')
-    // const internalCall = request.headers.get('x-internal-call') === 'true'
-    // const cronSecret = process.env.CRON_SECRET
-
     // Get the number of jobs to process (default: 10)
     const body = await request.json().catch(() => ({}))
     const maxJobs = body.maxJobs || 10
+    const syncId = body.sync_id
     
-    // Processing jobs
+    console.log(`🔧 [WORKER-API-${workerApiId}] Parameters:`)
+    console.log(`🔧 [WORKER-API-${workerApiId}] - Max Jobs: ${maxJobs}`)
+    console.log(`🔧 [WORKER-API-${workerApiId}] - Sync ID: ${syncId || 'NONE'}`)
+    console.log(`🔧 [WORKER-API-${workerApiId}] - Request Body:`, JSON.stringify(body, null, 2))
     
     // Import dependencies inside try block to catch import errors
+    console.log(`📦 [WORKER-API-${workerApiId}] Importing worker dependencies...`)
     const { ShopifyWorker } = await import('@/lib/workers/shopifyWorker')
     const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
+    console.log(`✅ [WORKER-API-${workerApiId}] Dependencies imported successfully`)
     
     // Process waiting jobs
     let processedCount = 0
     const results = []
     
     // Check for jobs in different states
+    console.log(`🔍 [WORKER-API-${workerApiId}] Checking queue status...`)
     const waitingJobs = await shopifyQueue.getWaiting()
     const activeJobs = await shopifyQueue.getActive()
     
-    // Found waiting and active jobs
+    console.log(`📊 [WORKER-API-${workerApiId}] Queue status:`)
+    console.log(`📊 [WORKER-API-${workerApiId}] - Waiting jobs: ${waitingJobs.length}`)
+    console.log(`📊 [WORKER-API-${workerApiId}] - Active jobs: ${activeJobs.length}`)
+    console.log(`📊 [WORKER-API-${workerApiId}] - Will process: ${Math.min(waitingJobs.length, maxJobs)} jobs`)
     
     // Process waiting jobs
     for (let i = 0; i < Math.min(waitingJobs.length, maxJobs); i++) {
       const job = waitingJobs[i]
+      const jobProcessId = `job_${job.id}_${Date.now()}`
+      
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Processing job ${i + 1}/${Math.min(waitingJobs.length, maxJobs)}`)
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] - Job ID: ${job.id}`)
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] - Job Type: ${job.name}`)
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] - Brand ID: ${job.data?.brandId || 'UNKNOWN'}`)
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] - Shop: ${job.data?.shop || 'UNKNOWN'}`)
+      console.log(`⚙️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] - Attempts: ${job.attemptsMade + 1}/${job.opts.attempts}`)
+      
+      const jobStart = Date.now()
       
       try {
-        // Processing job
+        console.log(`🚀 [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Starting job processing...`)
         
         // Process the job based on its type
         switch (job.name) {
           case 'recent_sync':
+            console.log(`📊 [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Calling ShopifyWorker.processRecentSync()`)
             await ShopifyWorker.processRecentSync(job)
             break
           case 'bulk_orders':
+            console.log(`📦 [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Calling ShopifyWorker.processBulkOrders()`)
             await ShopifyWorker.processBulkOrders(job)
             break
           case 'bulk_customers':
+            console.log(`👥 [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Calling ShopifyWorker.processBulkCustomers()`)
             await ShopifyWorker.processBulkCustomers(job)
             break
           case 'bulk_products':
+            console.log(`🛍️ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Calling ShopifyWorker.processBulkProducts()`)
             await ShopifyWorker.processBulkProducts(job)
             break
           case 'poll_bulk':
+            console.log(`⏰ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Calling ShopifyWorker.processPollBulk()`)
             await ShopifyWorker.processPollBulk(job)
             break
           default:
-            // Unknown job type
+            console.error(`❌ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Unknown job type: ${job.name}`)
             continue
         }
         
         // Mark job as completed
+        console.log(`✅ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Marking job as completed...`)
         await job.finished()
         processedCount++
+        
+        const jobTime = Date.now() - jobStart
+        console.log(`✅ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Job completed successfully in ${jobTime}ms`)
         
         results.push({
           jobId: job.id,
           type: job.name,
           status: 'completed',
-          brandId: job.data.brandId
+          brandId: job.data.brandId,
+          processing_time_ms: jobTime,
+          job_process_id: jobProcessId
         })
         
-        // Job completed successfully
-        
       } catch (error) {
-        // Job failed
+        const jobTime = Date.now() - jobStart
+        console.error(`❌ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Job failed after ${jobTime}ms:`, error)
+        console.error(`❌ [WORKER-API-${workerApiId}] [JOB-${jobProcessId}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
         
         // Mark job as failed
         await job.moveToFailed({ message: error instanceof Error ? error.message : 'Unknown error' })
@@ -88,7 +122,9 @@ export async function POST(request: NextRequest) {
           type: job.name,
           status: 'failed',
           error: error instanceof Error ? error.message : 'Unknown error',
-          brandId: job.data.brandId
+          brandId: job.data.brandId,
+          processing_time_ms: jobTime,
+          job_process_id: jobProcessId
         })
       }
     }
@@ -106,22 +142,33 @@ export async function POST(request: NextRequest) {
       failed: failed.length
     }
     
-    // Processing complete
+    console.log(`📊 [WORKER-API-${workerApiId}] Final queue statistics:`, stats)
+    console.log(`🎉 [WORKER-API-${workerApiId}] ===== WORKER API COMPLETED =====`)
+    console.log(`📊 [WORKER-API-${workerApiId}] Jobs processed: ${processedCount}`)
+    console.log(`📊 [WORKER-API-${workerApiId}] Success rate: ${results.filter(r => r.status === 'completed').length}/${results.length}`)
     
     return NextResponse.json({
       success: true,
       message: `Processed ${processedCount} jobs`,
       processedCount,
       results,
-      queueStats: stats
+      queueStats: stats,
+      worker_api_id: workerApiId,
+      timing: {
+        total_time_ms: Date.now() - parseInt(workerApiId.split('_')[2]),
+        jobs_processed: processedCount
+      }
     })
     
   } catch (error) {
-    // Error processing jobs
+    console.error(`❌ [WORKER-API-${workerApiId}] FATAL ERROR in worker API:`, error)
+    console.error(`❌ [WORKER-API-${workerApiId}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
     
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      worker_api_id: workerApiId,
+      details: error instanceof Error ? error.stack : 'No details'
     }, { status: 500 })
   }
 }

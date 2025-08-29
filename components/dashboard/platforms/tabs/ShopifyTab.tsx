@@ -674,196 +674,155 @@ export function ShopifyTab({
 
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
-  // Enhanced frontend logging utility
-  const logFrontendEvent = useCallback((level: 'INFO' | 'WARN' | 'ERROR', event: string, details?: any) => {
-    const timestamp = new Date().toISOString()
-    const sessionId = `FRONTEND_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
-
-    console.log(`[${timestamp}] [${sessionId}] [${level}] ${event}`, details || '')
-
-    // Store in localStorage for debugging
-    try {
-      const logs = JSON.parse(localStorage.getItem('shopify_sync_logs') || '[]')
-      logs.push({
-        timestamp,
-        sessionId,
-        level,
-        event,
-        details,
-        url: window.location.href,
-        userAgent: navigator.userAgent
-      })
-      // Keep only last 50 logs
-      if (logs.length > 50) logs.splice(0, logs.length - 50)
-      localStorage.setItem('shopify_sync_logs', JSON.stringify(logs))
-    } catch (error) {
-      // Ignore localStorage errors
-    }
-  }, [])
-
   // Fresh data sync function (like Meta's syncMetaInsights)
   const syncShopifyData = useCallback(async (refreshId?: string) => {
+    const frontendSyncId = `frontend_${Date.now()}`
+    
+    console.log(`🖥️ [FRONTEND-${frontendSyncId}] ===== FRONTEND SYNC TRIGGERED =====`)
+    console.log(`🖥️ [FRONTEND-${frontendSyncId}] Refresh ID: ${refreshId || 'NONE'}`)
+    console.log(`🖥️ [FRONTEND-${frontendSyncId}] Brand ID: ${brandId || 'MISSING'}`)
+    console.log(`🖥️ [FRONTEND-${frontendSyncId}] Connection: ${connection ? 'PRESENT' : 'MISSING'}`)
+    
     if (!brandId || !connection) {
-      logFrontendEvent('WARN', 'SYNC_CANCELLED_NO_DATA', {
-        reason: 'Missing brandId or connection',
-        brandId: !!brandId,
-        connection: !!connection
-      })
+      console.error(`❌ [FRONTEND-${frontendSyncId}] Missing required data - brandId: ${brandId}, connection: ${!!connection}`)
       return;
     }
 
-    const syncSessionId = `SYNC_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
-
-    logFrontendEvent('INFO', 'SYNC_FRONTEND_STARTED', {
-      syncSessionId,
-      brandId,
-      shop: connection.shop,
-      dateRange: {
-        from: format(dateRange.from, 'yyyy-MM-dd'),
-        to: format(dateRange.to, 'yyyy-MM-dd')
-      },
-      refreshId,
-      connectionStatus: connection.status
-    })
+    console.log(`📋 [FRONTEND-${frontendSyncId}] Connection details:`)
+    console.log(`📋 [FRONTEND-${frontendSyncId}] - ID: ${connection.id}`)
+    console.log(`📋 [FRONTEND-${frontendSyncId}] - Shop: ${connection.shop || 'NONE'}`)
+    console.log(`📋 [FRONTEND-${frontendSyncId}] - Status: ${connection.status}`)
+    console.log(`📋 [FRONTEND-${frontendSyncId}] - Sync Status: ${connection.sync_status || 'NONE'}`)
 
     try {
-      logFrontendEvent('INFO', 'SYNC_TOAST_SHOWN', { syncSessionId })
-
+      console.log(`🚀 [FRONTEND-${frontendSyncId}] Starting fresh Shopify data sync...`)
+      console.log(`📅 [FRONTEND-${frontendSyncId}] Date range: ${format(dateRange.from, 'yyyy-MM-dd')} to ${format(dateRange.to, 'yyyy-MM-dd')}`)
+      
       // Show toast for sync
-      toast.loading("Syncing fresh Shopify data...", {
+      toast.loading("Syncing fresh Shopify data...", { 
         id: "shopify-sync-toast",
-        duration: 15000
+        duration: 15000 
       });
 
       // Trigger fresh Shopify sync with date range
-      logFrontendEvent('INFO', 'SYNC_API_CALL_STARTED', {
-        syncSessionId,
-        endpoint: '/api/cron/shopify-sync',
-        method: 'POST'
-      })
-
+      const syncRequestBody = {
+        brandId,
+        force_refresh: true,
+        full_sync: true,
+        frontend_sync_id: frontendSyncId,
+        dateRange: {
+          from: format(dateRange.from, 'yyyy-MM-dd'),
+          to: format(dateRange.to, 'yyyy-MM-dd')
+        }
+      }
+      
+      console.log(`📡 [FRONTEND-${frontendSyncId}] Making sync request to /api/cron/shopify-sync`)
+      console.log(`📡 [FRONTEND-${frontendSyncId}] Request body:`, JSON.stringify(syncRequestBody, null, 2))
+      
       const syncResponse = await fetch('/api/cron/shopify-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          brandId,
-          force_refresh: true,
-          full_sync: true,
-          dateRange: {
-            from: format(dateRange.from, 'yyyy-MM-dd'),
-            to: format(dateRange.to, 'yyyy-MM-dd')
-          }
-        }),
+        body: JSON.stringify(syncRequestBody),
       });
 
-      logFrontendEvent('INFO', 'SYNC_API_RESPONSE_RECEIVED', {
-        syncSessionId,
-        status: syncResponse.status,
-        ok: syncResponse.ok
-      })
-
+      console.log(`📡 [FRONTEND-${frontendSyncId}] Sync response status: ${syncResponse.status}`)
+      
       if (!syncResponse.ok) {
         const errorText = await syncResponse.text()
-        logFrontendEvent('ERROR', 'SYNC_API_FAILED', {
-          syncSessionId,
-          status: syncResponse.status,
-          errorText: errorText.substring(0, 500) // Limit error text
-        })
-        throw new Error(`Shopify sync failed: ${syncResponse.status} - ${errorText}`)
+        console.error(`❌ [FRONTEND-${frontendSyncId}] Sync request failed:`)
+        console.error(`❌ [FRONTEND-${frontendSyncId}] Status: ${syncResponse.status}`)
+        console.error(`❌ [FRONTEND-${frontendSyncId}] Error: ${errorText}`)
+        throw new Error(`Shopify sync failed: ${syncResponse.status} - ${errorText}`);
       }
 
       const syncResult = await syncResponse.json();
-
-      logFrontendEvent('INFO', 'SYNC_API_SUCCESS', {
-        syncSessionId,
-        backendSyncId: syncResult.syncId,
-        results: syncResult.results,
-        synced: syncResult.synced,
-        errors: syncResult.errors
-      })
+      console.log(`✅ [FRONTEND-${frontendSyncId}] Shopify sync completed successfully:`)
+      console.log(`📋 [FRONTEND-${frontendSyncId}] Sync result:`, JSON.stringify(syncResult, null, 2))
 
       // Also sync comparison period data for the previous period
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
-
-      logFrontendEvent('INFO', 'SYNC_COMPARISON_PERIOD_STARTED', {
-        syncSessionId,
-        prevFrom,
-        prevTo
-      })
-
+      
+      console.log(`📅 [FRONTEND-${frontendSyncId}] Starting comparison period sync: ${prevFrom} to ${prevTo}`)
+      
       try {
-        await fetch('/api/cron/shopify-sync', {
+        const comparisonRequestBody = {
+          brandId,
+          force_refresh: true,
+          comparison_sync: true,
+          frontend_sync_id: frontendSyncId,
+          dateRange: {
+            from: prevFrom,
+            to: prevTo
+          }
+        }
+        
+        console.log(`📡 [FRONTEND-${frontendSyncId}] Making comparison sync request:`, JSON.stringify(comparisonRequestBody, null, 2))
+        
+        const comparisonResponse = await fetch('/api/cron/shopify-sync', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            brandId,
-            force_refresh: true,
-            comparison_sync: true,
-            dateRange: {
-              from: prevFrom,
-              to: prevTo
-            }
-          }),
+          body: JSON.stringify(comparisonRequestBody),
         });
-
-        logFrontendEvent('INFO', 'SYNC_COMPARISON_PERIOD_SUCCESS', { syncSessionId })
-
+        
+        console.log(`📡 [FRONTEND-${frontendSyncId}] Comparison sync response status: ${comparisonResponse.status}`)
+        
+        if (comparisonResponse.ok) {
+          const comparisonResult = await comparisonResponse.json()
+          console.log(`✅ [FRONTEND-${frontendSyncId}] Comparison period sync completed:`, comparisonResult)
+        } else {
+          const compErrorText = await comparisonResponse.text()
+          console.error(`❌ [FRONTEND-${frontendSyncId}] Comparison sync failed: ${comparisonResponse.status} - ${compErrorText}`)
+        }
+        
       } catch (compError) {
-        logFrontendEvent('WARN', 'SYNC_COMPARISON_PERIOD_FAILED', {
-          syncSessionId,
-          error: compError instanceof Error ? compError.message : 'Unknown error'
-        })
+        console.error(`❌ [FRONTEND-${frontendSyncId}] Comparison period sync failed:`, compError)
       }
 
-      logFrontendEvent('INFO', 'SYNC_TOAST_SUCCESS_SHOWN', { syncSessionId })
-
-      toast.success("Shopify data synced successfully", {
+      console.log(`🎉 [FRONTEND-${frontendSyncId}] Displaying success toast...`)
+      toast.success("Shopify data synced successfully", { 
         id: "shopify-sync-toast",
-        duration: 3000
+        duration: 3000 
       });
 
       // Trigger data refresh for all components
-      logFrontendEvent('INFO', 'SYNC_REFRESH_EVENTS_DISPATCHED', { syncSessionId })
-
-      window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', {
-        detail: {
-          brandId,
+      console.log(`📡 [FRONTEND-${frontendSyncId}] Dispatching shopifyDataRefreshed event...`)
+      window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', { 
+        detail: { 
+          brandId, 
           timestamp: Date.now(),
           forceRefresh: true,
-          syncSessionId
+          frontend_sync_id: frontendSyncId
         }
       }));
-
+      
       // Also dispatch specific events for enhanced widgets
-      window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
-        detail: {
-          brandId,
+      console.log(`📡 [FRONTEND-${frontendSyncId}] Dispatching refresh-all-widgets event...`)
+      window.dispatchEvent(new CustomEvent('refresh-all-widgets', { 
+        detail: { 
+          brandId, 
           timestamp: Date.now(),
           source: 'shopify-sync',
-          syncSessionId
+          frontend_sync_id: frontendSyncId
         }
       }));
-
-      logFrontendEvent('INFO', 'SYNC_FRONTEND_COMPLETED_SUCCESSFULLY', { syncSessionId })
+      
+      console.log(`✅ [FRONTEND-${frontendSyncId}] All refresh events dispatched successfully`)
 
     } catch (error) {
-      logFrontendEvent('ERROR', 'SYNC_FRONTEND_FAILED', {
-        syncSessionId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      })
-
+      console.error(`❌ [FRONTEND-${frontendSyncId}] Shopify data sync failed:`, error)
+      console.error(`❌ [FRONTEND-${frontendSyncId}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+      
       toast.error("Failed to sync Shopify data", {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
         duration: 5000,
         id: "shopify-sync-toast"
       });
     }
-  }, [brandId, connection, dateRange, logFrontendEvent]);
+  }, [brandId, connection, dateRange]);
 
   // Fresh data sync on mount and date changes (like MetaTab2)
   const hasFetchedShopifyData = useRef(false);
@@ -1026,27 +985,6 @@ export function ShopifyTab({
         <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-4">
           <div>Date Range: {dateRange.from.toDateString()} to {dateRange.to.toDateString()}</div>
           <div>Revenue Data Points: {safeMetrics.revenueByDay.length}</div>
-          <div className="mt-2">
-            <button
-              onClick={() => {
-                const logs = JSON.parse(localStorage.getItem('shopify_sync_logs') || '[]')
-                console.log('Frontend Sync Logs:', logs)
-                alert(`Found ${logs.length} frontend sync logs in console`)
-              }}
-              className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs"
-            >
-              View Frontend Logs
-            </button>
-            <button
-              onClick={() => {
-                localStorage.removeItem('shopify_sync_logs')
-                alert('Frontend logs cleared')
-              }}
-              className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs ml-2"
-            >
-              Clear Logs
-            </button>
-          </div>
         </div>
       )}
 
