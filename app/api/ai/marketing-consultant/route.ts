@@ -1245,14 +1245,16 @@ async function gatherMetaInsights(supabase: any, brandId: string, fromDate: stri
 function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyStats: any[], shopifyData?: any) {
   // Calculate totals from 30-day daily stats instead of cumulative campaign data
   const totalSpend = dailyStats.reduce((sum, d) => sum + (d.spend || 0), 0)
-  const metaRevenue = dailyStats.reduce((sum, d) => sum + (d.revenue || 0), 0)
+  const metaRevenue = dailyStats.reduce((sum, d) => sum + (d.purchase_value || 0), 0) // Use correct column name
   const shopifyRevenue = shopifyData?.metrics?.totalRevenue || 0
-  const totalRevenue = metaRevenue + shopifyRevenue  // Combine Meta and Shopify revenue
+  // Keep Meta and Shopify revenue separate for accurate ROAS calculation
+  const totalRevenue = metaRevenue + shopifyRevenue  // For total business metrics
+  const metaOnlyRevenue = metaRevenue // For Meta-specific ROAS
   const totalImpressions = dailyStats.reduce((sum, d) => sum + (d.impressions || 0), 0)
   const totalClicks = dailyStats.reduce((sum, d) => sum + (d.clicks || 0), 0)
-  
-  // Calculate averages
-  const averageROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0
+
+  // Calculate averages - use Meta revenue for Meta ROAS
+  const averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
   
@@ -1284,7 +1286,7 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     }
     const perf = campaignPerformance.get(campaignId)
     perf.spend += stat.spend || 0
-    perf.revenue += stat.revenue || 0
+    perf.revenue += stat.purchase_value || 0  // Use correct column name
     perf.impressions += stat.impressions || 0
     perf.clicks += stat.clicks || 0
   })

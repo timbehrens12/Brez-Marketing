@@ -1028,65 +1028,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
   //   )
   // }
 
-  if (!selectedBrandId && brands.length > 0) {
-    return (
-      <div className="min-h-screen p-6 flex items-center justify-center">
-        <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-2xl max-w-2xl w-full">
-          <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] pb-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                              flex items-center justify-center border border-white/10 shadow-lg">
-                  <Brain className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl text-white font-bold tracking-tight">
-                    AI Chatbot
-                  </CardTitle>
-                  <p className="text-gray-400 font-medium">Your intelligent marketing optimization partner</p>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-8">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10">
-                <Store className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-3">Ready to Optimize</h3>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8">
-                Switch to Agency mode for multi-brand insights, or select a brand to get personalized campaign optimization recommendations.
-              </p>
-              
-              {/* Brand Selector */}
-              {brands.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-sm text-gray-400 mb-3 font-medium">Select a Brand:</p>
-                  <div className="max-w-md mx-auto">
-                    <BrandSelector 
-                      onSelect={setSelectedBrandId}
-                      selectedBrandId={selectedBrandId}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => setSelectedMode('agency')}
-                  className="bg-white/10 hover:bg-white/20 text-white font-medium px-6 py-3 rounded-lg border border-white/20 transition-all duration-300"
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Switch to Agency Mode
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+
 
   return (
     <div className="min-h-screen flex gap-4 p-6">
@@ -1147,20 +1089,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
             </div>
           </div>
 
-          {/* Brand Selector - Show when needed */}
-          {!selectedBrandId && brands.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-400 mb-3 font-semibold">Select Brand for Brand-Specific Questions:</p>
-              <div className="max-w-full">
-                <BrandSelector
-                  onSelect={setSelectedBrandId}
-                  selectedBrandId={selectedBrandId}
-                  className="w-full"
-                />
-                <p className="text-xs text-gray-500 mt-2">Leave unselected for agency-wide questions</p>
-              </div>
-            </div>
-          )}
+
 
           <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto">
             {filteredPrompts.slice(0, 12).map((prompt) => (
