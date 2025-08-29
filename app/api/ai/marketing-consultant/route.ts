@@ -351,13 +351,17 @@ export async function POST(request: NextRequest) {
 
     // Validate data for hallucinations before sending to AI
     const validationErrors = []
-    if (analysisData.analysis?.averageROAS > 100) {
+    if (analysisData.analysis?.averageROAS > 50) {
       console.warn(`[AI Marketing] POTENTIAL HALLUCINATION DETECTED: Unrealistic ROAS of ${analysisData.analysis.averageROAS}x`)
-      validationErrors.push(`High ROAS detected: ${analysisData.analysis.averageROAS}x`)
+      validationErrors.push(`High ROAS detected: ${analysisData.analysis.averageROAS}x (unrealistic for advertising)`)
     }
     if (analysisData.analysis?.totalSpend < 0) {
       console.warn(`[AI Marketing] INVALID DATA: Negative spend amount: $${analysisData.analysis.totalSpend}`)
       validationErrors.push(`Invalid negative spend: $${analysisData.analysis.totalSpend}`)
+    }
+    if (analysisData.analysis?.totalSpend === 0 && analysisData.analysis?.totalRevenue > 0) {
+      console.warn(`[AI Marketing] POTENTIAL DATA ISSUE: Zero spend but positive revenue of $${analysisData.analysis.totalRevenue}`)
+      validationErrors.push(`Data attribution issue: Zero ad spend but $${analysisData.analysis.totalRevenue} revenue`)
     }
 
     if (validationErrors.length > 0) {
@@ -1455,6 +1459,8 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - Always use the EXACT numbers from the context - do not round, estimate, or modify them
 - When discussing spend amounts, use the precise values shown (e.g., $0.31, not $0.30)
 - For ROAS calculations, only use what's provided - never invent unrealistic numbers like 28215x
+- IMPORTANT: If ROAS appears unrealistically high (>50x), it likely indicates attribution issues. Explain this clearly to the user and suggest proper attribution setup
+- Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
 
 You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
 
@@ -1534,6 +1540,8 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - Always use the EXACT numbers from the context - do not round, estimate, or modify them
 - When discussing spend amounts, use the precise values shown (e.g., $0.31, not $0.30)
 - For ROAS calculations, only use what's provided - never invent unrealistic numbers like 28215x
+- IMPORTANT: If ROAS appears unrealistically high (>50x), it likely indicates attribution issues. Explain this clearly to the user and suggest proper attribution setup
+- Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
