@@ -2585,95 +2585,211 @@ export default function SettingsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-2xl bg-slate-900 border border-slate-700 text-white shadow-xl">
-          <DialogHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center">
-              <img
-                src="https://i.imgur.com/cnCcupx.png"
-                alt="Shopify"
-                className="w-10 h-10 object-contain"
-              />
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 text-white shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-green-500/5"></div>
+          
+          <DialogHeader className="text-center pb-6 relative z-10">
+            <div className="mx-auto mb-4 relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-3xl flex items-center justify-center border border-green-500/30 shadow-xl">
+                <img
+                  src="https://i.imgur.com/cnCcupx.png"
+                  alt="Shopify"
+                  className="w-12 h-12 object-contain drop-shadow-lg"
+                />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
             </div>
-            <DialogTitle className="text-2xl font-bold text-white mb-2">
+            <DialogTitle className="text-3xl font-bold text-white mb-3 bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
               Connect Your Shopify Store
             </DialogTitle>
-            <DialogDescription className="text-slate-400 text-base">
-              Sync your store data for real-time analytics and insights
+            <DialogDescription className="text-slate-300 text-lg leading-relaxed">
+              Secure integration for comprehensive ecommerce analytics and insights
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleShopifyConnect} className="space-y-6">
+          <form onSubmit={handleShopifyConnect} className="space-y-6 relative z-10">
             {/* What You'll Get Section */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-              <h4 className="text-white font-semibold mb-3 text-center">What you'll get:</h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Real-time sales tracking
+            <div className="bg-gradient-to-br from-slate-800/80 via-slate-800/80 to-slate-700/80 border border-slate-600/50 rounded-2xl p-6 backdrop-blur-sm">
+              <h4 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Product performance insights
+                Unlock Powerful Ecommerce Insights
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/40">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Real-time Sales Analytics</p>
+                    <p className="text-slate-400 text-xs">Live revenue & order tracking</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Customer analytics
+                <div className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/40">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Product Performance</p>
+                    <p className="text-slate-400 text-xs">Top sellers & inventory alerts</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Inventory monitoring
+                <div className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/40">
+                  <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Customer Intelligence</p>
+                    <p className="text-slate-400 text-xs">Behavior patterns & segmentation</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/40">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Automated Reports</p>
+                    <p className="text-slate-400 text-xs">Daily insights & recommendations</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Store URL Input */}
-            <div className="space-y-3">
-              <Label htmlFor="shopify-url" className="text-white font-semibold">
-                Store URL
+            <div className="space-y-4">
+              <Label htmlFor="shopify-url" className="text-white font-bold text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-6m-2-4h6m2 0V9a2 2 0 00-2-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 00-2 2v8a2 2 0 002 2h2m0 0h6" />
+                </svg>
+                Your Shopify Store URL
               </Label>
-              <div className="relative">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
+                </div>
                 <Input
                   id="shopify-url"
                   type="text"
                   placeholder="your-store.myshopify.com"
                   value={shopifyStoreUrl}
                   onChange={(e) => setShopifyStoreUrl(e.target.value)}
-                  className="pl-4 pr-4 bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-slate-600 h-12 rounded-lg"
+                  className="pl-16 pr-4 bg-slate-800/60 border-slate-600/50 text-white placeholder-slate-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/50 h-14 text-lg rounded-2xl transition-all duration-300 hover:bg-slate-700/60 backdrop-blur-sm group-hover:border-slate-500/70"
                   disabled={isConnectingShopify}
                 />
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
               </div>
-              <p className="text-sm text-slate-400">
-                We'll redirect you to Shopify for secure authentication
-              </p>
+            </div>
+
+            {/* Security & Process Information */}
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border border-green-700/30 rounded-2xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-green-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-green-300">Enterprise-Grade Security</h4>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="text-center">
+                    <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <p className="text-green-300 font-medium">OAuth 2.0</p>
+                    <p className="text-green-400/80">Secure Authentication</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-green-300 font-medium">Read-Only Access</p>
+                    <p className="text-green-400/80">No Store Changes</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-1">
+                      <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <p className="text-green-300 font-medium">SOC 2 Compliant</p>
+                    <p className="text-green-400/80">Enterprise Security</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Connection Process
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 text-xs text-slate-300">
+                    <div className="w-6 h-6 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center text-green-400 font-bold text-xs">1</div>
+                    <span>Secure redirect to Shopify for authorization</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-300">
+                    <div className="w-6 h-6 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center text-green-400 font-bold text-xs">2</div>
+                    <span>Read-only permissions granted (no store modifications)</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-300">
+                    <div className="w-6 h-6 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center text-green-400 font-bold text-xs">3</div>
+                    <span>Instant data sync and analytics activation</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-4 pt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShopifyConnectionDialog(prev => ({ ...prev, open: false }))}
-                className="flex-1 border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-14 rounded-2xl transition-all duration-300 backdrop-blur-sm font-medium text-lg"
                 disabled={isConnectingShopify}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 text-white font-bold h-14 rounded-2xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 text-lg relative overflow-hidden group"
                 disabled={isConnectingShopify || !shopifyStoreUrl.trim()}
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 {isConnectingShopify ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Connecting...
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-3" />
+                    <span className="relative z-10">Connecting to Shopify...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    Connect Store
+                    <span className="relative z-10">Connect Store Now</span>
                   </>
                 )}
               </Button>
@@ -2687,61 +2803,93 @@ export default function SettingsPage() {
         open={disconnectDialog.open} 
         onOpenChange={(open) => !open && setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
       >
-        <DialogContent className="sm:max-w-lg bg-slate-900 border border-slate-700 text-white shadow-xl">
-          <DialogHeader className="text-center pb-4">
-            <div className="mx-auto mb-4 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-400" />
+        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 text-white shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-red-500/5"></div>
+          
+          <DialogHeader className="text-center pb-6 relative z-10">
+            <div className="mx-auto mb-4 relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-2xl flex items-center justify-center border border-red-500/30 shadow-xl">
+                <AlertTriangle className="w-8 h-8 text-red-400" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
             </div>
-            <DialogTitle className="text-xl font-bold text-white mb-2">
+            <DialogTitle className="text-2xl font-bold text-white mb-2">
               Disconnect {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
-              This will remove all {disconnectDialog.platform} data from this brand
+            <DialogDescription className="text-slate-300 text-base">
+              This will permanently remove all {disconnectDialog.platform} data from "{disconnectDialog.brandName}"
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <p className="text-white font-medium mb-3 text-center">
-                What will happen when you disconnect:
+          <div className="space-y-6 relative z-10">
+            <div className="bg-gradient-to-br from-slate-800/80 via-slate-800/80 to-slate-700/80 border border-slate-600/50 rounded-2xl p-6 backdrop-blur-sm">
+              <p className="text-white font-bold mb-4 text-lg">
+                Disconnecting {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'} from "{disconnectDialog.brandName}" will:
               </p>
-
-              <div className="space-y-2 text-sm text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>All {disconnectDialog.platform} data will be removed from our database</span>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 p-3 bg-red-900/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">DELETE ALL {disconnectDialog.platform?.toUpperCase()} DATA</p>
+                    <p className="text-red-300/80 text-sm">Complete removal from our database</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Analytics and historical insights will be deleted</span>
+                <div className="flex items-center gap-4 p-3 bg-red-900/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">REMOVE ALL ANALYTICS & REPORTS</p>
+                    <p className="text-red-300/80 text-sm">Historical insights and performance data</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Reports and performance data will be cleared</span>
+                <div className="flex items-center gap-4 p-3 bg-red-900/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">STOP ONGOING DATA SYNC</p>
+                    <p className="text-red-300/80 text-sm">No new data will be collected</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-4 p-3 bg-green-900/20 border border-green-700/30 rounded-lg">
-                <p className="text-green-300 text-sm font-medium text-center">
-                  💡 You can reconnect anytime to restore your data
-                </p>
               </div>
             </div>
+
+            <div className="bg-gradient-to-r from-green-900/20 via-emerald-900/20 to-green-900/20 border border-green-700/30 rounded-2xl p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h4 className="text-green-300 font-semibold">Good News: Data Can Be Restored</h4>
+              </div>
+              <p className="text-green-200 text-sm leading-relaxed">
+                You can reconnect your {disconnectDialog.platform} account anytime to restore data sync. 
+                Historical data will be re-imported automatically upon reconnection.
+              </p>
+            </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button
                 variant="outline"
                 onClick={() => setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
-                className="flex-1 border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
               >
-                Cancel
+                Cancel - Keep Data Safe
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmDisconnect}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-700 hover:via-red-600 hover:to-red-700 text-white font-bold h-12 rounded-xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
               >
-                Disconnect
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10">🗑️ Yes, Disconnect</span>
               </Button>
             </div>
           </div>

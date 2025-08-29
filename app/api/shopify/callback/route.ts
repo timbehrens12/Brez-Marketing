@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to Brand Management tab with success message
-    const successUrl = `${APP_URL}/settings?tab=brand-management&shopify_connected=true&shop=${encodeURIComponent(shop)}&dataRefreshed=true`
+    const successUrl = `${APP_URL}/settings?tab=brand-management&shopify_connected=true&shop=${encodeURIComponent(shop)}${brandId ? `&brandId=${encodeURIComponent(brandId)}` : ''}&dataRefreshed=true`
     return NextResponse.redirect(successUrl)
 
   } catch (error) {

@@ -86,10 +86,11 @@ export function BrandManagementDropdown({
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const shopifyConnectedParam = urlParams.get('shopify_connected') === 'true'
+    const connectedBrandId = urlParams.get('brandId')
     
-    // Always trigger loading state for shopify_connected param (this means user just connected)
-    if (shopifyConnectedParam) {
-      // Shopify connected param detected
+    // Only trigger loading state if this is the brand that was just connected
+    if (shopifyConnectedParam && connectedBrandId === brand.id) {
+      // Shopify connected param detected for this specific brand
       // Current connection status checked
       setIsShopifySyncing(true)
       setIsConnecting(true)
