@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { ShopifyTab } from "./tabs/ShopifyTab"
 import { PlatformConnection } from "@/types/platformConnection"
 
@@ -17,6 +17,7 @@ interface ShopifyContentProps {
 }
 
 export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoading, brands }: ShopifyContentProps) {
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
   
   // Trigger refresh when Shopify content is mounted/brandId changes
   useEffect(() => {
@@ -27,12 +28,15 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       const timer = setTimeout(async () => {
         console.log('[ShopifyContent] Page loaded - starting NUCLEAR SYNC SEQUENCE')
         
-        // STEP 1: Block widget loading during sync
+        // STEP 1: Set refreshing state for MetricCards
+        setIsRefreshingData(true)
+        
+        // STEP 2: Block widget loading during sync
         window.dispatchEvent(new CustomEvent('shopify-sync-starting', {
           detail: { brandId, source: 'page-navigation' }
         }))
         
-        // STEP 2: NUCLEAR OPTION - Hard refresh from Shopify API  
+        // STEP 3: NUCLEAR OPTION - Hard refresh from Shopify API  
         try {
           console.log('🔥 [ShopifyContent] NUCLEAR SYNC STARTING...')
           const syncResponse = await fetch('/api/shopify/hard-refresh', {
@@ -52,7 +56,11 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
           console.error('🔥 [ShopifyContent] NUCLEAR SYNC ERROR:', syncError)
         }
 
-        // STEP 3: Now that sync is complete, refresh widgets with fresh data
+        // STEP 4: Wait a moment for any data to update
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // STEP 5: Clear refreshing state and refresh widgets
+        setIsRefreshingData(false)
         console.log('🔥 [ShopifyContent] NUCLEAR SYNC COMPLETE - Refreshing widgets with fresh data')
         window.dispatchEvent(new CustomEvent('force-widget-refresh', {
           detail: { 
@@ -68,6 +76,32 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       return () => clearTimeout(timer)
     }
   }, [brandId]) // Re-run when brandId changes
+  
+  // Listen for refresh button events
+  useEffect(() => {
+    const handleGlobalRefresh = async () => {
+      console.log('[ShopifyContent] Refresh button detected - setting loading state')
+      setIsRefreshingData(true)
+      
+      // Wait for nuclear sync to complete (listen for completion event)
+      const handleSyncComplete = () => {
+        setTimeout(() => {
+          console.log('[ShopifyContent] Refresh button sync complete - clearing loading state')
+          setIsRefreshingData(false)
+        }, 500)
+        window.removeEventListener('force-widget-refresh', handleSyncComplete)
+      }
+      
+      window.addEventListener('force-widget-refresh', handleSyncComplete)
+    }
+    
+    // Listen for global refresh button (when it starts nuclear sync)
+    window.addEventListener('shopify-sync-starting', handleGlobalRefresh)
+    
+    return () => {
+      window.removeEventListener('shopify-sync-starting', handleGlobalRefresh)
+    }
+  }, [])
   if (!brandId) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -95,6 +129,7 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       dateRange={dateRange}
       metrics={metrics}
       isLoading={isLoading}
+      isRefreshingData={isRefreshingData}
     />
   )
 }
