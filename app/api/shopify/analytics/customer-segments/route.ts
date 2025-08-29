@@ -34,12 +34,16 @@ export async function GET(request: NextRequest) {
       `)
       .eq('brand_id', brandId)
 
-    // Apply date range filter if provided
+    // Apply date range filter if provided - convert to Pacific timezone properly
     if (from) {
-      ordersQuery = ordersQuery.gte('created_at', from + 'T00:00:00Z')
+      ordersQuery = ordersQuery.gte('created_at', from + 'T08:00:00Z') // Start of day in Pacific (UTC-8)
     }
     if (to) {
-      ordersQuery = ordersQuery.lte('created_at', to + 'T23:59:59Z')
+      // For "to" date, we need the next day at 7:59 AM UTC to cover until 11:59 PM Pacific
+      const toDate = new Date(to)
+      toDate.setDate(toDate.getDate() + 1)
+      const nextDay = toDate.toISOString().split('T')[0]
+      ordersQuery = ordersQuery.lte('created_at', nextDay + 'T07:59:59Z')
     }
 
     const { data: ordersData, error: ordersError } = await ordersQuery
