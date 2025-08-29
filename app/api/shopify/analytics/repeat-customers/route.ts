@@ -77,14 +77,39 @@ export async function GET(request: NextRequest) {
     const customerOrderHistory = new Map()
     
     // Processing orders
-    
-    ordersData?.forEach((order, index) => {
-      // Use customer_id if available, otherwise use email, otherwise use order_id as unique identifier
-      if (index < 3) { // Log first 3 orders for debugging
-        // Processing order
+
+    // First pass: Build customer email to customer_id mapping
+    const emailToCustomerId = new Map()
+    ordersData?.forEach(order => {
+      if (order.customer_email && order.customer_id) {
+        emailToCustomerId.set(order.customer_email, order.customer_id)
       }
-      const customerId = order.customer_id || order.customer_email || `order_${order.id}`
-      if (!customerId) return
+    })
+
+    ordersData?.forEach((order, index) => {
+      // Improved customer identification: prioritize consistent identification
+      // If we have a customer_email, check if we've seen it before and use the same customer_id
+      let customerId = order.customer_id
+
+      if (!customerId && order.customer_email) {
+        // Check if we've seen this email before
+        const existingCustomerId = emailToCustomerId.get(order.customer_email)
+        if (existingCustomerId) {
+          customerId = existingCustomerId
+        } else {
+          // Use email as fallback identifier
+          customerId = order.customer_email
+        }
+      }
+
+      // Final fallback to order_id if nothing else available
+      if (!customerId) {
+        customerId = `order_${order.id}`
+      }
+
+      if (index < 3) { // Log first 3 orders for debugging
+        console.log(`[Repeat Customers API] Order ${order.id}: customer_id=${order.customer_id}, customer_email=${order.customer_email}, resolved_customer_id=${customerId}`)
+      }
       
       if (!customerOrderHistory.has(customerId)) {
         const address = orderAddressMap.get(order.id) // Use order_id for address lookup
