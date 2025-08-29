@@ -21,11 +21,21 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
   // Trigger refresh when Shopify content is mounted/brandId changes
   useEffect(() => {
     if (brandId) {
-      console.log('[ShopifyContent] Page loaded/brand changed - triggering fresh data refresh')
+      console.log('[ShopifyContent] Page loaded/brand changed - triggering fresh data refresh like date change')
       
       // Small delay to ensure components are mounted
       const timer = setTimeout(() => {
-        // Trigger refresh for all Shopify widgets
+        // Trigger database-level refresh (like date changes do)
+        window.dispatchEvent(new CustomEvent('force-shopify-database-refresh', {
+          detail: { 
+            brandId, 
+            timestamp: Date.now(), 
+            forceRefresh: true, 
+            source: 'shopify-page-load' 
+          }
+        }))
+        
+        // Also trigger widget refresh
         window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
           detail: { 
             brandId, 

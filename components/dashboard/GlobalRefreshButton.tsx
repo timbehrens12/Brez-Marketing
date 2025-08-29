@@ -141,35 +141,45 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         );
         
         if (shopifyConnection) {
-          // First: Trigger manual sync to get latest data from Shopify
-          const syncPromise = fetch('/api/shopify/manual-sync', {
+          // First: Trigger the queue-based sync system like date changes do
+          const syncPromise = fetch('/api/shopify/connected/' + brandId, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-internal-call': 'true'
+            },
             body: JSON.stringify({ 
               shop: shopifyConnection.shop,
-              brandId,
+              accessToken: 'refresh_token',
               connectionId: shopifyConnection.id,
-              forceRefresh: true,
-              skipWebhooks: false
+              brandId: brandId,
+              forceRefresh: true
             })
           }).then(response => {
             if (response.ok) {
-              console.log('[GlobalRefresh] ✅ Shopify manual sync completed successfully');
+              console.log('[GlobalRefresh] ✅ Shopify connected sync completed successfully');
               return true;
             } else {
-              console.warn('[GlobalRefresh] ⚠️ Shopify manual sync failed, continuing with widget refresh');
+              console.warn('[GlobalRefresh] ⚠️ Shopify connected sync failed, trying alternative');
               return false;
             }
           }).catch(error => {
-            console.error('[GlobalRefresh] ❌ Shopify manual sync error:', error);
+            console.error('[GlobalRefresh] ❌ Shopify connected sync error:', error);
             return false;
           });
 
-          // Second: After sync attempt, always refresh all widgets
-          syncPromise.then(() => {
-            console.log('[GlobalRefresh] 🔄 Refreshing all Shopify widgets');
+          // Second: Wait briefly for sync, then refresh all widgets with database-level refresh
+          syncPromise.then(async (syncSuccess) => {
+            console.log('[GlobalRefresh] 🔄 Waiting for data to sync, then refreshing all widgets');
             
-            // Dispatch multiple events to ensure all widgets refresh
+            // Wait a moment for the database to update
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Dispatch events that trigger fresh database queries (like date changes do)
+            window.dispatchEvent(new CustomEvent('force-shopify-database-refresh', {
+              detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-button' }
+            }));
+            
             window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
               detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-button' }
             }));

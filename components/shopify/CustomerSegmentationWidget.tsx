@@ -97,6 +97,7 @@ export function CustomerSegmentationWidget({
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
+    window.addEventListener('force-shopify-database-refresh', handleRefresh)
     
     // Also refresh when specific Shopify sync events occur
     window.addEventListener('shopify-sync-completed', handleRefresh)
@@ -106,6 +107,7 @@ export function CustomerSegmentationWidget({
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('force-shopify-database-refresh', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchSegmentData])
