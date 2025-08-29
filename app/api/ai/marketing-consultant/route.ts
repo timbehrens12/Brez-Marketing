@@ -341,12 +341,25 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate personalized AI response
-    console.log(`[AI Marketing] About to generate response for brand ${brandId}...`)
+    console.log(`[AI Marketing] About to generate response for brand ${brandId} (mode: ${mode})...`)
+    console.log(`[AI Marketing] Brand details:`, {
+      brandId,
+      brandName: brand?.name || 'Unknown',
+      mode,
+      userId
+    })
     console.log(`[AI Marketing] Data freshness check - analysis data:`, {
       totalSpend: analysisData.analysis?.totalSpend,
       averageROAS: analysisData.analysis?.averageROAS,
       dataTimestamp: new Date().toISOString(),
-      dateRange: analysisData.dateRange
+      dateRange: analysisData.dateRange,
+      shopifyData: {
+        hasData: !!analysisData.shopifyData,
+        totalOrders: analysisData.shopifyData?.metrics?.totalOrders,
+        totalRevenue: analysisData.shopifyData?.metrics?.totalRevenue,
+        customersCount: analysisData.shopifyData?.customers?.length,
+        ordersCount: analysisData.shopifyData?.orders?.length
+      }
     })
 
     // Validate data for hallucinations before sending to AI
@@ -1614,6 +1627,8 @@ Current Context:
 
 SHOPIFY DATA AVAILABLE: ${analysisData.shopifyData?.metrics?.totalOrders > 0 ? `YES - ${analysisData.shopifyData.metrics.totalOrders} orders, $${analysisData.shopifyData.metrics.totalRevenue.toFixed(2)} revenue for the requested period` : 'NO SALES DATA for this period'}
 ${dateRange?.from === dateRange?.to && analysisData.shopifyData?.metrics?.totalOrders > 0 ? `- SHOPIFY SALES FOR ${dateRange.from}: $${(analysisData.shopifyData?.metrics?.totalRevenue || 0).toFixed(2)} from ${analysisData.shopifyData?.metrics?.totalOrders || 0} orders` : ''}
+
+${analysisData.shopifyData?.metrics?.totalOrders === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
 - Average CPC: $${(analysis.averageCPC || 0).toFixed(2)}
 
 Performance Trends:
@@ -1845,6 +1860,70 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
     let totalImpressions = 0
     let totalClicks = 0
     let brandPerformance: any[] = []
+
+    // Aggregate Shopify data across all brands
+    let aggregatedShopifyData = {
+      customers: [],
+      orders: [],
+      products: [],
+      discounts: [],
+      draftOrders: [],
+      regionalSales: [],
+      inventoryAlerts: {
+        lowStockItems: [],
+        outOfStockItems: [],
+        needsReplenishment: [],
+        totalProducts: 0,
+        urgentReplenishment: 0,
+        totalInventoryValue: 0
+      },
+      metrics: {
+        totalRevenue: 0,
+        totalDiscounts: 0,
+        averageOrderValue: 0,
+        totalOrders: 0,
+        totalCustomers: 0,
+        returningCustomers: 0,
+        highValueCustomers: 0,
+        totalProducts: 0,
+        activeProducts: 0,
+        totalDraftOrders: 0,
+        abandonedCarts: 0,
+        abandonmentRate: 0,
+        activeDiscounts: 0,
+        conversionFunnel: {
+          totalCustomers: 0,
+          uniqueCustomers: 0,
+          customerConversionRate: 0,
+          cartAbandonmentRate: 0,
+          repeatPurchaseRate: 0,
+          customersWithoutOrders: 0
+        },
+        marginAnalysis: {
+          totalCost: 0,
+          totalProfit: 0,
+          averageMargin: 0,
+          ordersWithMarginData: 0,
+          marginDataCoverage: 0
+        }
+      },
+      conversionFunnel: {
+        totalCustomers: 0,
+        uniqueCustomers: 0,
+        customerConversionRate: 0,
+        cartAbandonmentRate: 0,
+        repeatPurchaseRate: 0,
+        customersWithoutOrders: 0
+      },
+      abandonedCartAnalysis: null,
+      customerSegmentation: null,
+      directCalculations: {
+        uniqueCustomersFromOrders: 0,
+        repeatCustomersFromOrders: 0,
+        repeatRateFromOrders: 0
+      },
+      topCustomers: []
+    }
     
     // Aggregate data across all brands
     console.log(`[AI Marketing Consultant] Agency mode: Processing ${brands.length} brands with date range:`, customDateRange)
@@ -1879,7 +1958,63 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
         const brandShopifyRevenue = (brandData.shopifyData?.metrics as any)?.totalRevenue || 0
         totalImpressions += brandData.analysis.totalImpressions || 0
         totalClicks += brandData.analysis.totalClicks || 0
-        
+
+        // Aggregate Shopify data from this brand
+        if (brandData.shopifyData) {
+          console.log(`[AI Marketing Consultant] Aggregating Shopify data for brand ${brand.name}:`, {
+            orders: brandData.shopifyData.orders?.length || 0,
+            revenue: brandShopifyRevenue,
+            customers: brandData.shopifyData.customers?.length || 0
+          })
+
+          // Aggregate customers, orders, products
+          aggregatedShopifyData.customers = [...aggregatedShopifyData.customers, ...(brandData.shopifyData.customers || [])]
+          aggregatedShopifyData.orders = [...aggregatedShopifyData.orders, ...(brandData.shopifyData.orders || [])]
+          aggregatedShopifyData.products = [...aggregatedShopifyData.products, ...(brandData.shopifyData.products || [])]
+          aggregatedShopifyData.discounts = [...aggregatedShopifyData.discounts, ...(brandData.shopifyData.discounts || [])]
+          aggregatedShopifyData.draftOrders = [...aggregatedShopifyData.draftOrders, ...(brandData.shopifyData.draftOrders || [])]
+          aggregatedShopifyData.regionalSales = [...aggregatedShopifyData.regionalSales, ...(brandData.shopifyData.regionalSales || [])]
+
+          // Aggregate metrics
+          if (brandData.shopifyData.metrics) {
+            aggregatedShopifyData.metrics.totalRevenue += brandShopifyRevenue
+            aggregatedShopifyData.metrics.totalDiscounts += (brandData.shopifyData.metrics as any)?.totalDiscounts || 0
+            aggregatedShopifyData.metrics.totalOrders += (brandData.shopifyData.metrics as any)?.totalOrders || 0
+            aggregatedShopifyData.metrics.totalCustomers += (brandData.shopifyData.metrics as any)?.totalCustomers || 0
+            aggregatedShopifyData.metrics.returningCustomers += (brandData.shopifyData.metrics as any)?.returningCustomers || 0
+            aggregatedShopifyData.metrics.highValueCustomers += (brandData.shopifyData.metrics as any)?.highValueCustomers || 0
+            aggregatedShopifyData.metrics.totalProducts += (brandData.shopifyData.metrics as any)?.totalProducts || 0
+            aggregatedShopifyData.metrics.activeProducts += (brandData.shopifyData.metrics as any)?.activeProducts || 0
+            aggregatedShopifyData.metrics.totalDraftOrders += (brandData.shopifyData.metrics as any)?.totalDraftOrders || 0
+            aggregatedShopifyData.metrics.abandonedCarts += (brandData.shopifyData.metrics as any)?.abandonedCarts || 0
+            aggregatedShopifyData.metrics.activeDiscounts += (brandData.shopifyData.metrics as any)?.activeDiscounts || 0
+
+            // Aggregate margin analysis
+            if ((brandData.shopifyData.metrics as any)?.marginAnalysis) {
+              aggregatedShopifyData.metrics.marginAnalysis.totalCost += (brandData.shopifyData.metrics as any).marginAnalysis.totalCost || 0
+              aggregatedShopifyData.metrics.marginAnalysis.totalProfit += (brandData.shopifyData.metrics as any).marginAnalysis.totalProfit || 0
+              aggregatedShopifyData.metrics.marginAnalysis.ordersWithMarginData += (brandData.shopifyData.metrics as any).marginAnalysis.ordersWithMarginData || 0
+            }
+          }
+
+          // Aggregate conversion funnel
+          if (brandData.shopifyData.conversionFunnel) {
+            aggregatedShopifyData.conversionFunnel.totalCustomers += brandData.shopifyData.conversionFunnel.totalCustomers || 0
+            aggregatedShopifyData.conversionFunnel.uniqueCustomers += brandData.shopifyData.conversionFunnel.uniqueCustomers || 0
+            aggregatedShopifyData.conversionFunnel.customersWithoutOrders += brandData.shopifyData.conversionFunnel.customersWithoutOrders || 0
+          }
+
+          // Aggregate inventory alerts
+          if (brandData.shopifyData.inventoryAlerts) {
+            aggregatedShopifyData.inventoryAlerts.lowStockItems = [...aggregatedShopifyData.inventoryAlerts.lowStockItems, ...(brandData.shopifyData.inventoryAlerts.lowStockItems || [])]
+            aggregatedShopifyData.inventoryAlerts.outOfStockItems = [...aggregatedShopifyData.inventoryAlerts.outOfStockItems, ...(brandData.shopifyData.inventoryAlerts.outOfStockItems || [])]
+            aggregatedShopifyData.inventoryAlerts.needsReplenishment = [...aggregatedShopifyData.inventoryAlerts.needsReplenishment, ...(brandData.shopifyData.inventoryAlerts.needsReplenishment || [])]
+            aggregatedShopifyData.inventoryAlerts.totalProducts += brandData.shopifyData.inventoryAlerts.totalProducts || 0
+            aggregatedShopifyData.inventoryAlerts.urgentReplenishment += brandData.shopifyData.inventoryAlerts.urgentReplenishment || 0
+            aggregatedShopifyData.inventoryAlerts.totalInventoryValue += brandData.shopifyData.inventoryAlerts.totalInventoryValue || 0
+          }
+        }
+
         // Track individual brand performance
         brandPerformance.push({
           brand_name: brand.name,
@@ -1922,6 +2057,27 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
     const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
     const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
 
+    // Finalize aggregated Shopify metrics
+    if (aggregatedShopifyData.metrics.totalOrders > 0) {
+      aggregatedShopifyData.metrics.averageOrderValue = aggregatedShopifyData.metrics.totalRevenue / aggregatedShopifyData.metrics.totalOrders
+    }
+
+    if (aggregatedShopifyData.metrics.totalCustomers > 0) {
+      aggregatedShopifyData.conversionFunnel.customerConversionRate = (aggregatedShopifyData.conversionFunnel.uniqueCustomers / aggregatedShopifyData.metrics.totalCustomers) * 100
+      aggregatedShopifyData.conversionFunnel.cartAbandonmentRate = (aggregatedShopifyData.conversionFunnel.customersWithoutOrders / aggregatedShopifyData.metrics.totalCustomers) * 100
+      aggregatedShopifyData.conversionFunnel.repeatPurchaseRate = (aggregatedShopifyData.directCalculations.repeatCustomersFromOrders / aggregatedShopifyData.directCalculations.uniqueCustomersFromOrders) * 100
+    }
+
+    if (aggregatedShopifyData.metrics.totalDraftOrders > 0) {
+      aggregatedShopifyData.metrics.abandonmentRate = (aggregatedShopifyData.metrics.abandonedCarts / aggregatedShopifyData.metrics.totalDraftOrders) * 100
+    }
+
+    // Calculate margin analysis
+    if (aggregatedShopifyData.metrics.marginAnalysis.ordersWithMarginData > 0) {
+      aggregatedShopifyData.metrics.marginAnalysis.averageMargin = (aggregatedShopifyData.metrics.marginAnalysis.totalProfit / aggregatedShopifyData.metrics.totalRevenue) * 100
+      aggregatedShopifyData.metrics.marginAnalysis.marginDataCoverage = (aggregatedShopifyData.metrics.marginAnalysis.ordersWithMarginData / aggregatedShopifyData.metrics.totalOrders) * 100
+    }
+
     // Sort brands by performance
     const topPerformingBrands = brandPerformance
       .filter(b => b.spend > 0)
@@ -1937,6 +2093,7 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
       campaigns: allCampaigns,
       brands,
       brandPerformance,
+      shopifyData: aggregatedShopifyData,
       analysis: {
         totalSpend,
         totalRevenue,
@@ -1950,14 +2107,19 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
         topPerformingBrands,
         underPerformingBrands
       },
-      dateRange: { from: 'N/A', to: 'N/A', days: 30 }
+      dateRange: customDateRange || { from: 'N/A', to: 'N/A', days: 30 }
     }
     
     console.log(`[AI Marketing Consultant] Final agency aggregation result:`, {
       totalSpend: result.analysis.totalSpend,
       totalRevenue: result.analysis.totalRevenue,
       brandCount: result.analysis.brandCount,
-      campaignCount: result.campaigns.length
+      campaignCount: result.campaigns.length,
+      aggregatedShopify: {
+        totalOrders: result.shopifyData?.metrics?.totalOrders || 0,
+        totalRevenue: result.shopifyData?.metrics?.totalRevenue || 0,
+        totalCustomers: result.shopifyData?.metrics?.totalCustomers || 0
+      }
     })
     
     return result
