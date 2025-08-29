@@ -315,7 +315,8 @@ const calculateInventoryLevels = (products: ShopifyProduct[], date: Date): numbe
       (product.variants?.reduce((variantTotal, variant) => {
         // Check if the variant has inventory management
         if (variant.inventory_management === "shopify") {
-          return variantTotal + (variant.inventory_quantity || 0)
+          // Only count positive inventory quantities (exclude 0 and negative stock)
+          return variantTotal + Math.max(0, variant.inventory_quantity || 0)
         }
         return variantTotal
       }, 0) || 0)

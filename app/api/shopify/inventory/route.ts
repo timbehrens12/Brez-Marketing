@@ -82,11 +82,14 @@ export async function GET(request: NextRequest) {
     console.log('Calculating inventory summary')
     const summary: InventorySummary = {
       totalProducts: new Set(inventoryItems.map((item: ShopifyInventoryItem) => item.product_id)).size,
-      totalInventory: inventoryItems.reduce((sum: number, item: ShopifyInventoryItem) => sum + item.inventory_quantity, 0),
+      totalInventory: inventoryItems.reduce((sum: number, item: ShopifyInventoryItem) => {
+        // Only count positive inventory quantities (exclude 0 and negative stock)
+        return sum + Math.max(0, item.inventory_quantity)
+      }, 0),
       lowStockItems: inventoryItems.filter((item: ShopifyInventoryItem) => item.inventory_quantity > 0 && item.inventory_quantity <= 5).length,
-      outOfStockItems: inventoryItems.filter((item: ShopifyInventoryItem) => item.inventory_quantity === 0).length,
+      outOfStockItems: inventoryItems.filter((item: ShopifyInventoryItem) => item.inventory_quantity <= 0).length,
       averageInventoryLevel: inventoryItems.length > 0 
-        ? inventoryItems.reduce((sum: number, item: ShopifyInventoryItem) => sum + item.inventory_quantity, 0) / inventoryItems.length 
+        ? inventoryItems.reduce((sum: number, item: ShopifyInventoryItem) => sum + Math.max(0, item.inventory_quantity), 0) / inventoryItems.length 
         : 0
     }
 
