@@ -158,7 +158,7 @@ export async function POST(
             .from('shopify_customers')
             .upsert(
               customersData.customers.map(customer => ({
-                id: parseInt(customer.id),  // Use Shopify customer ID as primary key
+                // DON'T set id - let database auto-generate UUID for primary key
                 connection_id: connectionId,
                 customer_id: customer.id.toString(),
                 email: customer.email,
@@ -178,7 +178,7 @@ export async function POST(
                 bulk_imported: true,
                 last_synced_at: new Date().toISOString()
               })),
-              { onConflict: 'id' }  // Use primary key for conflict resolution
+              { onConflict: 'customer_id' }  // Use customer_id for conflict resolution since id is UUID
             )
 
           if (customersError) {
