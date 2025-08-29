@@ -178,7 +178,7 @@ export async function POST(
                 bulk_imported: true,
                 last_synced_at: new Date().toISOString()
               })),
-              { onConflict: 'customer_id' }  // Use customer_id for conflict resolution since id is UUID
+              // No onConflict - let database handle with auto-generated UUID primary key
             )
 
           if (customersError) {
@@ -401,10 +401,15 @@ async function registerShopifyWebhooks(
       })
 
       if (response.ok) {
-        console.log(`[Webhooks] Registered ${webhook.topic} webhook for ${shop}`)
+        console.log(`[Webhooks] ✅ Registered ${webhook.topic} webhook for ${shop}`)
       } else {
         const errorText = await response.text()
-        console.error(`[Webhooks] Failed to register ${webhook.topic} webhook:`, errorText)
+        // Check if it's just a "already exists" error (common and harmless)
+        if (errorText.includes('already been taken')) {
+          console.log(`[Webhooks] ✓ ${webhook.topic} webhook already exists for ${shop} (skipping)`)
+        } else {
+          console.error(`[Webhooks] ❌ Failed to register ${webhook.topic} webhook:`, errorText)
+        }
       }
     } catch (error) {
       console.error(`[Webhooks] Error registering ${webhook.topic} webhook:`, error)
