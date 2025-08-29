@@ -18,7 +18,6 @@ import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { CustomerSegmentationWidget } from "@/components/shopify/CustomerSegmentationWidget"
-import { SyncLogger } from "@/components/debug/SyncLogger"
 
 import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidget"
 import { AbandonedCartWidget } from "@/components/shopify/AbandonedCartWidget"
@@ -675,22 +674,74 @@ export function ShopifyTab({
 
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
+  // Enhanced frontend logging utility
+  const logFrontendEvent = useCallback((level: 'INFO' | 'WARN' | 'ERROR', event: string, details?: any) => {
+    const timestamp = new Date().toISOString()
+    const sessionId = `FRONTEND_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
+
+    console.log(`[${timestamp}] [${sessionId}] [${level}] ${event}`, details || '')
+
+    // Store in localStorage for debugging
+    try {
+      const logs = JSON.parse(localStorage.getItem('shopify_sync_logs') || '[]')
+      logs.push({
+        timestamp,
+        sessionId,
+        level,
+        event,
+        details,
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      })
+      // Keep only last 50 logs
+      if (logs.length > 50) logs.splice(0, logs.length - 50)
+      localStorage.setItem('shopify_sync_logs', JSON.stringify(logs))
+    } catch (error) {
+      // Ignore localStorage errors
+    }
+  }, [])
+
   // Fresh data sync function (like Meta's syncMetaInsights)
   const syncShopifyData = useCallback(async (refreshId?: string) => {
     if (!brandId || !connection) {
+      logFrontendEvent('WARN', 'SYNC_CANCELLED_NO_DATA', {
+        reason: 'Missing brandId or connection',
+        brandId: !!brandId,
+        connection: !!connection
+      })
       return;
     }
 
+    const syncSessionId = `SYNC_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
+
+    logFrontendEvent('INFO', 'SYNC_FRONTEND_STARTED', {
+      syncSessionId,
+      brandId,
+      shop: connection.shop,
+      dateRange: {
+        from: format(dateRange.from, 'yyyy-MM-dd'),
+        to: format(dateRange.to, 'yyyy-MM-dd')
+      },
+      refreshId,
+      connectionStatus: connection.status
+    })
+
     try {
-      // Starting fresh Shopify data sync
-      
+      logFrontendEvent('INFO', 'SYNC_TOAST_SHOWN', { syncSessionId })
+
       // Show toast for sync
-      toast.loading("Syncing fresh Shopify data...", { 
+      toast.loading("Syncing fresh Shopify data...", {
         id: "shopify-sync-toast",
-        duration: 15000 
+        duration: 15000
       });
 
       // Trigger fresh Shopify sync with date range
+      logFrontendEvent('INFO', 'SYNC_API_CALL_STARTED', {
+        syncSessionId,
+        endpoint: '/api/cron/shopify-sync',
+        method: 'POST'
+      })
+
       const syncResponse = await fetch('/api/cron/shopify-sync', {
         method: 'POST',
         headers: {
@@ -707,19 +758,42 @@ export function ShopifyTab({
         }),
       });
 
+      logFrontendEvent('INFO', 'SYNC_API_RESPONSE_RECEIVED', {
+        syncSessionId,
+        status: syncResponse.status,
+        ok: syncResponse.ok
+      })
+
       if (!syncResponse.ok) {
-        throw new Error(`Shopify sync failed: ${syncResponse.status}`);
+        const errorText = await syncResponse.text()
+        logFrontendEvent('ERROR', 'SYNC_API_FAILED', {
+          syncSessionId,
+          status: syncResponse.status,
+          errorText: errorText.substring(0, 500) // Limit error text
+        })
+        throw new Error(`Shopify sync failed: ${syncResponse.status} - ${errorText}`)
       }
 
       const syncResult = await syncResponse.json();
-      // Shopify sync completed
+
+      logFrontendEvent('INFO', 'SYNC_API_SUCCESS', {
+        syncSessionId,
+        backendSyncId: syncResult.syncId,
+        results: syncResult.results,
+        synced: syncResult.synced,
+        errors: syncResult.errors
+      })
 
       // Also sync comparison period data for the previous period
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
-      
+
+      logFrontendEvent('INFO', 'SYNC_COMPARISON_PERIOD_STARTED', {
+        syncSessionId,
+        prevFrom,
+        prevTo
+      })
+
       try {
-        // Syncing comparison period
-        
         await fetch('/api/cron/shopify-sync', {
           method: 'POST',
           headers: {
@@ -735,46 +809,61 @@ export function ShopifyTab({
             }
           }),
         });
-        
-        // Comparison period sync completed
+
+        logFrontendEvent('INFO', 'SYNC_COMPARISON_PERIOD_SUCCESS', { syncSessionId })
+
       } catch (compError) {
-        // Comparison period sync failed
+        logFrontendEvent('WARN', 'SYNC_COMPARISON_PERIOD_FAILED', {
+          syncSessionId,
+          error: compError instanceof Error ? compError.message : 'Unknown error'
+        })
       }
 
-      toast.success("Shopify data synced successfully", { 
+      logFrontendEvent('INFO', 'SYNC_TOAST_SUCCESS_SHOWN', { syncSessionId })
+
+      toast.success("Shopify data synced successfully", {
         id: "shopify-sync-toast",
-        duration: 3000 
+        duration: 3000
       });
 
       // Trigger data refresh for all components
-      window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', { 
-        detail: { 
-          brandId, 
+      logFrontendEvent('INFO', 'SYNC_REFRESH_EVENTS_DISPATCHED', { syncSessionId })
+
+      window.dispatchEvent(new CustomEvent('shopifyDataRefreshed', {
+        detail: {
+          brandId,
           timestamp: Date.now(),
-          forceRefresh: true
+          forceRefresh: true,
+          syncSessionId
         }
       }));
-      
+
       // Also dispatch specific events for enhanced widgets
-      window.dispatchEvent(new CustomEvent('refresh-all-widgets', { 
-        detail: { 
-          brandId, 
+      window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
+        detail: {
+          brandId,
           timestamp: Date.now(),
-          source: 'shopify-sync'
+          source: 'shopify-sync',
+          syncSessionId
         }
       }));
-      
-      // Dispatched refresh events
+
+      logFrontendEvent('INFO', 'SYNC_FRONTEND_COMPLETED_SUCCESSFULLY', { syncSessionId })
 
     } catch (error) {
-      // Failed to sync Shopify data
+      logFrontendEvent('ERROR', 'SYNC_FRONTEND_FAILED', {
+        syncSessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
+
       toast.error("Failed to sync Shopify data", {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
         duration: 5000,
         id: "shopify-sync-toast"
       });
     }
-  }, [brandId, connection, dateRange]);
+  }, [brandId, connection, dateRange, logFrontendEvent]);
 
   // Fresh data sync on mount and date changes (like MetaTab2)
   const hasFetchedShopifyData = useRef(false);
@@ -937,6 +1026,27 @@ export function ShopifyTab({
         <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-4">
           <div>Date Range: {dateRange.from.toDateString()} to {dateRange.to.toDateString()}</div>
           <div>Revenue Data Points: {safeMetrics.revenueByDay.length}</div>
+          <div className="mt-2">
+            <button
+              onClick={() => {
+                const logs = JSON.parse(localStorage.getItem('shopify_sync_logs') || '[]')
+                console.log('Frontend Sync Logs:', logs)
+                alert(`Found ${logs.length} frontend sync logs in console`)
+              }}
+              className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs"
+            >
+              View Frontend Logs
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('shopify_sync_logs')
+                alert('Frontend logs cleared')
+              }}
+              className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs ml-2"
+            >
+              Clear Logs
+            </button>
+          </div>
         </div>
       )}
 
@@ -1092,17 +1202,12 @@ export function ShopifyTab({
 
         {/* Repeat Customer Analysis - Full width below */}
         <div className="mt-6">
-          <RepeatCustomersWidget
+          <RepeatCustomersWidget 
             brandId={brandId}
             dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
-        </div>
-
-        {/* 🔍 DEBUG LOGGING - REMOVE IN PRODUCTION */}
-        <div className="mt-6">
-          <SyncLogger brandId={brandId} isVisible={true} />
         </div>
       </div>
 

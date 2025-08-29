@@ -80,51 +80,57 @@ export class ShopifyBulkService {
     accessToken: string,
     connectionId: string
   ) {
-    console.log(`[Mini-sync] Starting immediate sync for brand ${brandId}, shop ${shop}`)
-    
+    const syncId = `MINI_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
+
+    console.log(`[Mini-sync] [${syncId}] 🚀 STARTING MINI-SYNC for brand ${brandId}, shop ${shop}`)
+
     try {
       const threeDaysAgo = new Date()
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-      
+
       // Fetch recent orders via REST API (faster for small datasets)
       const ordersUrl = `https://${shop}/admin/api/2024-01/orders.json?` +
         `status=any&created_at_min=${threeDaysAgo.toISOString()}&limit=250`
-      
-      console.log(`[Mini-sync] Fetching orders from: ${ordersUrl}`)
-      
+
+      console.log(`[Mini-sync] [${syncId}] 📡 Fetching orders from: ${ordersUrl}`)
+
       const response = await fetch(ordersUrl, {
         headers: { 'X-Shopify-Access-Token': accessToken }
       })
-      
+
       if (!response.ok) {
         const errorText = await response.text()
+        console.error(`[Mini-sync] [${syncId}] ❌ SHOPIFY API ERROR: ${response.status} - ${errorText}`)
         throw new Error(`Shopify API error: ${response.status} - ${errorText}`)
       }
-      
+
       const data = await response.json()
       const orders = data.orders || []
-      
-      console.log(`[Mini-sync] Found ${orders.length} recent orders`)
+
+      console.log(`[Mini-sync] [${syncId}] 📊 Found ${orders.length} recent orders from last 3 days`)
       
       if (orders.length === 0) {
-        console.log(`[Mini-sync] No recent orders found, sync complete`)
+        console.log(`[Mini-sync] [${syncId}] ⚠️ No recent orders found, sync complete`)
         return
       }
-      
+
       // Store recent orders for immediate dashboard population
       const { data: connectionData, error: connectionError } = await supabase
         .from('platform_connections')
         .select('user_id')
         .eq('id', connectionId)
         .single()
-      
+
       if (connectionError) {
+        console.error(`[Mini-sync] [${syncId}] ❌ CONNECTION DATA ERROR:`, connectionError.message)
         throw new Error(`Failed to get connection data: ${connectionError.message}`)
       }
-      
-      console.log(`[Mini-sync] Got connection data for user: ${connectionData?.user_id}`)
-      
+
+      console.log(`[Mini-sync] [${syncId}] 👤 Got connection data for user: ${connectionData?.user_id}`)
+
       // Prepare batch data for faster bulk insert
+      console.log(`[Mini-sync] [${syncId}] 🔄 Preparing ${orders.length} orders for bulk insert...`)
+
       const ordersData = orders.map(order => ({
         id: parseInt(order.id),
         brand_id: brandId,
@@ -147,18 +153,20 @@ export class ShopifyBulkService {
         line_items_count: order.line_items?.length || 0,
         last_synced_at: new Date().toISOString()
       }))
-      
+
+      console.log(`[Mini-sync] [${syncId}] 💾 Executing bulk upsert of ${ordersData.length} orders...`)
+
       // Bulk upsert - much faster than individual operations
       const { error: bulkUpsertError } = await supabase
         .from('shopify_orders')
         .upsert(ordersData, { onConflict: 'id' })
-      
+
       if (bulkUpsertError) {
-        console.error(`[Mini-sync] Bulk upsert error:`, bulkUpsertError)
+        console.error(`[Mini-sync] [${syncId}] ❌ BULK UPSERT ERROR:`, bulkUpsertError)
         throw bulkUpsertError
       }
-      
-      console.log(`[Mini-sync] Bulk stored ${orders.length} orders`)
+
+      console.log(`[Mini-sync] [${syncId}] ✅ SUCCESSFULLY BULK STORED ${orders.length} ORDERS in database`)
       
       // Skip regional data and abandoned checkouts for speed - let historical sync handle these
       /*
@@ -218,38 +226,60 @@ export class ShopifyBulkService {
       */
       
       // Update connection to mark mini-sync as completed BUT STILL SYNCING (queue jobs running)
-    await supabase
-      .from('platform_connections')
-      .update({
-        sync_status: 'syncing', // ✅ KEEP AS SYNCING - historical sync still running!
-        last_synced_at: new Date().toISOString(),
-        metadata: {
-          mini_sync_completed: true,
-          mini_sync_orders: orders.length,
-          mini_sync_errors: 0,
-          historical_sync_queued: true, // Indicate historical jobs are queued
-          sync_stage: 'historical_import' // Current stage
-        }
-      })
-      .eq('id', connectionId)
-        
-      console.log(`[Mini-sync] Updated connection status to syncing (queue jobs still running)`)
-      
-    } catch (error) {
-      console.error(`[Mini-sync] FATAL ERROR in immediate sync:`, error)
-      
-      // Update connection to mark sync as failed
-      await supabase
+      console.log(`[Mini-sync] [${syncId}] 🔄 Updating connection status to 'syncing' (mini-sync done, bulk jobs queued)...`)
+
+      const statusUpdate = await supabase
         .from('platform_connections')
-        .update({ 
-          sync_status: 'failed',
+        .update({
+          sync_status: 'syncing', // ✅ KEEP AS SYNCING - historical sync still running!
+          last_synced_at: new Date().toISOString(),
           metadata: {
-            mini_sync_error: error instanceof Error ? error.message : String(error),
-            mini_sync_completed: false
+            mini_sync_completed: true,
+            mini_sync_orders: orders.length,
+            mini_sync_errors: 0,
+            historical_sync_queued: true, // Indicate historical jobs are queued
+            sync_stage: 'historical_import', // Current stage
+            last_mini_sync_id: syncId,
+            last_mini_sync_timestamp: new Date().toISOString()
           }
         })
         .eq('id', connectionId)
-        
+
+      if (statusUpdate.error) {
+        console.error(`[Mini-sync] [${syncId}] ❌ STATUS UPDATE ERROR:`, statusUpdate.error)
+      } else {
+        console.log(`[Mini-sync] [${syncId}] ✅ Connection status updated to 'syncing' (queue jobs still running)`)
+      }
+
+      console.log(`[Mini-sync] [${syncId}] 🎉 MINI-SYNC COMPLETED SUCCESSFULLY!`)
+      console.log(`[Mini-sync] [${syncId}] 📋 Summary: ${orders.length} orders synced, bulk operations queued`)
+
+    } catch (error) {
+      console.error(`[Mini-sync] [${syncId}] 💥 FATAL ERROR in immediate sync:`, error)
+
+      // Update connection to mark sync as failed
+      console.log(`[Mini-sync] [${syncId}] 🔄 Updating connection status to 'failed'...`)
+
+      const errorUpdate = await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: 'failed',
+          metadata: {
+            mini_sync_error: error instanceof Error ? error.message : String(error),
+            mini_sync_completed: false,
+            failed_sync_id: syncId,
+            failed_at: new Date().toISOString(),
+            error_stack: error instanceof Error ? error.stack : undefined
+          }
+        })
+        .eq('id', connectionId)
+
+      if (errorUpdate.error) {
+        console.error(`[Mini-sync] [${syncId}] ❌ ERROR STATUS UPDATE FAILED:`, errorUpdate.error)
+      } else {
+        console.log(`[Mini-sync] [${syncId}] ✅ Connection status updated to 'failed'`)
+      }
+
       throw error // Re-throw so callback knows about the failure
     }
   }

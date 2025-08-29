@@ -39,93 +39,79 @@ export class ShopifyWorker {
    */
   static async processRecentSync(job: Job<ShopifyJobData>): Promise<void> {
     const { brandId, connectionId, shop } = job.data
-    const syncId = `SYNC_${brandId}_${Date.now()}`
-    const startTime = Date.now()
+    const jobId = `WORKER_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
 
-    console.log(`[${syncId}] 🚀 ===== STARTING FULL HISTORICAL SYNC =====`)
-    console.log(`[${syncId}] Brand: ${brandId}`)
-    console.log(`[${syncId}] Connection: ${connectionId}`)
-    console.log(`[${syncId}] Shop: ${shop}`)
-    console.log(`[${syncId}] Timestamp: ${new Date().toISOString()}`)
-    console.log(`[${syncId}] Job ID: ${job.id}`)
+    console.log(`[Worker] [${jobId}] 🚀 STARTING FULL HISTORICAL SYNC for brand ${brandId}, shop ${shop}`)
 
     // Get fresh access token from database to avoid 401 errors
-    console.log(`[${syncId}] 🔑 Getting fresh access token...`)
+    console.log(`[Worker] [${jobId}] 🔑 Getting fresh access token for connection ${connectionId}...`)
+
     const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
     if (tokenError || !accessToken) {
-      console.error(`[${syncId}] ❌ FAILED: No access token - ${tokenError || 'Token not found'}`)
+      console.error(`[Worker] [${jobId}] ❌ TOKEN ERROR: ${tokenError || 'Token not found'}`)
       throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
     }
 
-    console.log(`[${syncId}] ✅ Access token obtained (${accessToken.substring(0, 10)}...)`)
+    console.log(`[Worker] [${jobId}] ✅ Got fresh access token for connection ${connectionId}`)
 
     // Create ETL job record
-    console.log(`[${syncId}] 📝 Creating ETL job record...`)
+    console.log(`[Worker] [${jobId}] 📝 Creating ETL job record...`)
+
     const etlJobId = await ShopifyQueueService.createEtlJob(
       brandId,
       'recent_sync',
       ShopifyJobType.RECENT_SYNC
     )
 
-    console.log(`[${syncId}] ✅ ETL job created: ${etlJobId}`)
+    console.log(`[Worker] [${jobId}] ✅ Created ETL job with ID: ${etlJobId}`)
 
     try {
       // Update job status to running
-      console.log(`[${syncId}] 🔄 Updating ETL job status to running...`)
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'running'
       })
-      console.log(`[${syncId}] ✅ ETL job status updated to running`)
 
       // SKIP QUICK SYNC - GO STRAIGHT TO FULL HISTORICAL BULK OPERATIONS
-      console.log(`[${syncId}] ⏭️ SKIPPING quick sync - proceeding directly to FULL HISTORICAL bulk operations`)
+      console.log(`[Worker] ⏭️ SKIPPING quick sync - proceeding directly to FULL HISTORICAL bulk operations`)
 
       // STEP 2: Now start FULL HISTORICAL bulk operations
-      console.log(`[${syncId}] Step 2: Starting FULL HISTORICAL bulk operations`)
+      console.log(`[Worker] Step 2: Starting FULL HISTORICAL bulk operations`)
 
       // Skip bulk operation check - always proceed with sync
       // This ensures we always try to sync all data
-      console.log(`[${syncId}] 🚀 Proceeding with full historical sync for ${brandId}`)
+      console.log(`[Worker] 🚀 Proceeding with full historical sync for ${brandId}`)
 
       // Start FIRST bulk operation only (Shopify allows only 1 at a time)
-      console.log(`[${syncId}] 🚀 Starting ORDERS bulk operation (first of 3 - sequential processing)...`)
-
+      console.log(`[Worker] 🚀 Starting ORDERS bulk operation (first of 3 - sequential processing)...`)
+      
       try {
-        console.log(`[${syncId}] 1/3: Starting orders bulk operation...`)
+        console.log(`[Worker] 1/3: Starting orders bulk operation...`)
         await this.startBulkOperation('orders', brandId, connectionId, shop, accessToken)
-        console.log(`[${syncId}] ✅ Orders bulk operation started successfully`)
-        console.log(`[${syncId}] 📋 Customers and Products will start automatically after Orders completes`)
+        console.log(`[Worker] ✅ Orders bulk operation started successfully`)
+        console.log(`[Worker] 📋 Customers and Products will start automatically after Orders completes`)
       } catch (ordersError) {
-        console.error(`[${syncId}] ❌ Orders bulk operation FAILED:`, ordersError)
+        console.error(`[Worker] ❌ Orders bulk operation FAILED:`, ordersError)
         throw ordersError // Fail the whole sync if first operation fails
       }
 
       // Mark recent sync job as completed (no rows written since we skipped quick sync)
-      console.log(`[${syncId}] 📝 Marking recent sync ETL job as completed...`)
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'completed',
         completed_at: new Date().toISOString(),
         rows_written: 0 // No rows written (skipped quick sync)
       })
 
-      const duration = Date.now() - startTime
-      console.log(`[${syncId}] 🎉 FULL HISTORICAL SYNC INITIATED for brand ${brandId} (2010 onwards - NO QUICK SYNC)`)
-      console.log(`[${syncId}] ⏱️ Sync setup completed in ${duration}ms`)
-      console.log(`[${syncId}] 📊 Awaiting bulk operations to complete...`)
+      console.log(`[Worker] 🎉 FULL HISTORICAL SYNC INITIATED for brand ${brandId} (2010 onwards - NO QUICK SYNC)`)
 
     } catch (error) {
-      const duration = Date.now() - startTime
-      console.error(`[${syncId}] ❌ FULL HISTORICAL SYNC FAILED for brand ${brandId}:`, error)
-      console.error(`[${syncId}] ⏱️ Failed after ${duration}ms`)
+      console.error(`[Worker] Full historical sync failed for brand ${brandId}:`, error)
 
-      console.log(`[${syncId}] 📝 Updating ETL job to failed status...`)
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         status: 'failed',
         error_message: error instanceof Error ? error.message : 'Unknown error',
         completed_at: new Date().toISOString()
       })
 
-      console.log(`[${syncId}] 🔴 SYNC ABORTED - No data will be synced`)
       throw error
     }
   }
@@ -140,36 +126,21 @@ export class ShopifyWorker {
     shop: string,
     accessToken: string
   ): Promise<void> {
-    const syncId = `SYNC_${brandId}_${Date.now()}`
-    const startTime = Date.now()
-
     try {
-      console.log(`[${syncId}] 🚀 Starting bulk ${entity} export...`)
-      console.log(`[${syncId}] Entity: ${entity}`)
-      console.log(`[${syncId}] Brand: ${brandId}`)
-      console.log(`[${syncId}] Connection: ${connectionId}`)
-      console.log(`[${syncId}] Shop: ${shop}`)
+      console.log(`[Worker] Starting bulk ${entity} export...`)
 
       // Create ETL job for this bulk operation
-      console.log(`[${syncId}] 📝 Creating ETL job for ${entity}...`)
-      const jobType = entity === 'orders' ? ShopifyJobType.BULK_ORDERS :
-                     entity === 'customers' ? ShopifyJobType.BULK_CUSTOMERS :
-                     ShopifyJobType.BULK_PRODUCTS
-
       const etlJobId = await ShopifyQueueService.createEtlJob(
         brandId,
         entity,
-        jobType
+        entity === 'orders' ? ShopifyJobType.BULK_ORDERS :
+        entity === 'customers' ? ShopifyJobType.BULK_CUSTOMERS :
+        ShopifyJobType.BULK_PRODUCTS
       )
 
-      console.log(`[${syncId}] ✅ ETL job created: ${etlJobId} for ${entity}`)
-      console.log(`[${syncId}] 🔄 Updating ETL job status to running...`)
-
       await ShopifyQueueService.updateEtlJob(etlJobId, { status: 'running' })
-      console.log(`[${syncId}] ✅ ETL job status updated to running`)
 
       // Start the bulk operation
-      console.log(`[${syncId}] 🔗 Starting Shopify bulk operation for ${entity}...`)
       let bulkOp
       if (entity === 'orders') {
         bulkOp = await ShopifyGraphQLService.startBulkOrdersExport(shop, accessToken, '2010-01-01')
@@ -179,18 +150,16 @@ export class ShopifyWorker {
         bulkOp = await ShopifyGraphQLService.startBulkProductsExport(shop, accessToken, '2010-01-01')
       }
 
-      console.log(`[${syncId}] ✅ Shopify bulk operation started: ${bulkOp.id}`)
-      console.log(`[${syncId}] Status: ${bulkOp.status}`)
-
       // Update ETL job with bulk operation ID
-      console.log(`[${syncId}] 📝 Updating ETL job with bulk operation ID...`)
       await ShopifyQueueService.updateEtlJob(etlJobId, {
         shopify_bulk_id: bulkOp.id
       })
-      console.log(`[${syncId}] ✅ ETL job updated with bulk operation ID: ${bulkOp.id}`)
 
       // Schedule polling job
-      console.log(`[${syncId}] ⏰ Scheduling polling job to check completion...`)
+      const jobType = entity === 'orders' ? ShopifyJobType.BULK_ORDERS :
+                     entity === 'customers' ? ShopifyJobType.BULK_CUSTOMERS :
+                     ShopifyJobType.BULK_PRODUCTS
+
       await ShopifyQueueService.addPollBulkJob({
         brandId,
         connectionId,
@@ -202,24 +171,10 @@ export class ShopifyWorker {
         metadata: { etlJobId }
       } as any)
 
-      const duration = Date.now() - startTime
-      console.log(`[${syncId}] ✅ Bulk ${entity} export STARTED successfully`)
-      console.log(`[${syncId}] Bulk Operation ID: ${bulkOp.id}`)
-      console.log(`[${syncId}] ETL Job ID: ${etlJobId}`)
-      console.log(`[${syncId}] ⏱️ Setup completed in ${duration}ms`)
-      console.log(`[${syncId}] 📊 Polling job scheduled - will check every 30 seconds`)
+      console.log(`[Worker] ✅ Bulk ${entity} export started with ID: ${bulkOp.id}`)
 
     } catch (error) {
-      const duration = Date.now() - startTime
-      console.error(`[${syncId}] ❌ Failed to start bulk ${entity} export:`, error)
-      console.error(`[${syncId}] ⏱️ Failed after ${duration}ms`)
-      console.error(`[${syncId}] 🔍 Error details:`, {
-        entity,
-        brandId,
-        connectionId,
-        shop,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
+      console.error(`[Worker] Failed to start bulk ${entity} export:`, error)
       throw error
     }
   }
@@ -438,30 +393,15 @@ export class ShopifyWorker {
    */
   static async processPollBulk(job: Job<BulkJobData>): Promise<void> {
     const { brandId, connectionId, shop, bulkOperationId, entity, metadata } = job.data
-    const pollId = `POLL_${entity}_${bulkOperationId}_${Date.now()}`
-    const startTime = Date.now()
-
-    const etlJobId = metadata?.etlJobId
-
-    console.log(`[${pollId}] 🔍 ===== POLLING BULK OPERATION =====`)
-    console.log(`[${pollId}] Entity: ${entity}`)
-    console.log(`[${pollId}] Bulk Operation ID: ${bulkOperationId}`)
-    console.log(`[${pollId}] Brand: ${brandId}`)
-    console.log(`[${pollId}] ETL Job ID: ${etlJobId}`)
-    console.log(`[${pollId}] Shop: ${shop}`)
-    console.log(`[${pollId}] Timestamp: ${new Date().toISOString()}`)
-    console.log(`[${pollId}] Job ID: ${job.id}`)
-
+    
     // Get fresh access token from database to avoid 401 errors
-    console.log(`[${pollId}] 🔑 Getting fresh access token...`)
     const { accessToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
     if (tokenError || !accessToken) {
-      console.error(`[${pollId}] ❌ FAILED: No access token - ${tokenError || 'Token not found'}`)
       throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
     }
-    console.log(`[${pollId}] ✅ Access token obtained`)
-
-    console.log(`[${pollId}] 📡 Checking bulk operation status...`)
+    const etlJobId = metadata?.etlJobId
+    
+    console.log(`[Worker] Polling bulk operation ${bulkOperationId} for ${entity}`)
     
     try {
       // Check bulk operation status
@@ -483,20 +423,12 @@ export class ShopifyWorker {
       }
       
       if (bulkOp.status === 'COMPLETED') {
-        console.log(`[${pollId}] 🎉 BULK OPERATION COMPLETED!`)
-        console.log(`[${pollId}] Status: ${bulkOp.status}`)
-        console.log(`[${pollId}] URL: ${bulkOp.url}`)
-        console.log(`[${pollId}] Object Count: ${bulkOp.objectCount}`)
-        console.log(`[${pollId}] File Size: ${bulkOp.fileSize}`)
-
+        console.log(`[Worker] Bulk operation ${bulkOperationId} completed, processing results`)
+        
         if (!bulkOp.url) {
-          console.error(`[${pollId}] ❌ No download URL provided for completed bulk operation`)
           throw new Error('No download URL provided for completed bulk operation')
         }
-
-        console.log(`[${pollId}] ⬇️ DOWNLOADING AND PROCESSING RESULTS...`)
-        console.log(`[${pollId}] Download URL: ${bulkOp.url}`)
-
+        
         // Process the results - data now goes directly to production tables
         const results = await ShopifyGraphQLService.processBulkResults(
           bulkOp.url,
@@ -504,21 +436,12 @@ export class ShopifyWorker {
           brandId,
           connectionId
         )
-
-        console.log(`[${pollId}] 📊 PROCESSING RESULTS:`)
-        console.log(`[${pollId}] Orders processed: ${results.ordersProcessed}`)
-        console.log(`[${pollId}] Line items processed: ${results.lineItemsProcessed}`)
-        console.log(`[${pollId}] Customers processed: ${results.customersProcessed}`)
-        console.log(`[${pollId}] Products processed: ${results.productsProcessed}`)
-
+        
         // Update ETL job
         if (etlJobId) {
-          const totalRows = results.ordersProcessed + results.lineItemsProcessed +
+          const totalRows = results.ordersProcessed + results.lineItemsProcessed + 
                           results.customersProcessed + results.productsProcessed
-
-          console.log(`[${pollId}] 📝 Updating ETL job with results...`)
-          console.log(`[${pollId}] Total rows written: ${totalRows}`)
-
+          
           await ShopifyQueueService.updateEtlJob(etlJobId, {
             status: 'completed',
             rows_written: totalRows,
@@ -526,60 +449,40 @@ export class ShopifyWorker {
             progress_pct: 100,
             completed_at: new Date().toISOString()
           })
-
-          console.log(`[${pollId}] ✅ ETL job updated to completed`)
         }
-
-        const duration = Date.now() - startTime
-        console.log(`[${pollId}] 🎉 BULK OPERATION PROCESSING COMPLETED`)
-        console.log(`[${pollId}] ⏱️ Total processing time: ${duration}ms`)
-
+        
+        console.log(`[Worker] Bulk operation ${bulkOperationId} processing completed:`, results)
+        
         // 🚀 START NEXT BULK OPERATION (Sequential processing)
-        console.log(`[${pollId}] 🚀 Checking if next bulk operation should start...`)
         await this.startNextBulkOperation(entity as 'orders' | 'customers' | 'products', brandId, connectionId, shop, accessToken)
-
+        
         // 📦 TRIGGER INVENTORY SYNC AFTER PRODUCTS COMPLETE
         if (entity === 'products') {
-          console.log(`[${pollId}] 📦 Products completed - triggering inventory sync...`)
+          console.log(`[Worker] 📦 Products completed - triggering inventory sync...`)
           try {
             await this.triggerInventorySync(brandId, connectionId)
-            console.log(`[${pollId}] ✅ Inventory sync triggered after products completion`)
+            console.log(`[Worker] ✅ Inventory sync triggered after products completion`)
           } catch (inventoryError) {
-            console.error(`[${pollId}] ❌ Inventory sync failed:`, inventoryError)
+            console.error(`[Worker] ❌ Inventory sync failed:`, inventoryError)
             // Don't fail the whole sync for inventory issues
           }
         }
-
+        
         // Check if ALL jobs are now complete and update connection status
-        console.log(`[${pollId}] 🔍 Checking overall sync status...`)
         await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
-
-        console.log(`[${pollId}] ✅ POLLING JOB COMPLETED SUCCESSFULLY`)
       }
       
     } catch (error) {
-      const duration = Date.now() - startTime
-      console.error(`[${pollId}] ❌ BULK POLLING FAILED for ${bulkOperationId}:`, error)
-      console.error(`[${pollId}] ⏱️ Failed after ${duration}ms`)
-      console.error(`[${pollId}] 🔍 Error details:`, {
-        entity,
-        bulkOperationId,
-        brandId,
-        etlJobId,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-
-      console.log(`[${pollId}] 📝 Updating ETL job to failed status...`)
+      console.error(`[Worker] Bulk polling failed for ${bulkOperationId}:`, error)
+      
       if (etlJobId) {
         await ShopifyQueueService.updateEtlJob(etlJobId, {
           status: 'failed',
           error_message: error instanceof Error ? error.message : 'Unknown error',
           completed_at: new Date().toISOString()
         })
-        console.log(`[${pollId}] ✅ ETL job updated to failed`)
       }
-
-      console.log(`[${pollId}] 🔴 POLLING JOB ABORTED`)
+      
       throw error
     }
   }
