@@ -113,9 +113,8 @@ export function RepeatCustomersWidget({
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
-    
-    // Also refresh when specific Shopify sync events occur
     window.addEventListener('shopify-sync-completed', handleRefresh)
+    window.addEventListener('force-widget-refresh', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
@@ -123,6 +122,7 @@ export function RepeatCustomersWidget({
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
+      window.removeEventListener('force-widget-refresh', handleRefresh)
     }
   }, [fetchRepeatData])
 

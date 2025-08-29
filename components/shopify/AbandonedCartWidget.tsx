@@ -135,6 +135,7 @@ export function AbandonedCartWidget({
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
     window.addEventListener('global-refresh-all', handleRefresh)
     window.addEventListener('shopify-sync-completed', handleRefresh)
+    window.addEventListener('force-widget-refresh', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
@@ -142,6 +143,7 @@ export function AbandonedCartWidget({
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
       window.removeEventListener('global-refresh-all', handleRefresh)
       window.removeEventListener('shopify-sync-completed', handleRefresh)
+      window.removeEventListener('force-widget-refresh', handleRefresh)
     }
   }, [fetchData])
 
