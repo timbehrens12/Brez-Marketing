@@ -416,18 +416,12 @@ export class ShopifyWorker {
           throw new Error('No download URL provided for completed bulk operation')
         }
         
-        // Process the results
+        // Process the results - data now goes directly to production tables
         const results = await ShopifyGraphQLService.processBulkResults(
           bulkOp.url,
           entity as 'orders' | 'customers' | 'products',
           brandId,
           connectionId
-        )
-        
-        // Promote staging data to production
-        await ShopifyGraphQLService.promoteToProduction(
-          entity as 'orders' | 'customers' | 'products',
-          brandId
         )
         
         // Update ETL job
@@ -554,31 +548,54 @@ export class ShopifyWorker {
     try {
       const supabase = createClient()
 
-      // Use maybeSingle() instead of single() to handle multiple/no results gracefully
-      const { data: connection, error } = await supabase
+      // First check if ANY connection exists with this ID (regardless of status)
+      const { data: anyConnection, error: anyError } = await supabase
         .from('platform_connections')
-        .select('access_token')
+        .select('id, status, platform_type, shop, brand_id, access_token')
         .eq('id', connectionId)
-        .eq('status', 'active')
         .maybeSingle()
 
-      if (error) {
-        console.error('[Worker] Error fetching connection:', error)
-        return { error: error.message }
+      if (anyError) {
+        console.error('[Worker] Error checking connection existence:', anyError)
+        return { error: anyError.message }
       }
 
-      if (!connection) {
-        console.error('[Worker] No active connection found for ID:', connectionId)
-        return { error: 'No active connection found' }
+      if (!anyConnection) {
+        console.error(`[Worker] Connection ${connectionId} does not exist at all! This job should be cancelled.`)
+        
+        // Check what connections DO exist for debugging
+        const { data: allConnections } = await supabase
+          .from('platform_connections')
+          .select('id, status, platform_type, shop, brand_id, created_at')
+          .eq('platform_type', 'shopify')
+          .order('created_at', { ascending: false })
+          .limit(5)
+        
+        console.error('[Worker] Recent Shopify connections:', allConnections)
+        return { error: 'Connection does not exist - job should be cancelled' }
       }
 
-      if (!connection.access_token) {
+      // Log the connection status for debugging
+      console.log(`[Worker] Found connection ${connectionId}:`, {
+        status: anyConnection.status,
+        platform_type: anyConnection.platform_type,
+        shop: anyConnection.shop,
+        brand_id: anyConnection.brand_id,
+        has_token: !!anyConnection.access_token
+      })
+
+      if (anyConnection.status !== 'active') {
+        console.error(`[Worker] Connection ${connectionId} status is '${anyConnection.status}', not 'active'`)
+        return { error: `Connection status is ${anyConnection.status}, not active` }
+      }
+
+      if (!anyConnection.access_token) {
         console.error('[Worker] No access token found in connection:', connectionId)
         return { error: 'No access token found in connection' }
       }
 
       console.log(`[Worker] Retrieved access token for connection: ${connectionId}`)
-      return { accessToken: connection.access_token }
+      return { accessToken: anyConnection.access_token }
     } catch (error) {
       console.error('[Worker] Error getting fresh access token:', error)
       return { error: error instanceof Error ? error.message : 'Unknown error' }

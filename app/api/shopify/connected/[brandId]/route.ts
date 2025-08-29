@@ -229,10 +229,10 @@ async function registerShopifyWebhooks(
           webhook: {
             ...webhook,
             fields: webhook.topic.startsWith('orders') ? 
-              'id,name,email,created_at,updated_at,total_price,line_items' :
+              ['id', 'name', 'email', 'created_at', 'updated_at', 'total_price', 'line_items'] :
               webhook.topic.startsWith('customers') ?
-              'id,email,first_name,last_name,created_at,updated_at' :
-              'id,title,created_at,updated_at'
+              ['id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at'] :
+              ['id', 'title', 'created_at', 'updated_at']
           }
         })
       })
