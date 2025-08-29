@@ -57,6 +57,24 @@ export async function POST(request: NextRequest) {
       .delete()
       .eq('brand_id', brandId)
 
+    // Cancel any existing bulk operations in Shopify to prevent conflicts
+    console.log(`[Restart Sync] Cancelling any existing bulk operations...`)
+    try {
+      const cancelled = await ShopifyGraphQLService.cancelCurrentBulkOperation(
+        connection.shop,
+        connection.access_token
+      )
+      
+      if (cancelled) {
+        console.log(`[Restart Sync] ✅ Existing bulk operations cleared`)
+      } else {
+        console.log(`[Restart Sync] ⚠️ Could not cancel existing bulk operations - proceeding anyway`)
+      }
+    } catch (cancelError) {
+      console.error(`[Restart Sync] Error cancelling bulk operations:`, cancelError)
+      console.log(`[Restart Sync] ⚠️ Proceeding with sync despite cancel error`)
+    }
+
     // Update connection status to show full historical sync
     await supabase
       .from('platform_connections')
@@ -81,24 +99,7 @@ export async function POST(request: NextRequest) {
       connection.access_token
     )
 
-    // Also trigger inventory sync immediately
-    try {
-      console.log(`[Restart Sync] Triggering inventory sync...`)
-      const inventoryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connectionId: connection.id })
-      })
-
-      if (inventoryResponse.ok) {
-        console.log(`[Restart Sync] ✅ Inventory sync initiated`)
-      } else {
-        const errorText = await inventoryResponse.text()
-        console.log(`[Restart Sync] ⚠️ Inventory sync failed:`, errorText)
-      }
-    } catch (inventoryError) {
-      console.log(`[Restart Sync] ⚠️ Inventory sync request failed:`, inventoryError)
-    }
+    // Note: Inventory sync will trigger automatically after products complete (sequential processing)
 
     // Test webhook registration
     try {

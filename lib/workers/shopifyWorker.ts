@@ -446,6 +446,18 @@ export class ShopifyWorker {
         // 🚀 START NEXT BULK OPERATION (Sequential processing)
         await this.startNextBulkOperation(entity as 'orders' | 'customers' | 'products', brandId, connectionId, shop, accessToken)
         
+        // 📦 TRIGGER INVENTORY SYNC AFTER PRODUCTS COMPLETE
+        if (entity === 'products') {
+          console.log(`[Worker] 📦 Products completed - triggering inventory sync...`)
+          try {
+            await this.triggerInventorySync(brandId, connectionId)
+            console.log(`[Worker] ✅ Inventory sync triggered after products completion`)
+          } catch (inventoryError) {
+            console.error(`[Worker] ❌ Inventory sync failed:`, inventoryError)
+            // Don't fail the whole sync for inventory issues
+          }
+        }
+        
         // Check if ALL jobs are now complete and update connection status
         await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
       }
@@ -461,6 +473,36 @@ export class ShopifyWorker {
         })
       }
       
+      throw error
+    }
+  }
+
+  /**
+   * Trigger inventory sync after products complete
+   */
+  static async triggerInventorySync(brandId: string, connectionId: string): Promise<void> {
+    try {
+      console.log(`[Worker] 📦 Triggering inventory sync for brand ${brandId}`)
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/inventory/sync`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-internal-call': 'true'
+        },
+        body: JSON.stringify({ connectionId })
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Inventory sync API failed: ${response.status} - ${errorText}`)
+      }
+      
+      const result = await response.json()
+      console.log(`[Worker] 📦 Inventory sync response:`, result)
+      
+    } catch (error) {
+      console.error(`[Worker] Failed to trigger inventory sync:`, error)
       throw error
     }
   }

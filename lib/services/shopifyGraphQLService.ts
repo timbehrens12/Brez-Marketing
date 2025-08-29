@@ -386,6 +386,78 @@ export class ShopifyGraphQLService {
   /**
    * Get current bulk operation status
    */
+  /**
+   * Cancel any existing bulk operation to prevent conflicts
+   */
+  static async cancelCurrentBulkOperation(
+    shop: string,
+    accessToken: string
+  ): Promise<boolean> {
+    console.log('[GraphQL] Cancelling any existing bulk operation...')
+    
+    const currentOp = await this.getCurrentBulkOperation(shop, accessToken)
+    
+    if (!currentOp) {
+      console.log('[GraphQL] No existing bulk operation to cancel')
+      return true
+    }
+    
+    if (currentOp.status === 'COMPLETED' || currentOp.status === 'FAILED' || currentOp.status === 'CANCELED') {
+      console.log(`[GraphQL] Bulk operation ${currentOp.id} is already ${currentOp.status}`)
+      return true
+    }
+    
+    console.log(`[GraphQL] Cancelling bulk operation ${currentOp.id} (status: ${currentOp.status})`)
+    
+    const mutation = `
+      mutation bulkOperationCancel($id: ID!) {
+        bulkOperationCancel(id: $id) {
+          bulkOperation {
+            id
+            status
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `
+    
+    try {
+      const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: { id: currentOp.id }
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.errors) {
+        console.error('[GraphQL] Error cancelling bulk operation:', result.errors)
+        return false
+      }
+      
+      if (result.data?.bulkOperationCancel?.userErrors?.length > 0) {
+        console.error('[GraphQL] User errors cancelling bulk operation:', result.data.bulkOperationCancel.userErrors)
+        return false
+      }
+      
+      console.log(`[GraphQL] ✅ Bulk operation ${currentOp.id} cancelled successfully`)
+      return true
+      
+    } catch (error) {
+      console.error('[GraphQL] Failed to cancel bulk operation:', error)
+      return false
+    }
+  }
+
   static async getCurrentBulkOperation(
     shop: string,
     accessToken: string
