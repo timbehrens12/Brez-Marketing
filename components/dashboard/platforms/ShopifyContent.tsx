@@ -24,14 +24,33 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       console.log('[ShopifyContent] Page loaded/brand changed - forcing fresh data refresh')
       
       // Small delay to ensure components are mounted
-      const timer = setTimeout(() => {
-        // FORCE DATE RANGE REFRESH - This is what actually triggers fresh data!
+      const timer = setTimeout(async () => {
+        // FIRST: Trigger force fresh sync to get latest data from Shopify
+        console.log('[ShopifyContent] Triggering force fresh sync from Shopify API')
+        try {
+          const syncResponse = await fetch('/api/shopify/force-fresh-sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brandId })
+          })
+          
+          const syncResult = await syncResponse.json()
+          if (syncResponse.ok) {
+            console.log(`[ShopifyContent] ✅ Fresh sync completed: ${syncResult.ordersProcessed} orders processed`)
+          } else {
+            console.warn('[ShopifyContent] ⚠️ Fresh sync failed:', syncResult.error)
+          }
+        } catch (syncError) {
+          console.error('[ShopifyContent] ❌ Fresh sync error:', syncError)
+        }
+
+        // SECOND: Force date range refresh to trigger widget updates
         window.dispatchEvent(new CustomEvent('force-date-range-refresh', {
           detail: { 
             brandId, 
             timestamp: Date.now(), 
             forceRefresh: true,
-            source: 'shopify-page-navigation'
+            source: 'shopify-page-navigation-post-sync'
           }
         }))
         
