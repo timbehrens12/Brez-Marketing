@@ -71,49 +71,17 @@ export class ShopifyWorker {
       // This ensures we always try to sync all data
       console.log(`[Worker] 🚀 Proceeding with full historical sync for ${brandId}`)
 
-      // Start bulk operations for FULL historical data - SHOW ERRORS
-      console.log(`[Worker] 🚀 Starting 3 bulk operations individually...`)
-      const bulkResults = []
+      // Start FIRST bulk operation only (Shopify allows only 1 at a time)
+      console.log(`[Worker] 🚀 Starting ORDERS bulk operation (first of 3 - sequential processing)...`)
       
-      // Start orders bulk operation
       try {
         console.log(`[Worker] 1/3: Starting orders bulk operation...`)
         await this.startBulkOperation('orders', brandId, connectionId, shop, accessToken)
-        bulkResults.push({ entity: 'orders', success: true })
         console.log(`[Worker] ✅ Orders bulk operation started successfully`)
+        console.log(`[Worker] 📋 Customers and Products will start automatically after Orders completes`)
       } catch (ordersError) {
         console.error(`[Worker] ❌ Orders bulk operation FAILED:`, ordersError)
-        bulkResults.push({ entity: 'orders', success: false, error: ordersError instanceof Error ? ordersError.message : 'Unknown error' })
-      }
-      
-      // Start customers bulk operation
-      try {
-        console.log(`[Worker] 2/3: Starting customers bulk operation...`)
-        await this.startBulkOperation('customers', brandId, connectionId, shop, accessToken)
-        bulkResults.push({ entity: 'customers', success: true })
-        console.log(`[Worker] ✅ Customers bulk operation started successfully`)
-      } catch (customersError) {
-        console.error(`[Worker] ❌ Customers bulk operation FAILED:`, customersError)
-        bulkResults.push({ entity: 'customers', success: false, error: customersError instanceof Error ? customersError.message : 'Unknown error' })
-      }
-      
-      // Start products bulk operation
-      try {
-        console.log(`[Worker] 3/3: Starting products bulk operation...`)
-        await this.startBulkOperation('products', brandId, connectionId, shop, accessToken)
-        bulkResults.push({ entity: 'products', success: true })
-        console.log(`[Worker] ✅ Products bulk operation started successfully`)
-      } catch (productsError) {
-        console.error(`[Worker] ❌ Products bulk operation FAILED:`, productsError)
-        bulkResults.push({ entity: 'products', success: false, error: productsError instanceof Error ? productsError.message : 'Unknown error' })
-      }
-
-      const successfulOps = bulkResults.filter(result => result.success).length
-      const failedOps = bulkResults.filter(result => !result.success)
-      
-      console.log(`[Worker] 📊 BULK OPERATIONS SUMMARY: ${successfulOps}/3 successful`)
-      if (failedOps.length > 0) {
-        console.error(`[Worker] ❌ FAILED OPERATIONS:`, failedOps.map(f => `${f.entity}: ${f.error}`).join(', '))
+        throw ordersError // Fail the whole sync if first operation fails
       }
 
       // Mark recent sync job as completed (no rows written since we skipped quick sync)
@@ -475,6 +443,9 @@ export class ShopifyWorker {
         
         console.log(`[Worker] Bulk operation ${bulkOperationId} processing completed:`, results)
         
+        // 🚀 START NEXT BULK OPERATION (Sequential processing)
+        await this.startNextBulkOperation(entity as 'orders' | 'customers' | 'products', brandId, connectionId, shop, accessToken)
+        
         // Check if ALL jobs are now complete and update connection status
         await this.checkAndUpdateOverallSyncStatus(brandId, connectionId)
       }
@@ -491,6 +462,43 @@ export class ShopifyWorker {
       }
       
       throw error
+    }
+  }
+
+  /**
+   * Start the next bulk operation in sequence (orders -> customers -> products)
+   */
+  static async startNextBulkOperation(
+    completedEntity: 'orders' | 'customers' | 'products',
+    brandId: string,
+    connectionId: string,
+    shop: string,
+    accessToken: string
+  ): Promise<void> {
+    try {
+      let nextEntity: 'customers' | 'products' | null = null
+      
+      if (completedEntity === 'orders') {
+        nextEntity = 'customers'
+      } else if (completedEntity === 'customers') {
+        nextEntity = 'products'
+      }
+      // If completed entity is 'products', no next entity (sequence complete)
+      
+      if (!nextEntity) {
+        console.log(`[Worker] 🎉 ALL BULK OPERATIONS COMPLETED (${completedEntity} was last)`)
+        return
+      }
+      
+      console.log(`[Worker] 🚀 Starting NEXT bulk operation: ${nextEntity} (after ${completedEntity})`)
+      
+      await this.startBulkOperation(nextEntity, brandId, connectionId, shop, accessToken)
+      
+      console.log(`[Worker] ✅ Next bulk operation (${nextEntity}) started successfully`)
+      
+    } catch (error) {
+      console.error(`[Worker] ❌ Failed to start next bulk operation:`, error)
+      // Don't throw - let the sync continue with what we have
     }
   }
 
