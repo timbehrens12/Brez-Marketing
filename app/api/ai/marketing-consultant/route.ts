@@ -366,9 +366,19 @@ export async function POST(request: NextRequest) {
 
     if (validationErrors.length > 0) {
       console.error(`[AI Marketing] Data validation failed:`, validationErrors)
+
+      // Provide specific guidance based on the type of validation error
+      let userGuidance = 'Please check your Meta pixel setup or contact support if this persists.'
+      if (validationErrors.some(err => err.includes('Zero ad spend'))) {
+        userGuidance = 'This appears to be an attribution issue. Your ads may not be properly connected to your sales data. Please verify your Meta pixel and conversion tracking setup.'
+      } else if (validationErrors.some(err => err.includes('High ROAS detected'))) {
+        userGuidance = 'The calculated ROAS appears unrealistically high, which usually indicates attribution problems. Not all revenue necessarily comes from your ads. Consider reviewing your conversion tracking setup.'
+      }
+
       return NextResponse.json({
-        error: 'Data validation error detected. Please refresh and try again.',
+        error: 'Data validation error detected.',
         details: validationErrors,
+        guidance: userGuidance,
         timestamp: new Date().toISOString()
       }, { status: 422 })
     }

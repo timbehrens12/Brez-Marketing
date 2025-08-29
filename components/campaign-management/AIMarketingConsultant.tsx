@@ -857,17 +857,36 @@ I can help with literally anything marketing-related - scaling strategies, creat
         // Handle rate limiting
         if (response.status === 429) {
           setIsLimitReached(true)
-          setMessages(prev => prev.map(msg => 
-            msg.id === messageId 
-              ? { 
-                  ...msg, 
-                  content: `⚠️ ${data.reason || 'Daily limit reached. You can ask more questions tomorrow!'}`, 
-                  isLoading: false 
+          setMessages(prev => prev.map(msg =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  content: `⚠️ ${data.reason || 'Daily limit reached. You can ask more questions tomorrow!'}`,
+                  isLoading: false
                 }
               : msg
           ))
           return
         }
+
+        // Handle data validation errors
+        if (response.status === 422) {
+          const errorMessage = data.details && data.details.length > 0
+            ? `⚠️ Data Quality Issue Detected:\n${data.details.join('\n')}\n\n${data.guidance || 'Please check your Meta pixel setup or contact support if this persists.'}`
+            : `⚠️ ${data.error || 'Data validation error detected. Please refresh and try again.'}`
+
+          setMessages(prev => prev.map(msg =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  content: errorMessage,
+                  isLoading: false
+                }
+              : msg
+          ))
+          return
+        }
+
         throw new Error(data.error || 'Failed to get AI response')
       }
       
