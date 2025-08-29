@@ -381,6 +381,21 @@ export default function RootLayout({
                 return fetchPromise
               }
 
+              // Override console.log to catch network request logs
+              const originalLog = console.log
+              console.log = function(...args) {
+                if (args.some(arg =>
+                  typeof arg === 'string' && (
+                    arg.includes('409 (Conflict)') ||
+                    arg.includes('disconnect-platform 409') ||
+                    arg.includes('POST https://') && arg.includes('409')
+                  )
+                )) {
+                  return // Suppress these logs
+                }
+                originalLog.apply(console, args)
+              }
+
               // Override console.warn to suppress GoTrueClient warnings
               const originalWarn = console.warn
               console.warn = function(...args) {
@@ -402,6 +417,8 @@ export default function RootLayout({
                 if (args.some(arg =>
                   typeof arg === 'string' && (
                     arg.includes('400 Bad Request') ||
+                    arg.includes('409 (Conflict)') ||
+                    arg.includes('disconnect-platform 409') ||
                     arg.includes('outreach_message_usage') ||
                     // Filter out extension listener timeout errors
                     arg.includes('listener indicated an asynchronous response') ||

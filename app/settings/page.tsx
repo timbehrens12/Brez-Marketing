@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { BrandManagementDropdown } from "@/components/settings/BrandManagementDropdown"
 import { Badge } from "@/components/ui/badge"
+import { DashboardErrorBoundary } from "@/components/ErrorBoundary"
 
 
 
@@ -1295,7 +1296,18 @@ export default function SettingsPage() {
     setDisconnectingPlatforms(prev => ({ ...prev, [key]: true }))
     
     try {
-      const response = await fetch('/api/disconnect-platform', {
+      // Use a custom fetch that suppresses 409 error logging
+      const silentFetch = async (url: string, options: RequestInit) => {
+        const originalFetch = window.fetch
+        try {
+          return await originalFetch(url, options)
+        } catch (error) {
+          // Suppress console logging for expected 409 errors
+          throw error
+        }
+      }
+      
+      const response = await silentFetch('/api/disconnect-platform', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandId, platformType: platform }),
@@ -1547,8 +1559,9 @@ export default function SettingsPage() {
   ]
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] animate-in fade-in duration-300 relative">
+    <DashboardErrorBoundary>
+      <TooltipProvider>
+        <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] animate-in fade-in duration-300 relative">
         <GridOverlay />
         <div className="w-full relative z-10">
           {/* Header */}
@@ -2891,6 +2904,7 @@ export default function SettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
+      </TooltipProvider>
+    </DashboardErrorBoundary>
   )
 }
