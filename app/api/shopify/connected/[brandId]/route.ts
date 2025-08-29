@@ -91,6 +91,7 @@ export async function POST(
             .from('shopify_orders')
             .upsert(
               ordersData.orders.map(order => ({
+                id: parseInt(order.id),  // Use Shopify order ID as primary key
                 brand_id: brandId,
                 connection_id: connectionId,
                 order_number: order.order_number,
@@ -101,7 +102,6 @@ export async function POST(
                 subtotal_price: parseFloat(order.subtotal_price),
                 total_tax: parseFloat(order.total_tax),
                 total_discounts: parseFloat(order.total_discounts || 0),
-                // REMOVED: total_line_items_price field (doesn't exist in schema)
                 fulfillment_status: order.fulfillment_status,
                 financial_status: order.financial_status,
                 currency: order.currency,
@@ -121,7 +121,7 @@ export async function POST(
                 bulk_imported: true,
                 last_synced_at: new Date().toISOString()
               })),
-              { onConflict: 'order_number' }
+              { onConflict: 'id' }  // Use primary key for conflict resolution like working endpoint
             )
 
           if (ordersError) {
@@ -158,7 +158,7 @@ export async function POST(
             .from('shopify_customers')
             .upsert(
               customersData.customers.map(customer => ({
-                brand_id: brandId,
+                id: parseInt(customer.id),  // Use Shopify customer ID as primary key
                 connection_id: connectionId,
                 customer_id: customer.id.toString(),
                 email: customer.email,
@@ -178,7 +178,7 @@ export async function POST(
                 bulk_imported: true,
                 last_synced_at: new Date().toISOString()
               })),
-              { onConflict: 'customer_id' }
+              { onConflict: 'id' }  // Use primary key for conflict resolution
             )
 
           if (customersError) {
@@ -216,8 +216,8 @@ export async function POST(
             .from('shopify_products')
             .upsert(
               productsData.products.map(product => ({
+                id: parseInt(product.id),  // Use Shopify product ID as primary key
                 brand_id: brandId,
-                connection_id: connectionId,
                 product_id: product.id.toString(),
                 title: product.title,
                 body_html: product.body_html,
@@ -236,6 +236,7 @@ export async function POST(
                 bulk_imported: true,
                 synced_at: new Date().toISOString()
               })),
+              // Use the actual unique constraint from schema
               { onConflict: 'product_id' }
             )
 
