@@ -49,6 +49,7 @@ export function CustomerSegmentationWidget({
 
     try {
       setLoading(true)
+      const startTime = Date.now()
       
       // Build URL with date range if provided
       let url = `/api/shopify/analytics/customer-segments?brandId=${brandId}`
@@ -79,6 +80,13 @@ export function CustomerSegmentationWidget({
       } else {
         console.warn('[CustomerSegmentation] No data received')
       }
+
+      // Ensure minimum loading duration of 500ms for visual feedback
+      const elapsed = Date.now() - startTime
+      const minLoadingTime = 500
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
     } catch (error) {
       console.error('[CustomerSegmentation] Error fetching data:', error)
     } finally {
@@ -101,6 +109,10 @@ export function CustomerSegmentationWidget({
     const handleRefresh = (event?: any) => {
       const eventSource = event?.detail?.source || event?.type || 'unknown'
       console.log('[CustomerSegmentation] Refresh event received:', eventSource)
+      
+      // Show loading immediately when refresh is triggered
+      setLoading(true)
+      
       // Use debounced refresh to prevent spam
       debouncedRefresh(eventSource)
     }

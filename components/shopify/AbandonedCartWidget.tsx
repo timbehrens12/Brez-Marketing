@@ -126,6 +126,10 @@ export function AbandonedCartWidget({
   useEffect(() => {
     const handleRefresh = (event?: any) => {
       console.log('[AbandonedCart] Refresh event received:', event?.detail?.source || 'unknown')
+      
+      // Show loading immediately when refresh is triggered
+      setIsWidgetLoading(true)
+      
       // Force refresh regardless of cache state
       fetchData()
     }

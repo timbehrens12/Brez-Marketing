@@ -63,6 +63,7 @@ export function RepeatCustomersWidget({
 
     try {
       setLoading(true)
+      const startTime = Date.now()
       
       // Build URL with date range if provided
       let url = `/api/shopify/analytics/repeat-customers?brandId=${brandId}`
@@ -90,6 +91,13 @@ export function RepeatCustomersWidget({
       } else {
         console.warn('[RepeatCustomers] No data received')
       }
+
+      // Ensure minimum loading duration of 500ms for visual feedback
+      const elapsed = Date.now() - startTime
+      const minLoadingTime = 500
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
     } catch (error) {
       console.error('[RepeatCustomers] Error fetching data:', error)
     } finally {
@@ -105,6 +113,10 @@ export function RepeatCustomersWidget({
   useEffect(() => {
     const handleRefresh = (event?: any) => {
       console.log('[RepeatCustomers] Refresh event received:', event?.detail?.source || 'unknown')
+      
+      // Show loading immediately when refresh is triggered
+      setLoading(true)
+      
       // Force refresh regardless of cache state
       fetchRepeatData()
     }
