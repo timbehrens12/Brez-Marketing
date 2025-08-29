@@ -55,16 +55,6 @@ export class ShopifyQueueService {
     data: ShopifyJobData,
     options: any = {}
   ): Promise<void> {
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    console.log(`📋 [QUEUE-${jobId}] ===== ADDING JOB TO QUEUE =====`)
-    console.log(`📋 [QUEUE-${jobId}] Job Type: ${jobType}`)
-    console.log(`📋 [QUEUE-${jobId}] Brand ID: ${data.brandId}`)
-    console.log(`📋 [QUEUE-${jobId}] Connection ID: ${data.connectionId}`)
-    console.log(`📋 [QUEUE-${jobId}] Shop: ${data.shop}`)
-    console.log(`📋 [QUEUE-${jobId}] Access Token: ${data.accessToken ? 'PRESENT' : 'MISSING'}`)
-    console.log(`📋 [QUEUE-${jobId}] Options:`, JSON.stringify(options, null, 2))
-    
     const defaultOptions = {
       attempts: 5, // Increased retry attempts
       backoff: {
@@ -78,18 +68,11 @@ export class ShopifyQueueService {
       maxStalledCount: 3, // Allow 3 stalled attempts before failing
     }
 
-    const finalOptions = { ...defaultOptions, ...options }
-    console.log(`📋 [QUEUE-${jobId}] Final options:`, JSON.stringify(finalOptions, null, 2))
-
     try {
-      const job = await shopifyQueue.add(jobType, { ...data, queue_job_id: jobId }, finalOptions)
-      console.log(`✅ [QUEUE-${jobId}] Job added successfully to queue`)
-      console.log(`📋 [QUEUE-${jobId}] Queue job ID: ${job.id}`)
-      console.log(`📋 [QUEUE-${jobId}] Priority: ${job.opts.priority || 'default'}`)
-      console.log(`📋 [QUEUE-${jobId}] Delay: ${job.opts.delay || 0}ms`)
+      await shopifyQueue.add(jobType, data, { ...defaultOptions, ...options })
+      console.log(`[Queue] Added ${jobType} job for brand ${data.brandId}`)
     } catch (error) {
-      console.error(`❌ [QUEUE-${jobId}] Failed to add job to queue:`, error)
-      console.error(`❌ [QUEUE-${jobId}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+      console.error(`[Queue] Failed to add ${jobType} job:`, error)
       throw error
     }
   }
@@ -103,22 +86,13 @@ export class ShopifyQueueService {
     shop: string,
     accessToken: string
   ): Promise<void> {
-    const recentSyncId = `recent_${Date.now()}`
-    
-    console.log(`🚀 [QUEUE-RECENT-${recentSyncId}] Adding recent sync job (HIGH PRIORITY)`)
-    console.log(`📋 [QUEUE-RECENT-${recentSyncId}] Brand: ${brandId}`)
-    console.log(`📋 [QUEUE-RECENT-${recentSyncId}] Shop: ${shop}`)
-    
     await this.addJob(ShopifyJobType.RECENT_SYNC, {
       brandId,
       connectionId,
       shop,
       accessToken,
-      jobType: ShopifyJobType.RECENT_SYNC,
-      sync_job_id: recentSyncId
+      jobType: ShopifyJobType.RECENT_SYNC
     }, { priority: 10 }) // High priority for immediate UI
-    
-    console.log(`✅ [QUEUE-RECENT-${recentSyncId}] Recent sync job queued successfully`)
   }
 
   /**
@@ -130,48 +104,33 @@ export class ShopifyQueueService {
     shop: string,
     accessToken: string
   ): Promise<void> {
-    const bulkJobsId = `bulk_${Date.now()}`
-    
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] ===== ADDING BULK JOBS =====`)
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Brand: ${brandId}`)
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Shop: ${shop}`)
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Adding 3 bulk jobs with sequential delays...`)
-    
     // Add all bulk jobs with delays to prevent overwhelming Shopify
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Adding ORDERS bulk job (delay: 1000ms)...`)
     await this.addJob(ShopifyJobType.BULK_ORDERS, {
       brandId,
       connectionId,
       shop,
       accessToken,
       jobType: ShopifyJobType.BULK_ORDERS,
-      entity: 'orders',
-      bulk_jobs_id: bulkJobsId
+      entity: 'orders'
     }, { delay: 1000 })
 
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Adding CUSTOMERS bulk job (delay: 2000ms)...`)
     await this.addJob(ShopifyJobType.BULK_CUSTOMERS, {
       brandId,
       connectionId,
       shop,
       accessToken,
       jobType: ShopifyJobType.BULK_CUSTOMERS,
-      entity: 'customers',
-      bulk_jobs_id: bulkJobsId
+      entity: 'customers'
     }, { delay: 2000 })
 
-    console.log(`📦 [QUEUE-BULK-${bulkJobsId}] Adding PRODUCTS bulk job (delay: 3000ms)...`)
     await this.addJob(ShopifyJobType.BULK_PRODUCTS, {
       brandId,
       connectionId,
       shop,
       accessToken,
       jobType: ShopifyJobType.BULK_PRODUCTS,
-      entity: 'products',
-      bulk_jobs_id: bulkJobsId
+      entity: 'products'
     }, { delay: 3000 })
-    
-    console.log(`✅ [QUEUE-BULK-${bulkJobsId}] All 3 bulk jobs added successfully`)
   }
 
   /**
@@ -196,40 +155,26 @@ export class ShopifyQueueService {
     jobType: string,
     shopifyBulkId?: string
   ): Promise<number> {
-    const etlId = `etl_${Date.now()}_${entity}`
-    
-    console.log(`💾 [ETL-${etlId}] ===== CREATING ETL JOB RECORD =====`)
-    console.log(`💾 [ETL-${etlId}] Brand ID: ${brandId}`)
-    console.log(`💾 [ETL-${etlId}] Entity: ${entity}`)
-    console.log(`💾 [ETL-${etlId}] Job Type: ${jobType}`)
-    console.log(`💾 [ETL-${etlId}] Shopify Bulk ID: ${shopifyBulkId || 'NONE'}`)
-    
     const supabase = createClient()
-    
-    const etlData = {
-      brand_id: brandId,
-      entity: entity,
-      job_type: jobType,
-      status: 'queued',
-      shopify_bulk_id: shopifyBulkId,
-      started_at: new Date().toISOString()
-    }
-    
-    console.log(`💾 [ETL-${etlId}] Inserting ETL job data:`, JSON.stringify(etlData, null, 2))
     
     const { data, error } = await supabase
       .from('etl_job')
-      .insert(etlData)
+      .insert({
+        brand_id: brandId,
+        entity: entity,
+        job_type: jobType,
+        status: 'queued',
+        shopify_bulk_id: shopifyBulkId,
+        started_at: new Date().toISOString()
+      })
       .select('id')
       .single()
 
     if (error) {
-      console.error(`❌ [ETL-${etlId}] Error creating ETL job:`, error)
-      console.error(`❌ [ETL-${etlId}] Error details:`, JSON.stringify(error, null, 2))
+      console.error('[Queue] Error creating ETL job:', error)
       throw error
     }
 
-    console.log(`✅ [ETL-${etlId}] ETL job created successfully with ID: ${data.id}`)
     return data.id
   }
 
@@ -245,36 +190,22 @@ export class ShopifyQueueService {
       progress_pct?: number
       error_message?: string
       completed_at?: string
-      shopify_bulk_id?: string
     }
   ): Promise<void> {
-    const updateId = `update_${Date.now()}_${jobId}`
-    
-    console.log(`💾 [ETL-UPDATE-${updateId}] ===== UPDATING ETL JOB =====`)
-    console.log(`💾 [ETL-UPDATE-${updateId}] Job ID: ${jobId}`)
-    console.log(`💾 [ETL-UPDATE-${updateId}] Updates:`, JSON.stringify(updates, null, 2))
-    
     const supabase = createClient()
     
-    const finalUpdates = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-    
-    console.log(`💾 [ETL-UPDATE-${updateId}] Final update data:`, JSON.stringify(finalUpdates, null, 2))
-    
-    const { error } = await supabase
+    const { error } =     await supabase
       .from('etl_job')
-      .update(finalUpdates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', jobId)
 
     if (error) {
-      console.error(`❌ [ETL-UPDATE-${updateId}] Error updating ETL job:`, error)
-      console.error(`❌ [ETL-UPDATE-${updateId}] Error details:`, JSON.stringify(error, null, 2))
+      console.error('[Queue] Error updating ETL job:', error)
       throw error
     }
-    
-    console.log(`✅ [ETL-UPDATE-${updateId}] ETL job updated successfully`)
   }
 
   /**
