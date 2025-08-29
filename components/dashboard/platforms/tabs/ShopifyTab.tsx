@@ -18,6 +18,7 @@ import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { CustomerSegmentationWidget } from "@/components/shopify/CustomerSegmentationWidget"
+import { SyncLogger } from "@/components/debug/SyncLogger"
 
 import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidget"
 import { AbandonedCartWidget } from "@/components/shopify/AbandonedCartWidget"
@@ -1091,12 +1092,17 @@ export function ShopifyTab({
 
         {/* Repeat Customer Analysis - Full width below */}
         <div className="mt-6">
-          <RepeatCustomersWidget 
+          <RepeatCustomersWidget
             brandId={brandId}
             dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
+        </div>
+
+        {/* 🔍 DEBUG LOGGING - REMOVE IN PRODUCTION */}
+        <div className="mt-6">
+          <SyncLogger brandId={brandId} isVisible={true} />
         </div>
       </div>
 
