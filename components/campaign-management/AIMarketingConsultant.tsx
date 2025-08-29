@@ -56,8 +56,7 @@ interface PromptSuggestion {
   icon: React.ReactNode
   title: string
   prompt: string
-  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'agency' | 'seasonal' | 'email-sms'
-  mode?: 'brand' | 'agency' | 'both'
+  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'seasonal' | 'email-sms'
 }
 
 
@@ -110,7 +109,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'SMS marketing strategy for my brand',
     prompt: 'Based on my Shopify data including cart abandonment rates, conversion rates, and customer behavior, recommend a comprehensive SMS marketing strategy. Include list building tactics, segmentation strategies, message timing, automation sequences, and specific SMS campaigns that would work best for my brand.',
     category: 'email-sms',
-    mode: 'brand'
+
   },
   {
     id: 'email-retargeting',
@@ -118,7 +117,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Email retargeting campaign recommendations',
     prompt: 'Analyze my Shopify conversion funnel data (add-to-cart rates, checkout completion, etc.) and recommend targeted email campaigns. Include cart abandonment sequences, browse abandonment emails, post-purchase follow-ups, and win-back campaigns based on my specific customer behavior patterns.',
     category: 'email-sms',
-    mode: 'brand'
+
   },
   {
     id: 'list-building-strategy',
@@ -126,7 +125,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Build email/SMS subscriber lists',
     prompt: 'Based on my brand\'s performance data and customer journey, recommend strategies to grow my email and SMS subscriber lists. Include lead magnets, opt-in incentives, pop-up strategies, and integration tactics that align with my conversion rates and customer lifetime value.',
     category: 'email-sms',
-    mode: 'brand'
+
   },
   {
     id: 'automation-sequences',
@@ -134,7 +133,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Marketing automation sequences',
     prompt: 'Design automated email and SMS sequences based on my Shopify customer data. Include welcome series, abandoned cart recovery, post-purchase upsells, re-engagement campaigns, and VIP customer nurturing flows optimized for my brand\'s metrics.',
     category: 'email-sms',
-    mode: 'brand'
+
   },
 
   // Campaign Performance & Optimization
@@ -144,7 +143,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'How can I improve my ROAS?',
     prompt: 'Analyze my last 30 days of campaign data and provide specific recommendations to improve my return on ad spend (ROAS). Focus on budget allocation, audience targeting, and creative performance.',
     category: 'performance',
-    mode: 'brand'
+
   },
   {
     id: 'scale-winners',
@@ -152,7 +151,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Which campaigns should I scale?',
     prompt: 'Based on my recent performance data, identify which campaigns, ad sets, or creatives I should scale up and which ones I should pause or optimize. Provide specific scaling strategies.',
     category: 'optimization',
-    mode: 'brand'
+
   },
   {
     id: 'audience-insights',
@@ -160,7 +159,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'What audiences work best?',
     prompt: 'Analyze my audience performance data and identify which demographics, interests, and behavioral segments are driving the best results. Suggest new audience opportunities.',
     category: 'audience',
-    mode: 'brand'
+
   },
   {
     id: 'creative-fatigue',
@@ -168,7 +167,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Check for ad fatigue before ROAS drops',
     prompt: 'Analyze my ad creatives for early signs of fatigue by examining creative runtime, frequency, engagement trends, and performance decay patterns. Identify which creatives are at risk of declining performance BEFORE they significantly impact ROAS. Provide specific recommendations for creative rotation and refresh timing.',
     category: 'creative',
-    mode: 'brand'
+
   },
   {
     id: 'creative-refresh',
@@ -176,7 +175,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Which creatives need refreshing?',
     prompt: 'Examine my ad creative performance and identify which ones are showing signs of fatigue or declining performance. Recommend creative refresh strategies and winning elements to replicate.',
     category: 'creative',
-    mode: 'brand'
+
   },
   {
     id: 'budget-optimization',
@@ -184,7 +183,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'How should I reallocate my budget?',
     prompt: 'Analyze my current budget distribution across campaigns and ad sets. Recommend optimal budget reallocation to maximize ROI based on performance data and trends.',
     category: 'budget',
-    mode: 'brand'
+
   },
 
   // Reports & Analytics
@@ -220,7 +219,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Optimize lead generation strategy',
     prompt: 'Review my current lead generation campaigns and landing pages. Provide specific recommendations to improve lead quality, reduce cost per lead, and increase conversion rates.',
     category: 'leadgen',
-    mode: 'brand'
+
   },
   {
     id: 'lead-scoring-optimization',
@@ -228,7 +227,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Improve lead scoring and qualification',
     prompt: 'Analyze my lead data to help create better lead scoring criteria. Identify patterns in high-quality leads and recommend ways to optimize lead qualification processes.',
     category: 'leadgen',
-    mode: 'brand'
+
   },
   {
     id: 'landing-page-optimization',
@@ -236,33 +235,16 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Optimize landing pages for conversions',
     prompt: 'Review landing page performance data and provide recommendations for improving conversion rates, reducing bounce rates, and enhancing user experience.',
     category: 'leadgen',
-    mode: 'brand'
+
   },
 
-  // Outreach & Client Management
+  // Lead Generation & Outreach
   {
-    id: 'client-outreach-strategy',
+    id: 'lead-gen-optimization',
     icon: <Phone className="w-4 h-4" />,
-    title: 'Develop client outreach strategy',
-    prompt: 'Help me create effective outreach sequences and messaging for prospective clients. Include email templates, timing recommendations, and follow-up strategies.',
-    category: 'outreach',
-    mode: 'agency'
-  },
-  {
-    id: 'client-retention-analysis',
-    icon: <Users className="w-4 h-4" />,
-    title: 'Analyze client retention patterns',
-    prompt: 'Review client data to identify patterns in client retention and churn. Provide recommendations for improving client satisfaction and reducing churn rates.',
-    category: 'outreach',
-    mode: 'agency'
-  },
-  {
-    id: 'proposal-optimization',
-    icon: <FileText className="w-4 h-4" />,
-    title: 'Optimize proposals and pitches',
-    prompt: 'Help me improve my agency proposals and pitch presentations. Analyze successful proposals and recommend improvements for winning more clients.',
-    category: 'outreach',
-    mode: 'agency'
+    title: 'Optimize lead generation strategy',
+    prompt: 'Help me improve my lead generation and customer acquisition. Analyze my current funnel and provide recommendations for better lead quality, conversion rates, and customer acquisition costs.',
+    category: 'outreach'
   },
 
   // Creative Studio & Tools (NEW)
@@ -271,130 +253,44 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     icon: <Sparkles className="w-4 h-4" />,
     title: 'How to use Creative Studio effectively?',
     prompt: 'Give me tips on using the Creative Studio tool to generate high-converting ad creatives. Include best practices for prompts, image selection, text overlays, and how to iterate on generated creatives for better performance.',
-    category: 'creative',
-    mode: 'both'
+    category: 'creative'
   },
   {
     id: 'outreach-optimization',
     icon: <Phone className="w-4 h-4" />,
     title: 'Optimize my outreach campaigns',
     prompt: 'Review my current outreach campaigns and lead generation efforts. Provide recommendations for improving message response rates, lead qualification, and follow-up sequences.',
-    category: 'outreach',
-    mode: 'both'
+    category: 'outreach'
   },
   {
     id: 'brand-report-insights',
     icon: <FileText className="w-4 h-4" />,
     title: 'Generate brand performance insights',
     prompt: 'Create comprehensive insights from my latest brand reports. Identify key trends, opportunities, and actionable recommendations based on my brand health data.',
-    category: 'reports',
-    mode: 'both'
+    category: 'reports'
   },
   {
     id: 'lead-generator-strategy',
     icon: <Target className="w-4 h-4" />,
     title: 'Improve lead generation strategy',
     prompt: 'Analyze my lead generation efforts and suggest improvements. Include recommendations for better targeting, landing page optimization, and lead nurturing workflows.',
-    category: 'leadgen',
-    mode: 'both'
+    category: 'leadgen'
   },
 
-  // Agency Management
-  {
-    id: 'brands-need-focus',
-    icon: <AlertTriangle className="w-4 h-4" />,
-    title: 'Which brands need immediate attention?',
-    prompt: 'Analyze all my brands and identify which ones need immediate attention or intervention. Look for sudden performance drops, declining ROAS, creative fatigue patterns, and budget inefficiencies. Provide prioritized action items for each brand requiring attention.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'performance-fluctuations',
-    icon: <Activity className="w-4 h-4" />,
-    title: 'Detect performance fluctuations',
-    prompt: 'Scan all brands for sudden fluctuations in key metrics (ROAS, CPC, CTR, conversion rates). Identify potential causes and predict what might happen next based on historical patterns and current trends. Flag any brands showing early warning signs.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'predictive-analysis',
-    icon: <TrendingUp className="w-4 h-4" />,
-    title: 'What will happen to my brands next?',
-    prompt: 'Analyze current trends across all my brands and provide predictive insights. Based on historical patterns, seasonal factors, and current performance trajectory, forecast what is likely to happen in the next 7-30 days. Include recommendations to capitalize on opportunities or prevent issues.',
-    category: 'agency',
-    mode: 'agency'
-  },
+  // Additional Analysis
   {
     id: 'available-reports',
     icon: <FileText className="w-4 h-4" />,
     title: 'What reports are available?',
-    prompt: 'Show me what reports I can generate for my brands. Include performance reports, ROI analysis, weekly summaries, and any other available analytics.',
-    category: 'agency',
-    mode: 'agency'
+    prompt: 'Show me what reports I can generate for my brand. Include performance reports, ROI analysis, weekly summaries, and any other available analytics.',
+    category: 'reports'
   },
   {
     id: 'campaign-optimizations',
     icon: <Zap className="w-4 h-4" />,
     title: 'Available campaign optimizations',
-    prompt: 'Identify campaign optimization opportunities across all my brands. What campaigns can be scaled, paused, or need immediate attention?',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'multi-brand-performance',
-    icon: <Building2 className="w-4 h-4" />,
-    title: 'Compare performance across brands',
-    prompt: 'Analyze performance across all my brands. Identify top performers, underperformers, and opportunities for cross-brand learnings and optimizations.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'resource-allocation',
-    icon: <Settings className="w-4 h-4" />,
-    title: 'Optimize resource allocation',
-    prompt: 'Help me optimize how I allocate time, budget, and resources across different brands and campaigns. Identify areas where I should focus more or less attention.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'agency-growth-strategy',
-    icon: <TrendingUp className="w-4 h-4" />,
-    title: 'Develop agency growth strategy',
-    prompt: 'Based on my current agency performance, help me develop a growth strategy. Include recommendations for scaling successful approaches and expanding into new opportunities.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'top-performing-brands',
-    icon: <CheckCircle className="w-4 h-4" />,
-    title: 'Which brands are performing best?',
-    prompt: 'Identify my top-performing brands and analyze what makes them successful. How can I replicate these strategies across other brands?',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'client-acquisition-strategy',
-    icon: <UserPlus className="w-4 h-4" />,
-    title: 'Develop client acquisition strategy',
-    prompt: 'Help me create a systematic approach for acquiring new clients. Include prospecting strategies, outreach templates, pricing models, and qualification criteria for ideal clients.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'agency-efficiency-audit',
-    icon: <Activity className="w-4 h-4" />,
-    title: 'Audit agency operational efficiency',
-    prompt: 'Analyze my agency operations and identify areas for improvement. Look at workflow optimization, client communication, reporting processes, and resource allocation to recommend efficiency gains.',
-    category: 'agency',
-    mode: 'agency'
-  },
-  {
-    id: 'cross-brand-optimization',
-    icon: <Building2 className="w-4 h-4" />,
-    title: 'Cross-brand optimization opportunities',
-    prompt: 'Identify optimization strategies that can be applied across multiple brands. Look for successful tactics from high-performing brands that could benefit underperforming ones.',
-    category: 'agency',
-    mode: 'agency'
+    prompt: 'Identify campaign optimization opportunities for my brand. What campaigns can be scaled, paused, or need immediate attention?',
+    category: 'optimization'
   },
 
   // Troubleshooting
@@ -404,7 +300,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Why did my performance drop?',
     prompt: 'Investigate any recent drops in my campaign performance. Analyze metrics like CTR, CPC, ROAS, and conversion rates to identify potential causes and solutions.',
     category: 'troubleshooting',
-    mode: 'brand'
+
   },
   {
     id: 'ad-fatigue',
@@ -412,7 +308,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Are my ads experiencing fatigue?',
     prompt: 'Check my ad frequency, engagement rates, and performance trends to identify ad fatigue issues and recommend refresh strategies.',
     category: 'troubleshooting',
-    mode: 'brand'
+
   },
   {
     id: 'conversion-tracking',
@@ -420,7 +316,7 @@ const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
     title: 'Is my conversion tracking optimized?',
     prompt: 'Analyze my conversion data patterns and tracking setup to identify potential issues or optimization opportunities in my measurement and attribution.',
     category: 'troubleshooting',
-    mode: 'brand'
+
   },
 
   // Marketing Focus Quick Actions
@@ -595,7 +491,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: '',
-            mode: selectedBrandId ? 'brand' : 'agency',
+            mode: 'brand',
             goal: 'general', // Default to general since we removed the focus selector
             brandId: selectedBrandId,
             checkUsageOnly: true
@@ -702,7 +598,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
             brandId: selectedBrandId,
             prompt: '', // Empty prompt to just check usage
             marketingGoal: 'general', // Default to general since we removed the focus selector
-            mode: selectedBrandId ? 'brand' : 'agency',
+            mode: 'brand',
             checkUsageOnly: true, // Flag to indicate we only want usage info
             userContext: {
               name: user?.firstName || 'there'
@@ -729,8 +625,8 @@ I can help with literally anything marketing-related - scaling strategies, creat
   }, [selectedBrandId, user?.firstName])
 
   const filteredPrompts = selectedCategory === 'all'
-    ? PROMPT_SUGGESTIONS.filter(p => p.mode === 'brand' || p.mode === 'agency' || p.mode === 'both')
-    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory && (p.mode === 'brand' || p.mode === 'agency' || p.mode === 'both'))
+    ? PROMPT_SUGGESTIONS
+    : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory)
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
     if (isLoading || isLimitReached) return
@@ -839,7 +735,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
           brandId: selectedBrandId,
           prompt,
           marketingGoal: 'general', // Default to general since we removed the focus selector
-          mode: selectedBrandId ? 'brand' : 'agency',
+          mode: 'brand',
           userContext: {
             name: user?.firstName || 'there'
           },
@@ -953,7 +849,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
     { id: 'outreach', label: 'Outreach', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'outreach').length },
     { id: 'seasonal', label: 'Seasonal', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'seasonal').length },
     { id: 'email-sms', label: 'Email/SMS', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'email-sms').length },
-    { id: 'agency', label: 'Agency', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'agency').length },
+
     { id: 'troubleshooting', label: 'Troubleshooting', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'troubleshooting').length }
   ].filter(cat => cat.count > 0)
 
@@ -1029,6 +925,66 @@ I can help with literally anything marketing-related - scaling strategies, creat
   // }
 
 
+
+  // Check if user needs to select a brand
+  if (!selectedBrandId && brands.length > 0) {
+    return (
+      <div className="flex h-screen bg-gradient-to-br from-black via-[#111] to-black p-3 items-center justify-center">
+        <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl p-8 shadow-2xl max-w-md mx-auto text-center">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-white/10 to-white/20 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg">
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">AI Marketing Consultant</h2>
+              <p className="text-gray-400">Select a brand to get personalized marketing insights and optimization recommendations.</p>
+            </div>
+
+            <div className="w-full">
+              <BrandSelector />
+            </div>
+
+            <div className="text-xs text-gray-500 text-center max-w-sm">
+              Need to add a new brand? Visit the <span className="text-white font-semibold">Lead Generation</span> page to connect your Shopify store and Meta ad accounts.
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // Check if user has no brands at all
+  if (brands.length === 0) {
+    return (
+      <div className="flex h-screen bg-gradient-to-br from-black via-[#111] to-black p-3 items-center justify-center">
+        <Card className="bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a] border border-[#222] rounded-2xl p-8 shadow-2xl max-w-md mx-auto text-center">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-white/10 to-white/20 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg">
+              <Store className="w-8 h-8 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">Connect Your First Brand</h2>
+              <p className="text-gray-400">To start using the AI Marketing Consultant, you'll need to connect at least one brand with Shopify and Meta ad accounts.</p>
+            </div>
+
+            <Button
+              onClick={() => window.location.href = '/lead-generator'}
+              className="bg-gradient-to-r from-white/10 to-gray-200/20 hover:from-white/20 hover:to-gray-200/30 text-white border border-white/20 px-6 py-3 rounded-xl transition-all duration-300"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Connect Your First Brand
+            </Button>
+
+            <div className="text-xs text-gray-500 text-center max-w-sm">
+              Visit the Lead Generation page to connect your Shopify store and Meta ad accounts. Once connected, you'll get personalized AI marketing insights.
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex gap-4 p-6">

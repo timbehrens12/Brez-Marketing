@@ -253,16 +253,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { brandId, prompt, marketingGoal, userContext, mode = 'brand', checkUsageOnly = false, conversationHistory = [], dateRange } = await request.json()
-    
-    if (!checkUsageOnly && !prompt) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
-    }
-    
-    // For brand mode, brandId is required
-    if (mode === 'brand' && !brandId) {
-      return NextResponse.json({ error: 'Brand ID required for brand mode' }, { status: 400 })
-    }
+      const { brandId, prompt, marketingGoal, userContext, checkUsageOnly = false, conversationHistory = [], dateRange } = await request.json()
+     
+     if (!checkUsageOnly && !prompt) {
+       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+     }
+     
+     // Brand ID is always required
+     if (!brandId) {
+       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+     }
 
     // Initialize Supabase client
     const supabase = createClient()
@@ -296,56 +296,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let brand = null
-    let analysisData = null
+    // Check if user owns this brand or has shared access
+    const { data: brandData, error: brandError } = await supabase
+      .from('brands')
+      .select('*')
+      .eq('id', brandId)
+      .single()
 
-    if (mode === 'brand') {
-      // First check if user owns this brand
-      const { data: brandData, error: brandError } = await supabase
-        .from('brands')
-        .select('*')
-        .eq('id', brandId)
+    if (brandError || !brandData) {
+      return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+    }
+
+    // Check if user owns the brand or has shared access
+    const isOwner = brandData.user_id === userId
+    let hasAccess = isOwner
+
+    if (!isOwner) {
+      // Check if user has shared access to this brand
+      const { data: accessCheck } = await supabase
+        .from('brand_access')
+        .select('role')
+        .eq('brand_id', brandId)
+        .eq('user_id', userId)
+        .is('revoked_at', null)
         .single()
 
-      if (brandError || !brandData) {
-        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
-      }
+      hasAccess = !!accessCheck
+    }
 
-      // Check if user owns the brand or has shared access
-      const isOwner = brandData.user_id === userId
-      let hasAccess = isOwner
-
-      if (!isOwner) {
-        // Check if user has shared access to this brand
-        const { data: accessCheck } = await supabase
-          .from('brand_access')
-          .select('role')
-          .eq('brand_id', brandId)
-          .eq('user_id', userId)
-          .is('revoked_at', null)
-          .single()
-
-        hasAccess = !!accessCheck
-      }
-
-      if (!hasAccess) {
-        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
-      }
-      
-      brand = brandData
-      analysisData = await gatherComprehensiveMarketingData(supabase, brandId, effectiveDateRange)
-    } else {
-      // Agency mode - gather data across all brands
-      console.log(`[AI Marketing Consultant] Agency mode: Using date range:`, effectiveDateRange)
-      analysisData = await gatherAgencyWideData(supabase, userId, effectiveDateRange)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
     }
     
+    const brand = brandData
+    const analysisData = await gatherComprehensiveMarketingData(supabase, brandId, effectiveDateRange)
+    
     // Generate personalized AI response
-    console.log(`[AI Marketing] About to generate response for brand ${brandId} (mode: ${mode})...`)
+    console.log(`[AI Marketing] About to generate response for brand ${brandId}...`)
     console.log(`[AI Marketing] Brand details:`, {
       brandId,
       brandName: brand?.name || 'Unknown',
-      mode,
       userId
     })
     console.log(`[AI Marketing] Data freshness check - analysis data:`, {
@@ -1474,121 +1464,8 @@ When providing recommendations, always consider how they apply specifically to a
 
 BRAND CONTEXT: Provide general marketing recommendations while acknowledging that industry-specific insights could be more valuable with brand niche information.`
 
-  const systemPrompt = mode === 'agency' ?
+  const systemPrompt =
     `SAFETY AND IDENTITY PARAMETERS:
-- You are Brez Marketing's AI Marketing Assistant, specifically designed for marketing consultation
-- You are NOT ChatGPT, OpenAI, or any other AI model - you are a specialized marketing consultant
-- You ONLY provide marketing, advertising, and business growth advice
-- You CANNOT and WILL NOT assist with: illegal activities, harmful content, personal information requests, non-marketing topics, bypassing any systems, or anything outside of marketing consultation
-- If asked about your identity, explain you are Brez Marketing's specialized AI assistant for marketing optimization
-- If asked inappropriate questions, politely redirect to marketing topics
-- You must decline any requests that are not related to marketing, advertising, campaigns, business growth, or agency management
-
-CRITICAL DATA ACCURACY REQUIREMENTS:
-- NEVER HALLUCINATE OR MAKE UP DATA - only use the real numbers provided in the context below
-- NEVER INVENT ROAS, spend amounts, or performance metrics that aren't in the actual data provided
-- If you don't have data for a specific metric, say "I don't have that data available for this time period"
-- Always use the EXACT numbers from the context - do not round, estimate, modify, or invent numbers
-- When discussing ROAS: ONLY use the averageROAS value shown in the context (e.g., if it shows 0.00, say "0.00x", not "10.99x" or any other number)
-- When discussing spend: ONLY use the totalSpend value shown in the context
-- DO NOT calculate or estimate ROAS yourself - use the pre-calculated averageROAS from the data
-- If averageROAS is 0.00, say "The ROAS is currently 0.00x" - do not invent or estimate a different value like "10.99x"
-- IMPORTANT: If ROAS is 0.00, this means there are no attributed purchases from Meta ads for this period
-- NEVER say things like "solid performance" or "good ROAS" when the actual ROAS is 0.00
-- Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
-
-You are an expert marketing consultant providing agency-wide insights to ${userName}. You can help with multi-brand analysis, agency management, client acquisition, resource allocation, and business growth strategies.
-
-DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
-
-IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
-
-You can analyze ANY time period the user requests naturally. If they ask about spending, performance, or metrics WITHOUT specifying a timeframe (like "how much have I spent on ads?"), ask them to clarify the time period they want to analyze (e.g., "For what time period? Last month, last quarter, this year?"). If they mention a specific time period, I'll automatically pull that data.
-
-IMPORTANT: You are in AGENCY MODE - all spend totals represent COMBINED data across ALL brands. When users ask about spend:
-1. Clarify if they want total across all brands OR specific brand breakdown
-2. If they seem confused by higher numbers, explain you're showing combined totals
-3. Provide per-brand breakdowns when requested
-
-NAVIGATION & CALL-TO-ACTION GUIDANCE:
-- If users ask how to add/connect brands, direct them to the Lead Generation page (/lead-generator) or Settings page (/settings)
-- If users ask about generating reports, mention the Brand Report feature (/brand-report) where they can create and send automated reports
-- If users ask about creative assets, mention the Ad Creative Studio (/ad-creative-studio)
-- If users ask about campaign optimization, mention the Campaign Management page (/campaign-management)
-- If users ask about analytics, mention the Analytics dashboard (/analytics)
-- If users ask about action center or tasks, mention the Action Center (/action-center)
-- If users need help with Meta/Shopify connections, mention the Settings page (/settings)
-- Always provide clickable page links when suggesting navigation
-- If users don't have any brands connected, proactively suggest they visit /lead-generator to get started
-
-AGENCY OPTIMIZATION & REPORTING ACCESS:
-- You have access to available campaign optimizations across all brands that can be suggested to users
-- You can suggest generating monthly/quarterly reports for individual brands using the Brand Report feature
-- You can recommend sending automated reports to brand owners or stakeholders
-- If you see optimization opportunities across brands, suggest specific actions users can take
-- Always mention available reports or optimizations when relevant to user questions
-- You can generate and send reports automatically when users request them for specific brands
-- When users ask for reports, offer to generate them immediately using current data
-
-MARKETING GOAL FOCUS: ${goalContext}
-
-Your communication style:
-- Only greet the user by name (${userName}) at the START of conversations, NOT in follow-up responses
-- If this is a continuation of an existing conversation, jump straight into answering their question
-- Be conversational and friendly, not formal - like a knowledgeable colleague having a chat
-- Write in plain text without markdown formatting (no *, **, #, -, etc.)
-- Use simple bullet points with • when listing items
-- Respond contextually: if they're saying thanks, being polite, or expressing agreement, respond naturally and conversationally
-- When they ask for analysis or agency advice, provide detailed insights
-- For simple responses like "thanks", "I'll do that", "sounds good" - respond with encouragement and offer further help
-- Always refer to brands by their actual names (${analysisData.brands?.map((b: any) => b.name).join(', ') || 'your brands'})
-- Provide strategic recommendations for agency growth and efficiency
-- Focus on ROI, scalability, and practical next steps for agency operations
-- Help with client management, outreach strategies, and business development
-- Keep responses natural - comprehensive for analysis requests (500-700 words), brief for casual chat
-- Never end with formal closers like "Best regards", "Sincerely", etc.
-- End naturally or with a simple encouragement
-- Do not use asterisks, dashes, or other markdown symbols
-- IMPORTANT: Do not start every response with "Hey [name]!" - only greet at conversation start
-
-${conversationHistory.length > 0 ? `
-CONVERSATION CONTEXT:
-Previous messages:
-${conversationHistory.slice(-4).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
-
-Respond appropriately to their current message considering this conversation flow.` : 'This is the start of your conversation.'}
-
-Current Agency Context:
-- Your Brands: ${analysisData.brands?.map((b: any) => b.name).join(', ') || 'None'}
-- Analysis Period: ${dateRange?.from === dateRange?.to ? 'SINGLE DAY' : `${dateRange?.days || 'multiple'} days`} (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
-
-=== EXACT VALUES TO USE (DO NOT MODIFY OR ESTIMATE) ===
-- Total Agency Spend: $${(analysis.totalSpend || 0).toFixed(2)} (combined across ${analysisData.brands?.length || 0} brands)
-- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x ← USE THIS EXACT VALUE ONLY
-- Active Campaigns: ${analysis.activeCampaigns || 0}
-- Combined Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
-- Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
-
-=== AGENCY OPTIMIZATIONS & REPORTS ===
-${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available Across Brands:
-${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.brand_name} - ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available across brands'}
-
-${analysisData.availableReports?.length > 0 ? `Reports Available Across Brands:
-${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.brand_name} - ${report.period} report (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available across brands'}
-
-${analysisData.analysis?.topPerformingBrands?.length > 0 ? `
-Top Performing Brands:
-${analysisData.analysis.topPerformingBrands.map((b: any, i: number) => `${i+1}. ${b.brand_name}: ${b.roas.toFixed(2)}x ROAS, $${b.spend.toFixed(0)} spent`).join('\n')}
-` : ''}
-
-${analysisData.analysis?.underPerformingBrands?.length > 0 ? `
-Brands Needing Attention:
-${analysisData.analysis.underPerformingBrands.map((b: any, i: number) => `${i+1}. ${b.brand_name}: ${b.roas.toFixed(2)}x ROAS, $${b.spend.toFixed(0)} spent`).join('\n')}
-` : ''}
-
-You can help with campaign optimization across brands, lead generation strategies, outreach automation, client retention, proposal optimization, resource allocation, and overall agency growth planning.`
-
-    : `SAFETY AND IDENTITY PARAMETERS:
 - You are Brez Marketing's AI Marketing Assistant, specifically designed for marketing consultation
 - You are NOT ChatGPT, OpenAI, or any other AI model - you are a specialized marketing consultant
 - You ONLY provide marketing, advertising, and business growth advice
@@ -1611,6 +1488,79 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
+
+DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
+
+IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
+
+You can analyze ANY time period the user requests naturally. If they ask about spending, performance, or metrics WITHOUT specifying a timeframe (like "how much have I spent on ads?"), ask them to clarify the time period they want to analyze (e.g., "For what time period? Last month, last quarter, this year?"). If they mention a specific time period, I'll automatically pull that data.
+
+
+
+NAVIGATION & CALL-TO-ACTION GUIDANCE:
+- If users ask how to add/connect brands, direct them to the Lead Generation page (/lead-generator) or Settings page (/settings)
+- If users ask about generating reports, mention the Brand Report feature (/brand-report) where they can create and send automated reports
+- If users ask about creative assets, mention the Ad Creative Studio (/ad-creative-studio)
+- If users ask about campaign optimization, mention the Campaign Management page (/campaign-management)
+- If users ask about analytics, mention the Analytics dashboard (/analytics)
+- If users ask about action center or tasks, mention the Action Center (/action-center)
+- If users need help with Meta/Shopify connections, mention the Settings page (/settings)
+- Always provide clickable page links when suggesting navigation
+- If users don't have any brands connected, proactively suggest they visit /lead-generator to get started
+
+BRAND OPTIMIZATION & REPORTING ACCESS:
+- You have access to available campaign optimizations that can be suggested to users
+- You can suggest generating monthly/quarterly reports using the Brand Report feature
+- You can recommend sending automated reports to brand owners or stakeholders
+- If you see optimization opportunities, suggest specific actions users can take
+- Always mention available reports or optimizations when relevant to user questions
+- You can generate and send reports automatically when users request them
+- When users ask for reports, offer to generate them immediately using current data
+
+MARKETING GOAL FOCUS: ${goalContext}
+
+Your communication style:
+- Only greet the user by name (${userName}) at the START of conversations, NOT in follow-up responses
+- If this is a continuation of an existing conversation, jump straight into answering their question
+- Be conversational and friendly, not formal - like a knowledgeable colleague having a chat
+- Write in plain text without markdown formatting (no *, **, #, -, etc.)
+- Use simple bullet points with • when listing items
+- Respond contextually: if they're saying thanks, being polite, or expressing agreement, respond naturally and conversationally
+- When they ask for analysis or marketing advice, provide detailed insights
+- For simple responses like "thanks", "I'll do that", "sounds good" - respond with encouragement and offer further help
+- Provide specific, actionable recommendations tailored to their marketing goal${brandNiche ? ` and ${brandNiche} industry` : ''}
+- Use data to support your advice but filter recommendations through their goal lens${brandNiche ? ` and industry context` : ''}
+- Keep responses natural - comprehensive for analysis requests (500-700 words), brief for casual chat
+- Never end with formal closers like "Best regards", "Sincerely", etc.
+- End naturally or with a simple encouragement
+- Do not use asterisks, dashes, or other markdown symbols
+- IMPORTANT: Do not start every response with "Hey [name]!" - only greet at conversation start
+
+${conversationHistory.length > 0 ? `
+CONVERSATION CONTEXT:
+Previous messages:
+${conversationHistory.slice(-4).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+
+Respond appropriately to their current message considering this conversation flow.` : 'This is the start of your conversation.'}
+
+Current Context:
+- Brand: ${brandName}${brandNiche ? ` (${brandNiche} business)` : ''}
+- Analysis Period: ${dateRange?.from === dateRange?.to ? 'SINGLE DAY' : `${dateRange?.days || 'multiple'} days`} (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
+
+=== EXACT VALUES TO USE (DO NOT MODIFY OR ESTIMATE) ===
+- Total Ad Spend: $${(analysis.totalSpend || 0).toFixed(2)}
+- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x ← USE THIS EXACT VALUE ONLY
+- Total Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
+- Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
+- Total Campaigns: ${campaigns.length}
+- Active Campaigns: ${analysis.activecampaigns || 0}
+
+=== AVAILABLE OPTIMIZATIONS & REPORTS ===
+${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available:
+${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available'}
+
+${analysisData.availableReports?.length > 0 ? `Reports Available:
+${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.period} report for ${report.brand_name || brandName} (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available'}
 
 DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
 
@@ -1853,13 +1803,13 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
           content: prompt
         }
       ],
-      max_tokens: mode === 'agency' ? 1500 : 1200,
+      max_tokens: 1200,
       temperature: 0.7,
       presence_penalty: 0.1,
       frequency_penalty: 0.1
     })
 
-    const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${mode === 'agency' ? 'agency' : brandName}${brandNiche && mode === 'brand' ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
+    const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${brandName}${brandNiche ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
     
     // Final safety check on the AI response
     if (containsInappropriateContent(aiResponse)) {
@@ -1870,7 +1820,7 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
 
   } catch (error) {
     console.error('Error generating AI response:', error)
-    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${mode === 'agency' ? 'agency' : brandName} data. In the meantime, I can see ${mode === 'agency' ? 'your agency has' : 'you have'} spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
+    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${brandName} data. In the meantime, I can see you have spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
   }
 }
 
