@@ -13,6 +13,18 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
   const { isLoading, status, lastSynced, hasRecentConnection, hasAnyData, shouldHideData } = useSyncStatus(brandId)
   const [hasBeenRefreshed, setHasBeenRefreshed] = useState(false)
 
+  // Set refreshed state immediately on mount if status is completed
+  useEffect(() => {
+    if (status === 'completed') {
+      // Hide completed status after 5 seconds or on page load
+      const timer = setTimeout(() => {
+        setHasBeenRefreshed(true)
+      }, 5000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [status])
+
   // Detect page refresh/navigation
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -29,26 +41,32 @@ export function SyncStatusIndicator({ brandId, className = "" }: SyncStatusIndic
     return null
   }
 
-  // Hide if user has refreshed after completion
+  // Hide if user has refreshed after completion or status is completed and we've set the flag
   if (status === 'completed' && hasBeenRefreshed) {
     return null
   }
 
-  // Hide banner if sync is completed (don't wait 10 minutes)
-  if (status === 'completed') {
-    // Hide immediately after completion, unless it just completed (give 5 seconds to see)
-    if (lastSynced) {
-      const syncDate = new Date(lastSynced)
-      const fiveSecondsAgo = new Date(Date.now() - 5 * 1000)
-      if (syncDate < fiveSecondsAgo) {
-        return null
-      }
+  // Don't show if sync completed and enough time has passed
+  if (status === 'completed' && lastSynced && !shouldHideData) {
+    const syncDate = new Date(lastSynced)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    if (syncDate < fiveMinutesAgo) {
+      return null
     }
   }
 
-  // Don't show if not syncing and no recent connection
-  if (!hasRecentConnection && !shouldHideData) {
+  // Only show if actively syncing or very recently completed
+  if (status !== 'in_progress' && status !== 'pending' && status !== 'completed') {
     return null
+  }
+
+  // Don't show completed status if it's been more than a few seconds since page load
+  if (status === 'completed') {
+    const pageLoadTime = performance.timing?.loadEventEnd || Date.now()
+    const timeSincePageLoad = Date.now() - pageLoadTime
+    if (timeSincePageLoad > 5000) { // 5 seconds
+      return null
+    }
   }
 
   const getStatusConfig = () => {

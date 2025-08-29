@@ -26,7 +26,6 @@ export function InventorySummary({
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false)
   const [retryCount, setRetryCount] = useState<number>(0)
   const MAX_RETRIES = 3
-  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const fetchInventoryData = async (forceRefresh = false) => {
     if (!brandId) {
@@ -37,15 +36,6 @@ export function InventorySummary({
       // Don't set loading immediately to prevent flashing
       if (!initialLoadComplete) {
         setLoading(true)
-        
-        // Set a 30-second timeout to prevent infinite loading
-        if (loadingTimeout) clearTimeout(loadingTimeout)
-        const timeout = setTimeout(() => {
-          setLoading(false)
-          setInitialLoadComplete(true)
-          setError('Loading timeout - please refresh')
-        }, 30000)
-        setLoadingTimeout(timeout)
       }
       
       // Add cache-busting parameter and refresh flag if needed
@@ -67,41 +57,14 @@ export function InventorySummary({
         throw new Error(`Failed to fetch inventory data: ${data.error || response.statusText}`)
       }
       
-      // Check if we got empty data after a reconnection (might need retry)
-      const isEmpty = data.items?.length === 0 && data.summary?.totalProducts === 0
-      if (isEmpty && forceRefresh && retryCount < MAX_RETRIES) {
-        setRetryCount(prev => prev + 1)
-        
-        // Schedule a retry with exponential backoff
-        setTimeout(() => {
-          fetchInventoryData(true)
-        }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
-        
-        // Don't update loading state during retry
-        return
-      }
-      
-      // Clear loading timeout since we got data
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout)
-        setLoadingTimeout(null)
-      }
-      
-      // Update state with data regardless of whether it's empty
-      setInventorySummary(data.summary)
+      // Always update state with whatever data we got - don't retry on empty data
+      // Empty data is valid (store might not have inventory set up yet)
+      setInventorySummary(data.summary || { totalProducts: 0, totalInventory: 0, lowStockCount: 0, outOfStockCount: 0 })
       setInventoryItems(data.items || [])
       setError(null)
       setInitialLoadComplete(true)
-      setRetryCount(0) // Reset retry counter on success
-      setLoading(false) // Only set loading false when we have final data
-      
-      // If data is empty and we haven't exhausted retries, schedule another attempt
-      if (isEmpty && forceRefresh && retryCount < MAX_RETRIES) {
-        setRetryCount(prev => prev + 1)
-        setTimeout(() => {
-          fetchInventoryData(true)
-        }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
-      }
+      setRetryCount(0) // Reset retry counter
+      setLoading(false) // Always set loading false when we get a response
     } catch (err) {
       console.error('Error fetching inventory data:', err)
       
@@ -115,12 +78,6 @@ export function InventorySummary({
         }, Math.pow(2, retryCount) * 1000) // 1s, 2s, 4s backoff
       } else {
         // Exhausted retries, show error
-        // Clear loading timeout
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout)
-          setLoadingTimeout(null)
-        }
-        
         setError('Failed to load inventory data')
         setInventorySummary(null)
         setInventoryItems([])
@@ -173,11 +130,6 @@ export function InventorySummary({
       window.removeEventListener('force-shopify-refresh', handleRefreshEvent as EventListener)
       window.removeEventListener('global-refresh-all', handleRefreshEvent as EventListener)
       window.removeEventListener('refresh-all-widgets', handleRefreshEvent as EventListener)
-      
-      // Clear loading timeout on unmount
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout)
-      }
     }
   }, [brandId])
 
