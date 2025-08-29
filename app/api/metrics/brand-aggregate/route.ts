@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
       
       // Filter by user's timezone date (same logic as main API)
-      const userTimezone = 'America/Chicago'; // Default to Chicago for now
+      const userTimezone = 'America/Los_Angeles'; // Default to Pacific for now
       const todayOrders = allOrders?.filter(order => {
         if (!order.created_at) return false;
         const orderDate = new Date(order.created_at);
