@@ -31,6 +31,24 @@ export async function POST(request: Request) {
           )
         }
 
+        // STEP 1: Clear all queue jobs for these connections FIRST
+        console.log('🧹 Clearing orphaned queue jobs for connections:', connections.map(c => c.id))
+        try {
+          const connectionIds = connections.map(c => c.id)
+          const cleanupResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/test/queue-cleanup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ connectionIds })
+          })
+          
+          if (cleanupResponse.ok) {
+            const cleanupResult = await cleanupResponse.json()
+            console.log('✅ Queue cleanup completed:', cleanupResult)
+          }
+        } catch (cleanupError) {
+          console.warn('⚠️ Queue cleanup error:', cleanupError)
+        }
+
         // Try to delete the connections directly - if there are foreign key constraints, return 409
         const { error: connectionError } = await supabase
           .from('platform_connections')

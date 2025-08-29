@@ -46,6 +46,26 @@ export async function POST(request: Request) {
 
         console.log(`Force deleting ${connections.length} connections and all related data`)
 
+        // STEP 1: Clear all queue jobs for these connections FIRST
+        console.log('🧹 Clearing orphaned queue jobs for these connections...')
+        try {
+          const connectionIds = connections.map(c => c.id)
+          const cleanupResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/test/queue-cleanup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ connectionIds })
+          })
+          
+          if (cleanupResponse.ok) {
+            const cleanupResult = await cleanupResponse.json()
+            console.log('✅ Queue cleanup completed:', cleanupResult)
+          } else {
+            console.warn('⚠️ Queue cleanup failed, continuing with disconnect...')
+          }
+        } catch (cleanupError) {
+          console.warn('⚠️ Queue cleanup error:', cleanupError)
+        }
+
         // Use admin client for force operations to bypass RLS
         const adminSupabase = createAdminClient()
 
