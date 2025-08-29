@@ -80,14 +80,6 @@ export async function GET(request: NextRequest) {
       // Sample address logged
     }
 
-    // First pass: Build customer email to customer_id mapping for consistent identification
-    const emailToCustomerId = new Map()
-    ordersData?.forEach(order => {
-      if (order.customer_email && order.customer_id) {
-        emailToCustomerId.set(order.customer_email, order.customer_id)
-      }
-    })
-
     // Group orders by location and calculate customer segments
     const locationStats = {} as Record<string, any>
     const customerLocationMap = new Map() // Track which location each customer is from
@@ -95,10 +87,10 @@ export async function GET(request: NextRequest) {
     ordersData?.forEach(order => {
       const address = addressMap.get(order.id)
       const country = address?.country || 'Unknown'
-      const province = address?.province || 'Unknown'
+      const province = address?.province || 'Unknown' 
       const city = address?.city || 'Unknown'
       const key = `${country}-${province}-${city}`
-
+      
       if (!locationStats[key]) {
         locationStats[key] = {
           country,
@@ -114,29 +106,15 @@ export async function GET(request: NextRequest) {
 
       locationStats[key].totalRevenue += parseFloat(order.total_price || '0')
       locationStats[key].totalOrders += 1
-
-      // Improved customer identification: prioritize consistent identification
-      let customerId = order.customer_id
-
-      if (!customerId && order.customer_email) {
-        // Check if we've seen this email before
-        const existingCustomerId = emailToCustomerId.get(order.customer_email)
-        if (existingCustomerId) {
-          customerId = existingCustomerId
-        } else {
-          // Use email as fallback identifier
-          customerId = order.customer_email
-        }
-      }
-
-      // Final fallback to order_id if nothing else available
-      if (!customerId) {
-        customerId = `order_${order.id}`
-      }
-
+      
+      // Use customer_id if available, otherwise use email, but avoid creating fake customers from order IDs
+      const customerId = order.customer_id || (order.customer_email && order.customer_email.trim() !== '' ? order.customer_email : null)
       if (customerId) {
         locationStats[key].uniqueCustomers.add(customerId)
         customerLocationMap.set(customerId, { country, province, city })
+      } else {
+        // If no customer identifier, treat as anonymous customer but don't inflate customer count
+        // Just count the revenue and order
       }
     })
 
@@ -155,22 +133,7 @@ export async function GET(request: NextRequest) {
     // Calculate segment tiers based on customer spending
     const customerSpending = new Map()
     ordersData?.forEach(order => {
-      // Use the same improved customer identification logic
-      let customerId = order.customer_id
-
-      if (!customerId && order.customer_email) {
-        const existingCustomerId = emailToCustomerId.get(order.customer_email)
-        if (existingCustomerId) {
-          customerId = existingCustomerId
-        } else {
-          customerId = order.customer_email
-        }
-      }
-
-      if (!customerId) {
-        customerId = `order_${order.id}`
-      }
-
+      const customerId = order.customer_id || (order.customer_email && order.customer_email.trim() !== '' ? order.customer_email : null)
       if (customerId) {
         const current = customerSpending.get(customerId) || 0
         customerSpending.set(customerId, current + parseFloat(order.total_price || '0'))
@@ -199,6 +162,8 @@ export async function GET(request: NextRequest) {
           totalCustomers: customerSpending.size,
           totalSegments: locationArray.length,
           totalRevenue: ordersData?.reduce((sum, order) => sum + parseFloat(order.total_price || '0'), 0) || 0,
+          totalOrders: ordersData?.length || 0,
+          anonymousOrders: ordersData?.filter(order => !order.customer_id && (!order.customer_email || order.customer_email.trim() === '')).length || 0,
           totalClv: Array.from(customerSpending.values()).reduce((sum, spending) => sum + spending, 0),
           averageClv: customerSpending.size > 0 ? Array.from(customerSpending.values()).reduce((sum, spending) => sum + spending, 0) / customerSpending.size : 0
         },
