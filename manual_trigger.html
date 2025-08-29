@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopify Manual Data Trigger</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Shopify Manual Data Trigger</h1>
+    <p>This will force fetch all Shopify data and bypass the broken sync system.</p>
+
+    <button class="button" onclick="triggerOrders()">📊 Fetch Orders</button>
+    <button class="button" onclick="triggerCustomers()">👥 Fetch Customers</button>
+    <button class="button" onclick="triggerProducts()">📦 Fetch Products/Inventory</button>
+    <button class="button" onclick="triggerSync()">🔄 Trigger Full Sync</button>
+    <button class="button" onclick="triggerAll()">🚀 Trigger ALL (Recommended)</button>
+
+    <div id="results"></div>
+
+    <script>
+        const brandId = '1a30f34b-b048-4f80-b880-6c61bd12c720';
+        const baseUrl = 'https://www.brezmarketingdashboard.com';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        async function triggerOrders() {
+            addResult('🔄 Fetching orders...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/api/shopify/analytics/repeat-customers?brandId=${brandId}`, {
+                    headers: { 'x-internal-call': 'true' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Orders fetched: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Orders failed: ${response.status} - ${await response.text()}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Orders error: ${error.message}`, 'error');
+            }
+        }
+
+        async function triggerCustomers() {
+            addResult('🔄 Fetching customers...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/api/shopify/analytics/customer-segments?brandId=${brandId}`, {
+                    headers: { 'x-internal-call': 'true' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Customers fetched: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Customers failed: ${response.status} - ${await response.text()}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Customers error: ${error.message}`, 'error');
+            }
+        }
+
+        async function triggerProducts() {
+            addResult('🔄 Fetching products/inventory...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/api/shopify/inventory?brandId=${brandId}`, {
+                    headers: { 'x-internal-call': 'true' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Products/Inventory fetched: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Products/Inventory failed: ${response.status} - ${await response.text()}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Products/Inventory error: ${error.message}`, 'error');
+            }
+        }
+
+        async function triggerSync() {
+            addResult('🔄 Triggering full sync...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/api/shopify/sync?brandId=${brandId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-call': 'true'
+                    },
+                    body: JSON.stringify({ connectionId: 'fbbfbbdf-60f4-41e7-81d7-83bfae1bdf31' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Sync triggered: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Sync failed: ${response.status} - ${await response.text()}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Sync error: ${error.message}`, 'error');
+            }
+        }
+
+        async function triggerAll() {
+            addResult('🚀 Starting ALL triggers sequentially...', 'info');
+
+            await triggerOrders();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await triggerCustomers();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await triggerProducts();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await triggerSync();
+
+            addResult('✅ ALL triggers completed! Check your dashboard now.', 'success');
+        }
+
+        // Auto-trigger all on page load
+        window.onload = function() {
+            addResult('🔥 Page loaded - click "Trigger ALL" or run individual tests', 'info');
+        };
+    </script>
+</body>
+</html>
