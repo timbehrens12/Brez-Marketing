@@ -572,7 +572,9 @@ export class ShopifyWorker {
           .limit(5)
         
         console.error('[Worker] Recent Shopify connections:', allConnections)
-        return { error: 'Connection does not exist - job should be cancelled' }
+        
+        // This is a hard error - the job should not be retried with a non-existent connection
+        throw new Error('FATAL: Connection does not exist - cancelling job permanently')
       }
 
       // Log the connection status for debugging
