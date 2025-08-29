@@ -67,21 +67,67 @@ export async function POST(
       })
       .eq('id', connectionId)
 
-    // Step 1: Add recent sync job (high priority for immediate UI)
-    await ShopifyQueueService.addRecentSyncJob(
-      brandId,
-      connectionId,
-      shop,
-      accessToken
-    )
+    // 🚀 DIRECT API CALLS - BYPASS BROKEN QUEUE SYSTEM
+    console.log('[Connected] Starting direct API sync...')
 
-    // Step 2: Add bulk jobs for historical data (lower priority, background)
-    await ShopifyQueueService.addBulkJobs(
-      brandId,
-      connectionId,
-      shop,
-      accessToken
-    )
+    // Step 1: Direct orders sync (bypasses queue)
+    try {
+      console.log('[Connected] Syncing orders...')
+      const ordersResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/analytics/repeat-customers?brandId=${brandId}&force=true`, {
+        headers: { 'x-internal-call': 'true' }
+      })
+
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json()
+        console.log(`[Connected] ✅ Orders synced: ${ordersData.data?.total || 0} records`)
+      } else {
+        console.error('[Connected] ❌ Orders sync failed:', await ordersResponse.text())
+      }
+    } catch (error) {
+      console.error('[Connected] Orders sync error:', error)
+    }
+
+    // Step 2: Direct customers sync (bypasses queue)
+    try {
+      console.log('[Connected] Syncing customers...')
+      const customersResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/analytics/customer-segments?brandId=${brandId}&force=true`, {
+        headers: { 'x-internal-call': 'true' }
+      })
+
+      if (customersResponse.ok) {
+        const customersData = await customersResponse.json()
+        console.log(`[Connected] ✅ Customers synced: ${customersData.data?.total || 0} records`)
+      } else {
+        console.error('[Connected] ❌ Customers sync failed:', await customersResponse.text())
+      }
+    } catch (error) {
+      console.error('[Connected] Customers sync error:', error)
+    }
+
+    // Step 3: Trigger products sync (will populate inventory)
+    try {
+      console.log('[Connected] Triggering products sync...')
+      const productsResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-call': 'true'
+        },
+        body: JSON.stringify({
+          shop: shop,
+          brandId: brandId
+        })
+      })
+
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json()
+        console.log(`[Connected] ✅ Products sync started: ${productsData.message}`)
+      } else {
+        console.error('[Connected] ❌ Products sync failed:', await productsResponse.text())
+      }
+    } catch (error) {
+      console.error('[Connected] Products sync error:', error)
+    }
 
     // Step 3: Register webhooks (if not already registered)
     await registerShopifyWebhooks(shop, accessToken, brandId)
