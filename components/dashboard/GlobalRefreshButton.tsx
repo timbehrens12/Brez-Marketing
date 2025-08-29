@@ -112,28 +112,14 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
     try {
       toast.loading("Refreshing all data...", { id: "global-refresh" })
 
-      // Dispatch a comprehensive refresh event that all widgets should listen to
-      window.dispatchEvent(new CustomEvent('global-refresh-all', {
-        detail: {
-          brandId,
-          currentTab,
-          platforms: activePlatforms,
-          timestamp: Date.now(),
-          refreshId,
-          forceRefresh: true
-        }
-      }))
-
-      // Also dispatch tab-specific events for targeted refreshes
-      if (currentTab === 'meta' && activePlatforms.meta) {
-        // console.log('[GlobalRefresh] Triggering Meta refresh')
-        window.dispatchEvent(new CustomEvent('force-meta-refresh', {
-          detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh' }
-        }))
-      }
-
+      // For Shopify tab, skip global refresh and go straight to nuclear sequence
       if (currentTab === 'shopify' && activePlatforms.shopify) {
-        console.log('[GlobalRefresh] Triggering comprehensive Shopify refresh')
+        console.log('🔥 [GlobalRefresh] Starting NUCLEAR REFRESH SEQUENCE')
+        
+        // STEP 1: Block premature widget refreshes
+        window.dispatchEvent(new CustomEvent('shopify-sync-starting', {
+          detail: { brandId, source: 'global-refresh-button' }
+        }))
         
         // Find the Shopify connection for this brand
         const shopifyConnection = connections.find(c => 
@@ -141,7 +127,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         );
         
         if (shopifyConnection) {
-          // NUCLEAR OPTION: Hard refresh that actually pulls from Shopify API
+          // STEP 2: NUCLEAR OPTION - Hard refresh that actually pulls from Shopify API
           const syncPromise = fetch('/api/shopify/hard-refresh', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -163,7 +149,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
             return false;
           });
 
-          // Second: After nuclear sync completes, refresh widgets with fresh data
+          // STEP 3: After nuclear sync completes, refresh widgets with fresh data
           syncPromise.then((syncSuccess) => {
             console.log('🔥 [GlobalRefresh] NUCLEAR SYNC COMPLETED - Refreshing widgets with fresh data');
             
@@ -185,6 +171,25 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
           window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
             detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-no-connection' }
           }));
+        }
+      } else {
+        // For non-Shopify tabs, dispatch regular global refresh events
+        window.dispatchEvent(new CustomEvent('global-refresh-all', {
+          detail: {
+            brandId,
+            currentTab,
+            platforms: activePlatforms,
+            timestamp: Date.now(),
+            refreshId,
+            forceRefresh: true
+          }
+        }))
+
+        // Tab-specific events for targeted refreshes
+        if (currentTab === 'meta' && activePlatforms.meta) {
+          window.dispatchEvent(new CustomEvent('force-meta-refresh', {
+            detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh' }
+          }))
         }
       }
 
