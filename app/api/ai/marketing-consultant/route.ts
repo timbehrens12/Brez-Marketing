@@ -46,7 +46,12 @@ function parseeDateRangeFromPrompt(prompt: string): { from?: string, to?: string
     'last year': 365,
     'past year': 365,
     'last 2 years': 730,
-    'past 2 years': 730
+    'past 2 years': 730,
+    // Additional common patterns
+    'this week': 7,
+    'this month': 30,
+    'this quarter': 90,
+    'this year': 365
   }
   
   for (const [phrase, days] of Object.entries(commonPeriods)) {
@@ -561,14 +566,31 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
       .eq('connection_id', connectionId)
       .order('total_spent', { ascending: false })
 
-    // Fetch ALL orders data by BRAND_ID (same as widget API)
-    const { data: orders } = await supabase
+    // Fetch orders data with optional date filtering
+    let ordersQuery = supabase
       .from('shopify_orders')
       .select('*')
       .eq('brand_id', brandId)  // Use brand_id like the widget does!
       .order('created_at', { ascending: false })
+
+    // Apply date filtering if specific dates are provided
+    if (fromDate && toDate) {
+      console.log(`[AI Marketing Consultant] Applying date filter: ${fromDate} to ${toDate}`)
+      // Convert dates to proper timezone boundaries (America/Chicago/Pacific)
+      const fromDateTime = `${fromDate}T08:00:00Z` // Start of day in Pacific (UTC-8)
+      const toDate_obj = new Date(toDate)
+      toDate_obj.setDate(toDate_obj.getDate() + 1)
+      const nextDay = toDate_obj.toISOString().split('T')[0]
+      const toDateTime = `${nextDay}T07:59:59Z` // End of day in Pacific
+      
+      ordersQuery = ordersQuery
+        .gte('created_at', fromDateTime)
+        .lte('created_at', toDateTime)
+    }
+
+    const { data: orders } = await ordersQuery
     
-    console.log(`[AI Marketing Consultant] Shopify data query result (ALL data, no date filtering):`, {
+    console.log(`[AI Marketing Consultant] Shopify data query result (date range: ${fromDate || 'ALL'} to ${toDate || 'ALL'}):`, {
       connectionId,
       brandId,
       ordersCount: orders?.length || 0,
@@ -589,12 +611,49 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
     
     // Calculate repeat customers directly from orders (like widget does)
     const customerOrderCounts = new Map()
+    const customerSpending = new Map()
+    const customerFirstOrder = new Map()
+    const customerLastOrder = new Map()
+    
     orders?.forEach((order: any) => {
       const customerId = order.customer_id || order.customer_email || `order_${order.id}`
+      const orderValue = parseFloat(order.total_price) || 0
+      const orderDate = order.created_at
+      
       if (customerId) {
+        // Count orders
         customerOrderCounts.set(customerId, (customerOrderCounts.get(customerId) || 0) + 1)
+        
+        // Track spending
+        customerSpending.set(customerId, (customerSpending.get(customerId) || 0) + orderValue)
+        
+        // Track order dates
+        if (!customerFirstOrder.has(customerId) || orderDate < customerFirstOrder.get(customerId)) {
+          customerFirstOrder.set(customerId, orderDate)
+        }
+        if (!customerLastOrder.has(customerId) || orderDate > customerLastOrder.get(customerId)) {
+          customerLastOrder.set(customerId, orderDate)
+        }
       }
     })
+    
+    // Create top customers analysis (for AI responses about "who are our top customers")
+    const topCustomersBySpending = Array.from(customerSpending.entries())
+      .map(([customerId, totalSpent]) => {
+        const customer = customers?.find(c => c.customer_id?.toString() === customerId?.toString() || c.email === customerId)
+        return {
+          customerId,
+          totalSpent,
+          orderCount: customerOrderCounts.get(customerId) || 0,
+          customerName: customer ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : 'Unknown',
+          customerEmail: customer?.email || (typeof customerId === 'string' && customerId.includes('@') ? customerId : 'Unknown'),
+          firstOrderDate: customerFirstOrder.get(customerId),
+          lastOrderDate: customerLastOrder.get(customerId),
+          avgOrderValue: (customerOrderCounts.get(customerId) || 0) > 0 ? totalSpent / (customerOrderCounts.get(customerId) || 1) : 0
+        }
+      })
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 20) // Top 20 customers
     
     const uniqueCustomersFromOrders = customerOrderCounts.size
     const repeatCustomersFromOrders = Array.from(customerOrderCounts.values()).filter(count => count > 1).length
@@ -621,12 +680,27 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
       .eq('connection_id', connectionId)
       .order('usage_count', { ascending: false })
 
-    // Fetch regional sales data for geographic insights
-    const { data: regionalSales } = await supabase
+    // Fetch regional sales data for geographic insights with optional date filtering
+    let regionalSalesQuery = supabase
       .from('shopify_sales_by_region')
       .select('*')
       .eq('connection_id', connectionId)
       .order('total_sales', { ascending: false })
+
+    // Apply same date filtering to regional sales
+    if (fromDate && toDate) {
+      const fromDateTime = `${fromDate}T08:00:00Z`
+      const toDate_obj = new Date(toDate)
+      toDate_obj.setDate(toDate_obj.getDate() + 1)
+      const nextDay = toDate_obj.toISOString().split('T')[0]
+      const toDateTime = `${nextDay}T07:59:59Z`
+      
+      regionalSalesQuery = regionalSalesQuery
+        .gte('created_at', fromDateTime)
+        .lte('created_at', toDateTime)
+    }
+
+    const { data: regionalSales } = await regionalSalesQuery
     
     // Fetch draft orders for cart abandonment analysis
     let draftOrdersQuery = supabase
@@ -917,7 +991,9 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
         uniqueCustomersFromOrders,
         repeatCustomersFromOrders,
         repeatRateFromOrders
-      }
+      },
+      // Top customers analysis for AI responses
+      topCustomers: topCustomersBySpending
     }
 
   } catch (error) {
@@ -983,7 +1059,8 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
         uniqueCustomersFromOrders: 0,
         repeatCustomersFromOrders: 0,
         repeatRateFromOrders: 0
-      }
+      },
+      topCustomers: []
     }
   }
 }
@@ -1596,6 +1673,18 @@ ${analysisData.shopifyData?.customerSegmentation ? `
 - High Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.high?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.high?.percentage || 0).toFixed(1)}%)
 - Medium Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.medium?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.medium?.percentage || 0).toFixed(1)}%)
 - Low Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.low?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.low?.percentage || 0).toFixed(1)}%)
+` : ''}
+
+${analysisData.shopifyData?.topCustomers?.length > 0 ? `
+🏆 TOP CUSTOMERS BY SPENDING (Date Range: ${JSON.stringify(analysisData.dateRange || 'All Time')}):
+${analysisData.shopifyData.topCustomers.slice(0, 10).map((customer: any, i: number) => `${i+1}. ${customer.customerName || customer.customerEmail || 'Unknown'} - $${customer.totalSpent.toFixed(2)} (${customer.orderCount} orders, avg: $${customer.avgOrderValue.toFixed(2)})`).join('\n')}
+
+💰 CUSTOMER INSIGHTS:
+- Highest spender: $${analysisData.shopifyData.topCustomers[0]?.totalSpent?.toFixed(2) || '0.00'}
+- Top 10 customers represent ${analysisData.shopifyData.topCustomers.slice(0, 10).reduce((sum: number, c: any) => sum + c.totalSpent, 0).toFixed(2)} in revenue
+- Average orders per top customer: ${(analysisData.shopifyData.topCustomers.slice(0, 10).reduce((sum: number, c: any) => sum + c.orderCount, 0) / Math.min(10, analysisData.shopifyData.topCustomers.length)).toFixed(1)}
+
+Use this data to answer questions about top customers, customer performance, and personalized recommendations.
 ` : ''}
 
 
