@@ -25,19 +25,20 @@ function logSyncEvent(syncId: string, level: 'INFO' | 'WARN' | 'ERROR', event: s
   // Store in database for persistence
   try {
     const supabase = createClient()
-    // Use a generic table or skip if sync_logs doesn't exist yet
-    // This will be non-blocking to avoid sync failures
-    supabase.from('sync_logs').insert({
+    // Store in sync_session_logs table
+    supabase.from('sync_session_logs').insert({
       sync_session_id: syncId,
       level,
       event,
       details: details || {},
       created_at: timestamp
-    }).then(() => {}).catch(() => {
-      // Table might not exist yet, that's ok
+    }).then(() => {}).catch((err) => {
+      // Log database errors but don't fail the sync
+      console.error(`[DB LOG ERROR] Failed to store log:`, err)
     })
   } catch (error) {
     // Ignore logging errors to prevent sync failure
+    console.error(`[LOG SYSTEM ERROR] Failed to initialize logging:`, error)
   }
 }
 
