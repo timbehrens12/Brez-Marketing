@@ -59,9 +59,25 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
         // STEP 4: Wait a moment for any data to update
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        // STEP 5: Clear refreshing state and refresh widgets
+        // STEP 5: Force metrics refresh and clear refreshing state
+        console.log('🔥 [ShopifyContent] NUCLEAR SYNC COMPLETE - Triggering metrics refresh')
+        
+        // Force refresh of parent metrics data
+        window.dispatchEvent(new CustomEvent('force-metrics-refresh', {
+          detail: { 
+            brandId, 
+            timestamp: Date.now(), 
+            forceRefresh: true,
+            source: 'nuclear-sync-complete'
+          }
+        }))
+        
+        // Wait a moment for metrics to update
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Clear refreshing state and refresh widgets
         setIsRefreshingData(false)
-        console.log('🔥 [ShopifyContent] NUCLEAR SYNC COMPLETE - Refreshing widgets with fresh data')
+        console.log('🔥 [ShopifyContent] Refreshing widgets with fresh data')
         window.dispatchEvent(new CustomEvent('force-widget-refresh', {
           detail: { 
             brandId, 
@@ -85,10 +101,23 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
       
       // Wait for nuclear sync to complete (listen for completion event)
       const handleSyncComplete = () => {
+        console.log('[ShopifyContent] Refresh button sync complete - triggering metrics refresh')
+        
+        // Force refresh of parent metrics data
+        window.dispatchEvent(new CustomEvent('force-metrics-refresh', {
+          detail: { 
+            brandId, 
+            timestamp: Date.now(), 
+            forceRefresh: true,
+            source: 'refresh-button-complete'
+          }
+        }))
+        
         setTimeout(() => {
           console.log('[ShopifyContent] Refresh button sync complete - clearing loading state')
           setIsRefreshingData(false)
-        }, 500)
+        }, 1000) // Give more time for metrics to update
+        
         window.removeEventListener('force-widget-refresh', handleSyncComplete)
       }
       

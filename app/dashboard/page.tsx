@@ -1638,10 +1638,12 @@ export default function DashboardPage() {
     };
     
     window.addEventListener('force-shopify-refresh', handleShopifyRefresh);
+    window.addEventListener('force-metrics-refresh', handleShopifyRefresh);
     
     return () => {
       cancelled = true;
       window.removeEventListener('force-shopify-refresh', handleShopifyRefresh);
+      window.removeEventListener('force-metrics-refresh', handleShopifyRefresh);
     };
   }, [selectedBrandId, dateRange, setMetrics]);
 
