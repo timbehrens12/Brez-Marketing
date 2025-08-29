@@ -2585,62 +2585,107 @@ export default function SettingsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0f0f0f] border border-[#333] text-white shadow-2xl">
-          <DialogHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <img 
-                src="https://i.imgur.com/cnCcupx.png" 
-                alt="Shopify" 
-                className="w-10 h-10 object-contain"
-              />
+        <DialogContent className="sm:max-w-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 text-white shadow-2xl backdrop-blur-xl overflow-hidden">
+          {/* Animated Background Pattern */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-blue-500/5 to-purple-500/5 animate-gradient-x"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+          
+          <DialogHeader className="text-center pb-8 relative z-10">
+            <div className="mx-auto mb-6 relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-3xl flex items-center justify-center shadow-xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 rounded-3xl backdrop-blur-sm"></div>
+                <img 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify" 
+                  className="w-12 h-12 object-contain relative z-10 drop-shadow-lg"
+                />
+              </div>
+              {/* Floating dots */}
+              <div className="absolute -top-2 -right-2 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+              <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-300"></div>
             </div>
-            <DialogTitle className="text-2xl font-bold text-white mb-2">
+            <DialogTitle className="text-3xl font-bold text-white mb-3 bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
               Connect Your Shopify Store
             </DialogTitle>
-            <DialogDescription className="text-gray-400 text-base leading-relaxed">
-              Connect our API to automatically sync your store data with read-only permissions.
+            <DialogDescription className="text-slate-300 text-lg leading-relaxed max-w-md mx-auto">
+              Seamlessly integrate your store with our platform for real-time analytics and insights.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleShopifyConnect} className="space-y-6">
+          <form onSubmit={handleShopifyConnect} className="space-y-8 relative z-10">
             {/* What You'll Get Section */}
-            <div className="bg-gradient-to-r from-[#96BF48]/10 to-[#7EA83A]/10 border border-[#96BF48]/20 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#96BF48]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                What You'll Get
+            <div className="bg-gradient-to-br from-emerald-500/10 via-green-500/10 to-teal-500/10 border border-emerald-400/30 rounded-2xl p-6 backdrop-blur-sm">
+              <h4 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
+                <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                Unlock Powerful Insights
               </h4>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex items-center gap-2 text-gray-300">
-                  <div className="w-1.5 h-1.5 bg-[#96BF48] rounded-full"></div>
-                  Real-time sales tracking
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Real-time Sales</p>
+                    <p className="text-slate-400 text-xs">Live revenue tracking</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <div className="w-1.5 h-1.5 bg-[#96BF48] rounded-full"></div>
-                  Product performance insights
+                <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Product Insights</p>
+                    <p className="text-slate-400 text-xs">Performance analytics</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <div className="w-1.5 h-1.5 bg-[#96BF48] rounded-full"></div>
-                  Customer analytics
+                <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Customer Analytics</p>
+                    <p className="text-slate-400 text-xs">Behavior patterns</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <div className="w-1.5 h-1.5 bg-[#96BF48] rounded-full"></div>
-                  Inventory monitoring
+                <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Inventory Monitor</p>
+                    <p className="text-slate-400 text-xs">Stock level alerts</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Store URL Input */}
-            <div className="space-y-3">
-              <Label htmlFor="shopify-url" className="text-white font-semibold text-sm">
-                Store URL
+            <div className="space-y-4">
+              <Label htmlFor="shopify-url" className="text-white font-bold text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-6m-2-4h6m2 0V9a2 2 0 00-2-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 00-2 2v8a2 2 0 002 2h2m0 0h6" />
+                </svg>
+                Your Store URL
               </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
                 </div>
                 <Input
                   id="shopify-url"
@@ -2648,14 +2693,19 @@ export default function SettingsPage() {
                   placeholder="your-store.myshopify.com"
                   value={shopifyStoreUrl}
                   onChange={(e) => setShopifyStoreUrl(e.target.value)}
-                  className="pl-10 bg-[#1a1a1a] border-[#333] text-white placeholder-gray-500 focus:border-[#96BF48] focus:ring-1 focus:ring-[#96BF48] h-12 text-base rounded-xl transition-all duration-200"
+                  className="pl-16 pr-4 bg-slate-800/50 border-slate-600/50 text-white placeholder-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 h-14 text-lg rounded-2xl transition-all duration-300 hover:bg-slate-700/50 backdrop-blur-sm group-hover:border-slate-500/70"
                   disabled={isConnectingShopify}
                 />
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Info className="w-3 h-3" />
-                Enter your store's URL (we'll handle the connection automatically)
-              </p>
+              <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-3">
+                <p className="text-sm text-slate-300 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-400" />
+                  We'll redirect you to Shopify for secure authentication - no store changes will be made
+                </p>
+              </div>
             </div>
 
             {/* Process Steps */}
@@ -2696,32 +2746,33 @@ export default function SettingsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-4 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShopifyConnectionDialog(prev => ({ ...prev, open: false }))}
-                className="flex-1 border-[#333] bg-transparent text-gray-300 hover:bg-[#2a2a2a] hover:text-white h-12 rounded-xl transition-all duration-200"
+                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-14 rounded-2xl transition-all duration-300 backdrop-blur-sm font-medium text-lg"
                 disabled={isConnectingShopify}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-[#96BF48] to-[#7EA83A] hover:from-[#85AB3F] hover:to-[#6D9234] text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                className="flex-1 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white font-bold h-14 rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 text-lg relative overflow-hidden group"
                 disabled={isConnectingShopify || !shopifyStoreUrl.trim()}
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 {isConnectingShopify ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Connecting...
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-3" />
+                    <span className="relative z-10">Connecting to Shopify...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    Connect Store
+                    <span className="relative z-10">Connect Store Now</span>
                   </>
                 )}
               </Button>
@@ -2735,63 +2786,92 @@ export default function SettingsPage() {
         open={disconnectDialog.open} 
         onOpenChange={(open) => !open && setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
       >
-        <DialogContent className="sm:max-w-md bg-[#0A0A0A] border-red-500/30">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-400">
-              <Trash2 className="w-5 h-5" />
-              ⚠️ PERMANENT DATA DELETION WARNING
+        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-red-950/90 via-red-900/90 to-red-950/90 border border-red-500/30 text-white shadow-2xl backdrop-blur-xl overflow-hidden">
+          {/* Animated danger background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-red-500/5 animate-pulse"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(239,68,68,0.1),rgba(0,0,0,0.8))]"></div>
+          
+          <DialogHeader className="text-center pb-6 relative z-10">
+            <div className="mx-auto mb-4 relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-xl relative">
+                <div className="absolute inset-0 bg-red-400/30 rounded-full animate-ping"></div>
+                <AlertTriangle className="w-8 h-8 text-white relative z-10" />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-red-400 mb-2 flex items-center justify-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              PERMANENT DATA DELETION
+              <span className="text-2xl">⚠️</span>
             </DialogTitle>
-            <DialogDescription className="text-gray-300">
-              This action cannot be undone and will permanently delete all data.
+            <DialogDescription className="text-red-200 text-lg leading-relaxed">
+              This action is irreversible and will permanently destroy all your data.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-              <p className="text-white font-medium mb-3">
+          <div className="space-y-6 relative z-10">
+            <div className="bg-gradient-to-br from-red-900/30 via-red-800/30 to-red-900/30 border border-red-500/40 rounded-2xl p-6 backdrop-blur-sm">
+              <p className="text-white font-bold mb-4 text-lg">
                 Disconnecting {disconnectDialog.platform === 'shopify' ? 'Shopify' : 'Meta Ads'} from "{disconnectDialog.brandName}" will:
               </p>
               
-              <div className="space-y-2 text-sm text-gray-300">
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">🗑️</span>
-                  <span>DELETE ALL {disconnectDialog.platform?.toUpperCase()} DATA from our database</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 p-3 bg-red-800/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">DELETE ALL {disconnectDialog.platform?.toUpperCase()} DATA</p>
+                    <p className="text-red-300/80 text-sm">Complete removal from our database</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">📊</span>
-                  <span>Remove all analytics, insights, and historical data</span>
+                <div className="flex items-center gap-4 p-3 bg-red-800/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">REMOVE ALL ANALYTICS</p>
+                    <p className="text-red-300/80 text-sm">Historical insights and performance data</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">📈</span>
-                  <span>Clear all performance metrics and reports</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400">🔄</span>
-                  <span>Cannot be recovered once deleted</span>
+                <div className="flex items-center gap-4 p-3 bg-red-800/20 rounded-xl border border-red-600/30">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-red-200 font-medium">CANNOT BE RECOVERED</p>
+                    <p className="text-red-300/80 text-sm">This action is permanent and irreversible</p>
+                  </div>
                 </div>
               </div>
               
-              <div className="mt-3 p-2 bg-red-800/30 rounded border border-red-600/50">
-                <p className="text-red-200 text-sm font-medium">
-                  This action is PERMANENT and IRREVERSIBLE.
+              <div className="mt-5 p-4 bg-gradient-to-r from-red-800/40 to-red-700/40 rounded-xl border border-red-500/50">
+                <p className="text-red-100 font-bold text-center flex items-center justify-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  THIS ACTION IS PERMANENT AND IRREVERSIBLE
+                  <AlertTriangle className="w-5 h-5" />
                 </p>
               </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button
                 variant="outline"
                 onClick={() => setDisconnectDialog({ open: false, platform: null, brandId: '', brandName: '' })}
-                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white hover:border-slate-500 h-12 rounded-xl transition-all duration-300 backdrop-blur-sm font-medium"
               >
-                Cancel
+                Cancel - Keep Data Safe
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmDisconnect}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-700 hover:via-red-600 hover:to-red-700 text-white font-bold h-12 rounded-xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
               >
-                Yes, Delete All Data
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10">🗑️ Yes, Delete All Data</span>
               </Button>
             </div>
           </div>
