@@ -57,20 +57,26 @@ export function CustomerSegmentationWidget({
         url += `&from=${fromDate}&to=${toDate}`
       }
       
-      // Add cache busting
-      url += `&t=${Date.now()}`
+      // Add cache busting to ensure fresh data
+      url += `&t=${Date.now()}&cache_bust=${Math.random()}`
       
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success) {
         setData(result.data)
-        // Customer segmentation data loaded successfully
+        console.log(`[CustomerSegmentation] Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, $${result.data?.overview?.totalRevenue || 0} revenue`)
       } else {
-        // No customer segmentation data received
+        console.warn('[CustomerSegmentation] No data received')
       }
     } catch (error) {
-      // Error fetching customer segmentation
+      console.error('[CustomerSegmentation] Error fetching data:', error)
     } finally {
       setLoading(false)
     }

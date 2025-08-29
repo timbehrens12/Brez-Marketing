@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { ShopifyTab } from "./tabs/ShopifyTab"
 import { PlatformConnection } from "@/types/platformConnection"
 
@@ -16,6 +17,28 @@ interface ShopifyContentProps {
 }
 
 export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoading, brands }: ShopifyContentProps) {
+  
+  // Trigger refresh when Shopify content is mounted/brandId changes
+  useEffect(() => {
+    if (brandId) {
+      console.log('[ShopifyContent] Page loaded/brand changed - triggering fresh data refresh')
+      
+      // Small delay to ensure components are mounted
+      const timer = setTimeout(() => {
+        // Trigger refresh for all Shopify widgets
+        window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
+          detail: { 
+            brandId, 
+            timestamp: Date.now(), 
+            forceRefresh: true, 
+            source: 'shopify-page-load' 
+          }
+        }))
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [brandId]) // Re-run when brandId changes
   if (!brandId) {
     return (
       <div className="flex items-center justify-center h-96">

@@ -133,7 +133,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       }
 
       if (currentTab === 'shopify' && activePlatforms.shopify) {
-        // console.log('[GlobalRefresh] Triggering Shopify sync and refresh')
+        console.log('[GlobalRefresh] Triggering comprehensive Shopify refresh')
         
         // Find the Shopify connection for this brand
         const shopifyConnection = connections.find(c => 
@@ -141,30 +141,53 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         );
         
         if (shopifyConnection) {
-          // First trigger a sync to get latest data from Shopify
-          fetch('/api/shopify/sync', {
+          // First: Trigger manual sync to get latest data from Shopify
+          const syncPromise = fetch('/api/shopify/manual-sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               shop: shopifyConnection.shop,
               brandId,
-              forceRefresh: true 
+              connectionId: shopifyConnection.id,
+              forceRefresh: true,
+              skipWebhooks: false
             })
-        }).then(response => {
-          if (response.ok) {
-            console.log('[GlobalRefresh] Shopify sync completed, now refreshing widgets');
-            // After sync, refresh the widgets
+          }).then(response => {
+            if (response.ok) {
+              console.log('[GlobalRefresh] ✅ Shopify manual sync completed successfully');
+              return true;
+            } else {
+              console.warn('[GlobalRefresh] ⚠️ Shopify manual sync failed, continuing with widget refresh');
+              return false;
+            }
+          }).catch(error => {
+            console.error('[GlobalRefresh] ❌ Shopify manual sync error:', error);
+            return false;
+          });
+
+          // Second: After sync attempt, always refresh all widgets
+          syncPromise.then(() => {
+            console.log('[GlobalRefresh] 🔄 Refreshing all Shopify widgets');
+            
+            // Dispatch multiple events to ensure all widgets refresh
             window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
-              detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh' }
+              detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-button' }
             }));
-          }
-        }).catch(error => {
-          console.error('[GlobalRefresh] Shopify sync failed:', error);
-          // Still try to refresh widgets even if sync fails
+            
+            window.dispatchEvent(new CustomEvent('shopify-sync-completed', {
+              detail: { brandId, timestamp: Date.now(), source: 'global-refresh-button' }
+            }));
+            
+            window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
+              detail: { brandId, timestamp: Date.now(), source: 'global-refresh-button' }
+            }));
+          });
+        } else {
+          console.warn('[GlobalRefresh] No active Shopify connection found for brand:', brandId);
+          // Still refresh widgets even without active connection
           window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
-            detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh' }
+            detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-no-connection' }
           }));
-        });
         }
       }
 

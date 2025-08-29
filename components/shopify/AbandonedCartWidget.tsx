@@ -87,10 +87,16 @@ export function AbandonedCartWidget({
         url += `&from=${fromDate}&to=${toDate}`
       }
       
-      // Add cache busting
-      url += `&t=${Date.now()}`
+      // Add cache busting to ensure fresh data
+      url += `&t=${Date.now()}&cache_bust=${Math.random()}`
       
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
       
       if (!response.ok) {
@@ -99,11 +105,13 @@ export function AbandonedCartWidget({
       
       if (result.success && result.data) {
         setData(result.data)
+        console.log(`[AbandonedCart] Loaded data: ${result.data?.totalCarts || 0} carts, $${result.data?.totalValue || 0} value`)
       } else {
+        console.warn('[AbandonedCart] No data available')
         setError('No abandoned cart data available')
       }
     } catch (err) {
-      // Error fetching abandoned cart data
+      console.error('[AbandonedCart] Error fetching data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setIsWidgetLoading(false)
@@ -123,11 +131,15 @@ export function AbandonedCartWidget({
     window.addEventListener('refresh-all-widgets', handleRefresh)
     window.addEventListener('force-shopify-refresh', handleRefresh)
     window.addEventListener('shopifyDataRefreshed', handleRefresh)
+    window.addEventListener('global-refresh-all', handleRefresh)
+    window.addEventListener('shopify-sync-completed', handleRefresh)
 
     return () => {
       window.removeEventListener('refresh-all-widgets', handleRefresh)
       window.removeEventListener('force-shopify-refresh', handleRefresh)
       window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+      window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('shopify-sync-completed', handleRefresh)
     }
   }, [fetchData])
 

@@ -71,20 +71,26 @@ export function RepeatCustomersWidget({
         url += `&from=${fromDate}&to=${toDate}`
       }
       
-      // Add cache busting
-      url += `&t=${Date.now()}`
+      // Add cache busting to ensure fresh data
+      url += `&t=${Date.now()}&cache_bust=${Math.random()}`
       
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success) {
         setData(result.data)
-        // Repeat customers data loaded successfully
+        console.log(`[RepeatCustomers] Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, ${result.data?.overview?.repeatCustomers || 0} repeat customers`)
       } else {
-        // No repeat customers data received
+        console.warn('[RepeatCustomers] No data received')
       }
     } catch (error) {
-      // Error fetching repeat customer data
+      console.error('[RepeatCustomers] Error fetching data:', error)
     } finally {
       setLoading(false)
     }

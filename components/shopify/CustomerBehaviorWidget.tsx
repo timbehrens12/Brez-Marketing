@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Mail, MessageSquare, MapPin, RefreshCcw } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -54,12 +54,23 @@ export function CustomerBehaviorWidget({
   const [error, setError] = useState<string | null>(null)
   const [isWidgetLoading, setIsWidgetLoading] = useState(true)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!brandId) return
     
     try {
       setError(null)
-      const response = await fetch(`/api/shopify/analytics/customer-behavior?brandId=${brandId}`)
+      setIsWidgetLoading(true)
+      
+      // Add cache busting to ensure fresh data
+      const url = `/api/shopify/analytics/customer-behavior?brandId=${brandId}&t=${Date.now()}&cache_bust=${Math.random()}`
+      
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
       
       if (!response.ok) {
@@ -68,20 +79,43 @@ export function CustomerBehaviorWidget({
       
       if (result.success && result.data) {
         setData(result.data)
+        console.log(`[CustomerBehavior] Loaded data successfully`)
       } else {
+        console.warn('[CustomerBehavior] No data available')
         setError('No customer behavior data available')
       }
     } catch (err) {
-      // Error fetching customer behavior data
+      console.error('[CustomerBehavior] Error fetching data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setIsWidgetLoading(false)
     }
-  }
+  }, [brandId])
 
   useEffect(() => {
     fetchData()
-  }, [brandId])
+  }, [fetchData])
+
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchData()
+    }
+
+    window.addEventListener('refresh-all-widgets', handleRefresh)
+    window.addEventListener('force-shopify-refresh', handleRefresh)
+    window.addEventListener('shopifyDataRefreshed', handleRefresh)
+    window.addEventListener('global-refresh-all', handleRefresh)
+    window.addEventListener('shopify-sync-completed', handleRefresh)
+
+    return () => {
+      window.removeEventListener('refresh-all-widgets', handleRefresh)
+      window.removeEventListener('force-shopify-refresh', handleRefresh)
+      window.removeEventListener('shopifyDataRefreshed', handleRefresh)
+      window.removeEventListener('global-refresh-all', handleRefresh)
+      window.removeEventListener('shopify-sync-completed', handleRefresh)
+    }
+  }, [fetchData])
 
   const showLoading = isLoading || isWidgetLoading || isRefreshingData
 
