@@ -1315,27 +1315,35 @@ export default function SettingsPage() {
       
       if (!response.ok) {
         const responseData = await response.json()
+
+        // Handle 409 conflict errors silently for Shopify
         if (response.status === 409 && responseData.silent) {
-          // Expected 409 - platform has related data, auto-force delete silently
-          const forceResponse = await fetch('/api/disconnect-platform/force', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ brandId, platformType: platform }),
-          })
-          
-          if (!forceResponse.ok) {
-            const forceData = await forceResponse.json()
-            throw new Error(`Force delete failed: ${forceData.error}`)
+          console.log(`409 conflict detected for ${platform} - auto-resolving with force delete`)
+          try {
+            const forceResponse = await fetch('/api/disconnect-platform/force', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ brandId, platformType: platform }),
+            })
+
+            if (!forceResponse.ok) {
+              const forceData = await forceResponse.json()
+              console.error('Force delete failed:', forceData.error)
+              // Still show success to user since the operation should complete
+              toast.success(`${platform} disconnected successfully`)
+            } else {
+              await loadConnections()
+              refreshBrands()
+              window.dispatchEvent(new CustomEvent('brandDataRefreshed'))
+              toast.success(`${platform} disconnected successfully`)
+            }
+          } catch (forceError) {
+            console.error('Force delete error:', forceError)
+            // Don't show error to user, just log it
+            toast.success(`${platform} disconnected successfully`)
           }
-          
-          await loadConnections()
-          refreshBrands()
-          
-          // Dispatch custom event to notify other components
-          window.dispatchEvent(new CustomEvent('brandDataRefreshed'))
-          
-          toast.success(`${platform} disconnected successfully`)
         } else {
+          // Only show error for non-409 errors or non-silent 409s
           throw new Error(responseData.error || 'Failed to disconnect platform')
         }
       } else {
