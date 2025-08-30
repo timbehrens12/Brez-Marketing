@@ -671,55 +671,90 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
 
         // Load AI Consultant usage - now shows combined agency + brand usage
-        // Always try to get fresh usage data, but be smart about API calls
-        const currentUsage = newToolUsageData.aiConsultant[userId] || 0
-
-        // If we're already loading, just keep the current usage value
-        if (toolUsageLoadingRef.current) {
-          console.log('[AgencyActionCenter] Already loading, keeping current usage:', currentUsage)
-          newToolUsageData.aiConsultant[userId] = currentUsage
-        } else {
-          // We're not loading, so we can make an API call
-          toolUsageLoadingRef.current = true
-          try {
-            console.log('[AgencyActionCenter] Making marketing consultant API call for usage check')
-            const response = await fetch('/api/ai/marketing-consultant', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                mode: 'agency', // Mode doesn't matter now - usage is combined
-                checkUsageOnly: true
-              }),
-            })
-
-            console.log('[AgencyActionCenter] Marketing consultant API response status:', response.status)
-
-            if (response.ok) {
-              const data = await response.json()
-              // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
-              const remainingUses = data.remainingUses || 0
-              const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
-
-              // Store combined usage count for this user (daily limit of 15 across all modes)
-              newToolUsageData.aiConsultant[userId] = dailyUsageCount
-              console.log('[AgencyActionCenter] Updated usage from API:', dailyUsageCount)
-            } else if (response.status === 429) {
-              // User is maxed out - set to 15 used
-              newToolUsageData.aiConsultant[userId] = 15 // Maxed out
-              console.log('[AgencyActionCenter] User at limit (429 response)')
-            } else {
-              // If API fails, keep current usage
-              newToolUsageData.aiConsultant[userId] = currentUsage
-              console.log('[AgencyActionCenter] API failed, keeping current usage:', currentUsage)
+        // First check localStorage for cached usage data to avoid unnecessary API calls
+        let cachedUsage = 0
+        try {
+          const cachedData = localStorage.getItem(`ai-consultant-usage-${userId}`)
+          if (cachedData) {
+            const parsed = JSON.parse(cachedData)
+            const today = new Date().toDateString()
+            if (parsed.date === today && parsed.usage !== undefined) {
+              cachedUsage = parsed.usage
+              console.log('[AgencyActionCenter] Using cached AI consultant usage:', cachedUsage)
             }
-          } catch (error) {
-            console.error('[AgencyActionCenter] Error in marketing consultant API call:', error)
-            // If API fails, keep current usage
-            newToolUsageData.aiConsultant[userId] = currentUsage
-          } finally {
-            toolUsageLoadingRef.current = false // Always reset the loading flag
+          }
+        } catch (error) {
+          console.log('[AgencyActionCenter] No valid cached usage data')
+        }
+
+        // If cached usage shows user is maxed out, don't make API call
+        if (cachedUsage >= 15) {
+          console.log('[AgencyActionCenter] User at limit from cache, skipping API call')
+          newToolUsageData.aiConsultant[userId] = 15
+        } else {
+          // Only make API call if not already loading and user might not be maxed out
+          if (toolUsageLoadingRef.current) {
+            console.log('[AgencyActionCenter] Marketing consultant API call skipped - already loading')
+            newToolUsageData.aiConsultant[userId] = cachedUsage // Use cached value
+          } else {
+            toolUsageLoadingRef.current = true // Set loading flag for API call
+            try {
+              console.log('[AgencyActionCenter] Making marketing consultant API call for usage check')
+              const response = await fetch('/api/ai/marketing-consultant', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  mode: 'agency', // Mode doesn't matter now - usage is combined
+                  checkUsageOnly: true
+                }),
+              })
+
+              console.log('[AgencyActionCenter] Marketing consultant API response status:', response.status)
+
+              if (response.ok) {
+                const data = await response.json()
+                // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
+                const remainingUses = data.remainingUses || 0
+                const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+
+                // Store combined usage count for this user (daily limit of 15 across all modes)
+                newToolUsageData.aiConsultant[userId] = dailyUsageCount
+
+                // Cache the usage data for future use
+                try {
+                  localStorage.setItem(`ai-consultant-usage-${userId}`, JSON.stringify({
+                    date: new Date().toDateString(),
+                    usage: dailyUsageCount
+                  }))
+                } catch (error) {
+                  console.log('[AgencyActionCenter] Failed to cache usage data')
+                }
+              } else if (response.status === 429) {
+                // User is maxed out - set to 15 used
+                newToolUsageData.aiConsultant[userId] = 15 // Maxed out
+                
+                // Cache the maxed out status
+                try {
+                  localStorage.setItem(`ai-consultant-usage-${userId}`, JSON.stringify({
+                    date: new Date().toDateString(),
+                    usage: 15
+                  }))
+                } catch (error) {
+                  console.log('[AgencyActionCenter] Failed to cache maxed out status')
+                }
+              } else {
+                // If API fails, use cached value or set to 0
+                newToolUsageData.aiConsultant[userId] = cachedUsage || 0
+              }
+            } catch (error) {
+              console.error('[AgencyActionCenter] Error in marketing consultant API call:', error)
+              // If API fails, use cached value or set to 0
+              newToolUsageData.aiConsultant[userId] = cachedUsage || 0
+            } finally {
+              toolUsageLoadingRef.current = false // Always reset the loading flag
+            }
           }
         }
 
@@ -808,27 +843,18 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
 
     // Listen for AI consultant usage updates
-    const handleAIConsultantUpdate = (event: CustomEvent) => {
+    const handleAIConsultantUpdate = () => {
       console.log('[AgencyActionCenter] AI consultant usage update event received')
       if (userId) {
-        const { usedCount, remainingUses } = event.detail || {}
-
-        if (usedCount !== undefined) {
-          // Direct update with provided usage count - no need for API call
-          console.log('[AgencyActionCenter] Updating usage data directly from event:', usedCount)
-          setToolUsageData(prev => ({
-            ...prev,
-            aiConsultant: {
-              ...prev.aiConsultant,
-              [userId]: usedCount
-            }
-          }))
-          return
+        // Only refresh if we don't already know the user is maxed out
+        const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
+        console.log('[AgencyActionCenter] Current AI consultant usage:', currentUsage)
+        if (currentUsage < 15) {
+          console.log('[AgencyActionCenter] Calling loadToolUsageData from event handler')
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping AI consultant update - user already at limit')
         }
-
-        // Fallback: refresh data if no direct usage count provided
-        console.log('[AgencyActionCenter] No usage count in event, refreshing data')
-        loadToolUsageData()
       }
     }
 

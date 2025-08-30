@@ -677,17 +677,30 @@ I can help with literally anything marketing-related for your brand - performanc
             if (data.remainingUses <= 0) {
               setIsLimitReached(true)
             }
+            
+            // Cache the usage data for dashboard sync
+            const usedCount = Math.max(0, 15 - data.remainingUses)
+            try {
+              localStorage.setItem(`ai-consultant-usage-${user?.id}`, JSON.stringify({
+                date: new Date().toDateString(),
+                usage: usedCount
+              }))
+            } catch (error) {
+              console.log('[AI Marketing] Failed to cache usage data')
+            }
           } else if (response.status === 429) {
             setRemainingUses(0)
             setIsLimitReached(true)
-            // Trigger dashboard update with max usage
-            console.log('[AI Marketing] Usage check returned 429, user at limit')
-            window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
-              detail: {
-                usedCount: 15,
-                remainingUses: 0
-              }
-            }))
+            
+            // Cache the maxed out status
+            try {
+              localStorage.setItem(`ai-consultant-usage-${user?.id}`, JSON.stringify({
+                date: new Date().toDateString(),
+                usage: 15
+              }))
+            } catch (error) {
+              console.log('[AI Marketing] Failed to cache maxed out status')
+            }
           } else {
             setRemainingUses(15)
           }
@@ -898,14 +911,18 @@ I can help with literally anything marketing-related for your brand - performanc
         // Handle rate limiting
         if (response.status === 429) {
           setIsLimitReached(true)
-          // Trigger dashboard update with max usage
-          console.log('[AI Marketing] Analysis call returned 429, user at limit')
-          window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
-            detail: {
-              usedCount: 15,
-              remainingUses: 0
-            }
-          }))
+          setRemainingUses(0)
+          
+          // Cache the maxed out status
+          try {
+            localStorage.setItem(`ai-consultant-usage-${user?.id}`, JSON.stringify({
+              date: new Date().toDateString(),
+              usage: 15
+            }))
+          } catch (error) {
+            console.log('[AI Marketing] Failed to cache maxed out status')
+          }
+          
           setMessages(prev => prev.map(msg =>
             msg.id === messageId
               ? {
@@ -947,15 +964,21 @@ I can help with literally anything marketing-related for your brand - performanc
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
-        // Trigger dashboard update with current usage
-        const usedCount = Math.max(0, 15 - (data.remainingUses || 0))
-        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event with used count:', usedCount)
-        window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
-          detail: {
-            usedCount: usedCount,
-            remainingUses: data.remainingUses || 0
-          }
-        }))
+        
+        // Cache the updated usage data for dashboard sync
+        const usedCount = Math.max(0, 15 - data.remainingUses)
+        try {
+          localStorage.setItem(`ai-consultant-usage-${user?.id}`, JSON.stringify({
+            date: new Date().toDateString(),
+            usage: usedCount
+          }))
+        } catch (error) {
+          console.log('[AI Marketing] Failed to cache updated usage data')
+        }
+        
+        // Trigger dashboard update
+        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event')
+        window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated'))
       } else {
         // console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
