@@ -1068,12 +1068,18 @@ export default function AdCreativeStudioPage() {
   ]
   
   // New state for tabs and creatives
-  const [activeTab, setActiveTab] = useState<'create' | 'generated'>('create')
+  const [activeTab, setActiveTab] = useState<'create' | 'template' | 'generated'>('create')
   const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
   const [isLoadingCreatives, setIsLoadingCreatives] = useState(false)
   const [loadedImages, setLoadedImages] = useState<Record<string, { original: string, generated: string }>>({})
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set())
   const [showStyleModal, setShowStyleModal] = useState(false)
+
+  // Template-based generation state
+  const [templateImage, setTemplateImage] = useState<File | null>(null)
+  const [productImageForTemplate, setProductImageForTemplate] = useState<File | null>(null)
+  const [templateNotes, setTemplateNotes] = useState('')
+  const [isGeneratingFromTemplate, setIsGeneratingFromTemplate] = useState(false)
   const [modalStyle, setModalStyle] = useState<StyleOption>(STYLE_OPTIONS[0])
   const [creativeName, setCreativeName] = useState('')
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | 'any'>('any')
@@ -2966,6 +2972,17 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   Create New
                 </button>
                 <button
+                  onClick={() => setActiveTab('template')}
+                  className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                    activeTab === 'template'
+                      ? 'bg-white text-black'
+                      : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Template
+                </button>
+                <button
                   onClick={() => setActiveTab('generated')}
                   className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
                     activeTab === 'generated'
@@ -3366,6 +3383,210 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                    </div>
                  </div>
                 )}
+              </div>
+            ) : activeTab === 'template' ? (
+              // Template-Based Generation Tab
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6" />
+                    Template-Based Generation
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    Upload an Instagram ad you love and recreate its style with your product
+                  </p>
+                </div>
+
+                {/* Template Image Upload */}
+                <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                  <h4 className="text-lg font-medium text-white mb-4">Step 1: Upload Example Template</h4>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Upload an ad creative you saw on Instagram or anywhere else that you want to recreate
+                  </p>
+
+                  {!templateImage ? (
+                    <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
+                      <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
+                      <p className="text-gray-400 mb-4">Click to upload your example template</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setTemplateImage(file);
+                        }}
+                        className="hidden"
+                        id="template-upload"
+                      />
+                      <label
+                        htmlFor="template-upload"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#444] to-[#555] hover:from-[#555] hover:to-[#666] text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-200"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Choose Template Image
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <img
+                        src={URL.createObjectURL(templateImage)}
+                        alt="Template"
+                        className="w-full max-w-md mx-auto rounded-lg border border-[#444]"
+                      />
+                      <button
+                        onClick={() => setTemplateImage(null)}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Image Upload */}
+                <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                  <h4 className="text-lg font-medium text-white mb-4">Step 2: Upload Your Product</h4>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Upload the product you want to feature in the same style as your template
+                  </p>
+
+                  {!productImageForTemplate ? (
+                    <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
+                      <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
+                      <p className="text-gray-400 mb-4">Click to upload your product image</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setProductImageForTemplate(file);
+                        }}
+                        className="hidden"
+                        id="product-template-upload"
+                      />
+                      <label
+                        htmlFor="product-template-upload"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#444] to-[#555] hover:from-[#555] hover:to-[#666] text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-200"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Choose Product Image
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <img
+                        src={URL.createObjectURL(productImageForTemplate)}
+                        alt="Product"
+                        className="w-full max-w-md mx-auto rounded-lg border border-[#444]"
+                      />
+                      <button
+                        onClick={() => setProductImageForTemplate(null)}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Notes */}
+                <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
+                  <h4 className="text-lg font-medium text-white mb-4">Step 3: Additional Notes (Optional)</h4>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Add any specific requirements or customizations you'd like
+                  </p>
+                  <textarea
+                    value={templateNotes}
+                    onChange={(e) => setTemplateNotes(e.target.value)}
+                    placeholder="e.g., Make the background more vibrant, add gold accents, change the color scheme to blue and white, etc."
+                    className="w-full h-24 bg-[#1a1a1a] border border-[#444] rounded-lg p-3 text-white placeholder-gray-500 focus:border-[#666] focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* Generate Button */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={async () => {
+                      if (!templateImage || !productImageForTemplate) {
+                        toast.error('Please upload both template and product images');
+                        return;
+                      }
+
+                      setIsGeneratingFromTemplate(true);
+
+                      try {
+                        // Convert images to base64
+                        const templateBase64 = await new Promise<string>((resolve) => {
+                          const reader = new FileReader();
+                          reader.onload = () => resolve(reader.result as string);
+                          reader.readAsDataURL(templateImage);
+                        });
+
+                        const productBase64 = await new Promise<string>((resolve) => {
+                          const reader = new FileReader();
+                          reader.onload = () => resolve(reader.result as string);
+                          reader.readAsDataURL(productImageForTemplate);
+                        });
+
+                        // Call the API
+                        const response = await fetch('/api/generate-from-template', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            exampleImage: templateBase64,
+                            productImage: productBase64,
+                            additionalNotes: templateNotes,
+                            brandId: selectedBrandId,
+                            aspectRatio: 'portrait'
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.error || 'Failed to generate template-based creative');
+                        }
+
+                        const data = await response.json();
+
+                        // Show success and switch to generated tab
+                        toast.success('Template-based creative generated successfully!');
+                        setActiveTab('generated');
+                        await loadCreatives(); // Refresh the creatives list
+
+                        // Clear form
+                        setTemplateImage(null);
+                        setProductImageForTemplate(null);
+                        setTemplateNotes('');
+
+                      } catch (error) {
+                        console.error('Template generation error:', error);
+                        toast.error(error instanceof Error ? error.message : 'Failed to generate creative');
+                      } finally {
+                        setIsGeneratingFromTemplate(false);
+                      }
+                    }}
+                    disabled={!templateImage || !productImageForTemplate || isGeneratingFromTemplate}
+                    className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                      !templateImage || !productImageForTemplate || isGeneratingFromTemplate
+                        ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
+                    }`}
+                  >
+                    {isGeneratingFromTemplate ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Generate from Template
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             ) : (
               // Generated Creatives Tab
