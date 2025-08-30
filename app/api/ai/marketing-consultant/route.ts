@@ -1376,6 +1376,9 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     impressions: d.impressions
   })))
 
+  // Active campaigns
+  const activecampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
+  
   // Additional debug: Show what the AI will see
   console.log(`[AI Marketing Consultant] FINAL VALUES FOR AI:`, {
     totalSpend: totalSpend.toFixed(2),
@@ -1386,9 +1389,6 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     metaRevenue: metaRevenue.toFixed(2),
     shopifyRevenue: shopifyRevenue.toFixed(2)
   })
-  
-  // Active campaigns
-  const activecampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
   
   // Performance analysis - aggregate daily stats by campaign for 30-day period
   const campaignPerformance = new Map()
