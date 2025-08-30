@@ -618,6 +618,24 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
       dateRange: `${fromDate} to ${customDateRange?.to || todayStr}`
     })
 
+    // Calculate recent performance data for current status questions (last 7 days)
+    const recentDays = 7
+    const recentStats = dailyStatsArray.slice(0, recentDays)
+    const recentSpend = recentStats.reduce((sum: number, d: any) => sum + (d.spend || 0), 0)
+    const recentRevenue = recentStats.reduce((sum: number, d: any) => sum + (d.purchase_value || 0), 0)
+    const recentROAS = recentSpend > 0 ? recentRevenue / recentSpend : 0
+    const recentImpressions = recentStats.reduce((sum: number, d: any) => sum + (d.impressions || 0), 0)
+    const recentClicks = recentStats.reduce((sum: number, d: any) => sum + (d.clicks || 0), 0)
+
+    console.log(`[AI Marketing Consultant] RECENT PERFORMANCE (Last 7 days):`, {
+      recentSpend: `$${recentSpend.toFixed(2)}`,
+      recentRevenue: `$${recentRevenue.toFixed(2)}`,
+      recentROAS: `${recentROAS.toFixed(2)}x`,
+      recentImpressions: recentImpressions.toLocaleString(),
+      recentClicks,
+      note: 'This is the ACTUAL Meta API data for recent performance'
+    })
+
     return {
       campaigns: campaignArray,
       adSets: [], // Not needed for AI analysis
@@ -632,6 +650,14 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
         from: fromDate,
         to: customDateRange?.to || todayStr,
         days: fromDate === (customDateRange?.to || todayStr) ? 0 : days  // 0 days for same-day queries
+      },
+      // Add recent performance data for current status questions
+      recentPerformance: {
+        recentSpend,
+        recentRevenue,
+        recentROAS,
+        recentImpressions,
+        recentClicks
       }
     }
 
