@@ -83,11 +83,15 @@ export async function POST(request: NextRequest) {
 
     // Parse JSON request body
     const body = await request.json();
-    const { prompt, image, styleId, brandId, creativeId, textOverlays, saveToDatabase = false, customName, aspectRatio = 'portrait' } = body;
+    const { prompt, image, images, styleId, brandId, creativeId, textOverlays, saveToDatabase = false, customName, aspectRatio = 'portrait' } = body;
 
-    if (!image || !prompt) {
+    // Support both single image and multiple images
+    const imageList = images || (image ? [image] : []);
+    const isMultiProduct = imageList.length > 1;
+
+    if (imageList.length === 0 || !prompt) {
       return NextResponse.json(
-        { error: 'Missing required fields: image and prompt' },
+        { error: 'Missing required fields: image(s) and prompt' },
         { status: 400 }
       );
     }
@@ -102,48 +106,100 @@ export async function POST(request: NextRequest) {
     console.log('🎨 Generating background with Gemini...');
     console.log('📦 Style ID:', styleId);
     console.log('📦 Creative ID:', creativeId);
+    console.log('📦 Multi-product mode:', isMultiProduct);
 
-    // Extract base64 image data
-    let base64Data = image;
-    if (image.startsWith('data:image/')) {
-      base64Data = image.split(',')[1];
-    }
-
-    // Convert base64 to buffer for processing
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-
-    console.log('🔍 Processing image with Gemini 2.5 Flash Image...');
-
-    // Use Gemini 2.5 Flash Image for generation (same as generate-creative API)
-    let imageModel;
-    try {
-      imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
-    } catch (error) {
-      console.log('⚠️ Trying alternative model name...');
-      try {
-        imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
-      } catch (error2) {
-        console.log('⚠️ Trying gemini-2.0-flash-image...');
-        imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-image" });
+    // Function to process a single image
+    const processImage = async (imageData: string, index: number) => {
+      // Extract base64 image data
+      let base64Data = imageData;
+      if (imageData.startsWith('data:image/')) {
+        base64Data = imageData.split(',')[1];
       }
-    }
 
-    // Generate the background replacement using the image model
-    const result = await imageModel.generateContent([
-      enhancedPrompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg'
+      console.log(`🔍 Processing image ${index + 1}/${imageList.length} with Gemini...`);
+
+      // Use Gemini 2.5 Flash Image for generation (same as generate-creative API)
+      let imageModel;
+      try {
+        imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
+      } catch (error) {
+        console.log('⚠️ Trying alternative model name...');
+        try {
+          imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+        } catch (error2) {
+          console.log('⚠️ Trying gemini-2.0-flash-image...');
+          imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-image" });
         }
       }
-    ]);
 
-    // Extract the generated image from the response (same logic as generate-creative)
-    let generatedImageUrl = null;
-    let generatedImageData = null;
+      // Generate the background replacement using the image model
+      const result = await imageModel.generateContent([
+        enhancedPrompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: 'image/jpeg'
+          }
+        }
+      ]);
 
-    const candidates = result.response.candidates;
+      // Extract the generated image from the response (same logic as generate-creative)
+      let generatedImageUrl = null;
+      let generatedImageData = null;
+
+      const candidates = result.response.candidates;
+      if (!candidates || candidates.length === 0) {
+        throw new Error('No response candidates from Gemini API');
+      }
+
+      // Process the response to extract the image
+      for (const candidate of candidates) {
+        if (candidate.content && candidate.content.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+              generatedImageData = part.inlineData.data;
+              generatedImageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${generatedImageData}`;
+              break;
+            }
+          }
+        }
+        if (generatedImageUrl) break;
+      }
+
+      if (!generatedImageUrl) {
+        throw new Error('No image found in Gemini response');
+      }
+
+      return { generatedImageUrl, generatedImageData, originalImage: imageData };
+    };
+
+    // Process all images
+    const results = [];
+    for (let i = 0; i < imageList.length; i++) {
+      try {
+        const result = await processImage(imageList[i], i);
+        results.push(result);
+      } catch (error) {
+        console.error(`Error processing image ${i + 1}:`, error);
+        // Continue with other images instead of failing completely
+        results.push({ error: `Failed to process image ${i + 1}`, originalImage: imageList[i] });
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error('No images were successfully processed');
+    }
+
+    // For backward compatibility, return the first result as the main response
+    const firstResult = results.find(r => !r.error);
+    if (!firstResult) {
+      throw new Error('All images failed to process');
+    }
+
+    let generatedImageUrl = firstResult.generatedImageUrl;
+    let generatedImageData = firstResult.generatedImageData;
+
+    const candidates = [{ content: { parts: [{ inlineData: { data: generatedImageData, mimeType: 'image/png' } }] } }];
     if (!candidates || candidates.length === 0) {
       throw new Error('No response candidates from Gemini API');
     }
@@ -323,10 +379,24 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if usage recording fails
     }
 
-    return NextResponse.json({
-      imageUrl: imageUrl,
-      success: true
-    });
+    // Return response with all generated images for multi-product mode
+    if (isMultiProduct) {
+      const successfulResults = results.filter(r => !r.error);
+      return NextResponse.json({
+        images: successfulResults.map(r => ({
+          imageUrl: r.generatedImageUrl,
+          originalImage: r.originalImage
+        })),
+        failedCount: results.length - successfulResults.length,
+        success: true,
+        message: `Generated ${successfulResults.length} background images${results.length - successfulResults.length > 0 ? ` (${results.length - successfulResults.length} failed)` : ''}`
+      });
+    } else {
+      return NextResponse.json({
+        imageUrl: imageUrl,
+        success: true
+      });
+    }
 
   } catch (error) {
     console.error('Error in background generation:', error);

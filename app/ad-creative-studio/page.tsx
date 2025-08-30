@@ -2476,57 +2476,177 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 100)
     
-    toast.info('Starting image generation... This may take 30-60 seconds.')
+    toast.info(isMultiMode && uploadedImages.length > 1
+      ? `Starting generation of ${uploadedImages.length} creatives... This may take ${(uploadedImages.length * 45)}-${(uploadedImages.length * 75)} seconds.`
+      : 'Starting image generation... This may take 30-60 seconds.'
+    )
 
     try {
-      // Convert image to base64 with compression to avoid 413 errors
+      if (isMultiMode && uploadedImages.length > 1) {
+        // Multi-product mode: Generate individual creatives for each product
+        console.log(`🎨 Generating ${uploadedImages.length} individual creatives...`)
+
+        const creativeIds: string[] = []
+
+        // Generate a creative for each product image
+        for (let i = 0; i < uploadedImages.length; i++) {
+          const currentImage = uploadedImages[i]
+          const currentImageUrl = uploadedImageUrls[i]
+
+          console.log(`📸 Processing product ${i + 1}/${uploadedImages.length}...`)
+
+          // Create individual creative entry
+          const individualCreativeId = addCreative({
+            brand_id: selectedBrandId!,
+            user_id: user!.id,
+            style_id: modalStyle.id,
+            style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : `${modalStyle.name} (${i + 1}/${uploadedImages.length})`,
+            original_image_url: currentImageUrl,
+            generated_image_url: '',
+            prompt_used: enhancedPrompt,
+            text_overlays: customText,
+            status: 'generating',
+            metadata: { multiProductIndex: i + 1, totalProducts: uploadedImages.length },
+            updated_at: new Date().toISOString(),
+            custom_name: `${finalName} (${i + 1})`
+          })
+
+          creativeIds.push(individualCreativeId)
+
+          // Convert current image to base64
+          const currentBase64Image = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.readAsDataURL(currentImage)
+          })
+
+          // Call API for this individual image
+          const formData = new FormData();
+
+          // Convert base64 back to file
+          const base64Data = currentBase64Image.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let j = 0; j < byteCharacters.length; j++) {
+            byteNumbers[j] = byteCharacters.charCodeAt(j);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const imageBlob = new Blob([byteArray], { type: currentImage.type || 'image/jpeg' });
+          const imageFile = new File([imageBlob], currentImage.name || `product-${i + 1}.jpg`, { type: currentImage.type || 'image/jpeg' });
+
+          formData.append('image', imageFile);
+
+          // Continue with the API call setup for multi-product mode
+          formData.append('styleId', modalStyle.id);
+          formData.append('prompt', enhancedPrompt);
+          formData.append('textOverlays', JSON.stringify(customText));
+          formData.append('brandId', selectedBrandId!);
+          formData.append('userId', user!.id);
+          formData.append('styleName', modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.name);
+          formData.append('customName', `${finalName} (${i + 1})`);
+          formData.append('aspectRatio', 'portrait');
+
+          // Map style IDs to background types
+          const backgroundTypeMapping: { [key: string]: string } = {
+            'concrete-floor': 'concrete',
+            'marble-surface': 'marble',
+            'wooden-tabletop': 'wood',
+            'white-background': 'minimalist',
+            'cotton-sheet': 'fabric',
+            'black-background': 'minimalist',
+            'gradient-surface': 'gradient',
+            'metallic-surface': 'metallic'
+          };
+
+          formData.append('backgroundType', backgroundTypeMapping[modalStyle.id] || 'minimalist');
+
+          try {
+            // Make API call for this individual product
+            const response = await fetch('/api/ai/generate-creative', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              console.error(`❌ API Error for product ${i + 1}:`, errorData);
+              updateCreativeStatus(individualCreativeId, 'failed');
+              continue; // Continue with next product
+            }
+
+            const data = await response.json();
+            console.log(`✅ Generated creative for product ${i + 1}/${uploadedImages.length}`);
+
+            // Update creative status and save to database
+            updateCreativeStatus(individualCreativeId, 'completed', data.imageUrl);
+
+            // Save to database
+            try {
+              const saveResponse = await fetch('/api/creative-generations', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  brandId: selectedBrandId,
+                  userId: user?.id,
+                  styleId: modalStyle.id,
+                  styleName: modalStyle.id === 'custom-template' ? 'Custom Template' : `${modalStyle.name} (${i + 1}/${uploadedImages.length})`,
+                  originalImageUrl: currentImageUrl,
+                  generatedImageUrl: data.imageUrl,
+                  promptUsed: enhancedPrompt,
+                  textOverlays: customText,
+                  metadata: {
+                    backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
+                    aspectRatio: 'portrait',
+                    quality: 'hd',
+                    lighting: 'soft',
+                    customModifiers: !!customInstructions,
+                    model: data.model || 'gemini-2.5-flash-image-preview',
+                    multiProductIndex: i + 1,
+                    totalProducts: uploadedImages.length
+                  },
+                  customName: `${finalName} (${i + 1})`
+                }),
+              });
+
+              if (!saveResponse.ok) {
+                console.error(`❌ Failed to save product ${i + 1} to database`);
+              }
+            } catch (saveError) {
+              console.error(`❌ Error saving product ${i + 1} to database:`, saveError);
+            }
+
+            // Add a small delay between API calls to avoid rate limiting
+            if (i < uploadedImages.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+          } catch (apiError) {
+            console.error(`❌ Error processing product ${i + 1}:`, apiError);
+            updateCreativeStatus(individualCreativeId, 'failed');
+          }
+        }
+
+        // Multi-product generation completed
+        console.log(`✅ Completed generating ${uploadedImages.length} individual creatives`);
+        toast.success(`Generated ${uploadedImages.length} individual creatives!`);
+        incrementUsage(); // Increment usage count once for all products
+
+        // Clear the uploaded images after successful generation
+        setUploadedImages([]);
+        setUploadedImageUrls([]);
+        setCollageUrl('');
+        setIsMultiMode(false);
+
+        return; // Exit early for multi-product mode
+
+      }
+
+      // Single product mode (existing logic continues below)
       const base64Image = await new Promise<string>(async (resolve, reject) => {
         try {
-          if (isMultiMode && collageUrl) {
-            // Use the generated collage
-            // console.log('Using collage for multi-image generation')
-            resolve(collageUrl)
-          } else if (uploadedImage) {
-            // Check if image is too large and needs compression
-            // console.log('🗜️ Original image size:', uploadedImage.size, 'bytes')
-            // console.log('🗜️ Original image type:', uploadedImage.type)
-            
-            if (uploadedImage.size > 3 * 1024 * 1024) { // > 3MB
-              // console.log('🗜️ Image is large, compressing...')
-              const compressedBase64 = await compressImage(uploadedImage, 2) // Max 2MB
-              
-              // console.log('✅ Compressed image base64 length:', compressedBase64.length)
-              // console.log('📉 Size reduction:', ((uploadedImage.size - (compressedBase64.length * 0.75)) / uploadedImage.size * 100).toFixed(1) + '%')
-              
-              resolve(compressedBase64)
-            } else {
-              // Use original image if it's small enough
-              const reader = new FileReader()
-              reader.onload = () => {
-                let result = reader.result as string
-                
-                // console.log('Uploaded image size:', uploadedImage.size, 'bytes')
-                // console.log('Uploaded image type:', uploadedImage.type)
-                // console.log('Base64 length:', result.length)
-                
-                if (uploadedImage.size < 500000) { // Less than 500KB
-                  console.warn('⚠️  Image is quite small - consider uploading higher resolution for better detail preservation')
-                  toast.warning('⚠️ Image Resolution Warning', {
-                    description: 'This image is quite small (under 500KB). Consider uploading a higher resolution image for better detail preservation in generated creatives.',
-                    duration: 6000
-                  })
-                }
-                
-                resolve(result)
-              }
-              reader.readAsDataURL(uploadedImage)
-            }
-          }
-        } catch (error) {
-          console.error('❌ Image processing failed:', error)
-          reject(error)
-        }
-      })
+          if (uploadedImage) {
 
       // Debug logging
       // console.log('🚀 SENDING TO API:')
@@ -3065,7 +3185,44 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                       
                         {/* Right Side - Upload Section */}
                         <div>
-                      <div 
+                          {/* Single/Multi Product Toggle */}
+                          <div className="mb-4">
+                            <div className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333] rounded-lg p-1">
+                              <button
+                                onClick={() => {
+                                  setIsMultiMode(false);
+                                  setUploadedImages([]);
+                                  setUploadedImageUrls([]);
+                                  setCollageUrl('');
+                                  setGeneratedImage('');
+                                }}
+                                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                  !isMultiMode
+                                    ? 'bg-white text-black'
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                Single Product
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setIsMultiMode(true);
+                                  setUploadedImage(null);
+                                  setUploadedImageUrl('');
+                                  setGeneratedImage('');
+                                }}
+                                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                  isMultiMode
+                                    ? 'bg-white text-black'
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                Multiple Products
+                              </button>
+                            </div>
+                          </div>
+
+                          <div 
                             className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border-2 border-dashed border-[#444] rounded-xl p-8 hover:border-[#555] transition-all duration-300 cursor-pointer group mb-6"
                         onClick={() => document.getElementById('image-upload')?.click()}
                       >
@@ -3074,12 +3231,16 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                             <ImageIcon className="w-8 h-8 text-white" />
                           </div>
                               
-                              <h4 className="text-white font-semibold text-lg mb-2">Choose Product Image</h4>
-                              <p className="text-gray-400 text-sm mb-4">PNG, JPG up to 10MB</p>
-                              
+                              <h4 className="text-white font-semibold text-lg mb-2">
+                                {isMultiMode ? 'Choose Product Images' : 'Choose Product Image'}
+                              </h4>
+                              <p className="text-gray-400 text-sm mb-4">
+                                {isMultiMode ? 'PNG, JPG up to 10MB each (up to 10 images)' : 'PNG, JPG up to 10MB'}
+                              </p>
+
                               <Button className="bg-white hover:bg-gray-200 text-black border-0">
                             <Upload className="w-4 h-4 mr-2" />
-                            Upload Image
+                            {isMultiMode ? 'Upload Images' : 'Upload Image'}
                           </Button>
                         </div>
                       </div>
@@ -3395,6 +3556,38 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   <p className="text-gray-400 mb-6">
                     Upload an Instagram ad you love and recreate its style with your product
                   </p>
+
+                  {/* Single/Multi Product Toggle for Template */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#333] rounded-lg p-1 max-w-md mx-auto">
+                      <button
+                        onClick={() => {
+                          setIsMultiMode(false);
+                          setProductImageForTemplate(null);
+                        }}
+                        className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                          !isMultiMode
+                            ? 'bg-white text-black'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Single Product
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsMultiMode(true);
+                          setProductImageForTemplate(null);
+                        }}
+                        className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                          isMultiMode
+                            ? 'bg-white text-black'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Multiple Products
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Template Image Upload */}
@@ -3448,50 +3641,121 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
                 {/* Product Image Upload */}
                 <div className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-lg p-6">
-                  <h4 className="text-lg font-medium text-white mb-4">Step 2: Upload Your Product</h4>
+                  <h4 className="text-lg font-medium text-white mb-4">
+                    Step 2: Upload Your {isMultiMode ? 'Products' : 'Product'}
+                  </h4>
                   <p className="text-gray-400 text-sm mb-4">
-                    Upload the product you want to feature in the same style as your template
+                    {isMultiMode
+                      ? 'Upload multiple products to create creatives for each one using your template style'
+                      : 'Upload the product you want to feature in the same style as your template'
+                    }
                   </p>
                   <p className="text-yellow-400 text-xs mb-4">
                     💡 Tip: Use smaller images (under 2MB) for faster processing
                   </p>
 
-                  {!productImageForTemplate ? (
-                    <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
-                      <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
-                      <p className="text-gray-400 mb-4">Click to upload your product image</p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) setProductImageForTemplate(file);
-                        }}
-                        className="hidden"
-                        id="product-template-upload"
-                      />
-                      <label
-                        htmlFor="product-template-upload"
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#444] to-[#555] hover:from-[#555] hover:to-[#666] text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-200"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Choose Product Image
-                      </label>
-                    </div>
+                  {isMultiMode ? (
+                    /* Multi-product mode for template */
+                    uploadedImages.length === 0 ? (
+                      <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
+                        <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
+                        <p className="text-gray-400 mb-4">Click to upload multiple product images</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length > 0) {
+                              setUploadedImages(files);
+                              const urls = files.map(file => URL.createObjectURL(file));
+                              setUploadedImageUrls(urls);
+                            }
+                          }}
+                          className="hidden"
+                          id="product-template-upload-multi"
+                        />
+                        <label
+                          htmlFor="product-template-upload-multi"
+                          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#444] to-[#555] hover:from-[#555] hover:to-[#666] text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-200"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Choose Product Images
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-300 text-sm font-medium">
+                            {uploadedImages.length} PRODUCT IMAGES
+                          </span>
+                          <button
+                            onClick={() => {
+                              setUploadedImages([]);
+                              setUploadedImageUrls([]);
+                            }}
+                            className="text-red-400 hover:text-red-300 text-sm"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {uploadedImageUrls.slice(0, 9).map((url, index) => (
+                            <div key={index} className="relative aspect-square rounded overflow-hidden border border-white/10">
+                              <img
+                                src={url}
+                                alt={`Product ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              {index === 8 && uploadedImages.length > 9 && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <span className="text-white text-xs font-medium">+{uploadedImages.length - 9}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   ) : (
-                    <div className="relative">
-                      <img
-                        src={URL.createObjectURL(productImageForTemplate)}
-                        alt="Product"
-                        className="w-full max-w-md mx-auto rounded-lg border border-[#444]"
-                      />
-                      <button
-                        onClick={() => setProductImageForTemplate(null)}
-                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    /* Single product mode for template */
+                    !productImageForTemplate ? (
+                      <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
+                        <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
+                        <p className="text-gray-400 mb-4">Click to upload your product image</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setProductImageForTemplate(file);
+                          }}
+                          className="hidden"
+                          id="product-template-upload"
+                        />
+                        <label
+                          htmlFor="product-template-upload"
+                          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#444] to-[#555] hover:from-[#555] hover:to-[#666] text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-200"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Choose Product Image
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <img
+                          src={URL.createObjectURL(productImageForTemplate)}
+                          alt="Product"
+                          className="w-full max-w-md mx-auto rounded-lg border border-[#444]"
+                        />
+                        <button
+                          onClick={() => setProductImageForTemplate(null)}
+                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )
                   )}
                 </div>
 
@@ -3513,69 +3777,116 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 <div className="flex justify-center">
                   <button
                     onClick={async () => {
-                      if (!templateImage || !productImageForTemplate) {
-                        toast.error('Please upload both template and product images');
+                      const hasValidImages = templateImage && (
+                        (!isMultiMode && productImageForTemplate) ||
+                        (isMultiMode && uploadedImages.length > 0)
+                      );
+
+                      if (!hasValidImages) {
+                        const message = isMultiMode
+                          ? 'Please upload template image and at least one product image'
+                          : 'Please upload both template and product images';
+                        toast.error(message);
                         return;
                       }
 
                       setIsGeneratingFromTemplate(true);
 
                       try {
-                        // Convert images to base64
+                        // Convert template to base64
                         const templateBase64 = await new Promise<string>((resolve) => {
                           const reader = new FileReader();
                           reader.onload = () => resolve(reader.result as string);
                           reader.readAsDataURL(templateImage);
                         });
 
-                        const productBase64 = await new Promise<string>((resolve) => {
-                          const reader = new FileReader();
-                          reader.onload = () => resolve(reader.result as string);
-                          reader.readAsDataURL(productImageForTemplate);
-                        });
+                        if (isMultiMode) {
+                          // Multi-product generation
+                          const productBase64s = await Promise.all(
+                            uploadedImages.map(file => new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve(reader.result as string);
+                              reader.readAsDataURL(file);
+                            }))
+                          );
 
-                        // Call the API
-                        const response = await fetch('/api/generate-from-template', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            exampleImage: templateBase64,
-                            productImage: productBase64,
-                            additionalNotes: templateNotes,
-                            brandId: selectedBrandId,
-                            aspectRatio: 'portrait'
-                          }),
-                        });
+                          // Generate for each product
+                          const generationPromises = productBase64s.map(async (productBase64, index) => {
+                            const response = await fetch('/api/generate-from-template', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                exampleImage: templateBase64,
+                                productImage: productBase64,
+                                additionalNotes: templateNotes,
+                                brandId: selectedBrandId,
+                                aspectRatio: 'portrait'
+                              }),
+                            });
 
-                        if (!response.ok) {
-                          let errorMessage = 'Failed to generate template-based creative';
-
-                          try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.error || errorMessage;
-
-                            // Provide specific guidance for timeout errors
-                            if (response.status === 408 || errorMessage.includes('timeout')) {
-                              errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+                            if (!response.ok) {
+                              throw new Error(`Failed to generate creative for product ${index + 1}`);
                             }
-                          } catch (parseError) {
-                            // If we can't parse the error response, use a generic message
-                            if (response.status === 408) {
-                              errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+
+                            return response.json();
+                          });
+
+                          await Promise.all(generationPromises);
+                          toast.success(`Generated ${uploadedImages.length} template-based creatives!`);
+
+                        } else {
+                          // Single product generation (existing logic)
+                          const productBase64 = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(productImageForTemplate);
+                          });
+
+                          // Call the API
+                          const response = await fetch('/api/generate-from-template', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              exampleImage: templateBase64,
+                              productImage: productBase64,
+                              additionalNotes: templateNotes,
+                              brandId: selectedBrandId,
+                              aspectRatio: 'portrait'
+                            }),
+                          });
+
+                          if (!response.ok) {
+                            let errorMessage = 'Failed to generate template-based creative';
+
+                            try {
+                              const errorData = await response.json();
+                              errorMessage = errorData.error || errorMessage;
+
+                              // Provide specific guidance for timeout errors
+                              if (response.status === 408 || errorMessage.includes('timeout')) {
+                                errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+                              }
+                            } catch (parseError) {
+                              // If we can't parse the error response, use a generic message
+                              if (response.status === 408) {
+                                errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+                              }
                             }
+
+                            throw new Error(errorMessage);
                           }
 
-                          throw new Error(errorMessage);
+                          const data = await response.json();
+                          toast.success('Template-based creative generated successfully!');
                         }
 
-                        const data = await response.json();
-
-                        // Show success and switch to generated tab
-                        toast.success('Template-based creative generated successfully!');
+                        // Switch to generated tab and refresh
                         setActiveTab('generated');
-                        
+
                         // Refresh the creatives list
                         try {
                           if (typeof loadCreatives === 'function') {
@@ -3593,7 +3904,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
                         // Clear form
                         setTemplateImage(null);
-                        setProductImageForTemplate(null);
+                        if (isMultiMode) {
+                          setUploadedImages([]);
+                          setUploadedImageUrls([]);
+                        } else {
+                          setProductImageForTemplate(null);
+                        }
                         setTemplateNotes('');
 
                       } catch (error) {
@@ -3603,9 +3919,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         setIsGeneratingFromTemplate(false);
                       }
                     }}
-                    disabled={!templateImage || !productImageForTemplate || isGeneratingFromTemplate}
+                    disabled={
+                      !templateImage ||
+                      (!isMultiMode && !productImageForTemplate) ||
+                      (isMultiMode && uploadedImages.length === 0) ||
+                      isGeneratingFromTemplate
+                    }
                     className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                      !templateImage || !productImageForTemplate || isGeneratingFromTemplate
+                      !templateImage || (!isMultiMode && !productImageForTemplate) || (isMultiMode && uploadedImages.length === 0) || isGeneratingFromTemplate
                         ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                         : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
                     }`}
@@ -3613,13 +3934,21 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     {isGeneratingFromTemplate ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Generating Template...
-                        <span className="text-xs text-gray-400 ml-2">(This may take 10-15 seconds)</span>
+                        {isMultiMode
+                          ? `Generating ${uploadedImages.length} Templates...`
+                          : 'Generating Template...'
+                        }
+                        <span className="text-xs text-gray-400 ml-2">
+                          ({isMultiMode ? `${uploadedImages.length * 10}-` : ''}{uploadedImages.length * 15 || 15} seconds)
+                        </span>
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-5 h-5" />
-                        Generate from Template
+                        {isMultiMode
+                          ? `Generate ${uploadedImages.length || 0} Templates`
+                          : 'Generate from Template'
+                        }
                       </>
                     )}
                   </button>
@@ -4191,7 +4520,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     {/* Generate Button */}
                 <div className="flex gap-4">
                     <Button
-                      disabled={!uploadedImage || isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT || (modalStyle.id === 'custom-template' && !customTemplatePrompt.trim())}
+                      disabled={
+                        (!isMultiMode && !uploadedImage) ||
+                        (isMultiMode && uploadedImages.length === 0) ||
+                        isGenerating ||
+                        usageData.current >= WEEKLY_LIMIT ||
+                        generatedCreatives.length >= STORAGE_LIMIT ||
+                        (modalStyle.id === 'custom-template' && !customTemplatePrompt.trim())
+                      }
                     className={`flex-1 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 ${
                       usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white cursor-not-allowed' 
@@ -4210,19 +4546,27 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                       ) : isGenerating ? (
                         <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
+                        {isMultiMode && uploadedImages.length > 1
+                          ? `Generating ${uploadedImages.length} Creatives...`
+                          : 'Generating...'
+                        }
                         </>
                       ) : (
                         <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                          Generate Creative
+                          {isMultiMode && uploadedImages.length > 1
+                            ? `Generate ${uploadedImages.length} Creatives`
+                            : 'Generate Creative'
+                          }
                         </>
                       )}
                     </Button>
 
-                    {!uploadedImage && usageData.current < WEEKLY_LIMIT && (
+                    {((!isMultiMode && !uploadedImage) || (isMultiMode && uploadedImages.length === 0)) && usageData.current < WEEKLY_LIMIT && (
                     <div className="flex-1 flex items-center justify-center text-center py-3 bg-gray-500/10 border border-gray-500/20 rounded-lg">
-                      <p className="text-gray-400 text-sm">Upload a product image first</p>
+                      <p className="text-gray-400 text-sm">
+                        {isMultiMode ? 'Upload product images first' : 'Upload a product image first'}
+                      </p>
                       </div>
                     )}
                     
