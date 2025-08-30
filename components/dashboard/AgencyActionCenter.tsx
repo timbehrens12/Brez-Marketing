@@ -673,11 +673,18 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Load AI Consultant usage - now shows combined agency + brand usage
         // Check if we already know this user is maxed out to avoid excessive 429 calls
         const currentUsage = newToolUsageData.aiConsultant[userId] || 0
-        if (currentUsage < 15) { // Only make API call if not already maxed out
+        const existingUsage = toolUsageData.aiConsultant[userId] || 0
+
+        // If we already know user is at limit, don't make API call
+        if (existingUsage >= 15) {
+          console.log('[AgencyActionCenter] User already at limit, skipping API call')
+          newToolUsageData.aiConsultant[userId] = existingUsage
+        } else if (currentUsage < 15) { // Only make API call if not already maxed out
           // Double-check with loading ref to prevent race conditions
           if (toolUsageLoadingRef.current) {
             console.log('[AgencyActionCenter] Marketing consultant API call skipped - already loading')
-            newToolUsageData.aiConsultant[userId] = currentUsage // Keep current value
+            // Keep current value, but preserve any existing limit state
+            newToolUsageData.aiConsultant[userId] = Math.max(currentUsage, existingUsage)
           } else {
             toolUsageLoadingRef.current = true // Set loading flag for API call
             try {
@@ -720,9 +727,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               toolUsageLoadingRef.current = false // Always reset the loading flag
             }
           }
-        } else {
-          // User is already maxed out, no need to make another API call
-          console.log('[AgencyActionCenter] Skipping AI usage API call - user already at limit')
         }
 
         // Load Creative Studio usage - check localStorage (weekly limit)
@@ -810,10 +814,25 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
 
     // Listen for AI consultant usage updates
-    const handleAIConsultantUpdate = () => {
-      console.log('[AgencyActionCenter] AI consultant usage update event received')
+    const handleAIConsultantUpdate = (event: CustomEvent) => {
+      console.log('[AgencyActionCenter] AI consultant usage update event received:', event.detail)
+      const { userId: eventUserId, usedCount } = event.detail || {}
+
+      if (eventUserId === userId && usedCount !== undefined) {
+        // Direct update with provided usage count
+        console.log('[AgencyActionCenter] Updating usage data directly:', usedCount)
+        setToolUsageData(prev => ({
+          ...prev,
+          aiConsultant: {
+            ...prev.aiConsultant,
+            [userId]: usedCount
+          }
+        }))
+        return
+      }
+
+      // Fallback: refresh data if no direct usage count provided
       if (userId) {
-        // Only refresh if we don't already know the user is maxed out
         const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
         console.log('[AgencyActionCenter] Current AI consultant usage:', currentUsage)
         if (currentUsage < 15) {
@@ -822,6 +841,22 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         } else {
           console.log('[AgencyActionCenter] Skipping AI consultant update - user already at limit')
         }
+      }
+    }
+
+    // Listen for AI consultant limit reached events
+    const handleAIConsultantLimitReached = (event: CustomEvent) => {
+      console.log('[AgencyActionCenter] AI consultant limit reached event received:', event.detail)
+      const { userId: eventUserId, usedCount } = event.detail
+      if (eventUserId === userId) {
+        console.log('[AgencyActionCenter] Updating usage data to reflect limit reached:', usedCount || 15)
+        setToolUsageData(prev => ({
+          ...prev,
+          aiConsultant: {
+            ...prev.aiConsultant,
+            [userId]: usedCount || 15 // Set to max limit
+          }
+        }))
       }
     }
 
@@ -842,6 +877,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     window.addEventListener('focus', handleFocus)
     window.addEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
     window.addEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
+    window.addEventListener('ai-consultant-limit-reached', handleAIConsultantLimitReached)
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
@@ -849,6 +885,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
       window.removeEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
+      window.removeEventListener('ai-consultant-limit-reached', handleAIConsultantLimitReached)
       window.removeEventListener('storage', handleStorageChange)
       clearInterval(refreshInterval)
     }

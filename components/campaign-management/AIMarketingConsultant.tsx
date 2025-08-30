@@ -680,6 +680,15 @@ I can help with literally anything marketing-related for your brand - performanc
           } else if (response.status === 429) {
             setRemainingUses(0)
             setIsLimitReached(true)
+            // Notify dashboard that user has reached the limit
+            console.log('[AI Marketing] User reached daily limit - notifying dashboard')
+            window.dispatchEvent(new CustomEvent('ai-consultant-limit-reached', {
+              detail: {
+                userId: user?.id,
+                limitReached: true,
+                usedCount: 15
+              }
+            }))
           } else {
             setRemainingUses(15)
           }
@@ -931,9 +940,15 @@ I can help with literally anything marketing-related for your brand - performanc
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
-        // Trigger dashboard update
-        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event')
-        window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated'))
+        // Trigger dashboard update with usage data
+        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event with remaining uses:', data.remainingUses)
+        window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
+          detail: {
+            userId: user?.id,
+            remainingUses: data.remainingUses,
+            usedCount: Math.max(0, 15 - data.remainingUses)
+          }
+        }))
       } else {
         // console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
