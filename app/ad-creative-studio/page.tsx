@@ -2587,8 +2587,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
     try {
       if (isMultiMode && uploadedImages.length > 1) {
-        // NEW: Multi-product mode: Generate ONE creative with all products extracted and arranged
-        console.log(`🎨 Generating multi-product creative with ${uploadedImages.length} items...`)
+        // Multi-product mode: Use collage approach for reliability
+        console.log(`🎨 Generating multi-product collage with ${uploadedImages.length} items...`)
 
         // Create single creative entry for the multi-product result
         const multiProductCreativeId = addCreative({
@@ -2596,7 +2596,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
           user_id: user!.id,
           style_id: modalStyle.id,
           style_name: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
-          original_image_url: uploadedImageUrls[0], // Use first image as reference
+          original_image_url: uploadedImageUrls[0],
           generated_image_url: '',
           prompt_used: enhancedPrompt,
           text_overlays: customText,
@@ -2611,31 +2611,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         })
 
         try {
-          // Generate the multi-product creative using our new function
-          const generatedImageUrl = await generateMultiProductCreative(
-            uploadedImages,
-            modalStyle,
-            customText,
-            finalName
-          )
-
-          console.log('✅ Multi-product creative generated successfully!')
+          // Use the collage function for reliable multi-product generation
+          const collageUrl = await generateCollage(uploadedImages, 'grid-2x2')
+          console.log('✅ Multi-product collage generated successfully!')
 
           // Update creative status
-          updateCreativeStatus(multiProductCreativeId, 'completed', generatedImageUrl)
+          updateCreativeStatus(multiProductCreativeId, 'completed', collageUrl)
 
           // Save to database
-          const backgroundTypeMapping: { [key: string]: string } = {
-            'concrete-floor': 'concrete',
-            'marble-surface': 'marble',
-            'wooden-tabletop': 'wood',
-            'white-background': 'minimalist',
-            'cotton-sheet': 'fabric',
-            'black-background': 'minimalist',
-            'gradient-surface': 'gradient',
-            'metallic-surface': 'metallic'
-          }
-
           try {
             const saveResponse = await fetch('/api/creative-generations', {
               method: 'POST',
@@ -2648,19 +2631,16 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 styleId: modalStyle.id,
                 styleName: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
                 originalImageUrl: uploadedImageUrls[0],
-                generatedImageUrl: generatedImageUrl,
+                generatedImageUrl: collageUrl,
                 promptUsed: enhancedPrompt,
                 textOverlays: customText,
                 metadata: {
-                  backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
                   aspectRatio: 'portrait',
                   quality: 'hd',
-                  lighting: 'soft',
-                  customModifiers: !!customInstructions,
-                  model: 'gemini-2.5-flash-image-preview',
                   multiProductCount: uploadedImages.length,
                   multiProductImages: uploadedImageUrls,
-                  isMultiProduct: true
+                  isMultiProduct: true,
+                  collageLayout: 'grid-2x2'
                 },
                 customName: `${finalName} Multi-Product (${uploadedImages.length} items)`
               }),
@@ -2675,47 +2655,31 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             console.error('❌ Error saving multi-product creative to database:', saveError)
           }
 
-          // Update the UI with the generated image
+          // Update the UI with the generated collage
           setLoadedImages(prev => ({
             ...prev,
             [multiProductCreativeId]: {
               original: uploadedImageUrls[0],
-              generated: generatedImageUrl
+              generated: collageUrl
             }
           }))
 
-          toast.success(`Generated multi-product creative with ${uploadedImages.length} items!`)
+          toast.success(`Generated multi-product collage with ${uploadedImages.length} items!`)
           incrementUsage()
 
           // Clear the uploaded images after successful generation
           setUploadedImages([])
           setUploadedImageUrls([])
+          setIsMultiMode(false)
 
           // Switch to generated tab
           setActiveTab('generated')
 
         } catch (generationError: any) {
-          console.error('❌ Error generating multi-product creative:', generationError)
-
-          // Provide more specific error messages and fallback options
-          let errorMessage = 'Failed to generate multi-product creative'
-          let actionMessage = 'Try using fewer images, a simpler template, or generate individual creatives instead.'
-
-          if (generationError.message?.includes('timed out')) {
-            errorMessage = 'Generation timed out - multi-product requests can be complex.'
-            actionMessage = 'Try using fewer images (2-3 max) or generate individual creatives.'
-          } else if (generationError.message?.includes('API Error')) {
-            errorMessage = 'API temporarily unavailable.'
-            actionMessage = 'Please wait a moment and try again, or use single image generation.'
-          }
+          console.error('❌ Error generating multi-product collage:', generationError)
 
           updateCreativeStatus(multiProductCreativeId, 'failed')
-
-          // Show error with action guidance
-          toast.error(errorMessage, {
-            description: actionMessage,
-            duration: 8000
-          })
+          toast.error('Failed to generate multi-product collage')
 
           // Clean up the failed creative from UI
           setLoadedImages(prev => {
