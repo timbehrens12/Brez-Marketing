@@ -596,21 +596,35 @@ I can help with literally anything marketing-related for your brand - performanc
   // Check initial usage status when component mounts
   useEffect(() => {
     const checkInitialUsage = async () => {
+      console.log('[AI Marketing] Checking initial usage - user:', user?.id, 'brandId:', selectedBrandId, 'brands:', brands.length)
+
       // Only check usage if we have both user and selectedBrandId
       if (!user?.id || !selectedBrandId) {
-        // console.log('[AI Marketing] Skipping initial usage check - missing user or brandId')
+        console.log('[AI Marketing] Skipping initial usage check - missing user or brandId', {
+          hasUser: !!user?.id,
+          hasBrandId: !!selectedBrandId,
+          brandCount: brands.length
+        })
         return
       }
 
       try {
-        // console.log('[AI Marketing] Checking initial usage for brand:', selectedBrandId)
+        // If no brand is selected but brands are available, auto-select the first one
+        let brandIdToUse = selectedBrandId
+        if (!brandIdToUse && brands.length > 0) {
+          console.log('[AI Marketing] Auto-selecting first available brand for usage check:', brands[0].id)
+          brandIdToUse = brands[0].id
+          setSelectedBrandId(brandIdToUse)
+        }
+
+        // console.log('[AI Marketing] Checking initial usage for brand:', brandIdToUse)
         const response = await fetch('/api/ai/marketing-consultant', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            brandId: selectedBrandId,
+            brandId: brandIdToUse,
             prompt: '', // Empty prompt to just check usage
             marketingGoal: 'general', // Default to general since we removed the focus selector
             checkUsageOnly: true, // Flag to indicate we only want usage info
@@ -760,6 +774,25 @@ I can help with literally anything marketing-related for your brand - performanc
       }
 
       console.log('[AI Marketing] Making API call for brand:', selectedBrandId)
+      console.log('[AI Marketing] Full context:', {
+        userId: user?.id,
+        selectedBrandId,
+        brandsCount: brands.length,
+        prompt: prompt.substring(0, 50) + '...'
+      })
+
+      // If no brand is selected but brands are available, auto-select the first one
+      let brandIdToUse = selectedBrandId
+      if (!brandIdToUse && brands.length > 0) {
+        console.log('[AI Marketing] Auto-selecting first available brand:', brands[0].id)
+        brandIdToUse = brands[0].id
+        setSelectedBrandId(brandIdToUse)
+      }
+
+      if (!brandIdToUse) {
+        console.error('[AI Marketing] No brand available for API call')
+        throw new Error('Please select a brand first')
+      }
 
       const response = await fetch('/api/ai/marketing-consultant', {
         method: 'POST',
@@ -767,7 +800,7 @@ I can help with literally anything marketing-related for your brand - performanc
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          brandId: selectedBrandId,
+          brandId: brandIdToUse,
           prompt,
           marketingGoal: 'general', // Default to general since we removed the focus selector
           userContext: {
