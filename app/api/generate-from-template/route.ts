@@ -17,6 +17,10 @@ const ASPECT_RATIOS = {
 };
 
 export async function POST(request: NextRequest) {
+  // Add overall timeout to prevent Vercel 15s limit
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 14500); // 14.5 seconds
+
   try {
     // Authenticate user
     const { userId } = auth();
@@ -101,6 +105,38 @@ export async function POST(request: NextRequest) {
       productBase64 = productImage.split(',')[1];
     }
 
+    console.log('📊 Original image sizes:', {
+      example: exampleBase64.length,
+      product: productBase64.length
+    });
+
+    // Pre-compress images to reduce processing time and API payload
+    try {
+      console.log('🗜️ Pre-compressing images for faster processing...');
+
+      // Compress example image
+      const compressedExampleBuffer = await sharp(Buffer.from(exampleBase64, 'base64'))
+        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+      exampleBase64 = compressedExampleBuffer.toString('base64');
+
+      // Compress product image
+      const compressedProductBuffer = await sharp(Buffer.from(productBase64, 'base64'))
+        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+      productBase64 = compressedProductBuffer.toString('base64');
+
+      console.log('✅ Images pre-compressed:', {
+        example: exampleBase64.length,
+        product: productBase64.length
+      });
+    } catch (compressError) {
+      console.error('⚠️ Failed to pre-compress images:', compressError);
+      // Continue with original images if compression fails
+    }
+
     // Convert base64 to buffers for processing
     const exampleBuffer = Buffer.from(exampleBase64, 'base64');
     const productBuffer = Buffer.from(productBase64, 'base64');
@@ -121,38 +157,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build the comprehensive prompt for template-based generation
+    // Build the optimized prompt for template-based generation
     const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
 
-    let prompt = `Create a professional advertisement image by analyzing the provided example template and recreating its visual style with the new product.
+    let prompt = `Analyze this advertisement template and recreate its exact visual style with my new product.
 
-FIRST: Analyze the example template carefully and identify:
-- Overall composition and layout
-- Color palette and color scheme
-- Lighting style and direction
-- Background treatment and textures
-- Product placement and positioning
-- Visual hierarchy and focal points
-- Any text elements, fonts, or typography
-- Overall mood, aesthetic, and brand personality
-- Specific design elements like borders, overlays, or graphic elements
-
-SECOND: Recreate this exact visual style and composition using the new product, but maintain the same:
-- Color scheme and palette
-- Lighting setup and mood
-- Background style and treatment
-- Layout composition and product positioning
-- Overall aesthetic and brand personality
-- Design elements and visual hierarchy
-
-IMPORTANT: The final image should be generated in exactly ${aspectRatioSpec} dimensions for optimal mobile device display.
+KEY ELEMENTS TO MATCH:
+- Overall composition, layout, and design style
+- Color palette and lighting mood
+- Background treatment and visual hierarchy
+- Professional advertisement aesthetic
 
 ${additionalNotes ? `ADDITIONAL REQUIREMENTS: ${additionalNotes}` : ''}
 
-The result should look like a professional advertisement that could have been created by the same designer, maintaining complete visual consistency with the template while showcasing the new product perfectly.`;
+Generate in exactly ${aspectRatioSpec} dimensions. Make it look like the same designer created both ads.`;
 
-    // Generate the template-based creative
-    const result = await imageModel.generateContent([
+    // Generate the template-based creative with timeout
+    console.log('⏱️ Starting Gemini API call...');
+    const generationPromise = imageModel.generateContent([
       prompt,
       // Example template as reference
       {
@@ -169,6 +191,14 @@ The result should look like a professional advertisement that could have been cr
         }
       }
     ]);
+
+    // Add timeout to prevent hanging (12 seconds to stay under Vercel 15s limit)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Generation timeout - please try again')), 12000);
+    });
+
+    const result = await Promise.race([generationPromise, timeoutPromise]);
+    console.log('✅ Gemini API call completed');
 
     // Extract the generated image
     let generatedImageUrl = null;
@@ -265,26 +295,26 @@ The result should look like a professional advertisement that could have been cr
         try {
           console.log('🗜️ Compressing template images for database storage...');
 
-          // Compress example image
+          // Compress example image (smaller for storage)
           const exampleImageBuffer = await sharp(Buffer.from(exampleBase64, 'base64'))
-            .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 75 })
+            .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 70, progressive: false }) // Faster compression
             .toBuffer();
           compressedExampleImage = `data:image/jpeg;base64,${exampleImageBuffer.toString('base64')}`;
 
-          // Compress product image
+          // Compress product image (smaller for storage)
           const productImageBuffer = await sharp(Buffer.from(productBase64, 'base64'))
-            .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 75 })
+            .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 70, progressive: false }) // Faster compression
             .toBuffer();
           compressedProductImage = `data:image/jpeg;base64,${productImageBuffer.toString('base64')}`;
 
-          // Compress generated image
+          // Compress generated image (keep larger for quality)
           if (finalImageUrl.startsWith('data:image/')) {
             const generatedBase64 = finalImageUrl.split(',')[1];
             const generatedImageBuffer = await sharp(Buffer.from(generatedBase64, 'base64'))
-              .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ quality: 80 })
+              .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 75, progressive: false }) // Faster compression
               .toBuffer();
             compressedGeneratedImage = `data:image/jpeg;base64,${generatedImageBuffer.toString('base64')}`;
           }
@@ -338,6 +368,8 @@ The result should look like a professional advertisement that could have been cr
       console.error('Error recording template usage:', usageInsertError);
     }
 
+    clearTimeout(timeoutId); // Clean up timeout on success
+
     return NextResponse.json({
       imageUrl: finalImageUrl,
       success: true,
@@ -345,7 +377,18 @@ The result should look like a professional advertisement that could have been cr
     });
 
   } catch (error) {
+    clearTimeout(timeoutId); // Clean up timeout
+
     console.error('Error in template generation:', error);
+
+    // Check if it was a timeout
+    if (controller.signal.aborted) {
+      return NextResponse.json(
+        { error: 'Generation timed out. Please try again with smaller images.' },
+        { status: 408 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to generate template-based creative. Please try again.' },
       { status: 500 }

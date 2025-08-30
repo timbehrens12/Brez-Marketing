@@ -3403,6 +3403,9 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   <p className="text-gray-400 text-sm mb-4">
                     Upload an ad creative you saw on Instagram or anywhere else that you want to recreate
                   </p>
+                  <p className="text-yellow-400 text-xs mb-4">
+                    💡 Tip: Use smaller images (under 2MB) for faster processing
+                  </p>
 
                   {!templateImage ? (
                     <div className="border-2 border-dashed border-[#444] rounded-lg p-8 text-center hover:border-[#555] transition-colors">
@@ -3448,6 +3451,9 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                   <h4 className="text-lg font-medium text-white mb-4">Step 2: Upload Your Product</h4>
                   <p className="text-gray-400 text-sm mb-4">
                     Upload the product you want to feature in the same style as your template
+                  </p>
+                  <p className="text-yellow-400 text-xs mb-4">
+                    💡 Tip: Use smaller images (under 2MB) for faster processing
                   </p>
 
                   {!productImageForTemplate ? (
@@ -3544,8 +3550,24 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         });
 
                         if (!response.ok) {
-                          const errorData = await response.json();
-                          throw new Error(errorData.error || 'Failed to generate template-based creative');
+                          let errorMessage = 'Failed to generate template-based creative';
+
+                          try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorMessage;
+
+                            // Provide specific guidance for timeout errors
+                            if (response.status === 408 || errorMessage.includes('timeout')) {
+                              errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+                            }
+                          } catch (parseError) {
+                            // If we can't parse the error response, use a generic message
+                            if (response.status === 408) {
+                              errorMessage = 'Generation timed out. Try using smaller images (under 2MB) or try again.';
+                            }
+                          }
+
+                          throw new Error(errorMessage);
                         }
 
                         const data = await response.json();
