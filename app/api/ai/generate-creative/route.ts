@@ -214,15 +214,42 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      const imageGenerationResult = await imageModel.generateContent([
-        prompt, // The enhanced prompt for image generation
-        {
-          inlineData: {
-            mimeType: imageFile.type,
-            data: base64Image
-          }
+      // Build the content array for Gemini
+      const contentArray = [prompt]; // Start with the prompt
+      
+      // Add the primary image
+      contentArray.push({
+        inlineData: {
+          mimeType: imageFile.type,
+          data: base64Image
         }
-      ]);
+      });
+
+      // If this is a multi-product request, add additional images
+      if (customPrompt && multiProductCount && additionalImages) {
+        try {
+          const additionalImagesArray = JSON.parse(additionalImages);
+          console.log(`🖼️ Adding ${additionalImagesArray.length} additional images for multi-product generation`);
+          
+          additionalImagesArray.forEach((imageData: string, index: number) => {
+            // Extract base64 data and mime type from data URL
+            const [mimeTypePart, base64Part] = imageData.split(',');
+            const mimeType = mimeTypePart.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+            
+            contentArray.push({
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Part
+              }
+            });
+          });
+        } catch (parseError) {
+          console.error('❌ Error parsing additional images:', parseError);
+        }
+      }
+
+      console.log(`🚀 Sending ${contentArray.length - 1} images to Gemini for generation`);
+      const imageGenerationResult = await imageModel.generateContent(contentArray);
 
       // Extract the generated image from the response
       let generatedImageData = null;

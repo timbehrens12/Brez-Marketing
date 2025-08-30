@@ -1468,17 +1468,19 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         console.log(`✅ Converted ${base64Images.length} images to base64`)
 
         // Create enhanced prompt for multi-product extraction
-        const multiProductPrompt = `Create a stunning fashion display featuring ${images.length} different clothing items. Extract each clothing item from the provided images and arrange them artistically on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
+        const multiProductPrompt = `GENERATE AN IMAGE: Create a stunning fashion display featuring ${images.length} different clothing items extracted from the provided ${images.length} separate product images.
+
+TASK: Extract each clothing item from the separate images I'm providing and arrange them together in one beautiful composition on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
 
 CRITICAL REQUIREMENTS:
-- Extract and isolate each clothing item from the ${images.length} separate images
-- Arrange them in an elegant, professional layout
+- EXTRACT each clothing item from its respective image (I'm providing ${images.length} separate images)
+- ARRANGE all ${images.length} items together in one elegant, professional layout
 - Use ${style.id === 'concrete-floor' ? 'urban street style' : style.id === 'white-background' ? 'minimalist clean aesthetic' : style.id === 'marble-surface' ? 'luxury boutique style' : 'premium product photography'} aesthetic
 - Ensure each item is clearly visible and professionally presented
 - Maintain consistent lighting and shadows across all items
-- Create a cohesive, high-end fashion display
+- Create a cohesive, high-end fashion display in 1024x1536 portrait format
 
-Each item should be perfectly extracted and arranged to create a beautiful multi-product showcase.`
+DO NOT ask for more images - I am providing all ${images.length} images now. Generate the combined fashion display image immediately.`
 
         // Create FormData for the API call
         const formData = new FormData()
