@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
     if (checkUsageOnly) {
       return NextResponse.json({
         canUse: usageStatus.canUse,
-        remainingUses: usageStatus.remainingUses || 15
+        remainingUses: usageStatus.remainingUses || 0
       })
     }
 

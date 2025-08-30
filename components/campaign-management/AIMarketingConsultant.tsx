@@ -643,14 +643,16 @@ I can help with literally anything marketing-related for your brand - performanc
 
         const data = await response.json()
 
-        if (response.ok && data.remainingUses !== undefined) {
+        if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
           // console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
           setRemainingUses(data.remainingUses)
           if (data.remainingUses <= 0) {
             setIsLimitReached(true)
           }
         } else {
-          console.error('[AI Marketing] Usage check failed:', data.error || response.status)
+          // Fallback: set to 15 if we can't determine usage, so counter shows
+          console.log('[AI Marketing] Setting fallback usage to show counter')
+          setRemainingUses(15) // Show 0/15 used today
         }
       } catch (error) {
         console.error('[AI Marketing] Failed to check initial usage:', error)
@@ -1086,7 +1088,7 @@ I can help with literally anything marketing-related for your brand - performanc
               </div>
               
               {/* Usage Counter in Header */}
-              {remainingUses !== null && (
+              {remainingUses !== null && remainingUses !== undefined && (
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 shadow-sm">
                   <MessageCircle className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-medium text-white">
