@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
@@ -1267,7 +1267,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   }
 
   // Load creative generations from database when brand changes
-  const loadCreatives = async () => {
+  const loadCreatives = useCallback(async () => {
     if (!selectedBrandId || !user?.id) {
       setGeneratedCreatives([])
       setIsLoadingCreatives(false)
@@ -1279,7 +1279,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
     setGeneratedCreatives([]) // Clear immediately when brand changes
     setLoadedImages({}) // Clear loaded images cache
     setLoadingImages(new Set()) // Clear loading images
-
+    
     try {
       // console.log('📚 Loading creatives for brand:', selectedBrandId)
         const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&limit=50`)
@@ -1304,14 +1304,11 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       } finally {
         setIsLoadingCreatives(false)
       }
-    }
-  }
+    }, [selectedBrandId, user?.id])
 
   useEffect(() => {
-    if (typeof loadCreatives === 'function') {
-      loadCreatives()
-    }
-  }, [selectedBrandId, user?.id])
+    loadCreatives()
+  }, [loadCreatives])
 
   // Auto-load images for completed creatives when they become visible
   useEffect(() => {
@@ -3578,8 +3575,20 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         // Show success and switch to generated tab
                         toast.success('Template-based creative generated successfully!');
                         setActiveTab('generated');
-                        if (typeof loadCreatives === 'function') {
-                          await loadCreatives(); // Refresh the creatives list
+                        
+                        // Refresh the creatives list
+                        try {
+                          if (typeof loadCreatives === 'function') {
+                            await loadCreatives();
+                          } else {
+                            console.error('loadCreatives is not a function:', typeof loadCreatives);
+                            // Force reload if function is not available
+                            window.location.reload();
+                          }
+                        } catch (loadError) {
+                          console.error('Error refreshing creatives:', loadError);
+                          // Fallback: reload the page if loadCreatives fails
+                          window.location.reload();
                         }
 
                         // Clear form
