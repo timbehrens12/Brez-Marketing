@@ -299,6 +299,17 @@ const STYLE_OPTIONS: StyleOption[] = [
     goodFor: 'Any product - you have full creative control',
     prompt: 'CUSTOM_TEMPLATE_PLACEHOLDER' // This will be replaced with user's custom prompt
   },
+  // MULTI-PRODUCT TEMPLATE - For combining multiple items into one creative
+  {
+    id: 'multi-product-showcase',
+    name: 'Multi-Product Showcase',
+    description: 'Display multiple clothing items extracted from separate images in one elegant creative',
+    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEzMykiPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjxzZXJnIHg9Ii00MCIgeT0iLTQwIiB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiM0NDQiIG9wYWNpdHk9IjAuMyIvPjx0ZXh0IHg9IjEwMCIgeT0iMjMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjQUFBIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjYwMCI+TVVMVElfPC90ZXh0Pjx0ZXh0IHg9IjEwMCIgeT0iMjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMTBCOTgxIiBmb250LXNpemU9IjEyIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UHJvZHVjdDwvdGV4dD48L2c+PHRleHQgeD0iMTAwIiB5PSIyNzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMxMEI5ODEiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5TaG93Y2FzZTwvdGV4dD48L3N2Zz4=',
+
+    category: 'all',
+    goodFor: 'Multiple clothing items, fashion collections, product showcases',
+    prompt: 'Create a stunning multi-product fashion showcase by extracting and arranging multiple clothing items from the provided images. Display each item professionally with consistent styling, lighting, and background. Arrange them in an elegant, cohesive layout that highlights each piece while creating a unified fashion presentation. Ensure each clothing item is perfectly isolated from its original background and presented with premium quality. Use sophisticated styling that makes the entire collection look like a high-end fashion editorial spread.'
+  },
   // NEW CLOTHING TEMPLATES - Latest additions
   {
     id: 'forest-branch-hanger',
@@ -1440,6 +1451,99 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   }
 
   // Collage generation function
+  // New multi-product generation function
+  const generateMultiProductCreative = async (images: File[], style: StyleOption, customText: any, finalName: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        console.log('🎨 Starting multi-product creative generation...')
+
+        // Convert all images to base64
+        const imagePromises = images.map(file => new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(file)
+        }))
+
+        const base64Images = await Promise.all(imagePromises)
+        console.log(`✅ Converted ${base64Images.length} images to base64`)
+
+        // Create enhanced prompt for multi-product extraction
+        const multiProductPrompt = `Create a stunning fashion display featuring ${images.length} different clothing items. Extract each clothing item from the provided images and arrange them artistically on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
+
+CRITICAL REQUIREMENTS:
+- Extract and isolate each clothing item from the ${images.length} separate images
+- Arrange them in an elegant, professional layout
+- Use ${style.id === 'concrete-floor' ? 'urban street style' : style.id === 'white-background' ? 'minimalist clean aesthetic' : style.id === 'marble-surface' ? 'luxury boutique style' : 'premium product photography'} aesthetic
+- Ensure each item is clearly visible and professionally presented
+- Maintain consistent lighting and shadows across all items
+- Create a cohesive, high-end fashion display
+
+Each item should be perfectly extracted and arranged to create a beautiful multi-product showcase.`
+
+        // Create FormData for the API call
+        const formData = new FormData()
+
+        // Add the first image as the base (API expects one primary image)
+        const base64Data = base64Images[0].split(',')[1]
+        const byteCharacters = atob(base64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const imageBlob = new Blob([byteArray], { type: images[0].type || 'image/jpeg' })
+        const imageFile = new File([imageBlob], images[0].name || 'multi-product.jpg', { type: images[0].type || 'image/jpeg' })
+
+        formData.append('image', imageFile)
+        formData.append('prompt', multiProductPrompt)
+        formData.append('styleId', style.id)
+        formData.append('aspectRatio', 'portrait')
+        formData.append('quality', 'hd')
+        formData.append('textOverlays', JSON.stringify(customText))
+
+        // Add additional context about multiple products
+        formData.append('multiProductCount', images.length.toString())
+        formData.append('additionalImages', JSON.stringify(base64Images.slice(1)))
+
+        // Map background type
+        const backgroundTypeMapping: { [key: string]: string } = {
+          'concrete-floor': 'concrete',
+          'marble-surface': 'marble',
+          'wooden-tabletop': 'wood',
+          'white-background': 'minimalist',
+          'cotton-sheet': 'fabric',
+          'black-background': 'minimalist',
+          'gradient-surface': 'gradient',
+          'metallic-surface': 'metallic'
+        }
+
+        formData.append('backgroundType', backgroundTypeMapping[style.id] || 'minimalist')
+
+        console.log('🚀 Sending multi-product generation request...')
+
+        const response = await fetch('/api/ai/generate-creative', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          console.error('❌ Multi-product generation failed:', errorData)
+          reject(new Error(errorData.error || 'Failed to generate multi-product creative'))
+          return
+        }
+
+        const data = await response.json()
+        console.log('✅ Multi-product creative generated successfully!')
+        resolve(data.imageUrl)
+
+      } catch (error) {
+        console.error('❌ Error in multi-product generation:', error)
+        reject(error)
+      }
+    })
+  }
+
   const generateCollage = async (images: File[], layout: 'grid-2x2' | 'hero-plus-3' | 'row-5' | 'triangle' = 'grid-2x2'): Promise<string> => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas')
@@ -2477,76 +2581,50 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
     }, 100)
     
     toast.info(isMultiMode && uploadedImages.length > 1
-      ? `Starting generation of ${uploadedImages.length} creatives... This may take ${(uploadedImages.length * 45)}-${(uploadedImages.length * 75)} seconds.`
+      ? `Starting multi-product creative generation... This may take 60-90 seconds.`
       : 'Starting image generation... This may take 30-60 seconds.'
     );
 
     try {
       if (isMultiMode && uploadedImages.length > 1) {
-        // Multi-product mode: Generate individual creatives for each product
-        console.log(`🎨 Generating ${uploadedImages.length} individual creatives...`)
+        // NEW: Multi-product mode: Generate ONE creative with all products extracted and arranged
+        console.log(`🎨 Generating multi-product creative with ${uploadedImages.length} items...`)
 
-        const creativeIds: string[] = []
+        // Create single creative entry for the multi-product result
+        const multiProductCreativeId = addCreative({
+          brand_id: selectedBrandId!,
+          user_id: user!.id,
+          style_id: modalStyle.id,
+          style_name: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
+          original_image_url: uploadedImageUrls[0], // Use first image as reference
+          generated_image_url: '',
+          prompt_used: enhancedPrompt,
+          text_overlays: customText,
+          status: 'generating',
+          metadata: {
+            multiProductCount: uploadedImages.length,
+            multiProductImages: uploadedImageUrls,
+            isMultiProduct: true
+          },
+          updated_at: new Date().toISOString(),
+          custom_name: `${finalName} Multi-Product (${uploadedImages.length} items)`
+        })
 
-        // Generate a creative for each product image
-        for (let i = 0; i < uploadedImages.length; i++) {
-          const currentImage = uploadedImages[i]
-          const currentImageUrl = uploadedImageUrls[i]
+        try {
+          // Generate the multi-product creative using our new function
+          const generatedImageUrl = await generateMultiProductCreative(
+            uploadedImages,
+            modalStyle,
+            customText,
+            finalName
+          )
 
-          console.log(`📸 Processing product ${i + 1}/${uploadedImages.length}...`)
+          console.log('✅ Multi-product creative generated successfully!')
 
-          // Create individual creative entry
-          const individualCreativeId = addCreative({
-            brand_id: selectedBrandId!,
-            user_id: user!.id,
-            style_id: modalStyle.id,
-            style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : `${modalStyle.name} (${i + 1}/${uploadedImages.length})`,
-            original_image_url: currentImageUrl,
-            generated_image_url: '',
-            prompt_used: enhancedPrompt,
-            text_overlays: customText,
-            status: 'generating',
-            metadata: { multiProductIndex: i + 1, totalProducts: uploadedImages.length },
-            updated_at: new Date().toISOString(),
-            custom_name: `${finalName} (${i + 1})`
-          })
+          // Update creative status
+          updateCreativeStatus(multiProductCreativeId, 'completed', generatedImageUrl)
 
-          creativeIds.push(individualCreativeId)
-
-          // Convert current image to base64
-          const currentBase64Image = await new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(currentImage)
-          })
-
-          // Call API for this individual image
-          const formData = new FormData();
-
-          // Convert base64 back to file
-          const base64Data = currentBase64Image.split(',')[1];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let j = 0; j < byteCharacters.length; j++) {
-            byteNumbers[j] = byteCharacters.charCodeAt(j);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const imageBlob = new Blob([byteArray], { type: currentImage.type || 'image/jpeg' });
-          const imageFile = new File([imageBlob], currentImage.name || `product-${i + 1}.jpg`, { type: currentImage.type || 'image/jpeg' });
-
-          formData.append('image', imageFile);
-
-          // Continue with the API call setup for multi-product mode
-          formData.append('styleId', modalStyle.id);
-          formData.append('prompt', enhancedPrompt);
-          formData.append('textOverlays', JSON.stringify(customText));
-          formData.append('brandId', selectedBrandId!);
-          formData.append('userId', user!.id);
-          formData.append('styleName', modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.name);
-          formData.append('customName', `${finalName} (${i + 1})`);
-          formData.append('aspectRatio', 'portrait');
-
-          // Map style IDs to background types
+          // Save to database
           const backgroundTypeMapping: { [key: string]: string } = {
             'concrete-floor': 'concrete',
             'marble-surface': 'marble',
@@ -2556,91 +2634,71 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             'black-background': 'minimalist',
             'gradient-surface': 'gradient',
             'metallic-surface': 'metallic'
-          };
-
-          formData.append('backgroundType', backgroundTypeMapping[modalStyle.id] || 'minimalist');
+          }
 
           try {
-            // Make API call for this individual product
-            const response = await fetch('/api/ai/generate-creative', {
+            const saveResponse = await fetch('/api/creative-generations', {
               method: 'POST',
-              body: formData,
-            });
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              console.error(`❌ API Error for product ${i + 1}:`, errorData);
-              updateCreativeStatus(individualCreativeId, 'failed');
-              continue; // Continue with next product
-            }
-
-            const data = await response.json();
-            console.log(`✅ Generated creative for product ${i + 1}/${uploadedImages.length}`);
-
-            // Update creative status and save to database
-            updateCreativeStatus(individualCreativeId, 'completed', data.imageUrl);
-
-            // Save to database
-            try {
-              const saveResponse = await fetch('/api/creative-generations', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                brandId: selectedBrandId,
+                userId: user?.id,
+                styleId: modalStyle.id,
+                styleName: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
+                originalImageUrl: uploadedImageUrls[0],
+                generatedImageUrl: generatedImageUrl,
+                promptUsed: enhancedPrompt,
+                textOverlays: customText,
+                metadata: {
+                  backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
+                  aspectRatio: 'portrait',
+                  quality: 'hd',
+                  lighting: 'soft',
+                  customModifiers: !!customInstructions,
+                  model: 'gemini-2.5-flash-image-preview',
+                  multiProductCount: uploadedImages.length,
+                  multiProductImages: uploadedImageUrls,
+                  isMultiProduct: true
                 },
-                body: JSON.stringify({
-                  brandId: selectedBrandId,
-                  userId: user?.id,
-                  styleId: modalStyle.id,
-                  styleName: modalStyle.id === 'custom-template' ? 'Custom Template' : `${modalStyle.name} (${i + 1}/${uploadedImages.length})`,
-                  originalImageUrl: currentImageUrl,
-                  generatedImageUrl: data.imageUrl,
-                  promptUsed: enhancedPrompt,
-                  textOverlays: customText,
-                  metadata: {
-                    backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
-                    aspectRatio: 'portrait',
-                    quality: 'hd',
-                    lighting: 'soft',
-                    customModifiers: !!customInstructions,
-                    model: data.model || 'gemini-2.5-flash-image-preview',
-                    multiProductIndex: i + 1,
-                    totalProducts: uploadedImages.length
-                  },
-                  customName: `${finalName} (${i + 1})`
-                }),
-              });
+                customName: `${finalName} Multi-Product (${uploadedImages.length} items)`
+              }),
+            })
 
-              if (!saveResponse.ok) {
-                console.error(`❌ Failed to save product ${i + 1} to database`);
-              }
-            } catch (saveError) {
-              console.error(`❌ Error saving product ${i + 1} to database:`, saveError);
+            if (!saveResponse.ok) {
+              console.error('❌ Failed to save multi-product creative to database:', await saveResponse.text())
+            } else {
+              console.log('✅ Multi-product creative saved to database successfully')
             }
-
-            // Add a small delay between API calls to avoid rate limiting
-            if (i < uploadedImages.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-
-          } catch (apiError) {
-            console.error(`❌ Error processing product ${i + 1}:`, apiError);
-            updateCreativeStatus(individualCreativeId, 'failed');
+          } catch (saveError) {
+            console.error('❌ Error saving multi-product creative to database:', saveError)
           }
+
+          // Update the UI with the generated image
+          setLoadedImages(prev => ({
+            ...prev,
+            [multiProductCreativeId]: {
+              original: uploadedImageUrls[0],
+              generated: generatedImageUrl
+            }
+          }))
+
+          toast.success(`Generated multi-product creative with ${uploadedImages.length} items!`)
+          incrementUsage()
+
+          // Clear the uploaded images after successful generation
+          setUploadedImages([])
+          setUploadedImageUrls([])
+
+          // Switch to generated tab
+          setActiveTab('generated')
+
+        } catch (generationError) {
+          console.error('❌ Error generating multi-product creative:', generationError)
+          updateCreativeStatus(multiProductCreativeId, 'failed')
+          toast.error('Failed to generate multi-product creative')
         }
-
-        // Multi-product generation completed
-        console.log(`✅ Completed generating ${uploadedImages.length} individual creatives`);
-        toast.success(`Generated ${uploadedImages.length} individual creatives!`);
-        incrementUsage(); // Increment usage count once for all products
-
-        // Clear the uploaded images after successful generation
-        setUploadedImages([]);
-        setUploadedImageUrls([]);
-        setCollageUrl('');
-        setIsMultiMode(false);
-
-        return; // Exit early for multi-product mode
-
       }
 
       // Single product mode (existing logic continues below)
