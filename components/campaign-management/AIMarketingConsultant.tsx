@@ -604,6 +604,9 @@ I can help with literally anything marketing-related for your brand - performanc
   // Ref to track if usage check is already running
   const usageCheckRunningRef = useRef(false)
 
+  // Ref to track if analyzeAndRespond is already running
+  const analyzeRunningRef = useRef(false)
+
   useEffect(() => {
     // Prevent multiple simultaneous usage checks
     if (usageCheckRunningRef.current) {
@@ -804,6 +807,14 @@ I can help with literally anything marketing-related for your brand - performanc
   }
 
   const analyzeAndRespond = async (prompt: string, messageId: string) => {
+    // Prevent multiple simultaneous API calls
+    if (analyzeRunningRef.current) {
+      console.log('[AI Marketing] API call already in progress, skipping duplicate request')
+      return
+    }
+
+    analyzeRunningRef.current = true
+
     try {
       // Validate required parameters
       if (!selectedBrandId) {
@@ -824,18 +835,20 @@ I can help with literally anything marketing-related for your brand - performanc
         prompt: prompt.substring(0, 50) + '...'
       })
 
-      // If no brand is selected but brands are available, auto-select the first one
+      // Use current selectedBrandId or auto-select if none available
       let brandIdToUse = selectedBrandId
       if (!brandIdToUse && brands.length > 0) {
         console.log('[AI Marketing] Auto-selecting first available brand:', brands[0].id)
         brandIdToUse = brands[0].id
-        setSelectedBrandId(brandIdToUse)
+        // Don't set selectedBrandId here to avoid triggering useEffect again
       }
 
       if (!brandIdToUse) {
         console.error('[AI Marketing] No brand available for API call')
         throw new Error('Please select a brand first')
       }
+
+      console.log('[AI Marketing] About to make fetch call to marketing consultant API')
 
       const response = await fetch('/api/ai/marketing-consultant', {
         method: 'POST',
@@ -856,7 +869,11 @@ I can help with literally anything marketing-related for your brand - performanc
         }),
       })
 
+      console.log('[AI Marketing] Received response with status:', response.status)
+
       const data = await response.json()
+
+      console.log('[AI Marketing] Response data:', { status: response.status, error: data.error, remainingUses: data.remainingUses })
 
       if (!response.ok) {
         // Handle rate limiting
@@ -904,6 +921,7 @@ I can help with literally anything marketing-related for your brand - performanc
           setIsLimitReached(true)
         }
         // Trigger dashboard update
+        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event')
         window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated'))
       } else {
         // console.log('[AI Marketing Frontend] No remainingUses in response!')
@@ -922,6 +940,8 @@ I can help with literally anything marketing-related for your brand - performanc
     } catch (error) {
       console.error('Error in analyzeAndRespond:', error)
       throw error
+    } finally {
+      analyzeRunningRef.current = false
     }
   }
 

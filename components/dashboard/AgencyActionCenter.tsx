@@ -796,10 +796,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
     // Listen for AI consultant usage updates
     const handleAIConsultantUpdate = () => {
+      console.log('[AgencyActionCenter] AI consultant usage update event received')
       if (userId) {
         // Only refresh if we don't already know the user is maxed out
         const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
+        console.log('[AgencyActionCenter] Current AI consultant usage:', currentUsage)
         if (currentUsage < 15) {
+          console.log('[AgencyActionCenter] Calling loadToolUsageData from event handler')
           loadToolUsageData()
         } else {
           console.log('[AgencyActionCenter] Skipping AI consultant update - user already at limit')
