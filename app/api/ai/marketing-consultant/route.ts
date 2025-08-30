@@ -386,19 +386,19 @@ export async function POST(request: NextRequest) {
       }, { status: 422 })
     }
 
-    const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand, mode, conversationHistory)
+    const response = await generatePersonalizedResponse(prompt, analysisData, marketingGoal, userContext, brand, 'brand', conversationHistory)
     console.log(`[AI Marketing] Response generated successfully, now recording usage...`)
 
-    // Record chat usage - now using unified tracking for both modes
-    console.log(`[AI Marketing] Recording usage for userId ${userId}, mode: ${mode}, feature: ai_consultant_chat...`)
-    
+    // Record chat usage - now using unified tracking for brand mode
+    console.log(`[AI Marketing] Recording usage for userId ${userId}, mode: brand, feature: ai_consultant_chat...`)
+
     // Always record in ai_feature_usage table for unified tracking
     await recordAgencyModeUsage(userId, 'ai_consultant_chat', {
       prompt: prompt.substring(0, 100), // Store first 100 chars for tracking
       marketingGoal,
-      mode,
+      mode: 'brand',
       brandId: brandId || null, // Include brandId for context
-      brandNiche: brand?.niche || 'agency-wide',
+      brandNiche: brand?.niche || 'brand-specific',
       timestamp: new Date().toISOString()
     }, supabase)
     console.log(`[AI Marketing] Usage recorded successfully!`)
@@ -1562,229 +1562,20 @@ ${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.ca
 ${analysisData.availableReports?.length > 0 ? `Reports Available:
 ${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.period} report for ${report.brand_name || brandName} (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available'}
 
-DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
 
-IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
 
-You can analyze ANY time period the user requests naturally. If they ask about spending, performance, or metrics WITHOUT specifying a timeframe (like "how much have I spent on ads?"), ask them to clarify the time period they want to analyze (e.g., "For what time period? Last month, last quarter, this year?"). If they mention a specific time period, I'll automatically pull that data.
 
-NAVIGATION & CALL-TO-ACTION GUIDANCE:
-- If users ask how to add/connect brands, direct them to the Lead Generation page (/lead-generator) or Settings page (/settings)
-- If users ask about generating reports, mention the Brand Report feature (/brand-report) where they can create and send automated reports
-- If users ask about creative assets, mention the Ad Creative Studio (/ad-creative-studio)
-- If users ask about campaign optimization, mention the Campaign Management page (/campaign-management)
-- If users ask about analytics, mention the Analytics dashboard (/analytics)
-- If users ask about action center or tasks, mention the Action Center (/action-center)
-- If users need help with Meta/Shopify connections, mention the Settings page (/settings)
-- Always provide clickable page links when suggesting navigation
-- If users don't have any brands connected, proactively suggest they visit /lead-generator to get started
 
-BRAND OPTIMIZATION & REPORTING ACCESS:
-- You have access to available campaign optimizations that can be suggested to users
-- You can suggest generating monthly/quarterly reports using the Brand Report feature
-- You can recommend sending automated reports to brand owners or stakeholders
-- If you see optimization opportunities, suggest specific actions users can take
-- Always mention available reports or optimizations when relevant to user questions
-- You can generate and send reports automatically when users request them
-- When users ask for reports, offer to generate them immediately using current data
 
-MARKETING GOAL FOCUS: ${goalContext}
 
-Your communication style:
-- Only greet the user by name (${userName}) at the START of conversations, NOT in follow-up responses
-- If this is a continuation of an existing conversation, jump straight into answering their question
-- Be conversational and friendly, not formal - like a knowledgeable colleague having a chat
-- Write in plain text without markdown formatting (no *, **, #, -, etc.)
-- Use simple bullet points with • when listing items
-- Respond contextually: if they're saying thanks, being polite, or expressing agreement, respond naturally and conversationally
-- When they ask for analysis or marketing advice, provide detailed insights
-- For simple responses like "thanks", "I'll do that", "sounds good" - respond with encouragement and offer further help
-- Provide specific, actionable recommendations tailored to their marketing goal${brandNiche ? ` and ${brandNiche} industry` : ''}
-- Use data to support your advice but filter recommendations through their goal lens${brandNiche ? ` and industry context` : ''}
-- Focus on ROI and practical next steps that align with their objective${brandNiche ? ` and ${brandNiche} business model` : ''}
-- Keep responses natural - comprehensive for analysis requests (400-600 words), brief for casual chat
-- Never end with formal closers like "Best regards", "Sincerely", etc.
-- End naturally or with a simple encouragement
-- Do not use asterisks, dashes, or other markdown symbols${brandNiche ? `
-- Always contextualize recommendations for the ${brandNiche} industry when relevant` : ''}
-- IMPORTANT: Do not start every response with "Hey [name]!" - only greet at conversation start
 
-${conversationHistory.length > 0 ? `
-CONVERSATION CONTEXT:
-Previous messages:
-${conversationHistory.slice(-4).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
 
-Respond appropriately to their current message considering this conversation flow.` : 'This is the start of your conversation.'}
 
-Current Context:
-- Brand: ${brandName}${brandNiche ? ` (${brandNiche} business)` : ''}
-- Analysis Period: ${dateRange?.from === dateRange?.to ? 'SINGLE DAY' : `${dateRange?.days || 'multiple'} days`} (${dateRange?.from || 'N/A'} to ${dateRange?.to || 'N/A'})
 
-=== EXACT VALUES TO USE (DO NOT MODIFY OR ESTIMATE) ===
-- Total Ad Spend: $${(analysis.totalSpend || 0).toFixed(2)}
-- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x ← USE THIS EXACT VALUE ONLY
-- Total Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
-- Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
-- Total Campaigns: ${campaigns.length}
-- Active Campaigns: ${analysis.activecampaigns || 0}
 
-=== AVAILABLE OPTIMIZATIONS & REPORTS ===
-${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available:
-${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available'}
 
-${analysisData.availableReports?.length > 0 ? `Reports Available:
-${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.period} report for ${report.brand_name || brandName} (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available'}
 
-SHOPIFY DATA AVAILABLE: ${analysisData.shopifyData?.metrics?.totalOrders > 0 ? `YES - ${analysisData.shopifyData.metrics.totalOrders} orders, $${analysisData.shopifyData.metrics.totalRevenue.toFixed(2)} revenue for the requested period` : 'NO SALES DATA for this period'}
-${dateRange?.from === dateRange?.to && analysisData.shopifyData?.metrics?.totalOrders > 0 ? `- SHOPIFY SALES FOR ${dateRange.from}: $${(analysisData.shopifyData?.metrics?.totalRevenue || 0).toFixed(2)} from ${analysisData.shopifyData?.metrics?.totalOrders || 0} orders` : ''}
 
-${analysisData.shopifyData?.metrics?.totalOrders === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
-- Average CPC: $${(analysis.averageCPC || 0).toFixed(2)}
-
-Performance Trends:
-${analysis.trends?.improving?.length > 0 ? `Improving: ${analysis.trends.improving.join(', ')}` : ''}
-${analysis.trends?.declining?.length > 0 ? `Declining: ${analysis.trends.declining.join(', ')}` : ''}
-
-Top Performing Campaigns:
-${(analysis.topPerformers || []).map((c: any, i: number) => `${i+1}. ${c.campaign_name} - ${c.roas?.toFixed(1)}x ROAS, $${c.spent?.toFixed(0)} spent`).join('\n')}
-
-Underperforming Campaigns:
-${(analysis.underPerformers || []).map((c: any, i: number) => `${i+1}. ${c.campaign_name} - ${c.roas?.toFixed(1)}x ROAS, $${c.spent?.toFixed(0)} spent`).join('\n')}
-
-Budget Distribution:
-${(analysis.campaignSpendDistribution || []).slice(0, 5).map((c: any) => `${c.campaign}: ${c.percentage.toFixed(1)}% ($${c.spend.toFixed(0)})`).join('\n')}
-
-${analysisData.shopifyData ? `
-ENHANCED SHOPIFY E-COMMERCE DATA & MARKETING OPPORTUNITIES:
-📊 CORE METRICS:
-- Total Customers: ${analysisData.shopifyData.metrics?.totalCustomers || 0}
-- Total Orders: ${analysisData.shopifyData.metrics?.totalOrders || 0}
-- Total Revenue: $${(analysisData.shopifyData.metrics?.totalRevenue || 0).toFixed(2)}
-- Total Discounts Given: $${(analysisData.shopifyData.metrics?.totalDiscounts || 0).toFixed(2)}
-- Average Order Value: $${(analysisData.shopifyData.metrics?.averageOrderValue || 0).toFixed(2)}
-
-👥 CUSTOMER SEGMENTATION:
-- Total Customers: ${analysisData.shopifyData.directCalculations?.uniqueCustomersFromOrders || 0}
-- Repeat Customers: ${analysisData.shopifyData.directCalculations?.repeatCustomersFromOrders || 0}
-- Repeat Customer Rate: ${(analysisData.shopifyData.directCalculations?.repeatRateFromOrders || 0).toFixed(1)}%
-- High-Value Customers (2x AOV): ${analysisData.shopifyData.metrics?.highValueCustomers || 0}
-
-📦 PRODUCT PERFORMANCE:
-- Total Products: ${analysisData.shopifyData.metrics?.totalProducts || 0}
-- Active Products: ${analysisData.shopifyData.metrics?.activeProducts || 0}
-
-🛒 CART ABANDONMENT INSIGHTS:
-- Total Draft Orders: ${analysisData.shopifyData.metrics?.totalDraftOrders || 0}
-- Abandoned Carts: ${analysisData.shopifyData.metrics?.abandonedCarts || 0}
-- Abandonment Rate: ${(analysisData.shopifyData.metrics?.abandonmentRate || 0).toFixed(1)}%
-
-💰 DISCOUNT PERFORMANCE:
-- Active Discount Codes: ${analysisData.shopifyData.metrics?.activeDiscounts || 0}
-
-📈 PROFIT MARGIN ANALYSIS:
-- Total Revenue: $${(analysisData.shopifyData.metrics?.totalRevenue || 0).toFixed(2)}
-- Total Cost: $${(analysisData.shopifyData.metrics?.marginAnalysis?.totalCost || 0).toFixed(2)}
-- Total Profit: $${(analysisData.shopifyData.metrics?.marginAnalysis?.totalProfit || 0).toFixed(2)}
-- Average Margin: ${(analysisData.shopifyData.metrics?.marginAnalysis?.averageMargin || 0).toFixed(1)}%
-- Orders with Cost Data: ${analysisData.shopifyData.metrics?.marginAnalysis?.ordersWithMarginData || 0}/${analysisData.shopifyData.metrics?.totalOrders || 0} (${(analysisData.shopifyData.metrics?.marginAnalysis?.marginDataCoverage || 0).toFixed(1)}% coverage)
-` : ''}
-
-${analysisData.shopifyData?.inventoryAlerts ? `
-📦 INVENTORY MANAGEMENT ALERTS:
-- Total Inventory Value: $${(analysisData.shopifyData.inventoryAlerts.totalInventoryValue || 0).toFixed(2)}
-- Low Stock Items (≤5 units): ${analysisData.shopifyData.inventoryAlerts.lowStockItems?.length || 0}
-- Out of Stock Items: ${analysisData.shopifyData.inventoryAlerts.outOfStockItems?.length || 0}
-- Items Needing Urgent Replenishment (highly negative): ${analysisData.shopifyData.inventoryAlerts.urgentReplenishment || 0}
-${(analysisData.shopifyData.inventoryAlerts.lowStockItems?.length > 0 || analysisData.shopifyData.inventoryAlerts.outOfStockItems?.length > 0) ? `
-- URGENT: ${analysisData.shopifyData.inventoryAlerts.urgentReplenishment} items need immediate attention for inventory replenishment` : ''}
-${analysisData.shopifyData.inventoryAlerts.needsReplenishment?.length > 0 ? `
-- CRITICAL ITEMS NEEDING REPLENISHMENT:
-${analysisData.shopifyData.inventoryAlerts.needsReplenishment.slice(0, 5).map((item: any) => `  • ${item.product_title}: ${item.inventory_quantity} units (${item.variant_title || 'Default'})`).join('\n')}` : ''}
-` : ''}
-
-${analysisData.metaInsightsData ? `
-META AUDIENCE & DEVICE INSIGHTS (PHASE 1 DEMOGRAPHIC DATA):
-👥 AUDIENCE DEMOGRAPHICS:
-${analysisData.metaInsightsData.insights?.topAgeGroups?.length > 0 ? `Top Age Groups:
-${analysisData.metaInsightsData.insights.topAgeGroups.map((item: any, i: number) => `${i+1}. ${item.age}: ${item.impressions.toLocaleString()} impressions ($${item.spend.toFixed(2)} spent)`).join('\n')}` : '- No age group data available'}
-
-${analysisData.metaInsightsData.insights?.genderDistribution?.length > 0 ? `Gender Performance:
-${analysisData.metaInsightsData.insights.genderDistribution.map((item: any) => `${item.gender}: ${item.impressions.toLocaleString()} impressions, ${item.ctr.toFixed(2)}% CTR ($${item.spend.toFixed(2)} spent)`).join('\n')}` : '- No gender distribution data available'}
-
-📱 DEVICE & PLACEMENT PERFORMANCE:
-${analysisData.metaInsightsData.insights?.topDevices?.length > 0 ? `Top Devices:
-${analysisData.metaInsightsData.insights.topDevices.map((item: any, i: number) => `${i+1}. ${item.device}: ${item.impressions.toLocaleString()} impressions, ${item.ctr.toFixed(2)}% CTR`).join('\n')}` : '- No device performance data available'}
-
-${analysisData.metaInsightsData.insights?.bestPlacements?.length > 0 ? `Best Placements:
-${analysisData.metaInsightsData.insights.bestPlacements.map((item: any, i: number) => `${i+1}. ${item.placement}: ${item.ctr.toFixed(2)}% CTR ($${item.spend.toFixed(2)} spent)`).join('\n')}` : '- No placement performance data available'}
-
-${analysisData.metaInsightsData.insights?.platformBreakdown?.length > 0 ? `Platform Breakdown:
-${analysisData.metaInsightsData.insights.platformBreakdown.map((item: any) => `${item.platform}: ${item.impressions.toLocaleString()} impressions, ${item.ctr.toFixed(2)}% CTR ($${item.spend.toFixed(2)} spent)`).join('\n')}` : '- No platform breakdown data available'}
-
-🎯 AUDIENCE TARGETING INSIGHTS:
-Use this demographic and device data to provide specific targeting recommendations:
-• Age group optimization based on performance data
-• Device-specific ad creative and budget allocation
-• Placement optimization for better CTR and lower costs
-• Gender-based messaging and audience targeting strategies
-• Platform-specific campaign optimization
-` : ''}
-
-${analysisData.shopifyData ? `
-EMAIL/SMS MARKETING STRATEGIES (DATA-DRIVEN):
-🎯 HIGH-PRIORITY SEGMENTS:
-• ${analysisData.shopifyData.conversionFunnel?.customersWithoutOrders || 0} customers without recent orders → Winback campaigns
-• ${analysisData.shopifyData.metrics?.abandonedCarts || 0} abandoned carts → Recovery sequences  
-• ${analysisData.shopifyData.metrics?.highValueCustomers || 0} high-value customers → VIP programs
-
-📧 AUTOMATION SEQUENCES TO BUILD:
-• Welcome series for new customers
-• Cart abandonment emails (${(analysisData.shopifyData.metrics?.abandonmentRate || 0).toFixed(1)}% abandonment rate)
-• Post-purchase follow-up sequences
-• Replenishment campaigns based on order history
-• Win-back campaigns for inactive customers
-
-💡 OPTIMIZATION OPPORTUNITIES:
-• Discount strategy refinement (currently $${(analysisData.shopifyData.metrics?.totalDiscounts || 0).toFixed(2)} in discounts)
-• AOV increase tactics (current: $${(analysisData.shopifyData.metrics?.averageOrderValue || 0).toFixed(2)})
-• Customer lifetime value improvement
-• Product cross-sell/upsell opportunities
-${analysisData.shopifyData.metrics?.marginAnalysis?.averageMargin ? `
-• Profit margin optimization (current: ${analysisData.shopifyData.metrics.marginAnalysis.averageMargin.toFixed(1)}% avg margin)
-${analysisData.shopifyData.metrics.marginAnalysis.averageMargin < 20 ? '  ⚠️ LOW MARGIN ALERT: Focus on high-margin products and reduce discount dependency' : ''}
-${analysisData.shopifyData.metrics.marginAnalysis.averageMargin > 50 ? '  ✅ HEALTHY MARGINS: Opportunity for strategic price testing and premium positioning' : ''}
-• Margin-based customer segmentation and targeted promotions` : ''}
-
-Use this comprehensive Shopify data to provide specific, actionable email/SMS recommendations.
-` : ''}
-
-${analysisData.shopifyData?.abandonedCartAnalysis ? `
-🛒 ABANDONED CART ANALYSIS:
-- Total Abandoned Carts: ${analysisData.shopifyData.abandonedCartAnalysis.overview?.totalAbandoned || 0}
-- Total Abandoned Value: $${(analysisData.shopifyData.abandonedCartAnalysis.overview?.totalValue || 0).toFixed(2)}
-- Average Cart Value: $${(analysisData.shopifyData.abandonedCartAnalysis.overview?.averageValue || 0).toFixed(2)}
-- Recovery Rate: ${(analysisData.shopifyData.abandonedCartAnalysis.overview?.recoveryRate || 0).toFixed(1)}%
-` : ''}
-
-${analysisData.shopifyData?.customerSegmentation ? `
-👥 CUSTOMER SEGMENTATION ANALYSIS:
-- Total Customers: ${analysisData.shopifyData.customerSegmentation.overview?.totalCustomers || 0}
-- High Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.high?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.high?.percentage || 0).toFixed(1)}%)
-- Medium Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.medium?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.medium?.percentage || 0).toFixed(1)}%)
-- Low Value Customers: ${analysisData.shopifyData.customerSegmentation.overview?.segments?.low?.count || 0} (${(analysisData.shopifyData.customerSegmentation.overview?.segments?.low?.percentage || 0).toFixed(1)}%)
-` : ''}
-
-${analysisData.shopifyData?.topCustomers?.length > 0 ? `
-🏆 TOP CUSTOMERS BY SPENDING (Date Range: ${JSON.stringify(analysisData.dateRange || 'All Time')}):
-${analysisData.shopifyData.topCustomers.slice(0, 10).map((customer: any, i: number) => `${i+1}. ${customer.customerName || customer.customerEmail || 'Unknown'} - $${customer.totalSpent.toFixed(2)} (${customer.orderCount} orders, avg: $${customer.avgOrderValue.toFixed(2)})`).join('\n')}
-
-💰 CUSTOMER INSIGHTS:
-- Highest spender: $${analysisData.shopifyData.topCustomers[0]?.totalSpent?.toFixed(2) || '0.00'}
-- Top 10 customers represent ${analysisData.shopifyData.topCustomers.slice(0, 10).reduce((sum: number, c: any) => sum + c.totalSpent, 0).toFixed(2)} in revenue
-- Average orders per top customer: ${(analysisData.shopifyData.topCustomers.slice(0, 10).reduce((sum: number, c: any) => sum + c.orderCount, 0) / Math.min(10, analysisData.shopifyData.topCustomers.length)).toFixed(1)}
-
-Use this data to answer questions about top customers, customer performance, and personalized recommendations.
-` : ''}
 
 
 
