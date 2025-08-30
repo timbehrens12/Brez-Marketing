@@ -480,25 +480,31 @@ export default function AIMarketingConsultant(
 
   // Load messages from localStorage on component mount
   useEffect(() => {
-    const savedMessages = localStorage.getItem(`ai-chat-${user?.id}-${selectedBrandId}`)
-    if (savedMessages) {
+    if (user?.id && selectedBrandId) {
       try {
-        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }))
-        setMessages(parsedMessages)
-        setIsInitialized(true)
+        const savedMessages = localStorage.getItem(`ai-chat-${user.id}-${selectedBrandId}`)
+        if (savedMessages) {
+          const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+          setMessages(parsedMessages)
+        }
       } catch (error) {
         console.error('Error loading saved messages:', error)
       }
     }
+    setIsInitialized(true)
   }, [user?.id, selectedBrandId])
 
   // Save messages to localStorage whenever messages change
   useEffect(() => {
-    if (messages.length > 0 && isInitialized) {
-      localStorage.setItem(`ai-chat-${user?.id}-${selectedBrandId}`, JSON.stringify(messages))
+    if (messages.length > 0 && isInitialized && user?.id && selectedBrandId) {
+      try {
+        localStorage.setItem(`ai-chat-${user.id}-${selectedBrandId}`, JSON.stringify(messages))
+      } catch (error) {
+        console.error('Error saving messages:', error)
+      }
     }
   }, [messages, user?.id, selectedBrandId, isInitialized])
 
