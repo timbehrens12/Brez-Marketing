@@ -3147,7 +3147,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
           <div className="p-6">
             {activeTab === 'create' ? (
               <div className="space-y-6">
-                {!uploadedImage ? (
+                {!uploadedImage && (!isMultiMode || uploadedImages.length === 0) ? (
                   // No Product Uploaded State - Horizontal Layout
                   <div className="py-12">
                     <div className="max-w-6xl mx-auto">
