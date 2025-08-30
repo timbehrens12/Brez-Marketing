@@ -2526,22 +2526,41 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       // console.log('📷 Image size:', base64Image.length, 'characters')
       // console.log('📋 Text overlays:', customText)
 
-      const response = await fetch('/api/generate-background', {
+      // Create FormData for the new Gemini API
+      const formData = new FormData();
+      
+      // Convert base64 back to file for the new API
+      const base64Data = base64Image.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const imageBlob = new Blob([byteArray], { type: uploadedImage?.type || 'image/jpeg' });
+      const imageFile = new File([imageBlob], uploadedImage?.name || 'image.jpg', { type: uploadedImage?.type || 'image/jpeg' });
+      
+      formData.append('image', imageFile);
+      // Map style IDs to background types for the new Gemini API
+      const backgroundTypeMapping: { [key: string]: string } = {
+        'concrete-floor': 'concrete',
+        'marble-surface': 'marble', 
+        'wooden-tabletop': 'wood',
+        'white-background': 'minimalist',
+        'cotton-sheet': 'fabric',
+        // Add more mappings as needed
+      };
+      
+      const backgroundType = backgroundTypeMapping[modalStyle.id] || 'minimalist'; // Default to minimalist
+      formData.append('backgroundType', backgroundType);
+      formData.append('aspectRatio', 'portrait'); // Default to portrait for fashion shots
+      formData.append('quality', 'hd'); // Use high quality
+      formData.append('lighting', 'soft');
+      formData.append('customPromptModifiers', enhancedPrompt);
+
+      const response = await fetch('/api/ai/generate-creative', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64Image,
-          prompt: enhancedPrompt,
-          style: modalStyle.id,
-          brandId: selectedBrandId,
-          userId: user?.id,
-          styleName: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.name,
-          textOverlays: { top: customText.top, bottom: customText.bottom },
-          saveToDatabase: true,
-          customName: finalName
-        }),
+        body: formData, // Use FormData instead of JSON
       })
 
       if (!response.ok) {
