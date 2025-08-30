@@ -611,25 +611,31 @@ I can help with literally anything marketing-related for your brand - performanc
         return
       }
 
-      // Only check usage if we have both user and selectedBrandId
-      if (!user?.id || !selectedBrandId) {
-        console.log('[AI Marketing] Skipping initial usage check - missing user or brandId', {
+      // Only check usage if we have user
+      if (!user?.id) {
+        console.log('[AI Marketing] Skipping initial usage check - missing user')
+        return
+      }
+
+      // If no brand is selected but brands are available, auto-select the first one
+      let brandIdToUse = selectedBrandId
+      if (!brandIdToUse && brands.length > 0) {
+        console.log('[AI Marketing] Auto-selecting first available brand for usage check:', brands[0].id)
+        brandIdToUse = brands[0].id
+        setSelectedBrandId(brandIdToUse)
+      }
+
+      // Only proceed if we have a brand to use
+      if (!brandIdToUse) {
+        console.log('[AI Marketing] Skipping initial usage check - no brand available', {
           hasUser: !!user?.id,
-          hasBrandId: !!selectedBrandId,
-          brandCount: brands.length
+          brandCount: brands.length,
+          selectedBrandId
         })
         return
       }
 
       try {
-        // If no brand is selected but brands are available, auto-select the first one
-        let brandIdToUse = selectedBrandId
-        if (!brandIdToUse && brands.length > 0) {
-          console.log('[AI Marketing] Auto-selecting first available brand for usage check:', brands[0].id)
-          brandIdToUse = brands[0].id
-          setSelectedBrandId(brandIdToUse)
-        }
-
         // console.log('[AI Marketing] Checking initial usage for brand:', brandIdToUse)
         const response = await fetch('/api/ai/marketing-consultant', {
           method: 'POST',
