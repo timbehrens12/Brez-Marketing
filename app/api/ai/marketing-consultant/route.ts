@@ -1669,6 +1669,13 @@ Current Context:
 - Total Campaigns: ${campaigns.length}
 - Active Campaigns: ${analysis.activecampaigns || 0}
 
+=== RECENT PERFORMANCE (LAST 7 DAYS) - USE FOR CURRENT STATUS ===
+- Recent Ad Spend: $${(analysisData.recentPerformance?.recentSpend || 0).toFixed(2)}
+- Recent Meta Revenue: $${(analysisData.recentPerformance?.recentRevenue || 0).toFixed(2)}
+- Recent ROAS: ${(analysisData.recentPerformance?.recentROAS || 0).toFixed(2)}x ← USE THIS FOR "HOW IS MY CAMPAIGN GOING" QUESTIONS
+- Recent Impressions: ${(analysisData.recentPerformance?.recentImpressions || 0).toLocaleString()}
+- Recent Clicks: ${(analysisData.recentPerformance?.recentClicks || 0)}
+
 === AVAILABLE OPTIMIZATIONS & REPORTS ===
 ${analysisData.brandOptimizations?.length > 0 ? `Campaign Optimizations Available:
 ${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.campaign_name}: ${opt.recommendation?.title || 'Optimization available'}`).join('\n')}` : 'No campaign optimizations currently available'}
