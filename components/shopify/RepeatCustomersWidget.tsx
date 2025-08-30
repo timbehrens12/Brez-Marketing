@@ -271,7 +271,7 @@ export function RepeatCustomersWidget({
             <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                <span className="text-sm font-medium text-white">Occasional (>90 days)</span>
+                <span className="text-sm font-medium text-white">Occasional (&gt;90 days)</span>
               </div>
               <div className="text-lg font-bold text-white">{data.frequencySegments.occasional.count}</div>
               <div className="text-xs text-gray-400">{formatCurrency(data.frequencySegments.occasional.revenue)} revenue</div>
