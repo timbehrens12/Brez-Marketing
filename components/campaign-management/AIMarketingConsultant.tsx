@@ -606,7 +606,7 @@ I can help with literally anything marketing-related for your brand - performanc
       console.log('[AI Marketing] Checking initial usage - user:', user?.id, 'brandId:', selectedBrandId, 'brands:', brands.length)
 
       // Skip API call if we already know the user is maxed out
-      if (remainingUses === 0) {
+      if (remainingUses === 0 || isLimitReached) {
         console.log('[AI Marketing] Skipping usage check - user already at limit')
         return
       }
@@ -723,7 +723,7 @@ I can help with literally anything marketing-related for your brand - performanc
   }
 
   const handleCustomInput = async (customPrompt: string) => {
-    if (isLoading || isLimitReached || !customPrompt.trim() || !selectedBrandId) return
+    if (isLoading || isLimitReached || remainingUses <= 0 || !customPrompt.trim() || !selectedBrandId) return
 
     // Add user message
     const userMessage: ChatMessage = {
