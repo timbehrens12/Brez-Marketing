@@ -680,13 +680,12 @@ I can help with literally anything marketing-related for your brand - performanc
           } else if (response.status === 429) {
             setRemainingUses(0)
             setIsLimitReached(true)
-            // Notify dashboard that user has reached the limit
-            console.log('[AI Marketing] User reached daily limit - notifying dashboard')
-            window.dispatchEvent(new CustomEvent('ai-consultant-limit-reached', {
+            // Trigger dashboard update with max usage
+            console.log('[AI Marketing] Usage check returned 429, user at limit')
+            window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
               detail: {
-                userId: user?.id,
-                limitReached: true,
-                usedCount: 15
+                usedCount: 15,
+                remainingUses: 0
               }
             }))
           } else {
@@ -899,6 +898,14 @@ I can help with literally anything marketing-related for your brand - performanc
         // Handle rate limiting
         if (response.status === 429) {
           setIsLimitReached(true)
+          // Trigger dashboard update with max usage
+          console.log('[AI Marketing] Analysis call returned 429, user at limit')
+          window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
+            detail: {
+              usedCount: 15,
+              remainingUses: 0
+            }
+          }))
           setMessages(prev => prev.map(msg =>
             msg.id === messageId
               ? {
@@ -940,13 +947,13 @@ I can help with literally anything marketing-related for your brand - performanc
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
-        // Trigger dashboard update with usage data
-        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event with remaining uses:', data.remainingUses)
+        // Trigger dashboard update with current usage
+        const usedCount = Math.max(0, 15 - (data.remainingUses || 0))
+        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event with used count:', usedCount)
         window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated', {
           detail: {
-            userId: user?.id,
-            remainingUses: data.remainingUses,
-            usedCount: Math.max(0, 15 - data.remainingUses)
+            usedCount: usedCount,
+            remainingUses: data.remainingUses || 0
           }
         }))
       } else {
