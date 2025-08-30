@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
 // Weekly usage limits for creative generation
 const WEEKLY_CREATIVE_LIMIT = 50; // 50 creative generations per week
@@ -131,7 +129,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🎨 Generating creative with DALL-E...');
+    console.log('🎨 Generating creative with Gemini Flash 2.5...');
     console.log('📦 Image file:', imageFile.name, imageFile.size, 'bytes');
 
     // Step 1: Analyze the uploaded image to get a detailed description
@@ -139,31 +137,22 @@ export async function POST(request: NextRequest) {
     const base64Image = Buffer.from(imageBuffer).toString('base64');
     const imageDataUrl = `data:${imageFile.type};base64,${base64Image}`;
 
-    console.log('🔍 Analyzing uploaded image...');
+    console.log('🔍 Analyzing uploaded image with Gemini 2.5 Flash Image...');
 
-    const analysisResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Analyze this product image and provide a detailed description that captures all the important visual details including: colors, patterns, text/logos, fabric texture, shape, style, and any distinctive features. Be very specific and detailed as this will be used to recreate the product in a new setting."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: imageDataUrl
-              }
-            }
-          ]
+    // Use Gemini 2.5 Flash Image for both analysis and generation
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
+
+    const analysisResult = await imageModel.generateContent([
+      "Analyze this product image and provide a detailed description that captures all the important visual details including: colors, patterns, text/logos, fabric texture, shape, style, and any distinctive features. Be very specific and detailed as this will be used to recreate the product in a new setting.",
+      {
+        inlineData: {
+          mimeType: imageFile.type,
+          data: base64Image
         }
-      ],
-      max_tokens: 500
-    });
+      }
+    ]);
 
-    const productDescription = analysisResponse.choices[0]?.message?.content || 'product';
+    const productDescription = analysisResult.response.text() || 'product';
     console.log('📝 Product analysis:', productDescription);
 
     // Step 2: Build the complete prompt with background and modifiers
@@ -187,66 +176,62 @@ ${backgroundPreset.prompt}`;
 
     console.log('🎯 Final prompt:', prompt);
 
-    // Step 3: Generate the new image using DALL-E
-    let response;
+    // Step 3: Generate the image directly using Gemini 2.5 Flash Image
+    console.log('🎨 Generating image with Gemini 2.5 Flash Image...');
+
+    let generatedImageUrl = null;
+
     try {
-      response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: prompt,
-        size: ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] as "1024x1024" | "1536x1024" | "1024x1536",
-        quality: QUALITY_SETTINGS[quality as keyof typeof QUALITY_SETTINGS] as "standard" | "hd",
-        n: 1
-      });
-    } catch (openaiError: any) {
-      console.error('OpenAI API Error:', openaiError);
-      
-      // Handle specific OpenAI errors with user-friendly messages
-      if (openaiError?.error?.code === 'content_policy_violation') {
-        return NextResponse.json({
-          error: 'Content Policy Violation',
-          message: 'The image generation request was blocked due to OpenAI content policy. Please try a different prompt or remove any potentially inappropriate content.',
-          userFriendly: true
-        }, { status: 400 });
+      const imageGenerationResult = await imageModel.generateContent([
+        prompt, // The enhanced prompt for image generation
+        {
+          inlineData: {
+            mimeType: imageFile.type,
+            data: base64Image
+          }
+        }
+      ]);
+
+      // Extract the generated image from the response
+      let generatedImageData = null;
+
+      const candidates = imageGenerationResult.response.candidates;
+      if (!candidates || candidates.length === 0) {
+        throw new Error('No response candidates from Gemini API');
       }
-      
-      if (openaiError?.error?.code === 'billing_not_active') {
-        return NextResponse.json({
-          error: 'Billing Issue',
-          message: 'OpenAI billing is not active. Please contact support.',
-          userFriendly: true
-        }, { status: 402 });
+
+      const content = candidates[0].content;
+      if (!content || !content.parts) {
+        throw new Error('No content parts in Gemini API response');
       }
-      
-      if (openaiError?.error?.code === 'rate_limit_exceeded') {
-        return NextResponse.json({
-          error: 'Rate Limit Exceeded',
-          message: 'Too many requests. Please wait a moment and try again.',
-          userFriendly: true
-        }, { status: 429 });
+
+      for (const part of content.parts) {
+        if (part.inlineData) {
+          // Convert the generated image data to base64 for storage/response
+          generatedImageData = part.inlineData.data;
+          // Create a data URL for the response
+          generatedImageUrl = `data:${part.inlineData.mimeType};base64,${Buffer.from(generatedImageData).toString('base64')}`;
+          break;
+        }
       }
-      
-      // Generic OpenAI error
+
+      if (!generatedImageUrl) {
+        throw new Error('No image was generated by Gemini 2.5 Flash Image');
+      }
+
+      console.log('✅ Image generated successfully with Gemini 2.5 Flash Image');
+    } catch (imageGenError: any) {
+      console.error('Gemini 2.5 Flash Image Generation Error:', imageGenError);
+
       return NextResponse.json({
         error: 'Image Generation Failed',
-        message: 'Unable to generate image. Please try a different prompt or contact support if the issue persists.',
-        details: openaiError?.error?.message || 'Unknown OpenAI error',
+        message: 'Unable to generate image with Gemini 2.5 Flash Image. Please try again or contact support.',
+        details: imageGenError?.message || 'Unknown Gemini API error',
         userFriendly: true
       }, { status: 500 });
     }
 
-    const generatedImageUrl = response.data?.[0]?.url;
-
-    if (!generatedImageUrl) {
-      return NextResponse.json({
-        error: 'Generation Failed',
-        message: 'No image was generated. Please try again with a different prompt.',
-        userFriendly: true
-      }, { status: 500 });
-    }
-
-    console.log('✅ Image generated successfully');
-
-    // Track usage in database
+      // Track usage in database
     try {
       await supabase
         .from('ai_feature_usage')
@@ -259,11 +244,12 @@ ${backgroundPreset.prompt}`;
             aspectRatio,
             quality,
             lighting,
-            customModifiers: !!customPromptModifiers
+            customModifiers: !!customPromptModifiers,
+            model: 'gemini-2.5-flash-image-preview'
           },
           created_at: new Date().toISOString()
         });
-      
+
       console.log('✅ Usage tracked successfully');
     } catch (usageTrackingError) {
       console.error('Error tracking usage:', usageTrackingError);
@@ -276,7 +262,8 @@ ${backgroundPreset.prompt}`;
       backgroundType,
       aspectRatio,
       quality,
-      productDescription: productDescription.substring(0, 100) + '...',// Return truncated description
+      productDescription: productDescription.substring(0, 100) + '...',
+      model: 'gemini-2.5-flash-image-preview',
       usage: {
         used: currentWeeklyUsage + 1,
         limit: WEEKLY_CREATIVE_LIMIT,
@@ -295,16 +282,16 @@ ${backgroundPreset.prompt}`;
         userFriendly: true
       }, { status: 400 });
     }
-    
-    if (error.code === 'content_policy_violation') {
+
+    if (error.message?.includes('content') || error.message?.includes('policy')) {
       return NextResponse.json({
         error: 'Content Policy Violation',
-        message: 'Image content violates OpenAI policy. Please use appropriate product images and avoid inappropriate prompts.',
+        message: 'Content violates policy. Please use appropriate product images and avoid inappropriate prompts.',
         userFriendly: true
       }, { status: 400 });
     }
 
-    if (error.message?.includes('vision')) {
+    if (error.message?.includes('vision') || error.message?.includes('image')) {
       return NextResponse.json({
         error: 'Image Analysis Failed',
         message: 'Failed to analyze image. Please try with a clearer product photo.',

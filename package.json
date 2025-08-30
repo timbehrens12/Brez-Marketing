@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.9",
+    "@google/generative-ai": "^0.24.1",
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.9.1",
     "@mantine/core": "^8.1.1",
