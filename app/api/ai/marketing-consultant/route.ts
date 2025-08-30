@@ -339,14 +339,14 @@ export async function POST(request: NextRequest) {
 
       const { brandId, prompt, marketingGoal, userContext, checkUsageOnly = false, conversationHistory = [], dateRange } = await request.json()
      
-     if (!checkUsageOnly && !prompt) {
-       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
-     }
-     
-     // Brand ID is always required
-     if (!brandId) {
-       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
-     }
+         if (!checkUsageOnly && !prompt) {
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+    }
+
+    // Brand ID is required for actual queries, but not for usage checks
+    if (!checkUsageOnly && !brandId) {
+      return NextResponse.json({ error: 'Brand ID is required for queries' }, { status: 400 })
+    }
 
     // Initialize Supabase client
     const supabase = createClient()
