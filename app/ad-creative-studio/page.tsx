@@ -2578,6 +2578,44 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
       incrementUsage() // Increment usage count on successful generation
+
+      // Save the creative to the database
+      try {
+        const saveResponse = await fetch('/api/creative-generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId: selectedBrandId,
+            userId: user?.id,
+            styleId: modalStyle.id,
+            styleName: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.name,
+            originalImageUrl: uploadedImageUrl,
+            generatedImageUrl: data.imageUrl,
+            promptUsed: enhancedPrompt,
+            textOverlays: customText,
+            metadata: {
+              backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
+              aspectRatio: 'portrait',
+              quality: 'hd',
+              lighting: 'soft',
+              customModifiers: !!customInstructions,
+              model: data.model || 'gemini-2.5-flash-image-preview'
+            },
+            customName: finalName
+          }),
+        })
+
+        if (saveResponse.ok) {
+          console.log('✅ Creative saved to database successfully')
+        } else {
+          console.error('❌ Failed to save creative to database:', await saveResponse.text())
+        }
+      } catch (saveError) {
+        console.error('❌ Error saving creative to database:', saveError)
+        // Don't fail the generation if database save fails
+      }
       
       // Immediately set the loaded images to display the result without API call
       setLoadedImages(prev => ({
