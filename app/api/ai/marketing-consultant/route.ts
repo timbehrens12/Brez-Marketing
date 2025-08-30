@@ -455,11 +455,8 @@ export async function POST(request: NextRequest) {
       validationErrors.push(`Data attribution issue: Zero ad spend but $${analysisData.analysis.totalRevenue} revenue`)
     }
 
-    // Check for broken Meta attribution (high spend, very low attributed revenue)
-    if (analysisData.analysis?.totalSpend > 10 && analysisData.analysis?.averageROAS === 0) {
-      console.warn(`[AI Marketing] META ATTRIBUTION BROKEN: $${analysisData.analysis.totalSpend} spend but 0.00x ROAS - attribution not working`)
-      validationErrors.push(`Meta attribution issue: $${analysisData.analysis.totalSpend} ad spend but no attributed revenue detected`)
-    }
+    // Note: We no longer validate for "broken attribution" - show whatever Meta API returns
+    // If Meta shows 0 ROAS, that's the real data and should be reported as such
 
     if (validationErrors.length > 0) {
       console.error(`[AI Marketing] Data validation failed:`, validationErrors)
@@ -1359,26 +1356,16 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
   const totalImpressions = dailyStats.reduce((sum, d) => sum + (d.impressions || 0), 0)
   const totalClicks = dailyStats.reduce((sum, d) => sum + (d.clicks || 0), 0)
 
-  // Calculate averages - use Meta revenue for Meta ROAS
-  let averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
-
-  // Force ROAS to 0.00x if Meta attribution data is clearly broken
-  // If spend > $10 but attributed revenue < $1, attribution is likely not working
-  if (totalSpend > 10 && metaOnlyRevenue < 1) {
-    console.warn(`[AI Marketing] FORCING ROAS TO 0.00x - Meta attribution appears broken: $${totalSpend} spend but only $${metaOnlyRevenue} attributed revenue`)
-    averageROAS = 0
-  }
+  // Calculate averages - use Meta revenue for Meta ROAS (show whatever Meta API returns)
+  const averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
   
-  console.log(`[AI Marketing Consultant] analyzeCampaignData revenue breakdown:`, {
-    metaRevenue,
-    shopifyRevenue,
-    totalRevenue,
-    totalSpend,
-    averageROAS,
-    calculation: `${metaRevenue} / ${totalSpend} = ${averageROAS}x`,
-    dataSource: 'Meta purchase_value only'
+  console.log(`[AI Marketing Consultant] REAL META DATA:`, {
+    metaRevenue: `$${metaRevenue.toFixed(2)} (from Meta API purchase_value)`,
+    totalSpend: `$${totalSpend.toFixed(2)} (from Meta API spend)`,
+    calculatedROAS: `${averageROAS.toFixed(2)}x (real Meta attribution)`,
+    note: 'This shows the actual Meta API data - no mixing with Shopify'
   })
 
       // Debug: Log individual daily stats to see purchase_value data
@@ -1604,8 +1591,7 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - NEVER INVENT ROAS, spend amounts, or performance metrics that aren't in the actual data provided
 - If you don't have data for a specific metric, say "I don't have that data available for this time period"
 - Always use the EXACT numbers from the context - do not round, estimate, modify, or invent numbers
-- When discussing ROAS: ONLY use the averageROAS value shown in the context (e.g., if it shows 0.00, say "0.00x", not "10.99x" or any other number)
-- CRITICAL: If averageROAS shows 0.00x, this means Meta attribution is not working - do NOT estimate or calculate a different ROAS value
+- When discussing ROAS: ONLY use the averageROAS value shown in the context - report the exact Meta API data, whether it's 0.00x or 100.00x
 - When discussing spend: ONLY use the totalSpend value shown in the context
 - DO NOT calculate or estimate ROAS yourself - use the pre-calculated averageROAS from the data
 - If averageROAS is 0.00, say "The ROAS is currently 0.00x" - do not invent or estimate a different value like "10.99x"
