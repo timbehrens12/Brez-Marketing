@@ -2159,9 +2159,18 @@ Each item should be perfectly extracted and arranged to create a beautiful multi
     }
   }
 
-  const filteredStyleOptions = selectedCategory === 'all' 
-    ? STYLE_OPTIONS 
+  const filteredStyleOptions = selectedCategory === 'all'
+    ? STYLE_OPTIONS
     : STYLE_OPTIONS.filter(style => style.category === selectedCategory)
+
+  // When multiple images are uploaded, only show multi-product compatible templates
+  const finalFilteredStyleOptions = isMultiMode && uploadedImages.length > 1
+    ? filteredStyleOptions.filter(style =>
+        style.id === 'multi-product-showcase' ||
+        style.id === 'custom-template' ||
+        style.category === 'all'
+      )
+    : filteredStyleOptions
 
   // Text preset functions
   const handlePresetSelect = (position: 'top' | 'bottom', presetKey: string) => {
@@ -3333,7 +3342,13 @@ Each item should be perfectly extracted and arranged to create a beautiful multi
                       
                       {/* Category Filter */}
                       <div className="flex gap-2">
-                        {TEMPLATE_CATEGORIES.map((category) => (
+                        {TEMPLATE_CATEGORIES.filter(category => {
+                          // When multiple images uploaded, only show categories with multi-product templates
+                          if (isMultiMode && uploadedImages.length > 1) {
+                            return category.id === 'all';
+                          }
+                          return true;
+                        }).map((category) => (
                           <button
                             key={category.id}
                             onClick={() => setSelectedCategory(category.id)}
@@ -3349,6 +3364,43 @@ Each item should be perfectly extracted and arranged to create a beautiful multi
                       </div>
                     </div>
                                      <div className="space-y-8">
+                     {/* Multi-Product Templates Section - Only show when multiple images uploaded */}
+                     {isMultiMode && uploadedImages.length > 1 && (
+                       <div>
+                         <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                           <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                           </svg>
+                           Multi-Product Templates
+                         </h3>
+                         <div className="grid grid-cols-1 gap-6">
+                           <div
+                             onClick={() => openStyleModal(STYLE_OPTIONS.find(s => s.id === 'multi-product-showcase')!)}
+                             className="bg-gradient-to-br from-[#222] via-[#252525] to-[#1e1e1e] border border-[#333] rounded-xl p-6 transition-all duration-300 group hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 cursor-pointer"
+                           >
+                             <div className="flex items-center gap-4">
+                               <div className="w-16 h-16 bg-gradient-to-br from-[#333] to-[#222] border border-[#444] rounded-xl flex items-center justify-center">
+                                 <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                                 </svg>
+                               </div>
+                               <div className="flex-1">
+                                 <h4 className="text-white text-xl font-bold mb-2">Multi-Product Showcase</h4>
+                                 <p className="text-gray-300 text-sm leading-relaxed">
+                                   Display multiple clothing items extracted from separate images in one elegant creative. Perfect for fashion collections and product showcases.
+                                 </p>
+                               </div>
+                               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                 </svg>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     )}
+
                      {/* Custom Template Section */}
                      <div>
                        <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
@@ -3384,8 +3436,8 @@ Each item should be perfectly extracted and arranged to create a beautiful multi
                        </div>
                      </div>
 
-                     {/* Clothing & Apparel Section */}
-                     {(selectedCategory === 'all' || selectedCategory === 'clothing' || selectedCategory === 'clothing-backgrounds' || selectedCategory === 'clothing-environments' || selectedCategory === 'clothing-models') && (
+                     {/* Clothing & Apparel Section - Hide when multiple images uploaded */}
+                     {(selectedCategory === 'all' || selectedCategory === 'clothing' || selectedCategory === 'clothing-backgrounds' || selectedCategory === 'clothing-environments' || selectedCategory === 'clothing-models') && !(isMultiMode && uploadedImages.length > 1) && (
                        <div>
                          <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3505,8 +3557,8 @@ Each item should be perfectly extracted and arranged to create a beautiful multi
                        </div>
                      )}
  
-                     {/* Physical Products Section */}
-                     {(selectedCategory === 'all' || selectedCategory === 'products') && (
+                     {/* Physical Products Section - Hide when multiple images uploaded */}
+                     {(selectedCategory === 'all' || selectedCategory === 'products') && !(isMultiMode && uploadedImages.length > 1) && (
                        <div>
                          <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
                            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
