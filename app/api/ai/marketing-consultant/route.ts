@@ -1791,6 +1791,28 @@ Use this data to answer questions about top customers, customer performance, and
 Filter all recommendations through their marketing goal${brandNiche ? ` and ${brandNiche} industry context` : ''}. Provide specific campaign names, numbers, and actionable next steps based on this real data while keeping their objective${brandNiche ? ` and industry` : ''} as the primary focus. When discussing SMS/email marketing, reference the specific Shopify metrics to make recommendations data-driven and personalized.`
 
   try {
+    // Validate and sanitize system prompt
+    if (!systemPrompt || systemPrompt.length === 0) {
+      console.error('[AI Marketing] System prompt is empty!')
+      throw new Error('System prompt is empty')
+    }
+
+    if (systemPrompt.length > 32000) {
+      console.error('[AI Marketing] System prompt too long:', systemPrompt.length)
+      throw new Error('System prompt too long')
+    }
+
+    // Check for undefined values in system prompt
+    if (systemPrompt.includes('undefined') || systemPrompt.includes('null')) {
+      console.error('[AI Marketing] System prompt contains undefined/null values!')
+      console.error('[AI Marketing] System prompt preview:', systemPrompt.substring(0, 500))
+      throw new Error('System prompt contains undefined values')
+    }
+
+    // Debug the system prompt before sending to OpenAI
+    console.log('[AI Marketing] System prompt length:', systemPrompt.length)
+    console.log('[AI Marketing] User prompt:', prompt.substring(0, 200) + '...')
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -1810,16 +1832,30 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
     })
 
     const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${brandName}${brandNiche ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
-    
+
+    console.log('[AI Marketing] OpenAI response generated successfully, length:', aiResponse.length)
+
     // Final safety check on the AI response
     if (containsInappropriateContent(aiResponse)) {
       return `Hi ${userName}! I'm your marketing consultant assistant focused on helping with campaign optimization and marketing strategies. Let me help you with a marketing-related question instead - I can analyze your performance data, suggest optimization strategies, or help with campaign planning!`
     }
-    
+
     return aiResponse
 
   } catch (error) {
     console.error('Error generating AI response:', error)
+    console.error('Error details:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type
+    })
+
+    // Check if it's an OpenAI API error
+    if (error.status === 400) {
+      console.error('OpenAI API 400 error - likely system prompt issue')
+    }
+
     return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${brandName} data. In the meantime, I can see you have spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
   }
 }
