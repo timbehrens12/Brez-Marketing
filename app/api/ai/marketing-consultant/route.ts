@@ -5,8 +5,8 @@ import OpenAI from 'openai'
 import { aiUsageService } from '@/lib/services/ai-usage-service'
 import { getCurrentLocalDateString } from '@/lib/utils/timezone'
 
-// Smart date range parsing from natural language
-function parseeDateRangeFromPrompt(prompt: string): { from?: string, to?: string, days?: number } | null {
+// Smart date range parsing from natural language and conversation history
+function parseeDateRangeFromPrompt(prompt: string, conversationHistory: any[] = []): { from?: string, to?: string, days?: number } | null {
   const lowerPrompt = prompt.toLowerCase()
   // Use Eastern Time to get the correct "today" for US-based businesses
   const today = new Date()
@@ -166,7 +166,91 @@ function parseeDateRangeFromPrompt(prompt: string): { from?: string, to?: string
       }
     }
   }
-  
+
+  // Check conversation history for date context (if no explicit date found in current prompt)
+  if (conversationHistory && conversationHistory.length > 0) {
+    console.log(`[AI Marketing] Checking conversation history for date context...`)
+
+    // Look through recent conversation history for date mentions
+    for (let i = conversationHistory.length - 1; i >= 0 && i >= conversationHistory.length - 5; i--) {
+      const message = conversationHistory[i]
+      if (message.role === 'user') {
+        // Parse the historical message directly (avoid recursion)
+        const lowerHistoryPrompt = message.content.toLowerCase()
+
+        // Check for common date patterns in history
+        if (lowerHistoryPrompt.includes('today')) {
+          const today = new Date()
+          const easternTime = new Date(today.toLocaleString("en-US", {timeZone: "America/New_York"}))
+          const todayStr = easternTime.toISOString().split('T')[0]
+          console.log(`[AI Marketing] Found 'today' context from conversation history: ${todayStr}`)
+          return {
+            from: todayStr,
+            to: todayStr
+          }
+        }
+
+        if (lowerHistoryPrompt.includes('yesterday')) {
+          const today = new Date()
+          const easternTime = new Date(today.toLocaleString("en-US", {timeZone: "America/New_York"}))
+          const yesterday = new Date(easternTime.getTime() - 24*60*60*1000)
+          const yesterdayStr = yesterday.toISOString().split('T')[0]
+          console.log(`[AI Marketing] Found 'yesterday' context from conversation history: ${yesterdayStr}`)
+          return {
+            from: yesterdayStr,
+            to: yesterdayStr
+          }
+        }
+
+        // Check for other common patterns
+        for (const [phrase, days] of Object.entries({
+          'last week': 7,
+          'past week': 7,
+          'last month': 30,
+          'past month': 30,
+          'last quarter': 90,
+          'past quarter': 90,
+          'last year': 365,
+          'past year': 365
+        })) {
+          if (lowerHistoryPrompt.includes(phrase)) {
+            console.log(`[AI Marketing] Found '${phrase}' context from conversation history`)
+            return { days }
+          }
+        }
+      }
+    }
+
+    // Look for AI responses that mention specific dates
+    for (let i = conversationHistory.length - 1; i >= 0 && i >= conversationHistory.length - 5; i--) {
+      const message = conversationHistory[i]
+      if (message.role === 'assistant') {
+        const content = message.content.toLowerCase()
+
+        // Look for date mentions in AI responses like "For today (2025-08-29)"
+        const dateMatch = content.match(/for (today|yesterday) \((\d{4}-\d{2}-\d{2})\)/)
+        if (dateMatch) {
+          const dateType = dateMatch[1]
+          const dateStr = dateMatch[2]
+
+          if (dateType === 'today') {
+            console.log(`[AI Marketing] Found 'today' context from conversation history: ${dateStr}`)
+            return {
+              from: dateStr,
+              to: dateStr
+            }
+          } else if (dateType === 'yesterday') {
+            console.log(`[AI Marketing] Found 'yesterday' context from conversation history: ${dateStr}`)
+            return {
+              from: dateStr,
+              to: dateStr
+            }
+          }
+        }
+      }
+    }
+  }
+
   return null
 }
 
@@ -286,10 +370,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Smart date range detection from user prompt
+    // Smart date range detection from user prompt and conversation history
     let effectiveDateRange = dateRange || { days: 90 } // Default to 90 days if nothing specified
     if (prompt && !checkUsageOnly) {
-      const parsedDateRange = parseeDateRangeFromPrompt(prompt)
+      const parsedDateRange = parseeDateRangeFromPrompt(prompt, conversationHistory)
       if (parsedDateRange) {
         effectiveDateRange = parsedDateRange
         console.log(`[AI Marketing] Detected date range from prompt:`, parsedDateRange)
