@@ -1903,7 +1903,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
           styleId: style.id,
           textOverlay: { top: '', bottom: '' }, // No text overlay for retry
           brandId: selectedBrandId,
-          creativeId: actualRetryId
+          creativeId: actualRetryId,
+          aspectRatio: 'portrait' // Use portrait aspect ratio for mobile devices (1024x1536)
         }),
       })
 
@@ -2017,13 +2018,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         body: JSON.stringify({
           image: imageToUse,
           prompt: enhancedPrompt,
-          style: style.id,
+          styleId: style.id,
           brandId: selectedBrandId,
           userId: user?.id,
           styleName: style.name,
           textOverlays: creative.text_overlays,
           saveToDatabase: true,
-          customName: creative.custom_name
+          customName: creative.custom_name,
+          aspectRatio: 'portrait' // Use portrait aspect ratio for mobile devices (1024x1536)
         }),
       })
 
@@ -2249,13 +2251,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         body: JSON.stringify({
           image: base64Image,
           prompt: generateTextEditingPrompt(),
-          style: editingCreative.style_id,
+          styleId: editingCreative.style_id,
           brandId: selectedBrandId,
           userId: user?.id,
           styleName: editingCreative.style_name,
           textOverlays: { top: overlayCustomText.top, bottom: overlayCustomText.bottom },
           saveToDatabase: true,
-          customName: editingCreative.custom_name ? `${editingCreative.custom_name} (text edited)` : undefined
+          customName: editingCreative.custom_name ? `${editingCreative.custom_name} (text edited)` : undefined,
+          aspectRatio: 'portrait' // Use portrait aspect ratio for mobile devices (1024x1536)
         }),
       })
 

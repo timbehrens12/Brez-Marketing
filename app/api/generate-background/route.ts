@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
+import sharp from 'sharp';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
 // Weekly usage limits for background generation
 const WEEKLY_BACKGROUND_LIMIT = 100; // Higher limit for background generation
 const USAGE_FEATURE_TYPE = 'background_generation';
+
+const ASPECT_RATIOS = {
+  square: "1024x1024",
+  landscape: "1536x1024",
+  portrait: "1024x1536"
+};
 
 const STYLE_PROMPTS = {
   1: "Place this exact product on a clean, minimalist white background with professional studio lighting. Create subtle drop shadows beneath the product for depth while maintaining a clean aesthetic. Use soft, even lighting that eliminates harsh shadows but preserves product dimension.",
@@ -76,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Parse JSON request body
     const body = await request.json();
-    const { prompt, image, styleId, brandId, creativeId, textOverlays, saveToDatabase = false, customName } = body;
+    const { prompt, image, styleId, brandId, creativeId, textOverlays, saveToDatabase = false, customName, aspectRatio = 'portrait' } = body;
 
     if (!image || !prompt) {
       return NextResponse.json(
@@ -87,7 +94,10 @@ export async function POST(request: NextRequest) {
 
     // Get the style prompt
     const stylePrompt = STYLE_PROMPTS[styleId as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS[1];
-    const enhancedPrompt = `${stylePrompt} ${prompt}`;
+
+    // Add dimension specifications based on aspect ratio
+    const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
+    const enhancedPrompt = `${stylePrompt} ${prompt}. The final image should be generated in exactly ${aspectRatioSpec} dimensions for optimal mobile device display.`;
 
     console.log('🎨 Generating background with Gemini...');
     console.log('📦 Style ID:', styleId);
@@ -182,8 +192,42 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Background image generated successfully');
 
-    // Use the generated image URL
-    const imageUrl = generatedImageUrl;
+    // Post-process the image to ensure correct dimensions
+    let finalImageUrl = generatedImageUrl;
+    if (generatedImageUrl) {
+      try {
+        console.log('🔧 Resizing image to correct aspect ratio...');
+
+        // Get target dimensions
+        const targetDimensions = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
+        const [targetWidth, targetHeight] = targetDimensions.split('x').map(Number);
+
+        console.log(`🎯 Target dimensions: ${targetWidth}x${targetHeight}`);
+
+        // Resize image to exact dimensions with smart cropping
+        const resizedImageBuffer = await sharp(Buffer.from(generatedImageData, 'base64'))
+          .resize(targetWidth, targetHeight, {
+            fit: 'cover', // This maintains aspect ratio and crops if needed
+            position: 'center', // Center the crop
+            background: { r: 255, g: 255, b: 255, alpha: 1 } // White background for any padding
+          })
+          .png() // Ensure PNG output
+          .toBuffer();
+
+        // Convert back to base64
+        const resizedBase64 = resizedImageBuffer.toString('base64');
+        finalImageUrl = `data:image/png;base64,${resizedBase64}`;
+
+        console.log('✅ Image resized successfully to correct dimensions');
+      } catch (resizeError) {
+        console.error('⚠️ Failed to resize image:', resizeError);
+        // Continue with original image if resize fails
+        finalImageUrl = generatedImageUrl;
+      }
+    }
+
+    // Use the final image URL (resized or original)
+    const imageUrl = finalImageUrl;
 
     // If saveToDatabase is true, save the creative to the database
     if (saveToDatabase && brandId) {
@@ -204,6 +248,36 @@ export async function POST(request: NextRequest) {
 
         const styleName = styleNames[styleId] || 'Custom Style';
 
+        // Compress images before storing to avoid 413 error
+        let compressedOriginalImage = image;
+        let compressedGeneratedImage = imageUrl;
+
+        try {
+          console.log('🗜️ Compressing images for database storage...');
+
+          // Compress original image
+          const originalImageBuffer = await sharp(Buffer.from(base64Data, 'base64'))
+            .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer();
+          compressedOriginalImage = `data:image/jpeg;base64,${originalImageBuffer.toString('base64')}`;
+
+          // Compress generated image (if it's base64)
+          if (imageUrl.startsWith('data:image/')) {
+            const generatedBase64 = imageUrl.split(',')[1];
+            const generatedImageBuffer = await sharp(Buffer.from(generatedBase64, 'base64'))
+              .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 85 })
+              .toBuffer();
+            compressedGeneratedImage = `data:image/jpeg;base64,${generatedImageBuffer.toString('base64')}`;
+          }
+
+          console.log('✅ Images compressed successfully for database storage');
+        } catch (compressError) {
+          console.error('⚠️ Failed to compress images:', compressError);
+          // Continue with original images if compression fails
+        }
+
         // Create the creative record
         const { data: creativeData, error: creativeError } = await supabase
           .from('creatives')
@@ -214,8 +288,8 @@ export async function POST(request: NextRequest) {
             style_name: styleName,
             custom_name: customName,
             status: 'completed',
-            original_image_url: image, // Store original image
-            generated_image_url: imageUrl,
+            original_image_url: compressedOriginalImage, // Store compressed original image
+            generated_image_url: compressedGeneratedImage, // Store compressed generated image
             text_overlays: textOverlays || { top: '', bottom: '' },
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
