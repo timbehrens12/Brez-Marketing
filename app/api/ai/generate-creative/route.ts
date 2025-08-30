@@ -105,6 +105,11 @@ export async function POST(request: NextRequest) {
     const quality = formData.get('quality') as string || 'standard'; // Default to standard quality to reduce costs
     const lighting = formData.get('lighting') as string || 'soft';
     const customPromptModifiers = formData.get('customPromptModifiers') as string || '';
+    
+    // Multi-product support
+    const customPrompt = formData.get('prompt') as string;
+    const multiProductCount = formData.get('multiProductCount') as string;
+    const additionalImages = formData.get('additionalImages') as string;
 
     if (!imageFile || !backgroundType) {
       return NextResponse.json(
@@ -169,27 +174,37 @@ export async function POST(request: NextRequest) {
     console.log('📝 Product analysis:', productDescription);
 
     // Step 2: Build the complete prompt with background and modifiers
-    let prompt = `Create a professional product photography image featuring: ${productDescription}.
+    let prompt: string;
+    
+    // Check if this is a multi-product request with custom prompt
+    if (customPrompt && multiProductCount) {
+      console.log('🎨 Using custom multi-product prompt...');
+      // Use the custom multi-product prompt directly
+      prompt = customPrompt;
+    } else {
+      // Use standard single-product prompt generation
+      prompt = `Create a professional product photography image featuring: ${productDescription}.
 
 ${backgroundPreset.prompt}`;
 
-    // Add dimension specifications based on aspect ratio
-    const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
-    prompt += ` The final image should be generated in exactly ${aspectRatioSpec} dimensions for optimal mobile device display.`;
+      // Add dimension specifications based on aspect ratio
+      const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
+      prompt += ` The final image should be generated in exactly ${aspectRatioSpec} dimensions for optimal mobile device display.`;
 
-    // Add lighting modifiers
-    if (lighting === 'dramatic') {
-      prompt += " Use dramatic lighting with strong directional shadows for a bold, editorial look.";
-    } else if (lighting === 'bright') {
-      prompt += " Use bright, even lighting with minimal shadows for a clean, commercial look.";
+      // Add lighting modifiers
+      if (lighting === 'dramatic') {
+        prompt += " Use dramatic lighting with strong directional shadows for a bold, editorial look.";
+      } else if (lighting === 'bright') {
+        prompt += " Use bright, even lighting with minimal shadows for a clean, commercial look.";
+      }
+
+      // Add custom modifiers if provided
+      if (customPromptModifiers) {
+        prompt += ` ${customPromptModifiers}`;
+      }
+
+      prompt += " The final image should look like a professional product photograph with perfect studio lighting and composition.";
     }
-
-    // Add custom modifiers if provided
-    if (customPromptModifiers) {
-      prompt += ` ${customPromptModifiers}`;
-    }
-
-    prompt += " The final image should look like a professional product photograph with perfect studio lighting and composition.";
 
     console.log('🎯 Final prompt:', prompt);
 
@@ -271,6 +286,9 @@ ${backgroundPreset.prompt}`;
           
           // Convert base64 to buffer
           const base64Data = generatedImageData;
+          if (!base64Data) {
+            throw new Error('No base64 data received from Gemini');
+          }
           const imageBuffer = Buffer.from(base64Data, 'base64');
           
           // Sharp is already imported at the top

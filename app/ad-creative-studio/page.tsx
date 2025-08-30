@@ -308,7 +308,7 @@ const STYLE_OPTIONS: StyleOption[] = [
 
     category: 'all',
     goodFor: 'Multiple clothing items, fashion collections, product showcases',
-    prompt: 'Create a professional multi-product showcase featuring the primary clothing item along with additional complementary items. Arrange them in an elegant, balanced composition that showcases each piece effectively. Use consistent professional lighting, maintain high image quality for all items, and create a cohesive visual presentation that highlights the entire collection. The layout should be clean, modern, and visually appealing while ensuring each product remains clearly visible and professionally presented.'
+    prompt: 'Create a stunning multi-product fashion showcase by extracting and arranging multiple clothing items from the provided images. Display each item professionally with consistent styling, lighting, and background. Arrange them in an elegant, cohesive layout that highlights each piece while creating a unified fashion presentation. Ensure each clothing item is perfectly isolated from its original background and presented with premium quality. Use sophisticated styling that makes the entire collection look like a high-end fashion editorial spread.'
   },
   // NEW CLOTHING TEMPLATES - Latest additions
   {
@@ -1451,31 +1451,59 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   }
 
   // Collage generation function
-  // New multi-product generation function - Simplified approach
+  // New multi-product generation function
   const generateMultiProductCreative = async (images: File[], style: StyleOption, customText: any, finalName: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log('🎨 Starting simplified multi-product creative generation...')
+        console.log('🎨 Starting multi-product creative generation...')
 
-        // Use the first image as the primary image and enhance the prompt to describe multi-product scenario
-        const primaryImage = images[0]
+        // Convert all images to base64
+        const imagePromises = images.map(file => new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(file)
+        }))
 
-        // Create enhanced prompt that describes the multi-product scenario
-        const basePrompt = style.prompt || 'Create a professional product image'
-        const multiProductPrompt = `${basePrompt}
+        const base64Images = await Promise.all(imagePromises)
+        console.log(`✅ Converted ${base64Images.length} images to base64`)
 
-        IMPORTANT: This is a multi-product request featuring ${images.length} different items. Create a single cohesive image that showcases all ${images.length} products together in an elegant arrangement. The primary product shown should be combined with ${images.length - 1} additional similar products arranged professionally around it.`
+        // Create enhanced prompt for multi-product extraction
+        const multiProductPrompt = `Create a stunning fashion display featuring ${images.length} different clothing items. Extract each clothing item from the provided images and arrange them artistically on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
+
+CRITICAL REQUIREMENTS:
+- Extract and isolate each clothing item from the ${images.length} separate images
+- Arrange them in an elegant, professional layout
+- Use ${style.id === 'concrete-floor' ? 'urban street style' : style.id === 'white-background' ? 'minimalist clean aesthetic' : style.id === 'marble-surface' ? 'luxury boutique style' : 'premium product photography'} aesthetic
+- Ensure each item is clearly visible and professionally presented
+- Maintain consistent lighting and shadows across all items
+- Create a cohesive, high-end fashion display
+
+Each item should be perfectly extracted and arranged to create a beautiful multi-product showcase.`
 
         // Create FormData for the API call
         const formData = new FormData()
 
-        // Add the primary image
-        formData.append('image', primaryImage)
+        // Add the first image as the base (API expects one primary image)
+        const base64Data = base64Images[0].split(',')[1]
+        const byteCharacters = atob(base64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const imageBlob = new Blob([byteArray], { type: images[0].type || 'image/jpeg' })
+        const imageFile = new File([imageBlob], images[0].name || 'multi-product.jpg', { type: images[0].type || 'image/jpeg' })
+
+        formData.append('image', imageFile)
         formData.append('prompt', multiProductPrompt)
         formData.append('styleId', style.id)
         formData.append('aspectRatio', 'portrait')
         formData.append('quality', 'hd')
         formData.append('textOverlays', JSON.stringify(customText))
+
+        // Add additional context about multiple products
+        formData.append('multiProductCount', images.length.toString())
+        formData.append('additionalImages', JSON.stringify(base64Images.slice(1)))
 
         // Map background type
         const backgroundTypeMapping: { [key: string]: string } = {
@@ -1491,42 +1519,23 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
         formData.append('backgroundType', backgroundTypeMapping[style.id] || 'minimalist')
 
-        console.log('🚀 Sending simplified multi-product generation request...')
+        console.log('🚀 Sending multi-product generation request...')
 
-        // Add timeout handling for Vercel
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 25000) // 25 second timeout
+        const response = await fetch('/api/ai/generate-creative', {
+          method: 'POST',
+          body: formData,
+        })
 
-        try {
-          const response = await fetch('/api/ai/generate-creative', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-          })
-
-          clearTimeout(timeoutId)
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('❌ Multi-product generation failed:', response.status, errorText)
-            reject(new Error(`API Error: ${response.status} - ${errorText}`))
-            return
-          }
-
-          const data = await response.json()
-          console.log('✅ Multi-product creative generated successfully!')
-          resolve(data.imageUrl)
-
-        } catch (fetchError: any) {
-          clearTimeout(timeoutId)
-          if (fetchError.name === 'AbortError') {
-            console.error('❌ Request timed out')
-            reject(new Error('Request timed out - please try again'))
-          } else {
-            console.error('❌ Fetch error:', fetchError)
-            reject(fetchError)
-          }
+        if (!response.ok) {
+          const errorData = await response.json()
+          console.error('❌ Multi-product generation failed:', errorData)
+          reject(new Error(errorData.error || 'Failed to generate multi-product creative'))
+          return
         }
+
+        const data = await response.json()
+        console.log('✅ Multi-product creative generated successfully!')
+        resolve(data.imageUrl)
 
       } catch (error) {
         console.error('❌ Error in multi-product generation:', error)
@@ -2587,88 +2596,24 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
     try {
       if (isMultiMode && uploadedImages.length > 1) {
-        // TRUE AI Multi-Product Generation: Feed all images to AI for professional creative
-        console.log(`🎨 Generating TRUE AI multi-product creative with ${uploadedImages.length} items...`)
-
-        // Create single creative entry for the multi-product result
-        const multiProductCreativeId = addCreative({
-          brand_id: selectedBrandId!,
-          user_id: user!.id,
-          style_id: modalStyle.id,
-          style_name: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
-          original_image_url: uploadedImageUrls[0],
-          generated_image_url: '',
-          prompt_used: enhancedPrompt,
-          text_overlays: customText,
-          status: 'generating',
-          metadata: {
-            multiProductCount: uploadedImages.length,
-            multiProductImages: uploadedImageUrls,
-            isMultiProduct: true
-          },
-          updated_at: new Date().toISOString(),
-          custom_name: `${finalName} Multi-Product (${uploadedImages.length} items)`
-        })
+        // NEW: Multi-product mode: Generate ONE creative with all products extracted and arranged
+        console.log(`🎨 Generating multi-product creative with ${uploadedImages.length} items...`)
 
         try {
-          // Prepare all images for AI processing
-          const imageFiles = []
-          for (const image of uploadedImages) {
-            // Convert each uploaded image to base64 properly
-            const base64Image = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader()
-              reader.onload = () => resolve(reader.result as string)
-              reader.onerror = () => reject(new Error('Failed to read image'))
-              reader.readAsDataURL(image)
-            })
-            imageFiles.push(base64Image)
-          }
+          // Generate the multi-product creative using our new function
+          const generatedImageUrl = await generateMultiProductCreative(
+            uploadedImages,
+            modalStyle,
+            customText,
+            finalName
+          )
 
-          console.log(`✅ Converted ${imageFiles.length} images to base64 for AI processing`)
+          console.log('✅ Multi-product creative generated successfully!')
 
-          // Enhanced prompt for multi-product AI generation
-          const multiProductPrompt = `${modalStyle.prompt || 'Create a professional product image'}
+          // Update creative status with the generated URL
+          updateCreativeStatus(creativeId, 'completed', generatedImageUrl)
 
-          CRITICAL MULTI-PRODUCT REQUIREMENTS:
-          - You have ${uploadedImages.length} different product images to work with
-          - Extract ALL products from these images (${uploadedImages.length} total items)
-          - Create ONE cohesive, professional creative featuring ALL ${uploadedImages.length} products
-          - Arrange them elegantly in a single composition
-          - Ensure each product is clearly visible and professionally presented
-          - Use consistent lighting, styling, and professional composition
-          - Make it look like a high-end product showcase with all items displayed together
-          - The final result should be one unified, beautiful creative, not separate images`
-
-          // Use optimized API call with pre-processed data
-          const formData = new FormData()
-
-          // Add all images as additional context (the API will use the first as primary)
-          for (let i = 0; i < imageFiles.length; i++) {
-            const base64Data = imageFiles[i].split(',')[1]
-            const byteCharacters = atob(base64Data)
-            const byteNumbers = new Array(byteCharacters.length)
-            for (let j = 0; j < byteCharacters.length; j++) {
-              byteNumbers[j] = byteCharacters.charCodeAt(j)
-            }
-            const byteArray = new Uint8Array(byteNumbers)
-            const imageBlob = new Blob([byteArray], { type: uploadedImages[i]?.type || 'image/jpeg' })
-            const imageFile = new File([imageBlob], `product-${i + 1}.jpg`, { type: uploadedImages[i]?.type || 'image/jpeg' })
-
-            if (i === 0) {
-              formData.append('image', imageFile) // Primary image
-            } else {
-              formData.append('additionalImages', imageFile) // Additional context images
-            }
-          }
-
-          formData.append('prompt', multiProductPrompt)
-          formData.append('styleId', modalStyle.id)
-          formData.append('aspectRatio', 'portrait')
-          formData.append('quality', 'hd')
-          formData.append('textOverlays', JSON.stringify(customText))
-          formData.append('multiProductCount', uploadedImages.length.toString())
-
-          // Background type mapping
+          // Save to database
           const backgroundTypeMapping: { [key: string]: string } = {
             'concrete-floor': 'concrete',
             'marble-surface': 'marble',
@@ -2679,39 +2624,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             'gradient-surface': 'gradient',
             'metallic-surface': 'metallic'
           }
-          formData.append('backgroundType', backgroundTypeMapping[modalStyle.id] || 'minimalist')
 
-          console.log('🚀 Sending optimized multi-product AI generation request...')
-
-          // Use optimized API with longer timeout
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-
-          const response = await fetch('/api/ai/generate-creative-optimized', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-          })
-
-          clearTimeout(timeoutId)
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('❌ Multi-product AI generation failed:', response.status, errorText)
-
-            if (response.status === 504) {
-              throw new Error('AI generation timed out. Try using fewer images or a simpler template.')
-            }
-            throw new Error(`API Error: ${response.status} - ${errorText}`)
-          }
-
-          const data = await response.json()
-          console.log('✅ TRUE AI multi-product creative generated successfully!')
-
-          // Update creative status
-          updateCreativeStatus(multiProductCreativeId, 'completed', data.imageUrl)
-
-          // Save to database
           try {
             const saveResponse = await fetch('/api/creative-generations', {
               method: 'POST',
@@ -2724,17 +2637,19 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                 styleId: modalStyle.id,
                 styleName: modalStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${modalStyle.name} Multi-Product`,
                 originalImageUrl: uploadedImageUrls[0],
-                generatedImageUrl: data.imageUrl,
-                promptUsed: multiProductPrompt,
+                generatedImageUrl: generatedImageUrl,
+                promptUsed: enhancedPrompt,
                 textOverlays: customText,
                 metadata: {
+                  backgroundType: backgroundTypeMapping[modalStyle.id] || 'minimalist',
                   aspectRatio: 'portrait',
                   quality: 'hd',
+                  lighting: 'soft',
+                  customModifiers: !!customInstructions,
+                  model: 'gemini-2.5-flash-image-preview',
                   multiProductCount: uploadedImages.length,
                   multiProductImages: uploadedImageUrls,
-                  isMultiProduct: true,
-                  aiGenerated: true,
-                  processingMethod: 'true-ai-multi-product'
+                  isMultiProduct: true
                 },
                 customName: `${finalName} Multi-Product (${uploadedImages.length} items)`
               }),
@@ -2749,58 +2664,41 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
             console.error('❌ Error saving multi-product creative to database:', saveError)
           }
 
-          // Update the UI with the generated AI creative
+          // Update the UI with the generated image
           setLoadedImages(prev => ({
             ...prev,
-            [multiProductCreativeId]: {
+            [creativeId]: {
               original: uploadedImageUrls[0],
-              generated: data.imageUrl
+              generated: generatedImageUrl
             }
           }))
 
-          toast.success(`🎨 Generated professional AI multi-product creative with ${uploadedImages.length} items!`)
+          toast.success(`🎨 Generated multi-product creative with ${uploadedImages.length} items!`)
           incrementUsage()
 
           // Clear the uploaded images after successful generation
           setUploadedImages([])
           setUploadedImageUrls([])
-          setIsMultiMode(false)
 
           // Switch to generated tab
           setActiveTab('generated')
 
-        } catch (generationError: any) {
-          console.error('❌ Error in TRUE AI multi-product generation:', generationError)
-
-          updateCreativeStatus(multiProductCreativeId, 'failed')
-
-          // Provide specific error messages
-          let errorMessage = 'Failed to generate AI multi-product creative'
-          let actionMessage = 'Try using fewer images (2-3 max) or a simpler template.'
-
-          if (generationError.message?.includes('timed out') || generationError.name === 'AbortError') {
-            errorMessage = 'AI generation timed out - multi-product requests are complex.'
-            actionMessage = 'Try with fewer images, use single product mode, or wait a moment and try again.'
-          } else if (generationError.message?.includes('API Error')) {
-            errorMessage = 'AI service temporarily unavailable.'
-            actionMessage = 'Please wait a moment and try again, or use single product generation.'
-          }
-
-          toast.error(errorMessage, {
-            description: actionMessage,
-            duration: 8000
-          })
-
-          // Clean up the failed creative from UI
-          setLoadedImages(prev => {
-            const updated = { ...prev }
-            delete updated[multiProductCreativeId]
-            return updated
-          })
+        } catch (generationError) {
+          console.error('❌ Error generating multi-product creative:', generationError)
+          updateCreativeStatus(creativeId, 'failed')
+          toast.error('Failed to generate multi-product creative')
         }
+
+        return // Exit early to prevent fallthrough to single-product logic
       }
 
       // Single product mode (existing logic continues below)
+      if (!uploadedImage) {
+        toast.error('Please upload an image first');
+        updateCreativeStatus(creativeId, 'failed');
+        return;
+      }
+
       const base64Image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -4041,9 +3939,14 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
 
                         } else {
                           // Single product generation (existing logic)
-                          const productBase64 = await new Promise<string>((resolve) => {
+                          const productBase64 = await new Promise<string>((resolve, reject) => {
+                            if (!productImageForTemplate) {
+                              reject(new Error('No product image for template'));
+                              return;
+                            }
                             const reader = new FileReader();
                             reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = () => reject(new Error('Failed to read product image'));
                             reader.readAsDataURL(productImageForTemplate);
                           });
 
