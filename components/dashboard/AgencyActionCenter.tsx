@@ -674,12 +674,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           if (response.ok) {
             const data = await response.json()
-            const dailyUsageCount = 15 - (data.remainingUses || 0) // Calculate used from remaining
-            
+            // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
+            const remainingUses = data.remainingUses || 0
+            const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+
             // Store combined usage count for this user (daily limit of 15 across all modes)
             newToolUsageData.aiConsultant[userId] = dailyUsageCount
           } else {
-
+            // If API fails, set to 0 and try to get from local fallback
             newToolUsageData.aiConsultant[userId] = 0
           }
         } catch (error) {
@@ -750,6 +752,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
     }
 
+    // Listen for AI consultant usage updates
+    const handleAIConsultantUpdate = () => {
+      if (userId) {
+        loadToolUsageData()
+      }
+    }
+
     // Listen for localStorage changes (for creative studio usage resets)
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'ad-creative-usage' && userId) {
@@ -760,12 +769,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('focus', handleFocus)
     window.addEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
+    window.addEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('creative-studio-usage-updated', handleCreativeStudioUpdate)
+      window.removeEventListener('ai-consultant-usage-updated', handleAIConsultantUpdate)
       window.removeEventListener('storage', handleStorageChange)
       clearInterval(refreshInterval)
     }

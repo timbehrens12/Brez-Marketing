@@ -867,6 +867,8 @@ I can help with literally anything marketing-related for your brand - performanc
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
         }
+        // Trigger dashboard update
+        window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated'))
       } else {
         // console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
@@ -1087,7 +1089,9 @@ I can help with literally anything marketing-related for your brand - performanc
               {remainingUses !== null && (
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 shadow-sm">
                   <MessageCircle className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-white">{15 - remainingUses}/15 used today</span>
+                  <span className="text-sm font-medium text-white">
+                    {remainingUses <= 0 ? '15/15 used today' : `${15 - remainingUses}/15 used today`}
+                  </span>
                 </div>
               )}
             </div>
