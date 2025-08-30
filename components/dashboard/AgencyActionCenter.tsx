@@ -270,6 +270,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const brandHealthLoadingRef = useRef(false)
   const userDataLoadingRef = useRef(false)
   const todosLoadingRef = useRef(false)
+  // ===== RATE LIMITING PROTECTION =====
+  // Protection to prevent simultaneous tool usage data loading
   const toolUsageLoadingRef = useRef(false)
   
   // Add widget loading states (main loading moved to dashboard level)
@@ -672,37 +674,50 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         // Check if we already know this user is maxed out to avoid excessive 429 calls
         const currentUsage = newToolUsageData.aiConsultant[userId] || 0
         if (currentUsage < 15) { // Only make API call if not already maxed out
-          try {
-            const response = await fetch('/api/ai/marketing-consultant', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                mode: 'agency', // Mode doesn't matter now - usage is combined
-                checkUsageOnly: true
-              }),
-            })
+          // Double-check with loading ref to prevent race conditions
+          if (toolUsageLoadingRef.current) {
+            console.log('[AgencyActionCenter] Marketing consultant API call skipped - already loading')
+            newToolUsageData.aiConsultant[userId] = currentUsage // Keep current value
+          } else {
+            toolUsageLoadingRef.current = true // Set loading flag for API call
+            try {
+              console.log('[AgencyActionCenter] Making marketing consultant API call for usage check')
+              const response = await fetch('/api/ai/marketing-consultant', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  mode: 'agency', // Mode doesn't matter now - usage is combined
+                  checkUsageOnly: true
+                }),
+              })
 
-            if (response.ok) {
-              const data = await response.json()
-              // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
-              const remainingUses = data.remainingUses || 0
-              const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+              console.log('[AgencyActionCenter] Marketing consultant API response status:', response.status)
 
-              // Store combined usage count for this user (daily limit of 15 across all modes)
-              newToolUsageData.aiConsultant[userId] = dailyUsageCount
-            } else if (response.status === 429) {
-              // User is maxed out - set to 15 used
-              newToolUsageData.aiConsultant[userId] = 15 // Maxed out
-            } else {
-              // If API fails, set to 0 and try to get from local fallback
-              newToolUsageData.aiConsultant[userId] = 0
-            }
-          } catch (error) {
-            // If API fails, keep current usage or set to 0
-            if (!newToolUsageData.aiConsultant[userId]) {
-              newToolUsageData.aiConsultant[userId] = 0
+              if (response.ok) {
+                const data = await response.json()
+                // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
+                const remainingUses = data.remainingUses || 0
+                const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+
+                // Store combined usage count for this user (daily limit of 15 across all modes)
+                newToolUsageData.aiConsultant[userId] = dailyUsageCount
+              } else if (response.status === 429) {
+                // User is maxed out - set to 15 used
+                newToolUsageData.aiConsultant[userId] = 15 // Maxed out
+              } else {
+                // If API fails, set to 0 and try to get from local fallback
+                newToolUsageData.aiConsultant[userId] = 0
+              }
+            } catch (error) {
+              console.error('[AgencyActionCenter] Error in marketing consultant API call:', error)
+              // If API fails, keep current usage or set to 0
+              if (!newToolUsageData.aiConsultant[userId]) {
+                newToolUsageData.aiConsultant[userId] = 0
+              }
+            } finally {
+              toolUsageLoadingRef.current = false // Always reset the loading flag
             }
           }
         } else {

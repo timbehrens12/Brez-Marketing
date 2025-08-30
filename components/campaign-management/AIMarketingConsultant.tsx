@@ -600,17 +600,19 @@ I can help with literally anything marketing-related for your brand - performanc
     }
   }, [messages])
 
-  // Check initial usage status when component mounts
-  // Ref to track if usage check is already running
+  // ===== RATE LIMITING PROTECTION =====
+  // Multiple layers of protection to prevent 429 errors:
+
+  // Layer 1: Prevent simultaneous usage checks
   const usageCheckRunningRef = useRef(false)
 
-  // Ref to track if analyzeAndRespond is already running
+  // Layer 2: Prevent simultaneous analysis calls
   const analyzeRunningRef = useRef(false)
 
-  // Ref to track if we've already done initial brand selection and usage check
+  // Layer 3: Track initial setup completion
   const initialSetupDoneRef = useRef(false)
 
-  // Ref to track which brand we've checked usage for
+  // Layer 4: Track which brand we've checked usage for
   const usageCheckedBrandRef = useRef<string | null>(null)
 
   // Separate useEffect for initial brand selection
@@ -644,6 +646,13 @@ I can help with literally anything marketing-related for your brand - performanc
 
         try {
           console.log(`[${new Date().toISOString()}] [AI Marketing] Making usage check API call for brand:`, selectedBrandId)
+
+          // Last check before making API call
+          if (remainingUses === 0 || isLimitReached) {
+            console.log('[AI Marketing] BLOCKED: Final check - user at limit before usage API call')
+            usageCheckRunningRef.current = false
+            return
+          }
 
           const response = await fetch('/api/ai/marketing-consultant', {
             method: 'POST',
