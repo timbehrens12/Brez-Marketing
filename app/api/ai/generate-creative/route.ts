@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/server';
+import sharp from 'sharp';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
@@ -262,6 +263,44 @@ ${backgroundPreset.prompt}`;
       }
 
       console.log('✅ Image generated successfully with Gemini 2.5 Flash Image');
+
+      // Post-process the image to ensure correct dimensions
+      if (generatedImageUrl) {
+        try {
+          console.log('🔧 Resizing image to correct aspect ratio...');
+          
+          // Convert base64 to buffer
+          const base64Data = generatedImageData;
+          const imageBuffer = Buffer.from(base64Data, 'base64');
+          
+          // Sharp is already imported at the top
+          
+          // Get target dimensions
+          const targetDimensions = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
+          const [targetWidth, targetHeight] = targetDimensions.split('x').map(Number);
+          
+          console.log(`🎯 Target dimensions: ${targetWidth}x${targetHeight}`);
+          
+          // Resize image to exact dimensions with smart cropping
+          const resizedImageBuffer = await sharp(imageBuffer)
+            .resize(targetWidth, targetHeight, {
+              fit: 'cover', // This maintains aspect ratio and crops if needed
+              position: 'center', // Center the crop
+              background: { r: 255, g: 255, b: 255, alpha: 1 } // White background for any padding
+            })
+            .png() // Ensure PNG output
+            .toBuffer();
+          
+          // Convert back to base64
+          const resizedBase64 = resizedImageBuffer.toString('base64');
+          generatedImageUrl = `data:image/png;base64,${resizedBase64}`;
+          
+          console.log('✅ Image resized successfully to correct dimensions');
+        } catch (resizeError) {
+          console.error('⚠️ Image resize failed, using original:', resizeError);
+          // Continue with original image if resize fails
+        }
+      }
     } catch (imageGenError: any) {
       console.error('Gemini 2.5 Flash Image Generation Error:', imageGenError);
 
