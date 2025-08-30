@@ -704,22 +704,24 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
     let ordersQuery = supabase
       .from('shopify_orders')
       .select('*')
-      .eq('brand_id', brandId)  // Use brand_id like the widget does!
+      .eq('connection_id', connectionId)  // Use connection_id to match customers query
       .order('created_at', { ascending: false })
 
     // Apply date filtering if specific dates are provided
     if (fromDate && toDate) {
       console.log(`[AI Marketing Consultant] Applying date filter: ${fromDate} to ${toDate}`)
-      // Convert dates to proper timezone boundaries (America/Chicago/Pacific)
-      const fromDateTime = `${fromDate}T08:00:00Z` // Start of day in Pacific (UTC-8)
+      // Use UTC boundaries for better compatibility across timezones
+      const fromDateTime = `${fromDate}T00:00:00Z` // Start of day UTC
       const toDate_obj = new Date(toDate)
       toDate_obj.setDate(toDate_obj.getDate() + 1)
       const nextDay = toDate_obj.toISOString().split('T')[0]
-      const toDateTime = `${nextDay}T07:59:59Z` // End of day in Pacific
-      
+      const toDateTime = `${nextDay}T00:00:00Z` // Start of next day UTC (covers entire target day)
+
+      console.log(`[AI Marketing Consultant] Date filter boundaries: ${fromDateTime} to ${toDateTime}`)
+
       ordersQuery = ordersQuery
         .gte('created_at', fromDateTime)
-        .lte('created_at', toDateTime)
+        .lt('created_at', toDateTime) // Use lt instead of lte for exclusive upper bound
     }
 
     const { data: orders } = await ordersQuery
@@ -1645,6 +1647,11 @@ ${analysisData.brandOptimizations.map((opt: any, i: number) => `${i+1}. ${opt.ca
 
 ${analysisData.availableReports?.length > 0 ? `Reports Available:
 ${analysisData.availableReports.map((report: any, i: number) => `${i+1}. ${report.period} report for ${report.brand_name || brandName} (${report.date_range_start} to ${report.date_range_end})`).join('\n')}` : 'No reports currently available'}
+
+SHOPIFY DATA AVAILABLE: ${analysisData.shopifyData?.orders?.length > 0 ? `YES - ${analysisData.shopifyData.orders.length} orders, $${analysisData.shopifyData.metrics?.totalRevenue?.toFixed(2) || '0.00'} revenue for the requested period` : 'NO SALES DATA for this period'}
+${analysisData.dateRange?.from === analysisData.dateRange?.to && analysisData.shopifyData?.orders?.length > 0 ? `- SHOPIFY SALES FOR ${analysisData.dateRange.from}: $${(analysisData.shopifyData?.metrics?.totalRevenue || 0).toFixed(2)} from ${analysisData.shopifyData?.orders?.length || 0} orders` : ''}
+
+${analysisData.shopifyData?.orders?.length === 0 && analysisData.shopifyData ? 'NOTE: Shopify connection exists but no orders found for this date range. This could be due to timezone differences or no sales activity.' : ''}
 
 
 
