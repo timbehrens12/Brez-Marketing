@@ -700,10 +700,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           // User is already maxed out, no need to make another API call
           console.log('[AgencyActionCenter] Skipping AI usage API call - user already at limit')
         }
-        } catch (error) {
-
-          newToolUsageData.aiConsultant[userId] = 0
-        }
 
         // Load Creative Studio usage - check localStorage (weekly limit)
         try {
@@ -726,16 +722,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         
         setToolUsageData(newToolUsageData)
       } catch (error) {
-
+        console.error('Error loading tool usage data:', error)
       }
     }
 
-            loadToolUsageData()
-        if (brands && connections) {
-          loadBrandReportAvailability()
-        }
-
-
+    loadToolUsageData()
+    if (brands && connections) {
+      loadBrandReportAvailability()
+    }
 
     // Set up periodic refresh every 30 seconds to keep usage data fresh
     const refreshInterval = setInterval(() => {
