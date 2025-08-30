@@ -465,12 +465,9 @@ export default function AIMarketingConsultant(
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant that works with both individual brands and your entire agency.
+      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant.
 
-For agency-wide questions: "show me last Christmas performance", "compare Q1 vs Q2", "analyze my worst campaigns from last year", "what marketing strategies should I try?"
-For brand-specific questions: Select a brand from the sidebar first, then ask about that brand's performance, scaling, or optimization strategies
-
-I can help with literally anything marketing-related - scaling strategies, creative optimization, budget allocation, competitive analysis, and more. Choose a question below or type your own!`,
+I can help with literally anything marketing-related for your brand - performance analysis, scaling strategies, creative optimization, budget allocation, competitive analysis, and more. Choose a question below or type your own!`,
       timestamp: new Date()
     }
 
@@ -480,38 +477,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
 
 
 
-  // Check initial usage status on component mount
-  useEffect(() => {
-    const checkInitialUsage = async () => {
-      if (!user?.id) return
-      
-      try {
-        const response = await fetch('/api/ai/marketing-consultant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: '',
-            mode: 'brand',
-            goal: 'general', // Default to general since we removed the focus selector
-            brandId: selectedBrandId,
-            checkUsageOnly: true
-          })
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          if (data.remainingUses !== undefined) {
-            setRemainingUses(data.remainingUses)
-            setIsLimitReached(!data.canUse)
-          }
-        }
-      } catch (error) {
-        console.error('[AI Marketing] Error checking initial usage:', error)
-      }
-    }
-    
-    checkInitialUsage()
-  }, [user?.id, selectedBrandId])
+
 
   // Listen for refresh events to reset conversation with fresh data
   useEffect(() => {
@@ -587,7 +553,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
   useEffect(() => {
     const checkInitialUsage = async () => {
       // Only check usage if we have both user and selectedBrandId
-      if (!user?.firstName || !selectedBrandId) return
+      if (!user?.id || !selectedBrandId) return
 
       try {
         const response = await fetch('/api/ai/marketing-consultant', {
@@ -940,7 +906,7 @@ I can help with literally anything marketing-related - scaling strategies, creat
             </div>
 
             <div className="w-full">
-              <BrandSelector onSelect={() => {}} />
+              <BrandSelector onSelect={(brandId) => setSelectedBrandId(brandId)} />
             </div>
 
             <div className="text-xs text-gray-500 text-center max-w-sm">
