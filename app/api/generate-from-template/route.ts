@@ -17,9 +17,9 @@ const ASPECT_RATIOS = {
 };
 
 export async function POST(request: NextRequest) {
-  // Add overall timeout to prevent Vercel 15s limit
+  // Add overall timeout to prevent Vercel limit (18 seconds total buffer)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 14500); // 14.5 seconds
+  const timeoutId = setTimeout(() => controller.abort(), 18000); // 18 seconds
 
   try {
     // Authenticate user
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Processing template and product images with Gemini 2.0 Flash...');
 
-    // Use Gemini 2.0 Flash Image for generation
+    // Use the same working approach as generate-creative API
     let imageModel;
     try {
       imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
@@ -160,17 +160,7 @@ export async function POST(request: NextRequest) {
     // Build the optimized prompt for template-based generation
     const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
 
-    let prompt = `Analyze this advertisement template and recreate its exact visual style with my new product.
-
-KEY ELEMENTS TO MATCH:
-- Overall composition, layout, and design style
-- Color palette and lighting mood
-- Background treatment and visual hierarchy
-- Professional advertisement aesthetic
-
-${additionalNotes ? `ADDITIONAL REQUIREMENTS: ${additionalNotes}` : ''}
-
-Generate in exactly ${aspectRatioSpec} dimensions. Make it look like the same designer created both ads.`;
+    let prompt = `Recreate this advertisement template style with my new product. Match the colors, layout, and design exactly. ${additionalNotes ? `Additional: ${additionalNotes}` : ''} Generate in ${aspectRatioSpec} dimensions.`;
 
     // Generate the template-based creative with timeout
     console.log('⏱️ Starting Gemini API call...');
@@ -192,9 +182,9 @@ Generate in exactly ${aspectRatioSpec} dimensions. Make it look like the same de
       }
     ]);
 
-    // Add timeout to prevent hanging (12 seconds to stay under Vercel 15s limit)
+    // Add timeout to prevent hanging (15 seconds for optimized template generation)
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Generation timeout - please try again')), 12000);
+      setTimeout(() => reject(new Error('Generation timeout - please try again')), 15000);
     });
 
     const result = await Promise.race([generationPromise, timeoutPromise]);

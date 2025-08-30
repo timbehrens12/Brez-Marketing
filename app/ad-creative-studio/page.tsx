@@ -3599,7 +3599,8 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                     {isGeneratingFromTemplate ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Generating...
+                        Generating Template...
+                        <span className="text-xs text-gray-400 ml-2">(This may take 10-15 seconds)</span>
                       </>
                     ) : (
                       <>
