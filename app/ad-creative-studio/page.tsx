@@ -2988,149 +2988,67 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
               
                              <div className="flex items-center gap-2">
-                  {/* Circular Progress */}
-                 <div className="relative w-10 h-10">
-                   <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                    {/* Background circle */}
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.1)"
-                      strokeWidth="2"
-                      strokeDasharray="100, 100"
-                    />
-                    {/* Progress circle */}
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke={getProgressColor()}
-                      strokeWidth="2"
-                      strokeDasharray={`${usagePercentage}, 100`}
-                      className="transition-all duration-300"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">
-                      {Math.round(usagePercentage)}%
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Usage Stats */}
-                <div>
-                  <div className="text-white font-semibold text-sm">
-                    {usageData.current} / {WEEKLY_LIMIT}
-                  </div>
-                  <div className="text-gray-400 text-xs">
-                    {usageData.current} used this week
-                  </div>
-                  {usageData.current >= WEEKLY_LIMIT ? (
-                    <div className="text-red-400 text-xs font-medium">
-                      🚫 Limit Reached
-                    </div>
-                  ) : usagePercentage > 90 && (
-                    <div className="text-red-400 text-xs font-medium">
-                      ⚠️ Almost at limit
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Beta Notice Widget - Second widget */}
-                         <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-3 min-w-[260px] h-[80px] flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-sm font-medium">SYSTEM STATUS</span>
-                <FlaskConical className="w-6 h-6 text-orange-400" />
-              </div>
-              
-                             <div className="flex items-center gap-2">
-                 <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
-                   <FlaskConical className="w-5 h-5 text-orange-400" />
-                </div>
-                
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <div className="text-white font-semibold text-sm whitespace-nowrap">
-                    Beta Version
-                  </div>
-                  <div className="text-gray-400 text-xs leading-tight break-words">
-                    May struggle with fine text, poor quality images, tags & complex details. Hundreds more templates coming over the next weeks!
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Product Image Display - Third widget with larger space */}
-            <div 
-              className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-3 min-w-[220px] h-[80px] flex flex-col justify-between cursor-pointer hover:border-white/20 transition-all duration-300"
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-sm font-medium">
-                  {isMultiMode ? 'PRODUCT IMAGES' : 'PRODUCT IMAGE'}
-                </span>
-                <span className="text-sm text-gray-400 whitespace-nowrap">
-                  {uploadedImageUrl || uploadedImages.length > 0 ? 'Change' : 'Upload'}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-center flex-1">
-                {isMultiMode && uploadedImages.length > 0 ? (
-                  <>
-                    {/* Multiple Images Preview */}
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="grid grid-cols-2 gap-1 max-w-[120px] max-h-[60px]">
-                        {uploadedImageUrls.slice(0, 4).map((url, index) => (
-                          <div key={index} className="relative aspect-square rounded overflow-hidden border border-white/10">
-                            <img 
-                              src={url} 
-                              alt={`Product ${index + 1}`} 
-                              className="w-full h-full object-cover"
-                            />
-                            {index === 3 && uploadedImages.length > 4 && (
-                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <span className="text-white text-xs font-medium">+{uploadedImages.length - 4}</span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                  {/* Horizontal Progress Bar */}
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-xs">{usageData.current} / {WEEKLY_LIMIT}</span>
+                        <span className="text-white text-sm font-medium">{Math.round(usagePercentage)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${usagePercentage}%` }}
+                        ></div>
                       </div>
                     </div>
-                  </>
-                ) : uploadedImageUrl ? (
-                  <>
-                    {/* Single Product Preview - Full height */}
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border-2 border-white/10 max-w-[120px] max-h-[60px] flex items-center justify-center">
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Uploaded product" 
-                        className="max-w-full max-h-full object-contain"
-                    />
+
+                    {/* Usage Status */}
+                    <div className="text-xs">
+                      {usageData.current >= WEEKLY_LIMIT ? (
+                        <span className="text-red-400 font-medium">🚫 Limit Reached</span>
+                      ) : (
+                        <span className="text-green-400">{WEEKLY_LIMIT - usageData.current} remaining</span>
+                      )}
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Upload Icon */}
-                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
-                    </div>
-                  </>
-                )}
+                  </div>
+                
+
               </div>
-              
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
             </div>
+            
+            {/* System Status Widget */}
+                         <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-3 min-w-[220px] h-[80px] flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-sm font-medium">SYSTEM STATUS</span>
+                <span className="text-sm text-gray-400 whitespace-nowrap">
+                  Active
+                </span>
+              </div>
+
+                <div className="flex flex-col gap-2 flex-1">
+                  {/* Status Indicator */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-white font-semibold text-sm">Beta Version</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: '75%' }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Status Details */}
+                  <div className="text-xs text-gray-400">
+                    75% complete - New templates added weekly
+                  </div>
+                </div>
+            </div>
+            
+
             
                 </div>
           </div>
