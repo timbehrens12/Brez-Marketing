@@ -446,6 +446,7 @@ export default function AIMarketingConsultant(
   // { loading = false }: AIMarketingConsultantProps
   {}: AIMarketingConsultantProps = {}
 ) {
+  const { user } = useUser()
   const { selectedBrandId, brands, setSelectedBrandId } = useBrandContext()
 
   // Debug logging for brand selection
@@ -467,7 +468,7 @@ export default function AIMarketingConsultant(
       showROASDebug()
     }
   }, [selectedBrandId, brands, user])
-  const { user } = useUser()
+
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
