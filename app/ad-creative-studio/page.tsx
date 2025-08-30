@@ -2964,7 +2964,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       <GridOverlay />
       <div className="max-w-[1400px] mx-auto space-y-6 relative z-10">
         {/* Enhanced Header */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-3 shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -2979,7 +2979,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             
             <div className="flex items-center gap-4">
             {/* Weekly Usage Display - First widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[240px] h-[160px] flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[240px] h-[80px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-sm font-medium">WEEKLY USAGE</span>
                 <span className="text-sm text-gray-400 whitespace-nowrap">
@@ -2987,10 +2987,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </span>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {/* Circular Progress */}
-                <div className="relative w-16 h-16">
-                  <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
                     {/* Background circle */}
                     <path
                       d="M18 2.0845
@@ -3042,15 +3042,15 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
             
             {/* Beta Notice Widget - Second widget */}
-            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-6 min-w-[280px] h-[160px] flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-4 min-w-[280px] h-[80px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-gray-300 text-sm font-medium">SYSTEM STATUS</span>
                 <FlaskConical className="w-6 h-6 text-orange-400" />
               </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
-                  <FlaskConical className="w-8 h-8 text-orange-400" />
+
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center">
+                  <FlaskConical className="w-6 h-6 text-orange-400" />
                 </div>
                 
                 <div className="flex-1 min-w-0 overflow-hidden">
