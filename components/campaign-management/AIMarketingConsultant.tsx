@@ -607,108 +607,98 @@ I can help with literally anything marketing-related for your brand - performanc
   // Ref to track if analyzeAndRespond is already running
   const analyzeRunningRef = useRef(false)
 
+  // Ref to track if we've already done initial brand selection and usage check
+  const initialSetupDoneRef = useRef(false)
+
+  // Ref to track which brand we've checked usage for
+  const usageCheckedBrandRef = useRef<string | null>(null)
+
+  // Separate useEffect for initial brand selection
   useEffect(() => {
-    // Prevent multiple simultaneous usage checks
-    if (usageCheckRunningRef.current) {
-      return
+    if (initialSetupDoneRef.current) return
+
+    // Only run if we have brands but no selected brand
+    if (!selectedBrandId && brands.length > 0) {
+      console.log('[AI Marketing] Auto-selecting first available brand:', brands[0].id)
+      setSelectedBrandId(brands[0].id)
+      initialSetupDoneRef.current = true
     }
+  }, [selectedBrandId, brands.length, setSelectedBrandId])
 
-    const checkInitialUsage = async () => {
-      console.log('[AI Marketing] Checking initial usage - user:', user?.id, 'brandId:', selectedBrandId, 'brands:', brands.length)
-
-      // Skip API call if we already know the user is maxed out
+  // Separate useEffect for usage checking
+  useEffect(() => {
+    // Only run if we have required data and haven't checked this brand yet
+    if (user?.id && selectedBrandId && usageCheckedBrandRef.current !== selectedBrandId && !usageCheckRunningRef.current) {
+      // Skip if we're already at the limit
       if (remainingUses === 0 || isLimitReached) {
-        console.log('[AI Marketing] Skipping usage check - user already at limit')
-        usageCheckRunningRef.current = false
+        console.log('[AI Marketing] BLOCKED: Skipping usage check - user already at limit')
+        usageCheckedBrandRef.current = selectedBrandId // Mark as checked to prevent re-runs
         return
       }
 
-      // Only check usage if we have user
-      if (!user?.id) {
-        console.log('[AI Marketing] Skipping initial usage check - missing user')
-        usageCheckRunningRef.current = false
-        return
-      }
-
-      // Use current selectedBrandId or auto-select if none available
-      let brandIdToUse = selectedBrandId
-      if (!brandIdToUse && brands.length > 0) {
-        console.log('[AI Marketing] Auto-selecting first available brand for usage check:', brands[0].id)
-        brandIdToUse = brands[0].id
-        // Don't set selectedBrandId here to avoid triggering useEffect again
-      }
-
-      // Only proceed if we have a brand to use
-      if (!brandIdToUse) {
-        console.log('[AI Marketing] Skipping initial usage check - no brand available', {
-          hasUser: !!user?.id,
-          brandCount: brands.length,
-          selectedBrandId
-        })
-        usageCheckRunningRef.current = false
-        return
-      }
-
-      try {
-        // console.log('[AI Marketing] Checking initial usage for brand:', brandIdToUse)
-        const response = await fetch('/api/ai/marketing-consultant', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId: brandIdToUse,
-            prompt: '', // Empty prompt to just check usage
-            marketingGoal: 'general', // Default to general since we removed the focus selector
-            checkUsageOnly: true, // Flag to indicate we only want usage info
-            userContext: {
-              name: user?.firstName || 'there'
-            }
-          }),
-        })
-
-        const data = await response.json()
-
-        if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
-          setRemainingUses(data.remainingUses)
-          if (data.remainingUses <= 0) {
-            setIsLimitReached(true)
-          }
-        } else if (response.status === 429) {
-          // User is maxed out - show 15/15 used today
-          setRemainingUses(0) // Show 15/15 used today
-          setIsLimitReached(true)
-        } else {
-          // API error - fallback to show counter (assume not maxed out)
-          setRemainingUses(15) // Show 0/15 used today
-        }
-      } catch (error) {
-        console.error('[AI Marketing] Failed to check initial usage:', error)
-        // Don't show error to user for this background check
-      } finally {
-        usageCheckRunningRef.current = false
-      }
-    }
-
-    // Only run if we haven't checked usage yet and have the required data
-    if (!usageCheckRunningRef.current && user?.id && (selectedBrandId || brands.length > 0)) {
       usageCheckRunningRef.current = true
-      // Add a small delay to ensure brand selection is complete
-      const timeoutId = setTimeout(checkInitialUsage, 100)
+      usageCheckedBrandRef.current = selectedBrandId
 
-      return () => {
-        clearTimeout(timeoutId)
-        usageCheckRunningRef.current = false
+      const checkInitialUsage = async () => {
+        console.log(`[${new Date().toISOString()}] [AI Marketing] Checking initial usage for selected brand:`, selectedBrandId)
+
+        try {
+          console.log(`[${new Date().toISOString()}] [AI Marketing] Making usage check API call for brand:`, selectedBrandId)
+
+          const response = await fetch('/api/ai/marketing-consultant', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              brandId: selectedBrandId,
+              prompt: '', // Empty prompt to just check usage
+              marketingGoal: 'general',
+              checkUsageOnly: true,
+              userContext: {
+                name: user?.firstName || 'there'
+              }
+            }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
+            setRemainingUses(data.remainingUses)
+            if (data.remainingUses <= 0) {
+              setIsLimitReached(true)
+            }
+          } else if (response.status === 429) {
+            setRemainingUses(0)
+            setIsLimitReached(true)
+          } else {
+            setRemainingUses(15)
+          }
+        } catch (error) {
+          console.error('[AI Marketing] Failed to check initial usage:', error)
+        } finally {
+          usageCheckRunningRef.current = false
+        }
       }
+
+      // Small delay to ensure everything is set up
+      const timeoutId = setTimeout(checkInitialUsage, 100)
+      return () => clearTimeout(timeoutId)
     }
-  }, [selectedBrandId, user?.id, brands.length])
+  }, [selectedBrandId, user?.id])
 
   const filteredPrompts = selectedCategory === 'all'
     ? PROMPT_SUGGESTIONS
     : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory)
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
-    if (isLoading || isLimitReached || !selectedBrandId) {
+    // Extra protection: completely block if at limit
+    if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
+      console.log('[AI Marketing] BLOCKED: User at daily limit')
+      return
+    }
+
+    if (isLoading || !selectedBrandId) {
       console.log('[AI Marketing] Skipping prompt select - loading:', isLoading, 'limit reached:', isLimitReached, 'brandId:', selectedBrandId)
       return
     }
@@ -752,7 +742,13 @@ I can help with literally anything marketing-related for your brand - performanc
   }
 
   const handleCustomInput = async (customPrompt: string) => {
-    if (isLoading || isLimitReached || (remainingUses !== null && remainingUses <= 0) || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out - redeploy attempt
+    // Extra protection: completely block if at limit
+    if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
+      console.log('[AI Marketing] BLOCKED: User at daily limit')
+      return
+    }
+
+    if (isLoading || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out - redeploy attempt
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -813,6 +809,12 @@ I can help with literally anything marketing-related for your brand - performanc
       return
     }
 
+    // Extra protection: completely block if at limit
+    if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
+      console.log('[AI Marketing] BLOCKED: Cannot make API call - user at daily limit')
+      return
+    }
+
     analyzeRunningRef.current = true
 
     try {
@@ -848,7 +850,7 @@ I can help with literally anything marketing-related for your brand - performanc
         throw new Error('Please select a brand first')
       }
 
-      console.log('[AI Marketing] About to make fetch call to marketing consultant API')
+      console.log(`[${new Date().toISOString()}] [AI Marketing] About to make fetch call to marketing consultant API for prompt:`, prompt.substring(0, 50) + '...')
 
       const response = await fetch('/api/ai/marketing-consultant', {
         method: 'POST',
