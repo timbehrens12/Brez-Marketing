@@ -1588,9 +1588,9 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
       throw new Error('System prompt is empty')
     }
 
-    if (systemPrompt.length > 32000) {
+    if (systemPrompt.length > 25000) {
       console.error('[AI Marketing] System prompt too long:', systemPrompt.length)
-      throw new Error('System prompt too long')
+      throw new Error(`System prompt too long (${systemPrompt.length} characters). Maximum allowed: 25000`)
     }
 
     // Check for undefined values in system prompt
@@ -1600,11 +1600,22 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
       throw new Error('System prompt contains undefined values')
     }
 
+    // Additional safety checks
+    if (systemPrompt.includes('NaN')) {
+      console.error('[AI Marketing] System prompt contains NaN values!')
+      throw new Error('System prompt contains invalid numeric values')
+    }
+
     // Debug the system prompt before sending to OpenAI
     console.log('[AI Marketing] System prompt length:', systemPrompt.length)
     console.log('[AI Marketing] User prompt:', prompt.substring(0, 200) + '...')
 
-    const response = await openai.chat.completions.create({
+    // Add timeout wrapper to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('OpenAI API request timed out after 25 seconds')), 25000)
+    })
+
+    const openaiPromise = openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -1621,6 +1632,8 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
       presence_penalty: 0.1,
       frequency_penalty: 0.1
     })
+
+    const response = await Promise.race([openaiPromise, timeoutPromise])
 
     const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${brandName}${brandNiche ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
 
@@ -1647,7 +1660,13 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
       console.error('OpenAI API 400 error - likely system prompt issue')
     }
 
-    return `Hi ${userName}! I'm currently experiencing some technical difficulties analyzing your ${brandName} data. In the meantime, I can see you have spent $${(analysis.totalSpend || 0).toFixed(2)} across ${campaigns.length} campaigns with a ${(analysis.averageROAS || 0).toFixed(1)}x average ROAS. Please try your question again in a few moments!`
+    // Check if it's a timeout error
+    if (error.message && error.message.includes('timed out')) {
+      console.error('OpenAI API timeout - request took too long')
+      throw new Error('AI response generation timed out. Please try again.')
+    }
+
+    throw new Error(`Failed to generate AI response: ${error.message || 'Unknown error'}`)
   }
 }
 
