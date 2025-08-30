@@ -1267,22 +1267,21 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   }
 
   // Load creative generations from database when brand changes
-  useEffect(() => {
-    const loadCreatives = async () => {
-      if (!selectedBrandId || !user?.id) {
-        setGeneratedCreatives([])
-        setIsLoadingCreatives(false)
-        return
-      }
+  const loadCreatives = async () => {
+    if (!selectedBrandId || !user?.id) {
+      setGeneratedCreatives([])
+      setIsLoadingCreatives(false)
+      return
+    }
 
-      // Start loading immediately and clear old creatives
-      setIsLoadingCreatives(true)
-      setGeneratedCreatives([]) // Clear immediately when brand changes
-      setLoadedImages({}) // Clear loaded images cache
-      setLoadingImages(new Set()) // Clear loading images
-      
-      try {
-        // console.log('📚 Loading creatives for brand:', selectedBrandId)
+    // Start loading immediately and clear old creatives
+    setIsLoadingCreatives(true)
+    setGeneratedCreatives([]) // Clear immediately when brand changes
+    setLoadedImages({}) // Clear loaded images cache
+    setLoadingImages(new Set()) // Clear loading images
+
+    try {
+      // console.log('📚 Loading creatives for brand:', selectedBrandId)
         const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&limit=50`)
         
         if (!response.ok) {
@@ -1306,8 +1305,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         setIsLoadingCreatives(false)
       }
     }
+  }
 
-    loadCreatives()
+  useEffect(() => {
+    if (typeof loadCreatives === 'function') {
+      loadCreatives()
+    }
   }, [selectedBrandId, user?.id])
 
   // Auto-load images for completed creatives when they become visible
@@ -3575,7 +3578,9 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
                         // Show success and switch to generated tab
                         toast.success('Template-based creative generated successfully!');
                         setActiveTab('generated');
-                        await loadCreatives(); // Refresh the creatives list
+                        if (typeof loadCreatives === 'function') {
+                          await loadCreatives(); // Refresh the creatives list
+                        }
 
                         // Clear form
                         setTemplateImage(null);

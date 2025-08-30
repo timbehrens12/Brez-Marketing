@@ -315,23 +315,57 @@ export async function POST(request: NextRequest) {
         }
 
         // Save the template-based creative
+        // First, try to determine what columns are available in the creatives table
+        const creativeInsertData: any = {
+          brand_id: brandId,
+          user_id: userId,
+          style_id: 0, // Template-based generation
+          style_name: 'Template-Based',
+          custom_name: customName || 'Template Creative',
+          status: 'completed',
+          original_image_url: compressedProductImage,
+          generated_image_url: compressedGeneratedImage,
+          text_overlays: { top: '', bottom: '' },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // Try to add template-specific columns if they exist
+        try {
+          // Test if template_image_url column exists
+          const { error: testTemplateError } = await supabase
+            .from('creatives')
+            .select('template_image_url')
+            .limit(1);
+
+          if (!testTemplateError) {
+            creativeInsertData.template_image_url = compressedExampleImage;
+          } else {
+            console.log('⚠️ template_image_url column not found, skipping');
+          }
+        } catch (testError) {
+          console.log('⚠️ Could not test template_image_url column, skipping');
+        }
+
+        try {
+          // Test if additional_notes column exists
+          const { error: testNotesError } = await supabase
+            .from('creatives')
+            .select('additional_notes')
+            .limit(1);
+
+          if (!testNotesError) {
+            creativeInsertData.additional_notes = additionalNotes;
+          } else {
+            console.log('⚠️ additional_notes column not found, skipping');
+          }
+        } catch (testError) {
+          console.log('⚠️ Could not test additional_notes column, skipping');
+        }
+
         const { data: creativeData, error: creativeError } = await supabase
           .from('creatives')
-          .insert({
-            brand_id: brandId,
-            user_id: userId,
-            style_id: 0, // Template-based generation
-            style_name: 'Template-Based',
-            custom_name: customName || 'Template Creative',
-            status: 'completed',
-            original_image_url: compressedProductImage,
-            generated_image_url: compressedGeneratedImage,
-            template_image_url: compressedExampleImage, // Store the example template
-            additional_notes: additionalNotes,
-            text_overlays: { top: '', bottom: '' },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .insert(creativeInsertData)
           .select()
           .single();
 
