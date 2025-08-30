@@ -734,31 +734,52 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Set up periodic refresh every 30 seconds to keep usage data fresh
     const refreshInterval = setInterval(() => {
       if (!document.hidden && userId) {
-
-        loadToolUsageData()
+        // Only refresh if user hasn't reached AI consultant limit (15/15)
+        const currentAiUsage = toolUsageData.aiConsultant[userId] || 0
+        if (currentAiUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping periodic refresh - AI consultant limit reached')
+        }
       }
     }, 15000) // 15 seconds - faster refresh for better usage sync
 
     // Listen for focus events to refresh when user returns to dashboard
     const handleFocus = () => {
       if (userId) {
-
-        loadToolUsageData()
+        // Only refresh if user hasn't reached AI consultant limit (15/15)
+        const currentAiUsage = toolUsageData.aiConsultant[userId] || 0
+        if (currentAiUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping focus refresh - AI consultant limit reached')
+        }
       }
     }
-    
+
     // Listen for visibility change to refresh when user returns
     const handleVisibilityChange = () => {
       if (!document.hidden && userId) {
-
-        loadToolUsageData()
+        // Only refresh if user hasn't reached AI consultant limit (15/15)
+        const currentAiUsage = toolUsageData.aiConsultant[userId] || 0
+        if (currentAiUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping visibility refresh - AI consultant limit reached')
+        }
       }
     }
 
     // Listen for creative studio usage updates
     const handleCreativeStudioUpdate = () => {
       if (userId) {
-        loadToolUsageData()
+        // Only refresh if user hasn't reached AI consultant limit (15/15)
+        const currentAiUsage = toolUsageData.aiConsultant[userId] || 0
+        if (currentAiUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping creative studio update - AI consultant limit reached')
+        }
       }
     }
 
@@ -778,7 +799,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Listen for localStorage changes (for creative studio usage resets)
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'ad-creative-usage' && userId) {
-        loadToolUsageData()
+        // Only refresh if user hasn't reached AI consultant limit (15/15)
+        const currentAiUsage = toolUsageData.aiConsultant[userId] || 0
+        if (currentAiUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping storage change refresh - AI consultant limit reached')
+        }
       }
     }
 
