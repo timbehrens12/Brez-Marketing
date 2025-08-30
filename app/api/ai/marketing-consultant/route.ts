@@ -330,10 +330,20 @@ async function recordAgencyModeUsage(userId: string, featureType: string, metada
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    // Debug logging to identify source of calls
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    const referer = request.headers.get('referer') || 'unknown'
+    console.log('[API Debug] Marketing Consultant called:', {
+      userId: userId.substring(0, 8) + '...',
+      userAgent: userAgent.substring(0, 50),
+      referer: referer,
+      timestamp: new Date().toISOString()
+    })
 
       const { brandId, prompt, marketingGoal, userContext, checkUsageOnly = false, conversationHistory = [], dateRange } = await request.json()
     
