@@ -660,33 +660,46 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
 
         // Load AI Consultant usage - now shows combined agency + brand usage
-        try {
-          const response = await fetch('/api/ai/marketing-consultant', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              mode: 'agency', // Mode doesn't matter now - usage is combined
-              checkUsageOnly: true
-            }),
-          })
+        // Check if we already know this user is maxed out to avoid excessive 429 calls
+        const currentUsage = newToolUsageData.aiConsultant[userId] || 0
+        if (currentUsage < 15) { // Only make API call if not already maxed out
+          try {
+            const response = await fetch('/api/ai/marketing-consultant', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                mode: 'agency', // Mode doesn't matter now - usage is combined
+                checkUsageOnly: true
+              }),
+            })
 
-          if (response.ok) {
-            const data = await response.json()
-            // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
-            const remainingUses = data.remainingUses || 0
-            const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
+            if (response.ok) {
+              const data = await response.json()
+              // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
+              const remainingUses = data.remainingUses || 0
+              const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
 
-            // Store combined usage count for this user (daily limit of 15 across all modes)
-            newToolUsageData.aiConsultant[userId] = dailyUsageCount
-          } else if (response.status === 429) {
-            // User is maxed out - set to 15 used
-            newToolUsageData.aiConsultant[userId] = 15 // Maxed out
-          } else {
-            // If API fails, set to 0 and try to get from local fallback
-            newToolUsageData.aiConsultant[userId] = 0
+              // Store combined usage count for this user (daily limit of 15 across all modes)
+              newToolUsageData.aiConsultant[userId] = dailyUsageCount
+            } else if (response.status === 429) {
+              // User is maxed out - set to 15 used
+              newToolUsageData.aiConsultant[userId] = 15 // Maxed out
+            } else {
+              // If API fails, set to 0 and try to get from local fallback
+              newToolUsageData.aiConsultant[userId] = 0
+            }
+          } catch (error) {
+            // If API fails, keep current usage or set to 0
+            if (!newToolUsageData.aiConsultant[userId]) {
+              newToolUsageData.aiConsultant[userId] = 0
+            }
           }
+        } else {
+          // User is already maxed out, no need to make another API call
+          console.log('[AgencyActionCenter] Skipping AI usage API call - user already at limit')
+        }
         } catch (error) {
 
           newToolUsageData.aiConsultant[userId] = 0
@@ -758,7 +771,13 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     // Listen for AI consultant usage updates
     const handleAIConsultantUpdate = () => {
       if (userId) {
-        loadToolUsageData()
+        // Only refresh if we don't already know the user is maxed out
+        const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
+        if (currentUsage < 15) {
+          loadToolUsageData()
+        } else {
+          console.log('[AgencyActionCenter] Skipping AI consultant update - user already at limit')
+        }
       }
     }
 

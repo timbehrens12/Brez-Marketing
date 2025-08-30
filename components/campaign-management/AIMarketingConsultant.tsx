@@ -605,6 +605,12 @@ I can help with literally anything marketing-related for your brand - performanc
     const checkInitialUsage = async () => {
       console.log('[AI Marketing] Checking initial usage - user:', user?.id, 'brandId:', selectedBrandId, 'brands:', brands.length)
 
+      // Skip API call if we already know the user is maxed out
+      if (remainingUses === 0) {
+        console.log('[AI Marketing] Skipping usage check - user already at limit')
+        return
+      }
+
       // Only check usage if we have both user and selectedBrandId
       if (!user?.id || !selectedBrandId) {
         console.log('[AI Marketing] Skipping initial usage check - missing user or brandId', {
