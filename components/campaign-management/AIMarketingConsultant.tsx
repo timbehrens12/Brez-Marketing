@@ -644,7 +644,11 @@ I can help with literally anything marketing-related for your brand - performanc
         const data = await response.json()
 
         if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
-          // console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
+          console.log('[AI Marketing Frontend] Initial usage check:', {
+            remainingUses: data.remainingUses,
+            canUse: data.canUse,
+            responseStatus: response.status
+          })
           setRemainingUses(data.remainingUses)
           if (data.remainingUses <= 0) {
             setIsLimitReached(true)

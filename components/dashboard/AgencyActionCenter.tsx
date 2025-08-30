@@ -674,13 +674,25 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
           if (response.ok) {
             const data = await response.json()
+            console.log('[AgencyActionCenter] AI usage API response:', {
+              remainingUses: data.remainingUses,
+              canUse: data.canUse,
+              responseStatus: response.status
+            })
             // Calculate used from remaining: if remainingUses = 4, then used = 11 (15-4)
             const remainingUses = data.remainingUses || 0
             const dailyUsageCount = Math.max(0, 15 - remainingUses) // Ensure never negative
 
+            console.log('[AgencyActionCenter] Calculated usage:', {
+              remainingUses,
+              dailyUsageCount,
+              calculation: `15 - ${remainingUses} = ${dailyUsageCount}`
+            })
+
             // Store combined usage count for this user (daily limit of 15 across all modes)
             newToolUsageData.aiConsultant[userId] = dailyUsageCount
           } else {
+            console.error('[AgencyActionCenter] AI usage API failed:', response.status)
             // If API fails, set to 0 and try to get from local fallback
             newToolUsageData.aiConsultant[userId] = 0
           }
