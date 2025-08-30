@@ -250,7 +250,7 @@ function parseeDateRangeFromPrompt(prompt: string, conversationHistory: any[] = 
       }
     }
   }
-
+  
   return null
 }
 
@@ -338,11 +338,11 @@ export async function POST(request: NextRequest) {
     }
 
       const { brandId, prompt, marketingGoal, userContext, checkUsageOnly = false, conversationHistory = [], dateRange } = await request.json()
-     
-         if (!checkUsageOnly && !prompt) {
+    
+    if (!checkUsageOnly && !prompt) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
-
+    
     // Brand ID is required for actual queries, but not for usage checks
     if (!checkUsageOnly && !brandId) {
       return NextResponse.json({ error: 'Brand ID is required for queries' }, { status: 400 })
@@ -385,37 +385,37 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user owns this brand or has shared access
-    const { data: brandData, error: brandError } = await supabase
-      .from('brands')
-      .select('*')
-      .eq('id', brandId)
-      .single()
-
-    if (brandError || !brandData) {
-      return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
-    }
-
-    // Check if user owns the brand or has shared access
-    const isOwner = brandData.user_id === userId
-    let hasAccess = isOwner
-
-    if (!isOwner) {
-      // Check if user has shared access to this brand
-      const { data: accessCheck } = await supabase
-        .from('brand_access')
-        .select('role')
-        .eq('brand_id', brandId)
-        .eq('user_id', userId)
-        .is('revoked_at', null)
+      const { data: brandData, error: brandError } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('id', brandId)
         .single()
 
-      hasAccess = !!accessCheck
-    }
+      if (brandError || !brandData) {
+        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      }
 
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
-    }
-    
+      // Check if user owns the brand or has shared access
+      const isOwner = brandData.user_id === userId
+      let hasAccess = isOwner
+
+      if (!isOwner) {
+        // Check if user has shared access to this brand
+        const { data: accessCheck } = await supabase
+          .from('brand_access')
+          .select('role')
+          .eq('brand_id', brandId)
+          .eq('user_id', userId)
+          .is('revoked_at', null)
+          .single()
+
+        hasAccess = !!accessCheck
+      }
+
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      }
+      
     const brand = brandData
     const analysisData = await gatherComprehensiveMarketingData(supabase, brandId, effectiveDateRange)
     
@@ -482,7 +482,7 @@ export async function POST(request: NextRequest) {
 
     // Record chat usage - now using unified tracking for brand mode
     console.log(`[AI Marketing] Recording usage for userId ${userId}, mode: brand, feature: ai_consultant_chat...`)
-
+    
     // Always record in ai_feature_usage table for unified tracking
     await recordAgencyModeUsage(userId, 'ai_consultant_chat', {
       prompt: prompt.substring(0, 100), // Store first 100 chars for tracking
@@ -639,7 +639,7 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
     return {
       campaigns: campaignArray,
       adSets: [], // Not needed for AI analysis
-      ads: [], // Not needed for AI analysis
+      ads: [], // Not needed for AI analysis  
       dailyStats: dailyStatsArray,
       shopifyData,
       metaInsightsData,
@@ -752,7 +752,7 @@ async function gatherShopifyData(supabase: any, brandId: string, fromDate: strin
       const toDateTime = `${nextDay}T00:00:00Z` // Start of next day UTC (covers entire target day)
 
       console.log(`[AI Marketing Consultant] Date filter boundaries: ${fromDateTime} to ${toDateTime}`)
-
+      
       ordersQuery = ordersQuery
         .gte('created_at', fromDateTime)
         .lt('created_at', toDateTime) // Use lt instead of lte for exclusive upper bound
@@ -1381,7 +1381,7 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
   const metaOnlyRevenue = metaRevenue // For Meta-specific ROAS
   const totalImpressions = dailyStats.reduce((sum, d) => sum + (d.impressions || 0), 0)
   const totalClicks = dailyStats.reduce((sum, d) => sum + (d.clicks || 0), 0)
-
+  
   // Calculate averages - use Meta revenue for Meta ROAS (show whatever Meta API returns)
   const averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
@@ -1401,7 +1401,7 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     purchase_value: d.purchase_value,
     impressions: d.impressions
   })))
-
+  
   // Active campaigns
   const activecampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
   
@@ -1629,7 +1629,7 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
-DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}.
+DATA ACCESS: You have access to campaign and sales data from ${analysisData.dateRange?.from || 'N/A'} to ${analysisData.dateRange?.to || 'N/A'}. 
 
 IMPORTANT: The Shopify sales data shown in the context below is for the EXACT date range requested (${analysisData.dateRange?.from} to ${analysisData.dateRange?.to}). When users ask about specific days like "today" or "yesterday", you have that exact data available.
 
@@ -1790,12 +1790,12 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
     const aiResponse = response.choices[0].message.content || `Hi ${userName}! I'd be happy to help analyze your ${brandName}${brandNiche ? ` ${brandNiche} business` : ''} performance, but I'm having trouble generating a response right now. Please try again in a moment.`
 
     console.log('[AI Marketing] OpenAI response generated successfully, length:', aiResponse.length)
-
+    
     // Final safety check on the AI response
     if (containsInappropriateContent(aiResponse)) {
       return `Hi ${userName}! I'm your marketing consultant assistant focused on helping with campaign optimization and marketing strategies. Let me help you with a marketing-related question instead - I can analyze your performance data, suggest optimization strategies, or help with campaign planning!`
     }
-
+    
     return aiResponse
 
   } catch (error) {
@@ -1935,7 +1935,7 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
     
     // Fetch agency-wide optimizations and reports
     const agencyOptimizationsAndReports = await gatherAgencyOptimizationsAndReports(supabase, userId)
-
+    
     // Aggregate data across all brands
     console.log(`[AI Marketing Consultant] Agency mode: Processing ${brands.length} brands with date range:`, customDateRange)
     
@@ -2025,7 +2025,7 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
             aggregatedShopifyData.inventoryAlerts.totalInventoryValue += brandData.shopifyData.inventoryAlerts.totalInventoryValue || 0
           }
         }
-
+        
         // Track individual brand performance
         brandPerformance.push({
           brand_name: brand.name,
@@ -2139,8 +2139,8 @@ async function gatherAgencyWideData(supabase: any, userId: string, customDateRan
   } catch (error) {
     console.error('[AI Marketing Consultant] CRITICAL ERROR in gatherAgencyWideData:', error)
     console.error('[AI Marketing Consultant] Stack trace:', (error as Error).stack)
-    return {
-      campaigns: [],
+    return { 
+      campaigns: [], 
       brands: [],
       analysis: { totalSpend: 0, averageROAS: 0 },
       dateRange: { from: 'N/A', to: 'N/A', days: 30 }
