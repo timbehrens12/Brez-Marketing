@@ -742,7 +742,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           console.log('[AgencyActionCenter] Skipping periodic refresh - AI consultant limit reached')
         }
       }
-    }, 15000) // 15 seconds - faster refresh for better usage sync (updated to prevent 429 errors)
+    }, 15000) // 15 seconds - faster refresh for better usage sync (updated to prevent 429 errors - redeploy attempt)
 
     // Listen for focus events to refresh when user returns to dashboard
     const handleFocus = () => {

@@ -723,7 +723,7 @@ I can help with literally anything marketing-related for your brand - performanc
   }
 
   const handleCustomInput = async (customPrompt: string) => {
-    if (isLoading || isLimitReached || remainingUses <= 0 || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out
+    if (isLoading || isLimitReached || remainingUses <= 0 || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out - redeploy attempt
 
     // Add user message
     const userMessage: ChatMessage = {
