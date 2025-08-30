@@ -644,18 +644,16 @@ I can help with literally anything marketing-related for your brand - performanc
         const data = await response.json()
 
         if (response.ok && data.remainingUses !== undefined && data.remainingUses !== null) {
-          console.log('[AI Marketing Frontend] Initial usage check:', {
-            remainingUses: data.remainingUses,
-            canUse: data.canUse,
-            responseStatus: response.status
-          })
           setRemainingUses(data.remainingUses)
           if (data.remainingUses <= 0) {
             setIsLimitReached(true)
           }
+        } else if (response.status === 429) {
+          // User is maxed out - show 15/15 used today
+          setRemainingUses(0) // Show 15/15 used today
+          setIsLimitReached(true)
         } else {
-          // Fallback: set to 15 if we can't determine usage, so counter shows
-          console.log('[AI Marketing] Setting fallback usage to show counter')
+          // API error - fallback to show counter (assume not maxed out)
           setRemainingUses(15) // Show 0/15 used today
         }
       } catch (error) {

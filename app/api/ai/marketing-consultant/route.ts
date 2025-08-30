@@ -280,16 +280,6 @@ async function checkCombinedUsage(userId: string, featureType: string, supabase:
     
     const totalUsageCount = usageData?.length || 0
     const remaining = dailyLimit - totalUsageCount
-
-    console.log(`[AI Usage] User ${userId} - Total usage: ${totalUsageCount}/${dailyLimit}`)
-    console.log(`[AI Usage] Debug:`, {
-      usageDataLength: usageData?.length,
-      dailyLimit,
-      remaining,
-      today,
-      userId,
-      featureType
-    })
     
     if (totalUsageCount >= dailyLimit) {
       return {
@@ -372,11 +362,6 @@ export async function POST(request: NextRequest) {
 
     // If this is just a usage check, return the status without processing
     if (checkUsageOnly) {
-      console.log(`[AI API] checkUsageOnly response:`, {
-        canUse: usageStatus.canUse,
-        remainingUses: usageStatus.remainingUses,
-        reason: usageStatus.reason
-      })
       return NextResponse.json({
         canUse: usageStatus.canUse,
         remainingUses: usageStatus.remainingUses || 0
