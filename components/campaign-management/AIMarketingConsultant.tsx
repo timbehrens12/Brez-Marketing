@@ -601,28 +601,38 @@ I can help with literally anything marketing-related for your brand - performanc
   }, [messages])
 
   // Check initial usage status when component mounts
+  // Ref to track if usage check is already running
+  const usageCheckRunningRef = useRef(false)
+
   useEffect(() => {
+    // Prevent multiple simultaneous usage checks
+    if (usageCheckRunningRef.current) {
+      return
+    }
+
     const checkInitialUsage = async () => {
       console.log('[AI Marketing] Checking initial usage - user:', user?.id, 'brandId:', selectedBrandId, 'brands:', brands.length)
 
       // Skip API call if we already know the user is maxed out
       if (remainingUses === 0 || isLimitReached) {
         console.log('[AI Marketing] Skipping usage check - user already at limit')
+        usageCheckRunningRef.current = false
         return
       }
 
       // Only check usage if we have user
       if (!user?.id) {
         console.log('[AI Marketing] Skipping initial usage check - missing user')
+        usageCheckRunningRef.current = false
         return
       }
 
-      // If no brand is selected but brands are available, auto-select the first one
+      // Use current selectedBrandId or auto-select if none available
       let brandIdToUse = selectedBrandId
       if (!brandIdToUse && brands.length > 0) {
         console.log('[AI Marketing] Auto-selecting first available brand for usage check:', brands[0].id)
         brandIdToUse = brands[0].id
-        setSelectedBrandId(brandIdToUse)
+        // Don't set selectedBrandId here to avoid triggering useEffect again
       }
 
       // Only proceed if we have a brand to use
@@ -632,6 +642,7 @@ I can help with literally anything marketing-related for your brand - performanc
           brandCount: brands.length,
           selectedBrandId
         })
+        usageCheckRunningRef.current = false
         return
       }
 
@@ -671,14 +682,23 @@ I can help with literally anything marketing-related for your brand - performanc
       } catch (error) {
         console.error('[AI Marketing] Failed to check initial usage:', error)
         // Don't show error to user for this background check
+      } finally {
+        usageCheckRunningRef.current = false
       }
     }
 
-    // Add a small delay to ensure brand selection is complete
-    const timeoutId = setTimeout(checkInitialUsage, 100)
+    // Only run if we haven't checked usage yet and have the required data
+    if (!usageCheckRunningRef.current && user?.id && (selectedBrandId || brands.length > 0)) {
+      usageCheckRunningRef.current = true
+      // Add a small delay to ensure brand selection is complete
+      const timeoutId = setTimeout(checkInitialUsage, 100)
 
-    return () => clearTimeout(timeoutId)
-  }, [selectedBrandId, user?.id])
+      return () => {
+        clearTimeout(timeoutId)
+        usageCheckRunningRef.current = false
+      }
+    }
+  }, [selectedBrandId, user?.id, brands.length])
 
   const filteredPrompts = selectedCategory === 'all'
     ? PROMPT_SUGGESTIONS
@@ -729,7 +749,7 @@ I can help with literally anything marketing-related for your brand - performanc
   }
 
   const handleCustomInput = async (customPrompt: string) => {
-    if (isLoading || isLimitReached || remainingUses <= 0 || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out - redeploy attempt
+    if (isLoading || isLimitReached || (remainingUses !== null && remainingUses <= 0) || !customPrompt.trim() || !selectedBrandId) return // Prevent API calls when user is maxed out - redeploy attempt
 
     // Add user message
     const userMessage: ChatMessage = {

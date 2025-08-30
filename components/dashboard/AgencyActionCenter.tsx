@@ -270,6 +270,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const brandHealthLoadingRef = useRef(false)
   const userDataLoadingRef = useRef(false)
   const todosLoadingRef = useRef(false)
+  const toolUsageLoadingRef = useRef(false)
   
   // Add widget loading states (main loading moved to dashboard level)
   const [isWidgetLoading, setIsWidgetLoading] = useState({
@@ -590,6 +591,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     const loadToolUsageData = async () => {
       if (!userId) return
 
+      // Prevent multiple simultaneous calls
+      if (toolUsageLoadingRef.current) {
+        console.log('[AgencyActionCenter] Tool usage data already loading, skipping duplicate call')
+        return
+      }
+
+      toolUsageLoadingRef.current = true
+
       try {
         const supabase = await getSupabaseClient()
         const newToolUsageData = {
@@ -723,6 +732,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         setToolUsageData(newToolUsageData)
       } catch (error) {
         console.error('Error loading tool usage data:', error)
+      } finally {
+        toolUsageLoadingRef.current = false
       }
     }
 
