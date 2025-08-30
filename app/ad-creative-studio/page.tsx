@@ -3054,72 +3054,75 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
-          <div className="p-4 border-b border-[#333]">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setActiveTab('create')}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === 'create'
-                      ? 'bg-white text-black'
-                      : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
-                  }`}
-                >
-                  Create New
-                </button>
-                <button
-                  onClick={() => setActiveTab('template')}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
-                    activeTab === 'template'
-                      ? 'bg-white text-black'
-                      : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Template
-                </button>
-                <button
-                  onClick={() => setActiveTab('generated')}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
-                    activeTab === 'generated'
-                      ? 'bg-white text-black'
-                      : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
-                  }`}
-                >
-                  Generated Creatives
-                  {generatedCreatives.length > 0 && (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
-                      {generatedCreatives.length}
-                    </span>
-                  )}
-                </button>
-              </div>
-              
-              {/* Storage Limit Tracker - Always visible */}
-              <div className="bg-gradient-to-r from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm text-gray-400">Storage:</div>
-                  <div className={`text-sm font-medium ${
-                    generatedCreatives.length >= STORAGE_LIMIT 
-                      ? 'text-red-400' 
-                      : generatedCreatives.length >= STORAGE_LIMIT * 0.8 
-                        ? 'text-yellow-400' 
-                        : 'text-green-400'
-                  }`}>
-                    {generatedCreatives.length}/{STORAGE_LIMIT}
+        {/* Main Content Layout - 66/33 Split */}
+        <div className="flex gap-6">
+          {/* Left Section - Main Widget (66%) */}
+          <div className="w-2/3">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl">
+              <div className="p-4 border-b border-[#333]">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setActiveTab('create')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                        activeTab === 'create'
+                          ? 'bg-white text-black'
+                          : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      Create New
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('template')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                        activeTab === 'template'
+                          ? 'bg-white text-black'
+                          : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Template
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('generated')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                        activeTab === 'generated'
+                          ? 'bg-white text-black'
+                          : 'bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      Generated Creatives
+                      {generatedCreatives.length > 0 && (
+                        <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
+                          {generatedCreatives.length}
+                        </span>
+                      )}
+                    </button>
                   </div>
-                  {generatedCreatives.length >= STORAGE_LIMIT && (
-                    <div className="text-xs text-red-400 ml-1">🚫 Limit Reached</div>
-                  )}
+                  
+                  {/* Storage Limit Tracker - Always visible */}
+                  <div className="bg-gradient-to-r from-[#222] to-[#1e1e1e] border border-[#333] rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-gray-400">Storage:</div>
+                      <div className={`text-sm font-medium ${
+                        generatedCreatives.length >= STORAGE_LIMIT 
+                          ? 'text-red-400' 
+                          : generatedCreatives.length >= STORAGE_LIMIT * 0.8 
+                            ? 'text-yellow-400' 
+                            : 'text-green-400'
+                      }`}>
+                        {generatedCreatives.length}/{STORAGE_LIMIT}
+                      </div>
+                      {generatedCreatives.length >= STORAGE_LIMIT && (
+                        <div className="text-xs text-red-400 ml-1">🚫 Limit Reached</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Tab Content */}
-          <div className="p-6">
+              {/* Tab Content */}
+              <div className="p-6">
             {activeTab === 'create' ? (
               <div className="space-y-6">
                 {!uploadedImage && (!isMultiMode || uploadedImages.length === 0) ? (
@@ -4164,10 +4167,55 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 )}
               </div>
             )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Section - Creative Preview Widget (33%) */}
+          <div className="w-1/3">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] shadow-xl h-full">
+              <div className="p-4 border-b border-[#333]">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Creative Preview</h3>
+                    <p className="text-gray-400 text-sm">Generated creative will appear here</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                {/* Preview Content */}
+                <div className="min-h-[400px] flex flex-col items-center justify-center">
+                  {/* Empty State */}
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-gray-700/30 to-gray-800/30 rounded-xl flex items-center justify-center mb-4">
+                      <ImageIcon className="w-8 h-8 text-gray-500" />
+                    </div>
+                    <h4 className="text-white font-medium mb-2">No Preview Available</h4>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Upload a product image and generate a creative to see the preview here.
+                    </p>
+                  </div>
+                  
+                  {/* Status Indicator */}
+                  <div className="mt-8 w-full">
+                    <div className="bg-gradient-to-r from-gray-800/30 to-gray-700/30 rounded-lg p-4 border border-gray-700/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                        <span className="text-gray-400 text-sm">Waiting for generation...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-          </div>
-          </div>
+      </div>
+    </div>
 
     {/* Completely Redesigned Modal */}
         {showStyleModal && (
