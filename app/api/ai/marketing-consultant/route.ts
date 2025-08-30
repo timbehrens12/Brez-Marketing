@@ -455,6 +455,12 @@ export async function POST(request: NextRequest) {
       validationErrors.push(`Data attribution issue: Zero ad spend but $${analysisData.analysis.totalRevenue} revenue`)
     }
 
+    // Check for broken Meta attribution (high spend, very low attributed revenue)
+    if (analysisData.analysis?.totalSpend > 10 && analysisData.analysis?.averageROAS === 0) {
+      console.warn(`[AI Marketing] META ATTRIBUTION BROKEN: $${analysisData.analysis.totalSpend} spend but 0.00x ROAS - attribution not working`)
+      validationErrors.push(`Meta attribution issue: $${analysisData.analysis.totalSpend} ad spend but no attributed revenue detected`)
+    }
+
     if (validationErrors.length > 0) {
       console.error(`[AI Marketing] Data validation failed:`, validationErrors)
 
@@ -1354,7 +1360,14 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
   const totalClicks = dailyStats.reduce((sum, d) => sum + (d.clicks || 0), 0)
 
   // Calculate averages - use Meta revenue for Meta ROAS
-  const averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
+  let averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
+
+  // Force ROAS to 0.00x if Meta attribution data is clearly broken
+  // If spend > $10 but attributed revenue < $1, attribution is likely not working
+  if (totalSpend > 10 && metaOnlyRevenue < 1) {
+    console.warn(`[AI Marketing] FORCING ROAS TO 0.00x - Meta attribution appears broken: $${totalSpend} spend but only $${metaOnlyRevenue} attributed revenue`)
+    averageROAS = 0
+  }
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
   
@@ -1363,7 +1376,28 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     shopifyRevenue,
     totalRevenue,
     totalSpend,
-    averageROAS
+    averageROAS,
+    calculation: `${metaRevenue} / ${totalSpend} = ${averageROAS}x`,
+    dataSource: 'Meta purchase_value only'
+  })
+
+      // Debug: Log individual daily stats to see purchase_value data
+  console.log(`[AI Marketing Consultant] Meta daily stats breakdown:`, dailyStats.map(d => ({
+    date: d.date,
+    spend: d.spend,
+    purchase_value: d.purchase_value,
+    impressions: d.impressions
+  })))
+
+  // Additional debug: Show what the AI will see
+  console.log(`[AI Marketing Consultant] FINAL VALUES FOR AI:`, {
+    totalSpend: totalSpend.toFixed(2),
+    averageROAS: averageROAS.toFixed(2),
+    totalImpressions: totalImpressions.toLocaleString(),
+    averageCTR: averageCTR.toFixed(2),
+    activecampaigns,
+    metaRevenue: metaRevenue.toFixed(2),
+    shopifyRevenue: shopifyRevenue.toFixed(2)
   })
   
   // Active campaigns
@@ -1571,6 +1605,7 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - If you don't have data for a specific metric, say "I don't have that data available for this time period"
 - Always use the EXACT numbers from the context - do not round, estimate, modify, or invent numbers
 - When discussing ROAS: ONLY use the averageROAS value shown in the context (e.g., if it shows 0.00, say "0.00x", not "10.99x" or any other number)
+- CRITICAL: If averageROAS shows 0.00x, this means Meta attribution is not working - do NOT estimate or calculate a different ROAS value
 - When discussing spend: ONLY use the totalSpend value shown in the context
 - DO NOT calculate or estimate ROAS yourself - use the pre-calculated averageROAS from the data
 - If averageROAS is 0.00, say "The ROAS is currently 0.00x" - do not invent or estimate a different value like "10.99x"

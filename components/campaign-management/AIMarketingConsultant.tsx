@@ -453,6 +453,20 @@ export default function AIMarketingConsultant(
     console.log('[AI Marketing] selectedBrandId changed:', selectedBrandId)
     console.log('[AI Marketing] brands available:', brands.length)
   }, [selectedBrandId, brands.length])
+
+  // Debug function to show ROAS calculation details
+  const showROASDebug = () => {
+    console.log('[AI Marketing] Current brand:', selectedBrandId)
+    console.log('[AI Marketing] Available brands:', brands)
+    console.log('[AI Marketing] User ID:', user?.id)
+  }
+
+  // Add debug button in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      showROASDebug()
+    }
+  }, [selectedBrandId, brands, user])
   const { user } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
