@@ -102,52 +102,88 @@ export async function POST(request: NextRequest) {
     // Convert base64 to buffer for processing
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    console.log('🔍 Processing image with Gemini 2.0 Flash...');
+    console.log('🔍 Processing image with Gemini 2.5 Flash Image...');
 
-    // Use Gemini 2.0 Flash for generation
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
+    // Use Gemini 2.5 Flash Image for generation (same as generate-creative API)
+    let imageModel;
+    try {
+      imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
+    } catch (error) {
+      console.log('⚠️ Trying alternative model name...');
+      try {
+        imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+      } catch (error2) {
+        console.log('⚠️ Trying gemini-2.0-flash-image...');
+        imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-image" });
       }
-    });
+    }
 
-    // Create image part for Gemini
-    const imagePart = {
-      inlineData: {
-        data: base64Data,
-        mimeType: 'image/jpeg'
-      }
-    };
-
-    // Generate the background replacement
-    const result = await model.generateContent([
+    // Generate the background replacement using the image model
+    const result = await imageModel.generateContent([
       enhancedPrompt,
-      imagePart
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: 'image/jpeg'
+        }
+      }
     ]);
 
-    const response = await result.response;
-    const generatedText = response.text();
+    // Extract the generated image from the response (same logic as generate-creative)
+    let generatedImageUrl = null;
+    let generatedImageData = null;
 
-    // Extract image URL from the response (assuming it returns a data URL or similar)
-    let imageUrl = '';
-
-    // If the response contains a data URL, use it directly
-    const dataUrlMatch = generatedText.match(/data:image\/[^;]+;base64,[^"'\s]+/);
-    if (dataUrlMatch) {
-      imageUrl = dataUrlMatch[0];
-    } else {
-      // If no data URL found, we'll need to handle this differently
-      // For now, return an error
-      console.error('No image URL found in response:', generatedText);
-      return NextResponse.json(
-        { error: 'Failed to generate image URL from response' },
-        { status: 500 }
-      );
+    const candidates = result.response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No response candidates from Gemini API');
     }
+
+    console.log('🔍 Gemini response candidates count:', candidates.length);
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      throw new Error('No content parts in Gemini API response');
+    }
+
+    console.log('🔍 Content parts count:', content.parts.length);
+
+    for (const part of content.parts) {
+      console.log('🔍 Processing part:', Object.keys(part));
+
+      if (part.inlineData) {
+        // The data is already base64 encoded from Gemini
+        generatedImageData = part.inlineData.data;
+        // Create a data URL for the response
+        generatedImageUrl = `data:${part.inlineData.mimeType};base64,${generatedImageData}`;
+        console.log('🖼️ Generated image data length:', generatedImageData.length);
+        console.log('🎯 Generated image MIME type:', part.inlineData.mimeType);
+        break;
+      } else if (part.text) {
+        console.log('📝 Text response from Gemini:', part.text.substring(0, 200) + '...');
+      }
+    }
+
+    if (!generatedImageUrl) {
+      console.error('❌ No image found in Gemini response');
+      console.error('📋 Full response structure:', JSON.stringify(result.response, null, 2));
+
+      return NextResponse.json({
+        error: 'Image Generation Failed',
+        message: 'Gemini did not return image data. This might be due to model limitations or the prompt being interpreted as text-only.',
+        details: {
+          candidatesCount: candidates.length,
+          partsCount: content.parts.length,
+          partTypes: content.parts.map(p => Object.keys(p)),
+          hasText: content.parts.some(p => p.text),
+          hasInlineData: content.parts.some(p => p.inlineData)
+        }
+      }, { status: 500 });
+    }
+
+    console.log('✅ Background image generated successfully');
+
+    // Use the generated image URL
+    const imageUrl = generatedImageUrl;
 
     // If saveToDatabase is true, save the creative to the database
     if (saveToDatabase && brandId) {
