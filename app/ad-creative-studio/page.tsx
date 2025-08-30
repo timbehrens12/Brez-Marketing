@@ -2479,7 +2479,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
     toast.info(isMultiMode && uploadedImages.length > 1
       ? `Starting generation of ${uploadedImages.length} creatives... This may take ${(uploadedImages.length * 45)}-${(uploadedImages.length * 75)} seconds.`
       : 'Starting image generation... This may take 30-60 seconds.'
-    )
+    );
 
     try {
       if (isMultiMode && uploadedImages.length > 1) {
@@ -2644,9 +2644,12 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       }
 
       // Single product mode (existing logic continues below)
-      const base64Image = await new Promise<string>(async (resolve, reject) => {
-        try {
-          if (uploadedImage) {
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.readAsDataURL(uploadedImage);
+      });
 
       // Debug logging
       // console.log('🚀 SENDING TO API:')
@@ -2763,7 +2766,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
         })
       }
       
-      toast.success(`🎨 Image generated successfully!`)
+      toast.success(`🎨 Image generated successfully!`);
     } catch (error) {
       console.error('Error generating image:', error)
       updateCreativeStatus(creativeId, 'failed')
