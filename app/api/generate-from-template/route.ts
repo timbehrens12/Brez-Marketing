@@ -316,27 +316,26 @@ export async function POST(request: NextRequest) {
 
         // Save the template-based creative
         const { data: creativeData, error: creativeError } = await supabase
-          .from('creatives')
+          .from('creative_generations')
           .insert({
             brand_id: brandId,
             user_id: userId,
-            style_id: 0, // Template-based generation
+            style_id: 'template-based', // Template-based generation
             style_name: 'Template-Based',
-            custom_name: customName || 'Template Creative',
-            status: 'completed',
             original_image_url: compressedProductImage,
             generated_image_url: compressedGeneratedImage,
             template_image_url: compressedExampleImage, // Store the example template
             additional_notes: additionalNotes,
+            prompt_used: `Template-based generation: ${additionalNotes || 'No additional notes'}`,
             text_overlays: { top: '', bottom: '' },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            status: 'completed'
           })
           .select()
           .single();
 
         if (creativeError) {
-          console.error('Error saving template creative to database:', creativeError);
+          console.error('Error saving template creative to database:', JSON.stringify(creativeError, null, 2));
+          throw new Error(`Database save failed: ${creativeError.message || 'Unknown database error'}`);
         } else {
           console.log('✅ Template creative saved to database:', creativeData.id);
         }
