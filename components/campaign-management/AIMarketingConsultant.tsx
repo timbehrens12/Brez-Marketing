@@ -1228,6 +1228,13 @@ I can help with literally anything marketing-related for your brand - performanc
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Warning Watermark */}
+      <div className="mt-2 text-center">
+        <p className="text-xs text-gray-500/60 italic">
+          AI responses may contain inaccuracies - please double check important information
+        </p>
+      </div>
     </div>
   )
 } 

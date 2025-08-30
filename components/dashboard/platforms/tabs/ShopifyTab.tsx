@@ -20,7 +20,6 @@ import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { CustomerSegmentationWidget } from "@/components/shopify/CustomerSegmentationWidget"
 
 import { RepeatCustomersWidget } from "@/components/shopify/RepeatCustomersWidget"
-import { AbandonedCartWidget } from "@/components/shopify/AbandonedCartWidget"
 import { SyncStatusIndicator } from "@/components/ui/SyncStatusIndicator"
 
 import { format } from "date-fns"
@@ -1073,25 +1072,15 @@ export function ShopifyTab({
       <div className="mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Customer Segmentation by Location */}
-          <CustomerSegmentationWidget 
+          <CustomerSegmentationWidget
             brandId={brandId}
             dateRange={dateRange}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
 
-          {/* Abandoned Cart Analysis */}
-          <AbandonedCartWidget 
-            brandId={brandId}
-            dateRange={dateRange}
-            isLoading={isLoading}
-            isRefreshingData={isRefreshingData}
-          />
-        </div>
-
-        {/* Repeat Customer Analysis - Full width below */}
-        <div className="mt-6">
-          <RepeatCustomersWidget 
+          {/* Repeat Customer Analysis */}
+          <RepeatCustomersWidget
             brandId={brandId}
             dateRange={dateRange}
             isLoading={isLoading}
