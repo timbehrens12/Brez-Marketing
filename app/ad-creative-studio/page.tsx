@@ -2553,7 +2553,7 @@ const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
       
       const backgroundType = backgroundTypeMapping[modalStyle.id] || 'minimalist'; // Default to minimalist
       formData.append('backgroundType', backgroundType);
-      formData.append('aspectRatio', 'portrait'); // Default to portrait for fashion shots
+      formData.append('aspectRatio', 'portrait'); // Use portrait aspect ratio for mobile devices (1024x1536)
       formData.append('quality', 'hd'); // Use high quality
       formData.append('lighting', 'soft');
       formData.append('customPromptModifiers', enhancedPrompt);

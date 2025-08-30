@@ -168,10 +168,14 @@ export async function POST(request: NextRequest) {
     console.log('📝 Product analysis:', productDescription);
 
     // Step 2: Build the complete prompt with background and modifiers
-    let prompt = `Create a professional product photography image featuring: ${productDescription}. 
+    let prompt = `Create a professional product photography image featuring: ${productDescription}.
 
 ${backgroundPreset.prompt}`;
-    
+
+    // Add dimension specifications based on aspect ratio
+    const aspectRatioSpec = ASPECT_RATIOS[aspectRatio as keyof typeof ASPECT_RATIOS] || ASPECT_RATIOS.portrait;
+    prompt += ` The final image should be generated in exactly ${aspectRatioSpec} dimensions for optimal mobile device display.`;
+
     // Add lighting modifiers
     if (lighting === 'dramatic') {
       prompt += " Use dramatic lighting with strong directional shadows for a bold, editorial look.";
