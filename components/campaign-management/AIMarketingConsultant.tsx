@@ -447,6 +447,12 @@ export default function AIMarketingConsultant(
   {}: AIMarketingConsultantProps = {}
 ) {
   const { selectedBrandId, brands, setSelectedBrandId } = useBrandContext()
+
+  // Debug logging for brand selection
+  useEffect(() => {
+    console.log('[AI Marketing] selectedBrandId changed:', selectedBrandId)
+    console.log('[AI Marketing] brands available:', brands.length)
+  }, [selectedBrandId, brands.length])
   const { user } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -553,9 +559,13 @@ I can help with literally anything marketing-related for your brand - performanc
   useEffect(() => {
     const checkInitialUsage = async () => {
       // Only check usage if we have both user and selectedBrandId
-      if (!user?.id || !selectedBrandId) return
+      if (!user?.id || !selectedBrandId) {
+        // console.log('[AI Marketing] Skipping initial usage check - missing user or brandId')
+        return
+      }
 
       try {
+        // console.log('[AI Marketing] Checking initial usage for brand:', selectedBrandId)
         const response = await fetch('/api/ai/marketing-consultant', {
           method: 'POST',
           headers: {
@@ -573,29 +583,37 @@ I can help with literally anything marketing-related for your brand - performanc
         })
 
         const data = await response.json()
-        
+
         if (response.ok && data.remainingUses !== undefined) {
           // console.log('[AI Marketing Frontend] Initial usage check:', data.remainingUses)
           setRemainingUses(data.remainingUses)
           if (data.remainingUses <= 0) {
             setIsLimitReached(true)
           }
+        } else {
+          console.error('[AI Marketing] Usage check failed:', data.error || response.status)
         }
       } catch (error) {
-        // console.log('[AI Marketing Frontend] Failed to check initial usage:', error)
+        console.error('[AI Marketing] Failed to check initial usage:', error)
         // Don't show error to user for this background check
       }
     }
 
-    checkInitialUsage()
-  }, [selectedBrandId, user?.firstName])
+    // Add a small delay to ensure brand selection is complete
+    const timeoutId = setTimeout(checkInitialUsage, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [selectedBrandId, user?.id])
 
   const filteredPrompts = selectedCategory === 'all'
     ? PROMPT_SUGGESTIONS
     : PROMPT_SUGGESTIONS.filter(p => p.category === selectedCategory)
 
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
-    if (isLoading || isLimitReached || !selectedBrandId) return
+    if (isLoading || isLimitReached || !selectedBrandId) {
+      console.log('[AI Marketing] Skipping prompt select - loading:', isLoading, 'limit reached:', isLimitReached, 'brandId:', selectedBrandId)
+      return
+    }
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -692,6 +710,19 @@ I can help with literally anything marketing-related for your brand - performanc
 
   const analyzeAndRespond = async (prompt: string, messageId: string) => {
     try {
+      // Validate required parameters
+      if (!selectedBrandId) {
+        console.error('[AI Marketing] No brandId selected for API call')
+        throw new Error('No brand selected')
+      }
+
+      if (!user?.id) {
+        console.error('[AI Marketing] No user ID available for API call')
+        throw new Error('User not authenticated')
+      }
+
+      console.log('[AI Marketing] Making API call for brand:', selectedBrandId)
+
       const response = await fetch('/api/ai/marketing-consultant', {
         method: 'POST',
         headers: {
@@ -906,7 +937,10 @@ I can help with literally anything marketing-related for your brand - performanc
             </div>
 
             <div className="w-full">
-              <BrandSelector onSelect={(brandId) => setSelectedBrandId(brandId)} />
+              <BrandSelector onSelect={(brandId) => {
+                console.log('[AI Marketing] Brand selected:', brandId)
+                setSelectedBrandId(brandId)
+              }} />
             </div>
 
             <div className="text-xs text-gray-500 text-center max-w-sm">
