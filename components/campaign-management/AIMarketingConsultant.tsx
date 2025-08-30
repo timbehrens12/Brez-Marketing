@@ -464,6 +464,30 @@ export default function AIMarketingConsultant(
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
 
+  // Load messages from localStorage on component mount
+  useEffect(() => {
+    const savedMessages = localStorage.getItem(`ai-chat-${user?.id}-${selectedBrandId}`)
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }))
+        setMessages(parsedMessages)
+        setIsInitialized(true)
+      } catch (error) {
+        console.error('Error loading saved messages:', error)
+      }
+    }
+  }, [user?.id, selectedBrandId])
+
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0 && isInitialized) {
+      localStorage.setItem(`ai-chat-${user?.id}-${selectedBrandId}`, JSON.stringify(messages))
+    }
+  }, [messages, user?.id, selectedBrandId, isInitialized])
+
   // Initialize with welcome message
   useEffect(() => {
     if (isInitialized) return

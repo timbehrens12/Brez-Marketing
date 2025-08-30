@@ -371,12 +371,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Smart date range detection from user prompt and conversation history
-    let effectiveDateRange = dateRange || { days: 90 } // Default to 90 days if nothing specified
+    let effectiveDateRange = dateRange // No default limit - allow access to all historical data
     if (prompt && !checkUsageOnly) {
       const parsedDateRange = parseeDateRangeFromPrompt(prompt, conversationHistory)
       if (parsedDateRange) {
         effectiveDateRange = parsedDateRange
         console.log(`[AI Marketing] Detected date range from prompt:`, parsedDateRange)
+      } else if (!effectiveDateRange) {
+        // Only default to 90 days if no date context is found
+        effectiveDateRange = { days: 90 }
+        console.log(`[AI Marketing] No date context found, defaulting to 90 days`)
       }
     }
 
@@ -537,18 +541,19 @@ async function gatherComprehensiveMarketingData(supabase: any, brandId: string, 
       fromDate = startDate.toISOString().split('T')[0]
       toDate = todayStr
     } else {
-      // Default to 90 days
-      days = 90
-      const ninetyDaysAgo = new Date(easternTime.getTime() - 90 * 24 * 60 * 60 * 1000)
-      fromDate = ninetyDaysAgo.toISOString().split('T')[0]
+      // No specific date range provided - access all historical data
+      console.log(`[AI Marketing Consultant] No date range specified - accessing all historical data`)
+      // Set a very old date for fromDate to get all data
+      fromDate = '2020-01-01' // Start from when Meta ads were available
       toDate = todayStr
+      days = Math.ceil((new Date(todayStr).getTime() - new Date(fromDate).getTime()) / (24 * 60 * 60 * 1000))
     }
   } else {
-    // Default to 90 days
-    days = 90
-    const ninetyDaysAgo = new Date(easternTime.getTime() - 90 * 24 * 60 * 60 * 1000)
-    fromDate = ninetyDaysAgo.toISOString().split('T')[0]
+    // No custom date range provided - access all historical data
+    console.log(`[AI Marketing Consultant] No custom date range provided - accessing all historical data`)
+    fromDate = '2020-01-01' // Start from when Meta ads were available
     toDate = todayStr
+    days = Math.ceil((new Date(todayStr).getTime() - new Date(fromDate).getTime()) / (24 * 60 * 60 * 1000))
   }
 
   try {
@@ -1569,9 +1574,11 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - When discussing spend: ONLY use the totalSpend value shown in the context
 - DO NOT calculate or estimate ROAS yourself - use the pre-calculated averageROAS from the data
 - If averageROAS is 0.00, say "The ROAS is currently 0.00x" - do not invent or estimate a different value like "10.99x"
-- IMPORTANT: If ROAS is 0.00, this means there are no attributed purchases from Meta ads for this period
+- IMPORTANT: The averageROAS shown is calculated as Meta ad spend divided by Meta-attributed revenue ONLY
+- NEVER mix Meta ad spend with total Shopify revenue for ROAS calculations
 - NEVER say things like "solid performance" or "good ROAS" when the actual ROAS is 0.00
 - Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
+- CRITICAL: Only discuss "Meta ROAS" or "Facebook ROAS" when referring to platform-specific attribution
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
