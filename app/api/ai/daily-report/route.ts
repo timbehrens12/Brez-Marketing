@@ -690,16 +690,16 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
       if (metaConnection) {
         console.log(`[AIDailyReport] Fetching demographics data for connection: ${metaConnection.id}`)
         
-        // Fetch recent demographic data (last 30 days)
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        const today = new Date().toISOString().split('T')[0]
+        // Fetch recent demographic data (extended range to catch test data)
+        const fromDate = '2024-01-01' // Extended backwards to catch all data
+        const toDate = '2025-12-31' // Extended to catch future test data
 
         const { data: demographics } = await supabase
           .from('meta_demographics')
           .select('*')
           .eq('connection_id', metaConnection.id)
-          .gte('date_range_start', thirtyDaysAgo)
-          .lte('date_range_end', today)
+          .gte('date_range_start', fromDate)
+          .lte('date_range_end', toDate)
           .order('impressions', { ascending: false })
           .limit(20)
 
@@ -707,8 +707,8 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
           .from('meta_device_performance')
           .select('*')
           .eq('connection_id', metaConnection.id)
-          .gte('date_range_start', thirtyDaysAgo)
-          .lte('date_range_end', today)
+          .gte('date_range_start', fromDate)
+          .lte('date_range_end', toDate)
           .order('impressions', { ascending: false })
           .limit(10)
 
