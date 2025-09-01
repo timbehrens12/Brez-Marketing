@@ -139,6 +139,21 @@ function calculateDataHash(platformData: PlatformAnalysis): string {
         topDevice: platformData.meta.demographics.devices?.[0]?.breakdown_value || null
       } : null
     },
+    shopify: {
+      isConnected: platformData.shopify.isConnected,
+      geographic: platformData.shopify.geographic ? {
+        totalCustomers: platformData.shopify.geographic.totalCustomers,
+        totalRevenue: Math.round(platformData.shopify.geographic.totalRevenue * 100),
+        locationCount: platformData.shopify.geographic.locations?.length || 0,
+        topLocation: platformData.shopify.geographic.locations?.[0]?.country || null
+      } : null,
+      repeatCustomers: platformData.shopify.repeatCustomers ? {
+        totalOrders: platformData.shopify.repeatCustomers.totalOrders,
+        repeatRate: Math.round(platformData.shopify.repeatCustomers.repeatCustomerRate * 100),
+        avgOrderValue: Math.round(platformData.shopify.repeatCustomers.averageOrderValue * 100),
+        repeatRevenue: Math.round(platformData.shopify.repeatCustomers.repeatCustomerRevenue * 100)
+      } : null
+    },
     // Include date and hour to force hourly regeneration
     timestamp: `${today}_hour_${hour}`,
     timeWindow: hour,
@@ -266,6 +281,21 @@ interface PlatformAnalysis {
       gender: any[]
       devices: any[]
       placements: any[]
+    } | null
+  }
+  shopify: {
+    isConnected: boolean
+    geographic: {
+      locations: any[]
+      totalRevenue: number
+      totalCustomers: number
+    } | null
+    repeatCustomers: {
+      totalOrders: number
+      repeatCustomerRate: number
+      averageOrderValue: number
+      repeatCustomerRevenue: number
+      topCustomerLocations: any[]
     } | null
   }
   tiktok: {
@@ -700,6 +730,55 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
     }
   }
 
+  // Analyze Shopify data if connected - gather geographic and repeat customer data
+  let shopifyAnalysis = {
+    isConnected: !!connectedPlatforms.shopify,
+    geographic: null,
+    repeatCustomers: null
+  }
+
+  if (connectedPlatforms.shopify) {
+    console.log(`[AIDailyReport] Fetching Shopify geographic and repeat customer data for brand: ${brandId}`)
+    
+    try {
+      // Fetch geographic data from the same endpoint the dashboard uses
+      const geographicResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/shopify/customers/geographic?brandId=${brandId}`)
+      if (geographicResponse.ok) {
+        const geographicData = await geographicResponse.json()
+        shopifyAnalysis.geographic = {
+          locations: geographicData.locations || [],
+          totalRevenue: geographicData.totalRevenue || 0,
+          totalCustomers: geographicData.totalCustomers || 0
+        }
+        console.log(`[AIDailyReport] Geographic data loaded: ${geographicData.locations?.length || 0} locations, ${geographicData.totalCustomers || 0} customers`)
+      } else {
+        console.log(`[AIDailyReport] Geographic data request failed: ${geographicResponse.status}`)
+      }
+    } catch (error) {
+      console.error('[AIDailyReport] Error fetching geographic data:', error)
+    }
+
+    try {
+      // Fetch repeat customer data from the same endpoint the dashboard uses
+      const repeatCustomersResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/shopify/analytics/repeat-customers?brandId=${brandId}`)
+      if (repeatCustomersResponse.ok) {
+        const repeatCustomersData = await repeatCustomersResponse.json()
+        shopifyAnalysis.repeatCustomers = {
+          totalOrders: repeatCustomersData.totalOrders || 0,
+          repeatCustomerRate: repeatCustomersData.repeatCustomerRate || 0,
+          averageOrderValue: repeatCustomersData.averageOrderValue || 0,
+          repeatCustomerRevenue: repeatCustomersData.repeatCustomerRevenue || 0,
+          topCustomerLocations: repeatCustomersData.topLocations || []
+        }
+        console.log(`[AIDailyReport] Repeat customer data loaded: ${repeatCustomersData.totalOrders || 0} orders, ${(repeatCustomersData.repeatCustomerRate || 0).toFixed(1)}% repeat rate`)
+      } else {
+        console.log(`[AIDailyReport] Repeat customer data request failed: ${repeatCustomersResponse.status}`)
+      }
+    } catch (error) {
+      console.error('[AIDailyReport] Error fetching repeat customer data:', error)
+    }
+  }
+
   console.log(`[AIDailyReport] DEBUG: Final metaAnalysis:`, JSON.stringify({
     dailyBudget: metaAnalysis.dailyBudget,
     todayStats: metaAnalysis.todayStats,
@@ -712,6 +791,7 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
 
   return {
     meta: metaAnalysis,
+    shopify: shopifyAnalysis,
     tiktok: {
       isConnected: !!connectedPlatforms.tiktok,
       status: connectedPlatforms.tiktok ? 'active' : 'not_connected'
@@ -724,7 +804,7 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
 }
 
 async function generateDailyReport(platformData: PlatformAnalysis, userTimezone: string) {
-  const { meta, tiktok, googleAds } = platformData
+  const { meta, shopify, tiktok, googleAds } = platformData
 
   // Calculate consistent daily values for the report
   const dailySpend = meta.todayStats.spend > 0 ? meta.todayStats.spend : meta.totalSpend
@@ -1207,7 +1287,7 @@ function generateSuccessHighlights(meta: any): string[] {
 }
 
 function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: string): string {
-  const { meta } = platformData
+  const { meta, shopify } = platformData
   const now = new Date()
   
   // Calculate current hour in user's timezone
@@ -1392,6 +1472,44 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
     
     if (demographicInsights.length > 0) {
       summaryParts.push(`Audience analysis reveals ${demographicInsights.join(', ')}. Understanding these demographic patterns helps optimize targeting strategies and creative messaging to maximize campaign effectiveness.`)
+    }
+  }
+
+  // Geographic and Customer Analysis from Shopify
+  if (shopify.isConnected && (shopify.geographic || shopify.repeatCustomers)) {
+    const customerInsights = []
+    
+    // Geographic distribution analysis
+    if (shopify.geographic && shopify.geographic.locations.length > 0) {
+      const totalCustomers = shopify.geographic.totalCustomers
+      const topLocation = shopify.geographic.locations[0]
+      const locationPercentage = totalCustomers > 0 ? ((topLocation.customerCount || 0) / totalCustomers * 100) : 0
+      
+      if (locationPercentage > 50) {
+        customerInsights.push(`Customer base is heavily concentrated in ${topLocation.country || topLocation.state || topLocation.city} (${locationPercentage.toFixed(0)}% of customers)`)
+      } else if (shopify.geographic.locations.length > 3) {
+        customerInsights.push(`Customer base is geographically diverse across ${shopify.geographic.locations.length} locations, with ${topLocation.country || topLocation.state || topLocation.city} leading at ${locationPercentage.toFixed(0)}%`)
+      } else {
+        customerInsights.push(`Primary customer markets include ${shopify.geographic.locations.slice(0, 3).map(loc => loc.country || loc.state || loc.city).join(', ')}`)
+      }
+    }
+    
+    // Repeat customer analysis
+    if (shopify.repeatCustomers && shopify.repeatCustomers.totalOrders > 0) {
+      const repeatRate = shopify.repeatCustomers.repeatCustomerRate
+      const avgOrderValue = shopify.repeatCustomers.averageOrderValue
+      
+      if (repeatRate > 30) {
+        customerInsights.push(`Strong customer loyalty with ${repeatRate.toFixed(1)}% repeat purchase rate and $${avgOrderValue.toFixed(0)} average order value`)
+      } else if (repeatRate > 15) {
+        customerInsights.push(`Healthy customer retention at ${repeatRate.toFixed(1)}% repeat purchase rate generating $${avgOrderValue.toFixed(0)} average orders`)
+      } else if (repeatRate > 0) {
+        customerInsights.push(`Developing customer loyalty with ${repeatRate.toFixed(1)}% repeat purchase rate - opportunity to improve retention strategies`)
+      }
+    }
+    
+    if (customerInsights.length > 0) {
+      summaryParts.push(`Customer analysis shows ${customerInsights.join(', ')}. This geographic and behavioral data provides valuable insights for market expansion and customer lifetime value optimization.`)
     }
   }
 
