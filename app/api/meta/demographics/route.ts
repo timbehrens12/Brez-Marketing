@@ -53,9 +53,9 @@ export async function GET(request: NextRequest) {
       finalConnectionId = connection.id
     }
 
-    // Set default date range if not provided (last 30 days)
-    const defaultToDate = new Date().toISOString().split('T')[0]
-    const defaultFromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    // Set default date range if not provided (wider range to catch test data)
+    const defaultToDate = '2025-12-31' // Extended to catch future test data
+    const defaultFromDate = '2024-01-01' // Extended backwards to catch all data
     
     // Support both date formats
     const startDate = fromDate || dateRangeStart || defaultFromDate

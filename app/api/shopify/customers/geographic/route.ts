@@ -149,39 +149,36 @@ export async function GET(request: NextRequest) {
     const connectionIds = connections.map((c: any) => c.id);
     console.log(`Found ${connectionIds.length} Shopify connections for brand ${brandId}`);
 
-    // Try to get data from the new columns first
-    let customers: CustomerData[] = [];
+    // Get data from shopify_sales_by_region which has the actual geographic data
+    let salesByRegion: any[] = [];
     
     try {
-      // First try with the new columns
+      console.log('Fetching geographic data from shopify_sales_by_region for brandId:', brandId);
       const response = await supabase
-        .from('shopify_customers')
-        .select('id, city, state_province, country, total_spent, orders_count')
-        .in('connection_id', connectionIds)
+        .from('shopify_sales_by_region')
+        .select('city, province, country, total_price, order_count')
+        .eq('brand_id', brandId)
         .not('country', 'is', null);
       
-      if (!response.error) {
-        customers = response.data || [];
-        console.log(`Found ${customers.length} customers with location columns`);
-      } else {
-        // If that fails, try with default_address
-        console.log('New columns not found, falling back to default_address extraction');
-        const fallbackResponse = await supabase
-          .from('shopify_customers')
-          .select('id, default_address, total_spent, orders_count')
-          .in('connection_id', connectionIds)
-          .not('default_address', 'is', null);
-        
-        if (fallbackResponse.error) {
-          console.error('Error fetching geographic data:', fallbackResponse.error);
-          return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
-        }
-        
-        customers = fallbackResponse.data || [];
-        console.log(`Found ${customers.length} customers with default_address`);
+      if (response.error) {
+        console.error('Error fetching geographic data from sales by region:', response.error);
+        return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
       }
+      
+      salesByRegion = response.data || [];
+      console.log(`Found ${salesByRegion.length} sales records with location data`);
+      
+      // Also try to get customer data for additional analysis
+      const customerResponse = await supabase
+        .from('shopify_customers')
+        .select('id, city, state_province, country, total_spent, orders_count')
+        .in('connection_id', connectionIds);
+      
+      const customers = customerResponse.data || [];
+      console.log(`Found ${customers.length} total customers for fallback data`);
+      
     } catch (error) {
-      console.error('Error fetching customer data:', error);
+      console.error('Error fetching geographic data:', error);
       return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
     }
     
@@ -199,25 +196,13 @@ export async function GET(request: NextRequest) {
     let totalRevenue = 0;
     let totalCustomers = 0;
     
-    // Process customer data
-    customers.forEach((customer: CustomerData) => {
-      let country, state, city;
-      
-      // Check if we're using the new columns or need to extract from default_address
-      if (customer.country !== undefined) {
-        // Using new columns
-        country = customer.country || 'Unknown';
-        state = customer.state_province || '';
-        city = customer.city || '';
-      } else {
-        // Extract from default_address
-        const defaultAddress = customer.default_address || {};
-        country = defaultAddress.country || 'Unknown';
-        state = defaultAddress.province || '';
-        city = defaultAddress.city || '';
-      }
-      
-      const revenue = parseFloat(customer.total_spent) || 0;
+    // Process sales data from shopify_sales_by_region (this has the actual geographic data)
+    salesByRegion.forEach((sale: any) => {
+      const country = sale.country || 'Unknown';
+      const state = sale.province || '';
+      const city = sale.city || '';
+      const revenue = parseFloat(sale.total_price) || 0;
+      const orderCount = parseInt(sale.order_count) || 1;
       
       // Skip if we don't have any geographic information
       if (country === 'Unknown' && !state && !city) {
@@ -225,7 +210,7 @@ export async function GET(request: NextRequest) {
       }
       
       totalRevenue += revenue;
-      totalCustomers++;
+      totalCustomers += orderCount; // Use order count as customer proxy
       
       // Create a key for the region
       let locationKey = `${city}-${state}-${country}`;
@@ -247,14 +232,14 @@ export async function GET(request: NextRequest) {
       // Update or create the location entry
       if (locationMap.has(locationKey)) {
         const location = locationMap.get(locationKey)!;
-        location.customerCount += 1;
+        location.customerCount += orderCount;
         location.totalRevenue += revenue;
       } else {
         locationMap.set(locationKey, {
           city: city || '',
           state: state || '',
           country: country || 'Unknown',
-          customerCount: 1,
+          customerCount: orderCount,
           totalRevenue: revenue,
           lat,
           lng
