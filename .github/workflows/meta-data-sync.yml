@@ -1,0 +1,21 @@
+name: Daily Meta Data Sync
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # Run daily at 5am UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  sync-meta-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Meta data sync
+        run: |
+          echo "Triggering Meta data sync at $(date)"
+          curl -X GET "${{ secrets.META_SYNC_URL }}?secret=${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail
+      
+      - name: Check for success
+        run: echo "Meta data sync completed successfully" 

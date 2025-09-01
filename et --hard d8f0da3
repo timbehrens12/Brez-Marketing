@@ -1,0 +1,5 @@
+[33mc84c15c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Move YOUR PRODUCT widget to template selection page (WIP - has syntax errors to fix)
+[33md8f0da3[m Set consistent height for YOUR PRODUCT and TEMPLATE widgets (100px)
+[33m4138a07[m Reduce library widget width to half size (84px)
+[33mb5abfe4[m Fix library and weekly usage widgets to have exactly the same height (100px)
+[33m6b4cd4d[m Make library widget same height as weekly usage widget in ad creative studio

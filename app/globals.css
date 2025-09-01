@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* Pulse animations removed per user request */
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 11.2%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 46.9%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 91.4%;
+    --input: 0 0% 91.4%;
+    --ring: 0 0% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 4.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 40%;
+    --primary-foreground: 0 0% 11.2%;
+    --secondary: 0 0% 17.5%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 17.5%;
+    --muted-foreground: 0 0% 65.1%;
+    --accent: 0 0% 17.5%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 17.5%;
+    --input: 0 0% 17.5%;
+    --ring: 0 0% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Brand Report Improvements */
+.report-container {
+  max-width: 100%;
+  overflow-x: hidden;
+  background: #0a0a0a !important;
+}
+
+.report-header-wrapper {
+  position: relative;
+  overflow: visible;
+  background: #1a1a1a !important;
+}
+
+.report-logo-container {
+  z-index: 20 !important;
+}
+
+.report-info-section {
+  max-width: 65% !important;
+}
+
+.report-footer {
+  flex-wrap: wrap;
+  min-height: 60px;
+  background: #1a1a1a !important;
+}
+
+.footer-brand {
+  white-space: nowrap;
+}
+
+.footer-legal {
+  max-width: 40%;
+}
+
+/* PDF Export specific styles */
+@media print {
+  .report-container {
+    background: #0a0a0a !important;
+  }
+  
+  .report-header-wrapper {
+    padding: 2rem !important;
+    background: #1a1a1a !important;
+  }
+  
+  .report-footer {
+    padding: 1rem !important;
+    min-height: 50px !important;
+    background: #1a1a1a !important;
+  }
+  
+  .report-logo-container {
+    top: 1rem !important;
+    right: 1.5rem !important;
+  }
+}
+
+/* Loading states */
+.report-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.report-loading .report-content {
+  filter: blur(2px);
+}
+
+/* Ensure no blue colors in reports */
+.report-wrapper * {
+  color: inherit !important;
+}
+
+.report-wrapper .report-content {
+  color: #ffffff !important;
+  background: #0a0a0a !important;
+}
+
+.report-wrapper .report-content h1,
+.report-wrapper .report-content h2,
+.report-wrapper .report-content h3 {
+  color: #ffffff !important;
+}
+
+.report-wrapper .report-content p {
+  color: #d1d5db !important;
+}
+
+.report-wrapper .report-content strong {
+  color: #ffffff !important;
+}
+
+.report-wrapper .report-content ul,
+.report-wrapper .report-content ol {
+  color: #d1d5db !important;
+}
+
+.report-wrapper .report-content li {
+  color: #d1d5db !important;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+  border: 2px solid #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #1a1a1a;
+}

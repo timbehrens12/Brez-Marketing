@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/ai/generate-creative/route.ts": {
+      "maxDuration": 300
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/process-queue",
+      "schedule": "*/2 * * * *"
+    }
+  ]
+}

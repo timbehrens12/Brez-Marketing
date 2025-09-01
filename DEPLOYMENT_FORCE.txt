@@ -1,0 +1,5 @@
+FORCE DEPLOYMENT UPDATE - v2.1
+Timestamp: 2025-08-27T23:20:00Z
+
+This file forces a new Vercel deployment to reset cron job URLs.
+The cron jobs were stuck on old deployment URLs despite middleware fixes.
