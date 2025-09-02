@@ -100,54 +100,47 @@ ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 - Use two-column layouts where appropriate to maximize space efficiency
 - Keep sections concise and well-organized for standard paper printing
 
-Generate concise business report with organized sections:
+Generate marketing report using this structure with real data:
 
-<div style="background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 3px solid #3b82f6;">
-  <h2 style="color: #f1f5f9; font-size: 1.2rem; font-weight: 700; margin: 0 0 1rem 0;">📊 Executive Summary</h2>
-  <p style="color: #cbd5e1; font-size: 1rem; line-height: 1.6; margin: 0;">Provide overview of performance with key metrics: revenue, growth %, orders, and critical insights.</p>
+<div style="background: #1e293b; padding: 1rem; margin: 1rem 0; border-left: 3px solid #3b82f6;">
+<h2 style="color: #fff; margin: 0 0 0.5rem 0;">📊 Summary</h2>
+<p style="color: #cbd5e1;">Brief overview with revenue: $${revenue}, orders: ${orders}, growth: ${growth}%</p>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-  <div style="background: #065f46; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">🛒 Shopify Performance</h3>
-    <p style="color: #d1fae5; font-size: 0.95rem; line-height: 1.5; margin: 0;">Revenue, orders, AOV, growth rates with specific data.</p>
-  </div>
-  <div style="background: #1e40af; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">📱 Meta Advertising</h3>
-    <p style="color: #dbeafe; font-size: 0.95rem; line-height: 1.5; margin: 0;">Spend, CTR, impressions, ROAS with specific metrics.</p>
-  </div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+<div style="background: #065f46; padding: 1rem;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">🛒 Shopify</h3>
+<p style="color: #d1fae5;">Revenue, orders, AOV with data</p>
+</div>
+<div style="background: #1e40af; padding: 1rem;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">📱 Meta Ads</h3>
+<p style="color: #dbeafe;">Spend, CTR, impressions</p>
+</div>
 </div>
 
-<div style="background: #b45309; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
-  <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">👥 Audience Demographics</h3>
-  <p style="color: #fef3c7; font-size: 0.95rem; line-height: 1.5; margin: 0;">Complete breakdown of ALL age groups, genders, devices with specific numbers, percentages, CTR data.</p>
+<div style="background: #b45309; padding: 1rem; margin: 1rem 0;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">👥 Demographics</h3>
+<p style="color: #fef3c7;">Age groups, gender, devices with percentages</p>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-  <div style="background: #dc2626; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">🗺️ Geographic Distribution</h3>
-    <p style="color: #fecaca; font-size: 0.95rem; line-height: 1.5; margin: 0;">Customer locations, regional revenue with actual city/state data.</p>
-  </div>
-  <div style="background: #7c3aed; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">🔄 Customer Retention</h3>
-    <p style="color: #e9d5ff; font-size: 0.95rem; line-height: 1.5; margin: 0;">Retention rates, repeat purchase %, CLV with actual data.</p>
-  </div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+<div style="background: #dc2626; padding: 1rem;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">🗺️ Locations</h3>
+<p style="color: #fecaca;">Cities and revenue</p>
+</div>
+<div style="background: #7c3aed; padding: 1rem;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">🔄 Retention</h3>
+<p style="color: #e9d5ff;">Repeat rates</p>
+</div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-  <div style="background: #059669; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">✅ What's Working</h3>
-    <p style="color: #d1fae5; font-size: 0.95rem; line-height: 1.5; margin: 0;">Strengths and opportunities with specific data points.</p>
-  </div>
-  <div style="background: #dc2626; border-radius: 8px; padding: 1.5rem;">
-    <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">⚠️ Areas for Improvement</h3>
-    <p style="color: #fecaca; font-size: 0.95rem; line-height: 1.5; margin: 0;">Performance issues that need immediate attention.</p>
-  </div>
-</div>
-
-<div style="background: #1e40af; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
-  <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0;">🎯 Action Plan</h3>
-  <p style="color: #dbeafe; font-size: 0.95rem; line-height: 1.5; margin: 0;">4-6 specific, actionable recommendations with priorities and expected outcomes.</p>
+<div style="background: #1e40af; padding: 1rem; margin: 1rem 0;">
+<h3 style="color: #fff; margin: 0 0 0.5rem 0;">🎯 Recommendations</h3>
+<ul style="color: #dbeafe; margin: 0; padding-left: 1rem;">
+<li>Action 1</li>
+<li>Action 2</li>
+<li>Action 3</li>
+</ul>
 </div>
 
 **CRITICAL FORMATTING RULES:**
@@ -169,24 +162,24 @@ Response should be comprehensive with actual analysis replacing the placeholder 
     
          // Generate the report using OpenAI with timeout handling
      const controller = new AbortController()
-     const timeoutId = setTimeout(() => controller.abort(), 45000) // 45 second timeout
+     const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
      
      let chatCompletion
      try {
        chatCompletion = await openai.chat.completions.create({
          messages: [
            {
-             role: 'system',
-             content: 'You are a business analyst. Generate HTML report content with inline styles. Be concise but comprehensive. Focus on data-driven insights with specific numbers. Use the provided structure exactly as shown.'
+                        role: 'system',
+           content: 'Generate concise HTML marketing report. Use provided structure exactly. Include specific numbers and metrics. Keep response under 1500 words.'
            },
            {
              role: 'user',
              content: prompt
            }
          ],
-         model: 'gpt-4o-mini',
-         temperature: 0.5,
-         max_tokens: 3000
+         model: 'gpt-3.5-turbo',
+         temperature: 0.3,
+         max_tokens: 2000
        }, {
          signal: controller.signal
        })
@@ -195,7 +188,7 @@ Response should be comprehensive with actual analysis replacing the placeholder 
      } catch (error) {
        clearTimeout(timeoutId)
        if (error.name === 'AbortError') {
-         console.error('AI request timed out after 45 seconds')
+         console.error('AI request timed out after 2 minutes')
          throw new Error('AI request timed out - please try again')
        }
        throw error
