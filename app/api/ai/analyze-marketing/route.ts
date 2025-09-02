@@ -171,8 +171,9 @@ Response should be comprehensive with actual analysis replacing the placeholder 
      const controller = new AbortController()
      const timeoutId = setTimeout(() => controller.abort(), 45000) // 45 second timeout
      
+     let chatCompletion
      try {
-       const chatCompletion = await openai.chat.completions.create({
+       chatCompletion = await openai.chat.completions.create({
          messages: [
            {
              role: 'system',
