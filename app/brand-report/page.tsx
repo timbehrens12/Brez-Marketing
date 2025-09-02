@@ -1070,8 +1070,8 @@ export default function BrandReportPage() {
         // Add days of the month with data
         for (let day = 1; day <= daysInMonth; day++) {
           const dateStr = format(new Date(startDate.getFullYear(), startDate.getMonth(), day), 'yyyy-MM-dd')
-          const dayData = data.shopify?.find((d: any) => d.date === dateStr) || {}
-          const adData = data.meta?.find((d: any) => d.date === dateStr) || {}
+          const dayData = (Array.isArray(data.shopify) ? data.shopify.find((d: any) => d.date === dateStr) : null) || {}
+          const adData = (Array.isArray(data.meta) ? data.meta.find((d: any) => d.date === dateStr) : null) || {}
           
           const revenue = dayData.total_revenue || 0
           const adSpend = adData.spend || 0
@@ -1119,9 +1119,9 @@ export default function BrandReportPage() {
         const maxRevenue = Math.max(...(shopifyData.map((d: any) => d.total_revenue || 0).concat([1])))
         
         hours.forEach(hour => {
-          const hourData = shopifyData.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
+          const hourData = shopifyData.length > 0 ? shopifyData.find((d: any) => d.datetime && new Date(d.datetime).getHours() === hour) || {} : {}
           const metaData = Array.isArray(data.meta) ? data.meta : []
-          const adData = metaData.find((d: any) => new Date(d.datetime).getHours() === hour) || {}
+          const adData = metaData.length > 0 ? metaData.find((d: any) => d.datetime && new Date(d.datetime).getHours() === hour) || {} : {}
           
           const revenue = hourData.total_revenue || 0
           const adSpend = adData.spend || 0
