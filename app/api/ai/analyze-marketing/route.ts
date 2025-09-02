@@ -82,39 +82,61 @@ Analyze marketing data for ${brand.name} and generate business report content.
 **Repeat Customers**: ${additional_insights?.repeat_customers?.success ? 
   `Rate: ${additional_insights.repeat_customers.data?.overview?.repeatRate || 0}%, Revenue: $${additional_insights.repeat_customers.data?.overview?.repeatRevenue || 0}` : 'No data'}
 
-**CRITICAL AGENCY REPORT REQUIREMENTS:**
-- Write as a marketing agency presenting TO a client ABOUT their performance
-- Use professional, confident agency language ("We observed...", "Your campaigns achieved...", "Our analysis shows...")
-- Focus on campaign performance, optimization opportunities, and growth strategies
-- Present data insights as professional findings, not internal analysis
-- Include specific numbers, percentages, impressions, CTR, and spend data
-- ALWAYS use the Demographics & Audience Insights data for comprehensive audience analysis
-- ALWAYS use the Customer Geographic Data for location-based performance insights  
-- ALWAYS use the Repeat Customer Analysis for customer retention insights
-- Frame recommendations as strategic next steps from agency expertise
+**AGENCY REPORT REQUIREMENTS:**
+- Write as a marketing agency presenting results to your client
+- Use professional agency language: "We analyzed your campaigns", "Your audience shows", "We identified opportunities"
+- Present data as insights and findings, not instructions
+- Include all demographic segments (age, gender, devices) with specific performance data
+- Show geographic distribution and regional performance patterns  
+- Present customer retention metrics and loyalty insights
+- Focus on what the data reveals about their business performance
+- Provide strategic recommendations as expert guidance from the agency
 
-Generate ONLY the report content sections (no title, no wrapper). This is an AGENCY REPORT for a CLIENT. Use professional agency language. Start with:
+Generate ONLY the report content sections (no title, no wrapper). Create a professional agency report FOR the client with these sections:
 
-1. EXECUTIVE SUMMARY - High-level overview of campaign performance and key insights
-2. KEY PERFORMANCE METRICS - Month-over-month comparisons with growth metrics
-3. TOP PERFORMING ADS & CREATIVES - Best performing content and creative analysis  
+1. EXECUTIVE SUMMARY - High-level overview of performance and results
+2. KEY PERFORMANCE METRICS - Month-over-month comparisons and growth metrics
+3. TOP PERFORMING ADS & CREATIVES - Best performing campaigns and creative analysis
 4. AUDIENCE PERFORMANCE INSIGHTS - Demographics, geographic, and behavioral data
-5. BUDGET ALLOCATION & SCALING INSIGHTS - Ad spend efficiency and optimization opportunities
-6. OVERALL CLIENT IMPACT & ROI - Business impact and return on investment analysis
-7. NEXT STEPS & RECOMMENDATIONS - Strategic recommendations for continued growth
+5. BUDGET ALLOCATION & SCALING INSIGHTS - Spend efficiency and optimization opportunities
+6. OVERALL CLIENT IMPACT & ROI - Business impact and return on investment
+7. NEXT STEPS & RECOMMENDATIONS - Strategic guidance from your agency
 
 Use this exact HTML structure:
 
-Main sections:
-<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
+Use this professional agency report structure:
 
-For Audience Performance Insights subsections (small left tabs):
-<div style="margin: 2rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
-<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">DEMOGRAPHIC BREAKDOWN</h3>
-<p style="color: #d1d5db; line-height: 1.8;">Content here</p>
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Professional overview of campaign performance and key insights for the client.</p>
+
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📈 KEY PERFORMANCE METRICS</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Month-over-month performance comparisons and growth analysis.</p>
+
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 TOP PERFORMING ADS & CREATIVES</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Analysis of best performing campaigns and creative elements.</p>
+
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">👥 AUDIENCE PERFORMANCE INSIGHTS</h2>
+<div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
+<h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Demographics Analysis</h3>
+<p style="color: #d1d5db; line-height: 1.8;">Age, gender, and device performance breakdown.</p>
+</div>
+<div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #3b82f6; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
+<h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Geographic Performance</h3>
+<p style="color: #d1d5db; line-height: 1.8;">Regional distribution and location-based insights.</p>
+</div>
+<div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #8b5cf6; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
+<h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Customer Retention</h3>
+<p style="color: #d1d5db; line-height: 1.8;">Repeat customer analysis and loyalty metrics.</p>
 </div>
 
-Use colored left borders for subsections: #10b981 (green), #3b82f6 (blue), #8b5cf6 (purple), #f59e0b (orange), #ef4444 (red)
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">💰 BUDGET ALLOCATION & SCALING INSIGHTS</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Spend efficiency analysis and scaling opportunities.</p>
+
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 OVERALL CLIENT IMPACT & ROI</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Business impact assessment and return on investment analysis.</p>
+
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 NEXT STEPS & RECOMMENDATIONS</h2>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Strategic recommendations from your marketing team.</p>
 
 Include specific data points and be comprehensive. 400-600 words total.
 
@@ -133,7 +155,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a marketing agency analyst creating a professional client report. Generate ONLY the content sections - NO headers, titles, or wrapper elements. Use professional agency language presenting insights TO a client ABOUT their campaigns. Focus on data-driven performance insights, growth opportunities, and strategic recommendations from an agency perspective.'
+          content: 'You are a marketing agency analyst creating a professional report FOR your client. Write in agency-to-client tone (we did this, we found that, here are your results). Generate ONLY content sections - no headers/titles/wrappers. Focus on presenting results and insights professionally to the client with specific data points.'
         },
         {
           role: 'user',
