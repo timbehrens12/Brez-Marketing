@@ -61,6 +61,8 @@ export default function BrandReportPage() {
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null)
   const [lastManualGeneration, setLastManualGeneration] = useState<string | null>(null)
   const [devModeActive, setDevModeActive] = useState(false)
+  const [secretMenuVisible, setSecretMenuVisible] = useState(false)
+  const [keySequence, setKeySequence] = useState<string[]>([])
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   const [hasMonthlyReportThisMonth, setHasMonthlyReportThisMonth] = useState(false)
@@ -75,6 +77,28 @@ export default function BrandReportPage() {
     } catch (error) {
       setUserTimezone('America/Chicago') // Fallback
     }
+  }, [])
+
+  // Secret menu activation - listen for key sequence: R-E-S-E-T
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      
+      setKeySequence(prev => {
+        const newSequence = [...prev, key].slice(-5) // Keep only last 5 keys
+        
+        // Check for "reset" sequence
+        if (newSequence.join('') === 'reset') {
+          setSecretMenuVisible(true)
+          return []
+        }
+        
+        return newSequence
+      })
+    }
+
+    window.addEventListener('keypress', handleKeyPress)
+    return () => window.removeEventListener('keypress', handleKeyPress)
   }, [])
 
   // Stable Supabase client function with proper authentication
@@ -1896,7 +1920,171 @@ export default function BrandReportPage() {
     }
   }
 
+  // Reset usage functions for secret menu
+  const resetTodayUsage = async () => {
+    if (!selectedBrandId || !user?.id) {
+      toast({
+        title: "Reset Error",
+        description: "Missing brand or user information",
+        variant: "destructive",
+      })
+      return
+    }
 
+    try {
+      setIsLoadingReport(true)
+      
+      // Clear today's reports for this brand
+      const clearResponse = await fetch(`/api/brand-reports/clear?brandId=${selectedBrandId}&userId=${user.id}&type=today`, {
+        method: 'DELETE',
+      })
+      
+      if (!clearResponse.ok) {
+        throw new Error('Failed to clear today reports')
+      }
+
+      // Reset today's rate limiting
+      const today = format(new Date(), 'yyyy-MM-dd')
+      localStorage.removeItem(`lastManualGeneration_${selectedBrandId}`)
+      localStorage.removeItem(`lastDailyGeneration_${selectedBrandId}`)
+      setLastManualGeneration(null)
+      
+      // Clear current state for today
+      const todayReports = dailyReports.filter(r => {
+        const reportDate = format(new Date(r.createdAt), 'yyyy-MM-dd')
+        return reportDate !== today
+      })
+      setDailyReports(todayReports)
+      
+      if (selectedReport && format(new Date(selectedReport.createdAt), 'yyyy-MM-dd') === today) {
+        setSelectedReport(null)
+      }
+      
+      setHasDailyReportToday(false)
+      
+      toast({
+        title: "Today Usage Reset",
+        description: "Today's reports cleared and usage reset successfully",
+        variant: "default",
+      })
+      
+    } catch (error) {
+      toast({
+        title: "Reset Error",
+        description: "Failed to reset today's usage. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingReport(false)
+    }
+  }
+
+  const resetMonthUsage = async () => {
+    if (!selectedBrandId || !user?.id) {
+      toast({
+        title: "Reset Error",
+        description: "Missing brand or user information",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setIsLoadingReport(true)
+      
+      // Clear this month's reports for this brand
+      const clearResponse = await fetch(`/api/brand-reports/clear?brandId=${selectedBrandId}&userId=${user.id}&type=month`, {
+        method: 'DELETE',
+      })
+      
+      if (!clearResponse.ok) {
+        throw new Error('Failed to clear month reports')
+      }
+
+      // Reset month's rate limiting
+      const currentMonthKey = format(new Date(), 'yyyy-MM')
+      localStorage.removeItem(`lastMonthlyGeneration_${selectedBrandId}`)
+      setHasMonthlyReportThisMonth(false)
+      
+      // Clear current state for this month
+      const currentMonth = format(new Date(), 'yyyy-MM')
+      const nonMonthReports = dailyReports.filter(r => {
+        const reportMonth = format(new Date(r.createdAt), 'yyyy-MM')
+        return reportMonth !== currentMonth
+      })
+      setDailyReports(nonMonthReports)
+      
+      if (selectedReport && format(new Date(selectedReport.createdAt), 'yyyy-MM') === currentMonth) {
+        setSelectedReport(null)
+      }
+      
+      toast({
+        title: "Month Usage Reset",
+        description: "This month's reports cleared and usage reset successfully",
+        variant: "default",
+      })
+      
+    } catch (error) {
+      toast({
+        title: "Reset Error",
+        description: "Failed to reset month's usage. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingReport(false)
+    }
+  }
+
+  const resetAllUsage = async () => {
+    if (!selectedBrandId || !user?.id) {
+      toast({
+        title: "Reset Error",
+        description: "Missing brand or user information",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setIsLoadingReport(true)
+      
+      // Clear all reports for this brand
+      const clearResponse = await fetch(`/api/brand-reports/clear?brandId=${selectedBrandId}&userId=${user.id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!clearResponse.ok) {
+        throw new Error('Failed to clear all reports')
+      }
+
+      // Reset all rate limiting
+      localStorage.removeItem(`lastManualGeneration_${selectedBrandId}`)
+      localStorage.removeItem(`lastDailyGeneration_${selectedBrandId}`)
+      localStorage.removeItem(`lastMonthlyGeneration_${selectedBrandId}`)
+      setLastManualGeneration(null)
+      
+      // Clear all current state
+      setDailyReports([])
+      setSelectedReport(null)
+      setHasDailyReportToday(false)
+      setHasMonthlyReportThisMonth(false)
+      
+      toast({
+        title: "All Usage Reset",
+        description: "All reports cleared and usage reset successfully",
+        variant: "default",
+      })
+      
+    } catch (error) {
+      toast({
+        title: "Reset Error",
+        description: "Failed to reset all usage. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingReport(false)
+    }
+  }
 
   // Export the report to PDF
   const exportToPdf = async () => {
@@ -2776,6 +2964,66 @@ export default function BrandReportPage() {
         title="Secret Dev Panel"
       />
       
+      {/* Secret Menu Overlay */}
+      {secretMenuVisible && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-red-500/50 p-8 shadow-2xl max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                🔓 Secret Menu
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSecretMenuVisible(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-400 text-sm mb-6">
+                Reset usage limits for report generation
+              </p>
+              
+              <Button
+                onClick={resetTodayUsage}
+                disabled={isLoadingReport || !selectedBrandId}
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
+                Reset Today's Usage
+              </Button>
+              
+              <Button
+                onClick={resetMonthUsage}
+                disabled={isLoadingReport || !selectedBrandId}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
+                Reset Month's Usage
+              </Button>
+              
+              <Button
+                onClick={resetAllUsage}
+                disabled={isLoadingReport || !selectedBrandId}
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
+                Reset All Usage
+              </Button>
+              
+              <div className="pt-4 border-t border-gray-600">
+                <p className="text-xs text-gray-500 text-center">
+                  Type "reset" to show this menu again
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dev Mode Indicator */}
       {devModeActive && (
         <div className="fixed top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-50">
