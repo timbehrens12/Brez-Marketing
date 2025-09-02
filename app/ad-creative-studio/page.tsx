@@ -2844,31 +2844,46 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   }
 
   const generateImageFromTemplate = async (templateStyle: StyleOption) => {
+    console.log('🟡 generateImageFromTemplate called with:', templateStyle?.id)
+    
     if (!uploadedImage && !isMultiMode) {
+      console.log('🔴 ERROR: No uploaded image')
       toast.error('Please upload an image first')
       return
     }
 
+    console.log('🟢 Upload check passed')
+
     // Check usage limits
     if (usageData.current >= WEEKLY_LIMIT) {
+      console.log('🔴 ERROR: Usage limit reached')
       toast.error(`You've reached your weekly limit of ${WEEKLY_LIMIT} generations. Resets in ${getDaysUntilReset()} days.`)
       return
     }
 
+    console.log('🟢 Usage limit check passed')
+
     // Check storage limits
     if (generatedCreatives.length >= STORAGE_LIMIT) {
+      console.log('🔴 ERROR: Storage limit reached')
       toast.error(`You've reached your storage limit of ${STORAGE_LIMIT} saved creatives. Please delete some before creating new ones.`)
       return
     }
 
+    console.log('🟢 Storage limit check passed')
+
     // Generate enhanced prompt with custom instructions or custom template
+    console.log('🟡 Generating text prompt addition...')
     const textPromptAddition = generateTextPromptAddition()
+    console.log('🟢 Text prompt addition generated')
     
     let enhancedPrompt: string
     if (templateStyle.id === 'custom-template') {
+      console.log('🟡 Using custom template prompt')
       // For custom templates, use the user's complete custom prompt
       enhancedPrompt = customTemplatePrompt.trim() + textPromptAddition
     } else {
+      console.log('🟡 Using regular template prompt')
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
         ? ` CUSTOM INSTRUCTIONS: ${customInstructions.trim()}` 
@@ -2884,28 +2899,41 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         
       enhancedPrompt = templateStyle.prompt + textPromptAddition + customInstructionsAddition + regenerationFeedbackAddition + genderAddition
     }
+    
+    console.log('🟢 Enhanced prompt created, length:', enhancedPrompt.length)
 
     // Create creative entry with custom name
+    console.log('🟡 Creating creative entry...')
     const finalName = creativeName.trim() || generateDefaultName()
-    const creativeId = addCreative({
-      brand_id: selectedBrandId!,
-      user_id: user!.id,
-      style_id: templateStyle.id,
-      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.name,
-      original_image_url: uploadedImageUrl,
-      generated_image_url: '',
-      prompt_used: enhancedPrompt,
-      text_overlays: customText,
-      status: 'generating',
-      updated_at: new Date().toISOString(),
-      custom_name: finalName,
-      metadata: {}
-    })
+    console.log('🟡 Final name:', finalName)
+    
+    try {
+      const creativeId = addCreative({
+        brand_id: selectedBrandId!,
+        user_id: user!.id,
+        style_id: templateStyle.id,
+        style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.name,
+        original_image_url: uploadedImageUrl,
+        generated_image_url: '',
+        prompt_used: enhancedPrompt,
+        text_overlays: customText,
+        status: 'generating',
+        updated_at: new Date().toISOString(),
+        custom_name: finalName,
+        metadata: {}
+      })
+      console.log('🟢 Creative added with ID:', creativeId)
+    } catch (error) {
+      console.error('🔴 ERROR adding creative:', error)
+      throw error
+    }
 
+    console.log('🟡 Setting generating state...')
     setIsGenerating(true)
     setSelectedStyle(templateStyle)
     setShowStyleModal(false)
     setActiveTab('generated') // Switch to generated tab
+    console.log('🟢 State set, about to start API call...')
     
     // Background type mapping to match API BACKGROUND_PRESETS
     const backgroundTypeMapping: {[key: string]: string} = {
