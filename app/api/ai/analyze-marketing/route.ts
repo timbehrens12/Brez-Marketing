@@ -138,7 +138,13 @@ Use this professional agency report structure:
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 NEXT STEPS & RECOMMENDATIONS</h2>
 <p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Strategic recommendations from your marketing team.</p>
 
-Include specific data points and be comprehensive. 400-600 words total.
+MANDATORY REQUIREMENTS:
+- You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)
+- You MUST include ALL 3 colored subsections under Audience Performance Insights
+- Use the EXACT HTML structure and styling provided above
+- Generate the same structure for daily and monthly reports
+- Only change the data content, never the structure or section headers
+- Include specific data points and be comprehensive
 
 CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, li, span). Use inline styles only. Never use script, iframe, object, embed tags or event handlers.
     `
