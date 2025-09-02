@@ -3787,10 +3787,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       <div className="mt-2">
       {selectedCreativeType === 'clothing-models' ? (
                 /* Layout with Model Gender - Grid with generate button on right */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-          {/* Text Overlays - 5 columns */}
-          <div className="lg:col-span-5 space-y-2">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
+        <div className="space-y-3">
+          {/* Top Row: Text Overlays and Custom Instructions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Text Overlays - Left side */}
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">T</span>
@@ -3923,101 +3924,109 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
             </div>
 
-            {/* Model Gender Selection */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 flex flex-col justify-center hover:border-[#444]/80 transition-all duration-200">
-              <h3 className="text-sm font-semibold text-white mb-3 text-center flex items-center justify-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full"></span>
-                Model Gender *
-              </h3>
-              <div className="flex justify-center">
-                <div className="grid grid-cols-3 gap-3 max-w-xs">
-                  {[
-                    { value: 'male', label: 'Male', icon: '👨' },
-                    { value: 'female', label: 'Female', icon: '👩' },
-                    { value: 'any', label: 'Any', icon: '👤' }
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setSelectedGender(option.value as 'male' | 'female' | 'any')}
-                                              className={`p-2 rounded-lg transition-all text-center border ${
-                          selectedGender === option.value
-                            ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-lg'
-                            : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
-                        }`}
-                    >
-                      <div className="text-sm">{option.icon}</div>
-                      <div className="text-xs">{option.label}</div>
-                    </button>
-                  ))}
+            {/* Custom Instructions - Right side */}
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-cyan-400 rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">+</span>
                 </div>
-              </div>
-              {!selectedGender && (
-                <p className="text-xs text-red-400 mt-2 text-center">* Required for generation</p>
-              )}
-            </div>
-          </div>
-
-          {/* Custom Instructions - 6 columns */}
-          <div className="lg:col-span-6">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"></span>
                 Custom Instructions
               </h3>
               <textarea
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs h-20"
+                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs h-16"
               />
             </div>
           </div>
 
-          {/* Generate Button - Tall spanning all widgets */}
-          <div className="lg:col-span-1">
-            <div className="flex flex-col items-center justify-center h-[116px] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200">
-              <Button
-                onClick={async () => {
-                  if (!uploadedImage && !isMultiMode) {
-                    toast.error('Please upload an image first')
-                    return
-                  }
-
-                  if (!selectedTemplate) {
-                    toast.error('Please select a template first')
-                    return
-                  }
-
-                  // Validate gender selection for model-based templates
-                  if (selectedCreativeType === 'clothing-models' && !selectedGender) {
-                    toast.error('Please select a model gender first')
-                    return
-                  }
-
-                  try {
-                    // Call the generation function with the selected template directly
-                    await generateImageFromTemplate(selectedTemplate)
-
-                    // Clear regeneration feedback after successful generation
-                    setRegenerationFeedback({
-                      issues: [],
-                      details: ''
-                    })
-                  } catch (error) {
-                    setIsGenerating(false)
-                    toast.error('Failed to generate creative. Please try again.')
-                  }
-                }}
-                className="bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] px-4 py-6 font-semibold rounded-lg transition-all hover:scale-105 flex flex-col items-center justify-center w-20 h-full relative"
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                ) : (
-                  <ChevronRight className="w-8 h-8" />
+          {/* Bottom Row: Model Gender and Generate Button */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Model Gender - Centered */}
+            <div className="lg:col-span-8 lg:col-start-3">
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
+                <h3 className="text-lg font-semibold text-white mb-3 text-center flex items-center justify-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-400 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">👤</span>
+                  </div>
+                  Model Gender *
+                </h3>
+                <div className="flex justify-center">
+                  <div className="grid grid-cols-3 gap-3 max-w-xs">
+                    {[
+                      { value: 'male', label: 'Male', icon: '👨' },
+                      { value: 'female', label: 'Female', icon: '👩' },
+                      { value: 'any', label: 'Any', icon: '👤' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setSelectedGender(option.value as 'male' | 'female' | 'any')}
+                        className={`p-2 rounded-lg transition-all text-center border ${
+                            selectedGender === option.value
+                              ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-lg'
+                              : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
+                          }`}
+                      >
+                        <div className="text-sm">{option.icon}</div>
+                        <div className="text-xs">{option.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {!selectedGender && (
+                  <p className="text-xs text-red-400 mt-2 text-center">* Required for generation</p>
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-gray-500 text-center leading-none">Click to generate</div>
-              </Button>
+              </div>
+            </div>
+
+            {/* Generate Button - Right side */}
+            <div className="lg:col-span-3">
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[116px]">
+                <Button
+                  onClick={async () => {
+                    if (!uploadedImage && !isMultiMode) {
+                      toast.error('Please upload an image first')
+                      return
+                    }
+
+                    if (!selectedTemplate) {
+                      toast.error('Please select a template first')
+                      return
+                    }
+
+                    if (!selectedGender) {
+                      toast.error('Please select a model gender')
+                      return
+                    }
+
+                    // Set the modal style to the selected template for the generation function
+                    setModalStyle(selectedTemplate)
+                    
+                    try {
+                      // Call the actual generation function
+                      await generateImageFromModal()
+                    } catch (error) {
+                      console.error('Generation failed:', error)
+                      toast.error('Generation failed. Please try again.')
+                    }
+                  }}
+                  disabled={isGenerating || !selectedTemplate || !selectedGender}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
