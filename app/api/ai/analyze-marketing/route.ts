@@ -108,6 +108,8 @@ Use this HTML styling:
 - Emphasis: strong with bright white text
 
 Include specific data points and be comprehensive. 400-600 words total.
+
+CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, li, span). Use inline styles only. Never use script, iframe, object, embed tags or event handlers.
     `
     
     console.log('Sending optimized prompt to OpenAI...')
@@ -122,7 +124,7 @@ Include specific data points and be comprehensive. 400-600 words total.
       messages: [
         {
           role: 'system',
-          content: 'You are a business analyst. Generate concise HTML marketing report content with inline styles. Focus on data-driven insights with specific numbers. Use the exact structure requested.'
+          content: 'You are a business analyst. Generate valid, safe HTML marketing report content with inline styles. CRITICAL: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, li, span). Never use script, iframe, or other potentially unsafe tags. Focus on data-driven insights with specific numbers. Use the exact structure requested.'
         },
         {
           role: 'user',
@@ -150,8 +152,27 @@ Include specific data points and be comprehensive. 400-600 words total.
     
     console.log('Successfully generated AI report')
     
-    // Create streamlined response with minimal processing
-    const formattedReport = `<div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif;">${analysis}</div>`
+    // Sanitize and validate the AI response
+    const sanitizedAnalysis = analysis ? analysis.trim() : ''
+    
+    if (!sanitizedAnalysis) {
+      throw new Error('AI generated empty response')
+    }
+    
+    // Basic HTML validation - remove potentially dangerous elements
+    const safeHtml = sanitizedAnalysis
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
+      .replace(/<embed[^>]*>/gi, '')
+      .replace(/on\w+\s*=\s*"[^"]*"/gi, '') // Remove event handlers
+      .replace(/javascript:/gi, '')
+    
+    // Create safe, contained response with proper HTML structure
+    const formattedReport = `<div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">${safeHtml}</div>`
+    
+    console.log('Report length:', formattedReport.length)
+    console.log('First 200 chars:', formattedReport.substring(0, 200))
     
     // Return optimized response
     return NextResponse.json({ 
