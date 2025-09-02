@@ -783,7 +783,10 @@ export default function BrandReportPage() {
       }
 
       // If not forcing refresh, check if report already exists for this snapshot time
-      if (!forceRefresh) {
+      // TEMPORARY: Force refresh for monthly reports to ensure new format
+      const shouldSkipCache = forceRefresh || selectedPeriod === "last-month"
+      
+      if (!shouldSkipCache) {
         const existingReports = await loadDailyReports(selectedBrandId, fromDate, toDate, selectedPeriod)
         const existingReport = existingReports.find((r: DailyReport) => r.snapshotTime === snapshotTime)
         if (existingReport) {
