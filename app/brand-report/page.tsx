@@ -949,16 +949,25 @@ export default function BrandReportPage() {
         }
       }
 
-      // Send data to AI for analysis
+      // Send data to AI for analysis with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 240000) // 4 minute client timeout
+      
       const aiResponse = await fetch('/api/ai/analyze-marketing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataForAi)
+        body: JSON.stringify(dataForAi),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       if (!aiResponse.ok) {
+        if (aiResponse.status === 504) {
+          throw new Error(`Report generation timed out. Please try again or use a shorter date range.`)
+        }
         throw new Error(`AI API request failed: ${aiResponse.status}`)
       }
 
@@ -1909,10 +1918,21 @@ export default function BrandReportPage() {
         })
 
     } catch (error) {
+      let errorMessage = "An error occurred while creating your marketing report."
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = "Report generation was cancelled due to timeout. Please try again."
+        } else if (error.message.includes('timeout')) {
+          errorMessage = error.message
+        } else if (error.message.includes('504')) {
+          errorMessage = "Server timeout. Please try generating a shorter period report."
+        }
+      }
 
       toast({
         title: "Failed to generate report",
-        description: "An error occurred while creating your marketing report.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
