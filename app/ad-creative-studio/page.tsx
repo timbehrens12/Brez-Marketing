@@ -3559,7 +3559,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           {/* Left Column - Upload Drop Zone */}
           <div>
             <div 
-              className="border-2 border-dashed border-[#333] rounded-xl p-6 text-center hover:border-[#555] transition-colors h-full flex items-center justify-center"
+              className="border-2 border-dashed border-[#333] rounded-xl p-6 text-center hover:border-[#555] transition-colors h-[300px] flex items-center justify-center"
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
@@ -3594,7 +3594,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
           {/* Right Column - Pro Tips */}
           <div>
-            <div className="bg-gradient-to-br from-orange-500/10 to-amber-600/10 border border-orange-500/30 rounded-lg p-4 h-full">
+            <div className="bg-gradient-to-br from-orange-500/10 to-amber-600/10 border border-orange-500/30 rounded-lg p-4 h-[300px]">
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div>
@@ -3612,15 +3612,16 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
 
-        {/* Uploaded Images Preview */}
-        {(uploadedImage || (uploadedImages.length > 0)) && (
-          <div>
-            <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Uploaded Images ({isMultiMode ? uploadedImages.length : 1})
-            </h4>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        {/* Uploaded Images Preview - Fixed Area */}
+        <div className="min-h-[200px]">
+          {(uploadedImage || (uploadedImages.length > 0)) ? (
+            <div>
+              <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5" />
+                Uploaded Images ({isMultiMode ? uploadedImages.length : 1})
+              </h4>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
               {isMultiMode ? (
                 uploadedImageUrls.map((url, index) => (
                   <div key={index} className="relative">
@@ -3686,8 +3687,17 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-gray-400">
+                <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">Upload images to see preview here</p>
+                <p className="text-sm">Your uploaded images will appear in this space</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -3711,7 +3721,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
          <p className="text-gray-300 text-lg">What type of creative do you want to generate?</p>
        </div>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {CREATIVE_TYPES.map((type) => (
           <div
             key={type.id}
@@ -3729,14 +3739,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 setCurrentStep('template-selection')
               }
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[280px] flex flex-col justify-center"
           >
             <div className="text-center">
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
                 {type.icon}
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">{type.name}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              <h3 className="text-2xl font-bold text-white mb-4">{type.name}</h3>
+              <p className="text-gray-400 text-base leading-relaxed">{type.description}</p>
             </div>
           </div>
         ))}
@@ -3763,7 +3773,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         <p className="text-gray-300 text-lg">How would you like to display your clothing?</p>
       </div>
       
-      <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {CLOTHING_SUB_TYPES.map((subType) => (
           <div
             key={subType.id}
@@ -3772,14 +3782,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               setSelectedCreativeType(subType.id) // Update the main creative type for compatibility
               setCurrentStep('template-selection')
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[280px] flex flex-col justify-center"
           >
             <div className="text-center">
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
                 {subType.icon}
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">{subType.name}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{subType.description}</p>
+              <h3 className="text-2xl font-bold text-white mb-4">{subType.name}</h3>
+              <p className="text-gray-400 text-base leading-relaxed">{subType.description}</p>
             </div>
           </div>
         ))}
@@ -4350,7 +4360,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       <h3 className="text-xl font-semibold text-white mb-6 text-center">Creative Preview</h3>
       
       {isGenerating ? (
-        <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+        <div className="flex flex-col items-center justify-center space-y-6 h-[580px]">
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full border-4 border-[#333]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-gray-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
@@ -4378,8 +4388,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
       ) : generatedImage ? (
-        <div className="flex-1 flex flex-col space-y-4">
-          <div className="flex-1 bg-[#2a2a2a] rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col space-y-4 h-[580px]">
+          <div className="h-[440px] bg-[#2a2a2a] rounded-lg overflow-hidden flex items-center justify-center">
             <img
               src={generatedImage}
               alt="Generated creative"
@@ -4419,7 +4429,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-center">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center h-[580px]">
           <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10">
             <ImageIcon className="w-8 h-8 text-gray-400" />
           </div>
@@ -4838,7 +4848,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Right Side - Generation Preview */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] min-h-[600px] flex flex-col lg:w-[30%] flex-shrink-0">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] h-[720px] flex flex-col lg:w-[30%] flex-shrink-0">
               {renderGenerationPreview()}
             </div>
           </div>
