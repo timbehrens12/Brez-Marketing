@@ -111,7 +111,7 @@ export default function BrandReportPage() {
         return getStandardSupabaseClient()
       }
     } catch (error) {
-      console.error('[Brand Report] Error getting Supabase client:', error)
+
       return getStandardSupabaseClient()
     }
   }, [getToken])
@@ -547,12 +547,7 @@ export default function BrandReportPage() {
       const hasMonthlyReportForPeriod = reports.some((report: any) => {
         // Access the database record through the data property
         const dbReport = report.data || report
-        console.log(`🔍 Checking report:`, {
-          periodName: dbReport.period_name,
-          date_range_from: dbReport.date_range_from,
-          currentDateRange,
-          matches: dbReport.period_name === 'last-month' && dbReport.date_range_from === currentDateRange
-        })
+
         if (dbReport.period_name !== 'last-month') return false
         // Check if report covers the same date range we're looking at
         return dbReport.date_range_from === currentDateRange
@@ -965,16 +960,7 @@ export default function BrandReportPage() {
         }
       }
 
-      console.log('Data being sent to AI:', {
-        hasShopifyData: !!shopifyData,
-        hasMetaData: !!metaData,
-        hasDemographics: !!demographicsData,
-        hasLocationData: !!locationData,
-        hasRepeatCustomers: !!repeatCustomersData,
-        shopifyDataKeys: shopifyData ? Object.keys(shopifyData) : [],
-        metaDataKeys: metaData ? Object.keys(metaData) : [],
-        totalDataSize: JSON.stringify(dataForAi).length
-      })
+
 
       // Send data to AI for analysis with timeout
       const controller = new AbortController()
@@ -999,32 +985,21 @@ export default function BrandReportPage() {
       }
 
       const aiResult = await aiResponse.json()
-      console.log('AI Result received:', { 
-        hasReport: !!aiResult.report, 
-        hasAnalysis: !!aiResult.analysis, 
-        hasResult: !!aiResult.result,
-        keys: Object.keys(aiResult),
-        statusOk: aiResponse.ok,
-        status: aiResponse.status
-      })
+
 
       // Handle different response formats from the backend API
       const analysis = aiResult.report || aiResult.analysis || aiResult.result || 
         (aiResult.message && aiResult.message !== "Successfully generated AI report" ? aiResult.message : null) || 
         (typeof aiResult === 'string' ? aiResult : null);
 
-      console.log('Extracted analysis:', { 
-        hasAnalysis: !!analysis, 
-        analysisLength: analysis?.length,
-        analysisPreview: analysis?.substring(0, 100)
-      })
+
 
       if (!analysis) {
-        console.error('No analysis found in AI result:', aiResult)
+
         throw new Error("No analysis returned from AI")
       }
 
-      console.log('Analysis extracted successfully, proceeding to chart generation...')
+
 
       // Generate performance charts based on detailed data
       const generatePerformanceChart = () => {
@@ -1138,16 +1113,16 @@ export default function BrandReportPage() {
         return timelineHTML
       }
 
-      console.log('Generating performance charts...')
+
       let performanceChartHTML = ''
       try {
         performanceChartHTML = generatePerformanceChart()
-        console.log('Performance charts generated successfully')
+
       } catch (chartError) {
-        console.error('Error generating charts:', chartError)
+
         performanceChartHTML = '' // Continue without charts
       }
-      console.log('Creating formatted report...')
+
 
       // Create formatted report with optional snapshot time info
       const brandName = selectedBrand?.name || "Unknown Brand"
@@ -1928,17 +1903,11 @@ export default function BrandReportPage() {
         </div>
       `
 
-      console.log('Saving report to database...', {
-        selectedBrandId,
-        fromDate,
-        toDate,
-        reportLength: formattedReport.length,
-        hasSnapshotTime: !!snapshotTime
-      })
+
 
       // Save to database with snapshot time
       await saveReportToDatabase(selectedBrandId, fromDate, toDate, selectedPeriod, formattedReport, JSON.stringify(aiResult), snapshotTime)
-      console.log('Report saved to database successfully')
+
 
       // Update state
       const newReport: DailyReport = {
@@ -1948,14 +1917,11 @@ export default function BrandReportPage() {
         data: aiResult
       }
 
-      console.log('Setting new report to state:', {
-        contentLength: newReport.content.length,
-        snapshotTime: newReport.snapshotTime
-      })
+
 
       // Reload all daily reports to get the updated list
       const allReports = await loadDailyReports(selectedBrandId, fromDate, toDate, selectedPeriod)
-      console.log('Loaded reports:', allReports.length)
+
       
       setDailyReports(allReports)
       setSelectedReport(newReport)
