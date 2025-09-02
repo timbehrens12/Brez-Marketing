@@ -3547,7 +3547,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Progressive step components
   const renderUploadStep = () => (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto pr-32">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
         <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
@@ -3703,7 +3703,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   )
 
      const renderCreativeTypeStep = () => (
-     <div className="max-w-5xl mx-auto">
+     <div className="max-w-5xl mx-auto pr-32">
        <div className="flex items-start justify-between mb-4">
          <Button
            onClick={() => setCurrentStep('upload')}
@@ -3755,7 +3755,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   )
 
   const renderClothingSubcategoryStep = () => (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto pr-32">
       <div className="flex items-start justify-between mb-4">
         <Button
           onClick={() => setCurrentStep('creative-type')}
@@ -3813,8 +3813,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     )
 
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
+      <div className="max-w-7xl mx-auto pr-32">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-between mb-4">
             <Button
               onClick={() => {
@@ -3832,8 +3832,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               Back to Creative Type
             </Button>
           </div>
-          <h2 className="text-4xl font-bold text-white mb-4">Choose Template</h2>
-          <p className="text-gray-300 text-lg">Select a template for your {selectedType.name.toLowerCase()}</p>
+          <h2 className="text-3xl font-bold text-white mb-3">Choose Template</h2>
+          <p className="text-gray-300 text-base">Select a template for your {selectedType.name.toLowerCase()}</p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -3865,7 +3865,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   }
 
   const renderCustomizationStep = () => (
-    <div className="pt-[20px]">
+    <div className="pt-[20px] pr-32">
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
