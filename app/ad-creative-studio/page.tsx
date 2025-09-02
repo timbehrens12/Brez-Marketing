@@ -3548,14 +3548,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   // Progressive step components
   const renderUploadStep = () => (
     <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-white mb-4">Upload Your Product Images</h2>
-        <p className="text-gray-300 text-lg">Start by uploading one or more product images to create your ad creative</p>
+      <div className="text-center mb-6">
+        <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
+        <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
       </div>
       
       <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6">
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Left Column - Upload Drop Zone */}
           <div>
             <div 
@@ -3613,10 +3613,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
 
         {/* Uploaded Images Preview - Fixed Area */}
-        <div className="min-h-[200px]">
+        <div className="min-h-[180px]">
           {(uploadedImage || (uploadedImages.length > 0)) ? (
             <div>
-              <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
                 <ImageIcon className="w-5 h-5" />
                 Uploaded Images ({isMultiMode ? uploadedImages.length : 1})
               </h4>
@@ -3678,13 +3678,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Next Button */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-4">
               <Button
                 onClick={() => setCurrentStep('creative-type')}
-                className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] px-8 py-3 text-lg font-semibold text-white rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
+                className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] px-6 py-2 text-base font-semibold text-white rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
               >
                 Next: Choose Creative Type
-                <ChevronRight className="w-5 h-5 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
             </div>
@@ -4663,7 +4663,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-4 z-30">
+                <div className="absolute top-1 right-8 z-30">
                   <div className="flex items-center gap-3">
                     {/* YOUR PRODUCT */}
                     <div 
@@ -4843,7 +4843,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
 
               <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto pr-4 mr-2">
                   {renderCurrentStep()}
                 </div>
               </div>
