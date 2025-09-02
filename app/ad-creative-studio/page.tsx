@@ -4523,9 +4523,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[70%_30%] gap-3 py-2">
+          <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'template-selection' || currentStep === 'customization') && (
@@ -4714,7 +4714,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Right Side - Generation Preview */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] min-h-[600px] flex flex-col">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] min-h-[600px] flex flex-col lg:w-[30%] flex-shrink-0">
               {renderGenerationPreview()}
             </div>
           </div>
