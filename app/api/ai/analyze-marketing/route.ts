@@ -82,37 +82,39 @@ Analyze marketing data for ${brand.name} and generate business report content.
 **Repeat Customers**: ${additional_insights?.repeat_customers?.success ? 
   `Rate: ${additional_insights.repeat_customers.data?.overview?.repeatRate || 0}%, Revenue: $${additional_insights.repeat_customers.data?.overview?.repeatRevenue || 0}` : 'No data'}
 
-**CRITICAL DATA ANALYSIS REQUIREMENTS:**
-- ALWAYS use the Demographics & Audience Insights data to provide COMPREHENSIVE analysis of ALL age groups, genders, and devices in section 3.3 - not just the top performers
-- ALWAYS use the Customer Geographic Data to provide COMPLETE location analysis including ALL locations with revenue/customer data in section 3.4  
-- ALWAYS use the Repeat Customer Analysis data to provide DETAILED retention and loyalty insights in section 3.5
-- Show performance data for ALL demographic segments, not just the highest performing ones
-- Include specific numbers, percentages, impressions, CTR, and spend data for multiple segments
-- If any additional insights data is empty or null, then and only then mention data is unavailable
-- Provide detailed breakdowns rather than just highlighting top performers
+**CRITICAL AGENCY REPORT REQUIREMENTS:**
+- Write as a marketing agency presenting TO a client ABOUT their performance
+- Use professional, confident agency language ("We observed...", "Your campaigns achieved...", "Our analysis shows...")
+- Focus on campaign performance, optimization opportunities, and growth strategies
+- Present data insights as professional findings, not internal analysis
+- Include specific numbers, percentages, impressions, CTR, and spend data
+- ALWAYS use the Demographics & Audience Insights data for comprehensive audience analysis
+- ALWAYS use the Customer Geographic Data for location-based performance insights  
+- ALWAYS use the Repeat Customer Analysis for customer retention insights
+- Frame recommendations as strategic next steps from agency expertise
 
-Generate ONLY the report content sections (no title, no wrapper). Start with:
+Generate ONLY the report content sections (no title, no wrapper). This is an AGENCY REPORT for a CLIENT. Use professional agency language. Start with:
 
-1. EXECUTIVE SUMMARY section with SUMMARY subsection
-2. PERFORMANCE OVERVIEW section with KEY METRICS subsection  
-3. CHANNEL ANALYSIS section with 5 subsections (use colored left border tabs)
-4. STRENGTHS & OPPORTUNITIES section
-5. WHAT'S NOT WORKING section
-6. ACTIONABLE RECOMMENDATIONS section
+1. EXECUTIVE SUMMARY - High-level overview of campaign performance and key insights
+2. KEY PERFORMANCE METRICS - Month-over-month comparisons with growth metrics
+3. TOP PERFORMING ADS & CREATIVES - Best performing content and creative analysis  
+4. AUDIENCE PERFORMANCE INSIGHTS - Demographics, geographic, and behavioral data
+5. BUDGET ALLOCATION & SCALING INSIGHTS - Ad spend efficiency and optimization opportunities
+6. OVERALL CLIENT IMPACT & ROI - Business impact and return on investment analysis
+7. NEXT STEPS & RECOMMENDATIONS - Strategic recommendations for continued growth
 
 Use this exact HTML structure:
 
 Main sections:
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
-<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">SUMMARY</h3>
 
-Channel Analysis subsections (small left tabs):
+For Audience Performance Insights subsections (small left tabs):
 <div style="margin: 2rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
-<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">SHOPIFY PERFORMANCE</h3>
+<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">DEMOGRAPHIC BREAKDOWN</h3>
 <p style="color: #d1d5db; line-height: 1.8;">Content here</p>
 </div>
 
-Use different colored left borders: #10b981 (green), #3b82f6 (blue), #8b5cf6 (purple), #f59e0b (orange), #ef4444 (red)
+Use colored left borders for subsections: #10b981 (green), #3b82f6 (blue), #8b5cf6 (purple), #f59e0b (orange), #ef4444 (red)
 
 Include specific data points and be comprehensive. 400-600 words total.
 
@@ -131,7 +133,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a business analyst. Generate ONLY the content sections for a marketing report - NO headers, titles, or wrapper elements. Start directly with the first section content. Use safe HTML tags with inline styles. Focus on data-driven insights with specific numbers.'
+          content: 'You are a marketing agency analyst creating a professional client report. Generate ONLY the content sections - NO headers, titles, or wrapper elements. Use professional agency language presenting insights TO a client ABOUT their campaigns. Focus on data-driven performance insights, growth opportunities, and strategic recommendations from an agency perspective.'
         },
         {
           role: 'user',
