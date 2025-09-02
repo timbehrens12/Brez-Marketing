@@ -3546,12 +3546,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   }
 
   // Progressive step components
-      const renderUploadStep = () => (
-      <div className="w-full flex flex-col items-center">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
-          <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
-        </div>
+  const renderUploadStep = () => (
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
+        <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
+      </div>
       
       <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6">
         {/* Two Column Layout */}
@@ -3702,9 +3702,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
-           const renderCreativeTypeStep = () => (
-      <div className="w-full flex flex-col items-center">
-        <div className="w-full flex items-start justify-between mb-4 max-w-4xl">
+     const renderCreativeTypeStep = () => (
+     <div className="max-w-5xl mx-auto">
+       <div className="flex items-start justify-between mb-4">
          <Button
            onClick={() => setCurrentStep('upload')}
            variant="ghost"
@@ -3715,13 +3715,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
          </Button>
        </div>
 
-               {/* Header section */}
-        <div className="text-center mb-4 w-full">
-          <h2 className="text-3xl font-bold text-white mb-3">Choose Creative Type</h2>
-          <p className="text-gray-300 text-base">What type of creative do you want to generate?</p>
-        </div>
-       
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
+       {/* Header section */}
+       <div className="text-center mb-4">
+         <h2 className="text-3xl font-bold text-white mb-3">Choose Creative Type</h2>
+         <p className="text-gray-300 text-base">What type of creative do you want to generate?</p>
+       </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {CREATIVE_TYPES.map((type) => (
           <div
             key={type.id}
@@ -3754,9 +3754,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
-      const renderClothingSubcategoryStep = () => (
-     <div className="w-full flex flex-col items-center">
-       <div className="w-full flex items-start justify-between mb-4 max-w-4xl">
+  const renderClothingSubcategoryStep = () => (
+    <div className="max-w-5xl mx-auto">
+      <div className="flex items-start justify-between mb-4">
         <Button
           onClick={() => setCurrentStep('creative-type')}
           variant="ghost"
@@ -3767,13 +3767,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </Button>
       </div>
 
-             {/* Header section */}
-       <div className="text-center mb-4 w-full">
-         <h2 className="text-3xl font-bold text-white mb-3">Choose Clothing Type</h2>
-         <p className="text-gray-300 text-base">How would you like to display your clothing?</p>
-       </div>
-       
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
+      {/* Header section */}
+      <div className="text-center mb-4">
+        <h2 className="text-3xl font-bold text-white mb-3">Choose Clothing Type</h2>
+        <p className="text-gray-300 text-base">How would you like to display your clothing?</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {CLOTHING_SUB_TYPES.map((subType) => (
           <div
             key={subType.id}
@@ -3813,9 +3813,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     )
 
     return (
-      <div className="w-full flex flex-col items-center">
-        <div className="w-full flex flex-col items-center mb-8">
-          <div className="w-full flex items-center justify-between mb-4 max-w-6xl">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-between mb-4">
             <Button
               onClick={() => {
                 // Only go to clothing-subcategory if we actually selected a clothing subtype
@@ -3832,13 +3832,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               Back to Creative Type
             </Button>
           </div>
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-white mb-3">Choose Template</h2>
-            <p className="text-gray-300 text-base">Select a template for your {selectedType.name.toLowerCase()}</p>
-          </div>
+          <h2 className="text-4xl font-bold text-white mb-4">Choose Template</h2>
+          <p className="text-gray-300 text-lg">Select a template for your {selectedType.name.toLowerCase()}</p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-6xl">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {availableTemplates.map((template) => (
             <div
               key={template.id}
@@ -3867,7 +3865,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   }
 
   const renderCustomizationStep = () => (
-    <div className="pt-[20px]">
+    <div className="pt-[20px] max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
@@ -3892,7 +3890,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           {/* Left Column: Full width stacked widgets */}
           <div className="lg:col-span-11 space-y-3">
             {/* Text Overlays - Full width */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">T</span>
@@ -4061,7 +4059,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Custom Instructions - Full width */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">+</span>
@@ -4078,9 +4076,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
 
-                     {/* Right Column: Generate Button spanning full height */}
-           <div className="lg:col-span-1">
-             <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200" style={{ minHeight: '430px' }}>
+          {/* Right Column: Generate Button spanning full height */}
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200" style={{height: 'calc(3 * 160px + 2 * 12px)'}}>
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -4133,7 +4131,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           {/* Left Column: Full width stacked widgets */}
           <div className="lg:col-span-11 space-y-3">
             {/* Text Overlays - Full width */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[200px] hover:border-[#444]/80 transition-all duration-200">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[240px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></span>
                 Text Overlays
@@ -4265,7 +4263,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Custom Instructions - Full width */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[200px] hover:border-[#444]/80 transition-all duration-200">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[240px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"></span>
                 Custom Instructions
@@ -4280,9 +4278,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
 
-                     {/* Generate Button - Spanning full height */}
-           <div className="lg:col-span-1">
-             <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200" style={{ minHeight: '430px' }}>
+          {/* Generate Button - Spanning full height */}
+          <div className="lg:col-span-1">
+            <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200" style={{height: 'calc(2 * 240px + 1 * 12px)'}}>
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -4624,7 +4622,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         {currentStep === 'library' ? (
           /* Full Width Library */
           <div className="py-8">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 w-full max-w-5xl">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6">
               {renderCurrentStep()}
             </div>
           </div>
