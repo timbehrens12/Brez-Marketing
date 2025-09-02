@@ -151,6 +151,16 @@ const RETRY_ISSUES: RetryIssue[] = [
     id: 'shape-distortion',
     label: 'Shape/Silhouette Issues',
     promptAddition: 'CRITICAL FIX: The previous generation had incorrect clothing shape or silhouette. Pay ULTRA-CRITICAL attention to preserving the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. DO NOT alter, distort, or change the fundamental shape or silhouette of the garment in any way.'
+  },
+  {
+    id: 'black-bars-overlay',
+    label: 'Black Bars/Overlay Issues',
+    promptAddition: 'CRITICAL FIX: The previous generation had unwanted black bars, banners, strips, or overlay elements. ABSOLUTELY ELIMINATE ALL: black bars across the image, dark strips, rectangular backgrounds behind text, frame overlays, black boxing, banner elements, or any solid background shapes. Text must float directly on the image with completely transparent backgrounds. Use only subtle drop shadows or light outlines for text readability. The image must be completely clean and unobstructed by any overlay elements, bars, or geometric shapes.'
+  },
+  {
+    id: 'fabric-hallucination',
+    label: 'Fabric/Detail Hallucinations',
+    promptAddition: 'CRITICAL FIX: The previous generation hallucinated or invented clothing details that weren\'t in the original. STRICT REALITY CHECK: Only reproduce fabric textures, patterns, seams, stitching, pockets, buttons, zippers, and design elements that ACTUALLY EXIST in the source image. DO NOT add imaginary fabric details, fake textures, invented patterns, fictional seams, or non-existent design elements. Copy only what is genuinely visible in the original product photo with 100% accuracy. No creative interpretation or enhancement of fabric details allowed.'
   }
 ]
 
@@ -1128,8 +1138,8 @@ export default function AdCreativeStudioPage() {
     trending: { label: 'Trending', value: 'TRENDING', customizable: false },
     mustHave: { label: 'Must Have', value: 'MUST HAVE', customizable: false }
   })
-  const [selectedTopPreset, setSelectedTopPreset] = useState<string>('')
-  const [selectedBottomPreset, setSelectedBottomPreset] = useState<string>('')
+  const [selectedTopPreset, setSelectedTopPreset] = useState<string>('none')
+  const [selectedBottomPreset, setSelectedBottomPreset] = useState<string>('none')
   const [customValues, setCustomValues] = useState({ topValue: '', bottomValue: '' })
   const [textColors, setTextColors] = useState({ top: '#FFFFFF', bottom: '#FFFFFF' })
   
@@ -2448,7 +2458,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         const bottomColorName = colorOptions.find(c => c.value === overlayTextColors.bottom)?.name || 'white'
         textAddition += `MANDATORY: Place "${overlayCustomText.bottom}" text at the BOTTOM of the image. PERFECTLY CENTERED horizontally with equal spacing from left and right edges. The text must be PERFECTLY STRAIGHT and LEVEL (not tilted or wonky). Use large, bold, readable font that is EVENLY SPACED and SYMMETRICALLY POSITIONED. Make the text color ${bottomColorName.toLowerCase()} (${overlayTextColors.bottom}). Ensure text is PRECISELY ALIGNED and appears professional. CRITICAL: DO NOT add any black bars, borders, banners, or background rectangles behind the text - the text should be placed directly on the existing image without any additional backgrounds or bars. `
       }
-      textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with proper contrast and readability. NEVER cut off any letters. CRITICAL: NO BLACK BARS, BANNERS, OR BACKGROUND RECTANGLES - text should appear directly on the image with transparent background. Use drop shadows or outlines for readability if needed, but NEVER black bars or solid backgrounds behind text.'
+      textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with proper contrast and readability. NEVER cut off any letters. ULTRA-CRITICAL BLACK BAR PROHIBITION: ABSOLUTELY NO BLACK BARS, BANNERS, BOXES, RECTANGLES, STRIPS, OR ANY SOLID BACKGROUND SHAPES behind text. BANNED ELEMENTS: No black banners across the image, no dark strips, no rectangular text backgrounds, no frame overlays, no black boxing around text areas. Text should float directly on the image with TRANSPARENT BACKGROUND only. For readability, use subtle drop shadows, light outlines, or gentle glow effects, but NEVER any solid backgrounds, bars, or geometric shapes behind text. The image must remain clean and unobstructed by any overlay elements.'
     }
     return textAddition
   }
@@ -2620,13 +2630,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         const bottomColorName = colorOptions.find(c => c.value === textColors.bottom)?.name || 'white'
         textAddition += `MANDATORY: Place "${customText.bottom}" text at the BOTTOM of the image. PERFECTLY CENTERED horizontally with equal spacing from left and right edges. The text must be PERFECTLY STRAIGHT and LEVEL (not tilted or wonky). Use large, bold, readable font that is EVENLY SPACED and SYMMETRICALLY POSITIONED. Make the text color ${bottomColorName.toLowerCase()} (${textColors.bottom}). Ensure text is PRECISELY ALIGNED and appears professional. CRITICAL: DO NOT add any black bars, borders, banners, or background rectangles behind the text - the text should be placed directly on the existing image without any additional backgrounds or bars. `
       }
-      textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with proper contrast and readability. NEVER cut off any letters. CRITICAL: NO BLACK BARS, BANNERS, OR BACKGROUND RECTANGLES - text should appear directly on the image with transparent background. Use drop shadows or outlines for readability if needed, but NEVER black bars or solid backgrounds behind text.'
+      textAddition += 'CRITICAL TEXT ALIGNMENT: ALL TEXT must be PERFECTLY CENTERED both horizontally and vertically within their designated areas. Text must be STRAIGHT, LEVEL, and EVENLY POSITIONED - NO tilting, skewing, or wonky alignment. Use professional typography spacing with proper contrast and readability. NEVER cut off any letters. ULTRA-CRITICAL BLACK BAR PROHIBITION: ABSOLUTELY NO BLACK BARS, BANNERS, BOXES, RECTANGLES, STRIPS, OR ANY SOLID BACKGROUND SHAPES behind text. BANNED ELEMENTS: No black banners across the image, no dark strips, no rectangular text backgrounds, no frame overlays, no black boxing around text areas. Text should float directly on the image with TRANSPARENT BACKGROUND only. For readability, use subtle drop shadows, light outlines, or gentle glow effects, but NEVER any solid backgrounds, bars, or geometric shapes behind text. The image must remain clean and unobstructed by any overlay elements.'
     }
     // Add ULTRA-CRITICAL preservation instruction at the end
     if (textAddition) {
       textAddition += ' '
     }
-    textAddition += 'MANDATORY PERFECT CENTERING: The product must be PRECISELY CENTERED both horizontally and vertically in the composition. Ensure equal spacing from all edges and perfect symmetrical placement. For pedestal/platform shots, the product must sit EXACTLY in the center of the platform with no shifting or off-center positioning. ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Do not blur, distort, or alter any existing text elements no matter how small. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters.'
+    textAddition += 'MANDATORY PERFECT CENTERING: The product must be PRECISELY CENTERED both horizontally and vertically in the composition. Ensure equal spacing from all edges and perfect symmetrical placement. For pedestal/platform shots, the product must sit EXACTLY in the center of the platform with no shifting or off-center positioning. ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Do not blur, distort, or alter any existing text elements no matter how small. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters. STRICT ANTI-HALLUCINATION PROTOCOL: Only reproduce clothing elements that ACTUALLY EXIST in the source image. PROHIBITED: Adding imaginary fabric textures, fake seams, invented stitching, fictional pockets, non-existent buttons, made-up zippers, fantasy patterns, or any design elements not visible in the original. Copy reality exactly with zero creative interpretation or fabricated details.'
     
     return textAddition
   }
@@ -3758,18 +3768,18 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   const renderCustomizationStep = () => (
     <div className="pt-[20px]">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-3">
+      <div className="flex items-center gap-4 mb-6">
         <Button
           onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : 'template-selection')}
           variant="ghost"
-          className="text-gray-400 hover:text-white"
+          className="text-gray-400 hover:text-white transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
         <div>
-          <h2 className="text-2xl font-bold text-white">Customize Your Creative</h2>
-          <p className="text-gray-400 text-sm">Add text overlays and styling preferences</p>
+          <h2 className="text-3xl font-bold text-white">Customize Your Creative</h2>
+          <p className="text-gray-400 text-sm mt-1">Fine-tune your design with text overlays and custom styling</p>
         </div>
       </div>
       
@@ -3779,10 +3789,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 /* Layout with Model Gender - Grid with generate button on right */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
           {/* Text Overlays - 5 columns */}
-          <div className="lg:col-span-5 space-y-2">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[200px] hover:border-[#444]/80 transition-all duration-200">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></span>
+          <div className="lg:col-span-5 space-y-3">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-6 hover:border-[#444]/80 transition-all duration-200">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">T</span>
+                </div>
                 Text Overlays
               </h3>
               
@@ -3799,7 +3811,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedTopPreset === 'none'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -3813,7 +3825,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedTopPreset === 'custom'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -3860,7 +3872,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedBottomPreset === 'none'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -3874,7 +3886,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedBottomPreset === 'custom'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -3929,7 +3941,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       onClick={() => setSelectedGender(option.value as 'male' | 'female' | 'any')}
                                               className={`p-2 rounded-lg transition-all text-center border ${
                           selectedGender === option.value
-                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30 shadow-lg'
+                            ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-lg'
                             : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                         }`}
                     >
@@ -4035,7 +4047,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedTopPreset === 'none'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -4049,7 +4061,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedTopPreset === 'custom'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -4096,7 +4108,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedBottomPreset === 'none'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
@@ -4110,7 +4122,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       }}
                       className={`p-1.5 text-xs rounded-md transition-all border ${
                         selectedBottomPreset === 'custom'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30'
+                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
                           : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
                       }`}
                     >
