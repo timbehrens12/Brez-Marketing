@@ -3930,7 +3930,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="lg:col-span-6">
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-cyan-400 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">+</span>
                   </div>
                   Custom Instructions
@@ -3994,9 +3994,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
 
-          {/* Second Row: Model Gender Selection - Centered */}
+          {/* Second Row: Model Gender Selection - Under the first two widgets */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            <div className="lg:col-span-4 lg:col-start-5">
+            <div className="lg:col-span-6 lg:col-start-4">
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
                 <h3 className="text-lg font-semibold text-white mb-3 text-center flex items-center justify-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
