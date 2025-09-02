@@ -53,7 +53,7 @@ HISTORICAL CONTEXT: This appears to be the first report for this brand/period. F
       
             // Include historical context in the analysis prompt
       console.log('🔗 Including historical context in AI prompt for trend analysis')
-      const { date_range, brand, platforms, user, formatting_instructions } = data
+      const { date_range, brand, platforms, user, formatting_instructions, additional_insights } = data
       
       // Add historical context to the main data structure for AI processing
       const enhancedData = {
@@ -72,6 +72,22 @@ ${JSON.stringify(platforms.shopify, null, 2)}
 
 **Meta Advertising Data**:
 ${JSON.stringify(platforms.meta, null, 2)}
+
+**Demographics & Audience Insights**:
+${JSON.stringify(additional_insights?.demographics || {}, null, 2)}
+
+**Customer Geographic Data**:
+${JSON.stringify(additional_insights?.customer_location || {}, null, 2)}
+
+**Repeat Customer Analysis**:
+${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
+
+**CRITICAL DATA ANALYSIS REQUIREMENTS:**
+- ALWAYS use the Demographics & Audience Insights data to provide specific age group, gender, and device performance analysis in section 3.3
+- ALWAYS use the Customer Geographic Data to provide specific location analysis in section 3.4  
+- ALWAYS use the Repeat Customer Analysis data to provide specific retention and loyalty insights in section 3.5
+- If any additional insights data is empty or null, then and only then mention data is unavailable
+- Include specific numbers, percentages, and insights from the provided additional insights data
 
 **CRITICAL FORMATTING REQUIREMENTS:**
 - DO NOT include any main headers, titles, or "MARKETING INSIGHTS" text
@@ -101,13 +117,13 @@ Generate professional business report content with proper HTML structure includi
 <p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze audience composition by age, gender, and device preferences. Identify top-performing demographic segments and optimization opportunities based on engagement and conversion data.</p>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Demographics & Audience Insights data provided above to analyze specific age groups, gender performance, and device preferences. Include actual percentages, top-performing segments, and specific metrics from the data. Identify optimization opportunities based on the demographic breakdown provided.</p>
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.4 Geographic Performance Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze customer distribution by location, regional revenue performance, and identify geographic market opportunities and expansion potential.</p>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Customer Geographic Data provided above to analyze specific customer locations, regional revenue performance, and distribution patterns. Include actual city/state/country data, customer counts per location, and revenue by region from the provided data.</p>
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.5 Repeat Customer Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze customer retention rates, repeat purchase behavior, lifetime value trends, and identify opportunities to improve customer loyalty and repeat business.</p>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Repeat Customer Analysis data provided above to analyze specific retention rates, repeat purchase percentages, customer lifetime value metrics, and loyalty trends. Include actual numbers and percentages from the provided repeat customer data.</p>
 </div>
 
 <div class="strengths-opportunities">
