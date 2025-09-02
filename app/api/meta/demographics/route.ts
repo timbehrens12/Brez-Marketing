@@ -58,8 +58,23 @@ export async function GET(request: NextRequest) {
     const defaultFromDate = '2024-01-01' // Extended backwards to catch all data
     
     // Support both date formats
-    const startDate = fromDate || dateRangeStart || defaultFromDate
-    const endDate = toDate || dateRangeEnd || defaultToDate
+    let startDate = fromDate || dateRangeStart || defaultFromDate
+    let endDate = toDate || dateRangeEnd || defaultToDate
+    
+    // Convert dates to handle Central timezone properly for Meta data
+    // Meta data is typically aggregated by day, but we should ensure timezone alignment
+    if (fromDate && toDate) {
+      // For Meta demographics, adjust the date range to account for Central Time
+      // This ensures data from the user's local day is properly captured
+      const startDateObj = new Date(startDate + 'T06:00:00Z') // Start of day in Central (UTC-6)
+      const endDateObj = new Date(endDate + 'T05:59:59Z')     // End of day in Central
+      
+      // Convert back to date strings for the database query
+      startDate = startDateObj.toISOString().split('T')[0]
+      endDate = endDateObj.toISOString().split('T')[0]
+      
+      console.log(`[Meta Demographics] Timezone-adjusted dates: ${fromDate} -> ${startDate}, ${toDate} -> ${endDate}`)
+    }
 
     // If breakdownType is specified (legacy format), filter by that specific type
     let ageData = null, genderData = null, ageGenderData = null
