@@ -691,37 +691,64 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
         console.log(`[AIDailyReport] Fetching demographics data for connection: ${metaConnection.id}`)
         
         try {
-          // Fetch age demographics using the same API as dashboard
-          const ageResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/demographics?connectionId=${metaConnection.id}&breakdownType=age`)
-          const ageData = ageResponse.ok ? await ageResponse.json() : null
+          // Use the same database queries as the demographics API but without HTTP requests
+          // Extended date range to catch test data 
+          const startDate = '2024-01-01'
+          const endDate = '2025-12-31'
 
-          // Fetch gender demographics
-          const genderResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/demographics?connectionId=${metaConnection.id}&breakdownType=gender`)
-          const genderData = genderResponse.ok ? await genderResponse.json() : null
+          const [ageResult, genderResult, deviceResult, placementResult] = await Promise.all([
+            supabase
+              .from('meta_demographics')
+              .select('*')
+              .eq('connection_id', metaConnection.id)
+              .eq('breakdown_type', 'age')
+              .gte('date_range_start', startDate)
+              .lte('date_range_end', endDate),
+            supabase
+              .from('meta_demographics')
+              .select('*')
+              .eq('connection_id', metaConnection.id)
+              .eq('breakdown_type', 'gender')
+              .gte('date_range_start', startDate)
+              .lte('date_range_end', endDate),
+            supabase
+              .from('meta_device_performance')
+              .select('*')
+              .eq('connection_id', metaConnection.id)
+              .eq('breakdown_type', 'device')
+              .gte('date_range_start', startDate)
+              .lte('date_range_end', endDate),
+            supabase
+              .from('meta_device_performance')
+              .select('*')
+              .eq('connection_id', metaConnection.id)
+              .eq('breakdown_type', 'placement')
+              .gte('date_range_start', startDate)
+              .lte('date_range_end', endDate)
+          ])
 
-          // Fetch device performance data
-          const deviceResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/device-performance?connectionId=${metaConnection.id}&breakdownType=device`)
-          const deviceData = deviceResponse.ok ? await deviceResponse.json() : null
+          const ageData = ageResult.data || []
+          const genderData = genderResult.data || []
+          const deviceData = deviceResult.data || []
+          const placementData = placementResult.data || []
 
-          // Fetch placement performance data  
-          const placementResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/device-performance?connectionId=${metaConnection.id}&breakdownType=placement`)
-          const placementData = placementResponse.ok ? await placementResponse.json() : null
+          console.log(`[AIDailyReport] Demographics data fetched:`, {
+            ageSegments: ageData.length,
+            genderSegments: genderData.length,
+            deviceTypes: deviceData.length,
+            placements: placementData.length
+          })
 
-          if (ageData?.data || genderData?.data || deviceData?.data || placementData?.data) {
+          if (ageData.length > 0 || genderData.length > 0 || deviceData.length > 0 || placementData.length > 0) {
             metaAnalysis.demographics = {
-              age: ageData?.data || [],
-              gender: genderData?.data || [],
-              devices: deviceData?.data || [],
-              placements: placementData?.data || []
+              age: ageData,
+              gender: genderData,
+              devices: deviceData,
+              placements: placementData
             } as any
-            console.log(`[AIDailyReport] Demographics data loaded:`, {
-              ageSegments: metaAnalysis.demographics?.age.length || 0,
-              genderSegments: metaAnalysis.demographics?.gender.length || 0,
-              deviceTypes: metaAnalysis.demographics?.devices.length || 0,
-              placements: metaAnalysis.demographics?.placements.length || 0
-            })
+            console.log(`[AIDailyReport] Demographics data loaded successfully`)
           } else {
-            console.log(`[AIDailyReport] No demographic data returned from APIs`)
+            console.log(`[AIDailyReport] No demographic data found in database`)
           }
         } catch (error) {
           console.error('[AIDailyReport] Error fetching demographic data:', error)
@@ -741,18 +768,65 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
     console.log(`[AIDailyReport] Fetching Shopify geographic and repeat customer data for brand: ${brandId}`)
     
     try {
-      // Fetch geographic data from the same endpoint the dashboard uses
-      const geographicResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/shopify/customers/geographic?brandId=${brandId}`)
-      if (geographicResponse.ok) {
-        const geographicData = await geographicResponse.json()
+      // Fetch geographic data directly from shopify_sales_by_region table (same as geographic API)
+      const { data: salesByRegion } = await supabase
+        .from('shopify_sales_by_region')
+        .select('*')
+        .eq('brand_id', brandId)
+
+      console.log(`[AIDailyReport] Raw geographic data from shopify_sales_by_region:`, {
+        count: salesByRegion?.length || 0,
+        sample: salesByRegion?.slice(0, 2)
+      })
+
+      if (salesByRegion && salesByRegion.length > 0) {
+        // Process the data the same way as the geographic API
+        const locationMap = new Map();
+        let totalRevenue = 0;
+        let totalCustomers = 0;
+
+        salesByRegion.forEach((sale: any) => {
+          const country = sale.country || 'Unknown';
+          const state = sale.province || '';
+          const city = sale.city || '';
+          const revenue = parseFloat(sale.total_price) || 0;
+          const orderCount = parseInt(sale.order_count) || 1;
+          
+          if (country === 'Unknown' && !state && !city) {
+            return;
+          }
+          
+          totalRevenue += revenue;
+          totalCustomers += orderCount;
+          
+          const locationKey = `${city}-${state}-${country}`;
+          
+          if (locationMap.has(locationKey)) {
+            const existing = locationMap.get(locationKey);
+            existing.customerCount += orderCount;
+            existing.totalRevenue += revenue;
+          } else {
+            locationMap.set(locationKey, {
+              city,
+              state,
+              country,
+              customerCount: orderCount,
+              totalRevenue: revenue
+            });
+          }
+        });
+
+        const locations = Array.from(locationMap.values());
+        
         shopifyAnalysis.geographic = {
-          locations: geographicData.locations || [],
-          totalRevenue: geographicData.totalRevenue || 0,
-          totalCustomers: geographicData.totalCustomers || 0
+          locations,
+          totalRevenue,
+          totalCustomers
         } as any
-        console.log(`[AIDailyReport] Geographic data loaded: ${geographicData.locations?.length || 0} locations, ${geographicData.totalCustomers || 0} customers`)
+        
+        console.log(`[AIDailyReport] Geographic data processed: ${locations.length} locations, ${totalCustomers} customers, $${totalRevenue} revenue`)
       } else {
-        console.log(`[AIDailyReport] Geographic data request failed: ${geographicResponse.status}`)
+        console.log(`[AIDailyReport] No geographic data found in shopify_sales_by_region`)
       }
     } catch (error) {
       console.error('[AIDailyReport] Error fetching geographic data:', error)
@@ -1434,6 +1508,12 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
   }
   
   // Audience Demographics Analysis
+  console.log(`[AIDailyReport] Demographics condition check:`, {
+    hasDemographics: !!meta.demographics,
+    ageLength: meta.demographics?.age?.length || 0,
+    genderLength: meta.demographics?.gender?.length || 0,
+    devicesLength: meta.demographics?.devices?.length || 0
+  })
   if (meta.demographics && (meta.demographics.age.length > 0 || meta.demographics.gender.length > 0 || meta.demographics.devices.length > 0)) {
     const demographicInsights = []
     
@@ -1476,6 +1556,12 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
   }
 
   // Geographic and Customer Analysis from Shopify
+  console.log(`[AIDailyReport] Geographic condition check:`, {
+    shopifyConnected: shopify.isConnected,
+    hasGeographic: !!shopify.geographic,
+    hasRepeatCustomers: !!shopify.repeatCustomers,
+    geographicLocations: shopify.geographic?.locations?.length || 0
+  })
   if (shopify.isConnected && (shopify.geographic || shopify.repeatCustomers)) {
     const customerInsights = []
     
