@@ -91,21 +91,28 @@ Analyze marketing data for ${brand.name} and generate business report content.
 - If any additional insights data is empty or null, then and only then mention data is unavailable
 - Provide detailed breakdowns rather than just highlighting top performers
 
-Generate a business report with this structure:
+Generate ONLY the report content sections (no title, no wrapper). Start with:
 
-1. **📊 EXECUTIVE SUMMARY** - Overview with key metrics
-2. **📈 PERFORMANCE OVERVIEW** - Sales and ad performance 
-3. **🔍 CHANNEL ANALYSIS** - Shopify, Meta, Demographics, Geographic, Repeat Customers
-4. **💪 STRENGTHS & OPPORTUNITIES** - What's working well
-5. **⚠️ WHAT'S NOT WORKING** - Areas of concern
-6. **🎯 ACTIONABLE RECOMMENDATIONS** - 4-5 specific next steps
+1. EXECUTIVE SUMMARY section with SUMMARY subsection
+2. PERFORMANCE OVERVIEW section with KEY METRICS subsection  
+3. CHANNEL ANALYSIS section with 5 subsections (use colored left border tabs)
+4. STRENGTHS & OPPORTUNITIES section
+5. WHAT'S NOT WORKING section
+6. ACTIONABLE RECOMMENDATIONS section
 
-Use this HTML styling:
-- Main headers: h2 with white text, large font, border-bottom
-- Subsection boxes: div with dark gradient background and border
-- Sub headers: h3 with white text, uppercase
-- Text: p with light gray text
-- Emphasis: strong with bright white text
+Use this exact HTML structure:
+
+Main sections:
+<h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
+<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">SUMMARY</h3>
+
+Channel Analysis subsections (small left tabs):
+<div style="margin: 2rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
+<h3 style="color: #ffffff; font-size: 1.5rem; font-weight: 800; margin: 0 0 1rem 0; text-transform: uppercase;">SHOPIFY PERFORMANCE</h3>
+<p style="color: #d1d5db; line-height: 1.8;">Content here</p>
+</div>
+
+Use different colored left borders: #10b981 (green), #3b82f6 (blue), #8b5cf6 (purple), #f59e0b (orange), #ef4444 (red)
 
 Include specific data points and be comprehensive. 400-600 words total.
 
@@ -124,7 +131,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a business analyst. Generate valid, safe HTML marketing report content with inline styles. CRITICAL: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, li, span). Never use script, iframe, or other potentially unsafe tags. Focus on data-driven insights with specific numbers. Use the exact structure requested.'
+          content: 'You are a business analyst. Generate ONLY the content sections for a marketing report - NO headers, titles, or wrapper elements. Start directly with the first section content. Use safe HTML tags with inline styles. Focus on data-driven insights with specific numbers.'
         },
         {
           role: 'user',
@@ -159,7 +166,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       throw new Error('AI generated empty response')
     }
     
-    // Basic HTML validation - remove potentially dangerous elements
+    // Basic HTML validation - remove potentially dangerous elements and clean up
     const safeHtml = sanitizedAnalysis
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
@@ -167,6 +174,10 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       .replace(/<embed[^>]*>/gi, '')
       .replace(/on\w+\s*=\s*"[^"]*"/gi, '') // Remove event handlers
       .replace(/javascript:/gi, '')
+      .replace(/^```html\s*/gi, '') // Remove markdown code block start
+      .replace(/\s*```\s*$/gi, '') // Remove markdown code block end
+      .replace(/^["'`]+|["'`]+$/g, '') // Remove leading/trailing quotes
+      .trim()
     
     // Create safe, contained response with proper HTML structure
     const formattedReport = `<div style="padding: 2rem; color: #ffffff; font-family: system-ui, sans-serif; max-width: 100%; overflow: hidden; word-wrap: break-word;">${safeHtml}</div>`
