@@ -1162,18 +1162,18 @@ export default function BrandReportPage() {
             flex-direction: column !important;
           }
           
-          /* Header styles */
+          /* Header styles - Compact for 8.5x11 */
           .report-wrapper .report-header {
             background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%) !important;
             color: #ffffff !important;
-            padding: 2rem !important;
+            padding: 0.75rem !important;
             border-bottom: 1px solid #333333 !important;
             position: relative !important;
             overflow: hidden !important;
             display: flex !important;
             justify-content: space-between !important;
-            align-items: flex-start !important;
-            gap: 2rem !important;
+            align-items: center !important;
+            gap: 1rem !important;
             margin: 0 !important;
             width: 100% !important;
           }
@@ -1191,36 +1191,36 @@ export default function BrandReportPage() {
           
           .report-wrapper .report-header h1 {
             color: #ffffff !important;
-            font-size: 2.5rem !important;
-            font-weight: 800 !important;
-            margin: 0 0 1rem 0 !important;
+            font-size: 0.95rem !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
             display: block !important;
-            letter-spacing: -0.02em !important;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+            letter-spacing: 0.02em !important;
+            text-shadow: none !important;
           }
           
           .report-wrapper .report-subtitle {
             color: #cccccc !important;
-            font-size: 1.1rem !important;
-            margin: 0 0 2rem 0 !important;
-            font-weight: 500 !important;
+            font-size: 0.7rem !important;
+            margin: 0.2rem 0 0 0 !important;
+            font-weight: 400 !important;
             display: block !important;
-            line-height: 1.4 !important;
+            line-height: 1.2 !important;
           }
           
-          /* Header Right - Brand Section */
+          /* Header Right - Brand Section - Compact */
           .report-wrapper .header-brand-section {
             position: relative !important;
             background: #2a2a2a !important;
             border: 1px solid #444444 !important;
-            border-radius: 12px !important;
-            padding: 1.5rem !important;
+            border-radius: 6px !important;
+            padding: 0.5rem !important;
             display: flex !important;
             align-items: center !important;
-            gap: 1rem !important;
-            min-width: 250px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-            margin-top: 0.5rem !important;
+            gap: 0.5rem !important;
+            min-width: 180px !important;
+            box-shadow: none !important;
+            margin-top: 0 !important;
             flex-shrink: 0 !important;
           }
           
@@ -1230,15 +1230,15 @@ export default function BrandReportPage() {
           }
           
           .report-wrapper .brand-logo {
-            width: 50px !important;
-            height: 50px !important;
+            width: 24px !important;
+            height: 24px !important;
             background: #1a1a1a !important;
             border: 1px solid #333 !important;
-            border-radius: 8px !important;
+            border-radius: 4px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            padding: 8px !important;
+            padding: 2px !important;
             overflow: hidden !important;
             flex-shrink: 0 !important;
           }
@@ -1254,7 +1254,7 @@ export default function BrandReportPage() {
           
           .report-wrapper .brand-logo span {
             color: #ffffff !important;
-            font-size: 16px !important;
+            font-size: 8px !important;
             font-weight: 700 !important;
             letter-spacing: 0.05em !important;
           }
@@ -1266,37 +1266,37 @@ export default function BrandReportPage() {
           
           .report-wrapper .brand-label {
             color: #9ca3af !important;
-            font-size: 0.75rem !important;
+            font-size: 0.55rem !important;
             font-weight: 600 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
-            margin-bottom: 0.25rem !important;
+            margin-bottom: 0.1rem !important;
           }
           
           .report-wrapper .brand-name {
             color: #ffffff !important;
-            font-size: 1.1rem !important;
+            font-size: 0.7rem !important;
             font-weight: 700 !important;
-            line-height: 1.2 !important;
+            line-height: 1.1 !important;
             word-break: break-word !important;
           }
           
-          /* Hamburger-style stacked info items */
+          /* Compact info items */
           .report-wrapper .info-stack {
             background: rgba(42, 42, 42, 0.6) !important;
             border: 1px solid #333333 !important;
-            border-radius: 8px !important;
-            padding: 1rem !important;
-            margin-top: 1.5rem !important;
+            border-radius: 4px !important;
+            padding: 0.4rem !important;
+            margin-top: 0.3rem !important;
             backdrop-filter: blur(10px) !important;
-            max-width: 280px !important;
+            max-width: 200px !important;
           }
           
           .report-wrapper .info-item {
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            padding: 0.75rem 0 !important;
+            padding: 0.2rem 0 !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
           }
           
@@ -1311,7 +1311,7 @@ export default function BrandReportPage() {
           
           .report-wrapper .info-label {
             color: #9ca3af !important;
-            font-size: 0.75rem !important;
+            font-size: 0.55rem !important;
             font-weight: 600 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
@@ -1319,23 +1319,23 @@ export default function BrandReportPage() {
           
           .report-wrapper .info-value {
             color: #ffffff !important;
-            font-size: 0.875rem !important;
+            font-size: 0.6rem !important;
             font-weight: 700 !important;
             text-align: right !important;
           }
           
           .report-wrapper .info-value.monospace {
             font-family: 'Courier New', monospace !important;
-            font-size: 0.8rem !important;
+            font-size: 0.55rem !important;
           }
           
 
           
-          /* Content styles */
+          /* Content styles - Compact */
           .report-wrapper .report-content {
-            padding: 2rem !important;
+            padding: 0.5rem !important;
             background: transparent !important;
-            min-height: 500px !important;
+            min-height: auto !important;
             position: relative !important;
             width: 100% !important;
           }
@@ -1348,31 +1348,25 @@ export default function BrandReportPage() {
           .report-wrapper .content-section {
             background: #1a1a1a !important;
             border: 1px solid #2a2a2a !important;
-            border-radius: 12px !important;
-            padding: 2rem !important;
-            margin: 2rem 0 !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+            border-radius: 6px !important;
+            padding: 0.75rem !important;
+            margin: 0.5rem 0 !important;
+            box-shadow: none !important;
           }
           
           .report-wrapper .report-content h2 {
             color: #ffffff !important;
-            font-size: 1.75rem !important;
+            font-size: 0.9rem !important;
             font-weight: 700 !important;
-            margin: 0 0 1.5rem 0 !important;
-            padding: 0 0 1rem 0 !important;
-            border-bottom: 2px solid #444444 !important;
+            margin: 0 0 0.4rem 0 !important;
+            padding: 0 0 0.2rem 0 !important;
+            border-bottom: 1px solid #444444 !important;
             display: block !important;
             position: relative !important;
           }
           
           .report-wrapper .report-content h2::before {
-            content: '' !important;
-            position: absolute !important;
-            bottom: -2px !important;
-            left: 0 !important;
-            width: 60px !important;
-            height: 2px !important;
-            background: #ffffff !important;
+            display: none !important;
           }
           
           .report-wrapper .report-content h2:first-child {
@@ -1381,19 +1375,19 @@ export default function BrandReportPage() {
           
           .report-wrapper .report-content h3 {
             color: #f3f4f6 !important;
-            font-size: 1.35rem !important;
+            font-size: 0.8rem !important;
             font-weight: 600 !important;
-            margin: 2rem 0 1rem 0 !important;
+            margin: 0.5rem 0 0.3rem 0 !important;
             display: block !important;
-            padding-left: 1rem !important;
-            border-left: 3px solid #666666 !important;
+            padding-left: 0.5rem !important;
+            border-left: 2px solid #666666 !important;
           }
           
           .report-wrapper .report-content p {
             color: #d1d5db !important;
-            margin-bottom: 1.25rem !important;
-            line-height: 1.8 !important;
-            font-size: 1.05rem !important;
+            margin-bottom: 0.4rem !important;
+            line-height: 1.3 !important;
+            font-size: 0.7rem !important;
             display: block !important;
             background: none !important;
             padding: 0 !important;
@@ -1401,19 +1395,19 @@ export default function BrandReportPage() {
           }
           
           .report-wrapper .report-content ul {
-            margin: 0 0 1.5rem 1.5rem !important;
+            margin: 0 0 0.5rem 1rem !important;
             list-style: none !important;
             display: block !important;
           }
           
           .report-wrapper .report-content li {
             color: #d1d5db !important;
-            margin-bottom: 0.75rem !important;
-            line-height: 1.7 !important;
-            font-size: 1.05rem !important;
+            margin-bottom: 0.3rem !important;
+            line-height: 1.3 !important;
+            font-size: 0.7rem !important;
             display: list-item !important;
             position: relative !important;
-            padding-left: 1.5rem !important;
+            padding-left: 1rem !important;
           }
           
           .report-wrapper .report-content li::before {
@@ -1432,15 +1426,15 @@ export default function BrandReportPage() {
             border-radius: 0 !important;
           }
           
-          /* Footer styles */
+          /* Footer styles - Compact */
           .report-wrapper .report-footer {
             background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%) !important;
-            padding: 2rem !important;
+            padding: 0.5rem !important;
             border-top: 1px solid #333333 !important;
             position: relative !important;
             display: flex !important;
             justify-content: space-between !important;
-            align-items: flex-end !important;
+            align-items: center !important;
             margin: 0 !important;
             border-bottom: none !important;
             margin-bottom: 0 !important;
@@ -1461,17 +1455,17 @@ export default function BrandReportPage() {
           }
           
           .report-wrapper .footer-agency-logo {
-            width: 60px !important;
-            height: 60px !important;
+            width: 24px !important;
+            height: 24px !important;
             background: #2a2a2a !important;
-            border: 2px solid #444444 !important;
-            border-radius: 12px !important;
+            border: 1px solid #444444 !important;
+            border-radius: 4px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             flex-shrink: 0 !important;
             position: relative !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: none !important;
           }
           
           /* Remove white accent bar in PDF to avoid clutter */
@@ -1648,17 +1642,17 @@ export default function BrandReportPage() {
           }
           
           .report-wrapper .footer-agency-logo img {
-            max-width: 52px !important;
-            max-height: 52px !important;
+            max-width: 20px !important;
+            max-height: 20px !important;
             width: auto !important;
             height: auto !important;
-            border-radius: 8px !important;
+            border-radius: 2px !important;
             object-fit: contain !important;
           }
           
           .report-wrapper .footer-agency-logo span {
             color: #ffffff !important;
-            font-size: 18px !important;
+            font-size: 8px !important;
             font-weight: 700 !important;
             letter-spacing: 0.05em !important;
           }
@@ -1666,19 +1660,19 @@ export default function BrandReportPage() {
           .report-wrapper .footer-agency-info {
             display: flex !important;
             flex-direction: column !important;
-            gap: 0.25rem !important;
+            gap: 0.1rem !important;
           }
           
           .report-wrapper .footer-agency-name {
             color: #ffffff !important;
-            font-size: 1.1rem !important;
+            font-size: 0.65rem !important;
             font-weight: 700 !important;
-            line-height: 1.2 !important;
+            line-height: 1.1 !important;
           }
           
           .report-wrapper .footer-agency-tagline {
             color: #9ca3af !important;
-            font-size: 0.875rem !important;
+            font-size: 0.55rem !important;
             font-weight: 500 !important;
           }
           
@@ -1712,17 +1706,17 @@ export default function BrandReportPage() {
           
           .report-wrapper .timestamp {
             color: #9ca3af !important;
-            font-size: 0.75rem !important;
+            font-size: 0.55rem !important;
             font-family: 'Courier New', monospace !important;
             background: #2a2a2a !important;
-            padding: 0.25rem 0.5rem !important;
-            border-radius: 4px !important;
+            padding: 0.15rem 0.3rem !important;
+            border-radius: 2px !important;
             border: 1px solid #333333 !important;
           }
           
           .report-wrapper .report-id {
             color: #cccccc !important;
-            font-size: 0.75rem !important;
+            font-size: 0.55rem !important;
             font-family: 'Courier New', monospace !important;
           }
           

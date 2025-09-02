@@ -83,13 +83,13 @@ ${JSON.stringify(additional_insights?.customer_location || {}, null, 2)}
 ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 
 **CRITICAL DATA ANALYSIS REQUIREMENTS:**
-- ALWAYS use the Demographics & Audience Insights data to provide COMPREHENSIVE analysis of ALL age groups, genders, and devices in section 3.3 - not just the top performers
-- ALWAYS use the Customer Geographic Data to provide COMPLETE location analysis including ALL locations with revenue/customer data in section 3.4  
-- ALWAYS use the Repeat Customer Analysis data to provide DETAILED retention and loyalty insights in section 3.5
-- Show performance data for ALL demographic segments, not just the highest performing ones
-- Include specific numbers, percentages, impressions, CTR, and spend data for multiple segments
+- ALWAYS use the Demographics & Audience Insights data to provide COMPREHENSIVE analysis of ALL age groups, genders, and devices - not just top performers
+- ALWAYS use the Customer Geographic Data to provide COMPLETE location analysis including ALL locations with revenue/customer data  
+- ALWAYS use the Repeat Customer Analysis data to provide DETAILED retention and loyalty insights
+- Show performance data for ALL demographic segments with specific numbers, percentages, impressions, CTR, and spend
 - If any additional insights data is empty or null, then and only then mention data is unavailable
-- Provide detailed breakdowns rather than just highlighting top performers
+- Keep content CONCISE and well-organized for 8.5x11 paper format - use bullet points and short paragraphs
+- Focus on key insights rather than lengthy explanations
 
 **CRITICAL FORMATTING REQUIREMENTS:**
 - DO NOT include any main headers, titles, or "MARKETING INSIGHTS" text
@@ -102,67 +102,67 @@ ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 
 Generate professional business report content optimized for 8.5x11 paper format:
 
-<div class="report-header" style="margin-bottom: 1.5rem;">
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+<div class="report-header" style="margin-bottom: 0.5rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem;">
   <div class="executive-summary">
-    <h2 style="color: #e5e7eb; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">EXECUTIVE SUMMARY</h2>
-    <p style="margin-bottom: 0.75rem; line-height: 1.5; color: #d1d5db; font-size: 0.9rem;">Provide a concise overview of overall performance, highlighting key achievements and critical areas.</p>
+    <h2 style="color: #e5e7eb; font-size: 0.85rem; font-weight: 700; margin: 0 0 0.3rem 0; padding-bottom: 0.2rem; border-bottom: 1px solid #4b5563;">EXECUTIVE SUMMARY</h2>
+    <p style="margin-bottom: 0.4rem; line-height: 1.3; color: #d1d5db; font-size: 0.7rem;">Concise overview of performance, key achievements and critical areas.</p>
   </div>
   <div class="performance-overview">
-    <h2 style="color: #e5e7eb; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">KEY METRICS</h2>
-    <p style="margin-bottom: 0.75rem; line-height: 1.5; color: #d1d5db; font-size: 0.9rem;">Summary of critical metrics with specific numbers and percentages.</p>
+    <h2 style="color: #e5e7eb; font-size: 0.85rem; font-weight: 700; margin: 0 0 0.3rem 0; padding-bottom: 0.2rem; border-bottom: 1px solid #4b5563;">KEY METRICS</h2>
+    <p style="margin-bottom: 0.4rem; line-height: 1.3; color: #d1d5db; font-size: 0.7rem;">Critical metrics with specific numbers and percentages.</p>
   </div>
 </div>
 </div>
 
-<div class="channel-analysis" style="margin-bottom: 1.5rem;">
-<h2 style="color: #e5e7eb; font-size: 1.3rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">CHANNEL PERFORMANCE</h2>
+<div class="channel-analysis" style="margin-bottom: 0.5rem;">
+<h2 style="color: #e5e7eb; font-size: 0.9rem; font-weight: 700; margin: 0 0 0.4rem 0; padding-bottom: 0.2rem; border-bottom: 1px solid #4b5563;">CHANNEL PERFORMANCE</h2>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem;">
   <div class="shopify-section">
-    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #10b981;">Shopify Performance</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze revenue metrics, order counts, and customer behavior with specific data and growth percentages.</p>
+    <h3 style="color: #10b981; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">🛒 Shopify</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">Revenue, orders, customer behavior with growth %.</p>
   </div>
   <div class="meta-section">
-    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #3b82f6;">Meta/Facebook Ads</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze ad spend efficiency, CTR, impressions, and campaign performance with specific metrics.</p>
+    <h3 style="color: #3b82f6; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">📱 Meta Ads</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">Ad spend, CTR, impressions, campaign metrics.</p>
   </div>
 </div>
 
-<div class="audience-analysis" style="margin-bottom: 1.5rem;">
-  <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #f59e0b;">Audience Demographics</h3>
-  <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Provide comprehensive breakdown of ALL demographic segments. Include data for ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), ALL gender segments, and ALL device types. Show specific numbers and percentages for each segment, not just top performers.</p>
+<div class="audience-analysis" style="margin-bottom: 0.5rem;">
+  <h3 style="color: #f59e0b; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">👥 Demographics</h3>
+  <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), genders, devices with specific numbers.</p>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
   <div class="geographic-section">
-    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #ef4444;">Geographic Performance</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze customer locations, regional revenue, and distribution patterns. Include actual city/state/country data and revenue by region.</p>
+    <h3 style="color: #ef4444; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">🗺️ Geographic</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">Customer locations, regional revenue, city/state/country data.</p>
   </div>
   <div class="retention-section">
-    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #8b5cf6;">Customer Retention</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze retention rates, repeat purchase percentages, customer lifetime value, and loyalty trends with actual data.</p>
+    <h3 style="color: #8b5cf6; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">🔄 Retention</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">Repeat rates, customer lifetime value, loyalty trends.</p>
   </div>
 </div>
 </div>
 
-<div class="analysis-summary" style="margin-bottom: 1.5rem;">
-<h2 style="color: #e5e7eb; font-size: 1.3rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">ANALYSIS & RECOMMENDATIONS</h2>
+<div class="analysis-summary" style="margin-bottom: 0.5rem;">
+<h2 style="color: #e5e7eb; font-size: 0.9rem; font-weight: 700; margin: 0 0 0.4rem 0; padding-bottom: 0.2rem; border-bottom: 1px solid #4b5563;">INSIGHTS & ACTIONS</h2>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem;">
   <div class="strengths-section">
-    <h3 style="color: #10b981; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">✓ Strengths & Opportunities</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Identify what's working well and growth opportunities with specific data points.</p>
+    <h3 style="color: #10b981; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">✓ Strengths</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">What's working well with specific data.</p>
   </div>
   <div class="issues-section">
-    <h3 style="color: #ef4444; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">⚠ Areas for Improvement</h3>
-    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Identify performance issues and concerns with specific metrics.</p>
+    <h3 style="color: #ef4444; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">⚠ Issues</h3>
+    <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">Performance concerns with metrics.</p>
   </div>
 </div>
 
 <div class="recommendations-section">
-  <h3 style="color: #3b82f6; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">🎯 Priority Action Items</h3>
-  <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Provide 4-6 specific, actionable recommendations formatted as concise bullet points for easy implementation.</p>
+  <h3 style="color: #3b82f6; font-size: 0.75rem; font-weight: 600; margin: 0 0 0.2rem 0;">🎯 Action Items</h3>
+  <p style="margin-bottom: 0.3rem; line-height: 1.3; color: #d1d5db; font-size: 0.65rem;">4-6 specific recommendations as concise bullet points.</p>
 </div>
 </div>
 
@@ -213,52 +213,61 @@ Response should be 400-600 words with proper HTML formatting and inline styles.
     const formattedReport = `
       <style>
         .report-content {
-          padding: 2rem;
+          padding: 0.75rem;
           background: transparent;
           color: #ffffff;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          font-size: 0.75rem;
+          line-height: 1.3;
         }
         
         .content-section {
-          margin-bottom: 2rem;
+          margin-bottom: 0.75rem;
         }
         
         .report-content h2 {
           color: #e5e7eb;
-          font-size: 1.5rem;
+          font-size: 0.9rem;
           font-weight: 700;
-          margin: 2.5rem 0 1rem 0;
-          padding-bottom: 0.75rem;
-          border-bottom: 2px solid #4b5563;
+          margin: 0.5rem 0 0.4rem 0;
+          padding-bottom: 0.25rem;
+          border-bottom: 1px solid #4b5563;
         }
         
         .report-content h3 {
           color: #d1d5db;
-          font-size: 1.25rem;
+          font-size: 0.8rem;
           font-weight: 600;
-          margin: 2rem 0 0.75rem 0;
+          margin: 0.5rem 0 0.3rem 0;
         }
         
         .report-content p {
-          margin-bottom: 1rem;
-          line-height: 1.7;
+          margin-bottom: 0.4rem;
+          line-height: 1.3;
           color: #d1d5db;
+          font-size: 0.7rem;
         }
         
         .report-content ul {
-          margin: 0 0 1.5rem 2rem;
-          line-height: 1.7;
+          margin: 0 0 0.5rem 1rem;
+          line-height: 1.3;
           list-style: disc;
         }
         
         .report-content li {
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.3rem;
           color: #d1d5db;
+          font-size: 0.7rem;
         }
         
         .report-content strong {
           color: #f9fafb;
           font-weight: 700;
+        }
+        
+        .report-content .grid {
+          display: grid;
+          gap: 0.75rem;
         }
       </style>
       
