@@ -3885,11 +3885,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       {/* Layout with Model Gender Conditional */}
       <div className="mt-2">
       {selectedCreativeType === 'clothing-models' ? (
-                /* Layout with Model Gender - Vertical layout to match preview height */
+                /* Layout with Model Gender - Stacked full width widgets with skinny generate button */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-          {/* Left Column: Text Overlays, Model Gender, and Custom Instructions stacked vertically */}
-          <div className="lg:col-span-5 space-y-3">
-            {/* Text Overlays */}
+          {/* Left Column: Full width stacked widgets */}
+          <div className="lg:col-span-11 space-y-3">
+            {/* Text Overlays - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
@@ -4023,7 +4023,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
             </div>
 
-            {/* Model Gender Widget */}
+            {/* Model Gender Widget - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-lg font-semibold text-white mb-3 text-center flex items-center justify-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
@@ -4058,30 +4058,26 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               )}
             </div>
 
-
+            {/* Custom Instructions - Full width */}
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">+</span>
+                </div>
+                Custom Instructions
+              </h3>
+              <textarea
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                placeholder="Lighting, background, angles, etc..."
+                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
+                style={{ height: 'calc(100% - 3.5rem)' }}
+              />
+            </div>
           </div>
 
-          {/* Middle Column: Custom Instructions */}
-            <div className="lg:col-span-6">
-              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[140px]">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">+</span>
-                  </div>
-                  Custom Instructions
-                </h3>
-                <textarea
-                  value={customInstructions}
-                  onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="Lighting, background, angles, etc..."
-                  className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
-                  style={{ height: 'calc(100% - 3.5rem)' }}
-                />
-              </div>
-            </div>
-
           {/* Right Column: Generate Button spanning full height */}
-          <div className="lg:col-span-1 lg:row-span-2">
+          <div className="lg:col-span-1">
             <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[250px]">
               <Button
                 onClick={async () => {
@@ -4129,12 +4125,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
       ) : (
-        /* Layout without Model Gender - vertical stacked layout */
+        /* Layout without Model Gender - stacked full width widgets */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
           
-          {/* Left Column: Text Overlays and Custom Instructions stacked vertically */}
-          <div className="lg:col-span-5 space-y-3">
-            {/* Text Overlays */}
+          {/* Left Column: Full width stacked widgets */}
+          <div className="lg:col-span-11 space-y-3">
+            {/* Text Overlays - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[200px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></span>
@@ -4266,10 +4262,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
             </div>
 
-          </div>
-
-          {/* Custom Instructions - 6 columns */}
-          <div className="lg:col-span-6">
+            {/* Custom Instructions - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[200px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"></span>
@@ -4280,14 +4273,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
                 className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm"
-                style={{ height: 'calc(100% - 4rem)' }}
+                style={{ height: 'calc(100% - 2.5rem)' }}
               />
             </div>
           </div>
 
-          {/* Generate Button - Same height as widgets */}
+          {/* Generate Button - Spanning full height */}
           <div className="lg:col-span-1">
-            <div className="flex flex-col items-center justify-center h-[200px] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200">
+            <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[250px]">
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
