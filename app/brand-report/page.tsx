@@ -65,6 +65,19 @@ export default function BrandReportPage() {
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   const [hasMonthlyReportThisMonth, setHasMonthlyReportThisMonth] = useState(false)
   const [hasDailyReportToday, setHasDailyReportToday] = useState(false)
+  const [userTimezone, setUserTimezone] = useState<string>('America/Chicago') // Default fallback
+
+  // Detect user's timezone on mount
+  useEffect(() => {
+    try {
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      console.log('🌍 Detected user timezone:', detectedTimezone)
+      setUserTimezone(detectedTimezone)
+    } catch (error) {
+      console.warn('❌ Failed to detect timezone, using default:', error)
+      setUserTimezone('America/Chicago') // Fallback
+    }
+  }, [])
 
   // Stable Supabase client function with proper authentication
   const getSupabaseClient = useCallback(async () => {
@@ -778,6 +791,7 @@ export default function BrandReportPage() {
         brandId: selectedBrandId,
         from: fromDate,
         to: toDate,
+        timezone: userTimezone,
         t: Date.now().toString()
       })
 
@@ -788,11 +802,11 @@ export default function BrandReportPage() {
         fetch(`/api/metrics?${params.toString()}`),
         fetch(`/api/metrics/meta?${params.toString()}`),
         // Fetch Meta demographics and device data (comprehensive format)
-        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`).catch(() => null),
+        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&timezone=${userTimezone}&t=${Date.now()}`).catch(() => null),
         // Fetch Shopify location data with date filtering
-        fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => null),
+        fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&timezone=${userTimezone}`).catch(() => null),
         // Fetch repeat customer analysis with date filtering
-        fetch(`/api/shopify/analytics/repeat-customers?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => null)
+        fetch(`/api/shopify/analytics/repeat-customers?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&timezone=${userTimezone}`).catch(() => null)
       ])
 
       if (!shopifyResponse.ok || !metaResponse.ok) {

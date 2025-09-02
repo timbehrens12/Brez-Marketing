@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
+    const timezone = searchParams.get('timezone') || 'America/Chicago' // Default fallback
 
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
@@ -26,16 +27,41 @@ export async function GET(request: NextRequest) {
       .select('id, total_price, customer_id, customer_email, customer_first_name, customer_last_name, created_at')
       .eq('brand_id', brandId)
 
-    // Apply date range filter if provided - convert to Central timezone properly
+    // Apply date range filter if provided - convert to user's timezone properly
     if (from) {
-      ordersQuery = ordersQuery.gte('created_at', from + 'T06:00:00Z') // Start of day in Central (UTC-6)
+      // Calculate timezone offset dynamically
+      const getTimezoneOffset = (tz: string): number => {
+        try {
+          const now = new Date();
+          const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+          const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+          return Math.round((utc.getTime() - local.getTime()) / (1000 * 60 * 60)); // hours
+        } catch {
+          return -6; // Default to Central Time if timezone parsing fails
+        }
+      };
+      
+      const offsetHours = getTimezoneOffset(timezone);
+      ordersQuery = ordersQuery.gte('created_at', from + `T${String(Math.abs(offsetHours)).padStart(2, '0')}:00:00Z`)
     }
     if (to) {
-      // For "to" date, we need the next day at 5:59 AM UTC to cover until 11:59 PM Central
+      const offsetHours = getTimezoneOffset(timezone);
       const toDate = new Date(to)
       toDate.setDate(toDate.getDate() + 1)
       const nextDay = toDate.toISOString().split('T')[0]
-      ordersQuery = ordersQuery.lte('created_at', nextDay + 'T05:59:59Z')
+      ordersQuery = ordersQuery.lte('created_at', nextDay + `T${String(Math.abs(offsetHours) - 1).padStart(2, '0')}:59:59Z`)
+    }
+    
+    // Helper function for timezone offset calculation
+    function getTimezoneOffset(tz: string): number {
+      try {
+        const now = new Date();
+        const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+        const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+        return Math.round((utc.getTime() - local.getTime()) / (1000 * 60 * 60)); // hours
+      } catch {
+        return -6; // Default to Central Time if timezone parsing fails
+      }
     }
 
     const { data: ordersData, error: ordersError } = await ordersQuery.order('created_at', { ascending: true })

@@ -116,11 +116,13 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId');
     const fromDate = searchParams.get('from');
     const toDate = searchParams.get('to');
+    const timezone = searchParams.get('timezone') || 'America/Chicago'; // Default fallback
     
     console.log('[Geographic API] Request params:', {
       brandId,
       fromDate,
       toDate,
+      timezone,
       hasFromDate: !!fromDate,
       hasToDate: !!toDate,
       fullUrl: request.url
@@ -174,20 +176,31 @@ export async function GET(request: NextRequest) {
       
       // Add date filtering if provided
       if (fromDate && toDate) {
-        console.log(`Filtering geographic data by date range: ${fromDate} to ${toDate}`);
+        console.log(`Filtering geographic data by date range: ${fromDate} to ${toDate} (timezone: ${timezone})`);
         
-        // Convert dates to handle timezone properly (assuming Central Time UTC-6)
-        // For start of day: use 06:00 UTC (midnight CT)
-        // For end of day: use next day 05:59 UTC (11:59 PM CT)
-        const startDateTime = `${fromDate}T06:00:00Z`;
+        // Convert dates to handle user's timezone properly
+        // Calculate timezone offset from the timezone string
+        const getTimezoneOffset = (tz: string): number => {
+          try {
+            const now = new Date();
+            const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+            const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+            return Math.round((utc.getTime() - local.getTime()) / (1000 * 60 * 60)); // hours
+          } catch {
+            return -6; // Default to Central Time if timezone parsing fails
+          }
+        };
+        
+        const offsetHours = getTimezoneOffset(timezone);
+        const startDateTime = `${fromDate}T${String(Math.abs(offsetHours)).padStart(2, '0')}:00:00Z`;
         
         // For end date, we need to account for the timezone offset
         const endDate = new Date(toDate);
         endDate.setDate(endDate.getDate() + 1);
         const nextDay = endDate.toISOString().split('T')[0];
-        const endDateTime = `${nextDay}T05:59:59Z`;
+        const endDateTime = `${nextDay}T${String(Math.abs(offsetHours) - 1).padStart(2, '0')}:59:59Z`;
         
-        console.log(`Timezone-adjusted filtering: ${startDateTime} to ${endDateTime}`);
+        console.log(`Timezone-adjusted filtering (${timezone}, ${offsetHours}h offset): ${startDateTime} to ${endDateTime}`);
         
         query = query
           .gte('created_at', startDateTime)

@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const dateRangeStart = searchParams.get('dateRangeStart')
     const dateRangeEnd = searchParams.get('dateRangeEnd')
     const breakdownType = searchParams.get('breakdownType')
+    const timezone = searchParams.get('timezone') || 'America/Chicago' // Default fallback
 
     // Support both new format (brandId) and legacy format (connectionId)
     if (!brandId && !connectionId) {
@@ -61,19 +62,33 @@ export async function GET(request: NextRequest) {
     let startDate = fromDate || dateRangeStart || defaultFromDate
     let endDate = toDate || dateRangeEnd || defaultToDate
     
-    // Convert dates to handle Central timezone properly for Meta data
+    // Convert dates to handle user's timezone properly for Meta data
     // Meta data is typically aggregated by day, but we should ensure timezone alignment
     if (fromDate && toDate) {
-      // For Meta demographics, adjust the date range to account for Central Time
+      // Calculate timezone offset dynamically
+      const getTimezoneOffset = (tz: string): number => {
+        try {
+          const now = new Date();
+          const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+          const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+          return Math.round((utc.getTime() - local.getTime()) / (1000 * 60 * 60)); // hours
+        } catch {
+          return -6; // Default to Central Time if timezone parsing fails
+        }
+      };
+      
+      const offsetHours = getTimezoneOffset(timezone);
+      
+      // For Meta demographics, adjust the date range to account for user's timezone
       // This ensures data from the user's local day is properly captured
-      const startDateObj = new Date(startDate + 'T06:00:00Z') // Start of day in Central (UTC-6)
-      const endDateObj = new Date(endDate + 'T05:59:59Z')     // End of day in Central
+      const startDateObj = new Date(startDate + `T${String(Math.abs(offsetHours)).padStart(2, '0')}:00:00Z`)
+      const endDateObj = new Date(endDate + `T${String(Math.abs(offsetHours) - 1).padStart(2, '0')}:59:59Z`)
       
       // Convert back to date strings for the database query
       startDate = startDateObj.toISOString().split('T')[0]
       endDate = endDateObj.toISOString().split('T')[0]
       
-      console.log(`[Meta Demographics] Timezone-adjusted dates: ${fromDate} -> ${startDate}, ${toDate} -> ${endDate}`)
+      console.log(`[Meta Demographics] Timezone-adjusted dates (${timezone}, ${offsetHours}h offset): ${fromDate} -> ${startDate}, ${toDate} -> ${endDate}`)
     }
 
     // If breakdownType is specified (legacy format), filter by that specific type
