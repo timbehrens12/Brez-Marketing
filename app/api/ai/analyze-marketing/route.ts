@@ -83,11 +83,13 @@ ${JSON.stringify(additional_insights?.customer_location || {}, null, 2)}
 ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 
 **CRITICAL DATA ANALYSIS REQUIREMENTS:**
-- ALWAYS use the Demographics & Audience Insights data to provide specific age group, gender, and device performance analysis in section 3.3
-- ALWAYS use the Customer Geographic Data to provide specific location analysis in section 3.4  
-- ALWAYS use the Repeat Customer Analysis data to provide specific retention and loyalty insights in section 3.5
+- ALWAYS use the Demographics & Audience Insights data to provide COMPREHENSIVE analysis of ALL age groups, genders, and devices in section 3.3 - not just the top performers
+- ALWAYS use the Customer Geographic Data to provide COMPLETE location analysis including ALL locations with revenue/customer data in section 3.4  
+- ALWAYS use the Repeat Customer Analysis data to provide DETAILED retention and loyalty insights in section 3.5
+- Show performance data for ALL demographic segments, not just the highest performing ones
+- Include specific numbers, percentages, impressions, CTR, and spend data for multiple segments
 - If any additional insights data is empty or null, then and only then mention data is unavailable
-- Include specific numbers, percentages, and insights from the provided additional insights data
+- Provide detailed breakdowns rather than just highlighting top performers
 
 **CRITICAL FORMATTING REQUIREMENTS:**
 - DO NOT include any main headers, titles, or "MARKETING INSIGHTS" text
@@ -117,7 +119,7 @@ Generate professional business report content with proper HTML structure includi
 <p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Demographics & Audience Insights data provided above to analyze specific age groups, gender performance, and device preferences. Include actual percentages, top-performing segments, and specific metrics from the data. Identify optimization opportunities based on the demographic breakdown provided.</p>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Provide a comprehensive breakdown of ALL demographic segments from the Demographics & Audience Insights data above. Include performance data (impressions, CTR, spend) for ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), ALL gender segments (male, female), and ALL device types available in the data. Show specific numbers and percentages for each segment, not just the top performers. Identify patterns and optimization opportunities across the complete demographic spectrum.</p>
 
 <h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.4 Geographic Performance Analysis</h3>
 <p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Customer Geographic Data provided above to analyze specific customer locations, regional revenue performance, and distribution patterns. Include actual city/state/country data, customer counts per location, and revenue by region from the provided data.</p>

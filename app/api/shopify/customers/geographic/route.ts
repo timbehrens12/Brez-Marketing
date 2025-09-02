@@ -114,6 +114,8 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const brandId = searchParams.get('brandId');
+    const fromDate = searchParams.get('from');
+    const toDate = searchParams.get('to');
     
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
@@ -154,11 +156,24 @@ export async function GET(request: NextRequest) {
     
     try {
       console.log('Fetching geographic data from shopify_sales_by_region for brandId:', brandId);
-      const response = await supabase
+      
+      let query = supabase
         .from('shopify_sales_by_region')
         .select('city, province, country, total_price, order_count')
         .eq('brand_id', brandId)
         .not('country', 'is', null);
+      
+      // Add date filtering if provided
+      if (fromDate && toDate) {
+        console.log(`Filtering geographic data by date range: ${fromDate} to ${toDate}`);
+        query = query
+          .gte('created_at', `${fromDate}T00:00:00Z`)
+          .lte('created_at', `${toDate}T23:59:59Z`);
+      } else {
+        console.log('No date filtering applied - showing all-time geographic data');
+      }
+      
+      const response = await query;
       
       if (response.error) {
         console.error('Error fetching geographic data from sales by region:', response.error);

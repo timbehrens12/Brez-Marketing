@@ -788,11 +788,11 @@ export default function BrandReportPage() {
         fetch(`/api/metrics?${params.toString()}`),
         fetch(`/api/metrics/meta?${params.toString()}`),
         // Fetch Meta demographics and device data (comprehensive format)
-        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`).catch(() => ({ ok: false })),
-        // Fetch Shopify location data
-        fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}`).catch(() => ({ ok: false })),
-        // Fetch repeat customer analysis
-        fetch(`/api/shopify/analytics/repeat-customers?brandId=${selectedBrandId}`).catch(() => ({ ok: false }))
+        fetch(`/api/meta/demographics?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`).catch(() => null),
+        // Fetch Shopify location data with date filtering
+        fetch(`/api/shopify/customers/geographic?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => null),
+        // Fetch repeat customer analysis with date filtering
+        fetch(`/api/shopify/analytics/repeat-customers?brandId=${selectedBrandId}&from=${fromDate}&to=${toDate}`).catch(() => null)
       ])
 
       if (!shopifyResponse.ok || !metaResponse.ok) {
@@ -808,7 +808,7 @@ export default function BrandReportPage() {
       let repeatCustomersData = null
       
       try {
-        if (demographicsResponse.ok) {
+        if (demographicsResponse && demographicsResponse.ok) {
           demographicsData = await demographicsResponse.json()
           console.log('✅ Demographics data fetched for report:', {
             hasAgeData: demographicsData?.demographics?.age?.length > 0,
@@ -819,14 +819,14 @@ export default function BrandReportPage() {
                            (demographicsData?.devicePerformance?.device?.length || 0)
           })
         } else {
-          console.warn('Demographics response not ok:', demographicsResponse.status)
+          console.warn('Demographics response not ok:', demographicsResponse?.status || 'No response')
         }
       } catch (error) {
         console.warn('Failed to fetch demographics data:', error)
       }
       
       try {
-        if (locationResponse.ok) {
+        if (locationResponse && locationResponse.ok) {
           locationData = await locationResponse.json()
         }
       } catch (error) {
@@ -834,7 +834,7 @@ export default function BrandReportPage() {
       }
       
       try {
-        if (repeatCustomersResponse.ok) {
+        if (repeatCustomersResponse && repeatCustomersResponse.ok) {
           repeatCustomersData = await repeatCustomersResponse.json()
         }
       } catch (error) {
