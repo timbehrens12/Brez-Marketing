@@ -157,11 +157,16 @@ const RETRY_ISSUES: RetryIssue[] = [
     label: 'Black Bars/Overlay Issues',
     promptAddition: 'CRITICAL FIX: The previous generation had unwanted black bars, banners, strips, or overlay elements. ABSOLUTELY ELIMINATE ALL: black bars across the image, dark strips, rectangular backgrounds behind text, frame overlays, black boxing, banner elements, or any solid background shapes. Text must float directly on the image with completely transparent backgrounds. Use only subtle drop shadows or light outlines for text readability. The image must be completely clean and unobstructed by any overlay elements, bars, or geometric shapes.'
   },
-  {
-    id: 'fabric-hallucination',
-    label: 'Fabric/Detail Hallucinations',
-    promptAddition: 'CRITICAL FIX: The previous generation hallucinated or invented clothing details that weren\'t in the original. STRICT REALITY CHECK: Only reproduce fabric textures, patterns, seams, stitching, pockets, buttons, zippers, and design elements that ACTUALLY EXIST in the source image. DO NOT add imaginary fabric details, fake textures, invented patterns, fictional seams, or non-existent design elements. Copy only what is genuinely visible in the original product photo with 100% accuracy. No creative interpretation or enhancement of fabric details allowed.'
-  }
+      {
+      id: 'fabric-hallucination',
+      label: 'Fabric/Detail Hallucinations',
+      promptAddition: 'CRITICAL FIX: The previous generation hallucinated or invented clothing details that weren\'t in the original. STRICT REALITY CHECK: Only reproduce fabric textures, patterns, seams, stitching, pockets, buttons, zippers, and design elements that ACTUALLY EXIST in the source image. DO NOT add imaginary fabric details, fake textures, invented patterns, fictional seams, or non-existent design elements. Copy only what is genuinely visible in the original product photo with 100% accuracy. No creative interpretation or enhancement of fabric details allowed.'
+    },
+    {
+      id: 'distant-text-distortion',
+      label: 'Distant/Small Text Distorted',
+      promptAddition: 'CRITICAL FIX: The previous generation had text distortion when the product appeared smaller or more distant in the frame. DISTANCE-IMMUNE TEXT PRESERVATION: You are working from the SAME high-quality close-up source image regardless of composition distance. MANDATORY PRINCIPLE: Text quality is INDEPENDENT of product size in composition - whether the product fills the frame or appears small/distant, preserve ALL text with IDENTICAL crystal-clear sharpness. SUPER-RESOLUTION DISTANT TEXT PROTOCOL: When the product appears smaller in the composition, apply ENHANCED text preservation as if viewing the product through a magnifying glass. CRITICAL: The source image resolution and text clarity does NOT degrade just because the composition shows the product at a distance. ZOOM-LEVEL COMPENSATION: Mentally zoom into the product area and preserve text at maximum fidelity regardless of compositional distance. ABSOLUTE REQUIREMENT: Distant product text must be as sharp and readable as close-up product text - there is NO excuse for distance-based text degradation.'
+    }
 ]
 
 const TEMPLATE_CATEGORIES = [
@@ -254,7 +259,7 @@ const CREATIVE_TYPES = [
   {
     id: 'auto',
     name: 'Auto',
-    description: 'Automatically generate the best creative type based on your product',
+    description: 'Let AI pick the best template for you based on your product and optimize for maximum performance',
     icon: '🤖',
     subcategories: ['auto-generation']
   }
@@ -2662,7 +2667,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     if (textAddition) {
       textAddition += ' '
     }
-    textAddition += 'MANDATORY PERFECT CENTERING: The product must be PRECISELY CENTERED both horizontally and vertically in the composition. Ensure equal spacing from all edges and perfect symmetrical placement. For pedestal/platform shots, the product must sit EXACTLY in the center of the platform with no shifting or off-center positioning. ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Do not blur, distort, or alter any existing text elements no matter how small. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters. STRICT ANTI-HALLUCINATION PROTOCOL: Only reproduce clothing elements that ACTUALLY EXIST in the source image. PROHIBITED: Adding imaginary fabric textures, fake seams, invented stitching, fictional pockets, non-existent buttons, made-up zippers, fantasy patterns, or any design elements not visible in the original. Copy reality exactly with zero creative interpretation or fabricated details.'
+         textAddition += 'MANDATORY PERFECT CENTERING: The product must be PRECISELY CENTERED both horizontally and vertically in the composition. Ensure equal spacing from all edges and perfect symmetrical placement. For pedestal/platform shots, the product must sit EXACTLY in the center of the platform with no shifting or off-center positioning. ULTRA-CRITICAL DISTANCE-INDEPENDENT TEXT PRESERVATION: Whether the product appears large (close-up) or small (distant) in the final composition, ALL TEXT must be preserved with IDENTICAL crystal-clear quality. CRITICAL PRINCIPLE: The source image quality does NOT change based on composition distance - you are working from the same high-resolution close-up product photo regardless of how the product is positioned in the scene. DISTANCE COMPENSATION PROTOCOL: When placing the product in distant or smaller positions, apply SUPER-RESOLUTION TEXT TREATMENT - mentally zoom into the product area and preserve every character, logo, and text element at MAXIMUM fidelity as if it were a close-up shot. COMPOSITION SIZE INDEPENDENCE: Product distance from camera or size in frame does NOT determine text quality - a cologne bottle label must be equally sharp whether it fills the entire image or appears small on a distant shelf. ULTRA-CRITICAL FINAL INSTRUCTION: The original product must be preserved with 100% EXACT fidelity - every single character, logo, graphic, text, color, and detail must be IDENTICAL to the input image. Use the highest possible preservation quality equivalent to ChatGPT-level fidelity. DO NOT modify, stylize, or alter the product in ANY way. ULTRA-CRITICAL SHAPE PRESERVATION: Do your absolute best to preserve the EXACT shape of the clothing item - if it\'s a shirt, maintain the EXACT sleeve length and precise sleeve shape including ANY layered sleeve combinations (like short sleeves over long sleeves), complex sleeve constructions, sleeve cuffs, sleeve proportions, collar shape, and overall silhouette. CRITICAL: Copy the exact sleeve length - if sleeves end at the wrist, keep them at the wrist; if they\'re 3/4 length, keep them 3/4 length; if they\'re short sleeves, keep them short. If it\'s pants, preserve the exact leg shape, waistband, and proportions. If it\'s any garment, maintain the EXACT original shape including PRECISE SLEEVE LENGTH AND SHAPE (copy exact sleeve proportions, cuff positions, and any layered sleeve designs), hems, collars, pockets, and all structural elements. EXTREME COLOR PRESERVATION: Pay special attention to preserving EXACT color accuracy, especially blue tones, gradients, and color transitions - do not shift, desaturate, or distort any colors whatsoever. CRITICAL DISTORTION PREVENTION: Do not warp, stretch, compress, or distort any part of the clothing - maintain perfect proportions and shape integrity. ENHANCED TAG/LABEL PRESERVATION: If there are ANY visible tags, neck labels, brand names, logos, or text elements on the garment, they MUST be preserved with CRYSTAL-CLEAR accuracy - maintain exact fonts, letter spacing, clarity, and positioning. Pay EXTREME attention to preserving ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Do not blur, distort, or alter any existing text elements no matter how small. ABSOLUTE PROHIBITION: DO NOT CREATE, ADD, INVENT, OR IMAGINE ANY CONTENT THAT IS NOT ACTUALLY VISIBLE IN THE ORIGINAL IMAGE - this includes NO fake neck tags, NO fake brand names, NO fake labels, NO fake text of any kind. SPECIFICALLY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing. If the original is plain with no tags or text, keep it completely plain. MAXIMUM FIDELITY MODE: Treat this as if you are making a museum-quality reproduction where every pixel matters. STRICT ANTI-HALLUCINATION PROTOCOL: Only reproduce clothing elements that ACTUALLY EXIST in the source image. PROHIBITED: Adding imaginary fabric textures, fake seams, invented stitching, fictional pockets, non-existent buttons, made-up zippers, fantasy patterns, or any design elements not visible in the original. Copy reality exactly with zero creative interpretation or fabricated details.'
     
     return textAddition
   }
@@ -3717,6 +3722,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             key={type.id}
             onClick={() => {
               setSelectedCreativeType(type.id)
+              // Clear clothing subtype if not selecting clothing
+              if (type.id !== 'clothing') {
+                setSelectedClothingSubType('')
+              }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
               } else if (type.id === 'custom-template') {
@@ -3803,7 +3812,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         <div className="text-center mb-8">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={() => setCurrentStep(selectedClothingSubType ? 'clothing-subcategory' : 'creative-type')}
+              onClick={() => {
+                // Only go to clothing-subcategory if we actually selected a clothing subtype
+                if (selectedClothingSubType) {
+                  setCurrentStep('clothing-subcategory')
+                } else {
+                  setCurrentStep('creative-type')
+                }
+              }}
               variant="ghost"
               className="text-gray-400 hover:text-white"
             >
@@ -4028,6 +4044,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[250px]">
               <Button
                 onClick={async () => {
+                  console.log('Generate button clicked!', { uploadedImage, isMultiMode, selectedTemplate, selectedCreativeType, selectedGender })
+                  
                   if (!uploadedImage && !isMultiMode) {
                     toast.error('Please upload an image first')
                     return
@@ -4045,6 +4063,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   }
 
                   try {
+                    console.log('About to call generateImageFromTemplate...')
                     // Call the generation function with the selected template directly
                     await generateImageFromTemplate(selectedTemplate)
 
@@ -4054,6 +4073,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       details: ''
                     })
                   } catch (error) {
+                    console.error('Generate error:', error)
                     setIsGenerating(false)
                     toast.error('Failed to generate creative. Please try again.')
                   }
@@ -4268,6 +4288,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="flex flex-col items-center justify-center h-[200px] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200">
               <Button
                 onClick={async () => {
+                  console.log('Generate button (2nd) clicked!', { uploadedImage, isMultiMode, selectedTemplate, selectedCreativeType })
+                  
                   if (!uploadedImage && !isMultiMode) {
                     toast.error('Please upload an image first')
                     return
@@ -4279,6 +4301,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   }
 
                   try {
+                    console.log('About to call generateImageFromTemplate (2nd)...')
                     // Call the generation function with the selected template directly
                     await generateImageFromTemplate(selectedTemplate)
 
