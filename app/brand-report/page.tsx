@@ -1021,6 +1021,8 @@ export default function BrandReportPage() {
         throw new Error("No analysis returned from AI")
       }
 
+      console.log('Analysis extracted successfully, proceeding to chart generation...')
+
       // Generate performance charts based on detailed data
       const generatePerformanceChart = () => {
         if (!detailedData) return ''
@@ -1148,7 +1150,16 @@ export default function BrandReportPage() {
         return timelineHTML
       }
 
-      const performanceChartHTML = generatePerformanceChart()
+      console.log('Generating performance charts...')
+      let performanceChartHTML = ''
+      try {
+        performanceChartHTML = generatePerformanceChart()
+        console.log('Performance charts generated successfully')
+      } catch (chartError) {
+        console.error('Error generating charts:', chartError)
+        performanceChartHTML = '' // Continue without charts
+      }
+      console.log('Creating formatted report...')
 
       // Create formatted report with optional snapshot time info
       const brandName = selectedBrand?.name || "Unknown Brand"
