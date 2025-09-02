@@ -3703,8 +3703,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   )
 
      const renderCreativeTypeStep = () => (
-     <div className="max-w-6xl mx-auto">
-       <div className="flex items-start justify-between mb-6">
+     <div className="max-w-5xl mx-auto">
+       <div className="flex items-start justify-between mb-4">
          <Button
            onClick={() => setCurrentStep('upload')}
            variant="ghost"
@@ -3716,12 +3716,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
        </div>
 
        {/* Header section */}
-       <div className="text-center mb-6">
-         <h2 className="text-4xl font-bold text-white mb-4">Choose Creative Type</h2>
-         <p className="text-gray-300 text-lg">What type of creative do you want to generate?</p>
+       <div className="text-center mb-4">
+         <h2 className="text-3xl font-bold text-white mb-3">Choose Creative Type</h2>
+         <p className="text-gray-300 text-base">What type of creative do you want to generate?</p>
        </div>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {CREATIVE_TYPES.map((type) => (
           <div
             key={type.id}
@@ -3739,14 +3739,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 setCurrentStep('template-selection')
               }
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[280px] flex flex-col justify-center"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[180px] flex flex-col justify-center"
           >
             <div className="text-center">
-              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
                 {type.icon}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{type.name}</h3>
-              <p className="text-gray-400 text-base leading-relaxed">{type.description}</p>
+              <h3 className="text-lg font-bold text-white mb-2">{type.name}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
             </div>
           </div>
         ))}
@@ -3755,8 +3755,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   )
 
   const renderClothingSubcategoryStep = () => (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
+    <div className="max-w-5xl mx-auto">
+      <div className="flex items-start justify-between mb-4">
         <Button
           onClick={() => setCurrentStep('creative-type')}
           variant="ghost"
@@ -3768,12 +3768,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       </div>
 
       {/* Header section */}
-      <div className="text-center mb-6">
-        <h2 className="text-4xl font-bold text-white mb-4">Choose Clothing Type</h2>
-        <p className="text-gray-300 text-lg">How would you like to display your clothing?</p>
+      <div className="text-center mb-4">
+        <h2 className="text-3xl font-bold text-white mb-3">Choose Clothing Type</h2>
+        <p className="text-gray-300 text-base">How would you like to display your clothing?</p>
       </div>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {CLOTHING_SUB_TYPES.map((subType) => (
           <div
             key={subType.id}
@@ -3782,14 +3782,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               setSelectedCreativeType(subType.id) // Update the main creative type for compatibility
               setCurrentStep('template-selection')
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-8 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[280px] flex flex-col justify-center"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[180px] flex flex-col justify-center"
           >
             <div className="text-center">
-              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
                 {subType.icon}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{subType.name}</h3>
-              <p className="text-gray-400 text-base leading-relaxed">{subType.description}</p>
+              <h3 className="text-lg font-bold text-white mb-2">{subType.name}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{subType.description}</p>
             </div>
           </div>
         ))}
