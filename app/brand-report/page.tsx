@@ -71,10 +71,8 @@ export default function BrandReportPage() {
   useEffect(() => {
     try {
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-      console.log('🌍 Detected user timezone:', detectedTimezone)
       setUserTimezone(detectedTimezone)
     } catch (error) {
-      console.warn('❌ Failed to detect timezone, using default:', error)
       setUserTimezone('America/Chicago') // Fallback
     }
   }, [])
@@ -123,15 +121,8 @@ export default function BrandReportPage() {
       ['meta', 'shopify', 'facebook', 'instagram', 'google', 'tiktok'].includes(conn.platform_type?.toLowerCase())
     )
     
-    // Debug logging (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Platform Check Debug:', {
-        brandId,
-        totalConnections: connections.length,
-        brandConnections: brandConnections.length,
-        hasValidPlatform
-      })
-    }
+
+
     
     return hasValidPlatform
   }
@@ -218,13 +209,7 @@ export default function BrandReportPage() {
         const isManual = snapshotTime === "manual"
         const isToday = format(new Date(report.createdAt), 'yyyy-MM-dd') === today
         
-        console.log(`🔍 Checking daily report:`, {
-          snapshotTime,
-          isManual,
-          isToday,
-          createdAt: report.createdAt,
-          matches: isManual && isToday
-        })
+
         
         return isManual && isToday
       })
@@ -351,16 +336,16 @@ export default function BrandReportPage() {
         .eq('status', 'active')
 
       if (connectionsError) {
-        console.error('[Brand Report] Error loading platform connections:', connectionsError)
+
         setConnections([])
       } else {
         // Ensure connectionsData is an array
         const safeConnectionsData = Array.isArray(connectionsData) ? connectionsData : []
-        console.log('🔗 [Brand Report] Loaded', safeConnectionsData.length, 'platform connections for brand:', selectedBrandId)
+
         setConnections(safeConnectionsData)
       }
     } catch (error) {
-      console.error('[Brand Report] Error loading connections:', error)
+
       setConnections([])
     } finally {
       setIsLoadingConnections(false)
@@ -1923,7 +1908,7 @@ export default function BrandReportPage() {
         })
 
     } catch (error) {
-      console.error("Error generating AI report:", error)
+
       toast({
         title: "Failed to generate report",
         description: "An error occurred while creating your marketing report.",
@@ -1934,55 +1919,7 @@ export default function BrandReportPage() {
     }
   }
 
-  // Reset usage function - clears all reports and resets rate limiting
-  const handleResetUsage = async () => {
-    if (!selectedBrandId || !user?.id) {
-      toast({
-        title: "Reset Error",
-        description: "Missing brand or user information",
-        variant: "destructive",
-      })
-      return
-    }
 
-    try {
-      setIsLoadingReport(true)
-      
-      // Clear all reports for this brand
-      const clearResponse = await fetch(`/api/brand-reports/clear?brandId=${selectedBrandId}&userId=${user.id}`, {
-        method: 'DELETE',
-      })
-      
-      if (!clearResponse.ok) {
-        throw new Error('Failed to clear reports')
-      }
-      
-      // Reset rate limiting
-      localStorage.removeItem(`lastManualGeneration_${selectedBrandId}`)
-      setLastManualGeneration(null)
-      
-      // Clear current state
-      setDailyReports([])
-      setSelectedReport(null)
-      setHasDailyReportToday(false)
-      setHasMonthlyReportThisMonth(false)
-      
-      toast({
-        title: "Usage Reset",
-        description: "All reports cleared and usage reset successfully",
-        variant: "default",
-      })
-    } catch (error) {
-      console.error('Error resetting usage:', error)
-      toast({
-        title: "Reset Error",
-        description: "Failed to reset usage. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoadingReport(false)
-    }
-  }
 
   // Export the report to PDF
   const exportToPdf = async () => {
@@ -2239,7 +2176,7 @@ export default function BrandReportPage() {
         variant: "default"
       });
     } catch (error) {
-      console.error("Error exporting PDF:", error);
+
       toast({
         title: "Failed to export PDF",
         description: "An error occurred while creating the PDF.",
@@ -2361,7 +2298,7 @@ export default function BrandReportPage() {
           setIsLoadingReport(false)
         })
         .catch(error => {
-          console.error('❌ Error loading reports:', error)
+
           setDailyReports([])
           setSelectedReport(null)
           setIsLoadingReport(false)
@@ -2748,16 +2685,7 @@ export default function BrandReportPage() {
                 )
               })()}
 
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="bg-red-600 border-red-500 text-white hover:bg-red-700 hover:text-white rounded-xl transition-all duration-300 h-11"
-                onClick={handleResetUsage}
-                disabled={isLoadingReport || !selectedBrandId}
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingReport && "animate-spin")} />
-                Reset Usage
-              </Button>
+
 
               <Button 
                 variant="outline" 
