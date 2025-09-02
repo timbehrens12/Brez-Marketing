@@ -3547,13 +3547,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Progressive step components
   const renderUploadStep = () => (
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-6">
+    <div className="w-full flex flex-col items-center">
+      <div className="text-center mb-6 w-full">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
         <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
       </div>
       
-      <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 mx-auto max-w-5xl">
+      <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 w-full max-w-5xl">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Left Column - Upload Drop Zone */}
@@ -3612,8 +3612,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
 
-        {/* Uploaded Images Preview - Fixed Area */}
-        <div className="min-h-[120px]">
+        {/* Uploaded Images Preview */}
+        <div>
           {(uploadedImage || (uploadedImages.length > 0)) ? (
             <div>
               <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
@@ -4813,7 +4813,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
 
               <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
-                <div className={`${currentStep === 'upload' ? 'flex-1 overflow-y-auto pr-4 mr-2 pb-4' : 'flex-1 overflow-y-auto pr-4 mr-2'}`}>
+                <div className={`flex-1 ${currentStep === 'upload' ? 'overflow-visible' : 'overflow-y-auto'} pr-4 mr-2`}>
                   {renderCurrentStep()}
                 </div>
               </div>
