@@ -2013,13 +2013,15 @@ export default function BrandReportPage() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.top = '-9999px';
-      container.style.width = '800px'; // Fixed width for PDF
+      container.style.width = '816px'; // 8.5 inches * 96 DPI = 816px
+      container.style.maxWidth = '816px';
       container.style.backgroundColor = '#000000'; // Match background color
       container.style.color = '#ffffff'; // Ensure text is visible
       container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       container.style.margin = '0';
-      container.style.padding = '0';
+      container.style.padding = '20px'; // Add padding for margins
       container.style.overflow = 'hidden';
+      container.style.boxSizing = 'border-box';
       document.body.appendChild(container);
       
       // Get the current report content and parse it
@@ -2202,19 +2204,44 @@ export default function BrandReportPage() {
         }
       }
       
-      // Create new jsPDF instance
+      // Create new jsPDF instance with standard 8.5x11 letter format
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [imgWidth, imgHeight],
+        format: 'letter', // Standard 8.5x11 inch format (215.9 x 279.4 mm)
         hotfixes: ['px_scaling']
       });
+      
+      // Get standard letter dimensions
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate dimensions to fit content on standard page
+      const maxWidth = pageWidth - 20; // 10mm margins on each side
+      const maxHeight = pageHeight - 20; // 10mm margins top and bottom
+      
+      // Scale content to fit the page while maintaining aspect ratio
+      let finalWidth = imgWidth;
+      let finalHeight = imgHeight;
+      
+      if (imgWidth > maxWidth) {
+        finalWidth = maxWidth;
+        finalHeight = (imgHeight * maxWidth) / imgWidth;
+      }
+      
+      if (finalHeight > maxHeight) {
+        finalHeight = maxHeight;
+        finalWidth = (imgWidth * maxHeight) / imgHeight;
+      }
       
       // Convert canvas to image with high quality
       const imgData = canvas.toDataURL('image/png', 1.0);
       
-      // Add image to PDF
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+      // Add image to PDF with proper centering and scaling
+      const xOffset = (pageWidth - finalWidth) / 2;
+      const yOffset = (pageHeight - finalHeight) / 2;
+      
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalWidth, finalHeight, undefined, 'FAST');
       
       // Save PDF with descriptive filename
       const brandName = brands.find(brand => brand.id === selectedBrandId)?.name || "Brand";
@@ -2799,8 +2826,9 @@ export default function BrandReportPage() {
             </div>
           ) : selectedReport ? (
             <div className="p-8 flex justify-center">
-              <div className="w-full max-w-4xl bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl">
+              <div className="w-full max-w-[816px] bg-[#0f0f0f] rounded-xl border border-[#2A2A2A] overflow-hidden shadow-2xl" style={{ aspectRatio: '8.5/11' }}>
                 <div 
+                  className="p-6"
                   dangerouslySetInnerHTML={{ 
                     __html: selectedReport.content
                   }}

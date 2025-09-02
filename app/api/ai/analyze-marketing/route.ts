@@ -96,53 +96,74 @@ ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 - DO NOT include "OFFICIAL DOCUMENT" or similar headers
 - Generate ONLY the content sections that will go inside a pre-styled wrapper
 - Start directly with the first content section
-- Use proper HTML structure with clear sections and headings
+- Use proper HTML structure optimized for 8.5x11 paper format
+- Use two-column layouts where appropriate to maximize space efficiency
+- Keep sections concise and well-organized for standard paper printing
 
-Generate professional business report content with proper HTML structure including:
+Generate professional business report content optimized for 8.5x11 paper format:
 
-<div class="executive-summary">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">1. EXECUTIVE SUMMARY</h2>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Provide a brief overview of overall performance, highlighting key achievements and areas of concern.</p>
+<div class="report-header" style="margin-bottom: 1.5rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+  <div class="executive-summary">
+    <h2 style="color: #e5e7eb; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">EXECUTIVE SUMMARY</h2>
+    <p style="margin-bottom: 0.75rem; line-height: 1.5; color: #d1d5db; font-size: 0.9rem;">Provide a concise overview of overall performance, highlighting key achievements and critical areas.</p>
+  </div>
+  <div class="performance-overview">
+    <h2 style="color: #e5e7eb; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">KEY METRICS</h2>
+    <p style="margin-bottom: 0.75rem; line-height: 1.5; color: #d1d5db; font-size: 0.9rem;">Summary of critical metrics with specific numbers and percentages.</p>
+  </div>
+</div>
 </div>
 
-<div class="performance-overview">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">2. PERFORMANCE OVERVIEW</h2>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Summary of key metrics with specific numbers and percentages.</p>
+<div class="channel-analysis" style="margin-bottom: 1.5rem;">
+<h2 style="color: #e5e7eb; font-size: 1.3rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">CHANNEL PERFORMANCE</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+  <div class="shopify-section">
+    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #10b981;">Shopify Performance</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze revenue metrics, order counts, and customer behavior with specific data and growth percentages.</p>
+  </div>
+  <div class="meta-section">
+    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #3b82f6;">Meta/Facebook Ads</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze ad spend efficiency, CTR, impressions, and campaign performance with specific metrics.</p>
+  </div>
 </div>
 
-<div class="channel-analysis">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">3. CHANNEL ANALYSIS</h2>
-<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.1 Shopify Performance</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze revenue metrics, order metrics, and customer behavior insights with specific data.</p>
-
-<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.2 Meta/Facebook Ads Performance</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
-
-<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.3 Audience Demographics Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Provide a comprehensive breakdown of ALL demographic segments from the Demographics & Audience Insights data above. Include performance data (impressions, CTR, spend) for ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), ALL gender segments (male, female), and ALL device types available in the data. Show specific numbers and percentages for each segment, not just the top performers. Identify patterns and optimization opportunities across the complete demographic spectrum.</p>
-
-<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.4 Geographic Performance Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Customer Geographic Data provided above to analyze specific customer locations, regional revenue performance, and distribution patterns. Include actual city/state/country data, customer counts per location, and revenue by region from the provided data.</p>
-
-<h3 style="color: #d1d5db; font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem 0;">3.5 Repeat Customer Analysis</h3>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Use the Repeat Customer Analysis data provided above to analyze specific retention rates, repeat purchase percentages, customer lifetime value metrics, and loyalty trends. Include actual numbers and percentages from the provided repeat customer data.</p>
+<div class="audience-analysis" style="margin-bottom: 1.5rem;">
+  <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #f59e0b;">Audience Demographics</h3>
+  <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Provide comprehensive breakdown of ALL demographic segments. Include data for ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), ALL gender segments, and ALL device types. Show specific numbers and percentages for each segment, not just top performers.</p>
 </div>
 
-<div class="strengths-opportunities">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">4. STRENGTHS & OPPORTUNITIES</h2>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Identify what's working well and areas for improvement.</p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <div class="geographic-section">
+    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #ef4444;">Geographic Performance</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze customer locations, regional revenue, and distribution patterns. Include actual city/state/country data and revenue by region.</p>
+  </div>
+  <div class="retention-section">
+    <h3 style="color: #d1d5db; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #8b5cf6;">Customer Retention</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Analyze retention rates, repeat purchase percentages, customer lifetime value, and loyalty trends with actual data.</p>
+  </div>
+</div>
 </div>
 
-<div class="issues">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">5. WHAT'S NOT WORKING</h2>
-<p style="margin-bottom: 1rem; line-height: 1.7; color: #d1d5db;">Identify performance issues and areas of concern with specific data points.</p>
+<div class="analysis-summary" style="margin-bottom: 1.5rem;">
+<h2 style="color: #e5e7eb; font-size: 1.3rem; font-weight: 700; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #4b5563;">ANALYSIS & RECOMMENDATIONS</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+  <div class="strengths-section">
+    <h3 style="color: #10b981; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">✓ Strengths & Opportunities</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Identify what's working well and growth opportunities with specific data points.</p>
+  </div>
+  <div class="issues-section">
+    <h3 style="color: #ef4444; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">⚠ Areas for Improvement</h3>
+    <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Identify performance issues and concerns with specific metrics.</p>
+  </div>
 </div>
 
-<div class="recommendations">
-<h2 style="color: #e5e7eb; font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #4b5563;">6. ACTIONABLE RECOMMENDATIONS</h2>
-<ul style="margin: 0 0 1.5rem 2rem; line-height: 1.7; list-style: disc;">
-<li style="margin-bottom: 0.75rem; color: #d1d5db;">Provide 4-5 specific, actionable recommendations</li>
-</ul>
+<div class="recommendations-section">
+  <h3 style="color: #3b82f6; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem 0;">🎯 Priority Action Items</h3>
+  <p style="margin-bottom: 0.75rem; line-height: 1.4; color: #d1d5db; font-size: 0.85rem;">Provide 4-6 specific, actionable recommendations formatted as concise bullet points for easy implementation.</p>
+</div>
 </div>
 
 **CRITICAL FORMATTING RULES:**
