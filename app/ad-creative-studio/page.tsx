@@ -3768,7 +3768,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
   const renderCustomizationStep = () => (
     <div className="pt-[20px]">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : 'template-selection')}
           variant="ghost"
@@ -3784,14 +3784,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       </div>
       
       {/* Layout with Model Gender Conditional */}
-      <div className="mt-4">
+      <div className="mt-2">
       {selectedCreativeType === 'clothing-models' ? (
                 /* Layout with Model Gender - Grid with generate button on right */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
           {/* Text Overlays - 5 columns */}
-          <div className="lg:col-span-5 space-y-3">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-6 hover:border-[#444]/80 transition-all duration-200">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-3">
+          <div className="lg:col-span-5 space-y-2">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">T</span>
                 </div>
@@ -3924,7 +3924,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Model Gender Selection */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[114px] flex flex-col justify-center hover:border-[#444]/80 transition-all duration-200">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 flex flex-col justify-center hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 text-center flex items-center justify-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full"></span>
                 Model Gender *
@@ -3959,7 +3959,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
           {/* Custom Instructions - 6 columns */}
           <div className="lg:col-span-6">
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[322px] hover:border-[#444]/80 transition-all duration-200">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"></span>
                 Custom Instructions
@@ -3968,15 +3968,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
-                style={{ height: 'calc(100% - 2.5rem)' }}
+                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs h-20"
               />
             </div>
           </div>
 
           {/* Generate Button - Tall spanning all widgets */}
           <div className="lg:col-span-1">
-            <div className="flex flex-col items-center justify-center h-[322px] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200">
+            <div className="flex flex-col items-center justify-center h-[116px] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200">
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -4709,7 +4708,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </div>
               </div>
 
-              <div className="p-6 pt-0">
+              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2' : 'p-6 pt-0'}`}>
                 {renderCurrentStep()}
               </div>
             </div>
