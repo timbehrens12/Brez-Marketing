@@ -1560,7 +1560,7 @@ export default function AdCreativeStudioPage() {
     }
 
     try {
-      console.log('🗑️ Deleting creative:', id)
+
       
       const response = await fetch(`/api/creative-generations?id=${id}&userId=${user.id}`, {
         method: 'DELETE'
@@ -1599,7 +1599,7 @@ export default function AdCreativeStudioPage() {
         return updated
       })
       
-      console.log('✅ Creative and all related cache cleared:', id)
+
       toast.success('Creative deleted successfully!')
     } catch (error) {
       console.error('❌ Error deleting creative:', error)
@@ -1612,7 +1612,7 @@ export default function AdCreativeStudioPage() {
   const generateMultiProductCreative = async (images: File[], style: StyleOption, customText: any, finalName: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log('🎨 Starting multi-product creative generation...')
+
 
         // Convert all images to base64
         const imagePromises = images.map(file => new Promise<string>((resolve) => {
@@ -1622,7 +1622,7 @@ export default function AdCreativeStudioPage() {
         }))
 
         const base64Images = await Promise.all(imagePromises)
-        console.log(`✅ Converted ${base64Images.length} images to base64`)
+
 
         // Create enhanced prompt for multi-product extraction
         const multiProductPrompt = `GENERATE AN IMAGE: Create a stunning fashion display featuring ${images.length} different clothing items extracted from the provided ${images.length} separate product images.
@@ -1678,7 +1678,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
         formData.append('backgroundType', backgroundTypeMapping[style.id] || 'minimalist')
 
-        console.log('🚀 Sending multi-product generation request...')
+
 
         const response = await fetch('/api/ai/generate-creative', {
           method: 'POST',
@@ -1693,7 +1693,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         }
 
         const data = await response.json()
-        console.log('✅ Multi-product creative generated successfully!')
+        
         resolve(data.imageUrl)
 
       } catch (error) {
@@ -2010,7 +2010,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Delete creative function - handles creative deletion
   const handleDeleteCreative = async (creativeId: string) => {
-    console.log('🗑️ Delete creative called for ID:', creativeId)
     try {
       const response = await fetch(`/api/creative-generations?id=${creativeId}`, {
         method: 'DELETE',
@@ -2936,7 +2935,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     try {
       // Multi-product mode handling
       if (isMultiMode && uploadedImages.length > 1) {
-        console.log('🎨 Multi-product mode: generating creative...')
+
 
         try {
           // Generate the multi-product creative using our new function
@@ -2947,7 +2946,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             finalName
           )
 
-          console.log('✅ Multi-product creative generated successfully!')
+          
           updateCreativeStatus(creativeId, 'completed', generatedImageUrl)
           setGeneratedImage(generatedImageUrl)
 
@@ -2981,7 +2980,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           })
 
           if (saveResponse.ok) {
-            console.log('✅ Multi-product creative saved to database')
+  
           } else {
             console.error('❌ Failed to save multi-product creative to database')
           }
@@ -3023,13 +3022,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         reader.readAsDataURL(uploadedImage)
       });
 
-      // Debug logging
-      console.log('🚀 SENDING TO API:')
-      console.log('📝 Final Prompt:', enhancedPrompt)
-      console.log('🎨 Style ID:', templateStyle.id)
-      console.log('🎨 Style Name:', templateStyle.name)
-      console.log('📷 Image size:', base64Image.length, 'characters')
-      console.log('📋 Text overlays:', customText)
+
 
       // Create FormData for the new Gemini API
       const formData = new FormData();
@@ -3092,7 +3085,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       })
 
       if (saveResponse.ok) {
-        console.log('✅ Creative saved to database')
+        
       } else {
         console.error('❌ Failed to save creative to database')
       }
@@ -3193,7 +3186,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     try {
       if (isMultiMode && uploadedImages.length > 1) {
         // NEW: Multi-product mode: Generate ONE creative with all products extracted and arranged
-        console.log(`🎨 Generating multi-product creative with ${uploadedImages.length} items...`)
+        
 
         try {
           // Generate the multi-product creative using our new function
@@ -3204,7 +3197,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             finalName
           )
 
-          console.log('✅ Multi-product creative generated successfully!')
+          
 
           // Update creative status with the generated URL
           updateCreativeStatus(creativeId, 'completed', generatedImageUrl)
@@ -3254,7 +3247,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             if (!saveResponse.ok) {
               console.error('❌ Failed to save multi-product creative to database:', await saveResponse.text())
             } else {
-              console.log('✅ Multi-product creative saved to database successfully')
+  
             }
           } catch (saveError) {
             console.error('❌ Error saving multi-product creative to database:', saveError)
@@ -3391,7 +3384,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         })
 
         if (saveResponse.ok) {
-          console.log('✅ Creative saved to database successfully')
+
         } else {
           console.error('❌ Failed to save creative to database:', await saveResponse.text())
         }
