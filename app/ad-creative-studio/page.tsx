@@ -254,7 +254,7 @@ const CREATIVE_TYPES = [
   {
     id: 'auto',
     name: 'Auto',
-    description: 'Automatically generate the best creative type based on your product',
+    description: 'Let AI pick the best template for you based on your product and optimize for maximum performance',
     icon: '🤖',
     subcategories: ['auto-generation']
   }
@@ -3717,6 +3717,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             key={type.id}
             onClick={() => {
               setSelectedCreativeType(type.id)
+              // Clear clothing subtype if not selecting clothing
+              if (type.id !== 'clothing') {
+                setSelectedClothingSubType('')
+              }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
               } else if (type.id === 'custom-template') {
@@ -3803,7 +3807,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         <div className="text-center mb-8">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={() => setCurrentStep(selectedClothingSubType ? 'clothing-subcategory' : 'creative-type')}
+              onClick={() => {
+                // Only go to clothing-subcategory if we actually selected a clothing subtype
+                if (selectedClothingSubType) {
+                  setCurrentStep('clothing-subcategory')
+                } else {
+                  setCurrentStep('creative-type')
+                }
+              }}
               variant="ghost"
               className="text-gray-400 hover:text-white"
             >
