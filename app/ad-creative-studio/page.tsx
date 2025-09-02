@@ -3547,7 +3547,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Progressive step components
   const renderUploadStep = () => (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center -mt-8 mr-12">
       <div className="text-center mb-6 w-full">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
         <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
