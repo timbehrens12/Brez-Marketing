@@ -3787,7 +3787,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       <div className="mt-2">
       {selectedCreativeType === 'clothing-models' ? (
                 /* Layout with Model Gender - Grid with generate button on right */
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Top Row: Text Overlays and Custom Instructions with Generate Button */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             {/* Text Overlays - Left side of top row */}
@@ -3947,7 +3947,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
             {/* Generate Button - Right side spanning full height */}
             <div className="lg:col-span-1 lg:row-span-2">
-              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[295px]">
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[250px]">
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -3994,12 +3994,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
 
-          {/* Bottom Row: Model Gender Selection - Centered */}
+          {/* Second Row: Model Gender Selection - Centered */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             <div className="lg:col-span-4 lg:col-start-5">
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
                 <h3 className="text-lg font-semibold text-white mb-3 text-center flex items-center justify-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-pink-400 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">👤</span>
                   </div>
                   Model Gender *
