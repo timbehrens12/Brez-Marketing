@@ -4078,7 +4078,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
           {/* Middle Column: Generate Button */}
           <div className="lg:col-span-7">
-            <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[580px]">
+            <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[520px]">
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -4297,7 +4297,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
           {/* Middle Column: Generate Button */}
           <div className="lg:col-span-7">
-            <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[580px]">
+            <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm hover:border-[#444]/80 transition-all duration-200 min-h-[520px]">
               <Button
                 onClick={async () => {
                   if (!uploadedImage && !isMultiMode) {
@@ -4659,7 +4659,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         ) : (
           <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
@@ -4842,8 +4842,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </div>
               </div>
 
-              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2' : 'p-6 pt-0'}`}>
-                {renderCurrentStep()}
+              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
+                <div className="flex-1 overflow-y-auto">
+                  {renderCurrentStep()}
+                </div>
               </div>
             </div>
 
