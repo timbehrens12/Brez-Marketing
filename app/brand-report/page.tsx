@@ -962,6 +962,17 @@ export default function BrandReportPage() {
         }
       }
 
+      console.log('Data being sent to AI:', {
+        hasShopifyData: !!shopifyData,
+        hasMetaData: !!metaData,
+        hasDemographics: !!demographicsData,
+        hasLocationData: !!locationData,
+        hasRepeatCustomers: !!repeatCustomersData,
+        shopifyDataKeys: shopifyData ? Object.keys(shopifyData) : [],
+        metaDataKeys: metaData ? Object.keys(metaData) : [],
+        totalDataSize: JSON.stringify(dataForAi).length
+      })
+
       // Send data to AI for analysis with timeout
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 240000) // 4 minute client timeout
@@ -985,16 +996,28 @@ export default function BrandReportPage() {
       }
 
       const aiResult = await aiResponse.json()
+      console.log('AI Result received:', { 
+        hasReport: !!aiResult.report, 
+        hasAnalysis: !!aiResult.analysis, 
+        hasResult: !!aiResult.result,
+        keys: Object.keys(aiResult),
+        statusOk: aiResponse.ok,
+        status: aiResponse.status
+      })
 
-
-            // Handle different response formats from the backend API
+      // Handle different response formats from the backend API
       const analysis = aiResult.report || aiResult.analysis || aiResult.result || 
         (aiResult.message && aiResult.message !== "Successfully generated AI report" ? aiResult.message : null) || 
         (typeof aiResult === 'string' ? aiResult : null);
 
+      console.log('Extracted analysis:', { 
+        hasAnalysis: !!analysis, 
+        analysisLength: analysis?.length,
+        analysisPreview: analysis?.substring(0, 100)
+      })
 
       if (!analysis) {
-
+        console.error('No analysis found in AI result:', aiResult)
         throw new Error("No analysis returned from AI")
       }
 
@@ -1906,8 +1929,17 @@ export default function BrandReportPage() {
         </div>
       `
 
+      console.log('Saving report to database...', {
+        selectedBrandId,
+        fromDate,
+        toDate,
+        reportLength: formattedReport.length,
+        hasSnapshotTime: !!snapshotTime
+      })
+
       // Save to database with snapshot time
       await saveReportToDatabase(selectedBrandId, fromDate, toDate, selectedPeriod, formattedReport, JSON.stringify(aiResult), snapshotTime)
+      console.log('Report saved to database successfully')
 
       // Update state
       const newReport: DailyReport = {
@@ -1917,8 +1949,15 @@ export default function BrandReportPage() {
         data: aiResult
       }
 
+      console.log('Setting new report to state:', {
+        contentLength: newReport.content.length,
+        snapshotTime: newReport.snapshotTime
+      })
+
       // Reload all daily reports to get the updated list
       const allReports = await loadDailyReports(selectedBrandId, fromDate, toDate, selectedPeriod)
+      console.log('Loaded reports:', allReports.length)
+      
       setDailyReports(allReports)
       setSelectedReport(newReport)
 
