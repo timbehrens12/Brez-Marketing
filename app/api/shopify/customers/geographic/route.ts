@@ -117,6 +117,15 @@ export async function GET(request: NextRequest) {
     const fromDate = searchParams.get('from');
     const toDate = searchParams.get('to');
     
+    console.log('[Geographic API] Request params:', {
+      brandId,
+      fromDate,
+      toDate,
+      hasFromDate: !!fromDate,
+      hasToDate: !!toDate,
+      fullUrl: request.url
+    });
+    
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
     }
@@ -181,7 +190,17 @@ export async function GET(request: NextRequest) {
       }
       
       salesByRegion = response.data || [];
-      console.log(`Found ${salesByRegion.length} sales records with location data`);
+      console.log(`[Geographic API] Found ${salesByRegion.length} sales records with location data`);
+      
+      // Log sample records to see what dates we're getting
+      if (salesByRegion.length > 0) {
+        console.log('[Geographic API] Sample sales records:', salesByRegion.slice(0, 3).map(sale => ({
+          city: sale.city,
+          total_price: sale.total_price,
+          order_count: sale.order_count,
+          created_at: sale.created_at
+        })));
+      }
       
       // Also try to get customer data for additional analysis
       const customerResponse = await supabase
@@ -212,15 +231,22 @@ export async function GET(request: NextRequest) {
     let totalCustomers = 0;
     
     // Process sales data from shopify_sales_by_region (this has the actual geographic data)
-    salesByRegion.forEach((sale: any) => {
+    console.log(`[Geographic API] Processing ${salesByRegion.length} sales records for aggregation`);
+    
+    salesByRegion.forEach((sale: any, index: number) => {
       const country = sale.country || 'Unknown';
       const state = sale.province || '';
       const city = sale.city || '';
       const revenue = parseFloat(sale.total_price) || 0;
       const orderCount = parseInt(sale.order_count) || 1;
       
+      console.log(`[Geographic API] Processing sale ${index + 1}:`, {
+        city, state, country, revenue, orderCount, created_at: sale.created_at
+      });
+      
       // Skip if we don't have any geographic information
       if (country === 'Unknown' && !state && !city) {
+        console.log(`[Geographic API] Skipping sale ${index + 1} - no geographic data`);
         return;
       }
       
@@ -229,6 +255,7 @@ export async function GET(request: NextRequest) {
       
       // Create a key for the region
       let locationKey = `${city}-${state}-${country}`;
+      console.log(`[Geographic API] Location key for sale ${index + 1}: "${locationKey}"`);
       
       // Get coordinates
       let lat = 0, lng = 0;
@@ -247,9 +274,18 @@ export async function GET(request: NextRequest) {
       // Update or create the location entry
       if (locationMap.has(locationKey)) {
         const location = locationMap.get(locationKey)!;
+        console.log(`[Geographic API] Aggregating with existing location:`, {
+          oldCustomerCount: location.customerCount,
+          newCustomerCount: location.customerCount + orderCount,
+          oldRevenue: location.totalRevenue,
+          newRevenue: location.totalRevenue + revenue
+        });
         location.customerCount += orderCount;
         location.totalRevenue += revenue;
       } else {
+        console.log(`[Geographic API] Creating new location entry:`, {
+          locationKey, customerCount: orderCount, totalRevenue: revenue
+        });
         locationMap.set(locationKey, {
           city: city || '',
           state: state || '',
@@ -300,7 +336,18 @@ export async function GET(request: NextRequest) {
     }
     
     // Add logging to help debug
-    console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers`);
+    console.log(`[Geographic API] Final result for brand ${brandId}:`, {
+      totalLocations: locations.length,
+      totalRevenue,
+      totalCustomers,
+      dateFiltering: !!(fromDate && toDate),
+      locations: locations.map(loc => ({
+        city: loc.city,
+        state: loc.state,
+        customerCount: loc.customerCount,
+        totalRevenue: loc.totalRevenue
+      }))
+    });
     
     return NextResponse.json({ 
       locations,
