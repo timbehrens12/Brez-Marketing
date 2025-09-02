@@ -102,46 +102,46 @@ Generate ONLY the report content sections (no title, no wrapper). Create a profe
 6. OVERALL CLIENT IMPACT & ROI - Business impact and return on investment
 7. NEXT STEPS & RECOMMENDATIONS - Strategic guidance from your agency
 
-Use this exact HTML structure:
-
-Use this professional agency report structure:
+Use this EXACT HTML structure but replace the example text with your actual analysis of the provided data:
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 EXECUTIVE SUMMARY</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Professional overview of campaign performance and key insights for the client.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write your comprehensive executive summary here with actual performance data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📈 KEY PERFORMANCE METRICS</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Month-over-month performance comparisons and growth analysis.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual metrics analysis with specific numbers and percentages]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 TOP PERFORMING ADS & CREATIVES</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Analysis of best performing campaigns and creative elements.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ad performance analysis with specific data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">👥 AUDIENCE PERFORMANCE INSIGHTS</h2>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #10b981; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
 <h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Demographics Analysis</h3>
-<p style="color: #d1d5db; line-height: 1.8;">Age, gender, and device performance breakdown.</p>
+<p style="color: #d1d5db; line-height: 1.8;">[Write actual demographics analysis with age groups, gender, device data]</p>
 </div>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #3b82f6; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
 <h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Geographic Performance</h3>
-<p style="color: #d1d5db; line-height: 1.8;">Regional distribution and location-based insights.</p>
+<p style="color: #d1d5db; line-height: 1.8;">[Write actual geographic analysis with location data]</p>
 </div>
 <div style="margin: 1rem 0; padding: 1.5rem; border-left: 6px solid #8b5cf6; background: rgba(42, 42, 42, 0.3); border-radius: 8px;">
 <h3 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">Customer Retention</h3>
-<p style="color: #d1d5db; line-height: 1.8;">Repeat customer analysis and loyalty metrics.</p>
+<p style="color: #d1d5db; line-height: 1.8;">[Write actual customer retention analysis with repeat customer data]</p>
 </div>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">💰 BUDGET ALLOCATION & SCALING INSIGHTS</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Spend efficiency analysis and scaling opportunities.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual budget analysis with spend efficiency data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">📊 OVERALL CLIENT IMPACT & ROI</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Business impact assessment and return on investment analysis.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual ROI analysis with business impact data]</p>
 
 <h2 style="color: #ffffff; font-size: 2.25rem; font-weight: 900; margin: 2rem 0; padding: 1.5rem 0; border-bottom: 4px solid #ffffff; text-transform: uppercase;">🎯 NEXT STEPS & RECOMMENDATIONS</h2>
-<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">Strategic recommendations from your marketing team.</p>
+<p style="color: #d1d5db; line-height: 1.8; margin-bottom: 2rem;">[Write actual strategic recommendations based on the data analysis]</p>
 
 MANDATORY REQUIREMENTS:
 - You MUST include ALL 7 main sections shown above (Executive Summary through Next Steps)
 - You MUST include ALL 3 colored subsections under Audience Performance Insights
 - Use the EXACT HTML structure and styling provided above
+- REPLACE ALL [bracketed placeholder text] with actual analysis of the provided data
+- Do NOT copy the placeholder text - write real content based on the data
 - Generate the same structure for daily and monthly reports
 - Only change the data content, never the structure or section headers
 - Include specific data points and be comprehensive
@@ -156,7 +156,7 @@ CRITICAL HTML SAFETY: Only use safe HTML tags (h1, h2, h3, p, div, strong, ul, l
       messages: [
         {
           role: 'system',
-          content: 'You are a marketing agency analyst. Write agency-to-client tone. Generate ONLY content sections - no headers/wrappers. Be concise and data-focused.'
+          content: 'You are a marketing agency analyst creating a report FOR your client. Use the provided HTML template but REPLACE ALL placeholder text with actual analysis of the data. Write in agency-to-client tone with specific data points. Generate ONLY the content sections using the exact HTML structure provided.'
         },
         {
           role: 'user',
