@@ -958,7 +958,7 @@ export default function BrandReportPage() {
           note: "Use this historical data to identify trends, track improvements, evaluate recommendation effectiveness, and provide comparative analysis."
         },
         formatting_instructions: {
-          style: "Create a comprehensive, detailed marketing report following the EXACT structure of the first report format with additional insights. Use the professional structure: 1. EXECUTIVE SUMMARY (comprehensive overview highlighting key achievements and areas of concern), 2. PERFORMANCE OVERVIEW (detailed metrics with specific numbers and percentages), 3. CHANNEL ANALYSIS with subsections: 3.1 Shopify Performance (revenue, orders, customer behavior with location analysis), 3.2 Meta/Facebook Ads Performance (ad spend, impressions, clicks, conversions), 3.3 Audience Demographics Analysis (age groups, gender performance, device preferences with specific data), 3.4 Geographic Performance Analysis (customer locations, regional revenue, market opportunities), 3.5 Repeat Customer Analysis (retention rates, purchase frequency, lifetime value), 4. STRENGTHS & OPPORTUNITIES (what's working well and areas for improvement), 5. WHAT'S NOT WORKING (performance issues and concerns with specific data points), 6. ACTIONABLE RECOMMENDATIONS (4-6 specific, actionable recommendations). Include specific numbers, percentages, and data points throughout. When demographics data is available, provide detailed analysis of top-performing age groups, gender segments, and device types. When location data is available, analyze geographic distribution and regional performance. When repeat customer data is available, provide insights on customer retention and lifetime value. Make the report comprehensive but well-organized with flowing paragraphs rather than bullet points except in recommendations section."
+          style: "Create a comprehensive, detailed marketing report following the EXACT structure of the first report format with additional insights. Use the professional structure: 1. EXECUTIVE SUMMARY (comprehensive overview highlighting key achievements and areas of concern), 2. PERFORMANCE OVERVIEW (detailed metrics with specific numbers and percentages), 3. CHANNEL ANALYSIS with subsections: 3.1 Shopify Performance (revenue, orders, customer behavior with location analysis), 3.2 Meta/Facebook Ads Performance (ad spend, impressions, clicks, conversions), 3.3 Audience Demographics Analysis (age groups, gender performance, device preferences with specific data), 3.4 Geographic Performance Analysis (customer locations, regional revenue, market opportunities), 3.5 Repeat Customer Analysis (retention rates, purchase frequency, lifetime value), 4. STRENGTHS & OPPORTUNITIES (what's working well and areas for improvement), 5. WHAT'S NOT WORKING (performance issues and concerns with specific data points), 6. ACTIONABLE RECOMMENDATIONS (4-6 specific, actionable recommendations). Include specific numbers, percentages, and data points throughout. When demographics data is available, provide detailed analysis of top-performing age groups, gender segments, and device types. When location data is available, analyze geographic distribution and regional performance. When repeat customer data is available, provide insights on customer retention and lifetime value. Make the report comprehensive but well-organized with flowing paragraphs rather than bullet points except in recommendations section. CRITICAL: Use IDENTICAL formatting for both daily and monthly reports - no charts, graphics, tables, or visual elements. Keep the same clean text-only format regardless of time period."
         }
       }
 
@@ -1025,22 +1025,7 @@ export default function BrandReportPage() {
 
       // Generate performance charts based on detailed data
       const generatePerformanceChart = () => {
-        if (!detailedData) return ''
-
-        if (detailedData.type === 'daily') {
-          // Monthly calendar view
-          return `
-            <div class="performance-chart-section">
-              <h3>Daily Performance Calendar - ${format(dateRange.from!, 'MMMM yyyy')}</h3>
-              <div class="calendar-chart">
-                ${generateMonthlyCalendarChart(detailedData, dateRange.from!)}
-              </div>
-            </div>
-          `
-        } else if (detailedData.type === 'hourly') {
-          // Skip hourly timeline for now - causes issues
-          return ''
-        }
+        // Skip all charts for consistent clean report format
         return ''
       }
 
