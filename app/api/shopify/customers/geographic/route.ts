@@ -175,9 +175,23 @@ export async function GET(request: NextRequest) {
       // Add date filtering if provided
       if (fromDate && toDate) {
         console.log(`Filtering geographic data by date range: ${fromDate} to ${toDate}`);
+        
+        // Convert dates to handle timezone properly (assuming Central Time UTC-6)
+        // For start of day: use 06:00 UTC (midnight CT)
+        // For end of day: use next day 05:59 UTC (11:59 PM CT)
+        const startDateTime = `${fromDate}T06:00:00Z`;
+        
+        // For end date, we need to account for the timezone offset
+        const endDate = new Date(toDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const nextDay = endDate.toISOString().split('T')[0];
+        const endDateTime = `${nextDay}T05:59:59Z`;
+        
+        console.log(`Timezone-adjusted filtering: ${startDateTime} to ${endDateTime}`);
+        
         query = query
-          .gte('created_at', `${fromDate}T00:00:00Z`)
-          .lte('created_at', `${toDate}T23:59:59Z`);
+          .gte('created_at', startDateTime)
+          .lte('created_at', endDateTime);
       } else {
         console.log('No date filtering applied - showing all-time geographic data');
       }

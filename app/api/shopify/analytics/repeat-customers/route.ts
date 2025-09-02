@@ -26,16 +26,16 @@ export async function GET(request: NextRequest) {
       .select('id, total_price, customer_id, customer_email, customer_first_name, customer_last_name, created_at')
       .eq('brand_id', brandId)
 
-    // Apply date range filter if provided - convert to Pacific timezone properly
+    // Apply date range filter if provided - convert to Central timezone properly
     if (from) {
-      ordersQuery = ordersQuery.gte('created_at', from + 'T08:00:00Z') // Start of day in Pacific (UTC-8)
+      ordersQuery = ordersQuery.gte('created_at', from + 'T06:00:00Z') // Start of day in Central (UTC-6)
     }
     if (to) {
-      // For "to" date, we need the next day at 7:59 AM UTC to cover until 11:59 PM Pacific
+      // For "to" date, we need the next day at 5:59 AM UTC to cover until 11:59 PM Central
       const toDate = new Date(to)
       toDate.setDate(toDate.getDate() + 1)
       const nextDay = toDate.toISOString().split('T')[0]
-      ordersQuery = ordersQuery.lte('created_at', nextDay + 'T07:59:59Z')
+      ordersQuery = ordersQuery.lte('created_at', nextDay + 'T05:59:59Z')
     }
 
     const { data: ordersData, error: ordersError } = await ordersQuery.order('created_at', { ascending: true })
