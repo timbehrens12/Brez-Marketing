@@ -4294,9 +4294,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     return
                   }
 
+                  // Set the modal style to the selected template for the generation function
+                  setModalStyle(selectedTemplate)
+                  
                   try {
-                    // Call the generation function with the selected template directly
-                    await generateImageFromTemplate(selectedTemplate)
+                    // Call the actual generation function
+                    await generateImageFromModal()
 
                     // Clear regeneration feedback after successful generation
                     setRegenerationFeedback({
