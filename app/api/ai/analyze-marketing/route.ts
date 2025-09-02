@@ -98,199 +98,156 @@ ${JSON.stringify(additional_insights?.repeat_customers || {}, null, 2)}
 - Start directly with the first content section
 - Use proper HTML structure with clear sections and headings
 
-Generate a comprehensive professional business report with rich HTML structure including:
+Generate professional business report content with proper HTML structure including:
 
-<div class="executive-summary">
-<h2 style="color: #10b981; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-left: 4px solid #10b981; border-radius: 8px;">
-  📊 EXECUTIVE SUMMARY
+<div class="executive-summary" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #22d3ee; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #22d3ee; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">📊</span>
+1. EXECUTIVE SUMMARY
 </h2>
-<div style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">🎯 Key Performance Highlights</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Provide a compelling overview of overall performance with specific metrics and growth indicators.</p>
-  
-  <h4 style="color: #ef4444; font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 1rem 0;">⚠️ Critical Areas of Focus</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Highlight urgent issues and immediate opportunities that require attention.</p>
-</div>
+<p style="margin-bottom: 1.5rem; line-height: 1.8; color: #e5e7eb; font-size: 1.1rem; background: rgba(34, 211, 238, 0.1); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #22d3ee;">Provide a comprehensive overview of overall performance, highlighting key achievements, critical metrics, and areas requiring immediate attention.</p>
 </div>
 
-<div class="performance-overview">
-<h2 style="color: #3b82f6; font-size: 1.75rem; font-weight: 800; margin: 3rem 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%); border-left: 4px solid #3b82f6; border-radius: 8px;">
-  📈 PERFORMANCE OVERVIEW
+<div class="performance-overview" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #10b981; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #10b981; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">📈</span>
+2. PERFORMANCE OVERVIEW
 </h2>
-<div style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">💰 Revenue Performance</h4>
-  <p style="margin-bottom: 1.5rem; line-height: 1.8; color: #e5e7eb;">Detail total sales, growth rates, and revenue trends with specific numbers and percentages.</p>
-  
-  <h4 style="color: #8b5cf6; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">📊 Key Metrics Summary</h4>
-  <ul style="margin: 0 0 1.5rem 1.5rem; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #10b981;">✓</span> Average Order Value (AOV)
-    </li>
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #10b981;">✓</span> Order Volume & Growth
-    </li>
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #10b981;">✓</span> Customer Acquisition Metrics
-    </li>
-  </ul>
-</div>
+<p style="margin-bottom: 1.5rem; line-height: 1.8; color: #e5e7eb; font-size: 1.1rem; background: rgba(16, 185, 129, 0.1); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #10b981;">Detailed summary of key performance metrics with specific numbers, percentages, and growth indicators.</p>
 </div>
 
-<div class="channel-analysis">
-<h2 style="color: #f59e0b; font-size: 1.75rem; font-weight: 800; margin: 3rem 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #92400e 0%, #d97706 100%); border-left: 4px solid #f59e0b; border-radius: 8px;">
-  🚀 CHANNEL PERFORMANCE ANALYSIS
+<div class="channel-analysis" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #f59e0b; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #f59e0b; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">🎯</span>
+3. CHANNEL ANALYSIS
 </h2>
 
-<div class="shopify-section" style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h3 style="color: #10b981; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center;">
-    <span style="background: #10b981; color: #000; padding: 0.25rem 0.75rem; border-radius: 4px; margin-right: 1rem; font-size: 0.9rem;">3.1</span>
-    🛒 Shopify Performance
-  </h3>
-  <h4 style="color: #3b82f6; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">💵 Revenue Analysis</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Analyze total sales, order volume, and revenue trends with specific growth metrics.</p>
-  
-  <h4 style="color: #3b82f6; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">👥 Customer Behavior</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Detail customer acquisition, purchasing patterns, and order characteristics.</p>
+<div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+<h3 style="color: #22c55e; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="background: #22c55e; color: #000; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.875rem;">🛒</span>
+3.1 Shopify Performance
+</h3>
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Analyze revenue metrics, order metrics, and customer behavior insights with specific data.</p>
 </div>
 
-<div class="meta-section" style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h3 style="color: #3b82f6; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center;">
-    <span style="background: #3b82f6; color: #fff; padding: 0.25rem 0.75rem; border-radius: 4px; margin-right: 1rem; font-size: 0.9rem;">3.2</span>
-    📱 Meta/Facebook Ads Performance
-  </h3>
-  <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">💸 Ad Spend Efficiency</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Detail ad spend, CPM, CPC, and ROAS with specific performance metrics.</p>
-  
-  <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">🎯 Campaign Performance</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Analyze impressions, clicks, CTR, and conversion rates with optimization insights.</p>
+<div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+<h3 style="color: #3b82f6; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="background: #3b82f6; color: #000; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.875rem;">📱</span>
+3.2 Meta/Facebook Ads Performance
+</h3>
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Analyze ad spend efficiency, key performance indicators, and campaign insights with specific metrics.</p>
 </div>
 
-<div class="demographics-section" style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h3 style="color: #8b5cf6; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center;">
-    <span style="background: #8b5cf6; color: #fff; padding: 0.25rem 0.75rem; border-radius: 4px; margin-right: 1rem; font-size: 0.9rem;">3.3</span>
-    👥 Audience Demographics Analysis
-  </h3>
-  <h4 style="color: #ec4899; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">🎂 Age Group Performance</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Provide comprehensive breakdown of ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+) with specific impressions, CTR, and spend data for each segment.</p>
-  
-  <h4 style="color: #ec4899; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">⚧️ Gender Performance</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Detail male vs female audience performance with specific engagement metrics and spend allocation.</p>
-  
-  <h4 style="color: #ec4899; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">📱 Device & Platform Analysis</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Analyze performance across devices (mobile, desktop, tablet) and platforms with specific CTR and conversion data.</p>
+<div style="background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+<h3 style="color: #a855f7; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="background: #a855f7; color: #000; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.875rem;">👥</span>
+3.3 Audience Demographics Analysis
+</h3>
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Provide a comprehensive breakdown of ALL demographic segments from the Demographics & Audience Insights data above. Include performance data (impressions, CTR, spend) for ALL age groups (18-24, 25-34, 35-44, 45-54, 55-64, 65+), ALL gender segments (male, female), and ALL device types available in the data. Show specific numbers and percentages for each segment, not just the top performers. Identify patterns and optimization opportunities across the complete demographic spectrum.</p>
 </div>
 
-<div class="geographic-section" style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h3 style="color: #06b6d4; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center;">
-    <span style="background: #06b6d4; color: #000; padding: 0.25rem 0.75rem; border-radius: 4px; margin-right: 1rem; font-size: 0.9rem;">3.4</span>
-    🌍 Geographic Performance Analysis
-  </h3>
-  <h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">📍 Location Distribution</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Detail specific cities, states, and countries with customer counts and revenue by region from the actual geographic data.</p>
-  
-  <h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">🎯 Regional Opportunities</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Identify high-performing regions and untapped markets with expansion recommendations.</p>
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+<h3 style="color: #ef4444; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="background: #ef4444; color: #000; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.875rem;">🗺️</span>
+3.4 Geographic Performance Analysis
+</h3>
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Use the Customer Geographic Data provided above to analyze specific customer locations, regional revenue performance, and distribution patterns. Include actual city/state/country data, customer counts per location, and revenue by region from the provided data.</p>
 </div>
 
-<div class="retention-section" style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h3 style="color: #f97316; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center;">
-    <span style="background: #f97316; color: #fff; padding: 0.25rem 0.75rem; border-radius: 4px; margin-right: 1rem; font-size: 0.9rem;">3.5</span>
-    🔄 Customer Retention Analysis
-  </h3>
-  <h4 style="color: #8b5cf6; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">📊 Retention Metrics</h4>
-  <p style="margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb;">Detail repeat purchase rates, customer lifetime value, and retention percentages with specific numbers from the data.</p>
-  
-  <h4 style="color: #8b5cf6; font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.75rem 0;">💎 Customer Loyalty</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Analyze customer loyalty trends and identify strategies to improve retention rates.</p>
+<div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+<h3 style="color: #ec4899; font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="background: #ec4899; color: #000; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.875rem;">🔄</span>
+3.5 Repeat Customer Analysis
+</h3>
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Use the Repeat Customer Analysis data provided above to analyze specific retention rates, repeat purchase percentages, customer lifetime value metrics, and loyalty trends. Include actual numbers and percentages from the provided repeat customer data.</p>
 </div>
 </div>
 
-<div class="strengths-opportunities">
-<h2 style="color: #10b981; font-size: 1.75rem; font-weight: 800; margin: 3rem 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-left: 4px solid #10b981; border-radius: 8px;">
-  💪 STRENGTHS & OPPORTUNITIES
+<div class="strengths-opportunities" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #10b981; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #10b981; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">💪</span>
+4. STRENGTHS & OPPORTUNITIES
 </h2>
-<div style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">🌟 What's Working Well</h4>
-  <ul style="margin: 0 0 1.5rem 1.5rem; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #10b981;">🚀</span> Identify top-performing channels and campaigns
-    </li>
-  </ul>
-  
-  <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 1rem 0;">🔍 Growth Opportunities</h4>
-  <ul style="margin: 0; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #f59e0b;">💡</span> Highlight areas for improvement and expansion
-    </li>
-  </ul>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 1.25rem;">
+<h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="font-size: 1.25rem;">✅</span> STRENGTHS
+</h4>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #e5e7eb; font-size: 1rem;">Identify what's working well with specific data points.</p>
 </div>
+<div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 1.25rem;">
+<h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+<span style="font-size: 1.25rem;">🚀</span> OPPORTUNITIES
+</h4>
+<p style="margin-bottom: 1rem; line-height: 1.7; color: #e5e7eb; font-size: 1rem;">Identify areas for growth and improvement.</p>
 </div>
-
-<div class="issues">
-<h2 style="color: #ef4444; font-size: 1.75rem; font-weight: 800; margin: 3rem 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); border-left: 4px solid #ef4444; border-radius: 8px;">
-  ⚠️ PERFORMANCE CHALLENGES
-</h2>
-<div style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h4 style="color: #ef4444; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">🚨 Critical Issues</h4>
-  <ul style="margin: 0 0 1.5rem 1.5rem; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 0.75rem; color: #e5e7eb; padding-left: 1.5rem; position: relative;">
-      <span style="position: absolute; left: 0; color: #ef4444;">⛔</span> Identify underperforming areas with specific data points
-    </li>
-  </ul>
-  
-  <h4 style="color: #f97316; font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 1rem 0;">⚡ Immediate Concerns</h4>
-  <p style="margin-bottom: 0; line-height: 1.8; color: #e5e7eb;">Detail areas requiring urgent attention with specific metrics and impact assessment.</p>
 </div>
 </div>
 
-<div class="recommendations">
-<h2 style="color: #8b5cf6; font-size: 1.75rem; font-weight: 800; margin: 3rem 0 1.5rem 0; padding: 1rem 1.5rem; background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%); border-left: 4px solid #8b5cf6; border-radius: 8px;">
-  🎯 ACTIONABLE RECOMMENDATIONS
+<div class="issues" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #ef4444; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #ef4444; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">⚠️</span>
+5. WHAT'S NOT WORKING
 </h2>
-<div style="background: #1f2937; padding: 1.5rem; border-radius: 8px; border: 1px solid #374151; margin-bottom: 2rem;">
-  <h4 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0;">🚀 High-Priority Actions</h4>
-  <ul style="margin: 0 0 1.5rem 1.5rem; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 1rem; color: #e5e7eb; padding: 1rem; background: #374151; border-radius: 6px; border-left: 3px solid #10b981;">
-      <strong style="color: #10b981;">Recommendation 1:</strong> Provide specific, actionable steps with expected impact and timeline
-    </li>
-    <li style="margin-bottom: 1rem; color: #e5e7eb; padding: 1rem; background: #374151; border-radius: 6px; border-left: 3px solid #3b82f6;">
-      <strong style="color: #3b82f6;">Recommendation 2:</strong> Detail optimization strategies with measurable outcomes
-    </li>
-  </ul>
-  
-  <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 1rem 0;">📈 Growth Strategies</h4>
-  <ul style="margin: 0; line-height: 1.8; list-style: none;">
-    <li style="margin-bottom: 1rem; color: #e5e7eb; padding: 1rem; background: #374151; border-radius: 6px; border-left: 3px solid #f59e0b;">
-      <strong style="color: #f59e0b;">Strategy 1:</strong> Provide expansion and scaling recommendations with clear next steps
-    </li>
-  </ul>
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; padding: 1.5rem; border-left: 4px solid #ef4444;">
+<p style="margin-bottom: 1.25rem; line-height: 1.8; color: #e5e7eb; font-size: 1.05rem;">Identify performance issues and areas of concern with specific data points and metrics that need immediate attention.</p>
+</div>
+</div>
+
+<div class="recommendations" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border: 1px solid #333; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+<h2 style="color: #ffffff; font-size: 1.75rem; font-weight: 800; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 3px solid #8b5cf6; display: flex; align-items: center; gap: 0.75rem;">
+<span style="background: #8b5cf6; color: #000; padding: 0.5rem; border-radius: 8px; font-size: 1rem; font-weight: 900;">💡</span>
+6. ACTIONABLE RECOMMENDATIONS
+</h2>
+<div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 1.5rem; border-left: 4px solid #8b5cf6;">
+<ul style="margin: 0; line-height: 1.8; list-style: none; padding: 0;">
+<li style="margin-bottom: 1rem; color: #e5e7eb; font-size: 1.05rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+<span style="background: #8b5cf6; color: #000; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 0.125rem;">1</span>
+Provide 4-5 specific, actionable recommendations with priority numbering</li>
+<li style="margin-bottom: 1rem; color: #e5e7eb; font-size: 1.05rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+<span style="background: #8b5cf6; color: #000; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 0.125rem;">2</span>
+Each recommendation should be specific and actionable</li>
+<li style="margin-bottom: 1rem; color: #e5e7eb; font-size: 1.05rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+<span style="background: #8b5cf6; color: #000; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 0.125rem;">3</span>
+Include expected impact and timeline when possible</li>
+</ul>
 </div>
 </div>
 
 **CRITICAL FORMATTING RULES:**
-- Use the exact styled structure shown above with inline styles and color-coded sections
-- Use gradient backgrounds, emojis, and visual elements as specified
+- Use the EXACT styled structure shown above with all inline styles
+- Each section MUST be wrapped in the styled div containers
+- Each subsection (3.1, 3.2, etc.) MUST use the colored card styling
+- ALWAYS include the emoji icons and colored badges
+- Use numbered list items with styled number badges for recommendations
 - Use <strong style="color: #f9fafb; font-weight: 700;"> for emphasis on key numbers/metrics
-- Include numbered section badges and colored subsection headers
-- Use the dark gray (#1f2937) content boxes with proper padding and borders
+- Use professional dark theme: light gray (#e5e7eb) for headers, lighter gray (#d1d5db) for text
 - Include specific numbers and percentages from the actual data provided
-- Use color-coded bullet points and visual indicators as shown
-- Structure content with clear subsections and visual hierarchy
-- Make each section comprehensive with detailed analysis
-- Use proper spacing, padding, and styling as specified
+- Use <ul> and <li> with proper styling for bullet point lists
+- Keep content structured and readable, NOT one big paragraph
+- Break down complex sections into clear subsections with headers
+- Use data tables when presenting multiple metrics (with styled borders and spacing)
+- Add visual emphasis to important insights with background highlights
+- Structure demographic data in organized lists by age group, gender, and device type
+- Present geographic data with clear location breakdowns and revenue figures
+- Make the report comprehensive but well-organized
+- Use proper spacing with margin styles as shown
 
-**CONTENT REQUIREMENTS:**
-- Executive Summary: Include both highlights AND critical focus areas
-- Performance Overview: Detailed revenue analysis with specific metrics
-- Channel Analysis: Comprehensive breakdown with subsections for each platform
-- Demographics: COMPLETE analysis of ALL age groups, genders, and devices
-- Geographic: Specific location data with customer counts and revenue
-- Retention: Detailed metrics on repeat customers and loyalty
-- Strengths/Opportunities: Clear categorization of what's working vs growth areas
-- Challenges: Critical issues with urgent concerns
-- Recommendations: Actionable steps with priority levels and expected outcomes
+**EXAMPLE DATA PRESENTATION STYLES:**
 
-Response should be 800-1200 words with rich HTML formatting, inline styles, and comprehensive analysis.
+For key metrics, use highlight boxes:
+<div style="background: rgba(34, 211, 238, 0.15); border: 1px solid #22d3ee; border-radius: 6px; padding: 1rem; margin: 1rem 0; display: inline-block;">
+<strong style="color: #22d3ee; font-size: 1.1rem;">$1,200 Revenue</strong> | <span style="color: #e5e7eb;">2 Orders</span>
+</div>
+
+For demographic breakdowns, use organized lists:
+<ul style="margin: 1rem 0; padding: 0; list-style: none;">
+<li style="background: rgba(168, 85, 247, 0.1); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+<span style="color: #e5e7eb;">65+ Age Group:</span> <strong style="color: #a855f7;">58 impressions, 5.17% CTR</strong>
+</li>
+</ul>
+
+Response should be 400-600 words with proper HTML formatting and inline styles.
     `
     
     console.log('Sending prompt to OpenAI...')
