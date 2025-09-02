@@ -677,7 +677,7 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
         .slice(0, 3)
     }
 
-    // Fetch demographics data for audience insights
+    // Fetch demographics data for audience insights using the same APIs as dashboard
     if (connectedPlatforms.meta) {
       const { data: metaConnection } = await supabase
         .from('platform_connections')
@@ -690,41 +690,41 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
       if (metaConnection) {
         console.log(`[AIDailyReport] Fetching demographics data for connection: ${metaConnection.id}`)
         
-        // Fetch recent demographic data (extended range to catch test data)
-        const fromDate = '2024-01-01' // Extended backwards to catch all data
-        const toDate = '2025-12-31' // Extended to catch future test data
+        try {
+          // Fetch age demographics using the same API as dashboard
+          const ageResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/demographics?connectionId=${metaConnection.id}&breakdownType=age`)
+          const ageData = ageResponse.ok ? await ageResponse.json() : null
 
-        const { data: demographics } = await supabase
-          .from('meta_demographics')
-          .select('*')
-          .eq('connection_id', metaConnection.id)
-          .gte('date_range_start', fromDate)
-          .lte('date_range_end', toDate)
-          .order('impressions', { ascending: false })
-          .limit(20)
+          // Fetch gender demographics
+          const genderResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/demographics?connectionId=${metaConnection.id}&breakdownType=gender`)
+          const genderData = genderResponse.ok ? await genderResponse.json() : null
 
-        const { data: deviceData } = await supabase
-          .from('meta_device_performance')
-          .select('*')
-          .eq('connection_id', metaConnection.id)
-          .gte('date_range_start', fromDate)
-          .lte('date_range_end', toDate)
-          .order('impressions', { ascending: false })
-          .limit(10)
+          // Fetch device performance data
+          const deviceResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/device-performance?connectionId=${metaConnection.id}&breakdownType=device`)
+          const deviceData = deviceResponse.ok ? await deviceResponse.json() : null
 
-        if (demographics?.length > 0 || deviceData?.length > 0) {
-          metaAnalysis.demographics = {
-            age: demographics?.filter(d => d.breakdown_type === 'age') || [],
-            gender: demographics?.filter(d => d.breakdown_type === 'gender') || [],
-            devices: deviceData?.filter(d => d.breakdown_type === 'device') || [],
-            placements: deviceData?.filter(d => d.breakdown_type === 'placement') || []
+          // Fetch placement performance data  
+          const placementResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/meta/device-performance?connectionId=${metaConnection.id}&breakdownType=placement`)
+          const placementData = placementResponse.ok ? await placementResponse.json() : null
+
+          if (ageData?.data || genderData?.data || deviceData?.data || placementData?.data) {
+            metaAnalysis.demographics = {
+              age: ageData?.data || [],
+              gender: genderData?.data || [],
+              devices: deviceData?.data || [],
+              placements: placementData?.data || []
+            } as any
+            console.log(`[AIDailyReport] Demographics data loaded:`, {
+              ageSegments: metaAnalysis.demographics?.age.length || 0,
+              genderSegments: metaAnalysis.demographics?.gender.length || 0,
+              deviceTypes: metaAnalysis.demographics?.devices.length || 0,
+              placements: metaAnalysis.demographics?.placements.length || 0
+            })
+          } else {
+            console.log(`[AIDailyReport] No demographic data returned from APIs`)
           }
-          console.log(`[AIDailyReport] Demographics data loaded:`, {
-            ageSegments: metaAnalysis.demographics.age.length,
-            genderSegments: metaAnalysis.demographics.gender.length,
-            deviceTypes: metaAnalysis.demographics.devices.length,
-            placements: metaAnalysis.demographics.placements.length
-          })
+        } catch (error) {
+          console.error('[AIDailyReport] Error fetching demographic data:', error)
         }
       }
     }
@@ -749,7 +749,7 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
           locations: geographicData.locations || [],
           totalRevenue: geographicData.totalRevenue || 0,
           totalCustomers: geographicData.totalCustomers || 0
-        }
+        } as any
         console.log(`[AIDailyReport] Geographic data loaded: ${geographicData.locations?.length || 0} locations, ${geographicData.totalCustomers || 0} customers`)
       } else {
         console.log(`[AIDailyReport] Geographic data request failed: ${geographicResponse.status}`)
@@ -769,7 +769,7 @@ async function gatherPlatformData(supabase: any, brandId: string, userTimezone?:
           averageOrderValue: repeatCustomersData.averageOrderValue || 0,
           repeatCustomerRevenue: repeatCustomersData.repeatCustomerRevenue || 0,
           topCustomerLocations: repeatCustomersData.topLocations || []
-        }
+        } as any
         console.log(`[AIDailyReport] Repeat customer data loaded: ${repeatCustomersData.totalOrders || 0} orders, ${(repeatCustomersData.repeatCustomerRate || 0).toFixed(1)}% repeat rate`)
       } else {
         console.log(`[AIDailyReport] Repeat customer data request failed: ${repeatCustomersResponse.status}`)
