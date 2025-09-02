@@ -4663,7 +4663,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
-                <div className="absolute top-4 right-8 z-30">
+                <div className="absolute top-1 right-8 z-30">
                   <div className="flex items-center gap-3">
                     {/* YOUR PRODUCT */}
                     <div 
@@ -4843,7 +4843,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
 
               <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
-                <div className={`flex-1 overflow-y-auto pr-4 mr-2 ${(currentStep === 'template-selection' || currentStep === 'creative-type' || currentStep === 'clothing-subcategory') ? 'pt-[130px]' : ''}`}>
+                <div className={`flex-1 overflow-y-auto pr-6 mr-4 ${
+                  (currentStep === 'template-selection' || currentStep === 'creative-type' || currentStep === 'clothing-subcategory') && 
+                  (uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) 
+                    ? 'pt-[140px] pr-[140px]' : ''
+                }`}>
                   {renderCurrentStep()}
                 </div>
               </div>
