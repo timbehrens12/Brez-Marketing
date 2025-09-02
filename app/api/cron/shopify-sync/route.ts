@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ShopifyBulkService } from '@/lib/services/shopifyBulkService'
 
+// Set maximum duration for Shopify sync (5 minutes)
+export const maxDuration = 300
+
 // Shopify sync endpoint for brand reports and cron jobs
 export async function POST(request: NextRequest) {
   try {

@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
+// Set maximum duration for Meta sync (5 minutes)
+export const maxDuration = 300
+
 export async function POST(request: NextRequest) {
   try {
     // Check if this is an automated call (from cron job)

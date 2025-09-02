@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs'
 
+// Set maximum duration for Meta demographics sync (5 minutes)
+export const maxDuration = 300
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth()

@@ -723,12 +723,14 @@ export default function BrandReportPage() {
 
 
 
-      // Always run fresh data sync before generating reports to ensure accuracy
-
+      // Run data sync in background - don't block report generation
       try {
-        // Sync Meta data
-        const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7; // More days for monthly, recent for daily
-        await fetch('/api/meta/sync', {
+        // Sync Meta data with timeout
+        const metaSyncDays = selectedPeriod === "last-month" ? 45 : 7
+        const metaSyncController = new AbortController()
+        const metaSyncTimeout = setTimeout(() => metaSyncController.abort(), 45000) // 45 second timeout
+        
+        const metaSyncPromise = fetch('/api/meta/sync', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -738,11 +740,15 @@ export default function BrandReportPage() {
             days: metaSyncDays,
             automated: true,
             force_refresh: true
-          })
-        })
+          }),
+          signal: metaSyncController.signal
+        }).finally(() => clearTimeout(metaSyncTimeout))
         
-        // Sync Shopify data
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/cron/shopify-sync`, {
+        // Sync Shopify data with timeout
+        const shopifySyncController = new AbortController()
+        const shopifySyncTimeout = setTimeout(() => shopifySyncController.abort(), 30000) // 30 second timeout
+        
+        const shopifySyncPromise = fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/cron/shopify-sync`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -750,23 +756,30 @@ export default function BrandReportPage() {
           body: JSON.stringify({ 
             brandId: selectedBrandId,
             force_refresh: true
-          })
-        })
+          }),
+          signal: shopifySyncController.signal
+        }).finally(() => clearTimeout(shopifySyncTimeout))
         
-        // Sync Meta demographics data
-        await fetch('/api/meta/sync-demographics', {
+        // Sync Meta demographics with timeout
+        const demoSyncController = new AbortController()
+        const demoSyncTimeout = setTimeout(() => demoSyncController.abort(), 20000) // 20 second timeout
+        
+        const demoSyncPromise = fetch('/api/meta/sync-demographics', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
             brandId: selectedBrandId
-          })
-        })
+          }),
+          signal: demoSyncController.signal
+        }).finally(() => clearTimeout(demoSyncTimeout))
         
+        // Don't await - let sync run in background
+        Promise.allSettled([metaSyncPromise, shopifySyncPromise, demoSyncPromise])
 
       } catch (syncError) {
-
+        // Sync errors don't block report generation
       }
 
       // If not forcing refresh, check if report already exists for this snapshot time
