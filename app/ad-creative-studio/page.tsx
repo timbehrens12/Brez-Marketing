@@ -3547,7 +3547,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Progressive step components
   const renderUploadStep = () => (
-    <div className="w-full">
+    <div className="max-w-6xl mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
         <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
@@ -3613,7 +3613,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
 
         {/* Uploaded Images Preview - Fixed Area */}
-        <div className="min-h-[180px]">
+        <div className="min-h-[120px]">
           {(uploadedImage || (uploadedImages.length > 0)) ? (
             <div>
               <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
@@ -4627,9 +4627,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
           </div>
         ) : (
-          <div className="flex lg:gap-3 py-2 lg:items-start max-w-7xl mx-auto">
+          <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 min-h-[720px]">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
@@ -4812,15 +4812,15 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </div>
               </div>
 
-              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-6 flex flex-col' : 'p-6 pt-0 pb-6 flex flex-col'}`}>
-                <div className={`${currentStep === 'upload' ? '' : 'flex-1 overflow-y-auto pr-4 mr-2'}`}>
+              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
+                <div className={`${currentStep === 'upload' ? 'flex-1 overflow-y-auto pr-4 mr-2 pb-4' : 'flex-1 overflow-y-auto pr-4 mr-2'}`}>
                   {renderCurrentStep()}
                 </div>
               </div>
             </div>
 
             {/* Right Side - Generation Preview */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] min-h-[720px] flex flex-col lg:w-[30%] flex-shrink-0">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] py-6 pl-6 pr-[19px] h-[720px] flex flex-col lg:w-[30%] flex-shrink-0">
               {renderGenerationPreview()}
             </div>
           </div>
