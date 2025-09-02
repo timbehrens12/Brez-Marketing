@@ -217,25 +217,11 @@ const getClothingSubcategory = (templateId: string) => {
 // Creative type definitions for the progressive flow
 const CREATIVE_TYPES = [
   {
-    id: 'clothing-models',
-    name: 'Clothing Models',
-    description: 'Show your clothing on professional models in various settings',
-    icon: '👤',
-    subcategories: CLOTHING_SUBCATEGORIES.models
-  },
-  {
-    id: 'clothing-backgrounds',
-    name: 'Clothing Backgrounds',
-    description: 'Display clothing on clean, professional backgrounds',
-    icon: '🎨',
-    subcategories: CLOTHING_SUBCATEGORIES.backgrounds
-  },
-  {
-    id: 'clothing-environments',
-    name: 'Clothing Environments',
-    description: 'Showcase clothing in creative environmental settings',
-    icon: '🌍',
-    subcategories: CLOTHING_SUBCATEGORIES.environments
+    id: 'clothing',
+    name: 'Clothing',
+    description: 'Professional clothing displays with models, backgrounds, and environments',
+    icon: '👕',
+    hasSubcategories: true
   },
   {
     id: 'physical-products',
@@ -245,9 +231,9 @@ const CREATIVE_TYPES = [
     subcategories: ['product-studio-white', 'glossy-black-pedestal', 'marble-kitchen-counter', 'hand-held-product', 'glass-cube-display', 'wooden-crate-warehouse', 'forest-floor-natural', 'spa-bathtub-edge', 'floating-clouds-ethereal', 'concrete-podium-harsh', 'water-reflection-hover', 'kitchen-table-morning', 'neon-product-shelf', 'crystal-museum-case', 'floating-motion-blur', 'desert-rock-golden-hour', 'rustic-desk-flatlay', 'futuristic-tech-lab', 'rotating-display-platform', 'freezer-cold-storage', 'cracked-glass-industrial', 'rustic-cafe-table', 'unboxing-desk-setup']
   },
   {
-    id: 'multi-product',
-    name: 'Multi-Product',
-    description: 'Combine multiple products into one creative',
+    id: 'multiproducts',
+    name: 'Multi-Products',
+    description: 'Combine multiple products into one creative showcase',
     icon: '🔄',
     subcategories: ['multi-product-template']
   },
@@ -257,6 +243,45 @@ const CREATIVE_TYPES = [
     description: 'Create your own completely custom template with full prompt control',
     icon: '⚡',
     subcategories: ['custom-template']
+  },
+  {
+    id: 'copy',
+    name: 'Copy',
+    description: 'Generate compelling ad copy and text content for your campaigns',
+    icon: '✍️',
+    subcategories: ['copy-generation']
+  },
+  {
+    id: 'auto',
+    name: 'Auto',
+    description: 'Automatically generate the best creative type based on your product',
+    icon: '🤖',
+    subcategories: ['auto-generation']
+  }
+]
+
+// Clothing subcategory definitions
+const CLOTHING_SUB_TYPES = [
+  {
+    id: 'clothing-models',
+    name: 'Models',
+    description: 'Show your clothing on professional models in various settings',
+    icon: '👤',
+    subcategories: CLOTHING_SUBCATEGORIES.models
+  },
+  {
+    id: 'clothing-backgrounds',
+    name: 'Backgrounds',
+    description: 'Display clothing on clean, professional backgrounds',
+    icon: '🎨',
+    subcategories: CLOTHING_SUBCATEGORIES.backgrounds
+  },
+  {
+    id: 'clothing-environments',
+    name: 'Environments',
+    description: 'Showcase clothing in creative environmental settings',
+    icon: '🌍',
+    subcategories: CLOTHING_SUBCATEGORIES.environments
   }
 ]
 
@@ -1082,8 +1107,9 @@ export default function AdCreativeStudioPage() {
   const { agencySettings } = useAgency()
   
   // Progressive flow state
-  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'template-selection' | 'customization' | 'library'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
+  const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
   // Weekly usage system - 50 generations per week (universal)
@@ -3691,7 +3717,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             key={type.id}
             onClick={() => {
               setSelectedCreativeType(type.id)
-              if (type.id === 'custom-template') {
+              if (type.id === 'clothing') {
+                setCurrentStep('clothing-subcategory')
+              } else if (type.id === 'custom-template') {
                 setCurrentStep('customization')
               } else {
                 setCurrentStep('template-selection')
@@ -3712,12 +3740,62 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
+  const renderClothingSubcategoryStep = () => (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex items-start justify-between mb-6">
+        <Button
+          onClick={() => setCurrentStep('creative-type')}
+          variant="ghost"
+          className="text-gray-400 hover:text-white"
+        >
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          Back to Creative Type
+        </Button>
+      </div>
+
+      {/* Header section */}
+      <div className="text-center mb-6">
+        <h2 className="text-4xl font-bold text-white mb-4">Choose Clothing Type</h2>
+        <p className="text-gray-300 text-lg">How would you like to display your clothing?</p>
+      </div>
+      
+      <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+        {CLOTHING_SUB_TYPES.map((subType) => (
+          <div
+            key={subType.id}
+            onClick={() => {
+              setSelectedClothingSubType(subType.id)
+              setSelectedCreativeType(subType.id) // Update the main creative type for compatibility
+              setCurrentStep('template-selection')
+            }}
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                {subType.icon}
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">{subType.name}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{subType.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
   const renderTemplateSelectionStep = () => {
-    const selectedType = CREATIVE_TYPES.find(type => type.id === selectedCreativeType)
+    // Handle clothing subcategories
+    let selectedType = CREATIVE_TYPES.find(type => type.id === selectedCreativeType)
+    
+    // If it's a clothing subcategory, find it in CLOTHING_SUB_TYPES
+    if (!selectedType && selectedClothingSubType) {
+      selectedType = CLOTHING_SUB_TYPES.find(type => type.id === selectedCreativeType)
+    }
+    
     if (!selectedType) return null
 
     const availableTemplates = STYLE_OPTIONS.filter(style =>
-      selectedType.subcategories.includes(style.id)
+      selectedType.subcategories?.includes(style.id)
     )
 
     return (
@@ -3725,7 +3803,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         <div className="text-center mb-8">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={() => setCurrentStep('creative-type')}
+              onClick={() => setCurrentStep(selectedClothingSubType ? 'clothing-subcategory' : 'creative-type')}
               variant="ghost"
               className="text-gray-400 hover:text-white"
             >
@@ -4454,6 +4532,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         return renderUploadStep()
       case 'creative-type':
         return renderCreativeTypeStep()
+      case 'clothing-subcategory':
+        return renderClothingSubcategoryStep()
       case 'template-selection':
         return renderTemplateSelectionStep()
       case 'customization':
@@ -4537,7 +4617,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
-               (currentStep === 'creative-type' || currentStep === 'template-selection' || currentStep === 'customization') && (
+               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
                 <div className="absolute top-1 right-4 z-30">
                   <div className="flex items-center gap-3">
                     {/* YOUR PRODUCT */}
