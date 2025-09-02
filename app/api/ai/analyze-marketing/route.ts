@@ -104,7 +104,7 @@ Generate marketing report using this structure with real data:
 
 <div style="background: #1e293b; padding: 1rem; margin: 1rem 0; border-left: 3px solid #3b82f6;">
 <h2 style="color: #fff; margin: 0 0 0.5rem 0;">📊 Summary</h2>
-<p style="color: #cbd5e1;">Brief overview with revenue: $${revenue}, orders: ${orders}, growth: ${growth}%</p>
+<p style="color: #cbd5e1;">Brief overview with key performance metrics, revenue trends, and growth analysis</p>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
