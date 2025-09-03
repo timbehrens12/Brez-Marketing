@@ -3840,7 +3840,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
         
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pr-4 mb-4">
+        <div className="flex-1 overflow-y-auto pr-4 mb-8">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-16">
           {availableTemplates.map((template) => (
             <div
