@@ -392,7 +392,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     id: 'custom-template',
     name: 'Custom Template',
     description: 'Create your own completely custom template with full prompt control',
-    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEzMykiPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjxzdmcgeD0iLTEyIiB5PSItMTIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMEI5ODEiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTExIDRhMiAyIDAgMCAxIDQgMHYxYTEgMSAwIDAgMCAxIDFoM2ExIDEgMCAwIDEgMSAxdjNhMSAxIDAgMCAxLTEgMWgtMWEyIDIgMCAwIDAtNCAwaDFhMSAxIDAgMCAxIDEgMXYzYTEgMSAwIDAgMS0xIDFoLTNhMSAxIDAgMCAxLTEtMXYtMWEyIDIgMCAwIDEtNC0waDF2M2ExIDEgMCAwIDEtMSAxSDdhMSAxIDAgMCAxLTEtMXYtM2ExIDEgMCAwIDEgMS0xaDFhMiAyIDAgMCAwIDQtMEg3YTEgMSAwIDAgMS0xLTFWN2ExIDEgMCAwIDEgMS0xaDNhMSAxIDAgMCAxIDEtMXYtMXoiLz48L3N2Zz48L2c+PHRleHQgeD0iMTAwIiB5PSIyMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNBQUEiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNjAwIj5DVVNUT008L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIyNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMxMEI5ODEiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4=', // Custom SVG placeholder1 would work but what templates would we even make for multiple products??
+    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEzMykiPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjxwYXRoIGQ9Ik0tMTggLTljMi44IC0uNCA1LjggLTEuNCA3LjggLTMuNSAxLjcgLTEuOCAyLjcgLTQuMyAyLjcgLTYuOCAwIC00IC0zLjIgLTcuMiAtNy4yIC03LjIgLTQgMCAtNy4yIDMuMiAtNy4yIDcuMiAwIDIuNSAxIDUgMi43IDYuOCAyIDIuMSA1IDMuMSA3LjggMy41eiIgZmlsbD0iIzEwQjk4MSIvPjxwYXRoIGQ9Ik0xOCA5Yy0yLjggLjQgLTUuOCAxLjQgLTcuOCAzLjUgLTEuNyAxLjggLTIuNyA0LjMgLTIuNyA2LjggMCA0IDMuMiA3LjIgNy4yIDcuMiA0IDAgNy4yIC0zLjIgNy4yIC03LjIgMCAtMi41IC0xIC01IC0yLjcgLTYuOCAtMiAtMi4xIC01IC0zLjEgLTcuOCAtMy41eiIgZmlsbD0iIzEwQjk4MSIvPjxwYXRoIGQ9Ik05IC0xOGMuNCAyLjggMS40IDUuOCAzLjUgNy44IDEuOCAxLjcgNC4zIDIuNyA2LjggMi43IDQgMCA3LjIgLTMuMiA3LjIgLTcuMiAwIC00IC0zLjIgLTcuMiAtNy4yIC03LjIgLTIuNSAwIC01IDEgLTYuOCAyLjcgLTIuMSAyIC0zLjEgNSAtMy41IDcuOHoiIGZpbGw9IiMxMEI5ODEiLz48cGF0aCBkPSJNLTkgMThjLS40IC0yLjggLTEuNCA1LjggLTMuNSAtNy44IC0xLjggLTEuNyAtNC4zIC0yLjcgLTYuOCAtMi43IC00IDAgLTcuMiAzLjIgLTcuMiA3LjIgMCA0IDMuMiA3LjIgNy4yIDcuMiAyLjUgMCA1IC0xIDYuOCAtMi43IDIuMSAtMiAzLjEgLTUgMy41IC03Ljh6IiBmaWxsPSIjMTBCOTgxIi8+PGNpcmNsZSBjeD0iMCIgY3k9IjAiIHI9IjgiIGZpbGw9IiMxMEI5ODEiLz48L2c+PHRleHQgeD0iMTAwIiB5PSIyMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNBQUEiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNjAwIj5DVVNUT008L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIyNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMxMEI5ODEiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4=',
     
     category: 'all',
     goodFor: 'Any product - you have full creative control',
@@ -2952,8 +2952,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     
     let enhancedPrompt: string
     if (templateStyle.id === 'custom-template') {
-      // For custom templates, use the user's complete custom prompt
-      enhancedPrompt = customTemplatePrompt.trim() + textPromptAddition
+      // For custom templates, use the user's complete custom prompt with frame constraints
+      const frameConstraints = ' IMPORTANT: Ensure all content including text, products, and visual elements stay within the creative frame boundaries. Do not allow any elements to clip or extend beyond the edges of the creative canvas. Keep all content properly contained within the visible area.'
+      enhancedPrompt = customTemplatePrompt.trim() + frameConstraints + textPromptAddition
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -4235,12 +4236,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
-                  {usageData.current >= WEEKLY_LIMIT ? (
-                    <span className="text-red-400">Limit reached</span>
-                  ) : (
-                    <span className="text-gray-500">Click to generate</span>
-                  )}
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center">
+                  <span className="text-[9px] text-center leading-none">
+                    {usageData.current >= WEEKLY_LIMIT ? (
+                      <span className="text-red-400">Limit reached</span>
+                    ) : (
+                      <span className="text-gray-500">Click to generate</span>
+                    )}
+                  </span>
                 </div>
               </Button>
             </div>
@@ -4443,12 +4446,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
-                  {usageData.current >= WEEKLY_LIMIT ? (
-                    <span className="text-red-400">Limit reached</span>
-                  ) : (
-                    <span className="text-gray-500">Click to generate</span>
-                  )}
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center">
+                  <span className="text-[9px] text-center leading-none">
+                    {usageData.current >= WEEKLY_LIMIT ? (
+                      <span className="text-red-400">Limit reached</span>
+                    ) : (
+                      <span className="text-gray-500">Click to generate</span>
+                    )}
+                  </span>
                 </div>
               </Button>
             </div>
@@ -4924,14 +4929,16 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-1 left-0 right-0 text-[8px] text-center leading-tight px-1">
-                  {usageData.current >= WEEKLY_LIMIT ? (
-                    <span className="text-red-400">Limit reached</span>
-                  ) : customTemplatePrompt.trim().length < 20 ? (
-                    <span className="text-gray-500">Enter prompt</span>
-                  ) : (
-                    <span className="text-gray-500">Click to generate</span>
-                  )}
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
+                  <span className="text-[8px] text-center leading-tight">
+                    {usageData.current >= WEEKLY_LIMIT ? (
+                      <span className="text-red-400">Limit reached</span>
+                    ) : customTemplatePrompt.trim().length < 20 ? (
+                      <span className="text-gray-500">Enter prompt</span>
+                    ) : (
+                      <span className="text-gray-500">Click to generate</span>
+                    )}
+                  </span>
                 </div>
               </Button>
             </div>
