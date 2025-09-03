@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -246,7 +246,7 @@ const CREATIVE_TYPES = [
     id: 'custom-template',
     name: 'Custom Template',
     description: 'Create your own completely custom template with full prompt control',
-    icon: '⚡',
+    icon: '⚙️',
     subcategories: ['custom-template']
   },
   {
@@ -4621,7 +4621,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[200px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-bold text-white">⚡</span>
+                  <Settings className="w-4 h-4 text-white" />
                 </div>
                 Custom Prompt
               </h3>
