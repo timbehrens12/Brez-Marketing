@@ -3971,7 +3971,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, top: e.target.value }))
                         }}
                         placeholder="SWIPE UP..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedTopPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -3979,7 +3979,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.top}
                             onChange={(e) => setTextColors(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.top}</span>
                         </div>
@@ -4032,7 +4032,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, bottom: e.target.value }))
                         }}
                         placeholder="LINK IN BIO..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedBottomPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -4040,7 +4040,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.bottom}
                             onChange={(e) => setTextColors(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.bottom}</span>
                         </div>
@@ -4098,7 +4098,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
+                className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
             </div>
@@ -4139,10 +4139,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
-                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
               >
@@ -4222,7 +4222,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, top: e.target.value }))
                         }}
                         placeholder="SWIPE UP..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedTopPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -4230,7 +4230,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.top}
                             onChange={(e) => setTextColors(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.top}</span>
                         </div>
@@ -4283,7 +4283,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, bottom: e.target.value }))
                         }}
                         placeholder="LINK IN BIO..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedBottomPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -4291,7 +4291,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.bottom}
                             onChange={(e) => setTextColors(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.bottom}</span>
                         </div>
@@ -4312,7 +4312,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm"
+                className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm"
                 style={{ height: 'calc(100% - 2.5rem)' }}
               />
             </div>
@@ -4347,10 +4347,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
-                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
                             >
@@ -4629,7 +4629,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 value={customTemplatePrompt}
                 onChange={(e) => setCustomTemplatePrompt(e.target.value)}
                 placeholder="Enter your detailed prompt here... Describe exactly how you want your product displayed: background, lighting, setting, mood, colors, style, and any specific elements. Example: Display my product on a modern marble countertop in a luxurious kitchen setting with soft natural lighting..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
+                className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
             </div>
@@ -4688,7 +4688,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, top: e.target.value }))
                         }}
                         placeholder="SWIPE UP..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedTopPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -4696,7 +4696,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.top}
                             onChange={(e) => setTextColors(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.top}</span>
                         </div>
@@ -4749,7 +4749,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                           setCustomText(prev => ({ ...prev, bottom: e.target.value }))
                         }}
                         placeholder="LINK IN BIO..."
-                        className="w-full bg-[#333] border border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
+                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
                       />
                       {selectedBottomPreset === 'custom' && (
                         <div className="flex items-center gap-1">
@@ -4757,7 +4757,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             type="color"
                             value={textColors.bottom}
                             onChange={(e) => setTextColors(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-6 h-6 rounded border border-[#444] cursor-pointer"
+                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
                           />
                           <span className="text-xs text-gray-500">{textColors.bottom}</span>
                         </div>
@@ -4821,12 +4821,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
                     ? 'bg-gray-800/30 border-gray-600/50 text-gray-500 cursor-not-allowed'
-                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 20}
               >
@@ -4996,7 +4996,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                                     <img
                                       src={url}
                                       alt={`Product ${index + 1}`}
-                                      className="w-16 h-16 object-contain rounded border border-[#444] bg-[#2a2a2a]"
+                                      className="w-16 h-16 object-contain rounded border-[#444] bg-[#2a2a2a]"
                                     />
                                     <button
                                       onClick={(e) => {
@@ -5014,7 +5014,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                                   <img
                                     src={uploadedImageUrl}
                                     alt="Product"
-                                    className="w-16 h-16 object-contain rounded border border-[#444] bg-[#2a2a2a]"
+                                    className="w-16 h-16 object-contain rounded border-[#444] bg-[#2a2a2a]"
                                   />
                                   <button
                                     onClick={(e) => {
@@ -5358,7 +5358,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   details: e.target.value
                 }))}
                 placeholder="Describe exactly what needs to be fixed (e.g., 'The neck tag text is blurry', 'Sleeves are too short', 'Background is too dark')..."
-                className="w-full bg-[#333] border border-[#444] rounded px-3 py-3 text-white placeholder-gray-400 focus:border-[#666] focus:outline-none h-24 resize-none text-sm"
+                className="w-full bg-[#333] border-[#444] rounded px-3 py-3 text-white placeholder-gray-400 focus:border-[#666] focus:outline-none h-24 resize-none text-sm"
               />
             </div>
             
