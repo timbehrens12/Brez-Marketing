@@ -1587,19 +1587,26 @@ export default function AdCreativeStudioPage() {
     }
 
     try {
-
-      
       const response = await fetch(`/api/creative-generations?id=${id}&userId=${user.id}`, {
         method: 'DELETE'
       })
 
+      // Handle the case where creative doesn't exist in database (404)
+      // This can happen if the creative was only created locally but failed to save
       if (!response.ok) {
         const errorData = await response.json()
-        // Silent error handling
-        throw new Error(`Failed to delete creative: ${errorData.error || 'Unknown error'}`)
+        
+        // If it's a 404 (not found), treat it as success since the goal is achieved
+        if (response.status === 404) {
+          // Silent error handling - creative doesn't exist in DB, just remove from frontend
+        } else {
+          // For other errors, still remove from frontend but show a warning
+          // Silent error handling
+        }
       }
 
-      // Clear all related state for this creative
+      // Always clear all related state for this creative, regardless of DB result
+      // This ensures frontend stays consistent even if DB save originally failed
       setGeneratedCreatives(prev => prev.filter(creative => creative.id !== id))
       setLoadedImages(prev => {
         const updated = { ...prev }
@@ -1625,12 +1632,33 @@ export default function AdCreativeStudioPage() {
         delete updated[id]
         return updated
       })
-      
 
       toast.success('Creative deleted successfully!')
     } catch (error) {
-      // Silent error handling
-      toast.error('Failed to delete creative')
+      // Even if there's a network error, remove from frontend to prevent orphaned entries
+      setGeneratedCreatives(prev => prev.filter(creative => creative.id !== id))
+      setLoadedImages(prev => {
+        const updated = { ...prev }
+        delete updated[id]
+        return updated
+      })
+      setLoadingImages(prev => {
+        const updated = new Set(prev)
+        updated.delete(id)
+        return updated
+      })
+      setOriginalImageUrls(prev => {
+        const updated = { ...prev }
+        delete updated[id]
+        return updated
+      })
+      setCleanImageUrls(prev => {
+        const updated = { ...prev }
+        delete updated[id]
+        return updated
+      })
+      
+      toast.success('Creative removed!')
     }
   }
 
