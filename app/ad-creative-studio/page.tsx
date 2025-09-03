@@ -1430,6 +1430,16 @@ export default function AdCreativeStudioPage() {
     fetchUsageData()
   }, [])
 
+  // Set custom template when entering custom template step
+  useEffect(() => {
+    if (currentStep === 'custom-template-prompt') {
+      const customTemplate = STYLE_OPTIONS.find(s => s.id === 'custom-template')
+      if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
+        setSelectedTemplate(customTemplate)
+      }
+    }
+  }, [currentStep])
+
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to refresh usage count from database
@@ -4670,16 +4680,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
-  const renderCustomTemplatePromptStep = () => {
-    // Set the custom template as selected when this step is rendered
-    React.useEffect(() => {
-      const customTemplate = STYLE_OPTIONS.find(s => s.id === 'custom-template')
-      if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
-        setSelectedTemplate(customTemplate)
-      }
-    }, [])
-
-    return (
+  const renderCustomTemplatePromptStep = () => (
       <div className="pt-[20px] max-w-6xl mx-auto">
         {/* Header */}
       <div className="flex items-center gap-4 mb-4">
@@ -4939,7 +4940,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       </div>
     </div>
     )
-  }
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -5492,7 +5492,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           </div>
         </div>
       </div>
-    )}
-  </>
+          )}
+    </>
   )
 }
