@@ -1112,7 +1112,7 @@ export default function AdCreativeStudioPage() {
   const { agencySettings } = useAgency()
   
   // Progressive flow state
-  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'customization' | 'library'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
@@ -3747,7 +3747,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
               } else if (type.id === 'custom-template') {
-                setCurrentStep('customization')
+                setCurrentStep('custom-template-prompt')
               } else {
                 setCurrentStep('template-selection')
               }
@@ -4560,6 +4560,87 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
+  const renderCustomTemplatePromptStep = () => (
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            onClick={() => setCurrentStep('creative-type')}
+            variant="ghost"
+            className="text-gray-400 hover:text-white"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back to Creative Type
+          </Button>
+        </div>
+        <h2 className="text-4xl font-bold text-white mb-4">Custom Template</h2>
+        <p className="text-gray-300 text-lg">Create your own completely custom design with AI. Be as detailed as possible for best results.</p>
+      </div>
+      
+      <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-8">
+        <div className="space-y-6">
+          {/* Main Prompt Input */}
+          <div>
+            <label className="block text-lg font-semibold text-white mb-3">
+              Enter Your Detailed Prompt
+            </label>
+            <p className="text-gray-400 text-sm mb-4">
+              Describe exactly how you want your product to be displayed. Include details about background, lighting, setting, mood, colors, style, and any specific elements you want. The more detailed your description, the better the AI can create your vision.
+            </p>
+            <textarea
+              value={customTemplatePrompt}
+              onChange={(e) => setCustomTemplatePrompt(e.target.value)}
+              placeholder="Example: Display my product on a modern marble countertop in a luxurious kitchen setting with soft natural lighting from a large window. The background should have warm, inviting tones with subtle shadows. Add some elegant accessories like a coffee cup and fresh flowers to create a lifestyle feel. The overall mood should be premium and sophisticated..."
+              className="w-full bg-[#333] border border-[#444] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-[#555] focus:outline-none resize-none text-sm leading-relaxed"
+              style={{ minHeight: '200px' }}
+            />
+            <div className="mt-2 text-xs text-gray-500">
+              {customTemplatePrompt.length}/1000 characters (minimum 50 characters recommended)
+            </div>
+          </div>
+
+          {/* Tips Section */}
+          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-blue-500/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-blue-400 font-semibold mb-2">💡 Pro Tips for Better Results</h4>
+                <ul className="text-xs text-gray-300 space-y-1.5">
+                  <li>• <strong>Be specific about the setting:</strong> "modern kitchen" vs "minimalist white kitchen with marble countertops"</li>
+                  <li>• <strong>Describe the lighting:</strong> "soft natural light," "dramatic spotlighting," "golden hour sunlight"</li>
+                  <li>• <strong>Include mood/style:</strong> "luxury," "cozy," "professional," "artistic," "industrial"</li>
+                  <li>• <strong>Mention colors and materials:</strong> "warm wood tones," "cool metal surfaces," "earth tones"</li>
+                  <li>• <strong>Add context elements:</strong> props, accessories, or complementary items that enhance your product</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-center pt-4">
+            <Button
+              onClick={() => {
+                if (customTemplatePrompt.trim().length < 20) {
+                  toast.error('Please enter a more detailed prompt (at least 20 characters)')
+                  return
+                }
+                setSelectedTemplate(STYLE_OPTIONS.find(s => s.id === 'custom-template')!)
+                setCurrentStep('customization')
+              }}
+              disabled={customTemplatePrompt.trim().length < 20}
+              className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] px-8 py-3 text-base font-semibold text-white rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              Continue to Customization
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'upload':
@@ -4570,6 +4651,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         return renderClothingSubcategoryStep()
       case 'template-selection':
         return renderTemplateSelectionStep()
+      case 'custom-template-prompt':
+        return renderCustomTemplatePromptStep()
       case 'customization':
         return renderCustomizationStep()
       case 'library':
@@ -4651,7 +4734,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
-               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'customization') && (
+               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'customization') && (
                 <div className="absolute top-1 right-8 z-30">
                   <div className="flex items-center gap-3">
                     {/* YOUR PRODUCT */}
@@ -4831,7 +4914,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </div>
               </div>
 
-              <div className={`${currentStep === 'customization' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
+              <div className={`${currentStep === 'customization' || currentStep === 'custom-template-prompt' ? 'p-6 pt-0 pb-2 h-full flex flex-col' : 'p-6 pt-0 h-full flex flex-col'}`}>
                 <div className={`flex-1 ${currentStep === 'upload' ? 'overflow-visible' : 'overflow-y-auto'} pr-4 mr-2`}>
                   {renderCurrentStep()}
                 </div>
