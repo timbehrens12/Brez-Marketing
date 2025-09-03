@@ -5054,7 +5054,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="lg:col-span-11 flex flex-col gap-3 h-full">
               
               {/* Example Creative Upload Widget */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[70%] flex flex-col">
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[75%] flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                                       <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                       <ImageIcon className="w-4 h-4 text-white" />
@@ -5064,7 +5064,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 
                 {!exampleCreativeUrl ? (
                   <div 
-                    className="border-2 border-dashed border-[#444] rounded-lg h-[230px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
+                    className="border-2 border-dashed border-[#444] rounded-lg h-[250px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
                     onClick={() => document.getElementById('example-creative-upload')?.click()}
                     onDrop={(e) => {
                       e.preventDefault()
@@ -5080,7 +5080,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     </p>
                   </div>
                 ) : (
-                  <div className="relative h-[230px] rounded-lg overflow-hidden border border-[#444]">
+                  <div className="relative h-[250px] rounded-lg overflow-hidden border border-[#444]">
                     <img 
                       src={exampleCreativeUrl} 
                       alt="Example creative" 
@@ -5115,7 +5115,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
 
               {/* Additional Instructions Widget */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[30%] flex flex-col">
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[25%] flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                                       <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                       <span className="text-sm font-bold text-white">+</span>
