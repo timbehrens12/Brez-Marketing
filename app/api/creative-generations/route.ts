@@ -191,16 +191,19 @@ export async function DELETE(req: NextRequest) {
       .single()
 
     if (checkError) {
-      console.error('❌ Error checking creative existence:', checkError)
+      console.log('ℹ️ Creative check result:', checkError)
       
       if (checkError.code === 'PGRST116') {
+        // Creative doesn't exist - this is actually a success case for deletion
+        console.log('✅ Creative does not exist (already deleted or never existed) - treating as success')
         return NextResponse.json({ 
-          error: 'Creative Not Found',
-          message: 'The creative you are trying to delete does not exist or has already been deleted.',
-          userFriendly: true
-        }, { status: 404 })
+          success: true,
+          message: 'Creative deletion completed successfully',
+          alreadyDeleted: true
+        }, { status: 200 })
       }
       
+      console.error('❌ Error checking creative existence:', checkError)
       return NextResponse.json({ 
         error: 'Access Denied',
         message: 'You do not have permission to delete this creative.',

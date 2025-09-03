@@ -1606,22 +1606,47 @@ export default function AdCreativeStudioPage() {
       return
     }
 
+    // Check if creative exists in current state before attempting deletion
+    const creativeExists = generatedCreatives.some(creative => creative.id === id)
+    if (!creativeExists) {
+      console.log('Creative not found in current state - already deleted')
+      return
+    }
+
+    // Prevent double-deletion attempts
+    if (deletingCreativeId === id) {
+      console.log('Deletion already in progress for this creative')
+      return
+    }
+
+    setDeletingCreativeId(id)
+
     try {
       const response = await fetch(`/api/creative-generations?id=${id}&userId=${user.id}`, {
         method: 'DELETE'
       })
 
-      // Handle the case where creative doesn't exist in database (404)
-      // This can happen if the creative was only created locally but failed to save
+      // Handle API response - both success and errors
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         
         // If it's a 404 (not found), treat it as success since the goal is achieved
         if (response.status === 404) {
-          // Silent error handling - creative doesn't exist in DB, just remove from frontend
+          console.log('Creative not found in database - removing from frontend state')
+        } else if (response.status === 403) {
+          console.warn('Access denied for creative deletion:', errorData.message)
+          // Still remove from frontend to keep UI consistent
         } else {
-          // For other errors, still remove from frontend but show a warning
-          // Silent error handling
+          console.warn('Delete API error:', errorData.error || 'Unknown error')
+          // Still remove from frontend to keep UI consistent
+        }
+      } else {
+        // Success response
+        const result = await response.json().catch(() => ({ success: true }))
+        if (result.alreadyDeleted) {
+          console.log('Creative was already deleted - cleanup completed')
+        } else {
+          console.log('Creative deleted successfully')
         }
       }
 
@@ -1679,6 +1704,8 @@ export default function AdCreativeStudioPage() {
       })
       
       toast.success('Creative removed!')
+    } finally {
+      setDeletingCreativeId(null)
     }
   }
 
