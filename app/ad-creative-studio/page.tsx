@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings, Copy } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -261,7 +261,7 @@ const CREATIVE_TYPES: CreativeType[] = [
   {
     id: 'copy',
     name: 'Copy',
-    description: 'Generate compelling ad copy and text content for your campaigns',
+    description: 'Upload an example creative and recreate it using your product',
     icon: '✍️',
     subcategories: ['copy-generation']
   },
@@ -397,6 +397,16 @@ const STYLE_OPTIONS: StyleOption[] = [
     category: 'all',
     goodFor: 'Any product - you have full creative control',
     prompt: 'CUSTOM_TEMPLATE_PLACEHOLDER' // This will be replaced with user's custom prompt
+  },
+  // COPY CREATIVE TEMPLATE - For recreating example creatives with user's product
+  {
+    id: 'copy-generation',
+    name: 'Copy Creative',
+    description: 'Recreate an example creative using your product',
+    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48dGV4dCB4PSIxMDAiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRkZGRiIgZm9udC1zaXplPSIyNCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPkNPUFk8L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNGRkZGRkYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5DUkVBVElWRTwvdGV4dD48L3N2Zz4=',
+    category: 'all',
+    goodFor: 'Recreating any creative style with your product',
+    prompt: 'COPY_CREATIVE_PLACEHOLDER' // This will be replaced with copy logic
   },
   // MULTI-PRODUCT TEMPLATE - For combining multiple items into one creative
   {
@@ -1121,7 +1131,7 @@ export default function AdCreativeStudioPage() {
   const { agencySettings } = useAgency()
   
   // Progressive flow state
-  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'customization' | 'library'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
@@ -1266,6 +1276,9 @@ export default function AdCreativeStudioPage() {
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
   const [customTemplatePrompt, setCustomTemplatePrompt] = useState('')
+  const [exampleCreativeImage, setExampleCreativeImage] = useState<File | null>(null)
+  const [exampleCreativeUrl, setExampleCreativeUrl] = useState<string>('')
+  const [copyPromptAdditions, setCopyPromptAdditions] = useState('')
   const [regenerationFeedback, setRegenerationFeedback] = useState<{
     issues: string[]
     details: string
@@ -2982,6 +2995,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       // For custom templates, use the user's complete custom prompt with maximum frame constraints
       const frameConstraints = ' ULTRA-CRITICAL FRAME CONTAINMENT: MANDATORY 15% SAFETY MARGINS on ALL sides. ABSOLUTE ZERO TOLERANCE for any element touching or approaching frame edges. STRICT COMPOSITION PROTOCOL: 1) ALL content must fit within CENTER 70% of canvas 2) FORCE SCALE DOWN everything by default to ensure containment 3) NEVER allow ANY element to reach frame borders 4) Create MASSIVE white space/margins around ALL content 5) If ANYTHING appears large, immediately SHRINK IT by 30% 6) Text must be TINY and WELL INSIDE center area 7) Product must be SMALL and CENTERED with huge breathing room 8) Background must be CONTAINED and never reach edges 9) Apply ULTRA-CONSERVATIVE sizing - make everything 50% smaller than normal 10) TRIPLE-CHECK all elements are nowhere near frame boundaries. EMERGENCY FAIL-SAFE: If ANY element gets within 20% of frame edges, immediately scale down ENTIRE composition by 50% and re-center everything. COMPOSITION SIZE RULE: Make the entire scene 60% smaller than you normally would to guarantee perfect containment.'
       enhancedPrompt = customTemplatePrompt.trim() + frameConstraints + textPromptAddition
+    } else if (templateStyle.id === 'copy-generation') {
+      // For copy creatives, analyze the example and recreate with user's product
+      const copyInstructions = copyPromptAdditions.trim() 
+        ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
+        : ''
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3005,7 +3024,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: templateStyle.id,
-      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.name,
+      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -3073,7 +3092,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               brandId: selectedBrandId,
               userId: user?.id,
               styleId: templateStyle.id,
-              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : `${templateStyle.name} Multi-Product`,
+              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative Multi-Product' : `${templateStyle.name} Multi-Product`,
               originalImageUrl: uploadedImageUrls[0],
               generatedImageUrl: generatedImageUrl,
               promptUsed: enhancedPrompt,
@@ -3136,7 +3155,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const formData = new FormData();
       formData.append('image', uploadedImage);
 
-
+      // Add example creative image for copy generation
+      if (templateStyle.id === 'copy-generation' && exampleCreativeImage) {
+        formData.append('exampleCreative', exampleCreativeImage);
+      }
       
       const backgroundType = backgroundTypeMapping[templateStyle.id] || 'minimalist'; // Default to minimalist
       formData.append('backgroundType', backgroundType);
@@ -3174,7 +3196,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           brandId: selectedBrandId,
           userId: user?.id,
           styleId: templateStyle.id,
-          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.name,
+          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.name,
           originalImageUrl: uploadedImageUrl,
           generatedImageUrl: data.imageUrl,
           promptUsed: enhancedPrompt,
@@ -3237,6 +3259,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       // For custom templates, use the user's complete custom prompt with maximum frame constraints
       const frameConstraints = ' ULTRA-CRITICAL FRAME CONTAINMENT: MANDATORY 15% SAFETY MARGINS on ALL sides. ABSOLUTE ZERO TOLERANCE for any element touching or approaching frame edges. STRICT COMPOSITION PROTOCOL: 1) ALL content must fit within CENTER 70% of canvas 2) FORCE SCALE DOWN everything by default to ensure containment 3) NEVER allow ANY element to reach frame borders 4) Create MASSIVE white space/margins around ALL content 5) If ANYTHING appears large, immediately SHRINK IT by 30% 6) Text must be TINY and WELL INSIDE center area 7) Product must be SMALL and CENTERED with huge breathing room 8) Background must be CONTAINED and never reach edges 9) Apply ULTRA-CONSERVATIVE sizing - make everything 50% smaller than normal 10) TRIPLE-CHECK all elements are nowhere near frame boundaries. EMERGENCY FAIL-SAFE: If ANY element gets within 20% of frame edges, immediately scale down ENTIRE composition by 50% and re-center everything. COMPOSITION SIZE RULE: Make the entire scene 60% smaller than you normally would to guarantee perfect containment.'
       enhancedPrompt = customTemplatePrompt.trim() + frameConstraints + textPromptAddition
+    } else if (modalStyle.id === 'copy-generation') {
+      // For copy creatives, analyze the example and recreate with user's product
+      const copyInstructions = copyPromptAdditions.trim() 
+        ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
+        : ''
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3260,7 +3288,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: modalStyle.id,
-      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.name,
+      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.id === 'copy-generation' ? 'Copy Creative' : modalStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -3420,6 +3448,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const imageFile = new File([imageBlob], uploadedImage?.name || 'image.jpg', { type: uploadedImage?.type || 'image/jpeg' });
       
       formData.append('image', imageFile);
+      
+      // Add example creative image for copy generation
+      if (modalStyle.id === 'copy-generation' && exampleCreativeImage) {
+        formData.append('exampleCreative', exampleCreativeImage);
+      }
+      
       // Map style IDs to background types for the new Gemini API
       const backgroundTypeMapping: { [key: string]: string } = {
         'concrete-floor': 'concrete',
@@ -3864,6 +3898,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 setCurrentStep('clothing-subcategory')
               } else if (type.id === 'custom-template') {
                 setCurrentStep('custom-template-prompt')
+              } else if (type.id === 'copy') {
+                setCurrentStep('copy-creative-setup')
               } else {
                 setCurrentStep('template-selection')
               }
@@ -4008,7 +4044,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
-          onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : 'template-selection')}
+          onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : 'template-selection')}
           variant="ghost"
           className="text-gray-400 hover:text-white transition-colors"
         >
@@ -4976,6 +5012,184 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
     )
 
+  const renderCopyCreativeSetupStep = () => {
+    const handleExampleCreativeUpload = (files: FileList) => {
+      if (files && files.length > 0) {
+        const file = files[0]
+        setExampleCreativeImage(file)
+        
+        // Create preview URL
+        const url = URL.createObjectURL(file)
+        setExampleCreativeUrl(url)
+      }
+    }
+
+    return (
+      <div className="pt-[20px] max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            onClick={() => setCurrentStep('creative-type')}
+            variant="ghost"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold text-white">Copy Creative Style</h2>
+            <p className="text-gray-400 text-sm mt-1">Upload an example creative to recreate with your product</p>
+          </div>
+        </div>
+        
+        {/* Widget Layout */}
+        <div className="mt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Left Column: Stacked widgets */}
+            <div className="lg:col-span-11 space-y-3">
+              
+              {/* Example Creative Upload Widget */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[200px]">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-white" />
+                  </div>
+                  Example Creative
+                </h3>
+                
+                {!exampleCreativeUrl ? (
+                  <div 
+                    className="border-2 border-dashed border-[#444] rounded-lg h-[140px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
+                    onClick={() => document.getElementById('example-creative-upload')?.click()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      handleExampleCreativeUpload(e.dataTransfer.files)
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
+                    <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-gray-400 text-sm text-center">
+                      Upload example creative to copy
+                      <br />
+                      <span className="text-xs text-gray-500">Drag & drop or click to browse</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative h-[140px] rounded-lg overflow-hidden border border-[#444]">
+                    <img 
+                      src={exampleCreativeUrl} 
+                      alt="Example creative" 
+                      className="w-full h-full object-contain bg-[#2a2a2a]"
+                    />
+                    <button
+                      onClick={() => {
+                        setExampleCreativeImage(null)
+                        setExampleCreativeUrl('')
+                        if (exampleCreativeUrl.startsWith('blob:')) {
+                          URL.revokeObjectURL(exampleCreativeUrl)
+                        }
+                      }}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                
+                <input
+                  id="example-creative-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      handleExampleCreativeUpload(e.target.files)
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Additional Instructions Widget */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">+</span>
+                  </div>
+                  Additional Instructions (Optional)
+                </h3>
+                <textarea
+                  value={copyPromptAdditions}
+                  onChange={(e) => setCopyPromptAdditions(e.target.value)}
+                  placeholder="Any specific changes or additions you want? Example: Change the background to a beach setting, make the lighting more dramatic, add text saying 'NEW ARRIVAL'..."
+                  className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
+                  style={{ height: 'calc(100% - 3.5rem)' }}
+                />
+              </div>
+
+            </div>
+
+            {/* Right Column: Generate Button */}
+            <div className="lg:col-span-1 flex flex-col">
+              <Button
+                onClick={async () => {
+                  if (!exampleCreativeImage) {
+                    toast.error('Please upload an example creative first')
+                    return
+                  }
+
+                  try {
+                    // Set the copy template as selected and generate
+                    const copyTemplate = STYLE_OPTIONS.find(s => s.id === 'copy-generation')!
+                    setSelectedTemplate(copyTemplate)
+                    
+                    // Call the generation function with the copy template
+                    await generateImageFromTemplate(copyTemplate)
+
+                    // Clear regeneration feedback after successful generation
+                    setRegenerationFeedback({
+                      issues: [],
+                      details: ''
+                    })
+                  } catch (error) {
+                    setIsGenerating(false)
+                    toast.error('Failed to generate creative. Please try again.')
+                  }
+                }}
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
+                  usageData.current >= WEEKLY_LIMIT
+                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    : !exampleCreativeImage
+                    ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
+                }`}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || !exampleCreativeImage}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                ) : usageData.current >= WEEKLY_LIMIT ? (
+                  <Ban className="w-8 h-8 text-red-400" />
+                ) : (
+                  <ChevronRight className="w-8 h-8" />
+                )}
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
+                  <span className="text-[8px] text-center leading-tight">
+                    {usageData.current >= WEEKLY_LIMIT ? (
+                      <span className="text-red-400">Limit reached</span>
+                    ) : !exampleCreativeImage ? (
+                      <span className="text-gray-500">Upload example</span>
+                    ) : (
+                      <span className="text-gray-500">Click to generate</span>
+                    )}
+                  </span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'upload':
@@ -4988,6 +5202,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         return renderTemplateSelectionStep()
       case 'custom-template-prompt':
         return renderCustomTemplatePromptStep()
+      case 'copy-creative-setup':
+        return renderCopyCreativeSetupStep()
       case 'customization':
         return renderCustomizationStep()
       case 'library':
@@ -5038,17 +5254,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   </p>
                 </div>
 
-                {/* Copy Creative Button */}
-                <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 w-[84px] h-[100px] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-white/20 transition-colors"
-                     onClick={() => window.open('/copy-creative', '_blank')}
-                >
-                  <Copy className="w-6 h-6" />
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-gray-300">Copy</div>
-                    <div className="text-xs text-gray-400">Creative</div>
-                  </div>
-                </div>
-
                 {/* Library Button */}
                 <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 w-[84px] h-[100px] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-white/20 transition-colors"
                      onClick={() => setCurrentStep('library')}
@@ -5080,7 +5285,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
-               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'customization') && (
+               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'customization') && (
                 <div className="absolute top-1 right-8 z-30">
                   <div className="flex items-center gap-3">
                     {/* YOUR PRODUCT */}
@@ -5214,6 +5419,28 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                             </div>
                           </div>
                         </div>
+
+                        {/* EXAMPLE CREATIVE (for copy generation) */}
+                        {currentStep === 'copy-creative-setup' && exampleCreativeUrl && (
+                          <>
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[120px] h-[120px]">
+                              <div className="text-center h-full flex flex-col">
+                                <span className="text-xs text-gray-400 font-medium mb-1">EXAMPLE</span>
+                                <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                                  <img
+                                    src={exampleCreativeUrl}
+                                    alt="Example creative"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="text-xs text-purple-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
+                                  <span className="truncate max-w-full">Copy Style</span>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

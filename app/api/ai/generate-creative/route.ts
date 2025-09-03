@@ -106,6 +106,9 @@ export async function POST(request: NextRequest) {
     const lighting = formData.get('lighting') as string || 'soft';
     const customPromptModifiers = formData.get('customPromptModifiers') as string || '';
     
+    // Copy creative support
+    const exampleCreativeFile = formData.get('exampleCreative') as File | null;
+    
     // Multi-product support
     const customPrompt = formData.get('prompt') as string;
     const multiProductCount = formData.get('multiProductCount') as string;
@@ -234,6 +237,20 @@ ${backgroundPreset.prompt}`;
           data: base64Image
         }
       });
+
+      // Add example creative image for copy generation
+      if (exampleCreativeFile) {
+        console.log('📋 Adding example creative for copy generation...');
+        const exampleBuffer = await exampleCreativeFile.arrayBuffer();
+        const exampleBase64 = Buffer.from(exampleBuffer).toString('base64');
+        
+        contentArray.push({
+          inlineData: {
+            mimeType: exampleCreativeFile.type,
+            data: exampleBase64
+          }
+        });
+      }
 
       // If this is a multi-product request, add additional images
       if (customPrompt && multiProductCount && additionalImages) {
