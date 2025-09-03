@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 const WEEKLY_CREATIVE_LIMIT = 50
 const USAGE_FEATURE_TYPE = 'creative_generation'
