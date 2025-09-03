@@ -1358,13 +1358,14 @@ export default function AdCreativeStudioPage() {
     }
   }, [showCropModal])
 
-  // Get current Monday as week start
+  // Get current Monday at 12:00 AM as week start (local timezone)
   const getCurrentWeekStart = () => {
     const now = new Date()
     const dayOfWeek = now.getDay()
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Sunday = 0, Monday = 1
     const monday = new Date(now)
     monday.setDate(now.getDate() + mondayOffset)
+    monday.setHours(0, 0, 0, 0) // Set to 12:00 AM local time
     return monday.toISOString().split('T')[0] // YYYY-MM-DD format
   }
 
@@ -1376,14 +1377,14 @@ export default function AdCreativeStudioPage() {
     return daysUntilMonday
   }
 
-  // Initialize usage data from localStorage
+  // Initialize usage data from localStorage with proper weekly reset
   useEffect(() => {
     const currentWeekStart = getCurrentWeekStart()
     const stored = localStorage.getItem('ad-creative-usage')
     
     if (stored) {
       const parsed = JSON.parse(stored)
-      // If it's a new week, reset usage
+      // If it's a new week (Monday at 12:00 AM), reset usage
       if (parsed.weekStartDate !== currentWeekStart) {
         const newUsageData = { current: 0, weekStartDate: currentWeekStart }
         setUsageData(newUsageData)
@@ -1393,6 +1394,8 @@ export default function AdCreativeStudioPage() {
         window.dispatchEvent(new CustomEvent('creative-studio-usage-updated', {
           detail: { usage: 0, limit: WEEKLY_LIMIT }
         }))
+        
+
       } else {
         setUsageData(parsed)
       }
@@ -1401,6 +1404,7 @@ export default function AdCreativeStudioPage() {
       const newUsageData = { current: 0, weekStartDate: currentWeekStart }
       setUsageData(newUsageData)
       localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
+
     }
   }, [])
 
