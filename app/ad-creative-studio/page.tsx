@@ -392,7 +392,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     id: 'custom-template',
     name: 'Custom Template',
     description: 'Create your own completely custom template with full prompt control',
-    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEzMykiPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjxwYXRoIGQ9Ik0tMTggLTljMi44IC0uNCA1LjggLTEuNCA3LjggLTMuNSAxLjcgLTEuOCAyLjcgLTQuMyAyLjcgLTYuOCAwIC00IC0zLjIgLTcuMiAtNy4yIC03LjIgLTQgMCAtNy4yIDMuMiAtNy4yIDcuMiAwIDIuNSAxIDUgMi43IDYuOCAyIDIuMSA1IDMuMSA3LjggMy41eiIgZmlsbD0iIzEwQjk4MSIvPjxwYXRoIGQ9Ik0xOCA5Yy0yLjggLjQgLTUuOCAxLjQgLTcuOCAzLjUgLTEuNyAxLjggLTIuNyA0LjMgLTIuNyA2LjggMCA0IDMuMiA3LjIgNy4yIDcuMiA0IDAgNy4yIC0zLjIgNy4yIC03LjIgMCAtMi41IC0xIC01IC0yLjcgLTYuOCAtMiAtMi4xIC01IC0zLjEgLTcuOCAtMy41eiIgZmlsbD0iIzEwQjk4MSIvPjxwYXRoIGQ9Ik05IC0xOGMuNCAyLjggMS40IDUuOCAzLjUgNy44IDEuOCAxLjcgNC4zIDIuNyA2LjggMi43IDQgMCA3LjIgLTMuMiA3LjIgLTcuMiAwIC00IC0zLjIgLTcuMiAtNy4yIC03LjIgLTIuNSAwIC01IDEgLTYuOCAyLjcgLTIuMSAyIC0zLjEgNSAtMy41IDcuOHoiIGZpbGw9IiMxMEI5ODEiLz48cGF0aCBkPSJNLTkgMThjLS40IC0yLjggLTEuNCA1LjggLTMuNSAtNy44IC0xLjggLTEuNyAtNC4zIC0yLjcgLTYuOCAtMi43IC00IDAgLTcuMiAzLjIgLTcuMiA3LjIgMCA0IDMuMiA3LjIgNy4yIDcuMiAyLjUgMCA1IC0xIDYuOCAtMi43IDIuMSAtMiAzLjEgLTUgMy41IC03Ljh6IiBmaWxsPSIjMTBCOTgxIi8+PGNpcmNsZSBjeD0iMCIgY3k9IjAiIHI9IjgiIGZpbGw9IiMxMEI5ODEiLz48L2c+PHRleHQgeD0iMTAwIiB5PSIyMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNBQUEiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNjAwIj5DVVNUT008L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIyNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMxMEI5ODEiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4=',
+    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEzMykiPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjxwYXRoIGQ9Im0tNy41LTIwLjVjLTEuNCwwLjMtMi41LDEuNC0yLjgsMi44bC0wLjcsMy4yYy0xLjUsMC40LTIuOSwxLTQuMiwxLjhsLTIuOC0xLjhjLTEuMy0wLjgtMy4xLTAuNC0zLjksMS0wLjgsMSwwLjQsMywxLDMuOWwxLjgsMi44Yy0wLjgsMS4zLTEuNCwyLjctMS44LDQuMmwtMy4yLDAuN2MtMS40LDAuMy0yLjUsMS40LTIuOCwyLjhjLTAuMywxLjQsMS40LDIuNSwyLjgsMi44bDMuMiwwLjdjMC40LDEuNSwxLDIuOSwxLjgsNC4ybC0xLjgsMi44Yy0wLjgsMS4zLTAuNCwzLjEsMS4xLDMuOSUMMC44LDAuNCwzLDEsNC4zLDEuOGwyLjgtMS44YzEuMywwLjgsMi43LDEuNCw0LjIsMS44bDAuNywzLjJjMC4zLDEuNCwxLjQsMi41LDIuOCwyLjhzMi41LTEuNCwyLjgtMi44bDAuNy0zLjJjMS41LTAuNCwyLjktMSw0LjItMS44bDIuOCwxLjhjMS4zLDAuOCwzLjEsMC40LDMuOS0xLjFzLTAuNC0zLjEtMS4xLTMuOWwtMS44LTIuOGMwLjgtMS4zLDEuNC0yLjcsMS44LTQuMmwzLjItMC43YzEuNC0wLjMsMi41LTEuNCwyLjgtMi44czEuNCwyLjUtMi44LDIuOGwtMy4yLDAuN2MtMC40LTEuNS0xLTIuOS0xLjgtNC4ybDEuOC0yLjhjMC44LTEuMywwLjQtMy4xLTEuMS0zLjlzLTMuMS0wLjQtMy45LDEuMWwtMi44LDEuOGMtMS4zLTAuOC0yLjctMS40LTQuMi0xLjhsLTAuNy0zLjJjLTAuMy0xLjQtMS40LTIuNS0yLjgtMi44eiIgZmlsbD0iIzEwQjk4MSIvPjxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI4IiBmaWxsPSIjMjEyMTIxIi8+PC9nPjx0ZXh0IHg9IjEwMCIgeT0iMjMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjQUFBIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjYwMCI+Q1VTVE9NPC90ZXh0Pjx0ZXh0IHg9IjEwMCIgeT0iMjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMTBCOTgxIiBmb250LXNpemU9IjEyIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+VGVtcGxhdGU8L3RleHQ+PC9zdmc+',
     
     category: 'all',
     goodFor: 'Any product - you have full creative control',
@@ -2952,8 +2952,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     
     let enhancedPrompt: string
     if (templateStyle.id === 'custom-template') {
-      // For custom templates, use the user's complete custom prompt with frame constraints
-      const frameConstraints = ' IMPORTANT: Ensure all content including text, products, and visual elements stay within the creative frame boundaries. Do not allow any elements to clip or extend beyond the edges of the creative canvas. Keep all content properly contained within the visible area.'
+      // For custom templates, use the user's complete custom prompt with strong frame constraints
+      const frameConstraints = ' CRITICAL FRAME REQUIREMENTS: All content must be contained within the creative boundaries. NEVER allow text, products, graphics, or any visual elements to extend beyond or clip outside the canvas edges. Keep generous margins (at least 5% on all sides) from the frame borders. Ensure perfect centering and containment. All elements must fit completely within the visible creative area with no cropping or clipping whatsoever. Scale and position everything to stay well within bounds.'
       enhancedPrompt = customTemplatePrompt.trim() + frameConstraints + textPromptAddition
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
@@ -3207,8 +3207,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     
     let enhancedPrompt: string
     if (modalStyle.id === 'custom-template') {
-      // For custom templates, use the user's complete custom prompt
-      enhancedPrompt = customTemplatePrompt.trim() + textPromptAddition
+      // For custom templates, use the user's complete custom prompt with frame constraints
+      const frameConstraints = ' CRITICAL FRAME REQUIREMENTS: All content must be contained within the creative boundaries. NEVER allow text, products, graphics, or any visual elements to extend beyond or clip outside the canvas edges. Keep generous margins (at least 5% on all sides) from the frame borders. Ensure perfect centering and containment. All elements must fit completely within the visible creative area with no cropping or clipping whatsoever. Scale and position everything to stay well within bounds.'
+      enhancedPrompt = customTemplatePrompt.trim() + frameConstraints + textPromptAddition
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -4720,7 +4721,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               <textarea
                 value={customTemplatePrompt}
                 onChange={(e) => setCustomTemplatePrompt(e.target.value)}
-                placeholder="Enter your detailed prompt here... Describe exactly how you want your product displayed: background, lighting, setting, mood, colors, style, and any specific elements. Example: Display my product on a modern marble countertop in a luxurious kitchen setting with soft natural lighting..."
+                placeholder="Enter your detailed prompt here... Describe exactly how you want your product displayed: background, lighting, setting, mood, colors, style, and any specific elements. IMPORTANT: Keep all elements centered and within frame boundaries. Example: Display my product centered on a modern marble countertop in a luxurious kitchen setting with soft natural lighting, ensuring everything fits perfectly within the creative frame..."
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
