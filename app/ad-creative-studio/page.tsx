@@ -220,7 +220,16 @@ const getClothingSubcategory = (templateId: string) => {
 }
 
 // Creative type definitions for the progressive flow
-const CREATIVE_TYPES = [
+interface CreativeType {
+  id: string
+  name: string
+  description: string
+  icon: string | React.ComponentType<{ className?: string }>
+  subcategories?: string[]
+  hasSubcategories?: boolean
+}
+
+const CREATIVE_TYPES: CreativeType[] = [
   {
     id: 'clothing',
     name: 'Clothing',
@@ -3434,23 +3443,50 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         })
 
         if (saveResponse.ok) {
-
+          const savedCreative = await saveResponse.json()
+          // Update the creative with the actual database ID
+          if (savedCreative.creative?.id) {
+            setGeneratedCreatives(prev => 
+              prev.map(c => c.id === creativeId ? { ...c, id: savedCreative.creative.id } : c)
+            )
+            // Update loaded images with correct ID
+            setLoadedImages(prev => {
+              const updated = { ...prev }
+              delete updated[creativeId]
+              updated[savedCreative.creative.id] = {
+                original: uploadedImageUrl,
+                generated: data.imageUrl
+              }
+              return updated
+            })
+          } else {
+            // If no ID returned, set with original creativeId
+            setLoadedImages(prev => ({
+              ...prev,
+              [creativeId]: {
+                original: uploadedImageUrl,
+                generated: data.imageUrl
+              }
+            }))
+          }
         } else {
-          // Silent error handling
+          // If save fails, remove the creative from frontend state to prevent orphaned entries
+          setGeneratedCreatives(prev => prev.filter(c => c.id !== creativeId))
+          setLoadedImages(prev => {
+            const updated = { ...prev }
+            delete updated[creativeId]
+            return updated
+          })
         }
       } catch (saveError) {
-        // Silent error handling
-        // Don't fail the generation if database save fails
+        // If save fails due to network error, remove from frontend state
+        setGeneratedCreatives(prev => prev.filter(c => c.id !== creativeId))
+        setLoadedImages(prev => {
+          const updated = { ...prev }
+          delete updated[creativeId]
+          return updated
+        })
       }
-      
-      // Immediately set the loaded images to display the result without API call
-      setLoadedImages(prev => ({
-        ...prev,
-        [creativeId]: {
-          original: uploadedImageUrl,
-          generated: data.imageUrl
-        }
-      }))
       
       // Check for quality warnings
       if (data.warning && data.warning.type === 'quality_loss') {
@@ -3792,8 +3828,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[180px] flex flex-col justify-center"
           >
             <div className="text-center">
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                {type.icon}
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+                {typeof type.icon === 'string' ? (
+                  <span>{type.icon}</span>
+                ) : (
+                  <type.icon className="w-10 h-10 text-gray-300" />
+                )}
               </div>
               <h3 className="text-lg font-bold text-white mb-2">{type.name}</h3>
               <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
@@ -4853,7 +4893,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
-                    ? 'bg-gray-800/30 border-gray-600/50 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 20}
@@ -4865,7 +4905,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
+                <div className="absolute bottom-1 left-1 right-1 text-[8px] text-center leading-tight">
                   {usageData.current >= WEEKLY_LIMIT ? (
                     <span className="text-red-400">Limit reached</span>
                   ) : customTemplatePrompt.trim().length < 20 ? (

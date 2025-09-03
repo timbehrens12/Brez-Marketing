@@ -185,7 +185,9 @@ export async function POST(request: NextRequest) {
       // Check if we have a template prompt (customPromptModifiers)
       if (customPromptModifiers && customPromptModifiers.trim().length > 0) {
         // Use template-based generation - prioritize the template prompt over product description
-        prompt = `${customPromptModifiers} PRODUCT DETAILS: ${productDescription}`;
+        prompt = `${customPromptModifiers} PRODUCT DETAILS: ${productDescription}
+
+CRITICAL TEXT FITTING REQUIREMENT: Ensure ALL text elements (product text, overlays, labels, etc.) are PROPERLY SIZED and positioned to FIT COMPLETELY within the image boundaries. Never allow text to clip, cut off, or extend beyond the visible frame. Scale text appropriately to the composition and maintain readability while ensuring complete visibility. All text must be fully contained within the image dimensions.`;
         console.log('📝 Using template-based prompt from customPromptModifiers');
       } else {
         // Fallback to background preset for basic generation
