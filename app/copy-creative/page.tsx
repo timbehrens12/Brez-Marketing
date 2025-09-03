@@ -20,7 +20,7 @@ import {
   ChevronLeft
 } from 'lucide-react'
 import { GridOverlay } from '@/components/GridOverlay'
-import { useBrandContext } from '@/contexts/BrandContext'
+import { useBrandContext } from '@/lib/context/BrandContext'
 
 interface CopyCreative {
   id: string
