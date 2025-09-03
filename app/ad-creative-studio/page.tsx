@@ -4139,7 +4139,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
@@ -4347,7 +4347,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
@@ -4821,7 +4821,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative border ${
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
