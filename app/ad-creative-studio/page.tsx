@@ -3813,30 +3813,35 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     )
 
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <Button
-              onClick={() => {
-                // Only go to clothing-subcategory if we actually selected a clothing subtype
-                if (selectedClothingSubType) {
-                  setCurrentStep('clothing-subcategory')
-                } else {
-                  setCurrentStep('creative-type')
-                }
-              }}
-              variant="ghost"
-              className="text-gray-400 hover:text-white"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Back to Creative Type
-            </Button>
+      <div className="max-w-7xl mx-auto h-full flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                onClick={() => {
+                  // Only go to clothing-subcategory if we actually selected a clothing subtype
+                  if (selectedClothingSubType) {
+                    setCurrentStep('clothing-subcategory')
+                  } else {
+                    setCurrentStep('creative-type')
+                  }
+                }}
+                variant="ghost"
+                className="text-gray-400 hover:text-white"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Back to Creative Type
+              </Button>
+            </div>
+            <h2 className="text-4xl font-bold text-white mb-4">Choose Template</h2>
+            <p className="text-gray-300 text-lg">Select a template for your {selectedType.name.toLowerCase()}</p>
           </div>
-          <h2 className="text-4xl font-bold text-white mb-4">Choose Template</h2>
-          <p className="text-gray-300 text-lg">Select a template for your {selectedType.name.toLowerCase()}</p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto pr-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
           {availableTemplates.map((template) => (
             <div
               key={template.id}
@@ -3859,6 +3864,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
     )
