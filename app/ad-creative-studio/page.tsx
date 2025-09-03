@@ -1227,7 +1227,7 @@ export default function AdCreativeStudioPage() {
           setCollageUrl(collage)
           toast.success(`Image removed. ${newImages.length} images remaining.`)
         }).catch(error => {
-          console.error('Error regenerating collage:', error)
+          // Silent error handling
           toast.error('Image removed but failed to update collage')
         })
       }
@@ -1470,7 +1470,7 @@ export default function AdCreativeStudioPage() {
         }
         
       } catch (error) {
-        console.error('Error loading creatives:', error)
+        // Silent error handling
         toast.error('Failed to load previous creatives')
         setGeneratedCreatives([])
       } finally {
@@ -1581,7 +1581,7 @@ export default function AdCreativeStudioPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Delete API error:', errorData)
+        // Silent error handling
         throw new Error(`Failed to delete creative: ${errorData.error || 'Unknown error'}`)
       }
 
@@ -1615,7 +1615,7 @@ export default function AdCreativeStudioPage() {
 
       toast.success('Creative deleted successfully!')
     } catch (error) {
-      console.error('❌ Error deleting creative:', error)
+      // Silent error handling
       toast.error('Failed to delete creative')
     }
   }
@@ -1700,7 +1700,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
         if (!response.ok) {
           const errorData = await response.json()
-          console.error('❌ Multi-product generation failed:', errorData)
+          // Silent error handling
           reject(new Error(errorData.error || 'Failed to generate multi-product creative'))
           return
         }
@@ -1710,7 +1710,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         resolve(data.imageUrl)
 
       } catch (error) {
-        console.error('❌ Error in multi-product generation:', error)
+        // Silent error handling
         reject(error)
       }
     })
@@ -1970,7 +1970,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       setShowCropModal(false)
       toast.success('Image cropped successfully!')
     } catch (error) {
-      console.error('Crop error:', error)
+      // Silent error handling
       toast.error('Failed to crop image')
     }
   }
@@ -2050,7 +2050,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
       toast.success('Creative deleted successfully!')
     } catch (error) {
-      console.error('Error deleting creative:', error)
+      // Silent error handling
       toast.error('Failed to delete creative')
     }
   }
@@ -2280,7 +2280,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ API Error Response:', errorText)
+        // Silent error handling
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
 
@@ -2301,22 +2301,22 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           })
         }
       } else {
-        // console.log('❌ Generation failed, data:', data)
+        // Silent error handling
         updateCreativeStatus(actualRetryId, 'failed')
         toast.error(data.error || 'Generation failed - no image URL returned')
       }
     } catch (error) {
-      console.error('❌ Error during retry generation:', error)
+      // Silent error handling
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       const errorName = error instanceof Error ? error.name : ''
       
       if (errorName === 'AbortError') {
-        console.error('🕒 Request timed out after 2 minutes')
+        // Silent error handling
         updateCreativeStatus(actualRetryId, 'failed')
         toast.error('Generation timed out - please try again')
       } else if (errorMessage.includes('Failed to fetch')) {
-        console.error('🌐 Network error - API might be down')
+        // Silent error handling
         updateCreativeStatus(actualRetryId, 'failed')
         toast.error('Network error - please check your connection')
       } else {
@@ -2406,7 +2406,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       setRetryImage(null) // Clear retry image after successful generation
       toast.success(`Retry successful! Issue addressed: ${issue.label}`)
     } catch (error) {
-      console.error('Error retrying generation:', error)
+      // Silent error handling
       updateCreativeStatus(newCreativeId, 'failed')
       setRetryImage(null) // Clear retry image on error
       toast.error('Retry failed. Please try again.')
@@ -2609,7 +2609,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             reader.readAsDataURL(blob)
           })
         } catch (error) {
-          console.error('Failed to fetch image:', error)
+          // Silent error handling
           toast.error('Failed to load image')
           return
         }
@@ -2656,7 +2656,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       }
 
     } catch (error) {
-      console.error('Text editing error:', error)
+      // Silent error handling
       toast.error('Failed to edit text')
     }
   }
@@ -2830,7 +2830,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         setCollageUrl(collage)
         toast.success(`${allImages.length} images total! Collage updated.`)
       } catch (error) {
-        console.error('Error generating collage:', error)
+        // Silent error handling
         toast.error('Failed to generate collage')
       }
     }
@@ -3002,7 +3002,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           if (saveResponse.ok) {
   
           } else {
-            console.error('❌ Failed to save multi-product creative to database')
+            // Silent error handling
           }
 
           // Update usage
@@ -3021,7 +3021,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           setActiveTab('generated')
 
         } catch (generationError) {
-          console.error('❌ Error generating multi-product creative:', generationError)
+          // Silent error handling
           updateCreativeStatus(creativeId, 'failed')
           toast.error('Failed to generate multi-product creative')
         }
@@ -3064,8 +3064,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ API Error Response:', errorData)
-        console.error('❌ Response Status:', response.status, response.statusText)
+        // Silent error handling
         updateCreativeStatus(creativeId, 'failed')
         toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         return
@@ -3107,7 +3106,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       if (saveResponse.ok) {
         
       } else {
-        console.error('❌ Failed to save creative to database')
+        // Silent error handling
       }
 
       // Update usage
@@ -3121,7 +3120,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       toast.success('Creative generated successfully!')
 
     } catch (error) {
-      console.error('❌ Error generating creative:', error)
+      // Silent error handling
       updateCreativeStatus(creativeId, 'failed')
       toast.error('Failed to generate creative. Please try again.')
     } finally {
@@ -3265,12 +3264,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             })
 
             if (!saveResponse.ok) {
-              console.error('❌ Failed to save multi-product creative to database:', await saveResponse.text())
+              // Silent error handling
             } else {
   
             }
           } catch (saveError) {
-            console.error('❌ Error saving multi-product creative to database:', saveError)
+            // Silent error handling
           }
 
           // Update the UI with the generated image
@@ -3293,7 +3292,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           setActiveTab('generated')
 
         } catch (generationError) {
-          console.error('❌ Error generating multi-product creative:', generationError)
+          // Silent error handling
           updateCreativeStatus(creativeId, 'failed')
           toast.error('Failed to generate multi-product creative')
         }
@@ -3361,8 +3360,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ API Error Response:', errorData)
-        console.error('❌ Response Status:', response.status, response.statusText)
+        // Silent error handling
         updateCreativeStatus(creativeId, 'failed')
         toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         return
@@ -3406,10 +3404,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         if (saveResponse.ok) {
 
         } else {
-          console.error('❌ Failed to save creative to database:', await saveResponse.text())
+          // Silent error handling
         }
       } catch (saveError) {
-        console.error('❌ Error saving creative to database:', saveError)
+        // Silent error handling
         // Don't fail the generation if database save fails
       }
       
@@ -3432,7 +3430,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       
       toast.success(`🎨 Image generated successfully!`);
     } catch (error) {
-      console.error('Error generating image:', error)
+      // Silent error handling
       updateCreativeStatus(creativeId, 'failed')
       
       // Check if it's an image size error
