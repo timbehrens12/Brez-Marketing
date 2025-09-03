@@ -1122,8 +1122,11 @@ export default function AdCreativeStudioPage() {
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
+    limit: 50,
+    remaining: 50,
     weekStartDate: ''
   })
+  const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   
   // Generated creatives and library state
   const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
@@ -1377,53 +1380,64 @@ export default function AdCreativeStudioPage() {
     return daysUntilMonday
   }
 
-  // Initialize usage data from localStorage with proper weekly reset
-  useEffect(() => {
-    const currentWeekStart = getCurrentWeekStart()
-    const stored = localStorage.getItem('ad-creative-usage')
-    
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      // If it's a new week (Monday at 12:00 AM), reset usage
-      if (parsed.weekStartDate !== currentWeekStart) {
-        const newUsageData = { current: 0, weekStartDate: currentWeekStart }
-        setUsageData(newUsageData)
-        localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
+  // Fetch real usage data from database
+  const fetchUsageData = async () => {
+    try {
+      setIsLoadingUsage(true)
+      const response = await fetch('/api/creative-usage')
+      if (response.ok) {
+        const data = await response.json()
+        setUsageData(data.usage)
         
-        // Dispatch event to notify other components about usage reset
+        // Dispatch event to notify other components about usage
         window.dispatchEvent(new CustomEvent('creative-studio-usage-updated', {
-          detail: { usage: 0, limit: WEEKLY_LIMIT }
+          detail: { usage: data.usage.current, limit: data.usage.limit }
         }))
-        
-
       } else {
-        setUsageData(parsed)
+        // Fallback to default if API fails
+        setUsageData({
+          current: 0,
+          limit: 50,
+          remaining: 50,
+          weekStartDate: getCurrentWeekStart()
+        })
       }
-    } else {
-      // First time, initialize
-      const newUsageData = { current: 0, weekStartDate: currentWeekStart }
-      setUsageData(newUsageData)
-      localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
-
+    } catch (error) {
+      // Silent error handling - fallback to default
+      setUsageData({
+        current: 0,
+        limit: 50,
+        remaining: 50,
+        weekStartDate: getCurrentWeekStart()
+      })
+    } finally {
+      setIsLoadingUsage(false)
     }
+  }
+
+  // Initialize usage data from database
+  useEffect(() => {
+    fetchUsageData()
   }, [])
 
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
-  // Function to update usage count
-  const incrementUsage = () => {
-    const newUsageData = {
-      ...usageData,
-      current: Math.min(usageData.current + 1, WEEKLY_LIMIT)
+  // Function to refresh usage count from database
+  const refreshUsage = async () => {
+    try {
+      const response = await fetch('/api/creative-usage')
+      if (response.ok) {
+        const data = await response.json()
+        setUsageData(data.usage)
+        
+        // Dispatch event to notify other components about usage update
+        window.dispatchEvent(new CustomEvent('creative-studio-usage-updated', {
+          detail: { usage: data.usage.current, limit: data.usage.limit }
+        }))
+      }
+    } catch (error) {
+      // Silent error handling
     }
-    setUsageData(newUsageData)
-    localStorage.setItem('ad-creative-usage', JSON.stringify(newUsageData))
-    
-    // Dispatch event to notify other components about usage update
-    window.dispatchEvent(new CustomEvent('creative-studio-usage-updated', {
-      detail: { usage: newUsageData.current, limit: WEEKLY_LIMIT }
-    }))
-    // console.log('✅ Usage incremented to:', newUsageData.current)
   }
 
 
@@ -2402,7 +2416,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
       const data = await response.json()
       updateCreativeStatus(newCreativeId, 'completed', data.imageUrl)
-      incrementUsage() // Increment usage count on successful retry
+      await refreshUsage() // Refresh usage count from database
       setRetryImage(null) // Clear retry image after successful generation
       toast.success(`Retry successful! Issue addressed: ${issue.label}`)
     } catch (error) {
@@ -2640,7 +2654,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       if (data.imageUrl) {
         // Update the creative with the generated image
         updateCreativeStatus(textEditId, 'completed', data.imageUrl)
-        incrementUsage() // Increment usage count on successful text editing
+        await refreshUsage() // Refresh usage count from database
         toast.success('Text edited successfully!')
       } else {
         updateCreativeStatus(textEditId, 'failed')
@@ -3005,13 +3019,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             // Silent error handling
           }
 
-          // Update usage
-          const newUsage = usageData.current + 1
-          setUsageData(prev => ({ ...prev, current: newUsage }))
-          localStorage.setItem('ad-creative-usage', JSON.stringify({
-            current: newUsage,
-            weekStartDate: usageData.weekStartDate
-          }))
+          // Refresh usage from database
+          await refreshUsage()
 
           // Clear the uploaded images after successful generation
           setUploadedImages([])
@@ -3109,13 +3118,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         // Silent error handling
       }
 
-      // Update usage
-      const newUsage = usageData.current + 1
-      setUsageData(prev => ({ ...prev, current: newUsage }))
-      localStorage.setItem('ad-creative-usage', JSON.stringify({
-        current: newUsage,
-        weekStartDate: usageData.weekStartDate
-      }))
+      // Refresh usage from database
+      await refreshUsage()
 
       toast.success('Creative generated successfully!')
 
@@ -3282,7 +3286,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           }))
 
           toast.success(`🎨 Generated multi-product creative with ${uploadedImages.length} items!`)
-          incrementUsage()
+          await refreshUsage()
 
           // Clear the uploaded images after successful generation
           setUploadedImages([])
@@ -3371,7 +3375,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       // console.log('🖼️ Generated image URL length:', data.imageUrl?.length || 'no imageUrl')
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
-      incrementUsage() // Increment usage count on successful generation
+      await refreshUsage() // Refresh usage count from database
 
       // Save the creative to the database
       try {
