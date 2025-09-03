@@ -1136,6 +1136,7 @@ export default function AdCreativeStudioPage() {
     weekStartDate: ''
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
+  const [deletingCreativeId, setDeletingCreativeId] = useState<string | null>(null)
   
   // Generated creatives and library state
   const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([])
@@ -2074,6 +2075,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Delete creative function - handles creative deletion
   const handleDeleteCreative = async (creativeId: string) => {
+    setDeletingCreativeId(creativeId)
     try {
       const response = await fetch(`/api/creative-generations?id=${creativeId}`, {
         method: 'DELETE',
@@ -2103,6 +2105,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     } catch (error) {
       // Silent error handling
       toast.error('Failed to delete creative')
+    } finally {
+      setDeletingCreativeId(null)
     }
   }
 
@@ -4648,8 +4652,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                       variant="outline"
                       className="border-[#333] hover:border-red-500 text-gray-300 hover:text-red-400"
                       onClick={() => handleDeleteCreative(creative.id)}
+                      disabled={deletingCreativeId === creative.id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingCreativeId === creative.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -4661,9 +4670,18 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     </div>
   )
 
-  const renderCustomTemplatePromptStep = () => (
-    <div className="pt-[20px] max-w-6xl mx-auto">
-      {/* Header */}
+  const renderCustomTemplatePromptStep = () => {
+    // Set the custom template as selected when this step is rendered
+    React.useEffect(() => {
+      const customTemplate = STYLE_OPTIONS.find(s => s.id === 'custom-template')
+      if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
+        setSelectedTemplate(customTemplate)
+      }
+    }, [])
+
+    return (
+      <div className="pt-[20px] max-w-6xl mx-auto">
+        {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => setCurrentStep('creative-type')}
@@ -4905,7 +4923,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-1 left-1 right-1 text-[8px] text-center leading-tight">
+                <div className="absolute bottom-1 left-0 right-0 text-[8px] text-center leading-tight px-1">
                   {usageData.current >= WEEKLY_LIMIT ? (
                     <span className="text-red-400">Limit reached</span>
                   ) : customTemplatePrompt.trim().length < 20 ? (
@@ -4920,7 +4938,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
       </div>
     </div>
-  )
+    )
+  }
 
   const renderCurrentStep = () => {
     switch (currentStep) {
