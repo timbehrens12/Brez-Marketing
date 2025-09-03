@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -5036,6 +5036,17 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   <p className="text-xs text-gray-400">
                     {WEEKLY_LIMIT - usageData.current} remaining this week
                   </p>
+                </div>
+
+                {/* Copy Creative Button */}
+                <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-5 w-[84px] h-[100px] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-white/20 transition-colors"
+                     onClick={() => window.open('/copy-creative', '_blank')}
+                >
+                  <Copy className="w-6 h-6" />
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-300">Copy</div>
+                    <div className="text-xs text-gray-400">Creative</div>
+                  </div>
                 </div>
 
                 {/* Library Button */}
