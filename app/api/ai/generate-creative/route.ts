@@ -129,6 +129,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate example creative file type if provided
+    if (exampleCreativeFile && !exampleCreativeFile.type.startsWith('image/')) {
+      return NextResponse.json(
+        { error: 'Invalid example creative file type. Please upload an image file.' },
+        { status: 400 }
+      );
+    }
+
     // Get the base prompt for the selected background
     const backgroundPreset = BACKGROUND_PRESETS[backgroundType as keyof typeof BACKGROUND_PRESETS];
     if (!backgroundPreset) {
@@ -141,10 +149,46 @@ export async function POST(request: NextRequest) {
     console.log('🎨 Generating creative with Gemini Flash 2.5...');
     console.log('📦 Image file:', imageFile.name, imageFile.size, 'bytes');
 
-    // Step 1: Analyze the uploaded image to get a detailed description
-    const imageBuffer = await imageFile.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
-    const imageDataUrl = `data:${imageFile.type};base64,${base64Image}`;
+    // Helper function to convert unsupported formats to JPEG
+    const convertToSupportedFormat = async (file: File): Promise<{ buffer: Buffer, mimeType: string }> => {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      
+      // Check if format is supported by Gemini (JPEG, PNG, WebP, HEIC, HEIF)
+      const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+      
+      if (supportedTypes.includes(file.type)) {
+        return { buffer, mimeType: file.type };
+      }
+      
+      console.log(`🔄 Converting ${file.type} to JPEG for Gemini compatibility...`);
+      
+      // Convert unsupported formats (like AVIF) to JPEG using Sharp
+      const convertedBuffer = await sharp(buffer)
+        .jpeg({ quality: 95 })
+        .toBuffer();
+        
+      return { buffer: convertedBuffer, mimeType: 'image/jpeg' };
+    };
+
+    // Step 1: Convert images to supported formats if needed
+    const { buffer: imageBuffer, mimeType: imageMimeType } = await convertToSupportedFormat(imageFile);
+    const base64Image = imageBuffer.toString('base64');
+    const imageDataUrl = `data:${imageMimeType};base64,${base64Image}`;
+
+    // Convert example creative if provided
+    let exampleBuffer: Buffer | null = null;
+    let exampleMimeType: string | null = null;
+    let exampleBase64: string | null = null;
+    
+    if (exampleCreativeFile) {
+      const convertedExample = await convertToSupportedFormat(exampleCreativeFile);
+      exampleBuffer = convertedExample.buffer;
+      exampleMimeType = convertedExample.mimeType;
+      exampleBase64 = exampleBuffer.toString('base64');
+      console.log('📋 Example creative converted to:', exampleMimeType);
+    }
+
+    // Step 2: Analyze the uploaded image to get a detailed description
 
     console.log('🔍 Analyzing uploaded image with Gemini 2.5 Flash Image...');
 
@@ -167,7 +211,7 @@ export async function POST(request: NextRequest) {
       "Analyze this product image and provide a detailed description that captures all the important visual details including: colors, patterns, text/logos, fabric texture, shape, style, and any distinctive features. Be very specific and detailed as this will be used to recreate the product in a new setting.",
       {
         inlineData: {
-          mimeType: imageFile.type,
+          mimeType: imageMimeType,
           data: base64Image
         }
       }
@@ -233,20 +277,18 @@ ${backgroundPreset.prompt}`;
       // Add the primary image
       contentArray.push({
         inlineData: {
-          mimeType: imageFile.type,
+          mimeType: imageMimeType,
           data: base64Image
         }
       });
 
       // Add example creative image for copy generation
-      if (exampleCreativeFile) {
+      if (exampleCreativeFile && exampleBase64 && exampleMimeType) {
         console.log('📋 Adding example creative for copy generation...');
-        const exampleBuffer = await exampleCreativeFile.arrayBuffer();
-        const exampleBase64 = Buffer.from(exampleBuffer).toString('base64');
         
         contentArray.push({
           inlineData: {
-            mimeType: exampleCreativeFile.type,
+            mimeType: exampleMimeType,
             data: exampleBase64
           }
         });
@@ -276,6 +318,9 @@ ${backgroundPreset.prompt}`;
       }
 
       console.log(`🚀 Sending ${contentArray.length - 1} images to Gemini for generation`);
+      console.log('📋 Content array structure:', contentArray.map((item, i) => 
+        i === 0 ? 'prompt' : `image-${i} (${item.inlineData?.mimeType})`
+      ));
       const imageGenerationResult = await imageModel.generateContent(contentArray);
 
       // Extract the generated image from the response
