@@ -398,15 +398,50 @@ ${backgroundPreset.prompt}`;
           
           console.log(`🎯 Target dimensions: ${targetWidth}x${targetHeight}`);
           
-          // Resize image to exact dimensions with smart cropping
-          const resizedImageBuffer = await sharp(imageBuffer)
-            .resize(targetWidth, targetHeight, {
-              fit: 'cover', // This maintains aspect ratio and crops if needed
-              position: 'center', // Center the crop
-              background: { r: 255, g: 255, b: 255, alpha: 1 } // White background for any padding
-            })
-            .png() // Ensure PNG output
-            .toBuffer();
+          // Check original image dimensions
+          const metadata = await sharp(imageBuffer).metadata();
+          console.log(`📐 Original image dimensions: ${metadata.width}x${metadata.height}`);
+          
+          let resizedImageBuffer;
+          
+          if (metadata.width && metadata.height) {
+            const originalAspectRatio = metadata.width / metadata.height;
+            const targetAspectRatio = targetWidth / targetHeight;
+            
+            if (Math.abs(originalAspectRatio - targetAspectRatio) > 0.1) {
+              // Image aspect ratio is very different - use letterboxing for portrait format
+              console.log('🎬 Adding letterboxing to maintain content visibility');
+              
+              resizedImageBuffer = await sharp(imageBuffer)
+                .resize(targetWidth, targetHeight, {
+                  fit: 'contain', // Fit entire image inside dimensions
+                  position: 'center',
+                  background: { r: 0, g: 0, b: 0, alpha: 1 } // Black letterbox bars
+                })
+                .png()
+                .toBuffer();
+            } else {
+              // Similar aspect ratio - use smart cropping
+              resizedImageBuffer = await sharp(imageBuffer)
+                .resize(targetWidth, targetHeight, {
+                  fit: 'cover', // This maintains aspect ratio and crops if needed
+                  position: 'center', // Center the crop
+                  background: { r: 255, g: 255, b: 255, alpha: 1 } // White background for any padding
+                })
+                .png() // Ensure PNG output
+                .toBuffer();
+            }
+          } else {
+            // Fallback to cover if metadata is unavailable
+            resizedImageBuffer = await sharp(imageBuffer)
+              .resize(targetWidth, targetHeight, {
+                fit: 'cover',
+                position: 'center',
+                background: { r: 255, g: 255, b: 255, alpha: 1 }
+              })
+              .png()
+              .toBuffer();
+          }
           
           // Convert back to base64
           const resizedBase64 = resizedImageBuffer.toString('base64');

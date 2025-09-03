@@ -5043,13 +5043,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
         
         {/* Widget Layout */}
-        <div className="mt-2">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="mt-2 h-[600px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
             {/* Left Column: Stacked widgets */}
-            <div className="lg:col-span-11 space-y-3">
+            <div className="lg:col-span-11 flex flex-col gap-3 h-full">
               
               {/* Example Creative Upload Widget */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[200px]">
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[70%]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
                     <ImageIcon className="w-4 h-4 text-white" />
@@ -5110,7 +5110,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               </div>
 
               {/* Additional Instructions Widget */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[30%]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">+</span>
@@ -5129,7 +5129,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             </div>
 
             {/* Right Column: Generate Button */}
-            <div className="lg:col-span-1 flex flex-col">
+            <div className="lg:col-span-1 flex flex-col h-full">
               <Button
                 onClick={async () => {
                   if (!exampleCreativeImage) {
@@ -5286,18 +5286,18 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-8 z-30">
-                  <div className="flex items-center gap-3">
+                <div className="absolute top-1 right-2 lg:right-8 z-30">
+                  <div className="flex items-center gap-1 lg:gap-3 flex-wrap justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
                       className="relative"
                       onMouseEnter={() => setShowProductPopup(true)}
                       onMouseLeave={() => setShowProductPopup(false)}
                     >
-                      <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[120px] h-[120px]">
+                      <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[80px] lg:w-[120px] h-[80px] lg:h-[120px]">
                         <div className="text-center space-y-1">
                           <span className="text-xs text-gray-400 font-medium">YOUR PRODUCT</span>
-                          <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a]">
+                          <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a]">
                             <img
                               src={collageUrl || uploadedImageUrl || uploadedImageUrls[0]}
                               alt="Uploaded product"
@@ -5404,17 +5404,17 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                         <div className="text-gray-400">
                           <ChevronRight className="w-5 h-5" />
                         </div>
-                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[120px] h-[120px]">
+                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[80px] lg:w-[120px] h-[80px] lg:h-[120px]">
                           <div className="text-center h-full flex flex-col">
                             <span className="text-xs text-gray-400 font-medium mb-1">TEMPLATE</span>
-                            <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                            <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                               <img
                                 src={selectedTemplate.thumbnail}
                                 alt={selectedTemplate.name}
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <div className="text-xs text-blue-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
+                            <div className="text-xs text-gray-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
                               <span className="truncate max-w-full">{selectedTemplate.name}</span>
                             </div>
                           </div>
@@ -5424,17 +5424,17 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                         {currentStep === 'copy-creative-setup' && exampleCreativeUrl && (
                           <>
                             <ChevronRight className="w-4 h-4 text-gray-400" />
-                            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[120px] h-[120px]">
+                            <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[80px] lg:w-[120px] h-[80px] lg:h-[120px]">
                               <div className="text-center h-full flex flex-col">
                                 <span className="text-xs text-gray-400 font-medium mb-1">EXAMPLE</span>
-                                <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                                <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                                   <img
                                     src={exampleCreativeUrl}
                                     alt="Example creative"
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
-                                <div className="text-xs text-purple-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
+                                <div className="text-xs text-gray-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
                                   <span className="truncate max-w-full">Copy Style</span>
                                 </div>
                               </div>
