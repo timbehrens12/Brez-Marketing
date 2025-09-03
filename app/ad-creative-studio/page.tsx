@@ -2744,8 +2744,15 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       
       // console.log('✅ Images loaded for creative:', creativeId)
     } catch (error) {
-      console.error('Error loading creative images:', error)
-      toast.error('Failed to load creative images')
+      // Silently handle errors - don't spam console or show error toasts
+      // Mark as "loaded" with empty state to prevent retry attempts
+      setLoadedImages(prev => ({
+        ...prev,
+        [creativeId]: {
+          original: '',
+          generated: ''
+        }
+      }))
     } finally {
       setLoadingImages(prev => {
         const newSet = new Set(prev)
@@ -4743,12 +4750,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 </div>
                 Pro Tips
               </h3>
-              <div className="text-xs text-gray-300 space-y-1 overflow-y-auto" style={{ height: 'calc(100% - 3.5rem)' }}>
-                <div>• <strong>Be specific about setting:</strong> "modern kitchen" → "minimalist white kitchen with marble countertops"</div>
-                <div>• <strong>Describe lighting:</strong> "soft natural light," "dramatic spotlighting," "golden hour sunlight"</div>
-                <div>• <strong>Include mood/style:</strong> "luxury," "cozy," "professional," "artistic," "industrial"</div>
-                <div>• <strong>Mention materials:</strong> "warm wood tones," "cool metal surfaces," "earth tones"</div>
-                <div>• <strong>Add context:</strong> props, accessories, or complementary items that enhance your product</div>
+              <div className="text-xs text-gray-300 space-y-1" style={{ height: 'calc(100% - 3.5rem)' }}>
+                <div>• <strong>Be specific:</strong> "modern kitchen" → "minimalist white kitchen with marble countertops"</div>
+                <div>• <strong>Describe lighting:</strong> "soft natural light," "dramatic spotlighting," "golden hour"</div>
+                <div>• <strong>Include mood:</strong> "luxury," "cozy," "professional," "artistic," "industrial"</div>
+                <div>• <strong>Mention materials:</strong> "warm wood," "cool metal," "earth tones"</div>
+                <div>• <strong>Add context:</strong> props, accessories that enhance your product</div>
               </div>
             </div>
           </div>
@@ -4769,6 +4776,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   }
 
                   try {
+                    // Clear any previous generation state
+                    setIsGenerating(false)
+                    
                     // Set the custom template as selected
                     setSelectedTemplate(STYLE_OPTIONS.find(s => s.id === 'custom-template')!)
                     
