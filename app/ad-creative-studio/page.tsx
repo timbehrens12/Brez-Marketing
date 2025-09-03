@@ -5048,7 +5048,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         </div>
         
         {/* Widget Layout */}
-        <div className="mt-2 h-[420px]">
+        <div className="mt-2 h-[520px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
             {/* Left Column: Stacked widgets */}
             <div className="lg:col-span-11 flex flex-col gap-3 h-full">
@@ -5064,7 +5064,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 
                 {!exampleCreativeUrl ? (
                   <div 
-                    className="border-2 border-dashed border-[#444] rounded-lg h-[250px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
+                    className="border-2 border-dashed border-[#444] rounded-lg h-[320px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
                     onClick={() => document.getElementById('example-creative-upload')?.click()}
                     onDrop={(e) => {
                       e.preventDefault()
@@ -5080,7 +5080,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     </p>
                   </div>
                 ) : (
-                  <div className="relative h-[250px] rounded-lg overflow-hidden border border-[#444]">
+                  <div className="relative h-[320px] rounded-lg overflow-hidden border border-[#444]">
                     <img 
                       src={exampleCreativeUrl} 
                       alt="Example creative" 
