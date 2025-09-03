@@ -5064,7 +5064,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                 
                 {!exampleCreativeUrl ? (
                   <div 
-                    className="border-2 border-dashed border-[#444] rounded-lg flex-1 flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
+                    className="border-2 border-dashed border-[#444] rounded-lg h-[230px] flex flex-col items-center justify-center cursor-pointer hover:border-[#555] transition-colors"
                     onClick={() => document.getElementById('example-creative-upload')?.click()}
                     onDrop={(e) => {
                       e.preventDefault()
@@ -5080,7 +5080,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     </p>
                   </div>
                 ) : (
-                  <div className="relative flex-1 rounded-lg overflow-hidden border border-[#444]">
+                  <div className="relative h-[230px] rounded-lg overflow-hidden border border-[#444]">
                     <img 
                       src={exampleCreativeUrl} 
                       alt="Example creative" 
