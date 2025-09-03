@@ -1535,9 +1535,18 @@ export default function AdCreativeStudioPage() {
 
   // Functions for managing creatives
   const addCreative = (creative: Omit<GeneratedCreative, 'id' | 'created_at'>) => {
+    // Generate a proper UUID for database compatibility
+    const generateUUID = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+    
     const newCreative: GeneratedCreative = {
       ...creative,
-      id: Date.now().toString(),
+      id: generateUUID(),
       created_at: new Date().toISOString()
     }
     setGeneratedCreatives(prev => [newCreative, ...prev])
