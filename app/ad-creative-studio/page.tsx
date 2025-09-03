@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -1117,13 +1117,13 @@ export default function AdCreativeStudioPage() {
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
-  // Weekly usage system - 50 generations per week (universal)
-  const WEEKLY_LIMIT = 50
+  // Weekly usage system - 75 generations per week (universal)
+  const WEEKLY_LIMIT = 75
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
-    limit: 50,
-    remaining: 50,
+    limit: 75,
+    remaining: 75,
     weekStartDate: ''
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
@@ -1406,8 +1406,8 @@ export default function AdCreativeStudioPage() {
       // Silent error handling - fallback to default
       setUsageData({
         current: 0,
-        limit: 50,
-        remaining: 50,
+        limit: 75,
+        remaining: 75,
         weekStartDate: getCurrentWeekStart()
       })
     } finally {
@@ -4139,15 +4139,27 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className="bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] px-4 py-6 font-semibold rounded-lg transition-all hover:scale-105 flex flex-col items-center justify-center w-20 h-full relative"
-                disabled={isGenerating}
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                  usageData.current >= WEEKLY_LIMIT
+                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                }`}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
+                ) : usageData.current >= WEEKLY_LIMIT ? (
+                  <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-gray-500 text-center leading-none">Click to generate</div>
+                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
+                  {usageData.current >= WEEKLY_LIMIT ? (
+                    <span className="text-red-400">Limit reached</span>
+                  ) : (
+                    <span className="text-gray-500">Click to generate</span>
+                  )}
+                </div>
               </Button>
             </div>
           </div>
@@ -4335,21 +4347,33 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className="bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] px-4 py-6 font-semibold rounded-lg transition-all hover:scale-105 flex flex-col items-center justify-center w-20 h-full relative"
-                disabled={isGenerating}
-              >
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                  usageData.current >= WEEKLY_LIMIT
+                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                }`}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
+                            >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
+                ) : usageData.current >= WEEKLY_LIMIT ? (
+                  <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-gray-500 text-center leading-none">Click to generate</div>
+                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
+                  {usageData.current >= WEEKLY_LIMIT ? (
+                    <span className="text-red-400">Limit reached</span>
+                  ) : (
+                    <span className="text-gray-500">Click to generate</span>
+                  )}
+                </div>
               </Button>
             </div>
           </div>
         </div>
       )}
-      </div>
+    </div>
     </div>
   )
 
@@ -4797,15 +4821,31 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                     toast.error('Failed to generate creative. Please try again.')
                   }
                 }}
-                className="bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] px-4 py-6 font-semibold rounded-lg transition-all hover:scale-105 flex flex-col items-center justify-center w-20 h-full relative"
-                disabled={isGenerating || customTemplatePrompt.trim().length < 20}
+                className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-20 h-full relative ${
+                  usageData.current >= WEEKLY_LIMIT
+                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    : customTemplatePrompt.trim().length < 20
+                    ? 'bg-gray-800/30 border-gray-600/50 text-gray-500 cursor-not-allowed'
+                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border border-[#444] hover:border-[#555] hover:scale-105'
+                }`}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 20}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
+                ) : usageData.current >= WEEKLY_LIMIT ? (
+                  <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-gray-500 text-center leading-none">Click to generate</div>
+                <div className="absolute bottom-2 left-0 right-0 text-[9px] text-center leading-none">
+                  {usageData.current >= WEEKLY_LIMIT ? (
+                    <span className="text-red-400">Limit reached</span>
+                  ) : customTemplatePrompt.trim().length < 20 ? (
+                    <span className="text-gray-500">Enter prompt</span>
+                  ) : (
+                    <span className="text-gray-500">Click to generate</span>
+                  )}
+                </div>
               </Button>
             </div>
           </div>
