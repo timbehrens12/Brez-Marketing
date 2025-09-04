@@ -3031,70 +3031,54 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `CRITICAL: Generate a PORTRAIT AD (1024x1536px) with STRICT positioning rules.
+      enhancedPrompt = `🔴 EMERGENCY: AI KEEPS CLIPPING TEXT AT TOP! OVERRIDE WITH MATHEMATICAL LOCKS.
 
-🚨 ABSOLUTE POSITIONING REQUIREMENTS (NO EXCEPTIONS):
+CANVAS: 1024×1536 PORTRAIT - MATHEMATICAL POSITIONING ONLY
 
-CANVAS LAYOUT MAP:
-┌─────────────────────────────────────┐ y=0 (TOP EDGE)
-│         FORBIDDEN ZONE (400px)       │
-├─────────────────────────────────────┤ y=400 ← SAFE ZONE STARTS HERE
-│                                     │
-│       HEADLINE TEXT ZONE HERE       │ y=450-600
-│         (Center at y=525)           │
-│                                     │
-│      PRODUCT IMAGE ZONE HERE        │ y=600-1000  
-│         (Center at y=800)           │
-│        Max size: 400x400px          │
-│                                     │
-│         CTA BUTTON HERE             │ y=1000-1100
-│         (Center at y=1050)          │
-│                                     │
-├─────────────────────────────────────┤ y=1136 ← SAFE ZONE ENDS HERE
-│         FORBIDDEN ZONE (400px)       │
-└─────────────────────────────────────┘ y=1536 (BOTTOM EDGE)
+🚫 ABSOLUTE BAN ZONES (AI CANNOT USE):
+• y=0 to y=500: TOTALLY BANNED - NO CONTENT ALLOWED
+• y=1200 to y=1536: TOTALLY BANNED - NO CONTENT ALLOWED  
+• x=0 to x=300: TOTALLY BANNED - NO CONTENT ALLOWED
+• x=724 to x=1024: TOTALLY BANNED - NO CONTENT ALLOWED
 
-HORIZONTAL LAYOUT:
-│←250px→│←─────524px SAFE ZONE─────→│←250px→│
-│FORBIDDEN│   ALL CONTENT HERE ONLY  │FORBIDDEN│
+🎯 FORCED EXACT COORDINATES (AI MUST USE):
 
-STRICT CONTENT RULES:
-1. HEADLINE: Place between y=450-600, centered at x=512
-2. PRODUCT: Place between y=600-1000, max 400x400px, centered
-3. CTA: Place between y=1000-1100, centered at x=512
-4. ALL TEXT: Must be within x=300 to x=724 (center 424px)
-5. NOTHING can be within 250px of left/right edges
-6. NOTHING can be within 400px of top/bottom edges
+HEADLINE TEXT:
+- EXACT Y POSITION: 600px (AI cannot use any y-value below 600)
+- EXACT X POSITION: 512px (center)
+- MAX FONT SIZE: 44px
+- MAX TEXT WIDTH: 380px
+- VALIDATION: Top edge must be ≥ 580px, bottom edge must be ≤ 620px
 
-PRODUCT HANDLING:
-• Analyze uploaded product image
-• Scale to fit within 400x400px box while maintaining aspect ratio
-• Position exactly at center (x=512, y=800)
-• Add subtle drop shadow but keep within bounds
-• If product is wide, scale down more to fit safely
+PRODUCT IMAGE:
+- EXACT Y POSITION: 850px (center point)
+- EXACT X POSITION: 512px (center)  
+- MAX SIZE: 320×320px
+- VALIDATION: Top edge must be ≥ 690px, bottom edge must be ≤ 1010px
 
-TEXT SPECIFICATIONS:
-• Headline: 60px font maximum, bold, high contrast
-• Subtext: 36px font maximum
-• CTA: 48px font maximum, button or text style
-• All text must have high contrast against background
+CTA TEXT/BUTTON:
+- EXACT Y POSITION: 1100px
+- EXACT X POSITION: 512px (center)
+- MAX FONT SIZE: 38px
+- MAX WIDTH: 280px
+- VALIDATION: Top edge must be ≥ 1080px, bottom edge must be ≤ 1120px
 
-BACKGROUND RULES:
-• Can use gradients, patterns, or solid colors
-• Keep simple/subtle near edges to avoid distraction
-• Ensure high contrast with text and product
+🔒 MATHEMATICAL CONSTRAINTS:
+- IF headline y < 580: MOVE TO y=600
+- IF product y < 690: MOVE TO y=850  
+- IF CTA y > 1120: MOVE TO y=1100
+- IF any element x < 312: MOVE TO x=512
+- IF any element x > 712: MOVE TO x=512
 
-FINAL VALIDATION CHECKLIST:
-□ Is headline between y=450-600?
-□ Is product centered at y=800 and under 400x400px?
-□ Is CTA between y=1000-1100?
-□ Is all content within x=300-724?
-□ Are there 250px side margins and 400px top/bottom margins?
-□ Does text have high contrast and proper sizing?
+🛑 EMERGENCY RULES:
+- NO text allowed above y=580 (this causes clipping)
+- NO text allowed below y=1120 (this causes clipping)
+- NO content within 300px of ANY edge
+- If AI tries to place anything in banned zones: SHRINK by 50% and center
 
-IF ANY CHECK FAILS: Shrink everything by 20% and re-center!
+BACKGROUND: Can use full canvas but keep simple near edges for contrast.
 
-GENERATE: High-converting mobile ad creative following these EXACT positions.${autoInstructions}${textPromptAddition}`
+ABSOLUTE REQUIREMENT: Generate high-converting ad with ALL content between y=580-1120 and x=312-712.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3376,70 +3360,54 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `CRITICAL: Generate a PORTRAIT AD (1024x1536px) with STRICT positioning rules.
+      enhancedPrompt = `🔴 EMERGENCY: AI KEEPS CLIPPING TEXT AT TOP! OVERRIDE WITH MATHEMATICAL LOCKS.
 
-🚨 ABSOLUTE POSITIONING REQUIREMENTS (NO EXCEPTIONS):
+CANVAS: 1024×1536 PORTRAIT - MATHEMATICAL POSITIONING ONLY
 
-CANVAS LAYOUT MAP:
-┌─────────────────────────────────────┐ y=0 (TOP EDGE)
-│         FORBIDDEN ZONE (400px)       │
-├─────────────────────────────────────┤ y=400 ← SAFE ZONE STARTS HERE
-│                                     │
-│       HEADLINE TEXT ZONE HERE       │ y=450-600
-│         (Center at y=525)           │
-│                                     │
-│      PRODUCT IMAGE ZONE HERE        │ y=600-1000  
-│         (Center at y=800)           │
-│        Max size: 400x400px          │
-│                                     │
-│         CTA BUTTON HERE             │ y=1000-1100
-│         (Center at y=1050)          │
-│                                     │
-├─────────────────────────────────────┤ y=1136 ← SAFE ZONE ENDS HERE
-│         FORBIDDEN ZONE (400px)       │
-└─────────────────────────────────────┘ y=1536 (BOTTOM EDGE)
+🚫 ABSOLUTE BAN ZONES (AI CANNOT USE):
+• y=0 to y=500: TOTALLY BANNED - NO CONTENT ALLOWED
+• y=1200 to y=1536: TOTALLY BANNED - NO CONTENT ALLOWED  
+• x=0 to x=300: TOTALLY BANNED - NO CONTENT ALLOWED
+• x=724 to x=1024: TOTALLY BANNED - NO CONTENT ALLOWED
 
-HORIZONTAL LAYOUT:
-│←250px→│←─────524px SAFE ZONE─────→│←250px→│
-│FORBIDDEN│   ALL CONTENT HERE ONLY  │FORBIDDEN│
+🎯 FORCED EXACT COORDINATES (AI MUST USE):
 
-STRICT CONTENT RULES:
-1. HEADLINE: Place between y=450-600, centered at x=512
-2. PRODUCT: Place between y=600-1000, max 400x400px, centered
-3. CTA: Place between y=1000-1100, centered at x=512
-4. ALL TEXT: Must be within x=300 to x=724 (center 424px)
-5. NOTHING can be within 250px of left/right edges
-6. NOTHING can be within 400px of top/bottom edges
+HEADLINE TEXT:
+- EXACT Y POSITION: 600px (AI cannot use any y-value below 600)
+- EXACT X POSITION: 512px (center)
+- MAX FONT SIZE: 44px
+- MAX TEXT WIDTH: 380px
+- VALIDATION: Top edge must be ≥ 580px, bottom edge must be ≤ 620px
 
-PRODUCT HANDLING:
-• Analyze uploaded product image
-• Scale to fit within 400x400px box while maintaining aspect ratio
-• Position exactly at center (x=512, y=800)
-• Add subtle drop shadow but keep within bounds
-• If product is wide, scale down more to fit safely
+PRODUCT IMAGE:
+- EXACT Y POSITION: 850px (center point)
+- EXACT X POSITION: 512px (center)  
+- MAX SIZE: 320×320px
+- VALIDATION: Top edge must be ≥ 690px, bottom edge must be ≤ 1010px
 
-TEXT SPECIFICATIONS:
-• Headline: 60px font maximum, bold, high contrast
-• Subtext: 36px font maximum
-• CTA: 48px font maximum, button or text style
-• All text must have high contrast against background
+CTA TEXT/BUTTON:
+- EXACT Y POSITION: 1100px
+- EXACT X POSITION: 512px (center)
+- MAX FONT SIZE: 38px
+- MAX WIDTH: 280px
+- VALIDATION: Top edge must be ≥ 1080px, bottom edge must be ≤ 1120px
 
-BACKGROUND RULES:
-• Can use gradients, patterns, or solid colors
-• Keep simple/subtle near edges to avoid distraction
-• Ensure high contrast with text and product
+🔒 MATHEMATICAL CONSTRAINTS:
+- IF headline y < 580: MOVE TO y=600
+- IF product y < 690: MOVE TO y=850  
+- IF CTA y > 1120: MOVE TO y=1100
+- IF any element x < 312: MOVE TO x=512
+- IF any element x > 712: MOVE TO x=512
 
-FINAL VALIDATION CHECKLIST:
-□ Is headline between y=450-600?
-□ Is product centered at y=800 and under 400x400px?
-□ Is CTA between y=1000-1100?
-□ Is all content within x=300-724?
-□ Are there 250px side margins and 400px top/bottom margins?
-□ Does text have high contrast and proper sizing?
+🛑 EMERGENCY RULES:
+- NO text allowed above y=580 (this causes clipping)
+- NO text allowed below y=1120 (this causes clipping)
+- NO content within 300px of ANY edge
+- If AI tries to place anything in banned zones: SHRINK by 50% and center
 
-IF ANY CHECK FAILS: Shrink everything by 20% and re-center!
+BACKGROUND: Can use full canvas but keep simple near edges for contrast.
 
-GENERATE: High-converting mobile ad creative following these EXACT positions.${autoInstructions}${textPromptAddition}`
+ABSOLUTE REQUIREMENT: Generate high-converting ad with ALL content between y=580-1120 and x=312-712.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
