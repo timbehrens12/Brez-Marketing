@@ -411,7 +411,7 @@ const STYLE_OPTIONS: StyleOption[] = [
   // AUTO GENERATION TEMPLATE - AI picks the best approach based on product analysis
   {
     id: 'auto-generation',
-    name: 'Auto Generation',
+    name: 'Auto AI Creative',
     description: 'AI analyzes your product and creates optimized ad creatives for maximum sales',
     thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48dGV4dCB4PSIxMDAiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRkZGRiIgZm9udC1zaXplPSIyOCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPkFVVE88L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNGRkZGRkYiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5BSTwvdGV4dD48L3N2Zz4=',
     category: 'all',
@@ -1292,7 +1292,6 @@ export default function AdCreativeStudioPage() {
 
   // Auto Creative state
   const [autoPromptAdditions, setAutoPromptAdditions] = useState('')
-  
   const [regenerationFeedback, setRegenerationFeedback] = useState<{
     issues: string[]
     details: string
@@ -5305,7 +5304,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
               {/* AI Instructions Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-full flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">🤖</span>
                   </div>
                   AI Creative Instructions
