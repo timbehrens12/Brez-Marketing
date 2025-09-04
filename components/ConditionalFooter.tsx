@@ -37,7 +37,15 @@ export function ConditionalFooter() {
         bodyText.includes('Loading workspace data') ||
         bodyText.includes('Analyzing your brand') ||
         bodyText.includes('AI Dashboard') && bodyText.includes('Connecting') ||
-        bodyText.includes('Marketing Assistant') && bodyText.includes('Loading')
+        (bodyText.includes('Marketing Assistant') && (
+          bodyText.includes('Loading') ||
+          bodyText.includes('Initializing') ||
+          bodyText.includes('Syncing') ||
+          bodyText.includes('Preparing') ||
+          bodyText.includes('advertising data') ||
+          bodyText.includes('creative insights') ||
+          bodyText.includes('Finalizing dashboard')
+        ))
       )
       
       setIsLoadingPage(hasLoadingScreen || hasLoadingText)
