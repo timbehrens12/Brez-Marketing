@@ -33,16 +33,6 @@ import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Brain, Clock } from "lucide-react"
 
-// Custom CSS for modern shapes
-const modernStyles = `
-  .clip-path-triangle {
-    clip-path: polygon(100% 0%, 0% 0%, 100% 100%);
-  }
-  .clip-path-corner {
-    clip-path: polygon(0% 0%, calc(100% - 20px) 0%, 100% 20px, 100% 100%, 0% 100%);
-  }
-`
-
 // Extend Window interface for global state management
 declare global {
   interface Window {
@@ -1242,60 +1232,70 @@ export default function MarketingAssistantPage() {
   // Show regular dashboard when brand is selected
   return (
     <div className="w-full space-y-6 mb-12 relative">
-      {/* Inject modern styles */}
-      <style dangerouslySetInnerHTML={{ __html: modernStyles }} />
       <GridOverlay />
       <div className="relative z-10">
         <>
-          {/* Page Header - Full Width */}
-          <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
-            <div className="px-12 lg:px-24 xl:px-32">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Brain className="w-6 h-6 text-white" />
+          {/* Page Header - Modern Design */}
+          <div className="w-full relative overflow-hidden">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5 animate-gradient"></div>
+            <div className="relative bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a] backdrop-blur-xl border-b border-[#1a1a1a] py-8">
+              <div className="px-12 lg:px-24 xl:px-32">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    {/* Modern icon container with gradient ring */}
+                    <div className="relative group">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+                      <div className="relative w-14 h-14 bg-[#0a0a0a] rounded-2xl flex items-center justify-center border border-[#2a2a2a]">
+                        <Brain className="w-7 h-7 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold text-white tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                        Marketing Assistant
+                      </h1>
+                      <p className="text-gray-400 text-base mt-1">
+                        {lastPageRefresh ? (
+                          <span className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5" />
+                            Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        ) : (
+                          'AI-powered marketing insights and recommendations'
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
-                    <p className="text-gray-400 text-base">
-                      {lastPageRefresh ? (
-                        <>
-                          Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </>
-                      ) : (
-                        'AI-powered marketing insights and recommendations'
-                      )}
-                    </p>
-                  </div>
+                  
+                  {/* Modern refresh button */}
+                  <Button
+                    onClick={refreshAllWidgets}
+                    disabled={isRefreshingAll || refreshCooldown}
+                    variant="outline"
+                    size="sm"
+                    className="relative bg-[#0a0a0a] border-[#2a2a2a] text-white hover:bg-[#1a1a1a] 
+                             hover:border-purple-500/50 px-5 py-2.5 rounded-2xl font-medium transition-all 
+                             duration-300 group disabled:opacity-50 disabled:cursor-not-allowed
+                             shadow-lg hover:shadow-purple-500/20"
+                  >
+                    {isRefreshingAll ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : refreshCooldown ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2" />
+                        Cooldown
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                        Refresh All
+                      </>
+                    )}
+                  </Button>
                 </div>
-                
-                <Button
-                  onClick={refreshAllWidgets}
-                  disabled={isRefreshingAll || refreshCooldown}
-                  variant="outline"
-                  size="sm"
-                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                           hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
-                           duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRefreshingAll ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Refreshing...
-                    </>
-                  ) : refreshCooldown ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2" />
-                      Cooldown
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-                      Refresh All
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
           </div>
@@ -1306,26 +1306,40 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Main Content Grid - Modern Asymmetrical Layout */}
+          {/* Main Content Grid - Modern asymmetric layout */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-8 animate-in fade-in duration-300">
-            
-            {/* Asymmetrical Grid Layout */}
-            <div className="grid grid-cols-12 grid-rows-12 gap-6 h-[1200px] lg:h-[1000px]">
-              
-              {/* Primary Widget - Blended Widgets Table (Large Hexagonal Card) */}
-              <div className="col-span-12 lg:col-span-7 row-span-6 lg:row-span-7 relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 
-                              rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] 
-                              rounded-3xl border border-white/10 group-hover:border-white/20 
-                              shadow-2xl shadow-black/50 transition-all duration-500 overflow-hidden">
-                  {/* Geometric accent lines */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent 
-                                clip-path-triangle"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent 
-                                rounded-tr-full"></div>
-                  
-                  <div className="relative h-full p-1">
+            {/* Hero Section - AI Report and Campaign Management in modern layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left: AI Daily Report - Takes 5 columns with modern card style */}
+              <div className="lg:col-span-5">
+                <div className="relative group h-full">
+                  {/* Gradient background effect */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+                  <div className="relative bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a] overflow-hidden h-full shadow-2xl">
+                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Campaign Management - Takes 7 columns for prominence */}
+              <div className="lg:col-span-7">
+                <div className="relative">
+                  {/* Modern decorative element */}
+                  <div className="absolute -top-4 -right-4 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+                  <div className="relative bg-gradient-to-br from-[#0f0f0f] to-[#0a0a0a] rounded-2xl border border-[#1a1a1a] overflow-hidden shadow-xl">
+                    <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics Section - Dynamic staggered layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Blended Widgets - Modern card with unique shape */}
+              <div className="lg:col-span-4">
+                <div className="relative h-full">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#1a1a1a] to-[#0f0f0f] rounded-2xl transform rotate-1"></div>
+                  <div className="relative bg-[#0f0f0f] rounded-2xl border border-[#1a1a1a] overflow-hidden h-full transform transition-transform hover:-rotate-1 duration-300">
                     <BlendedWidgetsTable 
                       metaMetrics={metaMetrics}
                     />
@@ -1333,103 +1347,45 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* AI Daily Report (Elevated Rhombus Card) */}
-              <div className="col-span-12 lg:col-span-5 row-span-5 lg:row-span-6 relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-blue-500/10 
-                              rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500 
-                              transform rotate-1 group-hover:rotate-2"></div>
-                <div className="relative h-full bg-gradient-to-br from-[#1c1c1c] via-[#212121] to-[#181818] 
-                              rounded-2xl border border-white/10 group-hover:border-emerald-500/30 
-                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
-                              transform group-hover:-translate-y-1">
-                  {/* Animated accent bar */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500/50 
-                                via-cyan-500/50 to-blue-500/50 group-hover:h-2 transition-all duration-500"></div>
-                  {/* Side accent */}
-                  <div className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-gradient-to-b from-transparent 
-                                via-emerald-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
-                  
-                  <div className="relative h-full p-1">
-                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance Chart (Floating Organic Shape) */}
-              <div className="col-span-12 lg:col-span-6 row-span-5 lg:row-span-5 relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-pink-500/10 
-                              rounded-[2rem] blur-lg group-hover:blur-xl transition-all duration-500
-                              transform -rotate-1 group-hover:-rotate-2"></div>
-                <div className="relative h-full bg-gradient-to-br from-[#1e1e1e] via-[#232323] to-[#1a1a1a] 
-                              rounded-[2rem] border border-white/10 group-hover:border-orange-500/30 
-                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
-                              transform group-hover:scale-[1.02]">
-                  {/* Flowing accent lines */}
-                  <div className="absolute top-0 left-1/4 w-px h-16 bg-gradient-to-b from-orange-500/50 to-transparent 
-                                group-hover:h-20 transition-all duration-500"></div>
-                  <div className="absolute top-0 right-1/3 w-px h-12 bg-gradient-to-b from-red-500/40 to-transparent 
-                                group-hover:h-16 transition-all duration-500"></div>
-                  {/* Corner accent */}
-                  <div className="absolute bottom-4 right-4 w-3 h-3 rounded-full bg-orange-500/40 
-                                group-hover:w-4 group-hover:h-4 transition-all duration-500"></div>
-                  
-                  <div className="relative h-full p-1">
+              {/* Performance Chart - Floating design */}
+              <div className="lg:col-span-8">
+                <div className="relative group">
+                  {/* Animated gradient border */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-500 animate-gradient"></div>
+                  <div className="relative bg-[#0a0a0a] rounded-2xl border border-[#1a1a1a] overflow-hidden">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
                   </div>
                 </div>
               </div>
-
-              {/* Ad Creative Breakdown (Angular Modern Card) */}
-              <div className="col-span-12 lg:col-span-6 row-span-6 lg:row-span-6 relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-indigo-500/10 
-                              rounded-xl blur-lg group-hover:blur-xl transition-all duration-500
-                              transform rotate-1 group-hover:rotate-3"></div>
-                <div className="relative h-full bg-gradient-to-br from-[#1d1d1d] via-[#222] to-[#191919] 
-                              rounded-xl border border-white/10 group-hover:border-violet-500/30 
-                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
-                              clip-path-corner">
-                  {/* Diagonal accent */}
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/20 to-transparent 
-                                transform rotate-45 translate-x-8 -translate-y-8 group-hover:scale-125 
-                                transition-all duration-500"></div>
-                  {/* Bottom edge highlight */}
-                  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent 
-                                via-violet-500/50 to-transparent group-hover:h-0.5 transition-all duration-500"></div>
-                  
-                  <div className="relative h-full p-1">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  </div>
-                </div>
-              </div>
-
             </div>
 
-            {/* Campaign Management - Full Width Floating Panel */}
-            <div className="relative group mt-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-teal-500/5 to-blue-500/10 
-                            rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-gradient-to-r from-[#1a1a1a] via-[#1f1f1f] to-[#1a1a1a] 
-                            rounded-3xl border border-white/10 group-hover:border-teal-500/30 
-                            shadow-2xl shadow-black/50 transition-all duration-500 overflow-hidden
-                            group-hover:shadow-teal-500/10">
-                {/* Top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500/50 
-                              via-teal-500/50 to-blue-500/50 group-hover:h-2 transition-all duration-500"></div>
-                {/* Side accents */}
-                <div className="absolute left-0 top-1/3 bottom-1/3 w-1 bg-gradient-to-b from-transparent 
-                              via-teal-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
-                <div className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-gradient-to-b from-transparent 
-                              via-green-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
-                
-                <div className="relative p-1">
-                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            {/* Creative Section - Full width with modern treatment */}
+            <div className="relative">
+              {/* Background pattern */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1a1a1a]/10 to-transparent"></div>
+              <div className="relative">
+                <div className="bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a] rounded-2xl border border-[#1a1a1a] overflow-hidden shadow-2xl">
+                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                 </div>
               </div>
             </div>
 
           </div>
+
+          {/* Add CSS for gradient animation */}
+          <style jsx>{`
+            @keyframes gradient {
+              0% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+              100% { background-position: 0% 50%; }
+            }
+            .animate-gradient {
+              background-size: 200% 200%;
+              animation: gradient 3s ease infinite;
+            }
+          `}</style>
         </>
       </div>
     </div>
