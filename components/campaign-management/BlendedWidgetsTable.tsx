@@ -379,334 +379,326 @@ export default function BlendedWidgetsTable({
 
 
   return (
-    <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="relative">
-        {/* Header - matches AIDailyReport style */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Layers className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
-              <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
-            </div>
-          </div>
-        </div>
-        
-
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-auto">
-          {/* 2-column grid with modern cards */}
-          <div className="grid grid-cols-2 gap-3">
-          
-          {/* Row 1 - Budget Usage (spanning 2 columns) */}
-          <div className="col-span-2">
-            <BlendedMetricCard
-              icon={CreditCard}
-              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-              title="Total Blended Budget Usage"
-              value={budgetData.budgetUsedPercentage / 100}
-              change={null} // No change data for budget
-              isPercentage={true}
-              decimals={1}
-              customContent={
-                <div className="mt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Spend: ${budgetData.totalSpend.toFixed(2)}</span>
-                    <span className="text-gray-400">Budget: ${budgetData.totalBudget.toFixed(2)}</span>
+    <div className="h-full space-y-6 animate-in fade-in duration-500">
+      {/* Hero Metrics - Hexagonal Layout */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Primary Spend Metric - Large Hexagon */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          <div className="relative bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-full">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center border border-blue-500/30">
+                <DollarSign className="w-8 h-8 text-blue-400" />
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Total Spend</div>
+                <div className="text-3xl font-bold text-white">${metaMetrics.adSpend?.toFixed(2) || '0.00'}</div>
+                {metaMetrics.adSpendGrowth !== null && (
+                  <div className={`flex items-center justify-end gap-1 text-sm font-medium ${
+                    metaMetrics.adSpendGrowth > 0 ? 'text-green-400' : metaMetrics.adSpendGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                  }`}>
+                    {metaMetrics.adSpendGrowth > 0 ? <TrendingUp className="w-4 h-4" /> : 
+                     metaMetrics.adSpendGrowth < 0 ? <TrendingDown className="w-4 h-4" /> : null}
+                    {Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%
                   </div>
-                  <div className="w-full bg-[#333] rounded-full h-2">
-                    <div 
-                      className="h-2 rounded-full bg-white transition-all duration-300"
-                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                    />
+                )}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Image src="https://i.imgur.com/6hyyRrs.png" alt="Meta" width={24} height={24} className="rounded-lg" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-300">Meta</span>
+                    <span className="text-sm font-medium text-white">${metaMetrics.adSpend?.toFixed(2) || '0.00'}</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1 mt-1">
+                    <div className="bg-blue-400 h-1 rounded-full w-full"></div>
                   </div>
                 </div>
-              }
-              platforms={[
-                { 
-                  name: "Meta", 
-                  icon: "https://i.imgur.com/6hyyRrs.png", 
-                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
-                  active: budgetData.totalBudget > 0
-                },
-                { 
-                  name: "TikTok", 
-                  icon: "https://i.imgur.com/AXHa9UT.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                },
-                { 
-                  name: "Google Ads", 
-                  icon: "https://i.imgur.com/TavV4UJ.png", 
-                  value: "$0.00 / $0.00",
-                  active: false
-                }
-              ]}
-            />
+              </div>
+              <div className="flex items-center gap-3 opacity-40">
+                <Image src="https://i.imgur.com/AXHa9UT.png" alt="TikTok" width={24} height={24} className="rounded-lg grayscale" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">TikTok</span>
+                    <span className="text-sm text-gray-500">$0.00</span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1 mt-1"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          {/* Row 2 - Spend & ROAS */}
-          <BlendedMetricCard
-            icon={DollarSign}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Spend"
-            value={metaMetrics.adSpend}
-            change={metaMetrics.adSpendGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${metaMetrics.adSpend?.toFixed(2) || '0.00'}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={Target}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended ROAS"
-            value={metaMetrics.roas}
-            change={metaMetrics.roasGrowth}
-            suffix="x"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `${metaMetrics.roas?.toFixed(2) || '0.00'}x`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0.00x",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0.00x",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 3 - Revenue & Conversions */}
-          <BlendedMetricCard
-            icon={CreditCard}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Revenue"
-            value={metaMetrics.roas * metaMetrics.adSpend}
-            change={metaMetrics.roasGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={Target}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Conversions"
-            value={metaMetrics.conversions}
-            change={metaMetrics.conversionGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.conversions?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 4 - Impressions & Clicks */}
-          <BlendedMetricCard
-            icon={Eye}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Impressions"
-            value={metaMetrics.impressions}
-            change={metaMetrics.impressionGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.impressions?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={MousePointer}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended Clicks"
-            value={metaMetrics.clicks}
-            change={metaMetrics.clickGrowth}
-            decimals={0}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: metaMetrics.clicks?.toLocaleString() || '0',
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0",
-                active: false
-              }
-            ]}
-          />
-
-          {/* Row 5 - CTR & CPC */}
-          <BlendedMetricCard
-            icon={PercentIcon}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended CTR"
-            value={metaMetrics.ctr / 100}
-            change={metaMetrics.ctrGrowth}
-            isPercentage={true}
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `${metaMetrics.ctr?.toFixed(2) || '0.00'}%`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "0.00%",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "0.00%",
-                active: false
-              }
-            ]}
-          />
-          
-          <BlendedMetricCard
-            icon={DollarSign}
-            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
-            title="Total Blended CPC"
-            value={metaMetrics.cpc}
-            change={metaMetrics.cpcGrowth}
-            prefix="$"
-            decimals={2}
-            // Remove loading prop
-            // loading={loading}
-            platforms={[
-              { 
-                name: "Meta", 
-                icon: "https://i.imgur.com/6hyyRrs.png", 
-                value: `$${metaMetrics.cpc?.toFixed(2) || '0.00'}`,
-                active: true
-              },
-              { 
-                name: "TikTok", 
-                icon: "https://i.imgur.com/AXHa9UT.png", 
-                value: "$0.00",
-                active: false
-              },
-              { 
-                name: "Google Ads", 
-                icon: "https://i.imgur.com/TavV4UJ.png", 
-                value: "$0.00",
-                active: false
-              }
-            ]}
-          />
-          
-
         </div>
+
+        {/* Primary ROAS Metric - Large Hexagon */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          <div className="relative bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-full">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center border border-green-500/30">
+                <Target className="w-8 h-8 text-green-400" />
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Total ROAS</div>
+                <div className="text-3xl font-bold text-white">{metaMetrics.roas?.toFixed(2) || '0.00'}x</div>
+                {metaMetrics.roasGrowth !== null && (
+                  <div className={`flex items-center justify-end gap-1 text-sm font-medium ${
+                    metaMetrics.roasGrowth > 0 ? 'text-green-400' : metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                  }`}>
+                    {metaMetrics.roasGrowth > 0 ? <TrendingUp className="w-4 h-4" /> : 
+                     metaMetrics.roasGrowth < 0 ? <TrendingDown className="w-4 h-4" /> : null}
+                    {Math.abs(metaMetrics.roasGrowth).toFixed(1)}%
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Image src="https://i.imgur.com/6hyyRrs.png" alt="Meta" width={24} height={24} className="rounded-lg" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-300">Meta</span>
+                    <span className="text-sm font-medium text-white">{metaMetrics.roas?.toFixed(2) || '0.00'}x</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1 mt-1">
+                    <div className="bg-green-400 h-1 rounded-full w-full"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 opacity-40">
+                <Image src="https://i.imgur.com/TavV4UJ.png" alt="Google" width={24} height={24} className="rounded-lg grayscale" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Google</span>
+                    <span className="text-sm text-gray-500">0.00x</span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1 mt-1"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Circular Progress Metrics */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Budget Usage - Circular Progress */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          <div className="relative">
+            <div className="flex items-center justify-center mb-4">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-white/10"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={`${2 * Math.PI * 40}`}
+                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(budgetData.budgetUsedPercentage / 100, 1))}`}
+                    className="text-orange-400 transition-all duration-1000 ease-out"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-white">{budgetData.budgetUsedPercentage.toFixed(0)}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Budget Used</div>
+              <div className="text-sm text-gray-300">${budgetData.totalSpend.toFixed(2)} / ${budgetData.totalBudget.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conversions - Circular Progress */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          <div className="relative">
+            <div className="flex items-center justify-center mb-4">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-white/10"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={`${2 * Math.PI * 40}`}
+                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min((metaMetrics.conversions || 0) / 100, 1))}`}
+                    className="text-purple-400 transition-all duration-1000 ease-out"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Target className="w-6 h-6 text-purple-400" />
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Conversions</div>
+              <div className="text-lg font-bold text-white">{metaMetrics.conversions?.toLocaleString() || '0'}</div>
+              {metaMetrics.conversionGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.conversionGrowth > 0 ? 'text-green-400' : metaMetrics.conversionGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.conversionGrowth > 0 ? '+' : ''}{metaMetrics.conversionGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Revenue - Circular Progress */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          <div className="relative">
+            <div className="flex items-center justify-center mb-4">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-white/10"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={`${2 * Math.PI * 40}`}
+                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)) / 1000, 1))}`}
+                    className="text-cyan-400 transition-all duration-1000 ease-out"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-cyan-400" />
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Revenue</div>
+              <div className="text-lg font-bold text-white">${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}</div>
+              {metaMetrics.roasGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.roasGrowth > 0 ? 'text-green-400' : metaMetrics.roasGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.roasGrowth > 0 ? '+' : ''}{metaMetrics.roasGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Bottom Row - Compact Metrics */}
+      <div className="grid grid-cols-4 gap-3">
+        {/* Impressions */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
+              <Eye className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">Impressions</div>
+              <div className="text-sm font-bold text-white truncate">{metaMetrics.impressions?.toLocaleString() || '0'}</div>
+              {metaMetrics.impressionGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.impressionGrowth > 0 ? 'text-green-400' : metaMetrics.impressionGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.impressionGrowth > 0 ? '+' : ''}{metaMetrics.impressionGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Clicks */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/20 to-rose-600/20 flex items-center justify-center border border-rose-500/30">
+              <MousePointer className="w-5 h-5 text-rose-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">Clicks</div>
+              <div className="text-sm font-bold text-white truncate">{metaMetrics.clicks?.toLocaleString() || '0'}</div>
+              {metaMetrics.clickGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.clickGrowth > 0 ? 'text-green-400' : metaMetrics.clickGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.clickGrowth > 0 ? '+' : ''}{metaMetrics.clickGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* CTR */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center border border-amber-500/30">
+              <PercentIcon className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">CTR</div>
+              <div className="text-sm font-bold text-white truncate">{(metaMetrics.ctr || 0).toFixed(2)}%</div>
+              {metaMetrics.ctrGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.ctrGrowth > 0 ? 'text-green-400' : metaMetrics.ctrGrowth < 0 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.ctrGrowth > 0 ? '+' : ''}{metaMetrics.ctrGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* CPC */}
+        <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 flex items-center justify-center border border-emerald-500/30">
+              <DollarSign className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">CPC</div>
+              <div className="text-sm font-bold text-white truncate">${(metaMetrics.cpc || 0).toFixed(2)}</div>
+              {metaMetrics.cpcGrowth !== null && (
+                <div className={`text-xs font-medium ${
+                  metaMetrics.cpcGrowth > 0 ? 'text-red-400' : metaMetrics.cpcGrowth < 0 ? 'text-green-400' : 'text-gray-400'
+                }`}>
+                  {metaMetrics.cpcGrowth > 0 ? '+' : ''}{metaMetrics.cpcGrowth.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
