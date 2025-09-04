@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface MetaMetrics {
   adSpend: number
@@ -60,10 +61,10 @@ interface BlendedWidgetsTableProps {
   // isRefreshingData: boolean
 }
 
-// Modern metric card component with enhanced design
-function ModernMetricCard({
+// Custom metric card component for blended metrics
+function BlendedMetricCard({
   icon: Icon,
-  iconBg,
+  iconColor,
   title,
   value,
   change,
@@ -72,11 +73,12 @@ function ModernMetricCard({
   decimals = 0,
   isPercentage = false,
   customContent,
-  platforms,
-  priority = false
+  // Remove loading prop
+  // loading,
+  platforms
 }: {
   icon: any
-  iconBg: string
+  iconColor: string
   title: string
   value: number
   change: number | null
@@ -85,8 +87,9 @@ function ModernMetricCard({
   decimals?: number
   isPercentage?: boolean
   customContent?: React.ReactNode
+  // Remove loading prop
+  // loading: boolean
   platforms: { name: string; icon: string; value: string | number; active: boolean }[]
-  priority?: boolean
 }) {
   const formatValue = (val: number) => {
     if (isPercentage) {
@@ -102,128 +105,141 @@ function ModernMetricCard({
   }
 
   return (
-    <div className={cn(
-      "relative group overflow-hidden rounded-2xl border transition-all duration-500 hover:scale-[1.02]",
-      priority 
-        ? "bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent border-blue-500/20 hover:border-blue-400/40 shadow-lg hover:shadow-blue-500/10" 
-        : "bg-gradient-to-br from-[#161b22] via-[#1c2128] to-[#0d1117] border-[#30363d] hover:border-[#444c56]"
-    )}>
-      {/* Background glow effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent"></div>
-      {priority && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-      )}
-      
-      <div className="relative p-6 space-y-4">
-        {/* Header with icon and platforms */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className={cn("relative p-3 rounded-xl", iconBg)}>
-              <Icon className="w-5 h-5 text-white" />
-              {priority && (
-                <div className="absolute inset-0 bg-blue-500/20 rounded-xl animate-pulse"></div>
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">{title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                {platforms.map((platform) => (
-                  <TooltipProvider key={platform.name}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="relative cursor-pointer">
-                          <Image 
-                            src={platform.icon} 
-                            alt={platform.name} 
-                            width={20} 
-                            height={20} 
-                            className={cn(
-                              "object-contain transition-all duration-300 rounded",
-                              platform.active 
-                                ? "opacity-100 hover:scale-110" 
-                                : "grayscale opacity-30"
-                            )}
-                          />
-                          {platform.active && (
-                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-[#161b22]" />
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent 
-                        side="bottom" 
-                        className="bg-[#0d1117] border border-[#30363d] text-white p-3 rounded-xl shadow-2xl max-w-xs"
-                        sideOffset={8}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Image 
-                              src={platform.icon} 
-                              alt={platform.name} 
-                              width={16} 
-                              height={16} 
-                              className="object-contain"
-                            />
-                            <span className="font-medium text-white text-sm">{platform.name}</span>
-                            <span className={cn(
-                              "text-xs px-2 py-1 rounded-full",
-                              platform.active 
-                                ? "bg-green-500/20 text-green-300" 
-                                : "bg-gray-500/20 text-gray-400"
-                            )}>
-                              {platform.active ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-300">
-                            {title}: <span className="text-white font-medium">{platform.value}</span>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
-            </div>
+    <div className="relative bg-[#0A0A0A] border border-[#222] rounded-lg p-4 hover:border-[#444] transition-all duration-200 group">
+      {/* Icon and Title */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={cn("p-1.5 rounded-md", iconColor)}>
+            <Icon className="w-4 h-4 text-white" />
           </div>
+          <h3 className="text-sm font-medium text-gray-300">{title}</h3>
         </div>
+        
+        {/* Platform icons */}
+        <div className="flex items-center gap-2">
+          {platforms.map((platform) => (
+            <TooltipProvider key={platform.name}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative group cursor-pointer">
+                    <Image 
+                      src={platform.icon} 
+                      alt={platform.name} 
+                      width={32} 
+                      height={32} 
+                      className={cn(
+                        "object-contain transition-all duration-300 rounded-lg",
+                        platform.active 
+                          ? "opacity-100 hover:scale-110 shadow-lg" 
+                          : "grayscale opacity-30 hover:opacity-50"
+                      )}
+                    />
+                    {platform.active && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0A0A0A]" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#444] text-white p-4 rounded-xl shadow-2xl max-w-xs"
+                  sideOffset={8}
+                >
+                  <div className="space-y-3">
+                    {/* Platform Header */}
+                    <div className="flex items-center gap-3 pb-2 border-b border-[#333]">
+                      <Image 
+                        src={platform.icon} 
+                        alt={platform.name} 
+                        width={24} 
+                        height={24} 
+                        className="object-contain"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-white">{platform.name}</h4>
+                        <p className="text-xs text-gray-400">
+                          {platform.active ? "Connected & Active" : "Not Connected"}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Platform Value */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-300">{title} Value:</span>
+                        <span className="font-semibold text-white">{platform.value}</span>
+                      </div>
+                      
+                      {platform.active ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-300">Contribution:</span>
+                            <span className="font-semibold text-green-400">100%</span>
+                          </div>
+                          <div className="w-full bg-[#333] rounded-full h-2">
+                            <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full w-full"></div>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Currently the only active platform contributing to this metric.
+                          </p>
+                        </>
+                      ) : (
+                        <div className="text-center py-2">
+                          <p className="text-xs text-gray-400">
+                            Connect {platform.name} to see contribution data
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Future Enhancement Note */}
+                    {!platform.active && (
+                      <div className="mt-3 p-2 bg-[#222] rounded-lg border-l-2 border-blue-500">
+                        <p className="text-xs text-blue-300">
+                          💡 Connect {platform.name} for blended analytics across all platforms
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+        </div>
+      </div>
 
-        {/* Value and change */}
-        <div className="space-y-2">
-          <div className="flex items-baseline gap-3">
-            <span className={cn(
-              "font-bold tracking-tight",
-              priority ? "text-3xl text-white" : "text-2xl text-white"
+      {/* Value and Change */}
+      <div className="space-y-1">
+        <div className="flex items-baseline gap-2">
+          {/* Remove loading skeleton, always show actual content */}
+          <span className="text-2xl font-semibold text-white">
+            {formatValue(value)}
+          </span>
+          {change !== null && change !== undefined && (
+            <div className={cn(
+              "flex items-center gap-0.5 text-xs font-medium",
+              change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400"
             )}>
-              {formatValue(value)}
-            </span>
-            {change !== null && change !== undefined && (
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-                change > 0 
-                  ? "bg-green-500/20 text-green-300 border border-green-500/30" 
-                  : change < 0 
-                  ? "bg-red-500/20 text-red-300 border border-red-500/30" 
-                  : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
-              )}>
-                {change > 0 ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : change < 0 ? (
-                  <TrendingDown className="w-3 h-3" />
-                ) : null}
-                <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Custom content */}
-          {customContent && (
-            <div className="pt-2 border-t border-[#30363d]">
-              {customContent}
+              {change > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : change < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <div className="w-3 h-3" /> /* Empty space for 0% change */
+              )}
+              <span>{change === 0 ? "0.0%" : `${Math.abs(change).toFixed(1)}%`}</span>
             </div>
           )}
         </div>
-
-        {/* Hover gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+        
+        {/* Custom content */}
+        {customContent && (
+          <div className="mt-3">
+            {customContent}
+          </div>
+        )}
+        
+        {/* Subtle background pattern on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#1a1a1a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
       </div>
     </div>
   )
@@ -364,307 +380,333 @@ export default function BlendedWidgetsTable({
 
 
   return (
-    <div className="h-full">
-      {/* Hero metrics - key performance indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <ModernMetricCard
-          icon={DollarSign}
-          iconBg="bg-gradient-to-br from-green-500/20 to-emerald-600/20"
-          title="Total Spend"
-          value={metaMetrics.adSpend}
-          change={metaMetrics.adSpendGrowth}
-          prefix="$"
-          decimals={2}
-          priority={true}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `$${metaMetrics.adSpend?.toFixed(2) || '0.00'}`,
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "$0.00",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "$0.00",
-              active: false
-            }
-          ]}
-        />
-        
-        <ModernMetricCard
-          icon={Target}
-          iconBg="bg-gradient-to-br from-purple-500/20 to-indigo-600/20"
-          title="ROAS"
-          value={metaMetrics.roas}
-          change={metaMetrics.roasGrowth}
-          suffix="x"
-          decimals={2}
-          priority={true}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `${metaMetrics.roas?.toFixed(2) || '0.00'}x`,
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "0.00x",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "0.00x",
-              active: false
-            }
-          ]}
-        />
-      </div>
+    <Card className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                        flex items-center justify-center border border-white/10 shadow-lg">
+            <Layers className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
+            <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
+          </div>
+        </div>
+      </CardHeader>
+      
 
-      {/* Budget overview */}
-      <div className="mb-6">
-        <ModernMetricCard
-          icon={CreditCard}
-          iconBg="bg-gradient-to-br from-orange-500/20 to-red-600/20"
-          title="Budget Usage"
-          value={budgetData.budgetUsedPercentage / 100}
-          change={null}
-          isPercentage={true}
-          decimals={1}
-          customContent={
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm text-gray-300">
-                <span>Spend: <span className="text-white font-medium">${budgetData.totalSpend.toFixed(2)}</span></span>
-                <span>Budget: <span className="text-white font-medium">${budgetData.totalBudget.toFixed(2)}</span></span>
-              </div>
-              <div className="w-full bg-[#30363d] rounded-full h-3 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
-                />
-              </div>
-              {budgetData.budgetUsedPercentage > 80 && (
-                <div className="flex items-center gap-2 text-orange-300 text-sm">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>High budget usage detected</span>
+      {/* Content */}
+      <CardContent className="flex-1 p-6 overflow-auto">
+        {/* 2-column grid with modern cards */}
+        <div className="grid grid-cols-2 gap-3">
+        
+        {/* Row 1 - Budget Usage (spanning 2 columns) */}
+          <div className="col-span-2">
+            <BlendedMetricCard
+              icon={CreditCard}
+              iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+              title="Total Blended Budget Usage"
+              value={budgetData.budgetUsedPercentage / 100}
+              change={null} // No change data for budget
+              isPercentage={true}
+              decimals={1}
+              customContent={
+                <div className="mt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Spend: ${budgetData.totalSpend.toFixed(2)}</span>
+                    <span className="text-gray-400">Budget: ${budgetData.totalBudget.toFixed(2)}</span>
+                  </div>
+                  <div className="w-full bg-[#333] rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full bg-white transition-all duration-300"
+                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-          }
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
-              active: budgetData.totalBudget > 0
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "$0.00 / $0.00",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "$0.00 / $0.00",
-              active: false
-            }
-          ]}
-        />
-      </div>
+              }
+              platforms={[
+                { 
+                  name: "Meta", 
+                  icon: "https://i.imgur.com/6hyyRrs.png", 
+                  value: `$${budgetData.totalSpend.toFixed(2)} / $${budgetData.totalBudget.toFixed(2)}`,
+                  active: budgetData.totalBudget > 0
+                },
+                { 
+                  name: "TikTok", 
+                  icon: "https://i.imgur.com/AXHa9UT.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                },
+                { 
+                  name: "Google Ads", 
+                  icon: "https://i.imgur.com/TavV4UJ.png", 
+                  value: "$0.00 / $0.00",
+                  active: false
+                }
+              ]}
+            />
+          </div>
+          
+          {/* Row 2 - Spend & ROAS */}
+          <BlendedMetricCard
+            icon={DollarSign}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended Spend"
+            value={metaMetrics.adSpend}
+            change={metaMetrics.adSpendGrowth}
+            prefix="$"
+            decimals={2}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: `$${metaMetrics.adSpend?.toFixed(2) || '0.00'}`,
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "$0.00",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "$0.00",
+                active: false
+              }
+            ]}
+          />
+          
+          <BlendedMetricCard
+            icon={Target}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended ROAS"
+            value={metaMetrics.roas}
+            change={metaMetrics.roasGrowth}
+            suffix="x"
+            decimals={2}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: `${metaMetrics.roas?.toFixed(2) || '0.00'}x`,
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "0.00x",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "0.00x",
+                active: false
+              }
+            ]}
+          />
 
-      {/* Secondary metrics grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ModernMetricCard
-          icon={CreditCard}
-          iconBg="bg-gradient-to-br from-cyan-500/20 to-blue-600/20"
-          title="Revenue"
-          value={metaMetrics.roas * metaMetrics.adSpend}
-          change={metaMetrics.roasGrowth}
-          prefix="$"
-          decimals={2}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `$${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}`,
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "$0.00",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "$0.00",
-              active: false
-            }
-          ]}
-        />
-        
-        <ModernMetricCard
-          icon={Target}
-          iconBg="bg-gradient-to-br from-pink-500/20 to-rose-600/20"
-          title="Conversions"
-          value={metaMetrics.conversions}
-          change={metaMetrics.conversionGrowth}
-          decimals={0}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: metaMetrics.conversions?.toLocaleString() || '0',
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "0",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "0",
-              active: false
-            }
-          ]}
-        />
+          {/* Row 3 - Revenue & Conversions */}
+          <BlendedMetricCard
+            icon={CreditCard}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended Revenue"
+            value={metaMetrics.roas * metaMetrics.adSpend}
+            change={metaMetrics.roasGrowth}
+            prefix="$"
+            decimals={2}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: `$${((metaMetrics.roas || 0) * (metaMetrics.adSpend || 0)).toFixed(2)}`,
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "$0.00",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "$0.00",
+                active: false
+              }
+            ]}
+          />
+          
+          <BlendedMetricCard
+            icon={Target}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended Conversions"
+            value={metaMetrics.conversions}
+            change={metaMetrics.conversionGrowth}
+            decimals={0}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: metaMetrics.conversions?.toLocaleString() || '0',
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "0",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "0",
+                active: false
+              }
+            ]}
+          />
 
-        <ModernMetricCard
-          icon={Eye}
-          iconBg="bg-gradient-to-br from-teal-500/20 to-cyan-600/20"
-          title="Impressions"
-          value={metaMetrics.impressions}
-          change={metaMetrics.impressionGrowth}
-          decimals={0}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: metaMetrics.impressions?.toLocaleString() || '0',
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "0",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "0",
-              active: false
-            }
-          ]}
-        />
-        
-        <ModernMetricCard
-          icon={MousePointer}
-          iconBg="bg-gradient-to-br from-violet-500/20 to-purple-600/20"
-          title="Clicks"
-          value={metaMetrics.clicks}
-          change={metaMetrics.clickGrowth}
-          decimals={0}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: metaMetrics.clicks?.toLocaleString() || '0',
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "0",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "0",
-              active: false
-            }
-          ]}
-        />
-      </div>
+          {/* Row 4 - Impressions & Clicks */}
+          <BlendedMetricCard
+            icon={Eye}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended Impressions"
+            value={metaMetrics.impressions}
+            change={metaMetrics.impressionGrowth}
+            decimals={0}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: metaMetrics.impressions?.toLocaleString() || '0',
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "0",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "0",
+                active: false
+              }
+            ]}
+          />
+          
+          <BlendedMetricCard
+            icon={MousePointer}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended Clicks"
+            value={metaMetrics.clicks}
+            change={metaMetrics.clickGrowth}
+            decimals={0}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: metaMetrics.clicks?.toLocaleString() || '0',
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "0",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "0",
+                active: false
+              }
+            ]}
+          />
 
-      {/* Efficiency metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ModernMetricCard
-          icon={PercentIcon}
-          iconBg="bg-gradient-to-br from-yellow-500/20 to-orange-600/20"
-          title="CTR"
-          value={metaMetrics.ctr / 100}
-          change={metaMetrics.ctrGrowth}
-          isPercentage={true}
-          decimals={2}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `${metaMetrics.ctr?.toFixed(2) || '0.00'}%`,
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "0.00%",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "0.00%",
-              active: false
-            }
-          ]}
-        />
-        
-        <ModernMetricCard
-          icon={DollarSign}
-          iconBg="bg-gradient-to-br from-lime-500/20 to-green-600/20"
-          title="CPC"
-          value={metaMetrics.cpc}
-          change={metaMetrics.cpcGrowth}
-          prefix="$"
-          decimals={2}
-          platforms={[
-            { 
-              name: "Meta", 
-              icon: "https://i.imgur.com/6hyyRrs.png", 
-              value: `$${metaMetrics.cpc?.toFixed(2) || '0.00'}`,
-              active: true
-            },
-            { 
-              name: "TikTok", 
-              icon: "https://i.imgur.com/AXHa9UT.png", 
-              value: "$0.00",
-              active: false
-            },
-            { 
-              name: "Google Ads", 
-              icon: "https://i.imgur.com/TavV4UJ.png", 
-              value: "$0.00",
-              active: false
-            }
-          ]}
-        />
-      </div>
-    </div>
+          {/* Row 5 - CTR & CPC */}
+          <BlendedMetricCard
+            icon={PercentIcon}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended CTR"
+            value={metaMetrics.ctr / 100}
+            change={metaMetrics.ctrGrowth}
+            isPercentage={true}
+            decimals={2}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: `${metaMetrics.ctr?.toFixed(2) || '0.00'}%`,
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "0.00%",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "0.00%",
+                active: false
+              }
+            ]}
+          />
+          
+          <BlendedMetricCard
+            icon={DollarSign}
+            iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
+            title="Total Blended CPC"
+            value={metaMetrics.cpc}
+            change={metaMetrics.cpcGrowth}
+            prefix="$"
+            decimals={2}
+            // Remove loading prop
+            // loading={loading}
+            platforms={[
+              { 
+                name: "Meta", 
+                icon: "https://i.imgur.com/6hyyRrs.png", 
+                value: `$${metaMetrics.cpc?.toFixed(2) || '0.00'}`,
+                active: true
+              },
+              { 
+                name: "TikTok", 
+                icon: "https://i.imgur.com/AXHa9UT.png", 
+                value: "$0.00",
+                active: false
+              },
+              { 
+                name: "Google Ads", 
+                icon: "https://i.imgur.com/TavV4UJ.png", 
+                value: "$0.00",
+                active: false
+              }
+            ]}
+          />
+          
+
+        </div>
+      </CardContent>
+    </Card>
   )
 } 
