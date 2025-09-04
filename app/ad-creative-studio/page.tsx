@@ -3031,51 +3031,48 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `STEP-BY-STEP COORDINATE VALIDATION PROTOCOL:
+      enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
 
-BEFORE generating ANY pixel, you must THINK through this checklist:
+EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
+- Placing headline at y=0, y=50, y=100, y=200, y=300, y=400 (ALL THESE CAUSE CLIPPING)
+- Text starting near top edge of canvas
+- Large fonts that extend beyond canvas boundaries
 
-STEP 1: VALIDATE CANVAS
-- Canvas is 1024 pixels wide × 1536 pixels tall
-- Safe zone is from y=600 to y=1100 (500px tall safe area)
-- Safe zone is from x=350 to x=674 (324px wide safe area)
+EXACT LAYOUT REQUIREMENTS FOR 1024×1536 PORTRAIT:
 
-STEP 2: PLAN HEADLINE TEXT
-- Text content: (analyze product and create compelling headline)
-- Font size: 40px maximum
-- Position: x=512 (center), y=650 (well below top edge)
-- Validate: Is y=650 greater than y=600? YES - proceed
-- Width: Maximum 300px to stay within x=350-674 bounds
+BACKGROUND LAYER (STEP 1):
+- Create full canvas background (1024×1536)
+- Use gradient, solid color, or simple pattern
+- Keep design simple near where text will be placed
 
-STEP 3: PLAN PRODUCT IMAGE  
-- Source: Uploaded product image
-- Max size: 280×280px 
-- Position: x=512 (center), y=850 (center of safe zone)
-- Validate: Is y=850 between y=700-1000? YES - proceed
-- Ensure image fits within x=372-652 bounds (280px wide centered)
+HEADLINE TEXT LAYER (STEP 2):
+- Text positioning: Center horizontally at x=512, vertically at y=700
+- This means text baseline is at y=700 (far from top edge)
+- Font size: 48px maximum, bold weight
+- Text width: Keep under 400px total width
+- High contrast color (black on light background or white on dark)
+- Example: "BACK TO SCHOOL ESSENTIALS" positioned at exactly y=700
 
-STEP 4: PLAN CTA ELEMENT
-- Text content: Strong call to action (SHOP NOW, GET YOURS, etc.)
-- Font size: 36px maximum
-- Position: x=512 (center), y=1050 (near bottom of safe zone)
-- Validate: Is y=1050 less than y=1100? YES - proceed
-- Style: Button or bold text with high contrast
+PRODUCT IMAGE LAYER (STEP 3):
+- Product image: Center at x=512, y=900
+- Maximum size: 400×400 pixels
+- Ensure product fits entirely within this box
+- Add subtle drop shadow if desired but keep within bounds
 
-STEP 5: FINAL COORDINATE CHECK
-Before generating, verify:
-✓ Headline starts at y=650 or lower? 
-✓ Product centered at y=850?
-✓ CTA at y=1050 or higher?
-✓ All elements between x=350-674?
-✓ Nothing touches y=0-599 (top danger zone)?
-✓ Nothing touches y=1101-1536 (bottom danger zone)?
+CTA BUTTON LAYER (STEP 4):
+- Button/text: Center at x=512, y=1200
+- Font size: 42px maximum
+- Button dimensions: 300×80px maximum
+- High contrast color for visibility
+- Example: "SHOP NOW" button at exactly y=1200
 
-STEP 6: GENERATE WITH VALIDATED COORDINATES
-Create high-converting mobile ad creative using ONLY the validated coordinates from steps 1-5.
+CRITICAL SUCCESS VALIDATION:
+✓ Is headline text baseline at y=700 or lower? (NOT y=0-699)
+✓ Does headline fit entirely within canvas when rendered?
+✓ Is product image centered at y=900?
+✓ Is CTA positioned at y=1200?
 
-EMERGENCY OVERRIDE: If any element tries to go outside these coordinates, immediately shrink it by 30% and recenter within the safe zone.
-
-Background can use full canvas but keep subtle near edges for text contrast.${autoInstructions}${textPromptAddition}`
+GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 900, 1200) to prevent any text clipping.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3357,51 +3354,48 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `STEP-BY-STEP COORDINATE VALIDATION PROTOCOL:
+      enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
 
-BEFORE generating ANY pixel, you must THINK through this checklist:
+EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
+- Placing headline at y=0, y=50, y=100, y=200, y=300, y=400 (ALL THESE CAUSE CLIPPING)
+- Text starting near top edge of canvas
+- Large fonts that extend beyond canvas boundaries
 
-STEP 1: VALIDATE CANVAS
-- Canvas is 1024 pixels wide × 1536 pixels tall
-- Safe zone is from y=600 to y=1100 (500px tall safe area)
-- Safe zone is from x=350 to x=674 (324px wide safe area)
+EXACT LAYOUT REQUIREMENTS FOR 1024×1536 PORTRAIT:
 
-STEP 2: PLAN HEADLINE TEXT
-- Text content: (analyze product and create compelling headline)
-- Font size: 40px maximum
-- Position: x=512 (center), y=650 (well below top edge)
-- Validate: Is y=650 greater than y=600? YES - proceed
-- Width: Maximum 300px to stay within x=350-674 bounds
+BACKGROUND LAYER (STEP 1):
+- Create full canvas background (1024×1536)
+- Use gradient, solid color, or simple pattern
+- Keep design simple near where text will be placed
 
-STEP 3: PLAN PRODUCT IMAGE  
-- Source: Uploaded product image
-- Max size: 280×280px 
-- Position: x=512 (center), y=850 (center of safe zone)
-- Validate: Is y=850 between y=700-1000? YES - proceed
-- Ensure image fits within x=372-652 bounds (280px wide centered)
+HEADLINE TEXT LAYER (STEP 2):
+- Text positioning: Center horizontally at x=512, vertically at y=700
+- This means text baseline is at y=700 (far from top edge)
+- Font size: 48px maximum, bold weight
+- Text width: Keep under 400px total width
+- High contrast color (black on light background or white on dark)
+- Example: "BACK TO SCHOOL ESSENTIALS" positioned at exactly y=700
 
-STEP 4: PLAN CTA ELEMENT
-- Text content: Strong call to action (SHOP NOW, GET YOURS, etc.)
-- Font size: 36px maximum
-- Position: x=512 (center), y=1050 (near bottom of safe zone)
-- Validate: Is y=1050 less than y=1100? YES - proceed
-- Style: Button or bold text with high contrast
+PRODUCT IMAGE LAYER (STEP 3):
+- Product image: Center at x=512, y=900
+- Maximum size: 400×400 pixels
+- Ensure product fits entirely within this box
+- Add subtle drop shadow if desired but keep within bounds
 
-STEP 5: FINAL COORDINATE CHECK
-Before generating, verify:
-✓ Headline starts at y=650 or lower? 
-✓ Product centered at y=850?
-✓ CTA at y=1050 or higher?
-✓ All elements between x=350-674?
-✓ Nothing touches y=0-599 (top danger zone)?
-✓ Nothing touches y=1101-1536 (bottom danger zone)?
+CTA BUTTON LAYER (STEP 4):
+- Button/text: Center at x=512, y=1200
+- Font size: 42px maximum
+- Button dimensions: 300×80px maximum
+- High contrast color for visibility
+- Example: "SHOP NOW" button at exactly y=1200
 
-STEP 6: GENERATE WITH VALIDATED COORDINATES
-Create high-converting mobile ad creative using ONLY the validated coordinates from steps 1-5.
+CRITICAL SUCCESS VALIDATION:
+✓ Is headline text baseline at y=700 or lower? (NOT y=0-699)
+✓ Does headline fit entirely within canvas when rendered?
+✓ Is product image centered at y=900?
+✓ Is CTA positioned at y=1200?
 
-EMERGENCY OVERRIDE: If any element tries to go outside these coordinates, immediately shrink it by 30% and recenter within the safe zone.
-
-Background can use full canvas but keep subtle near edges for text contrast.${autoInstructions}${textPromptAddition}`
+GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 900, 1200) to prevent any text clipping.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
