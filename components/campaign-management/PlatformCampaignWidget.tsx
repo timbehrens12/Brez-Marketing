@@ -356,24 +356,24 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
     try {
       const requestData = {
-        brandId: selectedBrandId,
-        campaignId: campaign.campaign_id,
+          brandId: selectedBrandId,
+          campaignId: campaign.campaign_id,
         forceRefresh,
-        userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        campaignData: {
-          campaign_name: campaign.campaign_name,
-          campaign_id: campaign.campaign_id,
-          status: campaign.status,
-          objective: campaign.objective,
-          budget: campaign.budget,
-          spent: campaign.spent,
-          roas: campaign.roas,
-          impressions: campaign.impressions,
-          clicks: campaign.clicks,
-          conversions: campaign.conversions,
-          ctr: campaign.ctr,
-          cpc: campaign.cpc
-        }
+          userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          campaignData: {
+            campaign_name: campaign.campaign_name,
+            campaign_id: campaign.campaign_id,
+            status: campaign.status,
+            objective: campaign.objective,
+            budget: campaign.budget,
+            spent: campaign.spent,
+            roas: campaign.roas,
+            impressions: campaign.impressions,
+            clicks: campaign.clicks,
+            conversions: campaign.conversions,
+            ctr: campaign.ctr,
+            cpc: campaign.cpc
+          }
       }
       
       // console.log('[CampaignWidget] Sending recommendation request:', requestData)
@@ -421,7 +421,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         toast.info(`Weekly recommendation already used. Next available Monday (${daysText})`)
         return
       }
-      
+
       // Clear any blocked status for this campaign since we got a fresh recommendation
       setBlockedCampaigns(prev => {
         const updated = new Map(prev)
@@ -432,7 +432,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       if (data.recommendation) {
         // Update the specific campaign with the recommendation
         setLocalCampaigns(prev => prev.map(c => 
-                  c.campaign_id === campaign.campaign_id 
+          c.campaign_id === campaign.campaign_id 
             ? { ...c, recommendation: data.recommendation }
             : c
         ))
@@ -874,28 +874,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       if (roas >= 3) return 'text-emerald-400'
       if (roas >= 2) return 'text-amber-400'
       return 'text-red-400'
-    }
-    
-    return (
+  }
+
+  return (
       <div key={campaign.campaign_id} className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
                                                 hover:border-[#3a3a3a] transition-all duration-300 group">
         {/* Compact Header */}
         <div className="p-4 border-b border-[#2a2a2a]">
-          <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              {/* Platform logo for "All Platforms" tab */}
-              {selectedTab === "all" && (
-                <div className="relative">
-                  <Image 
-                    src={platformData.logo} 
-                    alt={platformData.name} 
-                    width={32} 
-                    height={32} 
-                    className="object-contain rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1"
-                  />
-                </div>
-              )}
-              
               <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg flex items-center justify-center border border-[#3a3a3a] flex-shrink-0">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
@@ -969,11 +956,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           <div className="bg-[#1a1a1a]/50 rounded-lg p-3 border border-[#2a2a2a]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div>
+          <div>
                   <div className="text-sm font-medium text-white">AI Recommendation</div>
                   <div className="text-xs text-gray-400">Weekly optimization insights</div>
-                </div>
-              </div>
+          </div>
+        </div>
               <div className="flex items-center gap-2">
                 {campaign.recommendation ? (
                   <>
@@ -1012,13 +999,13 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                       </Tooltip>
                     </TooltipProvider>
                     
-                    <Button
+        <Button
                       onClick={() => {
                         setSelectedRecommendation(campaign)
                         setRecommendationDialogOpen(true)
                       }}
                       variant="outline"
-                      size="sm"
+          size="sm"
                       className="bg-[#2a2a2a] border-[#3a3a3a] text-gray-300 hover:bg-[#3a3a3a] 
                                hover:text-white text-xs px-3 py-1 h-7"
                     >
@@ -1064,7 +1051,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                         return (
                           <Button
                             onClick={() => generateRecommendation(campaign, true)}
-                            variant="outline"
+          variant="outline"
                             size="sm"
                             disabled={isGenerating}
                             className="text-xs px-2 py-1 bg-[#2a2a2a] border-[#3a3a3a] text-gray-300 
@@ -1075,8 +1062,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               <RefreshCw className="h-3 w-3" />
-                            )}
-                          </Button>
+          )}
+        </Button>
                         )
                       } else {
                         // Calculate next Monday for display
@@ -1125,8 +1112,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   </Button>
                 )}
               </div>
-            </div>
-            
+      </div>
+
             {campaign.recommendation && (
               <div className="mt-3 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a]">
                 <div className="text-sm text-gray-300">
@@ -1170,21 +1157,21 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           {/* Search and filters */}
           <div className="flex flex-col sm:flex-row gap-4 px-6 pt-4 pb-0">
             <div className="flex-1">
-              <div className="relative">
+      <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
+        <Input
                   placeholder="Search campaigns across all platforms..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-gray-500 
                            focus:border-white/20 focus:ring-white/20"
-                />
-              </div>
-            </div>
+        />
+      </div>
+          </div>
             
             <div className="flex items-center gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1193,10 +1180,10 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   >
                     <Settings className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                     Filters
-                  </Button>
-                </DropdownMenuTrigger>
+                        </Button>
+                      </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-[#0a0a0a] border-[#1a1a1a] w-64 p-2 rounded-xl shadow-2xl">
-                  <DropdownMenuItem 
+                        <DropdownMenuItem 
                     onSelect={(e) => e.preventDefault()}
                     className="p-3 rounded-lg hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] cursor-pointer"
                   >
@@ -1208,19 +1195,19 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                         className="ml-2 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#2a2a2a]"
                       />
                     </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
 
           {/* Campaigns table */}
           <div className="px-6 pb-4">
             <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
               {filteredCampaigns.map(renderCampaignCard)}
-            </div>
-          </div>
-        </div>
+                    </div>
+                    </div>
+                  </div>
       )
     }
 
@@ -1234,10 +1221,10 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           <div className="w-20 h-20 mx-auto mb-6 bg-[#1a1a1a] rounded-2xl flex items-center justify-center 
                         border border-[#2a2a2a] shadow-lg">
             <AlertCircle className="w-10 h-10 text-gray-500" />
-          </div>
+                    </div>
           <h3 className="text-xl font-bold text-white mb-3">Platform Not Found</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">The requested platform could not be found</p>
-        </div>
+                    </div>
       )
     }
     
@@ -1247,14 +1234,14 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           <div className="w-20 h-20 mx-auto mb-6 bg-[#1a1a1a] rounded-2xl flex items-center justify-center 
                         border border-[#2a2a2a] shadow-lg">
             <AlertCircle className="w-10 h-10 text-gray-500" />
-          </div>
+                  </div>
           <h3 className="text-xl font-bold text-white mb-3">Platform Not Connected</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">Connect your {platform.name} account to view campaigns and performance metrics</p>
           <Button className="bg-white text-black hover:bg-gray-200 px-8 py-3 rounded-xl font-semibold 
                            transition-all duration-300 shadow-lg">
             Connect {platform.name}
           </Button>
-        </div>
+                </div>
       )
     }
 
@@ -1297,7 +1284,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           <div className="w-20 h-20 mx-auto mb-6 bg-[#1a1a1a] rounded-2xl flex items-center justify-center 
                         border border-[#2a2a2a] shadow-lg">
             <Target className="w-10 h-10 text-gray-500" />
-          </div>
+                    </div>
           <h3 className="text-xl font-bold text-white mb-3">No Campaigns Found</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
             {searchQuery ? 'Try adjusting your search criteria' : 'No campaigns available for this platform'}
@@ -1326,15 +1313,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
+                    <Button 
                   variant="outline" 
-                  size="sm" 
+                      size="sm" 
                   className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] hover:border-white/20 
                            px-5 py-3 rounded-xl font-medium transition-all duration-300 group"
-                >
+                    >
                   <Settings className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   Filters
-                </Button>
+                    </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-[#0a0a0a] border-[#1a1a1a] w-64 p-2 rounded-xl shadow-2xl">
                 <DropdownMenuItem 
@@ -1378,8 +1365,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             <p className="text-gray-400 text-lg font-medium">Refreshing campaigns...</p>
             <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
           </div>
-        </div>
-      )}
+                  </div>
+                )}
       */}
       
       {/* Compact Header */}
@@ -1488,8 +1475,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                       />
                       {platform.isActive && (
                         <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#1a1a1a]"></div>
-                      )}
-                    </div>
+        )}
+      </div>
                     <span className="font-medium">{platform.name}</span>
                   </div>
                 </TabsTrigger>
@@ -1512,7 +1499,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </div>
         </CardContent>
       </Card>
-        
+
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] text-white overflow-y-auto">
@@ -1570,7 +1557,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               )}
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="space-y-6 mt-6">
             {/* Campaign Overview */}
             <div className="bg-gradient-to-br from-[#111] to-[#1a1a1a] rounded-2xl p-6 border border-[#333]">
@@ -1632,7 +1619,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   </p>
                 </div>
               </div>
-            </div>
+              </div>
 
             {/* 7-Day Data Summary */}
             {selectedRecommendation?.recommendation?.data_summary && (
@@ -1720,9 +1707,9 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                     <h4 className="text-sm font-semibold text-white">Why this recommendation?</h4>
                     <p className="text-gray-400 text-sm leading-relaxed">
                       {selectedRecommendation?.recommendation?.reasoning || 'Based on campaign performance analysis, this optimization will help improve overall efficiency and ROI.'}
-                    </p>
-                  </div>
-                  
+                </p>
+              </div>
+
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-white">Implementation Steps</h4>
                                          <div className="text-gray-400 text-sm leading-relaxed">
@@ -1761,8 +1748,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                      </div>
                   </div>
                 </div>
+                </div>
               </div>
-            </div>
 
             {/* Specific Actions */}
             {selectedRecommendation?.recommendation?.specific_actions && (
@@ -1770,7 +1757,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl flex items-center justify-center border border-[#333]">
                     <span className="text-sm font-bold text-white">4</span>
-                  </div>
+                </div>
                   <h3 className="text-lg font-semibold text-white">Specific Actions</h3>
                 </div>
                 
@@ -1867,13 +1854,13 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 )}
               </div>
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setRecommendationDialogOpen(false)}
+                  <Button
+                    variant="outline"
+                    onClick={() => setRecommendationDialogOpen(false)}
                   className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] border-[#333] text-gray-300 hover:bg-gradient-to-br hover:from-[#2a2a2a] hover:to-[#333] hover:text-white"
-                >
-                  Close
-                </Button>
+                  >
+                    Close
+                  </Button>
                 <Button
                   className={`px-6 py-2 rounded-xl font-semibold transition-all duration-300 ${
                     selectedRecommendation?.recommendation?.status === 'completed'
@@ -1948,12 +1935,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   ) : (
                     "I've done it"
                   )}
-                </Button>
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
         </DialogContent>
       </Dialog>
-      </div>
-    )
-  } 
+    </div>
+  )
+}
