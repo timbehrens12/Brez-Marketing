@@ -464,8 +464,8 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   })
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -493,9 +493,9 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
           {/* Show health badge in header */}
           {report && getHealthBadge(report.overallHealth)}
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
+      <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
         <div className="flex-1 flex flex-col space-y-6">
           {/* Main Summary - Enhanced with professional background and centered text */}
           <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-6' : 'flex-1'}`}>
@@ -572,7 +572,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

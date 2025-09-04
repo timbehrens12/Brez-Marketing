@@ -1423,13 +1423,29 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+    <div className="space-y-8 relative">
+      {/* Remove Loading Overlay - completely commented out */}
+      {/* 
+      {isRefreshing && (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
+              <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+            </div>
+            <p className="text-gray-400 text-lg font-medium">Refreshing campaigns...</p>
+            <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+          </div>
+        </div>
+      )}
+      */}
+      
       {/* Header */}
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-8 py-5 border-b border-[#333] rounded-t-lg">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-8 py-5 border-b border-[#333] rounded-t-lg">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10 shadow-lg">
-              <Target className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Users className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-white">Campaign Management</h2>
@@ -1439,11 +1455,10 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
           </div>
         </div>
-      </CardHeader>
 
-      {/* Tabbed Interface */}
-      <CardContent className="px-8 py-6">
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+        {/* Tabbed Interface */}
+        <div className="px-8 py-6">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-11">
               <TabsTrigger 
                 value="all" 
@@ -1517,7 +1532,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               ))}
             </div>
           </Tabs>
-      </CardContent>
+        </div>
+      </div>
         
       {/* Recommendation Dialog */}
       <Dialog open={recommendationDialogOpen} onOpenChange={setRecommendationDialogOpen}>
@@ -1960,6 +1976,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           </div>
         </DialogContent>
       </Dialog>
-    </Card>
-  )
-} 
+      </div>
+    )
+  } 

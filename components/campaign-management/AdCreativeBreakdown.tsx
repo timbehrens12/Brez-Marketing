@@ -308,9 +308,9 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative h-full flex flex-col">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative">
       {/* Header - matches other widgets style */}
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -386,10 +386,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                      focus:border-white/20 focus:ring-1 focus:ring-white/20"
           />
         </div>
-      </CardHeader>
+      </div>
 
       {/* Content */}
-      <CardContent className="p-6 flex-1 overflow-y-auto">
+      <div className="p-6">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -575,7 +575,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             })}
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   )
 } 

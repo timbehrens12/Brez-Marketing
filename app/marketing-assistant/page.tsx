@@ -410,7 +410,7 @@ export default function MarketingAssistantPage() {
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
       // console.log("[MarketingAssistant] Skipping Meta data fetch from database: Missing brandId or dateRange")
-      return defaultMetrics
+      return
     }
 
     try {
@@ -1296,25 +1296,46 @@ export default function MarketingAssistantPage() {
 
           {/* Main Content Grid - All widgets now show with preloaded data */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-8 animate-in fade-in duration-300">
-            {/* New Layout using CSS Grid */}
-            <div className="grid grid-cols-12 gap-6">
-              {/* Left Column */}
-              <div className="col-span-12 lg:col-span-8 space-y-6">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            {/* Top Section - Blended Widgets and Advertising Report */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
+              {/* Left: Blended Widgets Table - 50% width */}
+              <div className="h-full">
+                <BlendedWidgetsTable 
+                  metaMetrics={metaMetrics}
+                  // Remove loading props
+                  // isLoadingMetrics={isLoadingMetrics}
+                  // isRefreshingData={isRefreshingData}
+                />
+                  </div>
+
+                                          {/* Right: Advertising Report - 50% width */}
+              <div className="h-full">
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              </div>
+                </div>
+
+            {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
+              {/* Left: Ad Creative Breakdown */}
+              <div className="h-full">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
-              {/* Right Column */}
-              <div className="col-span-12 lg:col-span-4 space-y-6">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              {/* Right: Performance Chart */}
+              <div className="h-full">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
-                />
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
+                  // Remove loading prop
+                  // loading={isLoadingMetrics || isRefreshingData} 
                 />
               </div>
             </div>
+
+            {/* Bottom Section - Campaign Management at 100% width (moved to bottom) */}
+            <div>
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </div>
+
           </div>
         </>
       </div>

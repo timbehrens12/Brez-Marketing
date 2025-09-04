@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 import { getStandardSupabaseClient } from '@/lib/utils/unified-supabase'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface MetaMetrics {
   adSpend: number
@@ -380,27 +379,29 @@ export default function BlendedWidgetsTable({
 
 
   return (
-    <Card className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                        flex items-center justify-center border border-white/10 shadow-lg">
-            <Layers className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
-            <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
+    <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+      <div className="relative">
+        {/* Header - matches AIDailyReport style */}
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Layers className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
+              <p className="text-gray-400 font-medium text-base">Unified view of performance across all advertising platforms</p>
+            </div>
           </div>
         </div>
-      </CardHeader>
-      
-
-      {/* Content */}
-      <CardContent className="flex-1 p-6 overflow-auto">
-        {/* 2-column grid with modern cards */}
-        <div className="grid grid-cols-2 gap-3">
         
-        {/* Row 1 - Budget Usage (spanning 2 columns) */}
+
+        {/* Content */}
+        <div className="flex-1 p-6 overflow-auto">
+          {/* 2-column grid with modern cards */}
+          <div className="grid grid-cols-2 gap-3">
+          
+          {/* Row 1 - Budget Usage (spanning 2 columns) */}
           <div className="col-span-2">
             <BlendedMetricCard
               icon={CreditCard}
@@ -706,7 +707,8 @@ export default function BlendedWidgetsTable({
           
 
         </div>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </div>
   )
 } 
