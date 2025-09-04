@@ -308,32 +308,25 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="relative bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A] border border-[#1a1a1a] rounded-2xl h-full flex flex-col overflow-hidden">
-      {/* Modern header */}
-      <div className="relative bg-gradient-to-r from-[#0f0f0f]/80 to-[#1a1a1a]/80 backdrop-blur-xl p-5 border-b border-[#222]">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative">
+      {/* Header - matches other widgets style */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-xl 
-                          flex items-center justify-center border border-purple-500/20 shadow-lg">
-              <ImageIcon className="w-6 h-6 text-purple-400" />
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <ImageIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Creative Performance</h2>
-              <p className="text-gray-400 text-sm">{filteredAndSortedAds.length} ads • {filteredAndSortedAds.filter(ad => ad.status === 'ACTIVE').length} active</p>
+              <h2 className="text-2xl text-white font-bold tracking-tight">Ad Creative Performance</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
+                  {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
             </div>
           </div>
           
-          {/* Quick stats */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Total Spend</p>
-              <p className="text-lg font-bold text-white">${filteredAndSortedAds.reduce((sum, ad) => sum + (ad.spent || 0), 0).toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Controls */}
-        <div className="flex items-center gap-3 mt-4">
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -397,7 +390,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
 
       {/* Content */}
       <div className="p-6">
-        {filteredAndSortedAds.length === 0 && !((preloadedAds && preloadedAds.length > 0) && ads.length === 0) ? (
+        {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                           flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
@@ -412,132 +405,177 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 lg:gap-4 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <div key={ad.ad_id} className="relative bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl hover:border-[#444] transition-all duration-300 group overflow-hidden">
-                  {/* Creative Image */}
-                  <div className="relative h-40 bg-[#1a1a1a] overflow-hidden">
-                    {ad.thumbnail_url || ad.image_url ? (
-                      <Image 
-                        src={ad.thumbnail_url || ad.image_url || ''} 
-                        alt={ad.ad_name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-gray-500" />
-                      </div>
-                    )}
-                    
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    
-                    {/* Status badge */}
-                    <div className="absolute top-3 right-3">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ad.status === 'ACTIVE' 
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                      }`}>
-                        {ad.status}
-                      </div>
-                    </div>
-                    
-                    {/* Platform logo */}
-                    <div className="absolute top-3 left-3">
-                      <div className="w-8 h-8 bg-black/50 backdrop-blur rounded-lg flex items-center justify-center border border-white/10">
-                        <Image
-                          src="https://i.imgur.com/6hyyRrs.png"
-                          alt="Meta"
-                          width={16}
-                          height={16}
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Preview button */}
-                    {ad.preview_url && (
-                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 bg-black/50 backdrop-blur hover:bg-black/70 text-white border border-white/20"
-                          onClick={() => window.open(ad.preview_url!, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Content section */}
-                  <div className="p-4">
-                    {/* Ad name and headline */}
-                    <div className="mb-3">
-                      <h4 className="font-semibold text-white text-sm mb-1 line-clamp-1">
-                        {ad.ad_name}
-                      </h4>
-                      {ad.headline && (
-                        <p className="text-xs text-gray-400 line-clamp-1">
-                          {ad.headline}
-                        </p>
-                      )}
-                    </div>
-                      
-                    
-                    {/* Key metrics in a horizontal layout */}
-                    <div className="grid grid-cols-3 gap-3 mb-3">
-                      <div className="text-center">
-                        <p className="text-xs text-gray-400">Spend</p>
-                        <p className="text-sm font-bold text-white">{formatCurrency(ad.spent)}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-400">Clicks</p>
-                        <p className="text-sm font-bold text-white">{formatNumber(ad.clicks)}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-400">CTR</p>
-                        <p className="text-sm font-bold text-white">{formatPercentage(ad.ctr)}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Performance indicator */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {roas > 2 ? (
-                          <div className="flex items-center gap-1 text-green-400">
-                            <TrendingUp className="w-3 h-3" />
-                            <span className="text-xs font-medium">High ROAS</span>
-                          </div>
-                        ) : roas > 1 ? (
-                          <div className="flex items-center gap-1 text-yellow-400">
-                            <Target className="w-3 h-3" />
-                            <span className="text-xs font-medium">Moderate</span>
-                          </div>
+                <Card key={ad.ad_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
+                                              shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col">
+                  <CardContent className="p-0 flex-1 flex flex-col">
+                    {/* Creative Image - Responsive sizing */}
+                    <div className="p-3 lg:p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
+                      <div className="relative h-28 lg:h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
+                                    flex items-center justify-center overflow-hidden group-hover:border-[#3a3a3a] transition-colors">
+                        {ad.thumbnail_url || ad.image_url ? (
+                          <Image 
+                            src={ad.thumbnail_url || ad.image_url || ''} 
+                            alt={ad.ad_name}
+                            fill
+                            className="object-cover rounded-xl"
+                          />
                         ) : (
-                          <div className="flex items-center gap-1 text-red-400">
-                            <TrendingDown className="w-3 h-3" />
-                            <span className="text-xs font-medium">Low ROAS</span>
+                          <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                        )}
+                        
+                        {/* Platform Logo */}
+                        <div className="absolute top-1.5 lg:top-2 left-1.5 lg:left-2">
+                          <div className="w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
+                            <Image
+                              src="https://i.imgur.com/6hyyRrs.png"
+                              alt="Meta"
+                              width={12}
+                              height={12}
+                              className="object-contain lg:w-[14px] lg:h-[14px]"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Status Badge */}
+                        <div className="absolute top-1.5 lg:top-2 right-1.5 lg:right-2">
+                          <Badge className={`text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+                            ad.status === 'ACTIVE' 
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                          }`}>
+                            {ad.status}
+                          </Badge>
+                        </div>
+                        
+                        {/* Preview Link - Hidden on smaller screens */}
+                        {ad.preview_url && (
+                          <div className="absolute bottom-1.5 lg:bottom-2 right-1.5 lg:right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 lg:h-6 lg:w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
+                                    onClick={() => window.open(ad.preview_url!, '_blank')}
+                                  >
+                                    <ExternalLink className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-[#0a0a0a] border-[#2a2a2a]">
+                                  <p className="text-white text-xs">Preview Ad</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400">Est. ROAS</p>
-                        <p className="text-sm font-bold text-white">{roas.toFixed(2)}x</p>
+                    </div>
+                    
+                    {/* Ad Details - Flexible container with proper overflow handling */}
+                    <div className="p-3 lg:p-4 pt-0 flex-1 flex flex-col min-h-0">
+                      <div className="mb-3 lg:mb-4 flex-shrink-0">
+                        {/* Ad name with responsive text sizing and proper line clamping */}
+                        <h4 className="font-semibold text-white text-xs lg:text-sm mb-1 tracking-tight 
+                                     break-words overflow-hidden text-ellipsis line-clamp-2">
+                          {ad.ad_name}
+                        </h4>
+                        {ad.headline && (
+                          <p className="text-xs text-gray-400 mb-2 break-words overflow-hidden text-ellipsis line-clamp-2">
+                            {ad.headline}
+                          </p>
+                        )}
+                        {/* Campaign and adset names with responsive overflow handling */}
+                        <div className="text-xs text-gray-500 space-y-0.5 lg:space-y-1">
+                          <p className="text-gray-400 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.campaign_name}>
+                            {ad.campaign_name}
+                          </p>
+                          <p className="text-gray-500 break-words overflow-hidden text-ellipsis line-clamp-1" 
+                             title={ad.adset_name}>
+                            {ad.adset_name}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Performance Metrics - Fully responsive grid */}
+                      <div className="grid grid-cols-2 gap-1.5 lg:gap-2 text-xs flex-1">
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Spend
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatCurrency(ad.spent)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Impress.
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.impressions)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Clicks
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.clicks)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            CTR
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatPercentage(ad.ctr)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            Conver.
+                          </div>
+                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                            {formatNumber(ad.conversions)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
+                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
+                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
+                                         truncate flex-shrink-0">
+                            ROAS
+                          </div>
+                          <div className={`font-bold text-xs lg:text-sm break-words flex-1 flex items-end ${
+                            roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>
+                            {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )
             })}
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 } 
