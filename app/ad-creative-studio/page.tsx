@@ -5178,9 +5178,9 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
     }
 
     return (
-      <div className="pt-[20px] max-w-6xl mx-auto">
+      <div className="pt-[18px] max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-3">
           <Button
             onClick={() => setCurrentStep('creative-type')}
             variant="ghost"
