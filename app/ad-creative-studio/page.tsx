@@ -5195,16 +5195,16 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
           </div>
         </div>
         
-        {/* AI Limitation Warning - Ultra Compact */}
-        <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded px-3 py-1 mb-2">
+        {/* AI Limitation Warning - Minimal */}
+        <div className="bg-amber-600/5 border border-amber-500/10 rounded px-2 py-0.5 mb-1">
           <div className="text-amber-200 text-xs flex items-center gap-1">
             <span>⚠️</span>
-            <span>AI struggles with non-portrait uploaded images - for best results avoid wide/rectangular products</span>
+            <span>AI struggles with non-portrait images - avoid wide/rectangular products</span>
           </div>
         </div>
 
         {/* Widget Layout */}
-        <div className="mt-1 h-[560px]">
+        <div className="mt-0 h-[535px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
             {/* Left Column: Stacked widgets */}
             <div className="lg:col-span-11 flex flex-col gap-3 h-full">
