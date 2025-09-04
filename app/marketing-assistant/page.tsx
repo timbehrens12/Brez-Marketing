@@ -1231,113 +1231,182 @@ export default function MarketingAssistantPage() {
 
   // Show regular dashboard when brand is selected
   return (
-    <div className="w-full space-y-6 mb-12 relative">
-      <GridOverlay />
+    <div className="w-full min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#0F0F0F] to-[#0A0A0A] relative overflow-hidden">
+      {/* Modern Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-purple-600/5 to-pink-600/5"></div>
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+      </div>
+      
       <div className="relative z-10">
-        <>
-          {/* Page Header - Full Width */}
-          <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
-            <div className="px-12 lg:px-24 xl:px-32">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Brain className="w-6 h-6 text-white" />
+        {/* Modern Header with Floating Elements */}
+        <div className="relative px-8 lg:px-12 xl:px-16 pt-8">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                {/* Modern Icon Container */}
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl 
+                                flex items-center justify-center border border-white/20 backdrop-blur-sm
+                                shadow-2xl relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                    <Brain className="w-8 h-8 text-white relative z-10" />
                   </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
-                    <p className="text-gray-400 text-base">
-                      {lastPageRefresh ? (
-                        <>
-                          Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </>
-                      ) : (
-                        'AI-powered marketing insights and recommendations'
-                      )}
-                    </p>
-                  </div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-20 blur-lg"></div>
                 </div>
                 
-                <Button
-                  onClick={refreshAllWidgets}
-                  disabled={isRefreshingAll || refreshCooldown}
-                  variant="outline"
-                  size="sm"
-                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                           hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
-                           duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <div className="space-y-1">
+                  <h1 className="text-4xl font-bold text-white tracking-tight">
+                    Marketing Assistant
+                  </h1>
+                  <p className="text-gray-300 text-lg">
+                    {lastPageRefresh ? (
+                      <>
+                        Last updated {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </>
+                    ) : (
+                      'AI-powered insights and strategic recommendations'
+                    )}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Modern Refresh Button */}
+              <Button
+                onClick={refreshAllWidgets}
+                disabled={isRefreshingAll || refreshCooldown}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 
+                         text-white border-0 px-6 py-3 rounded-2xl font-semibold transition-all 
+                         duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                         backdrop-blur-sm relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10 flex items-center gap-2">
                   {isRefreshingAll ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className="w-5 h-5 animate-spin" />
                       Refreshing...
                     </>
                   ) : refreshCooldown ? (
                     <>
-                      <Clock className="w-4 h-4 mr-2" />
+                      <Clock className="w-5 h-5" />
                       Cooldown
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                      <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
                       Refresh All
                     </>
                   )}
-                </Button>
-              </div>
+                </div>
+              </Button>
             </div>
           </div>
+        </div>
 
-          {/* Meta Connection Status Banner */}
+        {/* Meta Connection Status Banner */}
+        <div className="px-8 lg:px-12 xl:px-16 mt-6">
           <MetaConnectionStatus 
             brandId={selectedBrandId} 
-            className="px-12 lg:px-24 xl:px-32" 
+            className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-xl" 
           />
+        </div>
 
-          {/* Main Content Grid - All widgets now show with preloaded data */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-8 animate-in fade-in duration-300">
-            {/* Top Section - Blended Widgets and Advertising Report */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
-              {/* Left: Blended Widgets Table - 50% width */}
-              <div className="h-full">
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
-                  // Remove loading props
-                  // isLoadingMetrics={isLoadingMetrics}
-                  // isRefreshingData={isRefreshingData}
-                />
-                  </div>
-
-                                          {/* Right: Advertising Report - 50% width */}
-              <div className="h-full">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-              </div>
+        {/* Main Dashboard Content with Modern Layout */}
+        <div className="px-8 lg:px-12 xl:px-16 mt-8 pb-16 space-y-8">
+          
+          {/* Hero Section - Campaign Management (Moved to Top) */}
+          <div className="relative">
+            <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 
+                          rounded-3xl shadow-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10"></div>
+              <div className="relative z-10 p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-2xl font-bold text-white">Campaign Command Center</h2>
                 </div>
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
+            </div>
+          </div>
 
-            {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
-              {/* Left: Ad Creative Breakdown */}
-              <div className="h-full">
+          {/* Primary Analytics Section - Asymmetric Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 min-h-[600px]">
+            
+            {/* Left Panel - Performance Metrics (3/5 width) */}
+            <div className="xl:col-span-3 space-y-6">
+              
+              {/* Blended Metrics - Modern Card Design */}
+              <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 
+                            rounded-3xl shadow-2xl overflow-hidden h-full">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-blue-500/10 to-purple-500/10"></div>
+                <div className="relative z-10 p-8 h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-blue-500 rounded-full animate-pulse"></div>
+                    <h2 className="text-2xl font-bold text-white">Performance Dashboard</h2>
+                  </div>
+                  <BlendedWidgetsTable 
+                    metaMetrics={metaMetrics}
+                  />
+                </div>
+              </div>
+              
+            </div>
+
+            {/* Right Panel - AI Reports (2/5 width) */}
+            <div className="xl:col-span-2 space-y-6">
+              
+              {/* AI Daily Report - Tall Card */}
+              <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 
+                            rounded-3xl shadow-2xl overflow-hidden h-full">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10"></div>
+                <div className="relative z-10 p-8 h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+                    <h2 className="text-xl font-bold text-white">AI Insights</h2>
+                  </div>
+                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          {/* Secondary Analytics Section - Equal Split */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[500px]">
+            
+            {/* Creative Analytics */}
+            <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 
+                          rounded-3xl shadow-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10"></div>
+              <div className="relative z-10 p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-3 h-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-2xl font-bold text-white">Creative Intelligence</h2>
+                </div>
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
+            </div>
 
-              {/* Right: Performance Chart */}
-              <div className="h-full">
+            {/* Performance Trends */}
+            <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 
+                          rounded-3xl shadow-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-indigo-500/10"></div>
+              <div className="relative z-10 p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-2xl font-bold text-white">Performance Trends</h2>
+                </div>
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
-                  // Remove loading prop
-                  // loading={isLoadingMetrics || isRefreshingData} 
                 />
               </div>
             </div>
-
-            {/* Bottom Section - Campaign Management at 100% width (moved to bottom) */}
-            <div>
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-            </div>
-
           </div>
-        </>
+
+        </div>
       </div>
     </div>
   )
