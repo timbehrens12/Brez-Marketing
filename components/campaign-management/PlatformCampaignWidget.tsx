@@ -883,15 +883,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         <div className="p-4 border-b border-[#2a2a2a]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-600/20 
-                            rounded-lg flex items-center justify-center border border-blue-500/30 flex-shrink-0">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta" 
-                  width={20} 
-                  height={20} 
-                  className="object-contain rounded"
-                />
+              <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg flex items-center justify-center border border-[#3a3a3a] flex-shrink-0">
+                <span className="text-gray-400 text-xs font-medium">M</span>
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-white font-semibold text-base truncate">
@@ -953,14 +946,10 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
           </div>
 
-          {/* AI Recommendation Section - Streamlined */}
-          <div className="bg-gradient-to-r from-[#1a1a1a]/50 to-[#2a2a2a]/50 rounded-lg p-3 border border-[#3a3a3a]">
+          {/* AI Recommendation Section - Clean */}
+          <div className="bg-[#1a1a1a]/50 rounded-lg p-3 border border-[#2a2a2a]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-gradient-to-br from-purple-500/20 to-purple-600/20 
-                              rounded-lg flex items-center justify-center border border-purple-500/30">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
-                </div>
                 <div>
                   <div className="text-sm font-medium text-white">AI Recommendation</div>
                   <div className="text-xs text-gray-400">Weekly optimization insights</div>
@@ -969,39 +958,150 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               <div className="flex items-center gap-2">
                 {campaign.recommendation ? (
                   <>
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs px-2 py-1">
-                      {Math.round((campaign.recommendation.confidence || 8.5) * 10)}%
-                    </Badge>
+                    <span className="text-xs text-gray-400">
+                      {Math.round((campaign.recommendation.confidence || 8.5) * 10)}% confidence
+                    </span>
+                    
+                    {/* Completion Status Indicator */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                            campaign.recommendation?.status === 'completed'
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-[#2a2a2a] border-[#3a3a3a] text-gray-500'
+                          }`}>
+                            {campaign.recommendation?.status === 'completed' ? (
+                              <CheckCircle className="w-3 h-3" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#222] border-[#444] max-w-xs">
+                          <p className="font-medium text-white">
+                            {campaign.recommendation?.status === 'completed' 
+                              ? 'Recommendation Completed' 
+                              : 'Pending Implementation'}
+                          </p>
+                          <p className="text-sm text-gray-400 mt-1">
+                            {campaign.recommendation?.status === 'completed'
+                              ? 'You have marked this recommendation as implemented'
+                              : 'Click Details to mark as complete when implemented'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
                     <Button
                       onClick={() => {
                         setSelectedRecommendation(campaign)
                         setRecommendationDialogOpen(true)
                       }}
+                      variant="outline"
                       size="sm"
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 
-                               hover:to-purple-800 text-white text-xs px-2 py-1 h-7"
+                      className="bg-[#2a2a2a] border-[#3a3a3a] text-gray-300 hover:bg-[#3a3a3a] 
+                               hover:text-white text-xs px-3 py-1 h-7"
                     >
                       Details
                     </Button>
+                    
+                    {/* Weekly Refresh Button - only available on Mondays and when not blocked */}
+                    {(() => {
+                      const now = new Date()
+                      const isBlocked = isRecommendationBlocked(campaign)
+                      const isGenerating = campaignsGeneratingRecommendations.has(campaign.campaign_id)
+                      const daysUntilMonday = getDaysUntilNextMonday()
+                      
+                      // If blocked (recently generated), show blocked status regardless of day
+                      if (isBlocked) {
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="text-xs text-gray-500 px-2 py-1 bg-[#2a2a2a] rounded border border-[#3a3a3a] flex items-center gap-1 whitespace-nowrap cursor-help">
+                                  <Clock className="h-3 w-3" />
+                                  {daysUntilMonday}d
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-[#222] border-[#444] max-w-xs">
+                                <p className="font-medium text-white">
+                                  Weekly Recommendation Limit Reached
+                                </p>
+                                <p className="text-sm text-gray-400 mt-1">
+                                  You can only generate one AI recommendation per week. Next refresh available Monday ({daysUntilMonday === 1 ? '1 day' : `${daysUntilMonday} days`}).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )
+                      }
+                      
+                      // If this week's refresh is available (Monday has passed and not used yet), show refresh button
+                      const isMondayOrLater = now.getDay() >= 1 || now.getDay() === 0 // Monday through Sunday (0 = Sunday)
+                      const isWeeklyRefreshAvailable = isMondayOrLater && !isBlocked
+                      
+                      if (isWeeklyRefreshAvailable) {
+                        return (
+                          <Button
+                            onClick={() => generateRecommendation(campaign, true)}
+                            variant="outline"
+                            size="sm"
+                            disabled={isGenerating}
+                            className="text-xs px-2 py-1 bg-[#2a2a2a] border-[#3a3a3a] text-gray-300 
+                                       hover:bg-[#3a3a3a] hover:text-white transition-all duration-300 h-7"
+                            title="Refresh weekly recommendation (Available from Monday onwards)"
+                          >
+                            {isGenerating ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )
+                      } else {
+                        // Calculate next Monday for display
+                        const nextMonday = new Date(now)
+                        const daysUntilMondayCalc = (8 - now.getDay()) % 7 || 7
+                        nextMonday.setDate(now.getDate() + daysUntilMondayCalc)
+                        nextMonday.setHours(0, 0, 0, 0)
+                        
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="text-xs text-gray-500 px-2 py-1 bg-[#2a2a2a] rounded border border-[#3a3a3a] flex items-center gap-1 whitespace-nowrap">
+                                  <Clock className="h-3 w-3" />
+                                  Mon 12AM
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-[#222] border-[#444] max-w-xs">
+                                <p className="font-medium text-white">
+                                  Refresh Not Available
+                                </p>
+                                <p className="text-sm text-gray-400 mt-1">
+                                  Next refresh available: {nextMonday.toLocaleDateString()} at 12:00 AM
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )
+                      }
+                    })()}
                   </>
                 ) : (
                   <Button
                     onClick={() => generateRecommendation(campaign)}
                     disabled={isGeneratingRecommendation}
+                    variant="outline"
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 
-                             hover:to-blue-800 text-white text-xs px-2 py-1 h-7 disabled:opacity-50"
+                    className="bg-[#2a2a2a] border-[#3a3a3a] text-gray-300 hover:bg-[#3a3a3a] 
+                             hover:text-white text-xs px-3 py-1 h-7 disabled:opacity-50"
                   >
                     {isGeneratingRecommendation ? (
-                      <>
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        Generating...
-                      </>
+                      "Generating..."
                     ) : (
-                      <>
-                        <Brain className="w-3 h-3 mr-1" />
-                        Generate
-                      </>
+                      "Generate"
                     )}
                   </Button>
                 )}
@@ -1009,9 +1109,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
             
             {campaign.recommendation && (
-              <div className="mt-2 p-2 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a]">
-                <div className="text-xs text-gray-300 line-clamp-2">
-                  <strong className="text-white">{campaign.recommendation.action}</strong> - {campaign.recommendation.reasoning?.slice(0, 100)}...
+              <div className="mt-3 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a]">
+                <div className="text-sm text-gray-300">
+                  <span className="text-white font-medium">{campaign.recommendation.action}</span>
+                  {campaign.recommendation.reasoning && (
+                    <span className="text-gray-400"> - {campaign.recommendation.reasoning.slice(0, 120).split('.')[0]}.</span>
+                  )}
                 </div>
               </div>
             )}
@@ -1265,9 +1368,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-white/10 to-white/5 rounded-xl 
-                            flex items-center justify-center border border-white/10">
-                <Users className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg flex items-center justify-center border border-[#3a3a3a]">
+                <Users className="w-4 h-4 text-gray-400" />
               </div>
               <div>
                 <CardTitle className="text-white text-xl">Campaign Management</CardTitle>
@@ -1322,29 +1424,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                          text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
               >
                 <div className="flex items-center gap-2">
-                  <div className="flex -space-x-1">
-                    <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20"
-                    />
-                    <Image 
-                      src="https://i.imgur.com/AXHa9UT.png" 
-                      alt="TikTok" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
-                    />
-                    <Image 
-                      src="https://i.imgur.com/TavV4UJ.png" 
-                      alt="Google" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
-                    />
-                  </div>
+                  <span className="text-gray-400 text-xs">●●●</span>
                   <span className="font-medium">All Platforms</span>
                 </div>
               </TabsTrigger>
@@ -1358,15 +1438,11 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <Image 
-                        src={platform.logo} 
-                        alt={platform.name} 
-                        width={20} 
-                        height={20} 
-                        className={`object-contain rounded-lg ${!platform.isActive ? 'grayscale opacity-50' : ''}`}
-                      />
+                      <div className={`w-4 h-4 rounded border ${platform.isActive ? 'bg-gray-600 border-gray-500' : 'bg-gray-800 border-gray-700'}`}>
+                        <span className="text-xs text-gray-400">{platform.name.charAt(0)}</span>
+                      </div>
                       {platform.isActive && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#1a1a1a]"></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-gray-400 rounded-full"></div>
                       )}
                     </div>
                     <span className="font-medium">{platform.name}</span>
