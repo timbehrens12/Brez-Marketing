@@ -148,7 +148,15 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+// Configure timeout for Vercel
+export const maxDuration = 60 // 60 seconds for Pro accounts
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
+  // Add request timeout to prevent hanging
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 50000) // 50 second timeout
+  
   try {
     // CAMPAIGN RECOMMENDATIONS WITH WEEKLY BLOCKING
     // This endpoint generates AI-powered campaign optimization recommendations that:
@@ -606,10 +614,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating campaign recommendation:', error)
+    
+    // If it's a timeout error, provide more specific message
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return NextResponse.json({ 
+        error: 'Request timeout',
+        message: 'The recommendation generation took too long. Please try again.',
+        details: 'The system is experiencing high load. Try again in a few moments.',
+        userFriendly: true
+      }, { status: 504 })
+    }
+    
     return NextResponse.json({ 
       error: 'Failed to generate recommendation',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -1383,7 +1404,8 @@ Focus on the most impactful actions that address specific adset and ad performan
 `
 
   try {
-    const response = await openai.chat.completions.create({
+    // Add timeout to OpenAI call to prevent hanging
+    const openaiPromise = openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -1398,6 +1420,13 @@ Focus on the most impactful actions that address specific adset and ad performan
       max_tokens: 1000,
       temperature: 0.3
     })
+
+    // Add 15-second timeout to OpenAI API call
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('OpenAI API timeout - using fallback recommendation')), 15000)
+    })
+
+    const response = await Promise.race([openaiPromise, timeoutPromise]) as any
 
     const content = response.choices[0].message.content || '{}'
     let cleanedContent = content
