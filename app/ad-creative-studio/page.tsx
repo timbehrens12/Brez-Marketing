@@ -267,8 +267,8 @@ const CREATIVE_TYPES: CreativeType[] = [
   },
   {
     id: 'auto',
-    name: 'Auto',
-    description: 'Let AI pick the best template for you based on your product and optimize for maximum performance',
+    name: 'Auto Creative Generator',
+    description: 'AI analyzes your product and automatically creates optimized ad creatives for maximum sales',
     icon: '🤖',
     subcategories: ['auto-generation']
   }
@@ -411,7 +411,7 @@ const STYLE_OPTIONS: StyleOption[] = [
   // AUTO GENERATION TEMPLATE - AI picks the best approach based on product analysis
   {
     id: 'auto-generation',
-    name: 'Auto AI Creative',
+    name: 'Auto Creative Generator',
     description: 'AI analyzes your product and creates optimized ad creatives for maximum sales',
     thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48dGV4dCB4PSIxMDAiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRkZGRiIgZm9udC1zaXplPSIyOCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPkFVVE88L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNGRkZGRkYiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5BSTwvdGV4dD48L3N2Zz4=',
     category: 'all',
@@ -3072,7 +3072,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: templateStyle.id,
-      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto AI Creative' : templateStyle.name,
+      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto Creative Generator' : templateStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -3140,7 +3140,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
               brandId: selectedBrandId,
               userId: user?.id,
               styleId: templateStyle.id,
-              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative Multi-Product' : templateStyle.id === 'auto-generation' ? 'Auto AI Multi-Product' : `${templateStyle.name} Multi-Product`,
+              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative Multi-Product' : templateStyle.id === 'auto-generation' ? 'Auto Creative Generator Multi-Product' : `${templateStyle.name} Multi-Product`,
               originalImageUrl: uploadedImageUrls[0],
               generatedImageUrl: generatedImageUrl,
               promptUsed: enhancedPrompt,
@@ -3244,7 +3244,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
           brandId: selectedBrandId,
           userId: user?.id,
           styleId: templateStyle.id,
-          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto AI Creative' : templateStyle.name,
+          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto Creative Generator' : templateStyle.name,
           originalImageUrl: uploadedImageUrl,
           generatedImageUrl: data.imageUrl,
           promptUsed: enhancedPrompt,
@@ -3371,7 +3371,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: modalStyle.id,
-      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.id === 'copy-generation' ? 'Copy Creative' : modalStyle.id === 'auto-generation' ? 'Auto AI Creative' : modalStyle.name,
+      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.id === 'copy-generation' ? 'Copy Creative' : modalStyle.id === 'auto-generation' ? 'Auto Creative Generator' : modalStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -5288,9 +5288,17 @@ AI DECISION MAKING: Automatically select the best template style, background typ
     return (
       <div className="pt-[20px] max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            onClick={() => setCurrentStep('creative-type')}
+            variant="ghost"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
           <div>
-            <h2 className="text-3xl font-bold text-white">Auto AI Creative</h2>
+            <h2 className="text-3xl font-bold text-white">Auto Creative Generator</h2>
             <p className="text-gray-400 text-sm mt-1">AI will analyze your product and create optimized ad creatives for maximum sales</p>
           </div>
         </div>

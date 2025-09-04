@@ -101,10 +101,13 @@ export async function POST(request: NextRequest) {
     
     const imageFile = formData.get('image') as File;
     const backgroundType = formData.get('backgroundType') as string;
-    const aspectRatio = formData.get('aspectRatio') as string || 'square';
+    const aspectRatio = formData.get('aspectRatio') as string || 'portrait';
     const quality = formData.get('quality') as string || 'standard'; // Default to standard quality to reduce costs
     const lighting = formData.get('lighting') as string || 'soft';
     const customPromptModifiers = formData.get('customPromptModifiers') as string || '';
+    
+    console.log(`📏 Received aspectRatio: ${aspectRatio}`);
+    console.log(`🖼️ Using quality: ${quality}`);
     
     // Copy creative support
     const exampleCreativeFile = formData.get('exampleCreative') as File | null;
