@@ -3042,11 +3042,20 @@ CONVERSION OPTIMIZATION RULES:
 • Lighting creates depth and professional appeal
 • Overall aesthetic matches successful ad creatives in the product's category
 
+CRITICAL FORMAT REQUIREMENTS:
+• Generate in PORTRAIT orientation (1024x1536 pixels)
+• Fill ENTIRE portrait canvas from edge to edge
+• NO letterboxing, black bars, or empty space
+• Composition must extend to all four edges
+• Use full vertical height for maximum impact
+• Background extends to frame boundaries
+
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
 • High visual impact for scroll-stopping effect
 • Clear product visibility and appeal
 • Professional advertising quality
+• Full canvas utilization
 
 AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
@@ -3341,11 +3350,20 @@ CONVERSION OPTIMIZATION RULES:
 • Lighting creates depth and professional appeal
 • Overall aesthetic matches successful ad creatives in the product's category
 
+CRITICAL FORMAT REQUIREMENTS:
+• Generate in PORTRAIT orientation (1024x1536 pixels)
+• Fill ENTIRE portrait canvas from edge to edge
+• NO letterboxing, black bars, or empty space
+• Composition must extend to all four edges
+• Use full vertical height for maximum impact
+• Background extends to frame boundaries
+
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
 • High visual impact for scroll-stopping effect
 • Clear product visibility and appeal
 • Professional advertising quality
+• Full canvas utilization
 
 AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
