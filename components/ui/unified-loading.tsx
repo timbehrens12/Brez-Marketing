@@ -121,10 +121,13 @@ export function UnifiedLoading({
 
   if (variant === "fullscreen" || variant === "page") {
     return (
-      <div className={cn(
-        "min-h-screen flex items-center justify-center bg-[#0A0A0A]",
-        className
-      )}>
+      <div 
+        className={cn(
+          "min-h-screen flex items-center justify-center bg-[#0A0A0A]",
+          className
+        )}
+        data-loading-variant={variant}
+      >
         <div className="text-center">
           {renderLogo()}
           <Loader2 className={cn("animate-spin text-white mx-auto mb-4", sizeClasses[size])} />
