@@ -37,7 +37,6 @@ import { emitMetaApiError } from '@/components/MetaConnectionStatus'
 import { isTokenExpired, getTokenErrorMessage } from '@/lib/services/meta-service'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatCurrency, formatPercentage, formatNumber } from '@/lib/formatters'
-import { cn } from "@/lib/utils"
 
 interface Ad {
   ad_id: string
@@ -72,7 +71,7 @@ interface AdCreativeBreakdownProps {
 }
 
 export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdownProps = {}) {
-  
+  const { selectedBrandId } = useBrandContext()
   const [ads, setAds] = useState<Ad[]>(preloadedAds || [])
   const [searchQuery, setSearchQuery] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -84,48 +83,220 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   // Use preloaded ads when they change
   useEffect(() => {
     if (preloadedAds && preloadedAds.length > 0) {
+      // console.log('[AdCreativeBreakdown] Using preloaded ads data:', preloadedAds.length)
       setAds(preloadedAds)
     }
   }, [preloadedAds])
 
+  // Fetch all ads using the same method as dashboard
+  const fetchAds = async (forceRefresh = false) => {
+    if (!selectedBrandId) return
+
+    try {
+      // console.log('[AdCreativeBreakdown] Fetching ads for brand:', selectedBrandId)
+      
+      const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      })
+      const campaignsData = await campaignsResponse.json()
+
+      // Check for error field rather than success field, since the API doesn't return success field
+      if (campaignsData.error) {
+        throw new Error(campaignsData.error || 'Failed to fetch campaigns')
+      }
+
+      // Also check if campaigns array exists
+      if (!campaignsData.campaigns) {
+        throw new Error('No campaigns data returned from API')
+      }
+
+      const allAds: Ad[] = []
+
+      for (const campaign of campaignsData.campaigns || []) {
+        try {
+          const adsetsResponse = await fetch(`/api/meta/adsets?brandId=${selectedBrandId}&campaignId=${campaign.campaign_id}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          })
+          const adsetsData = await adsetsResponse.json()
+
+          if (adsetsData.success && adsetsData.adSets) {
+            for (const adSet of adsetsData.adSets) {
+              try {
+                const adsResponse = await fetch(`/api/meta/ads?brandId=${selectedBrandId}&adsetId=${adSet.adset_id}`, {
+                  cache: 'no-store',
+                  headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                  }
+                })
+                const adsData = await adsResponse.json()
+                
+                if (adsData.success && adsData.ads) {
+                  const enhancedAds = adsData.ads.map((ad: any) => ({
+                    ...ad,
+                    campaign_name: campaign.campaign_name,
+                    adset_name: adSet.adset_name,
+                    campaign_id: campaign.campaign_id
+                  }))
+                  
+                  allAds.push(...enhancedAds)
+                }
+              } catch (error) {
+                console.error(`[AdCreativeBreakdown] Error fetching ads for adset ${adSet.adset_id}:`, error)
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`[AdCreativeBreakdown] Error fetching adsets for campaign ${campaign.campaign_id}:`, error)
+        }
+      }
+
+      setAds(allAds)
+      setLastRefreshTime(Date.now())
+      
+      if (forceRefresh) {
+        toast.success(`Loaded ${allAds.length} ad creatives`, {
+          description: "Today's ad creative data refreshed successfully"
+        })
+      }
+      
+      // console.log(`[AdCreativeBreakdown] Successfully loaded ${allAds.length} ads`)
+
+    } catch (error: any) {
+      console.error('[AdCreativeBreakdown] Error:', error)
+      
+      if (isTokenExpired(error)) {
+        emitMetaApiError(error)
+        toast.error("Meta Connection Expired", {
+          description: "Please reconnect your Meta account in Settings"
+        })
+      } else {
+        toast.error("Failed to load ad creatives", {
+          description: getTokenErrorMessage(error)
+        })
+      }
+      
+      setAds([])
+    }
+  }
+
+  // Initial load - only if no preloaded data
+  useEffect(() => {
+    if (selectedBrandId && (!preloadedAds || preloadedAds.length === 0)) {
+      // console.log('[AdCreativeBreakdown] No preloaded data, fetching ads...')
+      fetchAds()
+    }
+  }, [selectedBrandId, preloadedAds])
+
+  // Listen for refresh events
+  useEffect(() => {
+    if (!selectedBrandId) return
+
+    let refreshTimeout: NodeJS.Timeout
+
+    const handleGlobalRefresh = (event: CustomEvent) => {
+      const { brandId, source, forceRefresh } = event.detail
+      
+      if (brandId === selectedBrandId && source !== 'AdCreativeBreakdown') {
+        // console.log('[AdCreativeBreakdown] Global refresh triggered from other widgets, updating ads...', { source, forceRefresh })
+        
+        clearTimeout(refreshTimeout)
+        refreshTimeout = setTimeout(() => {
+          fetchAds(true)
+        }, 1500)
+      }
+    }
+
+    const handleGlobalRefreshAll = (event: CustomEvent) => {
+      const { brandId, platforms, currentTab } = event.detail
+      
+      if (brandId === selectedBrandId && (platforms?.meta || currentTab === 'meta')) {
+        // console.log('[AdCreativeBreakdown] Global refresh all triggered, updating ads...', { platforms, currentTab })
+        
+        clearTimeout(refreshTimeout)
+        refreshTimeout = setTimeout(() => {
+          fetchAds(true)
+        }, 1500)
+      }
+    }
+
+    const handleNewDayDetected = (event: CustomEvent) => {
+      const { brandId } = event.detail
+      
+      if (brandId === selectedBrandId) {
+        // console.log('[AdCreativeBreakdown] New day detected, updating ads...')
+        
+        clearTimeout(refreshTimeout)
+        refreshTimeout = setTimeout(() => {
+          fetchAds(true)
+        }, 1500)
+      }
+    }
+
+    window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener)
+    window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
+    window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener)
+    window.addEventListener('newDayDetected', handleNewDayDetected as EventListener)
+    window.addEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener)
+
+    return () => {
+      clearTimeout(refreshTimeout)
+      window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener)
+      window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener)
+      window.removeEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener)
+      window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener)
+      window.removeEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener)
+    }
+  }, [selectedBrandId, fetchAds])
+
+  // Helper function to get sort value based on metric
+  const getSortValue = (ad: Ad, metric: string) => {
+    switch (metric) {
+      case 'spent':
+        return ad.spent || 0
+      case 'impressions':
+        return ad.impressions || 0
+      case 'clicks':
+        return ad.clicks || 0
+      case 'ctr':
+        return ad.ctr || 0
+      case 'conversions':
+        return ad.conversions || 0
+      default:
+        return ad.spent || 0
+    }
+  }
+
   // Filter and sort ads
   const filteredAndSortedAds = ads
     .filter(ad => {
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const matchesSearch = 
-          ad.ad_name.toLowerCase().includes(query) ||
-          ad.campaign_name.toLowerCase().includes(query) ||
-          (ad.headline && ad.headline.toLowerCase().includes(query)) ||
-          (ad.body && ad.body.toLowerCase().includes(query))
-        
-        if (!matchesSearch) return false
-      }
+      const matchesSearch = searchQuery === '' || 
+        (ad.ad_name && ad.ad_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (ad.campaign_name && ad.campaign_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (ad.adset_name && ad.adset_name.toLowerCase().includes(searchQuery.toLowerCase()))
       
-      // Filter by active status
-      if (!showInactive && ad.status !== 'ACTIVE') return false
+      const matchesStatus = showInactive || ad.status === 'ACTIVE'
       
-      return true
+      return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
-      let aVal: any = a[sortBy as keyof Ad]
-      let bVal: any = b[sortBy as keyof Ad]
-      
-      // Handle numeric sorting
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortOrder === 'desc' ? bVal - aVal : aVal - bVal
-      }
-      
-      // Handle string sorting
-      aVal = String(aVal).toLowerCase()
-      bVal = String(bVal).toLowerCase()
-      
-      if (sortOrder === 'desc') {
-        return bVal.localeCompare(aVal)
-      }
-      return aVal.localeCompare(bVal)
+      const aValue = getSortValue(a, sortBy)
+      const bValue = getSortValue(b, sortBy)
+      return sortOrder === 'desc' ? bValue - aValue : aValue - bValue
     })
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchAds(true)
+  }
 
   // Format ROAS calculation
   const calculateROAS = (conversions: number, spent: number) => {
@@ -137,21 +308,32 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <div className="bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a] border border-[#333]/50 rounded-2xl shadow-2xl backdrop-blur-sm h-full flex flex-col">
-      {/* Modern Compact Header */}
-      <div className="p-4 border-b border-[#333]/30">
+    <div className="relative bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A] border border-[#1a1a1a] rounded-2xl h-full flex flex-col overflow-hidden">
+      {/* Modern header */}
+      <div className="relative bg-gradient-to-r from-[#0f0f0f]/80 to-[#1a1a1a]/80 backdrop-blur-xl p-5 border-b border-[#222]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg 
-                          flex items-center justify-center border border-gray-600/20">
-              <ImageIcon className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-xl 
+                          flex items-center justify-center border border-purple-500/20 shadow-lg">
+              <ImageIcon className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Ad Creative Performance</h2>
-              <p className="text-gray-400 text-xs">{filteredAndSortedAds.length} creative{filteredAndSortedAds.length !== 1 ? 's' : ''}</p>
+              <h2 className="text-2xl font-bold text-white">Creative Performance</h2>
+              <p className="text-gray-400 text-sm">{filteredAndSortedAds.length} ads • {filteredAndSortedAds.filter(ad => ad.status === 'ACTIVE').length} active</p>
             </div>
           </div>
           
+          {/* Quick stats */}
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Total Spend</p>
+              <p className="text-lg font-bold text-white">${filteredAndSortedAds.reduce((sum, ad) => sum + (ad.spent || 0), 0).toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Controls */}
+        <div className="flex items-center gap-3 mt-4">
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -160,121 +342,202 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                   Options
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a] text-white">
-                <DropdownMenuLabel>View Options</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#2a2a2a]" />
-                <DropdownMenuItem className="hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]">
+              <DropdownMenuContent align="end" className="bg-gray-900 border-[#333]">
+                <DropdownMenuLabel className="text-white">Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#333]" />
+                {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
+                  <DropdownMenuItem 
+                    key={metric} 
+                    onSelect={() => setSortBy(metric)}
+                    className="text-white hover:bg-gray-800"
+                  >
+                    {metric === 'spent' && <DollarSign className="h-4 w-4 mr-2" />}
+                    {metric === 'impressions' && <Eye className="h-4 w-4 mr-2" />}
+                    {metric === 'clicks' && <MousePointer className="h-4 w-4 mr-2" />}
+                    {metric === 'ctr' && <Target className="h-4 w-4 mr-2" />}
+                    {metric === 'conversions' && <Zap className="h-4 w-4 mr-2" />}
+                    <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
+                    {sortBy === metric && (
+                      <Badge className="ml-2 bg-blue-600 text-white">
+                        {sortOrder === 'desc' ? '↓' : '↑'}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuItem 
+                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }} 
+                  className="text-white hover:bg-gray-800"
+                >
                   <div className="flex items-center justify-between w-full">
-                    <span>Show Inactive</span>
-                    <Switch
-                      checked={showInactive}
-                      onCheckedChange={setShowInactive}
-                      className="ml-2"
-                    />
+                    <div className="flex items-center">
+                      {showInactive ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+                      Show Inactive Ads
+                    </div>
+                    <Switch checked={showInactive} />
                   </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-[#2a2a2a]" />
-                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setSortBy('spent')} className="hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]">
-                  Ad Spend
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('ctr')} className="hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]">
-                  CTR
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('conversions')} className="hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]">
-                  Conversions
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
+        
+        {/* Search Bar */}
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search ads, campaigns, or headlines..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-gray-400 
+                     focus:border-white/20 focus:ring-1 focus:ring-white/20"
+          />
+        </div>
       </div>
 
-      {/* Modern Content Grid */}
-      <div className="flex-1 p-4 overflow-auto">
-        {filteredAndSortedAds.length === 0 ? (
-          <div className="text-center py-8">
-            <ImageIcon className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-white mb-2">No Creatives Found</h3>
-            <p className="text-gray-400 text-sm">
-              {searchQuery ? `No ads match "${searchQuery}"` : 'No active ad creatives to display'}
+      {/* Content */}
+      <div className="p-6">
+        {filteredAndSortedAds.length === 0 && !((preloadedAds && preloadedAds.length > 0) && ads.length === 0) ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
+              <ImageIcon className="h-8 w-8 text-gray-500" />
+            </div>
+            <h3 className="text-xl font-medium text-white truncate mb-2">No Ad Creatives Found</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              {searchQuery ? 
+                `No ads match your search "${searchQuery}". Try adjusting your filters.` :
+                'No ad creatives found for your selected criteria. Try adjusting your filters or check if your Meta campaigns have active ads.'
+              }
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredAndSortedAds.slice(0, 5).map((ad) => {
+          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
+            {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <div key={ad.ad_id} className="bg-gradient-to-r from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 hover:border-[#444]/50 transition-all">
-                  <div className="flex gap-4">
-                    {/* Creative Thumbnail */}
-                    <div className="w-16 h-16 bg-[#222] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {ad.thumbnail_url || ad.image_url ? (
-                        <Image 
-                          src={ad.thumbnail_url || ad.image_url || ''} 
-                          alt={ad.ad_name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="w-6 h-6 text-gray-500" />
-                      )}
+                <div key={ad.ad_id} className="relative bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl hover:border-[#444] transition-all duration-300 group overflow-hidden">
+                  {/* Creative Image */}
+                  <div className="relative h-40 bg-[#1a1a1a] overflow-hidden">
+                    {ad.thumbnail_url || ad.image_url ? (
+                      <Image 
+                        src={ad.thumbnail_url || ad.image_url || ''} 
+                        alt={ad.ad_name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-gray-500" />
+                      </div>
+                    )}
+                    
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    
+                    {/* Status badge */}
+                    <div className="absolute top-3 right-3">
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        ad.status === 'ACTIVE' 
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                      }`}>
+                        {ad.status}
+                      </div>
                     </div>
                     
-                    {/* Creative Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-semibold text-white truncate">{ad.ad_name}</h3>
-                          <p className="text-xs text-gray-400 truncate">{ad.campaign_name}</p>
-                        </div>
-                        <Badge className={cn("text-xs ml-2", 
-                          ad.status === 'ACTIVE' ? "bg-green-500/20 text-green-400 border-green-500/30" : 
-                          "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                        )}>
-                          {ad.status}
-                        </Badge>
+                    {/* Platform logo */}
+                    <div className="absolute top-3 left-3">
+                      <div className="w-8 h-8 bg-black/50 backdrop-blur rounded-lg flex items-center justify-center border border-white/10">
+                        <Image
+                          src="https://i.imgur.com/6hyyRrs.png"
+                          alt="Meta"
+                          width={16}
+                          height={16}
+                          className="object-contain"
+                        />
                       </div>
+                    </div>
+                    
+                    {/* Preview button */}
+                    {ad.preview_url && (
+                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 bg-black/50 backdrop-blur hover:bg-black/70 text-white border border-white/20"
+                          onClick={() => window.open(ad.preview_url!, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Content section */}
+                  <div className="p-4">
+                    {/* Ad name and headline */}
+                    <div className="mb-3">
+                      <h4 className="font-semibold text-white text-sm mb-1 line-clamp-1">
+                        {ad.ad_name}
+                      </h4>
+                      {ad.headline && (
+                        <p className="text-xs text-gray-400 line-clamp-1">
+                          {ad.headline}
+                        </p>
+                      )}
+                    </div>
                       
-                      {/* Metrics Row */}
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className="text-gray-400">Spent:</span>
-                          <span className="text-white ml-1 font-medium">${ad.spent.toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">CTR:</span>
-                          <span className="text-white ml-1 font-medium">{ad.ctr.toFixed(2)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Impressions:</span>
-                          <span className="text-white ml-1 font-medium">{ad.impressions.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">ROAS:</span>
-                          <span className={cn("ml-1 font-medium", 
-                            roas >= 2 ? "text-green-400" : roas >= 1 ? "text-yellow-400" : "text-red-400"
-                          )}>
-                            {roas.toFixed(2)}x
-                          </span>
-                        </div>
+                    
+                    {/* Key metrics in a horizontal layout */}
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">Spend</p>
+                        <p className="text-sm font-bold text-white">{formatCurrency(ad.spent)}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">Clicks</p>
+                        <p className="text-sm font-bold text-white">{formatNumber(ad.clicks)}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">CTR</p>
+                        <p className="text-sm font-bold text-white">{formatPercentage(ad.ctr)}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Performance indicator */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {roas > 2 ? (
+                          <div className="flex items-center gap-1 text-green-400">
+                            <TrendingUp className="w-3 h-3" />
+                            <span className="text-xs font-medium">High ROAS</span>
+                          </div>
+                        ) : roas > 1 ? (
+                          <div className="flex items-center gap-1 text-yellow-400">
+                            <Target className="w-3 h-3" />
+                            <span className="text-xs font-medium">Moderate</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-400">
+                            <TrendingDown className="w-3 h-3" />
+                            <span className="text-xs font-medium">Low ROAS</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Est. ROAS</p>
+                        <p className="text-sm font-bold text-white">{roas.toFixed(2)}x</p>
                       </div>
                     </div>
                   </div>
                 </div>
               )
             })}
-            
-            {filteredAndSortedAds.length > 5 && (
-              <div className="text-center py-3">
-                <p className="text-xs text-gray-400">Showing top 5 creatives</p>
-              </div>
-            )}
           </div>
         )}
       </div>
     </div>
   )
-}
+} 

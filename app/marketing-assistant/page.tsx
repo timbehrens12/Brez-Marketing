@@ -1242,48 +1242,44 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Modern Dynamic Layout - Inspired by the screenshot */}
-          <div className="px-8 lg:px-16 xl:px-24 py-8 space-y-8 animate-in fade-in duration-300">
+          {/* Dynamic Grid Layout - Asymmetrical and visually interesting */}
+          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Header Section */}
-            <div className="mb-12">
-              <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Marketing Assistant</h1>
-              <p className="text-lg text-gray-400">Unified view of performance across all advertising platforms</p>
-            </div>
-
-            {/* Top Row - Hero metrics and AI insights */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 h-auto">
-              {/* Large: Blended Performance Metrics - Takes 2/3 space */}
-              <div className="xl:col-span-2 h-fit">
+            {/* Top Row - Blended Metrics takes more prominent space */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Large: Blended Performance Metrics - Takes 2/3 of space */}
+              <div className="lg:col-span-8">
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                 />
               </div>
 
-              {/* Tall: AI Daily Report - Takes 1/3 space, full height */}
-              <div className="xl:col-span-1 h-fit">
+              {/* Smaller: AI Daily Report - Takes 1/3 of space, taller */}
+              <div className="lg:col-span-4">
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
             </div>
 
-            {/* Middle Row - Two widgets side by side with different proportions */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-auto">
-              {/* Creative Performance - Compact left widget */}
-              <div className="lg:col-span-2 h-fit">
+            {/* Middle Row - Creative and Performance in different sizes */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Medium: Ad Creative Breakdown - Takes about 45% */}
+              <div className="lg:col-span-5">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
-              {/* Performance Trends - Larger right widget */}
-              <div className="lg:col-span-3 h-fit">
+              {/* Large: Performance Chart - Takes about 55% for better data visualization */}
+              <div className="lg:col-span-7">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
                 />
               </div>
             </div>
 
-            {/* Bottom Section - Campaign Management spans full width */}
+            {/* Bottom Section - Campaign Management spans full width but with reduced height */}
             <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              <div className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-[#1a1a1a] rounded-xl overflow-hidden">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
             </div>
 
           </div>

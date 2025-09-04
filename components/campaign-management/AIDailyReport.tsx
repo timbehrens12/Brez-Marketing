@@ -464,34 +464,53 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   })
 
   return (
-    <div className="bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a] border border-[#333]/50 rounded-2xl shadow-2xl backdrop-blur-sm h-full flex flex-col">
-      {/* Modern Compact Header */}
-      <div className="p-4 border-b border-[#333]/30">
+    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg 
-                          flex items-center justify-center border border-gray-600/20">
-              <Brain className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Detailed Advertising Report</h2>
-              <p className="text-gray-400 text-xs">AI-powered campaign insights</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Detailed Advertising Report</h2>
+              <div className="flex items-center gap-3">
+                <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
+                {report?.generatedAt && (
+                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-3 py-1 rounded-full border border-[#2a2a2a]">
+                    Generated {new Date(report.generatedAt).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })} local time
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          {/* Health badge */}
+          {/* Show health badge in header */}
           {report && getHealthBadge(report.overallHealth)}
         </div>
       </div>
       
-      {/* Modern Content Area */}
-      <div className="flex-1 p-4 overflow-auto">
-        {/* Summary */}
-        <div className="bg-gradient-to-r from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 mb-4">
-          <p className="text-sm text-gray-200 leading-relaxed">
-            {report.summary}
-          </p>
-        </div>
+      <div className="flex-1 p-4 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
+        <div className="flex-1 flex flex-col space-y-3">
+          {/* Main Summary - Modern card design */}
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl p-5 hover:border-[#444] transition-all duration-300 group">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-cyan-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Brain className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-2">AI Analysis</h3>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {report.summary}
+                </p>
+              </div>
+            </div>
+          </div>
 
 
 
@@ -499,42 +518,50 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
 
 
-        {/* Priorities and Highlights */}
-        <div className="space-y-3">
+          {/* Top Priorities Section - Modern design */}
           {report?.topPriorities && report.topPriorities.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-white">Top Priorities</h3>
+            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Action Items</h3>
+                  <p className="text-xs text-gray-400">{report.topPriorities.length} priority task{report.topPriorities.length !== 1 ? 's' : ''}</p>
+                </div>
               </div>
               <div className="space-y-2">
-                {report.topPriorities.slice(0, 3).map((priority, index) => (
-                  <div key={index} className="bg-gradient-to-r from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full bg-gray-600/20 flex items-center justify-center mt-0.5">
-                        <span className="text-gray-400 font-bold text-xs">{index + 1}</span>
-                      </div>
-                      <p className="text-xs text-gray-300 leading-relaxed flex-1">{priority}</p>
+                {report.topPriorities.map((priority, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg hover:border-[#333] transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-600/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
                     </div>
+                    <p className="text-xs text-gray-300 leading-relaxed">{priority}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Success Highlights Section - Modern design */}
           {report?.successHighlights && report.successHighlights.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-white">Success Highlights</h3>
+            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl p-4 hover:border-[#444] transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-green-600/20 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Success Highlights</h3>
+                  <p className="text-xs text-gray-400">{report.successHighlights.length} positive indicator{report.successHighlights.length !== 1 ? 's' : ''}</p>
+                </div>
               </div>
               <div className="space-y-2">
-                {report.successHighlights.slice(0, 3).map((highlight, index) => (
-                  <div key={index} className="bg-gradient-to-r from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 text-gray-400 mt-1" />
-                      <p className="text-xs text-gray-300 leading-relaxed flex-1">{highlight}</p>
+                {report.successHighlights.map((highlight, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg hover:border-[#333] transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500/30 to-green-600/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="w-3 h-3 text-emerald-400" />
                     </div>
+                    <p className="text-xs text-gray-300 leading-relaxed">{highlight}</p>
                   </div>
                 ))}
               </div>

@@ -55,13 +55,74 @@ interface BudgetData {
 
 interface BlendedWidgetsTableProps {
   metaMetrics: MetaMetrics
+  // Remove loading props
+  // isLoadingMetrics: boolean
+  // isRefreshingData: boolean
+}
+
+// Modern metric card component
+function ModernMetricCard({
+  icon: Icon,
+  title,
+  value,
+  change,
+  color,
+  iconColor,
+  compact = false
+}: {
+  icon: any
+  title: string
+  value: string
+  change: number | null
+  color: string
+  iconColor: string
+  compact?: boolean
+}) {
+  return (
+    <div className={cn(
+      "relative bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl hover:border-[#444] transition-all duration-300 group overflow-hidden",
+      compact ? "p-4" : "p-5"
+    )}>
+      {/* Background gradient */}
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500", color)}></div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-3">
+          <div className={cn("bg-gradient-to-br rounded-lg flex items-center justify-center", color, compact ? "w-8 h-8" : "w-10 h-10")}>
+            <Icon className={cn("text-current", compact ? "w-4 h-4" : "w-5 h-5", iconColor)} />
+          </div>
+          
+          {change !== null && change !== undefined && (
+            <div className={cn(
+              "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-black/20",
+              change > 0 ? "text-green-400" : change < 0 ? "text-red-400" : "text-gray-400"
+            )}>
+              {change > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : change < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : null}
+              <span>{change === 0 ? "0.0%" : `${change > 0 ? '+' : ''}${change.toFixed(1)}%`}</span>
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <p className={cn("text-gray-400 mb-1", compact ? "text-xs" : "text-sm")}>{title}</p>
+          <p className={cn("font-bold text-white", compact ? "text-lg" : "text-2xl")}>{value}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function BlendedWidgetsTable({ 
   metaMetrics
+  // Remove loading props
+  // isLoadingMetrics, 
+  // isRefreshingData 
 }: BlendedWidgetsTableProps) {
-  
-  const { selectedBrand } = useBrandContext()
+  const { brands, selectedBrand } = useBrandContext()
   const { userId } = useAuth()
   const [budgetData, setBudgetData] = useState<BudgetData>({
     totalBudget: 0,
@@ -69,6 +130,9 @@ export default function BlendedWidgetsTable({
     budgetUsedPercentage: 0,
     brands: []
   })
+
+  // Remove loading state calculation
+  // const loading = isLoadingMetrics || isRefreshingData
 
   useEffect(() => {
     if (!userId || !selectedBrand) return
@@ -78,9 +142,11 @@ export default function BlendedWidgetsTable({
   const fetchBudgetData = async () => {
     try {
       if (!selectedBrand) {
+        // console.log(`[BlendedWidgets] No brand selected, skipping budget fetch`)
         return
       }
 
+      // console.log(`[BlendedWidgets] ⭐ BUDGET FETCH STARTED ⭐ for selected brand: ${selectedBrand.name} (${selectedBrand.id})`, { selectedBrand, metaMetrics })
       const supabase = getStandardSupabaseClient()
       
       let totalBudget = 0
@@ -89,30 +155,79 @@ export default function BlendedWidgetsTable({
 
       // Only process the selected brand
       const brand = selectedBrand
-      
-      const { data: brandData, error: brandError } = await supabase
-        .from('brands')
-        .select('monthly_budget')
-        .eq('id', brand.id)
-        .single()
+        // console.log(`[BlendedWidgets] 🔍 Processing brand: ${brand.name} (${brand.id})`)
+        try {
+          // Get active campaigns for this brand using the same API as CampaignWidget
+          const response = await fetch(`/api/meta/campaigns?brandId=${brand.id}&status=ACTIVE`)
+          const apiData = await response.json()
+          
+          const campaigns = apiData.campaigns || []
+          const error = response.ok ? null : { message: `HTTP ${response.status}` }
 
-      if (brandError) {
-        console.error(`[BlendedWidgets] Error fetching budget for brand ${brand.name}:`, brandError)
-        return
-      }
+          // console.log(`[BlendedWidgets] API result for brand ${brand.name} (${brand.id}):`, { campaigns: campaigns.length, error, apiData })
 
-      const monthlyBudget = brandData?.monthly_budget || 0
-      totalBudget += monthlyBudget
+          let budget = 0
+          
+          if (error) {
+            // console.log(`[BlendedWidgets] Campaign budget query error for brand ${brand.name}:`, error)
+          }
+          
+          if (error) {
+            
+            // Fallback to brand_budgets table if meta_campaigns fails
+            try {
+              const { data: brandBudgetConfig, error: budgetError } = await supabase
+                .from('brand_budgets')
+                .select('daily_budget')
+                .eq('brand_id', brand.id)
+                .eq('user_id', userId)
+                .single()
 
-      brandBudgets.push({
-        brand_id: brand.id,
-        brand_name: brand.name,
-        budget: monthlyBudget,
-        spend: totalSpend,
-        percentage: monthlyBudget > 0 ? (totalSpend / monthlyBudget) * 100 : 0
-      })
+              if (!budgetError && brandBudgetConfig?.daily_budget) {
+                budget = brandBudgetConfig.daily_budget
+                // console.log(`[BlendedWidgets] Using fallback budget from brand_budgets: $${budget}`)
+              }
+            } catch (fallbackError) {
+              // console.log(`[BlendedWidgets] Fallback budget query also failed:`, fallbackError)
+            }
+          } else {
+            // Filter and sum up all active campaign budgets for this brand
+            const validCampaigns = campaigns.filter((campaign: any) => {
+              const campaignBudget = parseFloat(campaign.budget || '0')
+              return campaignBudget > 0
+            })
+            
+            budget = validCampaigns.reduce((sum: number, campaign: any) => {
+              const campaignBudget = parseFloat(campaign.budget || '0')
+              return sum + campaignBudget
+            }, 0)
+            
+            // console.log(`[BlendedWidgets] Brand ${brand.name}: Found ${campaigns.length} campaigns, ${validCampaigns.length} with valid budgets, total budget: $${budget}`)
+            // console.log(`[BlendedWidgets] Valid campaigns:`, validCampaigns.map((c: any) => ({ name: c.campaign_name, budget: c.budget, status: c.status })))
+          }
+          totalBudget = budget  // Use this brand's budget as the total
+          brandBudgets.push({
+            brand_id: brand.id,
+            brand_name: brand.name,
+            budget,
+            spend: totalSpend,
+            percentage: budget > 0 ? (totalSpend / budget) * 100 : 0
+          })
+        } catch (brandError) {
+          // console.log(`[BlendedWidgets] Error fetching budget for brand ${brand.name}:`, brandError)
+          // Still add the brand with 0 budget
+          brandBudgets.push({
+            brand_id: brand.id,
+            brand_name: brand.name,
+            budget: 0,
+            spend: 0,
+            percentage: 0
+          })
+        }
 
       const budgetUsedPercentage = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : 0
+
+      // console.log(`[BlendedWidgets] Budget calculation: Total Budget: $${totalBudget}, Total Spend: $${totalSpend}, Usage: ${budgetUsedPercentage.toFixed(1)}%`)
 
       setBudgetData({
         totalBudget,
@@ -120,133 +235,206 @@ export default function BlendedWidgetsTable({
         budgetUsedPercentage,
         brands: brandBudgets
       })
+
     } catch (error) {
-      console.error('[BlendedWidgets] Error in fetchBudgetData:', error)
+      console.error('[BlendedWidgets] Error fetching budget data:', error)
+      // Set fallback data
       setBudgetData({
         totalBudget: 0,
-        totalSpend: 0,
+        totalSpend: metaMetrics.adSpend,
         budgetUsedPercentage: 0,
         brands: []
       })
     }
   }
 
+
+
   return (
-    <div className="relative bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a] border border-[#333]/50 rounded-2xl shadow-2xl backdrop-blur-sm h-full flex flex-col">
-      {/* Modern Header */}
-      <div className="p-6 border-b border-[#333]/30">
-        <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-xl 
-                        flex items-center justify-center border border-gray-600/20">
-            <Layers className="w-5 h-5 text-gray-400" />
+    <div className="relative bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A] border border-[#1a1a1a] rounded-2xl h-full flex flex-col overflow-hidden">
+      {/* Modern header with glass effect */}
+      <div className="relative bg-gradient-to-r from-[#0f0f0f]/80 to-[#1a1a1a]/80 backdrop-blur-xl p-6 border-b border-[#222]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-xl 
+                          flex items-center justify-center border border-blue-500/20 shadow-lg">
+              <Layers className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Performance Metrics</h2>
+              <p className="text-gray-400 text-sm">Multi-platform advertising insights</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Blended Performance Metrics</h2>
-            <p className="text-gray-400 text-sm">Key indicators from all platforms</p>
+          
+          {/* Live status indicator */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-400">Live Data</span>
           </div>
         </div>
       </div>
 
-      {/* Modern Grid Content */}
-      <div className="flex-1 p-6">
-        {/* Hero Metrics Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Spend */}
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 hover:border-[#444]/50 transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium text-gray-300">Spend</span>
-            </div>
-            <div className="text-2xl font-bold text-white">${metaMetrics.adSpend.toFixed(2)}</div>
-            {metaMetrics.adSpendGrowth !== null && (
-              <div className={cn("flex items-center gap-1 text-xs mt-1", 
-                metaMetrics.adSpendGrowth > 0 ? "text-red-400" : "text-green-400")}>
-                {metaMetrics.adSpendGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                <span>{Math.abs(metaMetrics.adSpendGrowth).toFixed(1)}%</span>
+      {/* Modern content with better spacing */}
+      <div className="flex-1 p-4 overflow-auto">
+        {/* Dynamic masonry-style grid */}
+        <div className="grid grid-cols-6 gap-3 h-full">
+          
+          {/* Hero metric - Budget Usage (large, spans 3 cols) */}
+          <div className="col-span-3 row-span-2">
+            <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-xl p-6 h-full hover:border-[#444] transition-all duration-300 group overflow-hidden">
+              {/* Background pattern */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Budget Usage</h3>
+                      <p className="text-xs text-gray-400">Daily spend tracking</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-6 h-6 rounded-md overflow-hidden">
+                      <Image src="https://i.imgur.com/6hyyRrs.png" alt="Meta" width={24} height={24} className="object-contain" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="text-4xl font-bold text-white">
+                    {(budgetData.budgetUsedPercentage).toFixed(1)}%
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Spent Today</span>
+                      <span className="text-white font-medium">${budgetData.totalSpend.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Daily Budget</span>
+                      <span className="text-white font-medium">${budgetData.totalBudget.toFixed(2)}</span>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full bg-[#333] rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-1000 ease-out"
+                        style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                      />
+                    </div>
+                    
+                    <div className="text-xs text-gray-400">
+                      {budgetData.budgetUsedPercentage > 80 ? "⚠️ High usage" : 
+                       budgetData.budgetUsedPercentage > 50 ? "✅ On track" : "📊 Low usage"}
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* ROAS */}
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 hover:border-[#444]/50 transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Target className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-gray-300">ROAS</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{metaMetrics.roas.toFixed(2)}x</div>
-            {metaMetrics.roasGrowth !== null && (
-              <div className={cn("flex items-center gap-1 text-xs mt-1", 
-                metaMetrics.roasGrowth > 0 ? "text-green-400" : "text-red-400")}>
-                {metaMetrics.roasGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                <span>{Math.abs(metaMetrics.roasGrowth).toFixed(1)}%</span>
-              </div>
-            )}
-          </div>
-
-          {/* Impressions */}
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 hover:border-[#444]/50 transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Eye className="w-4 h-4 text-purple-400" />
-              <span className="text-sm font-medium text-gray-300">Impressions</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{metaMetrics.impressions.toLocaleString()}</div>
-            {metaMetrics.impressionGrowth !== null && (
-              <div className={cn("flex items-center gap-1 text-xs mt-1", 
-                metaMetrics.impressionGrowth > 0 ? "text-green-400" : "text-red-400")}>
-                {metaMetrics.impressionGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                <span>{Math.abs(metaMetrics.impressionGrowth).toFixed(1)}%</span>
-              </div>
-            )}
-          </div>
-
-          {/* CTR */}
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-4 hover:border-[#444]/50 transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <MousePointer className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-medium text-gray-300">CTR</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{metaMetrics.ctr.toFixed(2)}%</div>
-            {metaMetrics.ctrGrowth !== null && (
-              <div className={cn("flex items-center gap-1 text-xs mt-1", 
-                metaMetrics.ctrGrowth > 0 ? "text-green-400" : "text-red-400")}>
-                {metaMetrics.ctrGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                <span>{Math.abs(metaMetrics.ctrGrowth).toFixed(1)}%</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Budget Usage - Full width modern card */}
-        <div className="bg-gradient-to-r from-[#1a1a1a] via-[#1a1a1a] to-[#111] border border-[#333]/30 rounded-xl p-5 hover:border-[#444]/50 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-5 h-5 text-gray-400" />
-              <h3 className="text-base font-semibold text-white">Budget Usage</h3>
-            </div>
-            <div className="text-sm text-gray-400">
-              ${budgetData.totalSpend.toFixed(2)} / ${budgetData.totalBudget.toFixed(2)}
             </div>
           </div>
           
-          {/* Progress bar */}
-          <div className="w-full bg-[#111] rounded-lg h-3 mb-3 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg transition-all duration-500"
-              style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+          {/* Spend & ROAS - Medium cards */}
+          <div className="col-span-2">
+            <ModernMetricCard
+              icon={DollarSign}
+              title="Total Spend"
+              value={`$${metaMetrics.adSpend.toFixed(2)}`}
+              change={metaMetrics.adSpendGrowth}
+              color="from-green-500/20 to-emerald-600/20"
+              iconColor="text-green-400"
             />
           </div>
           
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">{budgetData.budgetUsedPercentage.toFixed(1)}% used</span>
-            <span className={cn("font-medium", 
-              budgetData.budgetUsedPercentage > 90 ? "text-red-400" : 
-              budgetData.budgetUsedPercentage > 75 ? "text-yellow-400" : "text-green-400"
-            )}>
-              ${(budgetData.totalBudget - budgetData.totalSpend).toFixed(2)} remaining
-            </span>
+          <div className="col-span-1">
+            <ModernMetricCard
+              icon={Target}
+              title="ROAS"
+              value={`${metaMetrics.roas.toFixed(2)}x`}
+              change={metaMetrics.roasGrowth}
+              color="from-orange-500/20 to-red-600/20"
+              iconColor="text-orange-400"
+              compact
+            />
           </div>
+
+          {/* Revenue - spans 2 cols */}
+          <div className="col-span-2">
+            <ModernMetricCard
+              icon={CreditCard}
+              title="Revenue Generated"
+              value={`$${(metaMetrics.roas * metaMetrics.adSpend).toFixed(2)}`}
+              change={metaMetrics.roasGrowth}
+              color="from-purple-500/20 to-pink-600/20"
+              iconColor="text-purple-400"
+            />
+          </div>
+          
+          {/* Conversions - compact */}
+          <div className="col-span-1">
+            <ModernMetricCard
+              icon={Target}
+              title="Conversions"
+              value={metaMetrics.conversions.toLocaleString()}
+              change={metaMetrics.conversionGrowth}
+              color="from-cyan-500/20 to-blue-600/20"
+              iconColor="text-cyan-400"
+              compact
+            />
+          </div>
+
+          {/* Bottom row - smaller metrics */}
+          <div className="col-span-2">
+            <ModernMetricCard
+              icon={Eye}
+              title="Impressions"
+              value={metaMetrics.impressions.toLocaleString()}
+              change={metaMetrics.impressionGrowth}
+              color="from-gray-500/20 to-slate-600/20"
+              iconColor="text-gray-400"
+            />
+          </div>
+          
+          <div className="col-span-2">
+            <ModernMetricCard
+              icon={MousePointer}
+              title="Clicks"
+              value={metaMetrics.clicks.toLocaleString()}
+              change={metaMetrics.clickGrowth}
+              color="from-indigo-500/20 to-blue-600/20"
+              iconColor="text-indigo-400"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <ModernMetricCard
+              icon={PercentIcon}
+              title="CTR"
+              value={`${metaMetrics.ctr.toFixed(2)}%`}
+              change={metaMetrics.ctrGrowth}
+              color="from-yellow-500/20 to-orange-600/20"
+              iconColor="text-yellow-400"
+              compact
+            />
+          </div>
+          
+          <div className="col-span-1">
+            <ModernMetricCard
+              icon={DollarSign}
+              title="CPC"
+              value={`$${metaMetrics.cpc.toFixed(2)}`}
+              change={metaMetrics.cpcGrowth}
+              color="from-rose-500/20 to-pink-600/20"
+              iconColor="text-rose-400"
+              compact
+            />
+          </div>
+
+        </div>
         </div>
       </div>
     </div>
   )
-}
+} 
