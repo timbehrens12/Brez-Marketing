@@ -883,8 +883,27 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
         <div className="p-4 border-b border-[#2a2a2a]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0 flex-1">
+              {/* Platform logo for "All Platforms" tab */}
+              {selectedTab === "all" && (
+                <div className="relative">
+                  <Image 
+                    src={platformData.logo} 
+                    alt={platformData.name} 
+                    width={32} 
+                    height={32} 
+                    className="object-contain rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-1"
+                  />
+                </div>
+              )}
+              
               <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg flex items-center justify-center border border-[#3a3a3a] flex-shrink-0">
-                <span className="text-gray-400 text-xs font-medium">M</span>
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta" 
+                  width={20} 
+                  height={20} 
+                  className="object-contain rounded"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-white font-semibold text-base truncate">
@@ -1424,7 +1443,29 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                          text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-xs">●●●</span>
+                  <div className="flex -space-x-1">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain rounded-full border border-white/20"
+                    />
+                    <Image 
+                      src="https://i.imgur.com/AXHa9UT.png" 
+                      alt="TikTok" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
+                    />
+                    <Image 
+                      src="https://i.imgur.com/TavV4UJ.png" 
+                      alt="Google" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
+                    />
+                  </div>
                   <span className="font-medium">All Platforms</span>
                 </div>
               </TabsTrigger>
@@ -1438,11 +1479,15 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <div className={`w-4 h-4 rounded border ${platform.isActive ? 'bg-gray-600 border-gray-500' : 'bg-gray-800 border-gray-700'}`}>
-                        <span className="text-xs text-gray-400">{platform.name.charAt(0)}</span>
-                      </div>
+                      <Image 
+                        src={platform.logo} 
+                        alt={platform.name} 
+                        width={20} 
+                        height={20} 
+                        className={`object-contain rounded-lg ${!platform.isActive ? 'grayscale opacity-50' : ''}`}
+                      />
                       {platform.isActive && (
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#1a1a1a]"></div>
                       )}
                     </div>
                     <span className="font-medium">{platform.name}</span>
