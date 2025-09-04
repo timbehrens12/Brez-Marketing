@@ -1146,8 +1146,8 @@ export default function AdCreativeStudioPage() {
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
-  // Weekly usage system - 80 generations per week (universal)
-  const WEEKLY_LIMIT = 80
+  // Weekly usage system - 85 generations per week (universal)
+  const WEEKLY_LIMIT = 85
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
@@ -3013,7 +3013,19 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const copyInstructions = copyPromptAdditions.trim() 
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.
+
+CRITICAL FORMAT REQUIREMENTS:
+• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
+• IGNORE the aspect ratio of the uploaded product image
+• FORCE portrait format regardless of input image shape
+• Fill ENTIRE portrait canvas from edge to edge
+• NO letterboxing, black bars, or empty space
+• Composition must extend to all four edges
+• Use full vertical height for maximum impact
+• Background extends to frame boundaries
+• NEVER replicate the input image's aspect ratio
+• ALWAYS create portrait mobile-optimized format${copyInstructions}${textPromptAddition}`
     } else if (templateStyle.id === 'auto-generation') {
       // For auto generation, create AI-optimized sales-focused creative
       const autoInstructions = autoPromptAdditions.trim() 
@@ -3026,6 +3038,7 @@ PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
 2. DETERMINE the most effective creative approach based on the product's niche and market positioning
 3. SELECT optimal background, lighting, and composition that drives purchase intent
 4. OPTIMIZE for mobile viewing and social media advertising platforms
+5. IGNORE the original image format - ALWAYS output portrait regardless of input
 
 SALES-FOCUSED CREATIVE STRATEGY:
 • Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
@@ -3043,12 +3056,16 @@ CONVERSION OPTIMIZATION RULES:
 • Overall aesthetic matches successful ad creatives in the product's category
 
 CRITICAL FORMAT REQUIREMENTS:
-• Generate in PORTRAIT orientation (1024x1536 pixels)
+• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
+• IGNORE the aspect ratio of the uploaded product image
+• FORCE portrait format regardless of input image shape
 • Fill ENTIRE portrait canvas from edge to edge
 • NO letterboxing, black bars, or empty space
 • Composition must extend to all four edges
 • Use full vertical height for maximum impact
 • Background extends to frame boundaries
+• NEVER replicate the input image's aspect ratio
+• ALWAYS create portrait mobile-optimized format
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
@@ -3321,7 +3338,19 @@ AI DECISION MAKING: Automatically select the best template style, background typ
       const copyInstructions = copyPromptAdditions.trim() 
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.
+
+CRITICAL FORMAT REQUIREMENTS:
+• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
+• IGNORE the aspect ratio of the uploaded product image
+• FORCE portrait format regardless of input image shape
+• Fill ENTIRE portrait canvas from edge to edge
+• NO letterboxing, black bars, or empty space
+• Composition must extend to all four edges
+• Use full vertical height for maximum impact
+• Background extends to frame boundaries
+• NEVER replicate the input image's aspect ratio
+• ALWAYS create portrait mobile-optimized format${copyInstructions}${textPromptAddition}`
     } else if (modalStyle.id === 'auto-generation') {
       // For auto generation, create AI-optimized sales-focused creative
       const autoInstructions = autoPromptAdditions.trim() 
@@ -3334,6 +3363,7 @@ PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
 2. DETERMINE the most effective creative approach based on the product's niche and market positioning
 3. SELECT optimal background, lighting, and composition that drives purchase intent
 4. OPTIMIZE for mobile viewing and social media advertising platforms
+5. IGNORE the original image format - ALWAYS output portrait regardless of input
 
 SALES-FOCUSED CREATIVE STRATEGY:
 • Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
@@ -3351,12 +3381,16 @@ CONVERSION OPTIMIZATION RULES:
 • Overall aesthetic matches successful ad creatives in the product's category
 
 CRITICAL FORMAT REQUIREMENTS:
-• Generate in PORTRAIT orientation (1024x1536 pixels)
+• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
+• IGNORE the aspect ratio of the uploaded product image
+• FORCE portrait format regardless of input image shape
 • Fill ENTIRE portrait canvas from edge to edge
 • NO letterboxing, black bars, or empty space
 • Composition must extend to all four edges
 • Use full vertical height for maximum impact
 • Background extends to frame boundaries
+• NEVER replicate the input image's aspect ratio
+• ALWAYS create portrait mobile-optimized format
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
