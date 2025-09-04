@@ -142,9 +142,9 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       <div className="p-4 border-b border-[#333]/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg 
-                          flex items-center justify-center border border-orange-500/20">
-              <ImageIcon className="w-4 h-4 text-orange-400" />
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg 
+                          flex items-center justify-center border border-gray-600/20">
+              <ImageIcon className="w-4 h-4 text-gray-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">Ad Creative Performance</h2>

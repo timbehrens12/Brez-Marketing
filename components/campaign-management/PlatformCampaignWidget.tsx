@@ -1439,27 +1439,27 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       )}
       */}
       
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-8 py-5 border-b border-[#333] rounded-t-lg">
+      {/* Modern Header */}
+      <div className="bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a] border border-[#333]/50 rounded-2xl shadow-2xl backdrop-blur-sm">
+        <div className="p-6 border-b border-[#333]/30">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Users className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-xl 
+                          flex items-center justify-center border border-gray-600/20">
+              <Users className="w-5 h-5 text-gray-400" />
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-white">Campaign Management</h2>
               <p className="text-gray-400 text-sm">
-                Manage and optimize your advertising campaigns across all platforms
+                Manage and optimize campaigns across all platforms
               </p>
             </div>
           </div>
         </div>
 
-        {/* Tabbed Interface */}
-        <div className="px-8 py-6">
+        {/* Modern Tabbed Interface */}
+        <div className="px-6 py-4">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-11">
+            <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-10">
               <TabsTrigger 
                 value="all" 
                 className="flex items-center justify-center gap-2 data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white

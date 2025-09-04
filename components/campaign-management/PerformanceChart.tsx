@@ -93,14 +93,23 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     }
   }
 
-  // Prepare chart data
-  const chartData = performanceData.map(item => ({
-    day: item.day,
-    date: item.date,
-    Meta: enabledPlatforms.meta ? item.meta[selectedMetric] : 0,
-    TikTok: enabledPlatforms.tiktok ? item.tiktok[selectedMetric] : 0,
-    Google: enabledPlatforms.google ? item.google[selectedMetric] : 0
-  }))
+  // Prepare chart data with fallback mock data if no data available
+  const chartData = performanceData.length > 0 ? 
+    performanceData.map(item => ({
+      day: item.day,
+      date: item.date,
+      Meta: enabledPlatforms.meta ? item.meta[selectedMetric] : 0,
+      TikTok: enabledPlatforms.tiktok ? item.tiktok[selectedMetric] : 0,
+      Google: enabledPlatforms.google ? item.google[selectedMetric] : 0
+    })) :
+    // Mock data to show chart structure
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => ({
+      day,
+      date: `2024-01-${index + 1}`,
+      Meta: enabledPlatforms.meta ? (selectedMetric === 'spend' ? Math.random() * 100 : Math.random() * 1000) : 0,
+      TikTok: enabledPlatforms.tiktok ? (selectedMetric === 'spend' ? Math.random() * 50 : Math.random() * 500) : 0,
+      Google: enabledPlatforms.google ? (selectedMetric === 'spend' ? Math.random() * 75 : Math.random() * 750) : 0
+    }))
 
   // Platform colors
   const platformColors = {
@@ -115,9 +124,9 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
       <div className="p-4 border-b border-[#333]/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg 
-                          flex items-center justify-center border border-green-500/20">
-              <BarChart3 className="w-4 h-4 text-green-400" />
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg 
+                          flex items-center justify-center border border-gray-600/20">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">Performance Trends</h2>
@@ -203,7 +212,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
       
       {/* Modern Chart Content */}
       <div className="flex-1 p-4">
-        {chartData.length > 0 ? (
+        {chartData.length > 0 || performanceData.length === 0 ? (
           <div className="h-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>

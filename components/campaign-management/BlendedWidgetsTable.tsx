@@ -136,9 +136,9 @@ export default function BlendedWidgetsTable({
       {/* Modern Header */}
       <div className="p-6 border-b border-[#333]/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl 
-                        flex items-center justify-center border border-blue-500/20">
-            <Layers className="w-5 h-5 text-blue-400" />
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-xl 
+                        flex items-center justify-center border border-gray-600/20">
+            <Layers className="w-5 h-5 text-gray-400" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">Blended Performance Metrics</h2>
