@@ -5178,7 +5178,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
     }
 
     return (
-      <div className="-mt-[8px] max-w-6xl mx-auto">
+      <div className="-mt-[7px] max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button
