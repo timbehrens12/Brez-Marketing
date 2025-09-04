@@ -3903,10 +3903,10 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                 <Info className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="text-orange-400 font-semibold mb-2">📸 Pro Tips for Best Results</h4>
-                  <ul className="text-xs text-gray-300 space-y-1.5">
-                    <li>• <strong>Upload portrait images when possible</strong> - AI works better with taller-than-wide product photos</li>
-                    <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
-                    <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
+                                      <ul className="text-xs text-gray-300 space-y-1.5">
+                      <li>• <strong>Upload portrait images when possible</strong> - AI works better with taller-than-wide product photos</li>
+                      <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
+                      <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
                     <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
                     <li>• <strong>Multiple angles welcome</strong> - Upload different product views for varied creative options</li>
                     <li>• <strong>Avoid heavy filters</strong> - Use natural, unedited photos for most accurate reproduction</li>
