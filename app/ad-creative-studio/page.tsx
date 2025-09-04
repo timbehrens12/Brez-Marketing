@@ -3031,54 +3031,51 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `🔴 EMERGENCY: AI KEEPS CLIPPING TEXT AT TOP! OVERRIDE WITH MATHEMATICAL LOCKS.
+      enhancedPrompt = `STEP-BY-STEP COORDINATE VALIDATION PROTOCOL:
 
-CANVAS: 1024×1536 PORTRAIT - MATHEMATICAL POSITIONING ONLY
+BEFORE generating ANY pixel, you must THINK through this checklist:
 
-🚫 ABSOLUTE BAN ZONES (AI CANNOT USE):
-• y=0 to y=500: TOTALLY BANNED - NO CONTENT ALLOWED
-• y=1200 to y=1536: TOTALLY BANNED - NO CONTENT ALLOWED  
-• x=0 to x=300: TOTALLY BANNED - NO CONTENT ALLOWED
-• x=724 to x=1024: TOTALLY BANNED - NO CONTENT ALLOWED
+STEP 1: VALIDATE CANVAS
+- Canvas is 1024 pixels wide × 1536 pixels tall
+- Safe zone is from y=600 to y=1100 (500px tall safe area)
+- Safe zone is from x=350 to x=674 (324px wide safe area)
 
-🎯 FORCED EXACT COORDINATES (AI MUST USE):
+STEP 2: PLAN HEADLINE TEXT
+- Text content: (analyze product and create compelling headline)
+- Font size: 40px maximum
+- Position: x=512 (center), y=650 (well below top edge)
+- Validate: Is y=650 greater than y=600? YES - proceed
+- Width: Maximum 300px to stay within x=350-674 bounds
 
-HEADLINE TEXT:
-- EXACT Y POSITION: 600px (AI cannot use any y-value below 600)
-- EXACT X POSITION: 512px (center)
-- MAX FONT SIZE: 44px
-- MAX TEXT WIDTH: 380px
-- VALIDATION: Top edge must be ≥ 580px, bottom edge must be ≤ 620px
+STEP 3: PLAN PRODUCT IMAGE  
+- Source: Uploaded product image
+- Max size: 280×280px 
+- Position: x=512 (center), y=850 (center of safe zone)
+- Validate: Is y=850 between y=700-1000? YES - proceed
+- Ensure image fits within x=372-652 bounds (280px wide centered)
 
-PRODUCT IMAGE:
-- EXACT Y POSITION: 850px (center point)
-- EXACT X POSITION: 512px (center)  
-- MAX SIZE: 320×320px
-- VALIDATION: Top edge must be ≥ 690px, bottom edge must be ≤ 1010px
+STEP 4: PLAN CTA ELEMENT
+- Text content: Strong call to action (SHOP NOW, GET YOURS, etc.)
+- Font size: 36px maximum
+- Position: x=512 (center), y=1050 (near bottom of safe zone)
+- Validate: Is y=1050 less than y=1100? YES - proceed
+- Style: Button or bold text with high contrast
 
-CTA TEXT/BUTTON:
-- EXACT Y POSITION: 1100px
-- EXACT X POSITION: 512px (center)
-- MAX FONT SIZE: 38px
-- MAX WIDTH: 280px
-- VALIDATION: Top edge must be ≥ 1080px, bottom edge must be ≤ 1120px
+STEP 5: FINAL COORDINATE CHECK
+Before generating, verify:
+✓ Headline starts at y=650 or lower? 
+✓ Product centered at y=850?
+✓ CTA at y=1050 or higher?
+✓ All elements between x=350-674?
+✓ Nothing touches y=0-599 (top danger zone)?
+✓ Nothing touches y=1101-1536 (bottom danger zone)?
 
-🔒 MATHEMATICAL CONSTRAINTS:
-- IF headline y < 580: MOVE TO y=600
-- IF product y < 690: MOVE TO y=850  
-- IF CTA y > 1120: MOVE TO y=1100
-- IF any element x < 312: MOVE TO x=512
-- IF any element x > 712: MOVE TO x=512
+STEP 6: GENERATE WITH VALIDATED COORDINATES
+Create high-converting mobile ad creative using ONLY the validated coordinates from steps 1-5.
 
-🛑 EMERGENCY RULES:
-- NO text allowed above y=580 (this causes clipping)
-- NO text allowed below y=1120 (this causes clipping)
-- NO content within 300px of ANY edge
-- If AI tries to place anything in banned zones: SHRINK by 50% and center
+EMERGENCY OVERRIDE: If any element tries to go outside these coordinates, immediately shrink it by 30% and recenter within the safe zone.
 
-BACKGROUND: Can use full canvas but keep simple near edges for contrast.
-
-ABSOLUTE REQUIREMENT: Generate high-converting ad with ALL content between y=580-1120 and x=312-712.${autoInstructions}${textPromptAddition}`
+Background can use full canvas but keep subtle near edges for text contrast.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3360,54 +3357,51 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `🔴 EMERGENCY: AI KEEPS CLIPPING TEXT AT TOP! OVERRIDE WITH MATHEMATICAL LOCKS.
+      enhancedPrompt = `STEP-BY-STEP COORDINATE VALIDATION PROTOCOL:
 
-CANVAS: 1024×1536 PORTRAIT - MATHEMATICAL POSITIONING ONLY
+BEFORE generating ANY pixel, you must THINK through this checklist:
 
-🚫 ABSOLUTE BAN ZONES (AI CANNOT USE):
-• y=0 to y=500: TOTALLY BANNED - NO CONTENT ALLOWED
-• y=1200 to y=1536: TOTALLY BANNED - NO CONTENT ALLOWED  
-• x=0 to x=300: TOTALLY BANNED - NO CONTENT ALLOWED
-• x=724 to x=1024: TOTALLY BANNED - NO CONTENT ALLOWED
+STEP 1: VALIDATE CANVAS
+- Canvas is 1024 pixels wide × 1536 pixels tall
+- Safe zone is from y=600 to y=1100 (500px tall safe area)
+- Safe zone is from x=350 to x=674 (324px wide safe area)
 
-🎯 FORCED EXACT COORDINATES (AI MUST USE):
+STEP 2: PLAN HEADLINE TEXT
+- Text content: (analyze product and create compelling headline)
+- Font size: 40px maximum
+- Position: x=512 (center), y=650 (well below top edge)
+- Validate: Is y=650 greater than y=600? YES - proceed
+- Width: Maximum 300px to stay within x=350-674 bounds
 
-HEADLINE TEXT:
-- EXACT Y POSITION: 600px (AI cannot use any y-value below 600)
-- EXACT X POSITION: 512px (center)
-- MAX FONT SIZE: 44px
-- MAX TEXT WIDTH: 380px
-- VALIDATION: Top edge must be ≥ 580px, bottom edge must be ≤ 620px
+STEP 3: PLAN PRODUCT IMAGE  
+- Source: Uploaded product image
+- Max size: 280×280px 
+- Position: x=512 (center), y=850 (center of safe zone)
+- Validate: Is y=850 between y=700-1000? YES - proceed
+- Ensure image fits within x=372-652 bounds (280px wide centered)
 
-PRODUCT IMAGE:
-- EXACT Y POSITION: 850px (center point)
-- EXACT X POSITION: 512px (center)  
-- MAX SIZE: 320×320px
-- VALIDATION: Top edge must be ≥ 690px, bottom edge must be ≤ 1010px
+STEP 4: PLAN CTA ELEMENT
+- Text content: Strong call to action (SHOP NOW, GET YOURS, etc.)
+- Font size: 36px maximum
+- Position: x=512 (center), y=1050 (near bottom of safe zone)
+- Validate: Is y=1050 less than y=1100? YES - proceed
+- Style: Button or bold text with high contrast
 
-CTA TEXT/BUTTON:
-- EXACT Y POSITION: 1100px
-- EXACT X POSITION: 512px (center)
-- MAX FONT SIZE: 38px
-- MAX WIDTH: 280px
-- VALIDATION: Top edge must be ≥ 1080px, bottom edge must be ≤ 1120px
+STEP 5: FINAL COORDINATE CHECK
+Before generating, verify:
+✓ Headline starts at y=650 or lower? 
+✓ Product centered at y=850?
+✓ CTA at y=1050 or higher?
+✓ All elements between x=350-674?
+✓ Nothing touches y=0-599 (top danger zone)?
+✓ Nothing touches y=1101-1536 (bottom danger zone)?
 
-🔒 MATHEMATICAL CONSTRAINTS:
-- IF headline y < 580: MOVE TO y=600
-- IF product y < 690: MOVE TO y=850  
-- IF CTA y > 1120: MOVE TO y=1100
-- IF any element x < 312: MOVE TO x=512
-- IF any element x > 712: MOVE TO x=512
+STEP 6: GENERATE WITH VALIDATED COORDINATES
+Create high-converting mobile ad creative using ONLY the validated coordinates from steps 1-5.
 
-🛑 EMERGENCY RULES:
-- NO text allowed above y=580 (this causes clipping)
-- NO text allowed below y=1120 (this causes clipping)
-- NO content within 300px of ANY edge
-- If AI tries to place anything in banned zones: SHRINK by 50% and center
+EMERGENCY OVERRIDE: If any element tries to go outside these coordinates, immediately shrink it by 30% and recenter within the safe zone.
 
-BACKGROUND: Can use full canvas but keep simple near edges for contrast.
-
-ABSOLUTE REQUIREMENT: Generate high-converting ad with ALL content between y=580-1120 and x=312-712.${autoInstructions}${textPromptAddition}`
+Background can use full canvas but keep subtle near edges for text contrast.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
