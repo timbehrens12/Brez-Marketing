@@ -5178,7 +5178,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
     }
 
     return (
-      <div className="-mt-[7px] max-w-6xl mx-auto">
+      <div className="pt-[20px] max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button
@@ -5195,16 +5195,16 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
           </div>
         </div>
         
-        {/* AI Limitation Warning - Compact */}
-        <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-2 mb-3">
-          <div className="text-amber-200 text-xs flex items-center gap-2">
+        {/* AI Limitation Warning - Ultra Compact */}
+        <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded px-3 py-1 mb-2">
+          <div className="text-amber-200 text-xs flex items-center gap-1">
             <span>⚠️</span>
             <span>AI struggles with non-portrait uploaded images - for best results avoid wide/rectangular products</span>
           </div>
         </div>
 
         {/* Widget Layout */}
-        <div className="mt-2 h-[520px]">
+        <div className="mt-1 h-[525px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
             {/* Left Column: Stacked widgets */}
             <div className="lg:col-span-11 flex flex-col gap-3 h-full">
@@ -5399,9 +5399,9 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                     </ul>
                   </div>
 
-                  {/* AI Limitation Warning - Compact */}
-                  <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-2 mb-3">
-                    <div className="text-amber-200 text-xs flex items-center gap-2">
+                  {/* AI Limitation Warning - Ultra Compact */}
+                  <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded px-3 py-1 mb-2">
+                    <div className="text-amber-200 text-xs flex items-center gap-1">
                       <span>⚠️</span>
                       <span>AI struggles with non-portrait uploaded images - for best results avoid wide/rectangular products</span>
                     </div>
