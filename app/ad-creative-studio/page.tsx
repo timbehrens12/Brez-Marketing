@@ -3062,21 +3062,23 @@ CRITICAL FORMAT REQUIREMENTS:
 • NEVER replicate the input image's aspect ratio
 • ALWAYS create portrait mobile-optimized format
 
-ULTRA-CRITICAL CONTENT CONTAINMENT - MAXIMUM SECURITY PROTOCOL:
-• ALL content MUST fit within 60% of canvas center - NO EXCEPTIONS
-• MANDATORY 40% safety margins on ALL sides (top, bottom, left, right)
-• NEVER place ANY element within 300 pixels of ANY edge
-• TOP MARGIN: Minimum 300 pixels from top edge (critical for text visibility)
-• BOTTOM MARGIN: Minimum 300 pixels from bottom edge
-• LEFT/RIGHT MARGINS: Minimum 150 pixels from left/right edges
-• FORCE SCALE DOWN all elements by 50% minimum from normal size
-• CENTER everything in middle 40% of canvas core
-• EMERGENCY FAIL-SAFE: Scale down 70% if any doubt
-• CRITICAL: Text must be 60% smaller than normal and NEVER near top
-• ALL graphics, product, text COMPRESSED to tiny center zone
-• THINK: "Draw everything in a small rectangle in the exact middle"
-• ABSOLUTE RULE: If anything approaches edges, MAKE EVERYTHING TINY
-• SPECIFIC: Text headlines must start at least 400 pixels from top
+ULTRA-CRITICAL CONTENT CONTAINMENT - NUCLEAR SAFETY PROTOCOL:
+• ALL content MUST fit within 50% of canvas center - ABSOLUTE MAXIMUM
+• MANDATORY 50% safety margins on ALL sides - NO NEGOTIATIONS
+• NEVER place ANY element within 400 pixels of ANY edge - PERIOD
+• TOP MARGIN: Minimum 500 pixels from top edge - CRITICAL FOR TEXT
+• BOTTOM MARGIN: Minimum 500 pixels from bottom edge - NON-NEGOTIABLE  
+• LEFT MARGIN: Minimum 250 pixels from left edge - MANDATORY
+• RIGHT MARGIN: Minimum 250 pixels from right edge - MANDATORY
+• FORCE SCALE DOWN all elements by 70% minimum from normal size
+• CENTER everything in middle 30% of canvas core - TINY ZONE ONLY
+• EMERGENCY FAIL-SAFE: Scale down 80% if any doubt whatsoever
+• CRITICAL: Text must be 70% smaller than normal - MICROSCOPIC IF NEEDED
+• ALL graphics, product, text COMPRESSED to postage-stamp-sized center zone
+• THINK: "Draw everything as if it's on a tiny postage stamp in the exact center"
+• ABSOLUTE RULE: If ANYTHING gets close to edges, SHRINK EVERYTHING TO 20% SIZE
+• SPECIFIC: Text headlines must start at least 600 pixels from top edge
+• PARANOID RULE: Assume the canvas is 50% smaller than it actually is
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
@@ -3398,21 +3400,23 @@ CRITICAL FORMAT REQUIREMENTS:
 • NEVER replicate the input image's aspect ratio
 • ALWAYS create portrait mobile-optimized format
 
-ULTRA-CRITICAL CONTENT CONTAINMENT - MAXIMUM SECURITY PROTOCOL:
-• ALL content MUST fit within 60% of canvas center - NO EXCEPTIONS
-• MANDATORY 40% safety margins on ALL sides (top, bottom, left, right)
-• NEVER place ANY element within 300 pixels of ANY edge
-• TOP MARGIN: Minimum 300 pixels from top edge (critical for text visibility)
-• BOTTOM MARGIN: Minimum 300 pixels from bottom edge
-• LEFT/RIGHT MARGINS: Minimum 150 pixels from left/right edges
-• FORCE SCALE DOWN all elements by 50% minimum from normal size
-• CENTER everything in middle 40% of canvas core
-• EMERGENCY FAIL-SAFE: Scale down 70% if any doubt
-• CRITICAL: Text must be 60% smaller than normal and NEVER near top
-• ALL graphics, product, text COMPRESSED to tiny center zone
-• THINK: "Draw everything in a small rectangle in the exact middle"
-• ABSOLUTE RULE: If anything approaches edges, MAKE EVERYTHING TINY
-• SPECIFIC: Text headlines must start at least 400 pixels from top
+ULTRA-CRITICAL CONTENT CONTAINMENT - NUCLEAR SAFETY PROTOCOL:
+• ALL content MUST fit within 50% of canvas center - ABSOLUTE MAXIMUM
+• MANDATORY 50% safety margins on ALL sides - NO NEGOTIATIONS
+• NEVER place ANY element within 400 pixels of ANY edge - PERIOD
+• TOP MARGIN: Minimum 500 pixels from top edge - CRITICAL FOR TEXT
+• BOTTOM MARGIN: Minimum 500 pixels from bottom edge - NON-NEGOTIABLE  
+• LEFT MARGIN: Minimum 250 pixels from left edge - MANDATORY
+• RIGHT MARGIN: Minimum 250 pixels from right edge - MANDATORY
+• FORCE SCALE DOWN all elements by 70% minimum from normal size
+• CENTER everything in middle 30% of canvas core - TINY ZONE ONLY
+• EMERGENCY FAIL-SAFE: Scale down 80% if any doubt whatsoever
+• CRITICAL: Text must be 70% smaller than normal - MICROSCOPIC IF NEEDED
+• ALL graphics, product, text COMPRESSED to postage-stamp-sized center zone
+• THINK: "Draw everything as if it's on a tiny postage stamp in the exact center"
+• ABSOLUTE RULE: If ANYTHING gets close to edges, SHRINK EVERYTHING TO 20% SIZE
+• SPECIFIC: Text headlines must start at least 600 pixels from top edge
+• PARANOID RULE: Assume the canvas is 50% smaller than it actually is
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
