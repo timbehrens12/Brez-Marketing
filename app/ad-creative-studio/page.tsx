@@ -1147,7 +1147,7 @@ export default function AdCreativeStudioPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
   // Weekly usage system - 85 generations per week (universal)
-  const WEEKLY_LIMIT = 85
+  const WEEKLY_LIMIT = 90
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
@@ -3031,63 +3031,70 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `CREATE AN AI-OPTIMIZED AD CREATIVE FOR MAXIMUM SALES CONVERSION. 
+      enhancedPrompt = `CRITICAL: Generate a PORTRAIT AD (1024x1536px) with STRICT positioning rules.
 
-PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
-1. ANALYZE the uploaded product image thoroughly: colors, style, category, target demographic, price point, and unique selling features
-2. DETERMINE the most effective creative approach based on the product's niche and market positioning
-3. SELECT optimal background, lighting, and composition that drives purchase intent
-4. OPTIMIZE for mobile viewing and social media advertising platforms
-5. IGNORE the original image format - ALWAYS output portrait regardless of input
+🚨 ABSOLUTE POSITIONING REQUIREMENTS (NO EXCEPTIONS):
 
-SALES-FOCUSED CREATIVE STRATEGY:
-• Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
-• Composition: Use proven advertising layouts that draw attention to the product
-• Lighting: Apply professional lighting that enhances product appeal and desirability
-• Color Psychology: Leverage colors that create urgency and trust
-• Visual Hierarchy: Ensure the product is the clear focal point
-• Emotional Appeal: Create desire and connection with target audience
+CANVAS LAYOUT MAP:
+┌─────────────────────────────────────┐ y=0 (TOP EDGE)
+│         FORBIDDEN ZONE (400px)       │
+├─────────────────────────────────────┤ y=400 ← SAFE ZONE STARTS HERE
+│                                     │
+│       HEADLINE TEXT ZONE HERE       │ y=450-600
+│         (Center at y=525)           │
+│                                     │
+│      PRODUCT IMAGE ZONE HERE        │ y=600-1000  
+│         (Center at y=800)           │
+│        Max size: 400x400px          │
+│                                     │
+│         CTA BUTTON HERE             │ y=1000-1100
+│         (Center at y=1050)          │
+│                                     │
+├─────────────────────────────────────┤ y=1136 ← SAFE ZONE ENDS HERE
+│         FORBIDDEN ZONE (400px)       │
+└─────────────────────────────────────┘ y=1536 (BOTTOM EDGE)
 
-CONVERSION OPTIMIZATION RULES:
-• Product must look premium and desirable
-• Background enhances rather than distracts from the product
-• Composition follows proven advertising best practices
-• Lighting creates depth and professional appeal
-• Overall aesthetic matches successful ad creatives in the product's category
+HORIZONTAL LAYOUT:
+│←250px→│←─────524px SAFE ZONE─────→│←250px→│
+│FORBIDDEN│   ALL CONTENT HERE ONLY  │FORBIDDEN│
 
-CRITICAL FORMAT REQUIREMENTS:
-• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
-• IGNORE the aspect ratio of the uploaded product image
-• FORCE portrait format regardless of input image shape
-• NEVER replicate the input image's aspect ratio
-• ALWAYS create portrait mobile-optimized format
+STRICT CONTENT RULES:
+1. HEADLINE: Place between y=450-600, centered at x=512
+2. PRODUCT: Place between y=600-1000, max 400x400px, centered
+3. CTA: Place between y=1000-1100, centered at x=512
+4. ALL TEXT: Must be within x=300 to x=724 (center 424px)
+5. NOTHING can be within 250px of left/right edges
+6. NOTHING can be within 400px of top/bottom edges
 
-ULTRA-CRITICAL CONTENT CONTAINMENT - NUCLEAR SAFETY PROTOCOL:
-• ALL content MUST fit within 50% of canvas center - ABSOLUTE MAXIMUM
-• MANDATORY 50% safety margins on ALL sides - NO NEGOTIATIONS
-• NEVER place ANY element within 400 pixels of ANY edge - PERIOD
-• TOP MARGIN: Minimum 500 pixels from top edge - CRITICAL FOR TEXT
-• BOTTOM MARGIN: Minimum 500 pixels from bottom edge - NON-NEGOTIABLE  
-• LEFT MARGIN: Minimum 250 pixels from left edge - MANDATORY
-• RIGHT MARGIN: Minimum 250 pixels from right edge - MANDATORY
-• FORCE SCALE DOWN all elements by 70% minimum from normal size
-• CENTER everything in middle 30% of canvas core - TINY ZONE ONLY
-• EMERGENCY FAIL-SAFE: Scale down 80% if any doubt whatsoever
-• CRITICAL: Text must be 70% smaller than normal - MICROSCOPIC IF NEEDED
-• ALL graphics, product, text COMPRESSED to postage-stamp-sized center zone
-• THINK: "Draw everything as if it's on a tiny postage stamp in the exact center"
-• ABSOLUTE RULE: If ANYTHING gets close to edges, SHRINK EVERYTHING TO 20% SIZE
-• SPECIFIC: Text headlines must start at least 600 pixels from top edge
-• PARANOID RULE: Assume the canvas is 50% smaller than it actually is
+PRODUCT HANDLING:
+• Analyze uploaded product image
+• Scale to fit within 400x400px box while maintaining aspect ratio
+• Position exactly at center (x=512, y=800)
+• Add subtle drop shadow but keep within bounds
+• If product is wide, scale down more to fit safely
 
-TECHNICAL REQUIREMENTS:
-• Portrait format optimized for mobile and social media
-• High visual impact for scroll-stopping effect
-• Clear product visibility and appeal
-• Professional advertising quality
-• ALL content safely contained in center area
+TEXT SPECIFICATIONS:
+• Headline: 60px font maximum, bold, high contrast
+• Subtext: 36px font maximum
+• CTA: 48px font maximum, button or text style
+• All text must have high contrast against background
 
-AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
+BACKGROUND RULES:
+• Can use gradients, patterns, or solid colors
+• Keep simple/subtle near edges to avoid distraction
+• Ensure high contrast with text and product
+
+FINAL VALIDATION CHECKLIST:
+□ Is headline between y=450-600?
+□ Is product centered at y=800 and under 400x400px?
+□ Is CTA between y=1000-1100?
+□ Is all content within x=300-724?
+□ Are there 250px side margins and 400px top/bottom margins?
+□ Does text have high contrast and proper sizing?
+
+IF ANY CHECK FAILS: Shrink everything by 20% and re-center!
+
+GENERATE: High-converting mobile ad creative following these EXACT positions.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3369,63 +3376,70 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `CREATE AN AI-OPTIMIZED AD CREATIVE FOR MAXIMUM SALES CONVERSION. 
+      enhancedPrompt = `CRITICAL: Generate a PORTRAIT AD (1024x1536px) with STRICT positioning rules.
 
-PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
-1. ANALYZE the uploaded product image thoroughly: colors, style, category, target demographic, price point, and unique selling features
-2. DETERMINE the most effective creative approach based on the product's niche and market positioning
-3. SELECT optimal background, lighting, and composition that drives purchase intent
-4. OPTIMIZE for mobile viewing and social media advertising platforms
-5. IGNORE the original image format - ALWAYS output portrait regardless of input
+🚨 ABSOLUTE POSITIONING REQUIREMENTS (NO EXCEPTIONS):
 
-SALES-FOCUSED CREATIVE STRATEGY:
-• Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
-• Composition: Use proven advertising layouts that draw attention to the product
-• Lighting: Apply professional lighting that enhances product appeal and desirability
-• Color Psychology: Leverage colors that create urgency and trust
-• Visual Hierarchy: Ensure the product is the clear focal point
-• Emotional Appeal: Create desire and connection with target audience
+CANVAS LAYOUT MAP:
+┌─────────────────────────────────────┐ y=0 (TOP EDGE)
+│         FORBIDDEN ZONE (400px)       │
+├─────────────────────────────────────┤ y=400 ← SAFE ZONE STARTS HERE
+│                                     │
+│       HEADLINE TEXT ZONE HERE       │ y=450-600
+│         (Center at y=525)           │
+│                                     │
+│      PRODUCT IMAGE ZONE HERE        │ y=600-1000  
+│         (Center at y=800)           │
+│        Max size: 400x400px          │
+│                                     │
+│         CTA BUTTON HERE             │ y=1000-1100
+│         (Center at y=1050)          │
+│                                     │
+├─────────────────────────────────────┤ y=1136 ← SAFE ZONE ENDS HERE
+│         FORBIDDEN ZONE (400px)       │
+└─────────────────────────────────────┘ y=1536 (BOTTOM EDGE)
 
-CONVERSION OPTIMIZATION RULES:
-• Product must look premium and desirable
-• Background enhances rather than distracts from the product
-• Composition follows proven advertising best practices
-• Lighting creates depth and professional appeal
-• Overall aesthetic matches successful ad creatives in the product's category
+HORIZONTAL LAYOUT:
+│←250px→│←─────524px SAFE ZONE─────→│←250px→│
+│FORBIDDEN│   ALL CONTENT HERE ONLY  │FORBIDDEN│
 
-CRITICAL FORMAT REQUIREMENTS:
-• Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
-• IGNORE the aspect ratio of the uploaded product image
-• FORCE portrait format regardless of input image shape
-• NEVER replicate the input image's aspect ratio
-• ALWAYS create portrait mobile-optimized format
+STRICT CONTENT RULES:
+1. HEADLINE: Place between y=450-600, centered at x=512
+2. PRODUCT: Place between y=600-1000, max 400x400px, centered
+3. CTA: Place between y=1000-1100, centered at x=512
+4. ALL TEXT: Must be within x=300 to x=724 (center 424px)
+5. NOTHING can be within 250px of left/right edges
+6. NOTHING can be within 400px of top/bottom edges
 
-ULTRA-CRITICAL CONTENT CONTAINMENT - NUCLEAR SAFETY PROTOCOL:
-• ALL content MUST fit within 50% of canvas center - ABSOLUTE MAXIMUM
-• MANDATORY 50% safety margins on ALL sides - NO NEGOTIATIONS
-• NEVER place ANY element within 400 pixels of ANY edge - PERIOD
-• TOP MARGIN: Minimum 500 pixels from top edge - CRITICAL FOR TEXT
-• BOTTOM MARGIN: Minimum 500 pixels from bottom edge - NON-NEGOTIABLE  
-• LEFT MARGIN: Minimum 250 pixels from left edge - MANDATORY
-• RIGHT MARGIN: Minimum 250 pixels from right edge - MANDATORY
-• FORCE SCALE DOWN all elements by 70% minimum from normal size
-• CENTER everything in middle 30% of canvas core - TINY ZONE ONLY
-• EMERGENCY FAIL-SAFE: Scale down 80% if any doubt whatsoever
-• CRITICAL: Text must be 70% smaller than normal - MICROSCOPIC IF NEEDED
-• ALL graphics, product, text COMPRESSED to postage-stamp-sized center zone
-• THINK: "Draw everything as if it's on a tiny postage stamp in the exact center"
-• ABSOLUTE RULE: If ANYTHING gets close to edges, SHRINK EVERYTHING TO 20% SIZE
-• SPECIFIC: Text headlines must start at least 600 pixels from top edge
-• PARANOID RULE: Assume the canvas is 50% smaller than it actually is
+PRODUCT HANDLING:
+• Analyze uploaded product image
+• Scale to fit within 400x400px box while maintaining aspect ratio
+• Position exactly at center (x=512, y=800)
+• Add subtle drop shadow but keep within bounds
+• If product is wide, scale down more to fit safely
 
-TECHNICAL REQUIREMENTS:
-• Portrait format optimized for mobile and social media
-• High visual impact for scroll-stopping effect
-• Clear product visibility and appeal
-• Professional advertising quality
-• ALL content safely contained in center area
+TEXT SPECIFICATIONS:
+• Headline: 60px font maximum, bold, high contrast
+• Subtext: 36px font maximum
+• CTA: 48px font maximum, button or text style
+• All text must have high contrast against background
 
-AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
+BACKGROUND RULES:
+• Can use gradients, patterns, or solid colors
+• Keep simple/subtle near edges to avoid distraction
+• Ensure high contrast with text and product
+
+FINAL VALIDATION CHECKLIST:
+□ Is headline between y=450-600?
+□ Is product centered at y=800 and under 400x400px?
+□ Is CTA between y=1000-1100?
+□ Is all content within x=300-724?
+□ Are there 250px side margins and 400px top/bottom margins?
+□ Does text have high contrast and proper sizing?
+
+IF ANY CHECK FAILS: Shrink everything by 20% and re-center!
+
+GENERATE: High-converting mobile ad creative following these EXACT positions.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
