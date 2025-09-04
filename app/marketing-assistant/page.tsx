@@ -1242,46 +1242,44 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Main Content Grid - All widgets now show with preloaded data */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-8 animate-in fade-in duration-300">
-            {/* Top Section - Blended Widgets and Advertising Report */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
-              {/* Left: Blended Widgets Table - 50% width */}
-              <div className="h-full">
+          {/* Dynamic Grid Layout - Asymmetrical and visually interesting */}
+          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
+            
+            {/* Top Row - Blended Metrics takes more prominent space */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Large: Blended Performance Metrics - Takes 2/3 of space */}
+              <div className="lg:col-span-8">
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
-                  // Remove loading props
-                  // isLoadingMetrics={isLoadingMetrics}
-                  // isRefreshingData={isRefreshingData}
                 />
-                  </div>
+              </div>
 
-                                          {/* Right: Advertising Report - 50% width */}
-              <div className="h-full">
+              {/* Smaller: AI Daily Report - Takes 1/3 of space, taller */}
+              <div className="lg:col-span-4">
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
-                </div>
+            </div>
 
-            {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
-              {/* Left: Ad Creative Breakdown */}
-              <div className="h-full">
+            {/* Middle Row - Creative and Performance in different sizes */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Medium: Ad Creative Breakdown - Takes about 45% */}
+              <div className="lg:col-span-5">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
-              {/* Right: Performance Chart */}
-              <div className="h-full">
+              {/* Large: Performance Chart - Takes about 55% for better data visualization */}
+              <div className="lg:col-span-7">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
-                  // Remove loading prop
-                  // loading={isLoadingMetrics || isRefreshingData} 
                 />
               </div>
             </div>
 
-            {/* Bottom Section - Campaign Management at 100% width (moved to bottom) */}
-            <div>
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            {/* Bottom Section - Campaign Management spans full width but with reduced height */}
+            <div className="w-full">
+              <div className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-[#1a1a1a] rounded-xl overflow-hidden">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
             </div>
 
           </div>
