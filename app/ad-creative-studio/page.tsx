@@ -3059,20 +3059,28 @@ CRITICAL FORMAT REQUIREMENTS:
 • Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
 • IGNORE the aspect ratio of the uploaded product image
 • FORCE portrait format regardless of input image shape
-• Fill ENTIRE portrait canvas from edge to edge
-• NO letterboxing, black bars, or empty space
-• Composition must extend to all four edges
-• Use full vertical height for maximum impact
-• Background extends to frame boundaries
 • NEVER replicate the input image's aspect ratio
 • ALWAYS create portrait mobile-optimized format
+
+ULTRA-CRITICAL CONTENT CONTAINMENT - MAXIMUM SECURITY PROTOCOL:
+• ALL content MUST fit within 70% of canvas center - NO EXCEPTIONS
+• MANDATORY 30% safety margins on ALL sides (top, bottom, left, right)
+• NEVER place ANY element within 25% of ANY edge
+• ALL text must be minimum 200 pixels from ANY border
+• FORCE SCALE DOWN all elements by 40% minimum from normal size
+• CENTER everything in middle 50% of canvas core
+• EMERGENCY FAIL-SAFE: Scale down 60% if any doubt
+• CRITICAL: Text must be 50% smaller than normal
+• ALL graphics, product, text COMPRESSED to center zone
+• THINK: "Everything must fit in a tiny safe zone in the exact center"
+• ABSOLUTE RULE: If anything approaches edges, SHRINK EVERYTHING MORE
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
 • High visual impact for scroll-stopping effect
 • Clear product visibility and appeal
 • Professional advertising quality
-• Full canvas utilization
+• ALL content safely contained in center area
 
 AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
@@ -3384,20 +3392,28 @@ CRITICAL FORMAT REQUIREMENTS:
 • Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
 • IGNORE the aspect ratio of the uploaded product image
 • FORCE portrait format regardless of input image shape
-• Fill ENTIRE portrait canvas from edge to edge
-• NO letterboxing, black bars, or empty space
-• Composition must extend to all four edges
-• Use full vertical height for maximum impact
-• Background extends to frame boundaries
 • NEVER replicate the input image's aspect ratio
 • ALWAYS create portrait mobile-optimized format
+
+ULTRA-CRITICAL CONTENT CONTAINMENT - MAXIMUM SECURITY PROTOCOL:
+• ALL content MUST fit within 70% of canvas center - NO EXCEPTIONS
+• MANDATORY 30% safety margins on ALL sides (top, bottom, left, right)
+• NEVER place ANY element within 25% of ANY edge
+• ALL text must be minimum 200 pixels from ANY border
+• FORCE SCALE DOWN all elements by 40% minimum from normal size
+• CENTER everything in middle 50% of canvas core
+• EMERGENCY FAIL-SAFE: Scale down 60% if any doubt
+• CRITICAL: Text must be 50% smaller than normal
+• ALL graphics, product, text COMPRESSED to center zone
+• THINK: "Everything must fit in a tiny safe zone in the exact center"
+• ABSOLUTE RULE: If anything approaches edges, SHRINK EVERYTHING MORE
 
 TECHNICAL REQUIREMENTS:
 • Portrait format optimized for mobile and social media
 • High visual impact for scroll-stopping effect
 • Clear product visibility and appeal
 • Professional advertising quality
-• Full canvas utilization
+• ALL content safely contained in center area
 
 AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
