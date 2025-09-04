@@ -33,6 +33,16 @@ import { MetaConnectionStatus } from "@/components/MetaConnectionStatus"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Brain, Clock } from "lucide-react"
 
+// Custom CSS for modern shapes
+const modernStyles = `
+  .clip-path-triangle {
+    clip-path: polygon(100% 0%, 0% 0%, 100% 100%);
+  }
+  .clip-path-corner {
+    clip-path: polygon(0% 0%, calc(100% - 20px) 0%, 100% 20px, 100% 100%, 0% 100%);
+  }
+`
+
 // Extend Window interface for global state management
 declare global {
   interface Window {
@@ -1232,6 +1242,8 @@ export default function MarketingAssistantPage() {
   // Show regular dashboard when brand is selected
   return (
     <div className="w-full space-y-6 mb-12 relative">
+      {/* Inject modern styles */}
+      <style dangerouslySetInnerHTML={{ __html: modernStyles }} />
       <GridOverlay />
       <div className="relative z-10">
         <>
@@ -1294,46 +1306,127 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Main Content Grid - All widgets now show with preloaded data */}
+          {/* Main Content Grid - Modern Asymmetrical Layout */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-8 animate-in fade-in duration-300">
-            {/* Top Section - Blended Widgets and Advertising Report */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
-              {/* Left: Blended Widgets Table - 50% width */}
-              <div className="h-full">
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
-                  // Remove loading props
-                  // isLoadingMetrics={isLoadingMetrics}
-                  // isRefreshingData={isRefreshingData}
-                />
+            
+            {/* Asymmetrical Grid Layout */}
+            <div className="grid grid-cols-12 grid-rows-12 gap-6 h-[1200px] lg:h-[1000px]">
+              
+              {/* Primary Widget - Blended Widgets Table (Large Hexagonal Card) */}
+              <div className="col-span-12 lg:col-span-7 row-span-6 lg:row-span-7 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 
+                              rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] 
+                              rounded-3xl border border-white/10 group-hover:border-white/20 
+                              shadow-2xl shadow-black/50 transition-all duration-500 overflow-hidden">
+                  {/* Geometric accent lines */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent 
+                                clip-path-triangle"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent 
+                                rounded-tr-full"></div>
+                  
+                  <div className="relative h-full p-1">
+                    <BlendedWidgetsTable 
+                      metaMetrics={metaMetrics}
+                    />
                   </div>
-
-                                          {/* Right: Advertising Report - 50% width */}
-              <div className="h-full">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-              </div>
                 </div>
-
-            {/* Middle Section - Ad Creative and Performance Chart side by side (moved up from bottom) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[400px]">
-              {/* Left: Ad Creative Breakdown */}
-              <div className="h-full">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
-              {/* Right: Performance Chart */}
-              <div className="h-full">
-                <PerformanceChart 
-                  preloadedPerformanceData={preloadedData.performanceData}
-                  // Remove loading prop
-                  // loading={isLoadingMetrics || isRefreshingData} 
-                />
+              {/* AI Daily Report (Elevated Rhombus Card) */}
+              <div className="col-span-12 lg:col-span-5 row-span-5 lg:row-span-6 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-blue-500/10 
+                              rounded-2xl blur-lg group-hover:blur-xl transition-all duration-500 
+                              transform rotate-1 group-hover:rotate-2"></div>
+                <div className="relative h-full bg-gradient-to-br from-[#1c1c1c] via-[#212121] to-[#181818] 
+                              rounded-2xl border border-white/10 group-hover:border-emerald-500/30 
+                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
+                              transform group-hover:-translate-y-1">
+                  {/* Animated accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500/50 
+                                via-cyan-500/50 to-blue-500/50 group-hover:h-2 transition-all duration-500"></div>
+                  {/* Side accent */}
+                  <div className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-gradient-to-b from-transparent 
+                                via-emerald-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
+                  
+                  <div className="relative h-full p-1">
+                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                  </div>
+                </div>
               </div>
+
+              {/* Performance Chart (Floating Organic Shape) */}
+              <div className="col-span-12 lg:col-span-6 row-span-5 lg:row-span-5 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-pink-500/10 
+                              rounded-[2rem] blur-lg group-hover:blur-xl transition-all duration-500
+                              transform -rotate-1 group-hover:-rotate-2"></div>
+                <div className="relative h-full bg-gradient-to-br from-[#1e1e1e] via-[#232323] to-[#1a1a1a] 
+                              rounded-[2rem] border border-white/10 group-hover:border-orange-500/30 
+                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
+                              transform group-hover:scale-[1.02]">
+                  {/* Flowing accent lines */}
+                  <div className="absolute top-0 left-1/4 w-px h-16 bg-gradient-to-b from-orange-500/50 to-transparent 
+                                group-hover:h-20 transition-all duration-500"></div>
+                  <div className="absolute top-0 right-1/3 w-px h-12 bg-gradient-to-b from-red-500/40 to-transparent 
+                                group-hover:h-16 transition-all duration-500"></div>
+                  {/* Corner accent */}
+                  <div className="absolute bottom-4 right-4 w-3 h-3 rounded-full bg-orange-500/40 
+                                group-hover:w-4 group-hover:h-4 transition-all duration-500"></div>
+                  
+                  <div className="relative h-full p-1">
+                    <PerformanceChart 
+                      preloadedPerformanceData={preloadedData.performanceData}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ad Creative Breakdown (Angular Modern Card) */}
+              <div className="col-span-12 lg:col-span-6 row-span-6 lg:row-span-6 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-indigo-500/10 
+                              rounded-xl blur-lg group-hover:blur-xl transition-all duration-500
+                              transform rotate-1 group-hover:rotate-3"></div>
+                <div className="relative h-full bg-gradient-to-br from-[#1d1d1d] via-[#222] to-[#191919] 
+                              rounded-xl border border-white/10 group-hover:border-violet-500/30 
+                              shadow-xl shadow-black/40 transition-all duration-500 overflow-hidden
+                              clip-path-corner">
+                  {/* Diagonal accent */}
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/20 to-transparent 
+                                transform rotate-45 translate-x-8 -translate-y-8 group-hover:scale-125 
+                                transition-all duration-500"></div>
+                  {/* Bottom edge highlight */}
+                  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent 
+                                via-violet-500/50 to-transparent group-hover:h-0.5 transition-all duration-500"></div>
+                  
+                  <div className="relative h-full p-1">
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            {/* Bottom Section - Campaign Management at 100% width (moved to bottom) */}
-            <div>
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            {/* Campaign Management - Full Width Floating Panel */}
+            <div className="relative group mt-8">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-teal-500/5 to-blue-500/10 
+                            rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+              <div className="relative bg-gradient-to-r from-[#1a1a1a] via-[#1f1f1f] to-[#1a1a1a] 
+                            rounded-3xl border border-white/10 group-hover:border-teal-500/30 
+                            shadow-2xl shadow-black/50 transition-all duration-500 overflow-hidden
+                            group-hover:shadow-teal-500/10">
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500/50 
+                              via-teal-500/50 to-blue-500/50 group-hover:h-2 transition-all duration-500"></div>
+                {/* Side accents */}
+                <div className="absolute left-0 top-1/3 bottom-1/3 w-1 bg-gradient-to-b from-transparent 
+                              via-teal-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
+                <div className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-gradient-to-b from-transparent 
+                              via-green-500/30 to-transparent group-hover:w-2 transition-all duration-500"></div>
+                
+                <div className="relative p-1">
+                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                </div>
+              </div>
             </div>
 
           </div>
