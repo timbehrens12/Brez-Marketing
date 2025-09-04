@@ -1,47 +1,65 @@
 "use client"
 
-import { Footer } from './Footer'
 import { useEffect, useState } from 'react'
+import { Footer } from './Footer'
 
 export function ConditionalFooter() {
-  const [isPageLoading, setIsPageLoading] = useState(false)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
 
   useEffect(() => {
-    // Listen for page loading events
-    const handleLoadingStart = () => setIsPageLoading(true)
-    const handleLoadingEnd = () => setIsPageLoading(false)
-
-    // Check if any UnifiedLoading component with page variant is currently mounted
-    const checkForPageLoading = () => {
-      const pageLoadingElements = document.querySelectorAll('[data-loading-variant="page"]')
-      setIsPageLoading(pageLoadingElements.length > 0)
+    // Check if the current page is showing a loading screen
+    const checkLoadingState = () => {
+      // Look for common loading screen indicators
+      const loadingIndicators = [
+        '.min-h-screen .animate-spin', // Loading spinner in full screen
+        '[class*="loading"]',
+        '.w-20.h-20 .animate-spin', // Specific loading spinner pattern
+        'div:has(.animate-spin)[class*="min-h-screen"]' // Full screen with spinner
+      ]
+      
+      let hasLoadingScreen = false
+      
+      // Check for loading screen patterns
+      for (const selector of loadingIndicators) {
+        try {
+          if (document.querySelector(selector)) {
+            hasLoadingScreen = true
+            break
+          }
+        } catch (e) {
+          // Ignore selector errors
+        }
+      }
+      
+      // Also check for specific loading screen text content
+      const bodyText = document.body.textContent || ''
+      const hasLoadingText = (
+        bodyText.includes('Loading workspace data') ||
+        bodyText.includes('Analyzing your brand') ||
+        bodyText.includes('AI Dashboard') && bodyText.includes('Connecting') ||
+        bodyText.includes('Marketing Assistant') && bodyText.includes('Loading')
+      )
+      
+      setIsLoadingPage(hasLoadingScreen || hasLoadingText)
     }
-
-    // Initial check
-    checkForPageLoading()
-
-    // Set up a MutationObserver to watch for loading components
-    const observer = new MutationObserver(checkForPageLoading)
+    
+    // Check immediately
+    checkLoadingState()
+    
+    // Set up observer to watch for DOM changes
+    const observer = new MutationObserver(checkLoadingState)
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['data-loading-variant']
+      attributeFilter: ['class']
     })
-
-    // Custom events for manual control
-    window.addEventListener('page-loading-start', handleLoadingStart)
-    window.addEventListener('page-loading-end', handleLoadingEnd)
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('page-loading-start', handleLoadingStart)
-      window.removeEventListener('page-loading-end', handleLoadingEnd)
-    }
+    
+    return () => observer.disconnect()
   }, [])
 
-  // Don't show footer during page loading
-  if (isPageLoading) {
+  // Hide footer on loading pages
+  if (isLoadingPage) {
     return null
   }
 
