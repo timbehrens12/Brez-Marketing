@@ -404,45 +404,39 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   if (!report) {
     return (
-      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
+      <div className="h-full flex flex-col relative">
+        {/* Modern no-data state */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center max-w-sm">
+            {/* Animated AI icon */}
+            <div className="relative mb-6">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-600/20 
+                            flex items-center justify-center border border-purple-500/30 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 animate-pulse"></div>
+                <Brain className="w-10 h-10 text-purple-300 relative z-10" />
               </div>
-              <div>
-                <CardTitle className="text-3xl text-white font-bold tracking-tight">Detailed Advertising Report</CardTitle>
-                <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
-              </div>
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-purple-500/20 rounded-full blur-xl animate-pulse"></div>
             </div>
-          </div>
-        </div>
-        
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center max-w-md">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-                <Brain className="w-12 h-12 text-gray-400" />
+            
+            <h3 className="text-xl font-bold text-white mb-3">AI Report Generating</h3>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              Analyzing your advertising data to generate personalized insights and recommendations.
+            </p>
+            
+            {/* Connecting platforms preview */}
+            <div className="flex justify-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <div className="w-4 h-4 bg-blue-500 rounded-sm flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">f</span>
+                </div>
+                <span className="text-blue-300 text-xs font-medium">Meta</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">No Report Available</h3>
-              <p className="text-gray-400 mb-6 leading-relaxed">
-                No advertising data available for this brand. Connect your advertising platforms to see comprehensive insights and AI-powered recommendations.
-              </p>
-              <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-                <div className="p-3 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <span className="text-blue-400 font-bold">M</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Meta Ads</p>
+              
+              <div className="flex items-center gap-2 px-3 py-2 bg-gray-500/10 border border-gray-500/20 rounded-xl">
+                <div className="w-4 h-4 bg-gray-500 rounded-sm flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">G</span>
                 </div>
-                <div className="p-3 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-red-500/10 rounded-lg flex items-center justify-center">
-                    <span className="text-red-400 font-bold">G</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Google Ads</p>
-                </div>
+                <span className="text-gray-300 text-xs font-medium">Google</span>
               </div>
             </div>
           </div>
@@ -464,115 +458,134 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   })
 
   return (
-    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
+    <div className="h-full flex flex-col space-y-6">
+      {/* AI Health Status */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-600/20 
+                          flex items-center justify-center border border-purple-500/30">
+              <Brain className="w-5 h-5 text-purple-300" />
             </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Detailed Advertising Report</h2>
-              <div className="flex items-center gap-3">
-                <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
-                {report?.generatedAt && (
-                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-3 py-1 rounded-full border border-[#2a2a2a]">
-                    Generated {new Date(report.generatedAt).toLocaleString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })} local time
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1a1f2e] animate-pulse"></div>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white text-sm">AI Analysis</h3>
+            <p className="text-gray-400 text-xs">Real-time insights</p>
+          </div>
+        </div>
+        
+        {report && (
+          <div className="flex items-center gap-2">
+            {getHealthBadge(report.overallHealth)}
+            {report.generatedAt && (
+              <div className="text-xs text-gray-500 bg-[#30363d] px-2 py-1 rounded-lg">
+                {new Date(report.generatedAt).toLocaleString(undefined, {
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Main AI Summary */}
+      <div className="bg-gradient-to-br from-[#1a1f2e] via-[#242937] to-[#1a1f2e] 
+                    border border-[#30363d] rounded-2xl p-6 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500/30 to-indigo-600/30 
+                          flex items-center justify-center border border-purple-500/40">
+              <Zap className="w-4 h-4 text-purple-300" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-white font-semibold text-sm mb-2">Campaign Intelligence</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {report.summary}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Items & Successes */}
+      <div className="space-y-4">
+        {/* Priorities */}
+        {report?.topPriorities && report.topPriorities.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-400" />
+              <h4 className="text-white font-medium text-sm">Priority Actions</h4>
+            </div>
+            <div className="space-y-2">
+              {report.topPriorities.slice(0, 2).map((priority, index) => (
+                <div key={index} className="bg-gradient-to-r from-orange-500/10 to-red-500/10 
+                                             border border-orange-500/20 rounded-xl p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-orange-500/30 flex items-center justify-center mt-0.5 shrink-0">
+                      <span className="text-orange-300 font-bold text-xs">{index + 1}</span>
+                    </div>
+                    <p className="text-gray-200 text-xs leading-relaxed">{priority}</p>
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
+        )}
+
+        {/* Success Highlights */}
+        {report?.successHighlights && report.successHighlights.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <h4 className="text-white font-medium text-sm">Recent Wins</h4>
+            </div>
+            <div className="space-y-2">
+              {report.successHighlights.slice(0, 2).map((highlight, index) => (
+                <div key={index} className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 
+                                             border border-green-500/20 rounded-xl p-3">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                    <p className="text-gray-200 text-xs leading-relaxed">{highlight}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Stats */}
+      {(report?.todayStats || report?.yesterdayStats) && (
+        <div className="bg-gradient-to-br from-[#161b22] via-[#1c2128] to-[#0d1117] 
+                      border border-[#30363d] rounded-xl p-4">
+          <h4 className="text-white font-medium text-sm mb-3 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-blue-400" />
+            Today's Performance
+          </h4>
           
-          {/* Show health badge in header */}
-          {report && getHealthBadge(report.overallHealth)}
-        </div>
-      </div>
-      
-      <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
-        <div className="flex-1 flex flex-col space-y-6">
-          {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-6' : 'flex-1'}`}>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-6 backdrop-blur-sm h-full flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-base text-gray-200 leading-relaxed tracking-wide max-w-4xl mx-auto">
-                  {report.summary}
-                </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <div className="text-lg font-bold text-white">
+                {formatCurrency(relevantStats.stats?.spend || 0)}
               </div>
+              <div className="text-xs text-gray-400">Spend</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg font-bold text-white">
+                {(relevantStats.stats?.conversions || 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-400">Conversions</div>
             </div>
           </div>
-
-
-
-
-
-
-
-          {/* Top Priorities Section - Enhanced */}
-          {report?.topPriorities && report.topPriorities.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                  <AlertTriangle className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-white">Top Priorities</h3>
-                  <p className="text-sm text-gray-400">Action items requiring attention</p>
-                </div>
-              </div>
-              <div className="grid gap-3">
-                {report.topPriorities.map((priority, index) => (
-                  <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
-                          <span className="text-amber-400 font-bold text-sm">{index + 1}</span>
-                        </div>
-                        <p className="text-sm text-gray-300 leading-relaxed flex-1">{priority}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Success Highlights Section - Enhanced */}
-          {report?.successHighlights && report.successHighlights.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-white">Success Highlights</h3>
-                  <p className="text-sm text-gray-400">Positive performance indicators</p>
-                </div>
-              </div>
-              <div className="grid gap-3">
-                {report.successHighlights.map((highlight, index) => (
-                  <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-                          <CheckCircle className="w-4 h-4 text-emerald-400" />
-                        </div>
-                        <p className="text-sm text-gray-300 leading-relaxed flex-1">{highlight}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

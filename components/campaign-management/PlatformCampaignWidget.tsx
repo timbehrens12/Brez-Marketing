@@ -47,13 +47,15 @@ import {
   Sparkles,
   Eye,
   RefreshCw,
-  Clock
+  Clock,
+  Linkedin as LinkedinIcon
 } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 
 
@@ -1439,57 +1441,90 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       )}
       */}
       
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-8 py-5 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Users className="w-5 h-5 text-white" />
-            </div>
+      {/* Modern Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-cyan-500/10 
+                        flex items-center justify-center border border-blue-500/30 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 animate-pulse"></div>
+            <Users className="w-6 h-6 text-blue-300 relative z-10" />
+          </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">Campaign Management</h2>
-              <p className="text-gray-400 text-sm">
-                Manage and optimize your advertising campaigns across all platforms
-              </p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 
+                           bg-clip-text text-transparent tracking-tight">
+                Campaign Management
+              </h1>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-gray-400 font-medium">
+                  Active campaigns and AI-powered optimization insights
+                </p>
+                {lastRefreshTime > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 
+                                border border-green-500/20 rounded-full">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-green-300 text-xs font-medium">
+                      Updated {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Enhanced refresh button */}
+          <Button
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 
+                     border border-blue-500/30 text-white hover:from-blue-600/30 
+                     hover:to-purple-600/30 hover:border-blue-400/50 px-6 py-3 
+                     rounded-xl font-semibold transition-all duration-300 
+                     group backdrop-blur-sm shadow-lg hover:shadow-xl 
+                     hover:scale-105 active:scale-95"
+          >
+            <RefreshCw className="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+            Refresh Campaigns
+          </Button>
         </div>
 
-        {/* Tabbed Interface */}
+        {/* Campaign Content Container */}
+        <div>
+
+        {/* Modern Tabbed Interface */}
         <div className="px-8 py-6">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 h-11">
+            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-[#161b22] 
+                              via-[#1c2128] to-[#161b22] border border-[#30363d] 
+                              rounded-2xl p-1.5 h-12 shadow-lg backdrop-blur-sm 
+                              relative overflow-hidden">
+              {/* Tab background accent */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5 animate-pulse"></div>
               <TabsTrigger 
                 value="all" 
-                className="flex items-center justify-center gap-2 data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white
-                         text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
+                className="relative flex items-center justify-center gap-2 
+                         data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/30 
+                         data-[state=active]:to-purple-600/30 data-[state=active]:text-white
+                         data-[state=active]:border data-[state=active]:border-blue-500/40
+                         data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25
+                         text-gray-400 hover:text-white hover:bg-white/5 
+                         transition-all duration-300 rounded-xl h-full z-10
+                         backdrop-blur-sm font-medium"
               >
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
-                    <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20"
-                    />
-                    <Image 
-                      src="https://i.imgur.com/AXHa9UT.png" 
-                      alt="TikTok" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
-                    />
-                    <Image 
-                      src="https://i.imgur.com/TavV4UJ.png" 
-                      alt="Google" 
-                      width={16} 
-                      height={16} 
-                      className="object-contain rounded-full border border-white/20 grayscale opacity-50"
-                    />
+                    <div className="w-4 h-4 bg-blue-500 rounded-full border border-white/30 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">f</span>
+                    </div>
+                    <div className="w-4 h-4 bg-gray-600 rounded-full border border-white/30 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">T</span>
+                    </div>
+                    <div className="w-4 h-4 bg-red-500 rounded-full border border-white/30 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">G</span>
+                    </div>
                   </div>
-                  <span className="font-medium">All Platforms</span>
+                  <span className="text-xs font-semibold">All</span>
+                  <Badge className="bg-white/10 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {localCampaigns.length}
+                  </Badge>
                 </div>
               </TabsTrigger>
               
@@ -1497,23 +1532,43 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                 <TabsTrigger 
                   key={platformKey}
                   value={platformKey}
-                  className="flex items-center justify-center gap-2 data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white
-                           text-gray-400 hover:text-white transition-all duration-300 rounded-lg h-full"
+                  className="relative flex items-center justify-center gap-2 
+                           data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/30 
+                           data-[state=active]:to-purple-600/30 data-[state=active]:text-white
+                           data-[state=active]:border data-[state=active]:border-blue-500/40
+                           data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25
+                           text-gray-400 hover:text-white hover:bg-white/5 
+                           transition-all duration-300 rounded-xl h-full z-10
+                           backdrop-blur-sm font-medium"
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <Image 
-                        src={platform.logo} 
-                        alt={platform.name} 
-                        width={20} 
-                        height={20} 
-                        className={`object-contain rounded-lg ${!platform.isActive ? 'grayscale opacity-50' : ''}`}
-                      />
+                      <div className={cn(
+                        "w-4 h-4 rounded-sm flex items-center justify-center",
+                        platformKey === 'meta' && "bg-blue-500",
+                        platformKey === 'google' && "bg-red-500",
+                        platformKey === 'linkedin' && "bg-blue-700",
+                        platformKey === 'tiktok' && "bg-gray-700",
+                        !platform.isActive && "grayscale opacity-50"
+                      )}>
+                        {platformKey === 'meta' && <span className="text-white text-xs font-bold">f</span>}
+                        {platformKey === 'google' && <span className="text-white text-xs font-bold">G</span>}
+                        {platformKey === 'linkedin' && <LinkedinIcon className="w-3 h-3 text-white" />}
+                        {platformKey === 'tiktok' && <span className="text-white text-xs font-bold">T</span>}
+                      </div>
                       {platform.isActive && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#1a1a1a]"></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-[#161b22] animate-pulse"></div>
                       )}
                     </div>
-                    <span className="font-medium">{platform.name}</span>
+                    <span className="text-xs font-semibold">{platform.name}</span>
+                    <Badge className={cn(
+                      "text-xs px-1.5 py-0.5 rounded-full",
+                      platform.isActive 
+                        ? "bg-green-500/20 text-green-300 border-green-500/30" 
+                        : "bg-gray-500/20 text-gray-400 border-gray-500/30"
+                    )}>
+                      {localCampaigns.filter(c => c.platform === platform.name).length || 0}
+                    </Badge>
                   </div>
                 </TabsTrigger>
               ))}

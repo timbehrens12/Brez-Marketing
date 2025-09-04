@@ -308,274 +308,196 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg overflow-hidden relative">
-      {/* Header - matches other widgets style */}
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <ImageIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl text-white font-bold tracking-tight">Ad Creative Performance</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className="bg-white/10 text-gray-300 border-white/20 text-xs font-medium">
-                  {filteredAndSortedAds.length} Creative{filteredAndSortedAds.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
+    <div className="h-full flex flex-col space-y-4">
+      {/* Header with modern design */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500/20 to-pink-600/20 
+                        flex items-center justify-center border border-orange-500/30">
+            <ImageIcon className="w-4 h-4 text-orange-300" />
           </div>
-          
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-transparent border-[#333] text-white hover:bg-gray-800/50">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Options
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border-[#333]">
-                <DropdownMenuLabel className="text-white">Sort By</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#333]" />
-                {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
-                  <DropdownMenuItem 
-                    key={metric} 
-                    onSelect={() => setSortBy(metric)}
-                    className="text-white hover:bg-gray-800"
-                  >
-                    {metric === 'spent' && <DollarSign className="h-4 w-4 mr-2" />}
-                    {metric === 'impressions' && <Eye className="h-4 w-4 mr-2" />}
-                    {metric === 'clicks' && <MousePointer className="h-4 w-4 mr-2" />}
-                    {metric === 'ctr' && <Target className="h-4 w-4 mr-2" />}
-                    {metric === 'conversions' && <Zap className="h-4 w-4 mr-2" />}
-                    <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
-                    {sortBy === metric && (
-                      <Badge className="ml-2 bg-blue-600 text-white">
-                        {sortOrder === 'desc' ? '↓' : '↑'}
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator className="bg-[#333]" />
-                <DropdownMenuItem 
-                  onSelect={(e) => { e.preventDefault(); setShowInactive(!showInactive); }} 
-                  className="text-white hover:bg-gray-800"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center">
-                      {showInactive ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                      Show Inactive Ads
-                    </div>
-                    <Switch checked={showInactive} />
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div>
+            <h4 className="font-semibold text-white text-sm flex items-center gap-2">
+              Creative Analysis
+              <Badge className="bg-orange-500/10 text-orange-300 border-orange-500/20 text-xs px-2 py-1">
+                {filteredAndSortedAds.length}
+              </Badge>
+            </h4>
+            <p className="text-gray-400 text-xs">Top performing ad creatives</p>
           </div>
         </div>
         
-        {/* Search Bar */}
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search ads, campaigns, or headlines..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-gray-400 
-                     focus:border-white/20 focus:ring-1 focus:ring-white/20"
-          />
+        {/* Compact controls */}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white/10">
+                <Settings className="h-4 w-4 text-gray-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[#0d1117] border-[#30363d]">
+              <DropdownMenuLabel className="text-white text-xs">Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-[#30363d]" />
+              {['spent', 'impressions', 'clicks', 'ctr', 'conversions'].map(metric => (
+                <DropdownMenuItem 
+                  key={metric} 
+                  onSelect={() => setSortBy(metric)}
+                  className="text-white hover:bg-[#1c2128] text-xs"
+                >
+                  <span className="capitalize">{metric === 'ctr' ? 'CTR' : metric}</span>
+                  {sortBy === metric && (
+                    <span className="ml-auto text-orange-400">
+                      {sortOrder === 'desc' ? '↓' : '↑'}
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
+      {/* Compact search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3" />
+        <Input
+          placeholder="Search creatives..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8 h-8 bg-[#161b22] border-[#30363d] text-white placeholder-gray-400 text-xs
+                   focus:border-orange-500/30 focus:ring-1 focus:ring-orange-500/20"
+        />
+      </div>
+
       {/* Content */}
-      <div className="p-6">
+      <div className="flex-1 min-h-0">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
-              <ImageIcon className="h-8 w-8 text-gray-500" />
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-pink-600/20 rounded-xl 
+                            flex items-center justify-center border border-orange-500/30 mx-auto mb-3">
+                <ImageIcon className="h-6 w-6 text-orange-300" />
+              </div>
+              <h3 className="text-sm font-medium text-white mb-1">No Creatives</h3>
+              <p className="text-xs text-gray-400 max-w-sm">
+                {searchQuery ? 
+                  `No ads match "${searchQuery}"` :
+                  'No ad creatives found. Connect Meta to see performance data.'
+                }
+              </p>
             </div>
-            <h3 className="text-xl font-medium text-white truncate mb-2">No Ad Creatives Found</h3>
-            <p className="text-gray-400 max-w-md mx-auto">
-              {searchQuery ? 
-                `No ads match your search "${searchQuery}". Try adjusting your filters.` :
-                'No ad creatives found for your selected criteria. Try adjusting your filters or check if your Meta campaigns have active ads.'
-              }
-            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 lg:gap-4 max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-            {filteredAndSortedAds.map((ad) => {
+          <div className="space-y-3 max-h-full overflow-y-auto">
+            {filteredAndSortedAds.slice(0, 4).map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
               return (
-                <Card key={ad.ad_id} className="bg-[#0f0f0f] border-[#1a1a1a] hover:border-[#2a2a2a] transition-all duration-300 
-                                              shadow-lg hover:shadow-2xl group overflow-hidden flex flex-col">
-                  <CardContent className="p-0 flex-1 flex flex-col">
-                    {/* Creative Image - Responsive sizing */}
-                    <div className="p-3 lg:p-4 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex-shrink-0">
-                      <div className="relative h-28 lg:h-32 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] 
-                                    flex items-center justify-center overflow-hidden group-hover:border-[#3a3a3a] transition-colors">
+                <div key={ad.ad_id} 
+                     className="bg-gradient-to-r from-[#161b22] via-[#1c2128] to-[#161b22] 
+                              border border-[#30363d] rounded-xl p-4 hover:border-[#444c56] 
+                              transition-all duration-300 group relative overflow-hidden">
+                  {/* Background glow */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  <div className="relative z-10 flex items-start gap-3">
+                    {/* Creative thumbnail */}
+                    <div className="relative w-12 h-12 flex-shrink-0">
+                      <div className="w-full h-full bg-[#21262d] rounded-lg border border-[#30363d] 
+                                    flex items-center justify-center overflow-hidden">
                         {ad.thumbnail_url || ad.image_url ? (
                           <Image 
                             src={ad.thumbnail_url || ad.image_url || ''} 
                             alt={ad.ad_name}
                             fill
-                            className="object-cover rounded-xl"
+                            className="object-cover rounded-lg"
                           />
                         ) : (
-                          <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                          <ImageIcon className="h-4 w-4 text-gray-500" />
                         )}
-                        
-                        {/* Platform Logo */}
-                        <div className="absolute top-1.5 lg:top-2 left-1.5 lg:left-2">
-                          <div className="w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-lg flex items-center justify-center border border-[#2a2a2a]">
-                            <Image
-                              src="https://i.imgur.com/6hyyRrs.png"
-                              alt="Meta"
-                              width={12}
-                              height={12}
-                              className="object-contain lg:w-[14px] lg:h-[14px]"
-                            />
-                          </div>
+                      </div>
+                      
+                      {/* Platform badge */}
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full 
+                                    flex items-center justify-center border-2 border-[#161b22]">
+                        <span className="text-white text-xs font-bold">f</span>
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-white text-sm truncate">
+                            {ad.ad_name}
+                          </h4>
+                          <p className="text-xs text-gray-400 truncate">
+                            {ad.campaign_name}
+                          </p>
                         </div>
                         
-                        {/* Status Badge */}
-                        <div className="absolute top-1.5 lg:top-2 right-1.5 lg:right-2">
-                          <Badge className={`text-xs px-1.5 lg:px-2 py-0.5 lg:py-1 ${
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Badge className={`text-xs px-2 py-1 ${
                             ad.status === 'ACTIVE' 
                               ? 'bg-green-500/20 text-green-400 border-green-500/30' 
                               : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
                           }`}>
                             {ad.status}
                           </Badge>
-                        </div>
-                        
-                        {/* Preview Link - Hidden on smaller screens */}
-                        {ad.preview_url && (
-                          <div className="absolute bottom-1.5 lg:bottom-2 right-1.5 lg:right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 lg:h-6 lg:w-6 bg-[#0a0a0a]/80 hover:bg-[#1a1a1a] text-white border border-[#2a2a2a]"
-                                    onClick={() => window.open(ad.preview_url!, '_blank')}
-                                  >
-                                    <ExternalLink className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#0a0a0a] border-[#2a2a2a]">
-                                  <p className="text-white text-xs">Preview Ad</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Ad Details - Flexible container with proper overflow handling */}
-                    <div className="p-3 lg:p-4 pt-0 flex-1 flex flex-col min-h-0">
-                      <div className="mb-3 lg:mb-4 flex-shrink-0">
-                        {/* Ad name with responsive text sizing and proper line clamping */}
-                        <h4 className="font-semibold text-white text-xs lg:text-sm mb-1 tracking-tight 
-                                     break-words overflow-hidden text-ellipsis line-clamp-2">
-                          {ad.ad_name}
-                        </h4>
-                        {ad.headline && (
-                          <p className="text-xs text-gray-400 mb-2 break-words overflow-hidden text-ellipsis line-clamp-2">
-                            {ad.headline}
-                          </p>
-                        )}
-                        {/* Campaign and adset names with responsive overflow handling */}
-                        <div className="text-xs text-gray-500 space-y-0.5 lg:space-y-1">
-                          <p className="text-gray-400 break-words overflow-hidden text-ellipsis line-clamp-1" 
-                             title={ad.campaign_name}>
-                            {ad.campaign_name}
-                          </p>
-                          <p className="text-gray-500 break-words overflow-hidden text-ellipsis line-clamp-1" 
-                             title={ad.adset_name}>
-                            {ad.adset_name}
-                          </p>
+                          
+                          {ad.preview_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => window.open(ad.preview_url!, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 text-gray-400" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
-                      {/* Performance Metrics - Fully responsive grid */}
-                      <div className="grid grid-cols-2 gap-1.5 lg:gap-2 text-xs flex-1">
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            Spend
-                          </div>
-                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                      {/* Metrics grid */}
+                      <div className="grid grid-cols-3 gap-3 mt-3">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-400 mb-1">Spend</div>
+                          <div className="text-sm font-semibold text-white">
                             {formatCurrency(ad.spent)}
                           </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            Impress.
-                          </div>
-                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
-                            {formatNumber(ad.impressions)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            Clicks
-                          </div>
-                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
-                            {formatNumber(ad.clicks)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            CTR
-                          </div>
-                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-400 mb-1">CTR</div>
+                          <div className="text-sm font-semibold text-white">
                             {formatPercentage(ad.ctr)}
                           </div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            Conver.
-                          </div>
-                          <div className="text-white font-bold text-xs lg:text-sm break-words flex-1 flex items-end">
-                            {formatNumber(ad.conversions)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1a1a1a] rounded-lg lg:rounded-xl p-2 lg:p-3 border border-[#2a2a2a] 
-                                       hover:bg-[#1f1f1f] transition-colors min-h-0 flex flex-col">
-                          <div className="text-gray-500 mb-1 font-medium uppercase tracking-wider text-xs 
-                                         truncate flex-shrink-0">
-                            ROAS
-                          </div>
-                          <div className={`font-bold text-xs lg:text-sm break-words flex-1 flex items-end ${
+                        <div className="text-center">
+                          <div className="text-xs text-gray-400 mb-1">ROAS</div>
+                          <div className={`text-sm font-semibold ${
                             roas >= 3 ? 'text-green-400' : roas >= 2 ? 'text-yellow-400' : 'text-red-400'
                           }`}>
-                            {roas > 0 ? `${roas.toFixed(2)}x` : '0.00x'}
+                            {roas > 0 ? `${roas.toFixed(1)}x` : '0.0x'}
                           </div>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )
             })}
+            
+            {/* Show more indicator */}
+            {filteredAndSortedAds.length > 4 && (
+              <div className="text-center py-2">
+                <p className="text-xs text-gray-500">
+                  +{filteredAndSortedAds.length - 4} more creatives
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
-    </Card>
+    </div>
   )
 } 
