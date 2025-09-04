@@ -662,7 +662,7 @@ export default function MarketingAssistantPage() {
       await syncMetaInsights()
       
       // 🔥 FIX: Fetch the fresh metrics data that was just synced
-      const freshMetaMetrics = await fetchMetaDataFromDatabase()
+      const freshMetaMetrics = await fetchMetaDataFromDatabase() || defaultMetrics
       // console.log('[MarketingAssistant] 🎯 Fresh meta metrics loaded:', freshMetaMetrics)
       
       setLoadingProgress(50)
@@ -1235,58 +1235,6 @@ export default function MarketingAssistantPage() {
       <GridOverlay />
       <div className="relative z-10">
         <>
-          {/* Page Header - Full Width */}
-          <div className="w-full bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-[#222] py-6">
-            <div className="px-12 lg:px-24 xl:px-32">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                                flex items-center justify-center border border-white/10">
-                    <Brain className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white">Marketing Assistant</h1>
-                    <p className="text-gray-400 text-base">
-                      {lastPageRefresh ? (
-                        <>
-                          Last refreshed: {lastPageRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </>
-                      ) : (
-                        'AI-powered marketing insights and recommendations'
-                      )}
-                    </p>
-                  </div>
-                </div>
-                
-                <Button
-                  onClick={refreshAllWidgets}
-                  disabled={isRefreshingAll || refreshCooldown}
-                  variant="outline"
-                  size="sm"
-                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#2a2a2a] 
-                           hover:border-white/20 px-4 py-2 rounded-xl font-medium transition-all 
-                           duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRefreshingAll ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Refreshing...
-                    </>
-                  ) : refreshCooldown ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2" />
-                      Cooldown
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-                      Refresh All
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
 
           {/* Meta Connection Status Banner */}
           <MetaConnectionStatus 
