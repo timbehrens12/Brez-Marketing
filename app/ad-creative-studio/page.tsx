@@ -408,6 +408,16 @@ const STYLE_OPTIONS: StyleOption[] = [
     goodFor: 'Recreating any creative style with your product',
     prompt: 'COPY_CREATIVE_PLACEHOLDER' // This will be replaced with copy logic
   },
+  // AUTO GENERATION TEMPLATE - AI picks the best approach based on product analysis
+  {
+    id: 'auto-generation',
+    name: 'Auto Generation',
+    description: 'AI analyzes your product and creates optimized ad creatives for maximum sales',
+    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2NyIgdmlld0JveD0iMCAwIDIwMCAyNjciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMkEyQTJBIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMUUxRTFFIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjciIGZpbGw9InVybCgjYmdHcmFkaWVudCkiLz48dGV4dCB4PSIxMDAiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRkZGRiIgZm9udC1zaXplPSIyOCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPkFVVE88L3RleHQ+PHRleHQgeD0iMTAwIiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNGRkZGRkYiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5BSTwvdGV4dD48L3N2Zz4=',
+    category: 'all',
+    goodFor: 'Maximum sales optimization with AI-driven creative decisions',
+    prompt: 'AUTO_GENERATION_PLACEHOLDER' // This will be replaced with AI optimization logic
+  },
   // MULTI-PRODUCT TEMPLATE - For combining multiple items into one creative
   {
     id: 'multi-product-showcase',
@@ -1131,7 +1141,7 @@ export default function AdCreativeStudioPage() {
   const { agencySettings } = useAgency()
   
   // Progressive flow state
-  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'customization' | 'library'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'auto-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
@@ -1279,6 +1289,10 @@ export default function AdCreativeStudioPage() {
   const [exampleCreativeImage, setExampleCreativeImage] = useState<File | null>(null)
   const [exampleCreativeUrl, setExampleCreativeUrl] = useState<string>('')
   const [copyPromptAdditions, setCopyPromptAdditions] = useState('')
+
+  // Auto Creative state
+  const [autoPromptAdditions, setAutoPromptAdditions] = useState('')
+  
   const [regenerationFeedback, setRegenerationFeedback] = useState<{
     issues: string[]
     details: string
@@ -3001,6 +3015,41 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
       enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
+    } else if (templateStyle.id === 'auto-generation') {
+      // For auto generation, create AI-optimized sales-focused creative
+      const autoInstructions = autoPromptAdditions.trim() 
+        ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
+        : ''
+      enhancedPrompt = `CREATE AN AI-OPTIMIZED AD CREATIVE FOR MAXIMUM SALES CONVERSION. 
+
+PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
+1. ANALYZE the uploaded product image thoroughly: colors, style, category, target demographic, price point, and unique selling features
+2. DETERMINE the most effective creative approach based on the product's niche and market positioning
+3. SELECT optimal background, lighting, and composition that drives purchase intent
+4. OPTIMIZE for mobile viewing and social media advertising platforms
+
+SALES-FOCUSED CREATIVE STRATEGY:
+• Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
+• Composition: Use proven advertising layouts that draw attention to the product
+• Lighting: Apply professional lighting that enhances product appeal and desirability
+• Color Psychology: Leverage colors that create urgency and trust
+• Visual Hierarchy: Ensure the product is the clear focal point
+• Emotional Appeal: Create desire and connection with target audience
+
+CONVERSION OPTIMIZATION RULES:
+• Product must look premium and desirable
+• Background enhances rather than distracts from the product
+• Composition follows proven advertising best practices
+• Lighting creates depth and professional appeal
+• Overall aesthetic matches successful ad creatives in the product's category
+
+TECHNICAL REQUIREMENTS:
+• Portrait format optimized for mobile and social media
+• High visual impact for scroll-stopping effect
+• Clear product visibility and appeal
+• Professional advertising quality
+
+AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3024,7 +3073,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: templateStyle.id,
-      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.name,
+      style_name: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto AI Creative' : templateStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -3092,7 +3141,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
               brandId: selectedBrandId,
               userId: user?.id,
               styleId: templateStyle.id,
-              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative Multi-Product' : `${templateStyle.name} Multi-Product`,
+              styleName: templateStyle.id === 'custom-template' ? 'Custom Multi-Product Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative Multi-Product' : templateStyle.id === 'auto-generation' ? 'Auto AI Multi-Product' : `${templateStyle.name} Multi-Product`,
               originalImageUrl: uploadedImageUrls[0],
               generatedImageUrl: generatedImageUrl,
               promptUsed: enhancedPrompt,
@@ -3196,7 +3245,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
           brandId: selectedBrandId,
           userId: user?.id,
           styleId: templateStyle.id,
-          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.name,
+          styleName: templateStyle.id === 'custom-template' ? 'Custom Template' : templateStyle.id === 'copy-generation' ? 'Copy Creative' : templateStyle.id === 'auto-generation' ? 'Auto AI Creative' : templateStyle.name,
           originalImageUrl: uploadedImageUrl,
           generatedImageUrl: data.imageUrl,
           promptUsed: enhancedPrompt,
@@ -3265,6 +3314,41 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
       enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.${copyInstructions}${textPromptAddition}`
+    } else if (modalStyle.id === 'auto-generation') {
+      // For auto generation, create AI-optimized sales-focused creative
+      const autoInstructions = autoPromptAdditions.trim() 
+        ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
+        : ''
+      enhancedPrompt = `CREATE AN AI-OPTIMIZED AD CREATIVE FOR MAXIMUM SALES CONVERSION. 
+
+PRODUCT ANALYSIS & OPTIMIZATION PROTOCOL:
+1. ANALYZE the uploaded product image thoroughly: colors, style, category, target demographic, price point, and unique selling features
+2. DETERMINE the most effective creative approach based on the product's niche and market positioning
+3. SELECT optimal background, lighting, and composition that drives purchase intent
+4. OPTIMIZE for mobile viewing and social media advertising platforms
+
+SALES-FOCUSED CREATIVE STRATEGY:
+• Background: Choose high-converting background styles (minimalist, lifestyle, or premium depending on product)
+• Composition: Use proven advertising layouts that draw attention to the product
+• Lighting: Apply professional lighting that enhances product appeal and desirability
+• Color Psychology: Leverage colors that create urgency and trust
+• Visual Hierarchy: Ensure the product is the clear focal point
+• Emotional Appeal: Create desire and connection with target audience
+
+CONVERSION OPTIMIZATION RULES:
+• Product must look premium and desirable
+• Background enhances rather than distracts from the product
+• Composition follows proven advertising best practices
+• Lighting creates depth and professional appeal
+• Overall aesthetic matches successful ad creatives in the product's category
+
+TECHNICAL REQUIREMENTS:
+• Portrait format optimized for mobile and social media
+• High visual impact for scroll-stopping effect
+• Clear product visibility and appeal
+• Professional advertising quality
+
+AI DECISION MAKING: Automatically select the best template style, background type, lighting setup, and composition based on product analysis. No manual template selection needed - AI determines optimal approach.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3288,7 +3372,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       brand_id: selectedBrandId!,
       user_id: user!.id,
       style_id: modalStyle.id,
-      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.id === 'copy-generation' ? 'Copy Creative' : modalStyle.name,
+      style_name: modalStyle.id === 'custom-template' ? 'Custom Template' : modalStyle.id === 'copy-generation' ? 'Copy Creative' : modalStyle.id === 'auto-generation' ? 'Auto AI Creative' : modalStyle.name,
       original_image_url: uploadedImageUrl,
       generated_image_url: '',
       prompt_used: enhancedPrompt,
@@ -3905,6 +3989,13 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
                   setSelectedTemplate(copyTemplate)
                 }
                 setCurrentStep('copy-creative-setup')
+              } else if (type.id === 'auto') {
+                // Set the auto template as selected immediately
+                const autoTemplate = STYLE_OPTIONS.find(s => s.id === 'auto-generation')
+                if (autoTemplate) {
+                  setSelectedTemplate(autoTemplate)
+                }
+                setCurrentStep('auto-creative-setup')
               } else {
                 setCurrentStep('template-selection')
               }
@@ -4049,7 +4140,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
-          onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : 'template-selection')}
+          onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : selectedCreativeType === 'auto' ? 'auto-creative-setup' : 'template-selection')}
           variant="ghost"
           className="text-gray-400 hover:text-white transition-colors"
         >
@@ -5194,6 +5285,99 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     )
   }
 
+  const renderAutoCreativeSetupStep = () => {
+    return (
+      <div className="pt-[20px] max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-3xl font-bold text-white">Auto AI Creative</h2>
+            <p className="text-gray-400 text-sm mt-1">AI will analyze your product and create optimized ad creatives for maximum sales</p>
+          </div>
+        </div>
+        
+        {/* Widget Layout */}
+        <div className="mt-2 h-[520px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
+            {/* Left Column: Single widget */}
+            <div className="lg:col-span-11 flex flex-col gap-3 h-full">
+              
+              {/* AI Instructions Widget */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-full flex flex-col">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">🤖</span>
+                  </div>
+                  AI Creative Instructions
+                </h3>
+                
+                <div className="flex-1 flex flex-col">
+                  {/* AI Description */}
+                  <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+                    <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                      <span>🎯</span>
+                      How Auto AI Works
+                    </h4>
+                    <ul className="text-gray-300 text-sm space-y-2">
+                      <li>• AI analyzes your product details, colors, and category</li>
+                      <li>• Identifies the best creative style and background for your niche</li>
+                      <li>• Optimizes composition, lighting, and messaging for maximum conversions</li>
+                      <li>• Creates multiple variations focused on sales performance</li>
+                    </ul>
+                  </div>
+
+                  {/* Optional Custom Instructions */}
+                  <div className="flex-1 flex flex-col">
+                    <label className="text-white font-medium mb-3">Additional Instructions (Optional)</label>
+                    <textarea
+                      value={autoPromptAdditions}
+                      onChange={(e) => setAutoPromptAdditions(e.target.value)}
+                      placeholder="Any specific requirements? Example: 'Focus on luxury feel', 'Target young adults', 'Emphasize eco-friendly aspect', 'Use warm colors'..."
+                      className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right Column: Generate Button */}
+            <div className="lg:col-span-1 flex flex-col h-full">
+              <Button
+                onClick={async () => {
+                  if (!uploadedImageUrl && uploadedImageUrls.length === 0 && !collageUrl) {
+                    toast.error('Please upload a product image first')
+                    return
+                  }
+                  await generateImageFromTemplate(selectedTemplate!)
+                }}
+                className="relative w-full h-full rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                ) : usageData.current >= WEEKLY_LIMIT ? (
+                  <Ban className="w-8 h-8 text-red-400" />
+                ) : (
+                  <ChevronRight className="w-8 h-8" />
+                )}
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
+                  <span className="text-[8px] text-center leading-tight">
+                    {usageData.current >= WEEKLY_LIMIT ? (
+                      <span className="text-red-400">Limit reached</span>
+                    ) : (
+                      <span className="text-gray-500">Click to generate</span>
+                    )}
+                  </span>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'upload':
@@ -5208,6 +5392,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         return renderCustomTemplatePromptStep()
       case 'copy-creative-setup':
         return renderCopyCreativeSetupStep()
+      case 'auto-creative-setup':
+        return renderAutoCreativeSetupStep()
       case 'customization':
         return renderCustomizationStep()
       case 'library':
@@ -5289,7 +5475,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
               {/* Product → Template Preview (Absolute Top Right of Widget) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
-               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'customization') && (
+               (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
                 <div className="absolute top-1 right-2 lg:right-8 z-30 max-w-[50%]">
                   <div className="flex items-center gap-1 lg:gap-3 flex-wrap justify-end">
                     {/* YOUR PRODUCT */}
