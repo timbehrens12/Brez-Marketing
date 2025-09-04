@@ -433,7 +433,6 @@ export default function BlendedWidgetsTable({
           </div>
 
         </div>
-        </div>
       </div>
     </div>
   )
