@@ -495,13 +495,13 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
       
-      <div className="flex-1 p-6 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
-        <div className="flex-1 flex flex-col space-y-6">
+      <div className="flex-1 p-4 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
+        <div className="flex-1 flex flex-col space-y-4">
           {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-6' : 'flex-1'}`}>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-6 backdrop-blur-sm h-full flex items-center justify-center">
+          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-4' : 'flex-1'}`}>
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-4 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
-                <p className="text-base text-gray-200 leading-relaxed tracking-wide max-w-4xl mx-auto">
+                <p className="text-sm text-gray-200 leading-relaxed tracking-wide max-w-4xl mx-auto">
                   {report.summary}
                 </p>
               </div>
@@ -516,25 +516,25 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
           {/* Top Priorities Section - Enhanced */}
           {report?.topPriorities && report.topPriorities.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                  <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">Top Priorities</h3>
-                  <p className="text-sm text-gray-400">Action items requiring attention</p>
+                  <h3 className="text-sm font-semibold text-white">Top Priorities</h3>
+                  <p className="text-xs text-gray-400">Action items requiring attention</p>
                 </div>
               </div>
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {report.topPriorities.map((priority, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
-                          <span className="text-amber-400 font-bold text-sm">{index + 1}</span>
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
+                          <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
                         </div>
-                        <p className="text-sm text-gray-300 leading-relaxed flex-1">{priority}</p>
+                        <p className="text-xs text-gray-300 leading-relaxed flex-1">{priority}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -545,25 +545,25 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
           {/* Success Highlights Section - Enhanced */}
           {report?.successHighlights && report.successHighlights.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">Success Highlights</h3>
-                  <p className="text-sm text-gray-400">Positive performance indicators</p>
+                  <h3 className="text-sm font-semibold text-white">Success Highlights</h3>
+                  <p className="text-xs text-gray-400">Positive performance indicators</p>
                 </div>
               </div>
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {report.successHighlights.map((highlight, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-                          <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
+                          <CheckCircle className="w-3 h-3 text-emerald-400" />
                         </div>
-                        <p className="text-sm text-gray-300 leading-relaxed flex-1">{highlight}</p>
+                        <p className="text-xs text-gray-300 leading-relaxed flex-1">{highlight}</p>
                       </div>
                     </CardContent>
                   </Card>
