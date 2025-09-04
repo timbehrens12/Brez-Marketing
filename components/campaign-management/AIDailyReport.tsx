@@ -543,4 +543,5 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
     </div>
+  )
 }
