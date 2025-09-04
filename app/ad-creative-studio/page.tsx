@@ -4453,8 +4453,8 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center">
-                  <span className="text-[9px] text-center leading-none">
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
+                  <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : (
@@ -4663,8 +4663,8 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
-                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center">
-                  <span className="text-[9px] text-center leading-none">
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
+                  <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : (
@@ -5147,7 +5147,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
-                  <span className="text-[8px] text-center leading-tight">
+                  <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : customTemplatePrompt.trim().length < 20 ? (
@@ -5332,7 +5332,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
-                  <span className="text-[8px] text-center leading-tight">
+                  <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : !exampleCreativeImage ? (
@@ -5443,7 +5443,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
-                  <span className="text-[8px] text-center leading-tight">
+                  <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : (
