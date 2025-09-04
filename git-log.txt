@@ -1,0 +1,1004 @@
+commit a5e80fa3f3236968ae1b26bb139d5379c2fb1f86
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 14:16:17 -0500
+
+    jt3e63
+
+commit b4b669a41a3cf67eb626c32b23dd8e60216e89e0
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 14:08:31 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbnyjn2yhm3y2
+
+commit d28315fc8cba1f48419a7a71d457a0ec05de24c9
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 14:02:10 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb mgHny3y2
+
+commit 995a5368de5e2c42fa66d609c6092c8f3f9765d1
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 13:32:49 -0500
+
+    Remove Marketing Assistant header from marketing assistant page
+    
+    - Removed the full header section containing 'Marketing Assistant' title, last refresh timestamp, and 'Refresh All' button
+    - Page now flows directly from GridOverlay to Meta Connection Status Banner
+    - Fixed TypeScript linting error with fallback for freshMetaMetrics
+
+commit 8cc4be74c9b29b0ba4bf9983ba63dc6d3afe571f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 13:28:21 -0500
+
+    Fnmh5nnui5jn3nbtnnmmy22
+
+commit 75fcc4d95655234efadc816b941b50c2db50e63b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 13:23:34 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbnyjn2yhm3
+
+commit 439a88a85567d676a032e482896e5d245e034955
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 13:15:13 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbnyjn2yh3
+
+commit 456a4c52c788914f1c522debf87c2ae67efd936b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 12:55:40 -0500
+
+    Fnmh5nnui5jn3nbtnnmm2
+
+commit 0870eb78b287bfa11543a3280b06dce577aca29a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 12:48:47 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb mgHny32
+
+commit 18e615fbd557e78d16ee9239a0ed0770e0f9ff41
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:42:49 -0500
+
+    Fnmh5nnui5jn3nbtnnm2
+
+commit 2d29ab0a873bb422b343749966277ad1e155e57b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:39:08 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb mgHn2
+
+commit 25f340434ff3623db72332efec105f9822e165be
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:35:37 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbnyjn2
+
+commit 968af56c17ac052b968769bba8284b8993712297
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:30:38 -0500
+
+    Fnmh5nnui5jn3nbtn2
+
+commit c598508cd060af3265c295dffe2a6b3af3efc661
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:28:59 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb mgH2
+
+commit 8886dc67b06ad6328a9d15397e39faec48481433
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:24:00 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbny2
+
+commit 980aa627e3892ebbdec964fe48c62217d248e8b5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-04 00:04:51 -0500
+
+    Fnmh5nnui5jn3nbt2
+
+commit c4d100c9c78d4e8f9f8e7ba40d1e3dd9f5a96364
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:56:53 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb mg2
+
+commit 09660b8cc3598ae26cd7764a30b2927f4fafbe47
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:44:34 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymbn
+
+commit ab9f4c6c746c7396b458da97c716db313b437261
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:40:09 -0500
+
+    Fnmh5nnui5jn3nb
+
+commit 8aa94ff38e4de695fd55a2d6febc70b662f57b9e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:36:11 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbb m
+
+commit 8534a5cc55668cca80e86fc072a365558bb557ae
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:33:10 -0500
+
+    Add compact AI warnings to Copy & Auto Creative pages and improve layout spacing
+
+commit 31bd4393f0f76091113fa3d3a00016c0c090c55a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:30:10 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbymn
+
+commit 81fc0d16e4a301987d9ddf14afaa5267b8f5c9d3
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:24:39 -0500
+
+    Fnmh5nnui5jn3n
+
+commit 2066a37c2b2c2c69d88001b8be4972105b7d86ae
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:20:24 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nbm
+
+commit 31a7c9a1c3f1ed301ebc7e4ab76ab366a61726ab
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:16:01 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGbyn
+
+commit 23331aa464ed5c32a2a7d5bdc8695ea9de12ad66
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:11:16 -0500
+
+    Fnmh5nnui5jn3
+
+commit 68863443f87b3be3173253b1599c2005d3b0132c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:07:05 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,nm
+
+commit 686f982639795370b0ef34e5d9ade3c0802a41a5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 23:00:21 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGby
+
+commit 2bcd671f87cb3a5eb80dc705ffc1a52f3557ffc2
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:53:00 -0500
+
+    Fnmh5nnui5j3
+
+commit 5245c5a33b315f3e607cb343758ab2eabc1e4709
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:38:25 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnmH,m
+
+commit e38177a65bf9bbe8bbec7a1db2bd2b26b189283c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:28:21 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhGy
+
+commit 8e6c0972a3d5bebd6e4ca3a07dd696f4f0e5b0ee
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:23:33 -0500
+
+    Fnmh5nnui53
+
+commit d74677359fe5c7eb33aede201abc588dc1ab20c6
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:15:15 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnm,m
+
+commit 7e9704ebb4424c42b901cc97bfa2d21c80b8ece4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 22:07:02 -0500
+
+    FIty2hNtg2222t3hLmmgy3nhy
+
+commit 9e655cb31a5813e4fd0482bf3cb779e97279006f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:59:34 -0500
+
+    Fnmh5nn3
+
+commit 5bcea4b72abe1f53c6d9f0dd6a2c4a074bac477b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:55:11 -0500
+
+    FIty2hNtg2222t3hLmmgy3bnm
+
+commit e691c95ebd0d9ed1e3044cc6253dc960e1e65be3
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:48:59 -0500
+
+    FIty2hNtg2222t3hLmmgy3ny
+
+commit 948f00fa8c23116601c808e8053279a40f690108
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:43:02 -0500
+
+    Fnmh5n3
+
+commit d25bb0fcb2a69fabce82eed44ac6ad01b1afc3df
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:34:48 -0500
+
+    FIty2hNtg2222t3hLmmgy3m
+
+commit 197ceb114a685ca7bb044d0a2ac78ed1afd32a6a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:28:17 -0500
+
+    FIty2hNtg2222t3hLmmgy3y
+
+commit 1d294c2735fbc8e56a5b893ce5a4c37dde1e20eb
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:16:54 -0500
+
+    Fnmh53
+
+commit 94ae312b5a393e867d760943deee5fbbf4f8e8c6
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:11:33 -0500
+
+    FIty2hNtg2222t3hLmmgm
+
+commit 056af102de83551db08737d75328c3e04db4e441
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 21:04:12 -0500
+
+    FIty2hNtg2222t3hLmmgy
+
+commit d8a16030e683e02abb8c6e63f845c718b76c277b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 20:36:15 -0500
+
+    Fnmh5
+
+commit 276e572c0886739ef0fa62c58034e28fd88998df
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:50:45 -0500
+
+    FIty2hNtg2222t3hLmmg
+
+commit 53f3f886399509cd53c1d7a3f343f833b18bce8f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:46:56 -0500
+
+    FIty2hNtg2222t3hLmmg
+
+commit 39a879201976ff439a2205c486399fca4e473f46
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:42:23 -0500
+
+    Fnm5
+
+commit 3899e513ac62b106822da260ae505f07f7a1d202
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:36:37 -0500
+
+    JTm#
+
+commit 026548920cfaa6e20844903c5666c5ebfbf879e3
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:30:22 -0500
+
+    FIty2hNtg2222t3hLmg
+
+commit a307be374b1202c8cc23cd5a0781d9585fb38870
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 17:04:58 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy3y32Y3y3ynm3
+
+commit 5e94c889ad49dc5b2a5f413ca327151af8acf1dc
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 16:50:16 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyhkY3nmy2y32
+
+commit a0ca919e9666875b869dae137c49a5080c2710a4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 16:41:24 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2ynnmyy33
+
+commit 96229763811c78fb1812d2794431c69e2a3ca4cc
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 16:34:00 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy3y32Y3y3y3
+
+commit a49911bdce16f3ed9a0a6119fd5132f6a08ee0aa
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 16:17:53 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyhkY3nmy22
+
+commit c1f87233323d001b71ed52811dceb4caa5541fb3
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 16:13:45 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2ynnmy3
+
+commit 5f75ab717d53fbf779c5cdaf8c5e4d064c0ddc73
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:51:47 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyhkY3nm2
+
+commit d20ce6f62edfbaf4fc69c4810c78f9a5e089658b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:40:23 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2ynnm3
+
+commit 5754a376b888ae3ac80146672ce4addff4a2f277
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:38:19 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy3y32Y3
+
+commit 65ca753b36cc8487fb2835da453e6babb560a43c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:26:59 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyhkY32
+
+commit f4c669708b8fd3a8419d5d3aa2507af1ff314b11
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:20:35 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2yn3
+
+commit 8feedc92393a6300f2b44ba9d9284447d8eab91b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:09:34 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy3y32
+
+commit efaee8f777f4ad668b1b35d339462e787095bf7e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:08:20 -0500
+
+    Fix React error #310: remove duplicate closing braces and fix component structure
+
+commit 9d2a991b3feabae8f220c69aee1306c7c5e5cf85
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 15:01:28 -0500
+
+    Fix custom template UI issues: auto-display template preview, center button text, add delete spinner animation
+
+commit 40f3ec5f6b6cc2cbdcd879865029908913e36390
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:50:54 -0500
+
+    Fix custom template issues: gear icon display, button text overflow, lighter styling when no prompt, text fitting parameter, and improved database sync
+
+commit 47e9b96800072a714161d5fc48401466f4eac36e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:41:13 -0500
+
+    Fix creative deletion 404 errors: gracefully handle orphaned frontend creatives that failed to save to database
+
+commit 4a306b60e94b4e94a9ac514ee941165729cc02ea
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:38:59 -0500
+
+    Fix generate button shrinking: change w-20 to w-full to maintain full width during generation
+
+commit 0a7e9dd1f9cb6e30ade698154e670e46ed4bcaa7
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:33:52 -0500
+
+    Update custom template icon to gear/settings icon (⚙️) and use Settings icon in widget
+
+commit 267dcb979655cf2e93f8e411357c479bf75ff688
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:23:43 -0500
+
+    Fix generate button styling: prevent shrinking and fix border classes
+
+commit f902c5c00eef9ade6ad75d863c5cc269d9edfa05
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:14:14 -0500
+
+    Increase usage limit to 75 and add proper limit reached UI with disabled state and ban icon
+
+commit a8180732650d65b53fd5e6028c34720a648077b9
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:05:15 -0500
+
+    Fix build error: correct Supabase import path in creative-usage API
+
+commit 61c70397d7ddb1fabfda22a9fb338f5ec5d38c47
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 14:02:54 -0500
+
+    Fix 429 error: sync frontend usage tracking with backend database to prevent false rate limiting
+
+commit 308030023b6327327446ca4b2393cc89685dcad4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 13:57:18 -0500
+
+    Remove all console logging from ad-creative-studio page for clean production environment
+
+commit 1bfb21a4c4189d675553615cc126c410a279434e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 13:51:21 -0500
+
+    Fix custom template page issues: pro tips scrolling, 404 errors, generation state clearing
+
+commit ed01d9133bbacea62869660ab9fa25d596f5f7cb
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 13:37:43 -0500
+
+    Redesign custom template page with proper widget layout and site colors
+
+commit a9131774cf400175a2f9a30f3f167d477ccfe095
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-03 13:31:42 -0500
+
+    Add dedicated custom template prompt page with detailed guidance
+
+commit 79681e1d5c24dc64cc9a24f720294ad4df99352d
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 23:35:43 -0500
+
+    Fix creative ID generation to use UUID format instead of timestamps
+
+commit ade8744de475dc608ae6bf59aadad2f66de43889
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 23:21:10 -0500
+
+    Fix usage reset to properly reset on Mondays at 12:00 AM local time
+
+commit 6acbfad681d4575ce664de973dd1c80ccfb4cd02
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 22:58:10 -0500
+
+    Increase bottom margin to mb-8 to fully fix scrollbar clipping
+
+commit f8f430b577b9e82cf2cc957b41c92598146aa462
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 22:51:52 -0500
+
+    Fix scrollbar bottom clipping by adding margin to scrollable container
+
+commit c20099c4b730f557ccc33b5f08f6d0ed8b06af2e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 22:47:02 -0500
+
+    Fix template bottom clipping by adding proper padding
+
+commit 1bba3f0bac3548f3e081b4874c02089ef714fc89
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 20:17:39 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyhk2
+
+commit 852d2df05d67eab179fb4714b9899861ae848e2f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:32:56 -0500
+
+    Fine-tune upload widget position to translate-x-3
+
+commit 82efd5fe5da65dcd3ce96870f16015f4566766b0
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:30:19 -0500
+
+    Reduce upload widget right movement to be more subtle
+
+commit 0fdd15a81791d983d76e0b7698dc759d8a914d67
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:24:20 -0500
+
+    Use transform to actually move upload widget to the right
+
+commit 6ef285371a36987751ca6106b223a384c671447f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:18:51 -0500
+
+    Fine-tune upload widget position - move down and more right
+
+commit dd430fab84874778a49113fa452c07c0d8f559c5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:15:32 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2y3
+
+commit cc46ea5908842a73ee64402a57da5fb34ed66129
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 16:09:47 -0500
+
+    Fix upload widget clipping and centering issues
+
+commit d1551d598d546a83984cbfa611f42ef58bfe84c9
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:57:55 -0500
+
+    Fix upload widget centering and clipping issues
+
+commit 689752e7c540eeedf527c03dc2926cb84d937975
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:48:54 -0500
+
+    Fix upload widget clipping and centering issues
+
+commit 88abfaf640077f818a456be6ac8e41c16bfd7ac7
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:43:45 -0500
+
+    Fix widget heights and centering - widgets now fill top to bottom consistently
+
+commit 50a9a0fa6b17c3eacff68f8eaf16805c6229dd20
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:32:19 -0500
+
+    Fix generate button height and center all pages properly
+
+commit 26e9a3670b7ba0d4750cb8b381052b5b6d2858a2
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:20:40 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jyh2
+
+commit 854240e9e8f2adb2aa3f8f8b04e7c18a50e8be87
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 15:13:51 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnybny2
+
+commit 09ccc36902c59f4d0b050e0bf0b36e474aab8613
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:57:53 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy2
+
+commit 1547ea7a3d6a7f53f976bf621f7e36a2797e867a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:54:40 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'jy2
+
+commit 7face8a23fc5e0bfbd17c967dbc6dad76834bd01
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:50:45 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy2
+
+commit 1d9bc26db857218f35c10c143f42c7f740f28cdb
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:46:51 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyyy2
+
+commit 8beb221b101faa2171f79c309126dfcd26a42694
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:34:53 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'j2
+
+commit 4401f2cfcb3c99b92c255e5af82d2129fe6da51b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:26:59 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyy2
+
+commit 0123095a600db8f9246be90d989682db8f0e73c8
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:20:59 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhnyy2
+
+commit bff75117e4f5f8e81460fa0975a6c7454978c522
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:16:38 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y3hj'2
+
+commit 16165ae8b068fdd71317f23b90246ef73fbc63f4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 14:09:08 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhny2
+
+commit 53bc610e5d92bb63151e12daa4b2f3c78e3dd0ae
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:55:52 -0500
+
+    Remove debug console.log statements and clean up logging
+
+commit 0161fe800953f1a812b5641b1109f615f2767954
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:51:19 -0500
+
+    Fix generate button issue and improve storage error message
+
+commit b940d95279ebf9744ed743fa3f602645d0f87db4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:45:50 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhny2
+
+commit d997aa464aabafaf0c7ad646045a4423559fa144
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:41:24 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhn2
+
+commit ee384b1a23e42604a4c901e8c49c9acd03555366
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:33:54 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yhj'2
+
+commit d5da93ba34ed33a096debf782b40dc65169dda9a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:31:06 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY3y3326Y3m2
+
+commit 207af5fa1982399724762aa25c3915615c82a9e4
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 13:26:16 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3ym2
+
+commit 67b5d0eca27a6283106cc21579f23dcad50066aa
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:51:07 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3yh2
+
+commit 4cb3a47808ff321668a3381fe63d96d133414e37
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:44:17 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2yy33h3yY23
+
+commit e1ab69afc05b2de04e791f5c9d2aad84f020d4e6
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:24:00 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY3y3326Y32
+
+commit 71c77bee3a5e89397bf1928fcecb0cb1dd8f3449
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:18:18 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3y2
+
+commit 88bfae49fa0dfd7a6c0a4fa2c4e03a8a2093e7b6
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:10:31 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2yy33h3y3
+
+commit 6528b46923a2b3770e9c8b612ae7dbd56da33ebe
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:06:01 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY3y33262
+
+commit bdf85c41b5d028fc408694f0e9a55be0d474df4f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 12:00:08 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34yY3
+
+commit f8601471289ba92fabdd4b37d25622f52dc9378e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:56:51 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2yy33h3
+
+commit cf7828151eebdc233a1edd61b07377ce587feff1
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:52:38 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY3y332
+
+commit 50fadb22634d1225344407cf4a6412e4b5e5ee4d
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:44:44 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34y
+
+commit 160c2d48e069763a6c27866060a045cda058aac2
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:35:06 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2yy33
+
+commit 0b786b223c97745e82625ff40516f8adf8ba0983
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:21:48 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY3y33
+
+commit a632542415b3e3598f3b69df7cbe679f4dd62bb9
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 11:08:03 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33u34
+
+commit c38e4c011377c9619a3a16ae6f3f7cded8307016
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:43:57 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmmnt3y3bnn
+
+commit bb6c6790c6d9279b16a7df0d2bc90f9a78172d9c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:34:41 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2y3
+
+commit 54d3ec4cc9ba8c0f5579509f88a9155befaf3f86
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:23:38 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyynY33
+
+commit 9c67745d5a7a5108e7250e06f1ec3f7f3db12548
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:17:49 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmmnt3y3n
+
+commit 2a8b4ed185633ad862fe25e9f7d5877b487f4c92
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:12:11 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3t2
+
+commit d4d523aca4949b85689bd6ba07a18169d133c617
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 10:01:47 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyyn3
+
+commit 98d4fdd32d9f583fb130c09c8cf39a01550cf6fd
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:54:55 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmmnt3n
+
+commit dcf528481772a9e2f96431d22988c7c18de4ba6b
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:37:52 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3y3
+
+commit 9aca42fd9545e563b83b0301e8e083e52f7fd70a
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:31:47 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umnyy3
+
+commit c204b4171ab26289bfcbd6542ac0c72d35f9d55c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:24:47 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmmnn
+
+commit 313a54ce30a668c3f126a3cb340e85404bc564f8
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:16:30 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3yh3
+
+commit aba159f9a42572c2c1d357214db4559f111f31b5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:08:42 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umny
+
+commit a4803379ab1ea0b4f7962cf07a540fba63ee8806
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 09:03:37 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmmn
+
+commit 37e7bae794c9ae1df6f65edf2c226676038784be
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 08:52:37 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny3y
+
+commit e57f345d89e2e25256251825ce93f37423aed5f1
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 08:38:45 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2umy
+
+commit ff258f6e1c2284a4bb5854ac32cf25f029c124c7
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 08:32:57 -0500
+
+    FIty2hNg2222t3hLgyyjgk3ynmn
+
+commit fcf504240d77edd96e17a55c9eaaf4d796b7efd1
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 08:15:01 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3ny
+
+commit 6fd55cbc280180d2d25107705d9a78949535ba9d
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 08:07:24 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2uy
+
+commit daa2c44124f05197133def106dd7ceaf892d2db2
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 07:57:37 -0500
+
+    FIty2hNg2222t3hLgyyjgk3yn
+
+commit e5c869cc63f99bff007cbf8521717b27a17bdd7d
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 07:48:28 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bh3n
+
+commit cc0ff7b9144c7aa048c3cc2ef47edb3cbeaf5e46
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-02 07:41:57 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2y
+
+commit cc76d9d3fcc7a69ac7d7d85673577b235ae8e290
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 23:23:55 -0500
+
+    FIty2hNg2222t3hLgyyjgk3n
+
+commit 44316833e6755c72af901cbbe751a6646a6f374f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 23:15:17 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2bn
+
+commit df33f177ce68f2c978596d1df9c6049b22f425a5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 23:09:26 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nbn2
+
+commit 017b4e42562c9f96eb15781e3f4c88581669158c
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 23:03:31 -0500
+
+    Further optimize AI report generation for speed
+    
+    - Increased timeout from 45s to 2 minutes to prevent aborts
+    - Switched from gpt-4o-mini to gpt-3.5-turbo for faster response
+    - Reduced max_tokens from 3000 to 2000 for quicker generation
+    - Simplified HTML template to be much more concise
+    - Streamlined system prompt for better performance
+    - Lowered temperature to 0.3 for more consistent output
+
+commit cdc96bf9a72193d9cde3168255f02da873c3133f
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 22:58:32 -0500
+
+    Critical fix: Variable scope error in analyze-marketing API
+    
+    - Fixed chatCompletion variable declared inside try-catch but referenced outside
+    - Moved declaration before try-catch block to fix ReferenceError
+    - Resolves 'chatCompletion is not defined' error causing report generation failure
+
+commit 9b4bcac9c2800fa141921d414549293ac1c69a0e
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 22:46:09 -0500
+
+    Fix report timeout: optimize AI prompt and add timeout handling - Added 45s timeout with AbortController to prevent 504 errors - Simplified HTML template to reduce AI generation time - Reduced max_tokens from 4000 to 3000 - Lowered temperature from 0.7 to 0.5 for faster processing - Streamlined gradient styling to basic color blocks - Maintained visual appeal with emoji icons and color coding - Kept all data requirements but made template more concise
+
+commit c2d0953337f054246deca5fc3df0d034bce758d0
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 22:38:16 -0500
+
+    FIty2hNg2222t3hLgyyjk3n
+
+commit e6b2a2f93e503414bc2870ccd093423edd40d128
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 22:29:29 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nn2
+
+commit 45e12881738d0f57e3723e3cf432a5299ffacdd8
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 22:20:46 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y2nb2
+
+commit 5cf5b16adfb1c6da15bae83006d6b087d0293441
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 21:54:36 -0500
+
+    FIty2hNg2222t3hLgyyjk3
+
+commit 9eee5237cabf9bb4b8f22dfe75cf2f44ec593b59
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 21:09:53 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yy2ym72
+
+commit 59acf2634ae84af8a7162dc091fc9fc941275072
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 20:48:25 -0500
+
+    FIty2hNg2222t3hLgyy3
+
+commit 3d011255bde1270ee60c793b8d3ff4c4cea61075
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 20:39:25 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y2y22
+
+commit c7338ee2a51e7cacb54b26cda99e2b0c255e7654
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 20:29:43 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yy2ym2
+
+commit 50dc4472ed3b5c72c9c9e1eb341ba299da5a7f53
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 19:59:12 -0500
+
+    FIty2hNg2222t3hLgy
+
+commit 9e634b6d8b09ee334a2360d2b62caad97d447ae7
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 19:41:21 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy3y22
+
+commit 5b061714e8116e71e453400390266a5e625d51bb
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 19:35:49 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yy2y2
+
+commit 4e81d4f28de31af8ebe2b9b627c01dc7cb9a8a34
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 19:06:58 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuuy32
+
+commit e3641a3f581096d37fa8a6d3f4255e534ae48295
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 18:54:03 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yy2
+
+commit 6bc086b98f3d380630d66e3b52171abcf5cc25a2
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 18:40:26 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yh2
+
+commit cab2a664a8ba03113e7e1c8fc261976d0d825167
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 18:24:51 -0500
+
+    post-SSD: fix git index/ref33jsnh3jhgg3hh33hh3j3hhgh33G3jh33mh3h3ggg33g2g2h3gg3g3ngmy2mgg3g32gG33m3g3g33h3gjnmjHBnBg33hnhh6hy3y3hhjnmu4YY3h3y3H3h3h3h3y3hgu53y2j3yuu2
+
+commit 06988313384f2c922ddf4580a26d1f1ec303bbd5
+Author: Tim Behrens <your.email@example.com>
+Date:   2025-09-01 16:28:18 -0500
+
+    FIty2hNg2222t3hLg

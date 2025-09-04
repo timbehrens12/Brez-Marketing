@@ -1242,46 +1242,74 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Dynamic Grid Layout - Asymmetrical and visually interesting */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
-            
-            {/* Top Row - Blended Metrics takes more prominent space */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Large: Blended Performance Metrics - Takes 2/3 of space */}
-              <div className="lg:col-span-8">
+          {/* Modern Clean Layout - Redesigned from scratch */}
+          <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] to-[#111111] p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+              
+              {/* Hero Metrics Section - Clean and prominent */}
+              <div className="bg-gradient-to-r from-[#1a1a1a] to-[#222] border border-[#333] rounded-2xl p-8 shadow-2xl">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-white mb-2">Performance Overview</h2>
+                  <p className="text-gray-400">Real-time advertising metrics and insights</p>
+                </div>
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                 />
               </div>
 
-              {/* Smaller: AI Daily Report - Takes 1/3 of space, taller */}
-              <div className="lg:col-span-4">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              {/* Two-Column Content Section */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                
+                {/* Left Column - AI Insights */}
+                <div className="xl:col-span-1 space-y-6">
+                  <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl overflow-hidden h-fit">
+                    <div className="p-6 border-b border-[#333]">
+                      <h3 className="text-lg font-semibold text-white mb-1">AI Daily Report</h3>
+                      <p className="text-sm text-gray-400">Smart campaign analysis</p>
+                    </div>
+                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                  </div>
+                </div>
+
+                {/* Right Column - Charts and Creative */}
+                <div className="xl:col-span-2 space-y-8">
+                  
+                  {/* Performance Chart - Full width for better visualization */}
+                  <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl overflow-hidden">
+                    <div className="p-6 border-b border-[#333]">
+                      <h3 className="text-lg font-semibold text-white mb-1">Performance Trends</h3>
+                      <p className="text-sm text-gray-400">7-day performance analysis</p>
+                    </div>
+                    <div className="p-6">
+                      <PerformanceChart 
+                        preloadedPerformanceData={preloadedData.performanceData}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ad Creative Breakdown */}
+                  <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl overflow-hidden">
+                    <div className="p-6 border-b border-[#333]">
+                      <h3 className="text-lg font-semibold text-white mb-1">Creative Performance</h3>
+                      <p className="text-sm text-gray-400">Top performing ad creatives</p>
+                    </div>
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  </div>
+                </div>
               </div>
+
+              {/* Campaign Management - Full Width with Modern Design */}
+              <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl overflow-hidden">
+                <div className="p-6 border-b border-[#333]">
+                  <h3 className="text-xl font-semibold text-white mb-1">Campaign Management</h3>
+                  <p className="text-gray-400">Monitor and optimize your advertising campaigns</p>
+                </div>
+                <div className="p-6">
+                  <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+                </div>
+              </div>
+
             </div>
-
-            {/* Middle Row - Creative and Performance in different sizes */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Medium: Ad Creative Breakdown - Takes about 45% */}
-              <div className="lg:col-span-5">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-              </div>
-
-              {/* Large: Performance Chart - Takes about 55% for better data visualization */}
-              <div className="lg:col-span-7">
-                <PerformanceChart 
-                  preloadedPerformanceData={preloadedData.performanceData}
-                />
-              </div>
-            </div>
-
-            {/* Bottom Section - Campaign Management spans full width but with reduced height */}
-            <div className="w-full">
-              <div className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-[#1a1a1a] rounded-xl overflow-hidden">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-              </div>
-            </div>
-
           </div>
         </>
       </div>
