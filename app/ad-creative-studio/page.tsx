@@ -99,53 +99,63 @@ interface RetryIssue {
 const RETRY_ISSUES: RetryIssue[] = [
   {
     id: 'distorted-text',
-    label: 'Distorted Text',
-    promptAddition: 'CRITICAL FIX: The previous generation had distorted or unclear text. Pay EXTRA attention to preserving all text elements with perfect clarity, readability, and positioning. NECK TAG TEXT CRITICAL: Pay special attention to neck tag text which is often small and gets distorted - ensure neck tag brand names, logos, and text are preserved with CRYSTAL-CLEAR readability and ZERO distortion. Never allow neck tag text to become blurry, pixelated, or illegible. Ensure all text, logos, and graphics are crystal clear and identical to the original image.'
+    label: 'Distorted Text/Labels',
+    promptAddition: 'CRITICAL FIX: The previous generation had distorted or unclear text. Pay EXTRA attention to preserving all text elements with perfect clarity, readability, and positioning. This includes: product labels, brand names, logos, ingredient lists, nutritional info, size tags, neck tags, care labels, model numbers, packaging text, and any text anywhere on the product. Ensure all text, logos, and graphics are crystal clear and identical to the original image.'
   },
   {
-    id: 'neck-tag-distortion',
-    label: 'Neck Tag Text Issues',
-    promptAddition: 'CRITICAL FIX: The previous generation had distorted, blurry, or illegible neck tag text. NECK TAG TEXT ULTRA-CRITICAL: Pay EXTREME attention to neck tag text preservation - ensure neck tag brand names, logos, size information, and any text visible on neck tags are preserved with MAXIMUM clarity and sharpness. Never allow neck tag text to become blurry, pixelated, distorted, or illegible. Treat neck tag text with the same importance as the main product graphics.'
+    id: 'product-labels',
+    label: 'Product Labels Issues',
+    promptAddition: 'CRITICAL FIX: The previous generation had distorted, blurry, or illegible product labels/packaging text. LABEL TEXT ULTRA-CRITICAL: Pay EXTREME attention to preserving all product labeling - brand names, ingredient lists, nutritional information, size information, model numbers, barcodes, and any text visible on product packaging or the product itself. Never allow any text to become blurry, pixelated, distorted, or illegible.'
   },
   {
     id: 'distorted-graphics',
     label: 'Distorted Graphics/Logo',
-    promptAddition: 'CRITICAL FIX: The previous generation had distorted graphics or logos. Pay EXTRA attention to preserving all graphic elements, logos, symbols, and visual designs with perfect clarity and positioning. Ensure all graphics remain identical to the original image.'
+    promptAddition: 'CRITICAL FIX: The previous generation had distorted graphics or logos. Pay EXTRA attention to preserving all graphic elements, logos, symbols, brand marks, design patterns, and visual designs with perfect clarity and positioning. Ensure all graphics remain identical to the original image.'
   },
   {
-    id: 'fake-tags',
-    label: 'Fake Tags Created',
-    promptAddition: 'CRITICAL FIX: The previous generation incorrectly created fake tags, neck labels, or text that were NOT in the original image. ULTRA-IMPORTANT: DO NOT create, add, or invent ANY content whatsoever that is not actually visible in the original image. This specifically includes: NO fake brand names, NO fake neck tags, NO fake size labels, NO fake care instructions, NO fake logos of any kind. ABSOLUTELY BANNED: Never add "PROJECT CAPRI" or any other test brand names to clothing under any circumstances. If the original clothing item is completely plain with no visible tags, neck labels, graphics, or text anywhere on it, then keep it completely plain. Only preserve content that actually exists in the source image. Never fabricate, imagine, or add fictional content.'
+    id: 'fake-content',
+    label: 'Added Fake Content',
+    promptAddition: 'CRITICAL FIX: The previous generation incorrectly created fake labels, text, or content that were NOT in the original image. ULTRA-IMPORTANT: DO NOT create, add, or invent ANY content whatsoever that is not actually visible in the original image. This includes: NO fake brand names, NO fake labels, NO fake text, NO fake logos, NO fake model numbers, NO fake ingredients, NO fake nutritional info. If the original product has no visible text/labels, keep it that way. Only preserve content that actually exists in the source image.'
   },
   {
     id: 'wrong-colors',
     label: 'Wrong Colors',
-    promptAddition: 'CRITICAL FIX: The previous generation had incorrect colors. Pay EXTRA attention to preserving the exact colors of the clothing item, graphics, text, and all visual elements. Match colors PRECISELY to the original image.'
+    promptAddition: 'CRITICAL FIX: The previous generation had incorrect colors. Pay EXTRA attention to preserving the exact colors of the product, packaging, graphics, text, and all visual elements. Match colors PRECISELY to the original image including product color, packaging colors, label colors, and background elements.'
   },
   {
     id: 'poor-positioning',
     label: 'Poor Positioning',
-    promptAddition: 'CRITICAL FIX: The previous generation had poor positioning or sizing. PERFECT CENTERING REQUIRED: Ensure the product/clothing item is PRECISELY CENTERED both horizontally and vertically. The item must be EXACTLY in the center with equal spacing from all edges. NO off-center positioning, tilting, or uneven placement allowed. Size appropriately (85-90% of frame width), and position naturally with realistic contact points. For pedestal/platform shots, the product must be PERFECTLY CENTERED on the platform with symmetrical placement.'
+    promptAddition: 'CRITICAL FIX: The previous generation had poor positioning or sizing. PERFECT CENTERING REQUIRED: Ensure the product is PRECISELY CENTERED both horizontally and vertically. The item must be EXACTLY in the center with equal spacing from all edges. NO off-center positioning, tilting, or uneven placement allowed. Size appropriately (85-90% of frame width), and position naturally. For pedestal/platform shots, the product must be PERFECTLY CENTERED on the platform.'
   },
   {
     id: 'off-center-product',
     label: 'Product Off-Center',
-    promptAddition: 'CRITICAL FIX: The previous generation had the product positioned off-center or shifted to one side. MANDATORY PERFECT CENTERING: The product must be EXACTLY centered both horizontally and vertically in the frame. Measure equal distances from all edges to ensure perfect symmetrical placement. For pedestal/platform templates, the product must sit PRECISELY in the center of the platform with no shifting, tilting, or asymmetrical positioning. Use mathematical precision for centering - the product should be equidistant from left/right edges and top/bottom edges.'
+    promptAddition: 'CRITICAL FIX: The previous generation had the product positioned off-center or shifted to one side. MANDATORY PERFECT CENTERING: The product must be EXACTLY centered both horizontally and vertically in the frame. Measure equal distances from all edges to ensure perfect symmetrical placement. For pedestal/platform templates, the product must sit PRECISELY in the center with no shifting or asymmetrical positioning.'
   },
   {
-    id: 'wrong-tilt-direction',
-    label: 'Wrong Tilt Direction',
-    promptAddition: 'CRITICAL FIX: The previous generation had the product tilted in the wrong direction. For angled backgrounds, the clothing MUST be tilted exactly 20 degrees CLOCKWISE (leaning to the RIGHT side of the image), never counterclockwise or to the left. The product should clearly lean to the right.'
+    id: 'wrong-orientation',
+    label: 'Wrong Product Orientation',
+    promptAddition: 'CRITICAL FIX: The previous generation had the product oriented incorrectly. Ensure the product is positioned in its natural, intended orientation. For bottles/containers: upright with labels facing forward. For books: spine or cover clearly visible. For electronics: screen/interface facing forward. For clothing: properly displayed as worn. Match the intended display orientation for the product type.'
   },
   {
     id: 'artificial-look',
     label: 'Too Artificial/AI-like',
-    promptAddition: 'CRITICAL FIX: The previous generation looked too artificial or AI-generated. Add more natural imperfections, realistic lighting variations, authentic fabric behavior, and natural surface textures to make it look like a genuine photograph.'
+    promptAddition: 'CRITICAL FIX: The previous generation looked too artificial or AI-generated. Add more natural imperfections, realistic lighting variations, authentic material behavior (fabric draping, plastic shine, metal reflections, etc.), and natural surface textures to make it look like a genuine photograph. Consider the natural properties of the product material.'
   },
   {
     id: 'missing-details',
-    label: 'Missing Details',
-    promptAddition: 'CRITICAL FIX: The previous generation was missing important details from the original. Ensure ALL details, textures, patterns, small text, graphics, and visual elements from the original image are preserved and clearly visible. Pay EXTREME attention to preserving the EXACT shape of the clothing item including sleeves, collars, cuffs, hems, pockets, and all structural elements. Preserve ALL text including the smallest text, size tags, care labels, neck prints, and any microscopic text anywhere on the garment with crystal-clear readability.'
+    label: 'Missing Product Details',
+    promptAddition: 'CRITICAL FIX: The previous generation was missing important details from the original. Ensure ALL details, textures, patterns, small text, graphics, and visual elements from the original image are preserved and clearly visible. This includes: all product features, buttons, zippers, seams, surface textures, material properties, structural elements, and any text/graphics anywhere on the product with crystal-clear readability.'
+  },
+  {
+    id: 'wrong-scale',
+    label: 'Wrong Product Scale',
+    promptAddition: 'CRITICAL FIX: The previous generation had the product at the wrong scale/size in the composition. Ensure the product is sized appropriately for its type - not too large that it overwhelms the frame, not too small that details are lost. Maintain realistic proportions and scale relative to any background elements like platforms, pedestals, or environmental contexts.'
+  },
+  {
+    id: 'lighting-issues',
+    label: 'Poor Lighting',
+    promptAddition: 'CRITICAL FIX: The previous generation had poor lighting that made the product look unnatural or poorly lit. Apply professional product photography lighting that enhances the product appeal: soft, even lighting that eliminates harsh shadows, highlights product features, shows true colors, and creates appropriate depth and dimension. Avoid overexposure, underexposure, or unnatural lighting artifacts.'
   },
   {
     id: 'shape-distortion',
@@ -5379,6 +5389,22 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                       <li>• Optimizes composition, lighting, and messaging for maximum conversions</li>
                       <li>• Creates multiple variations focused on sales performance</li>
                     </ul>
+                  </div>
+
+                  {/* AI Limitation Warning */}
+                  <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+                    <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+                      <span>⚠️</span>
+                      Important: Upload Portrait Images
+                    </h4>
+                    <div className="text-amber-200 text-sm">
+                      <p>The AI has limitations and often copies the aspect ratio of your uploaded product image. For best results:</p>
+                      <ul className="mt-2 space-y-1 ml-4">
+                        <li>• <strong>Upload portrait-oriented product images</strong> (taller than wide)</li>
+                        <li>• Avoid wide/rectangular product photos when possible</li>
+                        <li>• This helps ensure proper mobile-optimized creative output</li>
+                      </ul>
+                    </div>
                   </div>
 
                   {/* Optional Custom Instructions */}
