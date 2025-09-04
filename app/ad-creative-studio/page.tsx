@@ -5204,7 +5204,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
         </div>
 
         {/* Widget Layout */}
-        <div className="mt-1 h-[525px]">
+        <div className="mt-1 h-[560px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
             {/* Left Column: Stacked widgets */}
             <div className="lg:col-span-11 flex flex-col gap-3 h-full">
