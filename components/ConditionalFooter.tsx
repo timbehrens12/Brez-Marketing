@@ -38,13 +38,14 @@ export function ConditionalFooter() {
         bodyText.includes('Analyzing your brand') ||
         bodyText.includes('AI Dashboard') && bodyText.includes('Connecting') ||
         (bodyText.includes('Marketing Assistant') && (
-          bodyText.includes('Loading') ||
           bodyText.includes('Initializing') ||
-          bodyText.includes('Syncing') ||
-          bodyText.includes('Preparing') ||
-          bodyText.includes('advertising data') ||
-          bodyText.includes('creative insights') ||
-          bodyText.includes('Finalizing dashboard')
+          bodyText.includes('Loading advertising') ||
+          bodyText.includes('Syncing latest') ||
+          bodyText.includes('AI analyzing') ||
+          bodyText.includes('Loading creative insights') ||
+          bodyText.includes('Preparing AI marketing') ||
+          bodyText.includes('Finalizing dashboard') ||
+          bodyText.includes('Checking for missing')
         ))
       )
       
