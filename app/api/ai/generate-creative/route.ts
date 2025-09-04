@@ -7,7 +7,7 @@ import sharp from 'sharp';
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
 // Weekly usage limits for creative generation
-const WEEKLY_CREATIVE_LIMIT = 75; // 75 creative generations per week
+const WEEKLY_CREATIVE_LIMIT = 80; // 80 creative generations per week
 const USAGE_FEATURE_TYPE = 'creative_generation';
 
 const BACKGROUND_PRESETS = {

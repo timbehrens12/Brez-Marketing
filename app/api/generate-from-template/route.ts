@@ -7,7 +7,7 @@ import sharp from 'sharp';
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
 // Weekly usage limits for template generation
-const WEEKLY_TEMPLATE_LIMIT = 75; // Slightly lower than regular generation
+const WEEKLY_TEMPLATE_LIMIT = 80; // Updated to match regular generation
 const USAGE_FEATURE_TYPE = 'template_generation';
 
 const ASPECT_RATIOS = {
