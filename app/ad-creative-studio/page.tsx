@@ -5195,6 +5195,22 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
           </div>
         </div>
         
+        {/* AI Limitation Warning */}
+        <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+          <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+            <span>⚠️</span>
+            Important: Upload Portrait Images
+          </h4>
+          <div className="text-amber-200 text-sm">
+            <p>The AI struggles with text positioning when given non-portrait images. For best results:</p>
+            <ul className="mt-2 space-y-1 ml-4">
+              <li>• <strong>Upload portrait-oriented product images</strong> (taller than wide)</li>
+              <li>• Avoid wide/rectangular product photos when possible</li>
+              <li>• This helps ensure proper text placement and mobile-optimized output</li>
+            </ul>
+          </div>
+        </div>
+
         {/* Widget Layout */}
         <div className="mt-2 h-[520px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full">
@@ -5398,11 +5414,11 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                       Important: Upload Portrait Images
                     </h4>
                     <div className="text-amber-200 text-sm">
-                      <p>The AI has limitations and often copies the aspect ratio of your uploaded product image. For best results:</p>
+                      <p>The AI struggles with text positioning when given non-portrait images. For best results:</p>
                       <ul className="mt-2 space-y-1 ml-4">
                         <li>• <strong>Upload portrait-oriented product images</strong> (taller than wide)</li>
                         <li>• Avoid wide/rectangular product photos when possible</li>
-                        <li>• This helps ensure proper mobile-optimized creative output</li>
+                        <li>• This helps ensure proper text placement and mobile-optimized output</li>
                       </ul>
                     </div>
                   </div>
