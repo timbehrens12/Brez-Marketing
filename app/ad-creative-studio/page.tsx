@@ -1146,13 +1146,13 @@ export default function AdCreativeStudioPage() {
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
-  // Weekly usage system - 75 generations per week (universal)
-  const WEEKLY_LIMIT = 75
+  // Weekly usage system - 80 generations per week (universal)
+  const WEEKLY_LIMIT = 80
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,
-    limit: 75,
-    remaining: 75,
+    limit: WEEKLY_LIMIT,
+    remaining: WEEKLY_LIMIT,
     weekStartDate: ''
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
@@ -5312,7 +5312,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
                 
                 <div className="flex-1 flex flex-col">
                   {/* AI Description */}
-                  <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+                  <div className="bg-gradient-to-r from-gray-600/10 to-gray-500/10 border border-gray-500/20 rounded-lg p-4 mb-4">
                     <h4 className="text-white font-medium mb-2 flex items-center gap-2">
                       <span>🎯</span>
                       How Auto AI Works
@@ -5350,7 +5350,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
                   }
                   await generateImageFromTemplate(selectedTemplate!)
                 }}
-                className="relative w-full h-full rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
+                className="relative w-full h-full rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
               >
                 {isGenerating ? (
@@ -5365,7 +5365,7 @@ AI DECISION MAKING: Automatically select the best template style, background typ
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
                     ) : (
-                      <span className="text-gray-500">Click to generate</span>
+                      <span className="text-white">Click to generate</span>
                     )}
                   </span>
                 </div>
