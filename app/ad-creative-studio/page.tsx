@@ -2910,30 +2910,69 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
     // Check if all images are portrait (height > width)
     const checkPortraitImages = async (files: File[]) => {
-      const promises = files.map(file => {
-        return new Promise<{ file: File, isPortrait: boolean }>((resolve) => {
+      console.log(`🔍 Checking ${files.length} files for portrait orientation...`)
+      
+      const promises = files.map((file, index) => {
+        return new Promise<{ file: File, isPortrait: boolean, fileName: string, dimensions?: { width: number, height: number } }>((resolve) => {
           const img = new Image()
           img.onload = () => {
             const isPortrait = img.height > img.width
-            resolve({ file, isPortrait })
+            console.log(`📏 File ${index + 1} (${file.name}): ${img.width}x${img.height} - ${isPortrait ? 'Portrait ✅' : 'Landscape ❌'}`)
+            resolve({ 
+              file, 
+              isPortrait, 
+              fileName: file.name,
+              dimensions: { width: img.width, height: img.height }
+            })
+            // Clean up the object URL
+            URL.revokeObjectURL(img.src)
           }
-          img.onerror = () => resolve({ file, isPortrait: false })
+          img.onerror = (error) => {
+            console.error(`❌ Failed to load image ${file.name}:`, error)
+            toast.error(`Failed to load image: ${file.name}`)
+            resolve({ file, isPortrait: false, fileName: file.name })
+            URL.revokeObjectURL(img.src)
+          }
           img.src = URL.createObjectURL(file)
         })
       })
       
-      const results = await Promise.all(promises)
-      const nonPortraitFiles = results.filter(r => !r.isPortrait)
-      
-      if (nonPortraitFiles.length > 0) {
-        toast.error('Only portrait images (taller than wide) are allowed. Please upload portrait-oriented images for best results.')
+      try {
+        const results = await Promise.all(promises)
+        const nonPortraitFiles = results.filter(r => !r.isPortrait)
+        
+        if (nonPortraitFiles.length > 0) {
+          const landscapeFiles = nonPortraitFiles.map(r => {
+            const dims = r.dimensions ? `${r.dimensions.width}x${r.dimensions.height}` : 'unknown dimensions'
+            return `${r.fileName} (${dims})`
+          })
+          
+          toast.error(
+            `Only portrait images are allowed. The following ${nonPortraitFiles.length} file(s) are landscape:\n\n${landscapeFiles.join('\n')}\n\nPlease use images that are taller than they are wide.`,
+            { duration: 8000 }
+          )
+          console.log(`❌ Upload blocked: ${nonPortraitFiles.length} landscape files detected`)
+          return false
+        }
+        
+        console.log(`✅ All ${files.length} files are portrait orientation`)
+        return true
+      } catch (error) {
+        console.error('❌ Error during portrait validation:', error)
+        toast.error('Error validating image orientation. Please try again.')
         return false
       }
-      return true
     }
 
-    const isValidOrientation = await checkPortraitImages(imageFiles)
-    if (!isValidOrientation) {
+    try {
+      const isValidOrientation = await checkPortraitImages(imageFiles)
+      if (!isValidOrientation) {
+        console.log('🚫 Upload cancelled due to orientation validation failure')
+        return
+      }
+    } catch (error) {
+      console.error('❌ Portrait validation failed:', error)
+      toast.error('Failed to validate image orientation. Please try again.')
       return
     }
 
