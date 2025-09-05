@@ -224,24 +224,32 @@ export async function POST(request: NextRequest) {
     console.log('📝 Product analysis:', productDescription);
 
     // Step 2: Build the complete prompt with background and modifiers
+    
+    // Add session reset to prevent AI model caching from previous requests
+    const sessionReset = `IMPORTANT: This is a NEW request. Ignore any previous context or themes from earlier generations. Focus ONLY on the current product and requirements below.
+
+SESSION RESET: Previous requests and their themes (like "back to school", seasonal themes, etc.) should be completely ignored. This is a fresh, independent request.
+
+`;
+    
     let prompt: string;
     
     // Check if this is a multi-product request with custom prompt
     if (customPrompt && multiProductCount) {
       console.log('🎨 Using custom multi-product prompt...');
       // Use the custom multi-product prompt directly
-      prompt = customPrompt;
+      prompt = sessionReset + customPrompt;
     } else {
       // Check if we have a template prompt (customPromptModifiers)
       if (customPromptModifiers && customPromptModifiers.trim().length > 0) {
         // Use template-based generation - prioritize the template prompt over product description
-        prompt = `${customPromptModifiers} PRODUCT DETAILS: ${productDescription}
+        prompt = `${sessionReset}${customPromptModifiers} PRODUCT DETAILS: ${productDescription}
 
 CRITICAL TEXT FITTING REQUIREMENT: Ensure ALL text elements (product text, overlays, labels, etc.) are PROPERLY SIZED and positioned to FIT COMPLETELY within the image boundaries. Never allow text to clip, cut off, or extend beyond the visible frame. Scale text appropriately to the composition and maintain readability while ensuring complete visibility. All text must be fully contained within the image dimensions.`;
         console.log('📝 Using template-based prompt from customPromptModifiers');
       } else {
         // Fallback to background preset for basic generation
-        prompt = `Create a professional product photography image featuring: ${productDescription}.
+        prompt = `${sessionReset}Create a professional product photography image featuring: ${productDescription}.
 
 ${backgroundPreset.prompt}`;
         console.log('📝 Using background preset prompt');

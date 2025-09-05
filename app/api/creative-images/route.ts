@@ -21,10 +21,12 @@ export async function GET(req: NextRequest) {
 
     // console.log('🖼️ Fetching images for creative:', creativeId)
 
-    // Get image URLs for the specific creative
-    const { data, error } = await supabase.rpc('get_creative_images', {
-      p_creative_id: creativeId
-    })
+    // Get image URLs for the specific creative using direct query
+    const { data, error } = await supabase
+      .from('creative_generations')
+      .select('id, original_image_url, generated_image_url')
+      .eq('id', creativeId)
+      .single()
 
     if (error) {
       console.error('Error fetching creative images:', error)
@@ -34,15 +36,15 @@ export async function GET(req: NextRequest) {
       }, { status: 500 })
     }
 
-    if (!data || data.length === 0) {
+    if (!data) {
       return NextResponse.json({ error: 'Creative not found' }, { status: 404 })
     }
 
     // console.log('✅ Successfully fetched images for creative')
     return NextResponse.json({ 
-      id: data[0].id,
-      originalImageUrl: data[0].original_image_url,
-      generatedImageUrl: data[0].generated_image_url
+      id: data.id,
+      originalImageUrl: data.original_image_url,
+      generatedImageUrl: data.generated_image_url
     })
 
   } catch (error: any) {
