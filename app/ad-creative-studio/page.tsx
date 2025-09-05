@@ -3109,6 +3109,13 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
+      
+      // Debug logging to see what's being sent
+      console.log('🔍 Auto generation debug:', {
+        autoPromptAdditions: autoPromptAdditions,
+        autoInstructions: autoInstructions,
+        isEmpty: !autoPromptAdditions.trim()
+      })
       enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
 
 EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
@@ -3432,6 +3439,13 @@ CRITICAL FORMAT REQUIREMENTS:
       const autoInstructions = autoPromptAdditions.trim() 
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
+      
+      // Debug logging to see what's being sent (modal version)
+      console.log('🔍 Auto generation debug (modal):', {
+        autoPromptAdditions: autoPromptAdditions,
+        autoInstructions: autoInstructions,
+        isEmpty: !autoPromptAdditions.trim()
+      })
       enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
 
 EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
