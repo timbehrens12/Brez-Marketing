@@ -2861,9 +2861,20 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
     // Check if this creative exists in our current state and has been saved to database
     const creative = generatedCreatives.find(c => c.id === creativeId)
-    if (!creative || creative.status === 'generating') {
-      // Skip fetch for unsaved or still-generating creatives to avoid 404s
+    if (!creative || creative.status === 'generating' || creative.status === 'failed') {
+      // Skip fetch for unsaved, generating, or failed creatives to avoid 404s
       return
+    }
+
+    // Additional check: If the creative was just completed, wait a moment for database save
+    if (creative.status === 'completed') {
+      const createdAt = new Date(creative.created_at || creative.updated_at || Date.now())
+      const timeSinceCreation = Date.now() - createdAt.getTime()
+      
+      // If created less than 2 seconds ago, skip to avoid race condition with database save
+      if (timeSinceCreation < 2000) {
+        return
+      }
     }
 
     setLoadingImages(prev => new Set(prev).add(creativeId))
@@ -3354,7 +3365,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
-          toast.error('🚫 Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.')
+          toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
         } else {
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         }
@@ -3752,7 +3763,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
-          toast.error('🚫 Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.')
+          toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
         } else {
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         }

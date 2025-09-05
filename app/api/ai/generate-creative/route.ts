@@ -385,10 +385,10 @@ ${backgroundPreset.prompt}`;
           );
           
           if (isRefusal) {
-            console.log('🚫 Gemini refused to generate content due to policy violation');
+            console.log('🚫 Creative generation AI refused to generate content due to policy violation');
             return NextResponse.json({
               error: 'Content Policy Violation',
-              message: 'Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.',
+              message: 'Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.',
               userFriendly: true
             }, { status: 400 });
           }
