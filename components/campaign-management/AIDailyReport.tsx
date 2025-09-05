@@ -490,7 +490,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-4 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
                 <p className="text-sm text-gray-200 leading-relaxed max-w-4xl mx-auto">
-                  {report.summary ? report.summary.split('.').slice(0, 2).join('.') + '.' : ''}
+                  {report.summary ? report.summary.split('.').slice(0, 4).join('.') + '.' : ''}
                 </p>
               </div>
             </div>
@@ -510,12 +510,12 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                   <AlertTriangle className="w-4 h-4 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Top Priority</h3>
-                  <p className="text-xs text-gray-400">Most critical action</p>
+                  <h3 className="text-sm font-semibold text-white">Top Priorities</h3>
+                  <p className="text-xs text-gray-400">Critical actions needed</p>
                 </div>
               </div>
               <div className="grid gap-2">
-                {report.topPriorities.slice(0, 1).map((priority, index) => (
+                {report.topPriorities.slice(0, 2).map((priority, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
                     <CardContent className="p-3">
                       <div className="flex items-start gap-2">
@@ -523,7 +523,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                           <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
                         </div>
                         <p className="text-xs text-gray-300 leading-relaxed flex-1">
-                          {priority.split('.')[0] + '.'}
+                          {priority.split('.').slice(0, 2).join('.') + '.'}
                         </p>
                       </div>
                     </CardContent>
@@ -541,12 +541,12 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                   <CheckCircle className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Key Success</h3>
-                  <p className="text-xs text-gray-400">Positive indicator</p>
+                  <h3 className="text-sm font-semibold text-white">Success Highlights</h3>
+                  <p className="text-xs text-gray-400">Positive performance indicators</p>
                 </div>
               </div>
               <div className="grid gap-2">
-                {report.successHighlights.slice(0, 1).map((highlight, index) => (
+                {report.successHighlights.slice(0, 2).map((highlight, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
                     <CardContent className="p-3">
                       <div className="flex items-start gap-2">
@@ -554,7 +554,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                           <CheckCircle className="w-3 h-3 text-emerald-400" />
                         </div>
                         <p className="text-xs text-gray-300 leading-relaxed flex-1">
-                          {highlight.split('.')[0] + '.'}
+                          {highlight.split('.').slice(0, 2).join('.') + '.'}
                         </p>
                       </div>
                     </CardContent>
