@@ -5437,7 +5437,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 <textarea
                   value={copyPromptAdditions}
                   onChange={(e) => setCopyPromptAdditions(e.target.value)}
-                  placeholder="Any specific changes or additions you want? Example: Change the background to a beach setting, make the lighting more dramatic, add text saying 'NEW ARRIVAL'..."
+                  placeholder="Any specific changes or additions you want? Example: Change the background to a beach setting, make the lighting more dramatic, add text saying 'NEW ARRIVAL', include pricing, add call-to-action buttons..."
                   className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs flex-1"
                 />
               </div>
@@ -5579,7 +5579,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                     <textarea
                       value={autoPromptAdditions}
                       onChange={(e) => setAutoPromptAdditions(e.target.value)}
-                      placeholder="Any specific requirements? Example: 'Focus on luxury feel', 'Target young adults', 'Emphasize eco-friendly aspect', 'Use warm colors'..."
+                      placeholder="Tell the AI what you want! Example: 'Focus on luxury feel', 'Target young adults', 'Add text saying NEW ARRIVAL', 'Use specific colors', 'Include call-to-action buttons', 'Emphasize key features'..."
                       className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs flex-1"
                     />
                     {autoPromptAdditions.trim() && (
@@ -6134,8 +6134,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               <label className="text-sm font-medium text-gray-300 mb-3 block">What went wrong? (Select all that apply)</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { id: 'tag_distorted', label: 'Tags/Labels Distorted' },
-                  { id: 'shape_wrong', label: 'Wrong Clothing Shape' },
+                  { id: 'labels_distorted', label: 'Labels/Text Distorted' },
+                  { id: 'shape_wrong', label: 'Wrong Product Shape' },
                   { id: 'text_corrupted', label: 'Text Corrupted/Blurry' },
                   { id: 'color_wrong', label: 'Colors Changed' },
                   { id: 'off-center-product', label: 'Product Off-Center' },
@@ -6176,7 +6176,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   ...prev,
                   details: e.target.value
                 }))}
-                placeholder="Describe exactly what needs to be fixed (e.g., 'The neck tag text is blurry', 'Sleeves are too short', 'Background is too dark')..."
+                placeholder="Describe exactly what needs to be fixed (e.g., 'Text is blurry', 'Product is too small', 'Background is too dark', 'Logo needs to be bigger', 'Colors don't match brand', 'Missing call-to-action')..."
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-3 text-white placeholder-gray-400 focus:border-[#666] focus:outline-none h-24 resize-none text-sm"
               />
             </div>
