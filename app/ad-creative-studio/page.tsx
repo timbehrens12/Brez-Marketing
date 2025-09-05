@@ -2910,17 +2910,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
     // Check if all images are portrait (height > width)
     const checkPortraitImages = async (files: File[]) => {
-      console.log(`🔍 Checking ${files.length} files for portrait orientation...`)
-      
-      // Test if toast is working
-      toast.info(`Validating ${files.length} image(s)...`, { duration: 2000 })
-      
       const promises = files.map((file, index) => {
         return new Promise<{ file: File, isPortrait: boolean, fileName: string, dimensions?: { width: number, height: number } }>((resolve) => {
           const img = new Image()
           img.onload = () => {
             const isPortrait = img.height > img.width
-            console.log(`📏 File ${index + 1} (${file.name}): ${img.width}x${img.height} - ${isPortrait ? 'Portrait ✅' : 'Landscape ❌'}`)
             resolve({ 
               file, 
               isPortrait, 
@@ -2931,8 +2925,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             URL.revokeObjectURL(img.src)
           }
           img.onerror = (error) => {
-            console.error(`❌ Failed to load image ${file.name}:`, error)
-            toast.error(`Failed to load image: ${file.name}`)
+            alert(`Failed to load image: ${file.name}`)
             resolve({ file, isPortrait: false, fileName: file.name })
             URL.revokeObjectURL(img.src)
           }
@@ -2950,24 +2943,11 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             return `${r.fileName} (${dims})`
           })
           
-          // Multiple error notification methods to ensure user sees the message
-          const errorMessage = `Only portrait images allowed! ${nonPortraitFiles.length} file(s) rejected. Files must be taller than wide. Square images (like ${nonPortraitFiles[0].fileName}) are not accepted.`
+          const errorMessage = `Only portrait images allowed!\n\n${nonPortraitFiles.length} file(s) rejected:\n${landscapeFiles.join('\n')}\n\nPlease use images that are taller than wide.\nSquare images are not accepted.`
           
-          // Try toast first
-          toast.error(errorMessage, { duration: 6000 })
-          
-          // Also try a basic toast without options
-          toast.error("❌ Upload rejected: Only portrait images (taller than wide) are allowed!")
-          
-          // Fallback to alert if toast isn't working
-          setTimeout(() => {
-            alert(`Upload Error:\n\n${errorMessage}`)
-          }, 50)
-          console.log(`❌ Upload blocked: ${nonPortraitFiles.length} landscape files detected`)
+          alert(errorMessage)
           return false
         }
-        
-        console.log(`✅ All ${files.length} files are portrait orientation`)
         return true
       } catch (error) {
         console.error('❌ Error during portrait validation:', error)
@@ -2979,18 +2959,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     try {
       const isValidOrientation = await checkPortraitImages(imageFiles)
       if (!isValidOrientation) {
-        console.log('🚫 Upload cancelled due to orientation validation failure')
-        // Additional fallback toast in case the first one didn't show
-        setTimeout(() => {
-          toast.error('❌ Upload failed: Only portrait images (taller than wide) are accepted!', {
-            duration: 5000
-          })
-        }, 100)
         return
       }
     } catch (error) {
-      console.error('❌ Portrait validation failed:', error)
-      toast.error('Failed to validate image orientation. Please try again.')
+      alert('Failed to validate image orientation. Please try again.')
       return
     }
 
