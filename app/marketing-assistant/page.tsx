@@ -1246,7 +1246,7 @@ export default function MarketingAssistantPage() {
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
             {/* Top Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
-            <div className="flex gap-6 items-start">
+            <div className="flex gap-6 items-start mb-12">
               
               {/* Left: Blended Performance Metrics with nested widgets below - 70% width */}
               <div className="flex-1 space-y-6" style={{ flexBasis: '70%' }}>
@@ -1259,12 +1259,12 @@ export default function MarketingAssistantPage() {
                 {/* Nested widgets under Blended Metrics */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Ad Creative Breakdown */}
-                  <div className="h-[120px]">
+                  <div className="h-[200px]">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
 
                   {/* Performance Chart */}
-                  <div className="h-[120px]">
+                  <div className="h-[200px]">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1273,14 +1273,14 @@ export default function MarketingAssistantPage() {
               </div>
 
               {/* Right: AI Daily Report - 30% width, matches left column height */}
-              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 120px)' }}>
+              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 200px)' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
             </div>
 
-            {/* Bottom Section - Campaign Management spans full width with extra spacing */}
-            <div className="w-full mt-8">
+            {/* Bottom Section - Campaign Management spans full width */}
+            <div className="w-full">
               <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
 
