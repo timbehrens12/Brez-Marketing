@@ -1245,43 +1245,44 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
-            <div className="flex gap-6 items-start mb-12">
+            {/* Top Section - Blended Performance Metrics (70%) and AI Daily Report (30%) */}
+            <div className="flex gap-6">
               
-              {/* Left: Blended Performance Metrics with nested widgets below - 70% width */}
-              <div className="flex-1 space-y-6" style={{ flexBasis: '70%' }}>
-                {/* Blended Performance Metrics */}
+              {/* Left: Horizontal Blended Performance Metrics - 70% width */}
+              <div className="flex-1" style={{ flexBasis: '70%' }}>
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                   layout="horizontal"
                 />
-                
-                {/* Nested widgets under Blended Metrics */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Ad Creative Breakdown */}
-                  <div className="h-[200px]">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  </div>
-
-                  {/* Performance Chart */}
-                  <div className="h-[200px]">
-                    <PerformanceChart 
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
-                  </div>
-                </div>
               </div>
 
-              {/* Right: AI Daily Report - 30% width, matches left column height */}
-              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 200px)' }}>
+              {/* Right: AI Daily Report - 30% width */}
+              <div className="flex-1" style={{ flexBasis: '30%' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
             </div>
 
-            {/* Bottom Section - Campaign Management spans full width */}
+            {/* Middle Section - Campaign Management spans full width */}
             <div className="w-full">
               <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </div>
+
+            {/* Bottom Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Ad Creative Breakdown */}
+              <div className="h-full">
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              </div>
+
+              {/* Performance Chart */}
+              <div className="h-full">
+                <PerformanceChart 
+                  preloadedPerformanceData={preloadedData.performanceData}
+                />
+              </div>
+
             </div>
 
           </div>
