@@ -5728,8 +5728,25 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                     { key: 'template-selection', title: 'Template' },
                     { key: 'customization', title: 'Customize' }
                   ].map((step, index) => {
-                    const isActive = currentStep === step.key
-                    const isCompleted = index < ['upload', 'creative-type', 'template-selection', 'customization'].indexOf(currentStep)
+                    // Handle active state - customization step should be active for all customization-related steps
+                    const isActive = step.key === currentStep || 
+                      (step.key === 'customization' && (currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup'))
+                    
+                    // Handle different workflows for completion logic
+                    let isCompleted = false
+                    if (currentStep === 'customization' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup') {
+                      // For customization step, mark upload and creative-type as completed
+                      // For copy/custom/auto workflows, also mark template as completed since it's skipped
+                      if (step.key === 'upload' || step.key === 'creative-type') {
+                        isCompleted = true
+                      } else if (step.key === 'template-selection' && (selectedCreativeType === 'copy' || selectedCreativeType === 'custom' || selectedCreativeType === 'auto')) {
+                        isCompleted = true
+                      }
+                    } else {
+                      // Standard completion logic for other steps
+                      isCompleted = index < ['upload', 'creative-type', 'template-selection', 'customization'].indexOf(currentStep)
+                    }
+                    
                     const isLast = index === 3
 
                     return (
