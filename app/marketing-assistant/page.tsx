@@ -1242,41 +1242,47 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Optimized Grid Layout - Better space utilization */}
-          <div className="px-8 lg:px-16 xl:px-24 space-y-6 animate-in fade-in duration-300">
+          {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
+          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Row - Campaign Management spans full width */}
+            {/* Top Section - Horizontal Blended Performance Metrics */}
             <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              <BlendedWidgetsTable 
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
             </div>
 
-            {/* Middle Row - Three equal columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">
+            {/* Middle Section - Other widgets to be arranged */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              {/* Left: Blended Performance Metrics */}
-              <div className="lg:col-span-1 h-full">
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
-                />
+              {/* Campaign Management */}
+              <div className="h-full">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
               </div>
 
-              {/* Center: Performance Chart */}
-              <div className="lg:col-span-1 h-full">
+              {/* AI Daily Report */}
+              <div className="h-full">
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              </div>
+
+            </div>
+
+            {/* Bottom Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Ad Creative Breakdown */}
+              <div className="h-full">
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              </div>
+
+              {/* Performance Chart */}
+              <div className="h-full">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
                 />
               </div>
 
-              {/* Right: Ad Creative Breakdown */}
-              <div className="lg:col-span-1 h-full">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-              </div>
-
-            </div>
-
-            {/* Bottom Section - AI Daily Report spans full width */}
-            <div className="w-full">
-              <AIDailyReport preloadedReport={preloadedData.dailyReport} />
             </div>
 
           </div>

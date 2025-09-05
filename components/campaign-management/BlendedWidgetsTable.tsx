@@ -55,6 +55,7 @@ interface BudgetData {
 
 interface BlendedWidgetsTableProps {
   metaMetrics: MetaMetrics
+  layout?: 'vertical' | 'horizontal'
   // Remove loading props
   // isLoadingMetrics: boolean
   // isRefreshingData: boolean
@@ -245,7 +246,8 @@ function BlendedMetricCard({
 }
 
 export default function BlendedWidgetsTable({ 
-  metaMetrics
+  metaMetrics,
+  layout = 'vertical'
   // Remove loading props
   // isLoadingMetrics, 
   // isRefreshingData 
@@ -377,6 +379,176 @@ export default function BlendedWidgetsTable({
   }
 
 
+
+  if (layout === 'horizontal') {
+    return (
+      <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333] rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+                          flex items-center justify-center border border-white/10 shadow-lg">
+              <Layers className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">Blended Performance Metrics</h2>
+              <p className="text-gray-400 font-medium text-sm">Unified view across all platforms</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Horizontal Content - Budget pill on left, 8 metrics in 2x4 grid on right */}
+        <div className="p-4">
+          <div className="flex gap-4">
+            
+            {/* Left: Budget Usage Pill (Vertical) */}
+            <div className="flex-shrink-0 w-40">
+              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full">
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg flex items-center justify-center mb-3">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-300 mb-2">Budget Usage</h3>
+                  <div className="text-2xl font-semibold text-white mb-1">
+                    {(budgetData.budgetUsedPercentage).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ${budgetData.totalSpend.toFixed(0)} / ${budgetData.totalBudget.toFixed(0)}
+                  </div>
+                  <div className="w-full bg-[#1a1a1a] rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-gradient-to-r from-gray-500 to-gray-400 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(budgetData.budgetUsedPercentage, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: 8 Metrics in 2x4 Grid */}
+            <div className="flex-1">
+              <div className="grid grid-cols-4 gap-3 h-full">
+                {/* Row 1 - Top 4 metrics */}
+                <div>
+                  <BlendedMetricCard
+                    icon={DollarSign}
+                    iconColor="bg-gradient-to-br from-green-600/20 to-green-700/30"
+                    title="Ad Spend"
+                    value={metaMetrics.adSpend}
+                    change={metaMetrics.adSpendGrowth}
+                    prefix="$"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true }
+                    ]}
+                  />
+                </div>
+                
+                <div>
+                  <BlendedMetricCard
+                    icon={Eye}
+                    iconColor="bg-gradient-to-br from-blue-600/20 to-blue-700/30"
+                    title="Impressions"
+                    value={metaMetrics.impressions}
+                    change={metaMetrics.impressionGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={MousePointer}
+                    iconColor="bg-gradient-to-br from-purple-600/20 to-purple-700/30"
+                    title="Clicks"
+                    value={metaMetrics.clicks}
+                    change={metaMetrics.clickGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={Target}
+                    iconColor="bg-gradient-to-br from-orange-600/20 to-orange-700/30"
+                    title="Conversions"
+                    value={metaMetrics.conversions}
+                    change={metaMetrics.conversionGrowth}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true }
+                    ]}
+                  />
+                </div>
+
+                {/* Row 2 - Bottom 4 metrics */}
+                <div>
+                  <BlendedMetricCard
+                    icon={Percent}
+                    iconColor="bg-gradient-to-br from-cyan-600/20 to-cyan-700/30"
+                    title="CTR"
+                    value={metaMetrics.ctr}
+                    change={metaMetrics.ctrGrowth}
+                    suffix="%"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={DollarSign}
+                    iconColor="bg-gradient-to-br from-red-600/20 to-red-700/30"
+                    title="CPC"
+                    value={metaMetrics.cpc}
+                    change={metaMetrics.cpcGrowth}
+                    prefix="$"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={TrendingUp}
+                    iconColor="bg-gradient-to-br from-amber-600/20 to-amber-700/30"
+                    title="ROAS"
+                    value={metaMetrics.roas}
+                    change={metaMetrics.roasGrowth}
+                    suffix="x"
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <BlendedMetricCard
+                    icon={Users}
+                    iconColor="bg-gradient-to-br from-indigo-600/20 to-indigo-700/30"
+                    title="Frequency"
+                    value={metaMetrics.frequency}
+                    change={null}
+                    decimals={2}
+                    platforms={[
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true }
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">

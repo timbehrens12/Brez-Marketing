@@ -891,7 +891,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
                   height={20} 
                   className="object-contain rounded"
                 />
-              </div>
+          </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-white font-semibold text-base truncate">
                   {campaign.campaign_name}
