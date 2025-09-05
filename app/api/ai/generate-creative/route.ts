@@ -365,6 +365,33 @@ ${backgroundPreset.prompt}`;
           break;
         } else if (part.text) {
           console.log('📝 Text response from Gemini:', part.text.substring(0, 200) + '...');
+          
+          // Check if this is a content policy refusal
+          const refusalKeywords = [
+            'cannot fulfill this request',
+            'unable to generate',
+            'harmful stereotypes',
+            'offensive',
+            'inappropriate',
+            'against my guidelines',
+            'policy violation',
+            'cannot create',
+            'refuse to create',
+            'not appropriate'
+          ];
+          
+          const isRefusal = refusalKeywords.some(keyword => 
+            part.text.toLowerCase().includes(keyword.toLowerCase())
+          );
+          
+          if (isRefusal) {
+            console.log('🚫 Gemini refused to generate content due to policy violation');
+            return NextResponse.json({
+              error: 'Content Policy Violation',
+              message: 'Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.',
+              userFriendly: true
+            }, { status: 400 });
+          }
         }
       }
 
