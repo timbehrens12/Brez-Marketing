@@ -3104,9 +3104,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
     // Check storage limits
     if (generatedCreatives.length >= STORAGE_LIMIT) {
-      toast.error(`Storage Full! You've reached your limit of ${STORAGE_LIMIT} saved creatives. Please delete some stored creatives to generate new ones.`, {
-        duration: 6000
-      })
+      alert(`Library is full! Delete some creatives to generate new ones. (${STORAGE_LIMIT}/${STORAGE_LIMIT})`)
       return
     }
 
@@ -3469,7 +3467,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
 
     // Check storage limits
     if (generatedCreatives.length >= STORAGE_LIMIT) {
-      toast.error(`You've reached your storage limit of ${STORAGE_LIMIT} saved creatives. Please delete some before creating new ones.`)
+      alert(`Library is full! Delete some creatives to generate new ones. (${STORAGE_LIMIT}/${STORAGE_LIMIT})`)
       return
     }
 
@@ -5093,7 +5091,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               <textarea
                 value={customTemplatePrompt}
                 onChange={(e) => setCustomTemplatePrompt(e.target.value)}
-                placeholder="Describe your creative vision. Be descriptive and include any specific details you want: background, lighting, colors, text, style, mood, etc..."
+                placeholder="Describe your creative vision! Include background, lighting, setting, mood, colors, style, and any specific elements you want. Be descriptive and detailed about your product display."
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
@@ -5261,8 +5259,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                     return
                   }
 
-                  if (customTemplatePrompt.trim().length < 5) {
-                    toast.error('Please enter a prompt describing what you want')
+                  if (customTemplatePrompt.trim().length < 20) {
+                    toast.error('Please enter a more detailed prompt (at least 20 characters)')
                     return
                   }
 
@@ -5289,11 +5287,11 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
-                    : customTemplatePrompt.trim().length < 5
+                    : customTemplatePrompt.trim().length < 20
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 5}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 20}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
@@ -5306,7 +5304,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
-                    ) : customTemplatePrompt.trim().length < 5 ? (
+                    ) : customTemplatePrompt.trim().length < 20 ? (
                       <span className="text-gray-500">Enter prompt</span>
                     ) : (
                       <span className="text-gray-500">Click to generate</span>
