@@ -1263,12 +1263,7 @@ export default function MarketingAssistantPage() {
 
             </div>
 
-            {/* Middle Section - Campaign Management spans full width */}
-            <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-            </div>
-
-            {/* Bottom Section */}
+            {/* Second Section - Ad Creative Performance and Performance Trends side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Ad Creative Breakdown */}
@@ -1283,6 +1278,11 @@ export default function MarketingAssistantPage() {
                 />
               </div>
 
+            </div>
+
+            {/* Bottom Section - Campaign Management spans full width */}
+            <div className="w-full">
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
 
           </div>
