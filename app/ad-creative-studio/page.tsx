@@ -1486,6 +1486,14 @@ export default function AdCreativeStudioPage() {
     }
   }, [selectedCreativeType, autoPromptAdditions])
 
+  // Clear auto instructions when uploading a new image/product
+  useEffect(() => {
+    // Clear auto instructions when a new product image is uploaded
+    if (autoPromptAdditions.trim()) {
+      setAutoPromptAdditions('')
+    }
+  }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
+
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to refresh usage count from database
