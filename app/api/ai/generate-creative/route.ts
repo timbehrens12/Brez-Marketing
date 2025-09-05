@@ -282,10 +282,20 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      // Build the content array for Gemini - Try minimal prompt approach
+      // Build the content array for Gemini - Add text boundary enforcement
       const contentArray = [
         {
-          text: "Create a professional advertisement image with this product. Make it visually appealing with text overlays."
+          text: `Create a professional advertisement image with this product. Make it visually appealing with text overlays.
+
+CRITICAL TEXT PLACEMENT RULES:
+- ALL text must be COMPLETELY within the image boundaries
+- Leave at least 40 pixels margin from all edges for text
+- Never allow text to be cut off or clipped at image borders
+- Ensure headlines fit entirely within the visible area
+- Position text in safe zones away from edges
+- Test that all text elements are fully readable and visible
+
+Format: 1024x1536 portrait. Professional advertising quality.`
         }
       ];
       
