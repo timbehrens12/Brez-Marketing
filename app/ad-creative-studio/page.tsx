@@ -3117,48 +3117,45 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
 
-EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
-- Placing headline at y=0, y=50, y=100, y=200, y=300, y=400 (ALL THESE CAUSE CLIPPING)
-- Text starting near top edge of canvas
-- Large fonts that extend beyond canvas boundaries
+DESIGN VARIETY - Choose ONE of these creative approaches:
+1. HERO PRODUCT: Large product as main focus with minimal text overlay
+2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
+3. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+5. TESTIMONIAL STYLE: Include review quotes or social proof elements
+6. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
-EXACT LAYOUT REQUIREMENTS FOR 1024×1536 PORTRAIT:
+MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
+- Specific product benefits (not just "perfect fit" or "essential")
+- Emotional triggers related to the product category
+- Unique selling propositions that differentiate this product
+- Action-oriented language that creates urgency or desire
+- Creative wordplay or memorable phrases when appropriate
 
-BACKGROUND LAYER (STEP 1):
-- Create full canvas background (1024×1536)
-- Use gradient, solid color, or simple pattern
-- Keep design simple near where text will be placed
+LAYOUT FLEXIBILITY:
+- Text can be positioned anywhere that looks compelling (top, middle, bottom, side)
+- Product size and position should vary based on the chosen approach
+- Use creative typography - different fonts, sizes, styles for emphasis
+- Experiment with text layouts: diagonal, curved, stacked, scattered
+- Background can be minimalist, gradient, textured, or environmental
 
-HEADLINE TEXT LAYER (STEP 2):
-- Text positioning: Center horizontally at x=512, vertically at y=700
-- This means text baseline is at y=700 (far from top edge)
-- Font size: 48px maximum, bold weight
-- Text width: Keep under 400px total width
-- High contrast color (black on light background or white on dark)
-- Example: "BACK TO SCHOOL ESSENTIALS" positioned at exactly y=700
+TECHNICAL REQUIREMENTS:
+- Canvas: 1024×1536 portrait format
+- Ensure all text is readable and within canvas boundaries  
+- Maintain professional advertising quality
+- Use high contrast for text visibility
+- Keep mobile-first design principles
 
-PRODUCT IMAGE LAYER (STEP 3):
-- Product image: Center at x=512, y=900
-- Maximum size: 400×400 pixels
-- Ensure product fits entirely within this box
-- Add subtle drop shadow if desired but keep within bounds
+AVOID REPETITIVE PATTERNS:
+- Don't always center everything
+- Vary headline lengths and styles
+- Mix up CTA button styles and positions
+- Try different color schemes and moods
+- Experiment with product presentation angles
 
-CTA BUTTON LAYER (STEP 4):
-- Button/text: Center at x=512, y=1200
-- Font size: 42px maximum
-- Button dimensions: 300×80px maximum
-- High contrast color for visibility
-- Example: "SHOP NOW" button at exactly y=1200
-
-CRITICAL SUCCESS VALIDATION:
-✓ Is headline text baseline at y=700 or lower? (NOT y=0-699)
-✓ Does headline fit entirely within canvas when rendered?
-✓ Is product image centered at y=900?
-✓ Is CTA positioned at y=1200?
-
-GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 900, 1200) to prevent any text clipping.${autoInstructions}${textPromptAddition}`
+CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3478,48 +3475,45 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `CRITICAL ISSUE: Previous AI outputs had text clipping at top edge (text getting cut off). This MUST be prevented.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
 
-EXAMPLE OF WHAT NOT TO DO (CAUSES CLIPPING):
-- Placing headline at y=0, y=50, y=100, y=200, y=300, y=400 (ALL THESE CAUSE CLIPPING)
-- Text starting near top edge of canvas
-- Large fonts that extend beyond canvas boundaries
+DESIGN VARIETY - Choose ONE of these creative approaches:
+1. HERO PRODUCT: Large product as main focus with minimal text overlay
+2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
+3. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+5. TESTIMONIAL STYLE: Include review quotes or social proof elements
+6. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
-EXACT LAYOUT REQUIREMENTS FOR 1024×1536 PORTRAIT:
+MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
+- Specific product benefits (not just "perfect fit" or "essential")
+- Emotional triggers related to the product category
+- Unique selling propositions that differentiate this product
+- Action-oriented language that creates urgency or desire
+- Creative wordplay or memorable phrases when appropriate
 
-BACKGROUND LAYER (STEP 1):
-- Create full canvas background (1024×1536)
-- Use gradient, solid color, or simple pattern
-- Keep design simple near where text will be placed
+LAYOUT FLEXIBILITY:
+- Text can be positioned anywhere that looks compelling (top, middle, bottom, side)
+- Product size and position should vary based on the chosen approach
+- Use creative typography - different fonts, sizes, styles for emphasis
+- Experiment with text layouts: diagonal, curved, stacked, scattered
+- Background can be minimalist, gradient, textured, or environmental
 
-HEADLINE TEXT LAYER (STEP 2):
-- Text positioning: Center horizontally at x=512, vertically at y=700
-- This means text baseline is at y=700 (far from top edge)
-- Font size: 48px maximum, bold weight
-- Text width: Keep under 400px total width
-- High contrast color (black on light background or white on dark)
-- Example: "BACK TO SCHOOL ESSENTIALS" positioned at exactly y=700
+TECHNICAL REQUIREMENTS:
+- Canvas: 1024×1536 portrait format
+- Ensure all text is readable and within canvas boundaries  
+- Maintain professional advertising quality
+- Use high contrast for text visibility
+- Keep mobile-first design principles
 
-PRODUCT IMAGE LAYER (STEP 3):
-- Product image: Center at x=512, y=900
-- Maximum size: 400×400 pixels
-- Ensure product fits entirely within this box
-- Add subtle drop shadow if desired but keep within bounds
+AVOID REPETITIVE PATTERNS:
+- Don't always center everything
+- Vary headline lengths and styles
+- Mix up CTA button styles and positions
+- Try different color schemes and moods
+- Experiment with product presentation angles
 
-CTA BUTTON LAYER (STEP 4):
-- Button/text: Center at x=512, y=1200
-- Font size: 42px maximum
-- Button dimensions: 300×80px maximum
-- High contrast color for visibility
-- Example: "SHOP NOW" button at exactly y=1200
-
-CRITICAL SUCCESS VALIDATION:
-✓ Is headline text baseline at y=700 or lower? (NOT y=0-699)
-✓ Does headline fit entirely within canvas when rendered?
-✓ Is product image centered at y=900?
-✓ Is CTA positioned at y=1200?
-
-GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 900, 1200) to prevent any text clipping.${autoInstructions}${textPromptAddition}`
+CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
