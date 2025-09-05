@@ -2856,14 +2856,19 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     // UUIDs have the format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(creativeId)) {
-      // console.log('🚫 Skipping image load for non-UUID creative ID:', creativeId)
+      return
+    }
+
+    // Check if this creative exists in our current state and has been saved to database
+    const creative = generatedCreatives.find(c => c.id === creativeId)
+    if (!creative || creative.status === 'generating') {
+      // Skip fetch for unsaved or still-generating creatives to avoid 404s
       return
     }
 
     setLoadingImages(prev => new Set(prev).add(creativeId))
 
     try {
-      // console.log('🖼️ Loading images for creative:', creativeId)
       const response = await fetch(`/api/creative-images?id=${creativeId}`)
       
       if (!response.ok) {
