@@ -282,20 +282,28 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      // Build the content array for Gemini - Add text boundary enforcement
+      // Build the content array for Gemini - Strengthen text boundary enforcement
       const contentArray = [
         {
           text: `Create a professional advertisement image with this product. Make it visually appealing with text overlays.
 
-CRITICAL TEXT PLACEMENT RULES:
-- ALL text must be COMPLETELY within the image boundaries
-- Leave at least 40 pixels margin from all edges for text
-- Never allow text to be cut off or clipped at image borders
-- Ensure headlines fit entirely within the visible area
-- Position text in safe zones away from edges
-- Test that all text elements are fully readable and visible
+MANDATORY TEXT SAFETY RULES - ZERO TOLERANCE FOR CLIPPING:
+- TEXT MUST BE 100% INSIDE IMAGE BOUNDARIES - NO EXCEPTIONS
+- MINIMUM 60 pixel margin from ALL edges (top, bottom, left, right)
+- Use CENTER-WEIGHTED text positioning - avoid edges completely
+- Create invisible text safety zones: top 15%, bottom 15%, left 10%, right 10% are OFF-LIMITS for text
+- All headlines, subtext, and CTAs must fit in the central 70% of the canvas
+- If text is too long, make it SMALLER or break into multiple lines
+- NEVER extend text beyond visible canvas area
+- Test every text element: can you see the entire word/phrase clearly?
 
-Format: 1024x1536 portrait. Professional advertising quality.`
+COMPOSITION RULES:
+- Product in center, text in safe zones around it
+- Use vertical text stacking in center column when needed
+- Prefer shorter, punchier headlines over long ones
+- Background must contrast with text for visibility
+
+Format: 1024x1536 portrait. Professional advertising quality with ZERO text clipping.`
         }
       ];
       

@@ -5582,11 +5582,6 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                       placeholder="Tell the AI what you want! Example: 'Focus on luxury feel', 'Target young adults', 'Add text saying NEW ARRIVAL', 'Use specific colors', 'Include call-to-action buttons', 'Emphasize key features'..."
                       className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs flex-1"
                     />
-                    {autoPromptAdditions.trim() && (
-                      <div className="mt-2 text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded px-2 py-1">
-                        ⚠️ Current instructions: "{autoPromptAdditions.slice(0, 50)}{autoPromptAdditions.length > 50 ? '...' : ''}"
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
