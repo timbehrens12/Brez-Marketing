@@ -1255,9 +1255,9 @@ export default function MarketingAssistantPage() {
                 />
               </div>
 
-              {/* Right Top: AI Daily Report - Takes remaining width on top */}
+              {/* Right Top: Campaign Management - Takes remaining width on top */}
               <div className="lg:col-span-8 lg:row-span-1">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
               </div>
 
               {/* Right Middle Left: Ad Creative Breakdown */}
@@ -1274,11 +1274,9 @@ export default function MarketingAssistantPage() {
 
             </div>
 
-            {/* Bottom Section - Campaign Management spans full width */}
+            {/* Bottom Section - AI Daily Report spans full width */}
             <div className="w-full">
-              <div className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-[#1a1a1a] rounded-xl overflow-hidden">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-              </div>
+              <AIDailyReport preloadedReport={preloadedData.dailyReport} />
             </div>
 
           </div>
