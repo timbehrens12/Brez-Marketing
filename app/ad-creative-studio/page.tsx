@@ -2866,13 +2866,19 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       return
     }
 
+    // CRITICAL: Only fetch for creatives that have imageUrl - this means they were successfully saved
+    if (!creative.imageUrl) {
+      // Skip if no imageUrl exists - this means it wasn't saved to database yet
+      return
+    }
+
     // Additional check: If the creative was just completed, wait a moment for database save
     if (creative.status === 'completed') {
       const createdAt = new Date(creative.created_at || creative.updated_at || Date.now())
       const timeSinceCreation = Date.now() - createdAt.getTime()
       
-      // If created less than 2 seconds ago, skip to avoid race condition with database save
-      if (timeSinceCreation < 2000) {
+      // If created less than 5 seconds ago, skip to avoid race condition with database save
+      if (timeSinceCreation < 5000) {
         return
       }
     }
