@@ -2908,6 +2908,35 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       return
     }
 
+    // Check if all images are portrait (height > width)
+    const checkPortraitImages = async (files: File[]) => {
+      const promises = files.map(file => {
+        return new Promise<{ file: File, isPortrait: boolean }>((resolve) => {
+          const img = new Image()
+          img.onload = () => {
+            const isPortrait = img.height > img.width
+            resolve({ file, isPortrait })
+          }
+          img.onerror = () => resolve({ file, isPortrait: false })
+          img.src = URL.createObjectURL(file)
+        })
+      })
+      
+      const results = await Promise.all(promises)
+      const nonPortraitFiles = results.filter(r => !r.isPortrait)
+      
+      if (nonPortraitFiles.length > 0) {
+        toast.error('Only portrait images (taller than wide) are allowed. Please upload portrait-oriented images for best results.')
+        return false
+      }
+      return true
+    }
+
+    const isValidOrientation = await checkPortraitImages(imageFiles)
+    if (!isValidOrientation) {
+      return
+    }
+
     // Check if we're adding to existing images or starting fresh
     const hasExistingImages = uploadedImages.length > 0 || uploadedImage !== null
     
@@ -3904,11 +3933,10 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                 <div>
                   <h4 className="text-orange-400 font-semibold mb-2">📸 Pro Tips for Best Results</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
-                      <li>• <strong>Upload portrait images when possible</strong> - AI works better with taller-than-wide product photos</li>
+                      <li>• <strong>Portrait images only</strong> - Only taller-than-wide images are accepted for optimal AI generation</li>
                       <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
                       <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
                     <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
-                    <li>• <strong>Multiple angles welcome</strong> - Upload different product views for varied creative options</li>
                     <li>• <strong>Avoid heavy filters</strong> - Use natural, unedited photos for most accurate reproduction</li>
                   </ul>
                 </div>
