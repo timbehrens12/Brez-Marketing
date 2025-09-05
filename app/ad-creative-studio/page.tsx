@@ -1476,6 +1476,16 @@ export default function AdCreativeStudioPage() {
     }
   }, [currentStep])
 
+  // Clear auto instructions when switching away from auto creative type
+  useEffect(() => {
+    if (selectedCreativeType && selectedCreativeType !== 'auto') {
+      // Clear auto instructions when switching to a different creative type
+      if (autoPromptAdditions.trim()) {
+        setAutoPromptAdditions('')
+      }
+    }
+  }, [selectedCreativeType, autoPromptAdditions])
+
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to refresh usage count from database
@@ -5467,13 +5477,28 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
 
                   {/* Optional Custom Instructions */}
                   <div className="flex-1 flex flex-col">
-                    <label className="text-white font-medium mb-3">Additional Instructions (Optional)</label>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-white font-medium">Additional Instructions (Optional)</label>
+                      {autoPromptAdditions.trim() && (
+                        <button
+                          onClick={() => setAutoPromptAdditions('')}
+                          className="text-xs text-red-400 hover:text-red-300 underline transition-colors"
+                        >
+                          Clear Instructions
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       value={autoPromptAdditions}
                       onChange={(e) => setAutoPromptAdditions(e.target.value)}
                       placeholder="Any specific requirements? Example: 'Focus on luxury feel', 'Target young adults', 'Emphasize eco-friendly aspect', 'Use warm colors'..."
                       className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs flex-1"
                     />
+                    {autoPromptAdditions.trim() && (
+                      <div className="mt-2 text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded px-2 py-1">
+                        ⚠️ Current instructions: "{autoPromptAdditions.slice(0, 50)}{autoPromptAdditions.length > 50 ? '...' : ''}"
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
