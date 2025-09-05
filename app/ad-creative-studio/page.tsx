@@ -5257,7 +5257,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
         <div className="bg-amber-600/5 border border-amber-500/10 rounded px-2 py-0.5 mb-1">
           <div className="text-amber-200 text-xs flex items-center gap-1">
             <span>⚠️</span>
-            <span>AI struggles with non-portrait images - avoid wide/rectangular products</span>
+            <span>Use clear, unobstructed product images - avoid busy backgrounds or models posing with products</span>
           </div>
         </div>
 
@@ -5461,7 +5461,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                   <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded px-3 py-1 mb-2">
                     <div className="text-amber-200 text-xs flex items-center gap-1">
                       <span>⚠️</span>
-                      <span>AI struggles with non-portrait uploaded images - for best results avoid wide/rectangular products</span>
+                      <span>Use clear, unobstructed product images and templates - avoid models posing or busy backgrounds for best AI results</span>
                     </div>
                   </div>
 
