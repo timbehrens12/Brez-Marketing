@@ -1245,37 +1245,36 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Blended Performance Metrics (70%) and AI Daily Report (30%) */}
+            {/* Top Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
             <div className="flex gap-6">
               
-              {/* Left: Horizontal Blended Performance Metrics - 70% width */}
-              <div className="flex-1" style={{ flexBasis: '70%' }}>
+              {/* Left: Blended Performance Metrics with nested widgets below - 70% width */}
+              <div className="flex-1 space-y-6" style={{ flexBasis: '70%' }}>
+                {/* Blended Performance Metrics */}
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                   layout="horizontal"
                 />
+                
+                {/* Nested widgets under Blended Metrics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Ad Creative Breakdown */}
+                  <div className="h-full">
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  </div>
+
+                  {/* Performance Chart */}
+                  <div className="h-full">
+                    <PerformanceChart 
+                      preloadedPerformanceData={preloadedData.performanceData}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Right: AI Daily Report - 30% width */}
-              <div className="flex-1" style={{ flexBasis: '30%' }}>
+              {/* Right: AI Daily Report - 30% width, extends full height */}
+              <div className="flex-1 h-full" style={{ flexBasis: '30%' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-              </div>
-
-            </div>
-
-            {/* Second Section - Ad Creative Performance and Performance Trends side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              {/* Ad Creative Breakdown */}
-              <div className="h-full">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-              </div>
-
-              {/* Performance Chart */}
-              <div className="h-full">
-                <PerformanceChart 
-                  preloadedPerformanceData={preloadedData.performanceData}
-                />
               </div>
 
             </div>
