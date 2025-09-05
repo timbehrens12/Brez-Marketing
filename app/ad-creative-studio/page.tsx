@@ -1157,7 +1157,7 @@ export default function AdCreativeStudioPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
   // Weekly usage system - 85 generations per week (universal)
-  const WEEKLY_LIMIT = 95
+  const WEEKLY_LIMIT = 100
   const STORAGE_LIMIT = 50 // Maximum saved creatives per brand
   const [usageData, setUsageData] = useState({
     current: 0,

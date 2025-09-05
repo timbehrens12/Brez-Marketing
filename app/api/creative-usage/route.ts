@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/server'
 
-const WEEKLY_CREATIVE_LIMIT = 95
+const WEEKLY_CREATIVE_LIMIT = 100
 const USAGE_FEATURE_TYPE = 'creative_generation'
 
 export async function GET(request: NextRequest) {
