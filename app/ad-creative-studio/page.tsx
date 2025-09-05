@@ -4594,15 +4594,15 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT
+                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT ? (
+                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
@@ -4611,6 +4611,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
+                    ) : generatedCreatives.length >= STORAGE_LIMIT ? (
+                      <span className="text-red-400">Library full</span>
                     ) : (
                       <span className="text-gray-500">Click to generate</span>
                     )}
@@ -4804,15 +4806,15 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT
+                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
                             >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT ? (
+                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
@@ -4821,6 +4823,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
+                    ) : generatedCreatives.length >= STORAGE_LIMIT ? (
+                      <span className="text-red-400">Library full</span>
                     ) : (
                       <span className="text-gray-500">Click to generate</span>
                     )}
@@ -5285,17 +5289,17 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT
+                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || customTemplatePrompt.trim().length < 20}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT || customTemplatePrompt.trim().length < 20}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT ? (
+                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
@@ -5304,6 +5308,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
+                    ) : generatedCreatives.length >= STORAGE_LIMIT ? (
+                      <span className="text-red-400">Library full</span>
                     ) : customTemplatePrompt.trim().length < 20 ? (
                       <span className="text-gray-500">Enter prompt</span>
                     ) : (
@@ -5470,17 +5476,17 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   }
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
-                  usageData.current >= WEEKLY_LIMIT
+                  usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
                     : !exampleCreativeImage
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || !exampleCreativeImage}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT || !exampleCreativeImage}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT ? (
+                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
@@ -5489,6 +5495,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
+                    ) : generatedCreatives.length >= STORAGE_LIMIT ? (
+                      <span className="text-red-400">Library full</span>
                     ) : !exampleCreativeImage ? (
                       <span className="text-gray-500">Upload example</span>
                     ) : (
@@ -5597,11 +5605,11 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   await generateImageFromTemplate(selectedTemplate!)
                 }}
                 className="relative w-full h-full rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
-                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
-                ) : usageData.current >= WEEKLY_LIMIT ? (
+                ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
                   <Ban className="w-8 h-8 text-red-400" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
@@ -5610,6 +5618,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
                       <span className="text-red-400">Limit reached</span>
+                    ) : generatedCreatives.length >= STORAGE_LIMIT ? (
+                      <span className="text-red-400">Library full</span>
                     ) : (
                       <span className="text-white">Click to generate</span>
                     )}
@@ -6192,7 +6202,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   }
                 }}
                 className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
-                disabled={isGenerating}
+                disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
               >
                 {isGenerating ? (
                   <>
