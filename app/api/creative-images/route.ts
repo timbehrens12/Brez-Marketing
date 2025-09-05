@@ -19,8 +19,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Creative ID is required' }, { status: 400 })
     }
 
-    console.log('🖼️ Fetching images for creative:', creativeId)
-
     // Get image URLs for the specific creative using direct query
     const { data, error } = await supabase
       .from('creative_generations')
@@ -29,14 +27,10 @@ export async function GET(req: NextRequest) {
       .single()
 
     if (error) {
-      console.error('❌ Error fetching creative images:', error)
-      
-      // If no rows found, provide specific error
+      // If no rows found, silently return 404 (this is expected for unsaved creatives)
       if (error.code === 'PGRST116') {
-        console.log(`🔍 Creative ${creativeId} not found in database`)
         return NextResponse.json({ 
           error: 'Creative not found',
-          details: `Creative with ID ${creativeId} does not exist in database`,
           code: 'CREATIVE_NOT_FOUND'
         }, { status: 404 })
       }
@@ -49,17 +43,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (!data) {
-      console.log(`🔍 Creative ${creativeId} returned null data`)
       return NextResponse.json({ error: 'Creative not found' }, { status: 404 })
     }
-
-    console.log('✅ Successfully fetched creative:', {
-      id: data.id,
-      createdAt: data.created_at,
-      status: data.status,
-      hasOriginal: !!data.original_image_url,
-      hasGenerated: !!data.generated_image_url
-    })
 
     // console.log('✅ Successfully fetched images for creative')
     return NextResponse.json({ 

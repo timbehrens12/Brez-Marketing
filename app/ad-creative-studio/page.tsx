@@ -2871,7 +2871,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         
         // If creative not found, it might be a timing issue with unsaved creatives
         if (response.status === 404 && errorData.code === 'CREATIVE_NOT_FOUND') {
-          console.log(`⏳ Creative ${creativeId} not yet saved to database, skipping image load`)
           return
         }
         
@@ -3349,9 +3348,14 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
 
       if (!response.ok) {
         const errorData = await response.json()
-        // Silent error handling
         updateCreativeStatus(creativeId, 'failed')
-        toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+        
+        // Handle policy violations specifically
+        if (response.status === 400 && errorData.error === 'Content Policy Violation') {
+          toast.error('🚫 Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.')
+        } else {
+          toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+        }
         return
       }
 
@@ -3745,9 +3749,14 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
 
       if (!response.ok) {
         const errorData = await response.json()
-        // Silent error handling
         updateCreativeStatus(creativeId, 'failed')
-        toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+        
+        // Handle policy violations specifically
+        if (response.status === 400 && errorData.error === 'Content Policy Violation') {
+          toast.error('🚫 Our AI cannot generate this content as it violates safety policies. Please use appropriate product images and descriptions.')
+        } else {
+          toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+        }
         return
       }
 
