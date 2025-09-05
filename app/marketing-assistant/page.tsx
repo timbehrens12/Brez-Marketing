@@ -1243,7 +1243,7 @@ export default function MarketingAssistantPage() {
           />
 
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
+          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300 pb-24">
             
             {/* Top Section - Campaign Management spans full width with scrolling */}
             <div className="w-full">
