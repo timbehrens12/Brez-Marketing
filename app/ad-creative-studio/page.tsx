@@ -3171,26 +3171,33 @@ ENVIRONMENTAL REQUIREMENTS:
 - Create depth and atmosphere in every scene
 - Make backgrounds feel authentic and lived-in, not artificial
 
-CREATIVE EXECUTION:
-- Use dynamic angles and perspectives
-- Incorporate natural lighting and shadows
-- Add environmental storytelling elements
-- Include complementary objects and scenery
-- Create immersive, magazine-quality compositions
-
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
-- Specific product benefits tied to the environment shown
-- Emotional triggers related to the lifestyle/setting
-- Unique selling propositions that match the scene
+- Specific product benefits (not just "perfect fit" or "essential")
+- Emotional triggers related to the product category
+- Unique selling propositions that differentiate this product
 - Action-oriented language that creates urgency or desire
 - Creative wordplay or memorable phrases when appropriate
+
+LAYOUT FLEXIBILITY:
+- Text can be positioned anywhere that looks compelling (top, middle, bottom, side)
+- Product size and position should vary based on the chosen approach
+- Use creative typography - different fonts, sizes, styles for emphasis
+- Experiment with text layouts: diagonal, curved, stacked, scattered
+- Background must be rich, detailed, and environmental - NO minimalist or simple gradients
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
 - Ensure all text is readable and within canvas boundaries  
-- Maintain high-end advertising quality like premium brand campaigns
-- Use high contrast for text visibility against rich backgrounds
+- Maintain professional advertising quality
+- Use high contrast for text visibility
 - Keep mobile-first design principles
+
+AVOID REPETITIVE PATTERNS:
+- Don't always center everything
+- Vary headline lengths and styles
+- Mix up CTA button styles and positions
+- Try different color schemes and moods
+- Experiment with product presentation angles
 
 CREATE SOMETHING CINEMATIC: Make each ad feel like a premium lifestyle campaign, not a basic product advertisement.${autoInstructions}${textPromptAddition}`
     } else {
@@ -3515,49 +3522,45 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging, environmental way. NO LAZY GRADIENT BACKGROUNDS OR SIMPLE TEXT OVERLAYS.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
 
-MANDATORY CREATIVE APPROACHES - Choose ONE of these ONLY:
-1. REAL ENVIRONMENT: Product being used by real people in authentic, detailed settings (modern home, busy office, outdoor adventure, gym workout, trendy café, city street, etc.)
-2. LIFESTYLE SCENE: Product naturally integrated into realistic lifestyle contexts with rich environmental details
-3. MODEL SHOWCASE: Attractive people wearing/using/holding the product in photorealistic professional environments with depth and atmosphere
-4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation in realistic settings
-5. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments with authentic environmental backdrops
-
-FORBIDDEN APPROACHES - NEVER DO THESE:
-❌ Simple gradient backgrounds with floating text
-❌ Minimalist white/black backgrounds with centered product
-❌ Plain colored backgrounds with basic text overlay
-❌ Generic studio-style product shots
-❌ Lazy floating product + simple text combinations
-
-ENVIRONMENTAL REQUIREMENTS:
-- ALWAYS include rich, detailed, photorealistic backgrounds
-- Show real-world contexts where the product would actually be used
-- Include environmental elements: furniture, architecture, nature, people, lighting
-- Create depth and atmosphere in every scene
-- Make backgrounds feel authentic and lived-in, not artificial
-
-CREATIVE EXECUTION:
-- Use dynamic angles and perspectives
-- Incorporate natural lighting and shadows
-- Add environmental storytelling elements
-- Include complementary objects and scenery
-- Create immersive, magazine-quality compositions
+DESIGN VARIETY - Choose ONE of these creative approaches:
+1. HERO PRODUCT: Large product as main focus with minimal text overlay
+2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
+3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
+4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
+5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+7. TESTIMONIAL STYLE: Include review quotes or social proof elements
+8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
-- Specific product benefits tied to the environment shown
-- Emotional triggers related to the lifestyle/setting
-- Unique selling propositions that match the scene
+- Specific product benefits (not just "perfect fit" or "essential")
+- Emotional triggers related to the product category
+- Unique selling propositions that differentiate this product
 - Action-oriented language that creates urgency or desire
 - Creative wordplay or memorable phrases when appropriate
+
+LAYOUT FLEXIBILITY:
+- Text can be positioned anywhere that looks compelling (top, middle, bottom, side)
+- Product size and position should vary based on the chosen approach
+- Use creative typography - different fonts, sizes, styles for emphasis
+- Experiment with text layouts: diagonal, curved, stacked, scattered
+- Background must be rich, detailed, and environmental - NO minimalist or simple gradients
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
 - Ensure all text is readable and within canvas boundaries  
-- Maintain high-end advertising quality like premium brand campaigns
-- Use high contrast for text visibility against rich backgrounds
+- Maintain professional advertising quality
+- Use high contrast for text visibility
 - Keep mobile-first design principles
+
+AVOID REPETITIVE PATTERNS:
+- Don't always center everything
+- Vary headline lengths and styles
+- Mix up CTA button styles and positions
+- Try different color schemes and moods
+- Experiment with product presentation angles
 
 CREATE SOMETHING CINEMATIC: Make each ad feel like a premium lifestyle campaign, not a basic product advertisement.${autoInstructions}${textPromptAddition}`
     } else {
