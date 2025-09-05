@@ -1246,7 +1246,7 @@ export default function MarketingAssistantPage() {
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
             {/* Top Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
-            <div className="flex gap-6">
+            <div className="flex gap-6 items-start">
               
               {/* Left: Blended Performance Metrics with nested widgets below - 70% width */}
               <div className="flex-1 space-y-6" style={{ flexBasis: '70%' }}>
@@ -1257,14 +1257,14 @@ export default function MarketingAssistantPage() {
                 />
                 
                 {/* Nested widgets under Blended Metrics */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Ad Creative Breakdown */}
-                  <div className="h-full">
+                  <div className="h-[500px]">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
 
                   {/* Performance Chart */}
-                  <div className="h-full">
+                  <div className="h-[500px]">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1272,8 +1272,8 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right: AI Daily Report - 30% width, extends full height */}
-              <div className="flex-1 h-full" style={{ flexBasis: '30%' }}>
+              {/* Right: AI Daily Report - 30% width, matches left column height */}
+              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 500px)' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 

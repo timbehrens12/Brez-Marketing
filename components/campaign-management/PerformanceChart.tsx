@@ -301,7 +301,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   return (
     <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-[690px]">
       {/* Header - matches other widgets style */}
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -309,8 +309,10 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Performance Trends</h2>
-              <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
+              <h2 className="text-2xl text-white font-bold tracking-tight">Performance Trends</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
+              </div>
             </div>
           </div>
           
