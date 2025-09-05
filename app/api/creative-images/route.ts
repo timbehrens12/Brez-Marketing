@@ -19,26 +19,47 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Creative ID is required' }, { status: 400 })
     }
 
-    // console.log('🖼️ Fetching images for creative:', creativeId)
+    console.log('🖼️ Fetching images for creative:', creativeId)
 
     // Get image URLs for the specific creative using direct query
     const { data, error } = await supabase
       .from('creative_generations')
-      .select('id, original_image_url, generated_image_url')
+      .select('id, original_image_url, generated_image_url, created_at, status')
       .eq('id', creativeId)
       .single()
 
     if (error) {
-      console.error('Error fetching creative images:', error)
+      console.error('❌ Error fetching creative images:', error)
+      
+      // If no rows found, provide specific error
+      if (error.code === 'PGRST116') {
+        console.log(`🔍 Creative ${creativeId} not found in database`)
+        return NextResponse.json({ 
+          error: 'Creative not found',
+          details: `Creative with ID ${creativeId} does not exist in database`,
+          code: 'CREATIVE_NOT_FOUND'
+        }, { status: 404 })
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to fetch creative images',
-        details: error?.message 
+        details: error?.message,
+        code: error?.code 
       }, { status: 500 })
     }
 
     if (!data) {
+      console.log(`🔍 Creative ${creativeId} returned null data`)
       return NextResponse.json({ error: 'Creative not found' }, { status: 404 })
     }
+
+    console.log('✅ Successfully fetched creative:', {
+      id: data.id,
+      createdAt: data.created_at,
+      status: data.status,
+      hasOriginal: !!data.original_image_url,
+      hasGenerated: !!data.generated_image_url
+    })
 
     // console.log('✅ Successfully fetched images for creative')
     return NextResponse.json({ 

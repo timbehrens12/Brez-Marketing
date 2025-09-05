@@ -2867,7 +2867,15 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const response = await fetch(`/api/creative-images?id=${creativeId}`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch creative images')
+        const errorData = await response.json().catch(() => ({}))
+        
+        // If creative not found, it might be a timing issue with unsaved creatives
+        if (response.status === 404 && errorData.code === 'CREATIVE_NOT_FOUND') {
+          console.log(`⏳ Creative ${creativeId} not yet saved to database, skipping image load`)
+          return
+        }
+        
+        throw new Error(`Failed to fetch creative images: ${response.status} ${errorData.error || response.statusText}`)
       }
 
       const data = await response.json()
@@ -3263,7 +3271,23 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
           })
 
           if (saveResponse.ok) {
-  
+            const savedCreative = await saveResponse.json()
+            // Update the creative with the actual database ID
+            if (savedCreative.creative?.id) {
+              setGeneratedCreatives(prev => 
+                prev.map(c => c.id === creativeId ? { ...c, id: savedCreative.creative.id } : c)
+              )
+              // Update loaded images with correct ID
+              setLoadedImages(prev => {
+                const updated = { ...prev }
+                delete updated[creativeId]
+                updated[savedCreative.creative.id] = {
+                  original: uploadedImageUrls[0],
+                  generated: generatedImageUrl
+                }
+                return updated
+              })
+            }
           } else {
             // Silent error handling
           }
@@ -3365,7 +3389,23 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
       })
 
       if (saveResponse.ok) {
-        
+        const savedCreative = await saveResponse.json()
+        // Update the creative with the actual database ID
+        if (savedCreative.creative?.id) {
+          setGeneratedCreatives(prev => 
+            prev.map(c => c.id === creativeId ? { ...c, id: savedCreative.creative.id } : c)
+          )
+          // Update loaded images with correct ID
+          setLoadedImages(prev => {
+            const updated = { ...prev }
+            delete updated[creativeId]
+            updated[savedCreative.creative.id] = {
+              original: uploadedImageUrl,
+              generated: data.imageUrl
+            }
+            return updated
+          })
+        }
       } else {
         // Silent error handling
       }
@@ -3589,7 +3629,23 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
             if (!saveResponse.ok) {
               // Silent error handling
             } else {
-  
+              const savedCreative = await saveResponse.json()
+              // Update the creative with the actual database ID
+              if (savedCreative.creative?.id) {
+                setGeneratedCreatives(prev => 
+                  prev.map(c => c.id === creativeId ? { ...c, id: savedCreative.creative.id } : c)
+                )
+                // Update loaded images with correct ID
+                setLoadedImages(prev => {
+                  const updated = { ...prev }
+                  delete updated[creativeId]
+                  updated[savedCreative.creative.id] = {
+                    original: uploadedImageUrls[0],
+                    generated: data.imageUrl
+                  }
+                  return updated
+                })
+              }
             }
           } catch (saveError) {
             // Silent error handling
