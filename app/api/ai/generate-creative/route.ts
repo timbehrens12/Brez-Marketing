@@ -282,28 +282,31 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      // Build the content array for Gemini - Strengthen text boundary enforcement
+      // Build the content array for Gemini - Ultra-strict text boundaries and instruction following
       const contentArray = [
         {
           text: `Create a professional advertisement image with this product. Make it visually appealing with text overlays.
 
-MANDATORY TEXT SAFETY RULES - ZERO TOLERANCE FOR CLIPPING:
-- TEXT MUST BE 100% INSIDE IMAGE BOUNDARIES - NO EXCEPTIONS
-- MINIMUM 60 pixel margin from ALL edges (top, bottom, left, right)
-- Use CENTER-WEIGHTED text positioning - avoid edges completely
-- Create invisible text safety zones: top 15%, bottom 15%, left 10%, right 10% are OFF-LIMITS for text
-- All headlines, subtext, and CTAs must fit in the central 70% of the canvas
-- If text is too long, make it SMALLER or break into multiple lines
-- NEVER extend text beyond visible canvas area
-- Test every text element: can you see the entire word/phrase clearly?
+🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
+- ALL TEXT MUST BE COMPLETELY INSIDE THE 1024x1536 CANVAS
+- MASSIVE 80 pixel margins from ALL edges - no text within 80px of any border
+- ONLY place text in the central 60% of the image - edges are FORBIDDEN
+- Text safety zones: top 20%, bottom 20%, left 15%, right 15% are ABSOLUTELY OFF-LIMITS
+- If any text touches or approaches an edge, MOVE IT TO CENTER or MAKE IT SMALLER
+- Use compact, centered text layouts only
+- NO side text, NO edge text, NO corner text - CENTER ONLY
 
-COMPOSITION RULES:
-- Product in center, text in safe zones around it
-- Use vertical text stacking in center column when needed
-- Prefer shorter, punchier headlines over long ones
-- Background must contrast with text for visibility
+📝 USER INSTRUCTION COMPLIANCE - FOLLOW EXACTLY:
+${customPromptModifiers ? `MANDATORY REQUIREMENTS FROM USER: ${customPromptModifiers}` : ''}
 
-Format: 1024x1536 portrait. Professional advertising quality with ZERO text clipping.`
+LAYOUT STRATEGY:
+- Product prominently displayed in center
+- All text elements clustered in safe center zones
+- Use tight, compact text groupings
+- Ensure high contrast between text and background
+- Make text punchy and readable
+
+Format: 1024x1536 portrait. Professional quality with PERFECT text containment and EXACT instruction following.`
         }
       ];
       
