@@ -1245,11 +1245,11 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Blended Metrics and AI Report side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Top Section - Blended Performance Metrics and AI Daily Report side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Left: Horizontal Blended Performance Metrics */}
-              <div className="lg:col-span-8">
+              <div className="h-full">
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                   layout="horizontal"
@@ -1257,8 +1257,8 @@ export default function MarketingAssistantPage() {
               </div>
 
               {/* Right: AI Daily Report */}
-              <div className="lg:col-span-4">
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} compact />
+              <div className="h-full">
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
             </div>

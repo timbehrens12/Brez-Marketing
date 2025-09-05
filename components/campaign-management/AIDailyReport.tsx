@@ -78,10 +78,9 @@ interface DailyReport {
 
 interface AIDailyReportProps {
   preloadedReport?: DailyReport | null
-  compact?: boolean
 }
 
-export default function AIDailyReport({ preloadedReport, compact = false }: AIDailyReportProps = {}) {
+export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = {}) {
   const { selectedBrandId } = useBrandContext()
   const [report, setReport] = useState<DailyReport | null>(preloadedReport || null)
   // Remove loading states
@@ -463,64 +462,6 @@ export default function AIDailyReport({ preloadedReport, compact = false }: AIDa
   platformDistribution.forEach(p => {
     p.percentage = totalPlatformSpend > 0 ? (p.value / totalPlatformSpend) * 100 : 0
   })
-
-  if (compact) {
-    return (
-      <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-        {/* Compact Header */}
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333] rounded-t-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">AI Report</h2>
-              <p className="text-gray-400 font-medium text-sm">Campaign insights</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Compact Content */}
-        <div className="flex-1 p-4 overflow-auto">
-          {report ? (
-            <div className="space-y-3">
-              {/* Summary only - shortened */}
-              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
-                <p className="text-sm text-gray-200 leading-relaxed line-clamp-3">
-                  {report.summary.split('.')[0]}.
-                </p>
-              </div>
-              
-              {/* Only show top 2 priorities if they exist */}
-              {report?.topPriorities && report.topPriorities.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                    <h3 className="text-sm font-semibold text-white">Priorities</h3>
-                  </div>
-                  <div className="space-y-1">
-                    {report.topPriorities.slice(0, 2).map((priority, index) => (
-                      <div key={index} className="bg-[#0f0f0f] border border-[#1a1a1a] rounded p-2">
-                        <p className="text-xs text-gray-300 line-clamp-2">{priority}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <Brain className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-400 text-sm">No report available</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
