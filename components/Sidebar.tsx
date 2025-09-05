@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Zap, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2, MessageCircle } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, BrainCircuit, Send, Palette, Target, Globe, Settings2, ClipboardList, FileBarChart, Pin, PinOff, Building2, MessageCircle } from "lucide-react"
 import { useAuth, useClerk, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
@@ -64,7 +64,7 @@ const navItems: NavItem[] = [
   { 
     name: "Lead Generator", 
     href: "/lead-generator", 
-    icon: Zap,
+    icon: Target,
     description: "Find and qualify leads"
   },
   { 
