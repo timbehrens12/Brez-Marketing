@@ -432,7 +432,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={DollarSign}
-                    iconColor="bg-gradient-to-br from-green-600/20 to-green-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="Ad Spend"
                     value={metaMetrics.adSpend}
                     change={metaMetrics.adSpendGrowth}
@@ -447,7 +447,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={Eye}
-                    iconColor="bg-gradient-to-br from-blue-600/20 to-blue-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="Impressions"
                     value={metaMetrics.impressions}
                     change={metaMetrics.impressionGrowth}
@@ -460,7 +460,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={MousePointer}
-                    iconColor="bg-gradient-to-br from-purple-600/20 to-purple-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="Clicks"
                     value={metaMetrics.clicks}
                     change={metaMetrics.clickGrowth}
@@ -473,7 +473,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={Target}
-                    iconColor="bg-gradient-to-br from-orange-600/20 to-orange-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="Conversions"
                     value={metaMetrics.conversions}
                     change={metaMetrics.conversionGrowth}
@@ -487,7 +487,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={Percent}
-                    iconColor="bg-gradient-to-br from-cyan-600/20 to-cyan-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="CTR"
                     value={metaMetrics.ctr}
                     change={metaMetrics.ctrGrowth}
@@ -502,7 +502,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={DollarSign}
-                    iconColor="bg-gradient-to-br from-red-600/20 to-red-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="CPC"
                     value={metaMetrics.cpc}
                     change={metaMetrics.cpcGrowth}
@@ -517,7 +517,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={TrendingUp}
-                    iconColor="bg-gradient-to-br from-amber-600/20 to-amber-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="ROAS"
                     value={metaMetrics.roas}
                     change={metaMetrics.roasGrowth}
@@ -532,7 +532,7 @@ export default function BlendedWidgetsTable({
                 <div>
                   <BlendedMetricCard
                     icon={Users}
-                    iconColor="bg-gradient-to-br from-indigo-600/20 to-indigo-700/30"
+                    iconColor="bg-gradient-to-br from-gray-600/20 to-gray-700/30"
                     title="Frequency"
                     value={metaMetrics.frequency}
                     change={null}
