@@ -5,6 +5,39 @@ import { createClient } from '@/lib/supabase/server'
 const WEEKLY_CREATIVE_LIMIT = 25
 const USAGE_FEATURE_TYPE = 'creative_generation'
 
+export async function DELETE(request: NextRequest) {
+  try {
+    // Authenticate user
+    const { userId } = auth()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    // Delete all creative usage records for this user
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('ai_feature_usage')
+      .delete()
+      .eq('user_id', userId)
+      .eq('feature_type', USAGE_FEATURE_TYPE)
+
+    if (error) {
+      console.error('Error resetting creative usage:', error)
+      return NextResponse.json({ error: 'Failed to reset usage' }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: 'Creative usage reset successfully' })
+    
+  } catch (error: any) {
+    console.error('Error resetting creative usage:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
