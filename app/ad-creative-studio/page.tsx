@@ -2859,27 +2859,28 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       return
     }
 
-    // Check if this creative exists in our current state and has been saved to database
+    // Check if this creative exists in our current state
     const creative = generatedCreatives.find(c => c.id === creativeId)
-    if (!creative || creative.status === 'generating' || creative.status === 'failed') {
-      // Skip fetch for unsaved, generating, or failed creatives to avoid 404s
-      return
-    }
-
-    // CRITICAL: Only fetch for creatives that have imageUrl - this means they were successfully saved
-    if (!creative.imageUrl) {
-      // Skip if no imageUrl exists - this means it wasn't saved to database yet
-      return
-    }
-
-    // Additional check: If the creative was just completed, wait a moment for database save
-    if (creative.status === 'completed') {
-      const createdAt = new Date(creative.created_at || creative.updated_at || Date.now())
-      const timeSinceCreation = Date.now() - createdAt.getTime()
-      
-      // If created less than 5 seconds ago, skip to avoid race condition with database save
-      if (timeSinceCreation < 5000) {
+    if (creative) {
+      // If we have it in state, check if it's still generating or failed
+      if (creative.status === 'generating' || creative.status === 'failed') {
         return
+      }
+      
+      // If it already has imageUrl, don't fetch again
+      if (creative.imageUrl) {
+        return
+      }
+      
+      // If it was just completed, wait a moment for database save
+      if (creative.status === 'completed') {
+        const createdAt = new Date(creative.created_at || creative.updated_at || Date.now())
+        const timeSinceCreation = Date.now() - createdAt.getTime()
+        
+        // If created less than 2 seconds ago, skip to avoid race condition
+        if (timeSinceCreation < 2000) {
+          return
+        }
       }
     }
 
