@@ -1242,34 +1242,34 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
+          {/* Optimized Grid Layout - Better space utilization */}
+          <div className="px-8 lg:px-16 xl:px-24 space-y-6 animate-in fade-in duration-300">
             
-            {/* Main Grid - Blended Metrics (2 high x 4 wide) + Right side widgets */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[800px]">
+            {/* Top Row - Campaign Management spans full width */}
+            <div className="w-full">
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </div>
+
+            {/* Middle Row - Three equal columns */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">
               
-              {/* Left: Blended Performance Metrics - 2 rows high, 4 columns wide */}
-              <div className="lg:col-span-4 lg:row-span-2 h-full">
+              {/* Left: Blended Performance Metrics */}
+              <div className="lg:col-span-1 h-full">
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                 />
               </div>
 
-              {/* Right Top: Campaign Management - Takes remaining width on top */}
-              <div className="lg:col-span-8 lg:row-span-1">
-                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-              </div>
-
-              {/* Right Middle Left: Ad Creative Breakdown */}
-              <div className="lg:col-span-4 lg:row-span-1">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-              </div>
-
-              {/* Right Middle Right: Performance Chart */}
-              <div className="lg:col-span-4 lg:row-span-1">
+              {/* Center: Performance Chart */}
+              <div className="lg:col-span-1 h-full">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
                 />
+              </div>
+
+              {/* Right: Ad Creative Breakdown */}
+              <div className="lg:col-span-1 h-full">
+                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
             </div>
