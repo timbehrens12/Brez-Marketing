@@ -3371,7 +3371,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
           console.log('🔍 Showing policy violation toast')
-          toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+          const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+          toast.error(errorMessage)
+          // Fallback alert to ensure user sees the message
+          setTimeout(() => alert(errorMessage), 100)
         } else {
           console.log('🔍 Showing generic error toast')
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
@@ -3445,7 +3448,9 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       
       // Check if this is a policy violation that wasn't caught earlier
       if (error instanceof Error && error.message.includes('Content Policy Violation')) {
-        toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+        const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+        toast.error(errorMessage)
+        setTimeout(() => alert(errorMessage), 100)
       } else {
         toast.error('Failed to generate creative. Please try again.')
       }
@@ -3782,7 +3787,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
           console.log('🔍 Showing policy violation toast')
-          toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+          const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+          toast.error(errorMessage)
+          // Fallback alert to ensure user sees the message
+          setTimeout(() => alert(errorMessage), 100)
         } else {
           console.log('🔍 Showing generic error toast')
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
@@ -3886,7 +3894,9 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       
       // Check if this is a policy violation that wasn't caught earlier
       if (error instanceof Error && error.message.includes('Content Policy Violation')) {
-        toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+        const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+        toast.error(errorMessage)
+        setTimeout(() => alert(errorMessage), 100)
       } else if (error instanceof Error && error.message.includes('too large even after maximum compression')) {
         toast.error('❌ Image is too large to process. Please use a smaller image or crop it before uploading.')
       } else if (error instanceof Error && error.message.includes('Failed to compress image')) {
