@@ -3148,22 +3148,17 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product with visual interest and professional quality. Avoid basic colored backgrounds with just text overlay.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
 
-CREATIVE APPROACHES - Choose ONE of these:
-1. CLEAN STUDIO: Product elegantly presented with interesting lighting, subtle textures, or simple geometric elements
-2. LIFESTYLE SCENE: Product naturally integrated into realistic lifestyle contexts  
+DESIGN VARIETY - Choose ONE of these creative approaches:
+1. HERO PRODUCT: Large product as main focus with minimal text overlay
+2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
 3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
-4. MODEL SHOWCASE: Attractive people wearing/using/holding the product in professional settings
+4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
 5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
 6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
 7. TESTIMONIAL STYLE: Include review quotes or social proof elements
 8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
-
-AVOID THESE BASIC APPROACHES:
-❌ Plain colored background with floating product and text
-❌ Simple gradient with centered product
-❌ Boring flat presentations without depth or interest
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
@@ -3177,7 +3172,7 @@ LAYOUT FLEXIBILITY:
 - Product size and position should vary based on the chosen approach
 - Use creative typography - different fonts, sizes, styles for emphasis
 - Experiment with text layouts: diagonal, curved, stacked, scattered
-- Background should have visual interest: could be textured, environmental, have interesting lighting, or subtle design elements - avoid plain flat colors
+- Background can be minimalist, gradient, textured, or environmental
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
@@ -3185,12 +3180,6 @@ TECHNICAL REQUIREMENTS:
 - Maintain professional advertising quality
 - Use high contrast for text visibility
 - Keep mobile-first design principles
-
-VISUAL QUALITY GUIDELINES:
-- Add some depth and dimension to avoid flat presentations
-- Make the product look premium and desirable
-- Include subtle visual elements that enhance without overwhelming
-- Focus on professional presentation over artistic complexity
 
 AVOID REPETITIVE PATTERNS:
 - Don't always center everything
@@ -3546,7 +3535,7 @@ LAYOUT FLEXIBILITY:
 - Product size and position should vary based on the chosen approach
 - Use creative typography - different fonts, sizes, styles for emphasis
 - Experiment with text layouts: diagonal, curved, stacked, scattered
-- Background should have visual interest: could be textured, environmental, have interesting lighting, or subtle design elements - avoid plain flat colors
+- Background can be minimalist, gradient, textured, or environmental
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
@@ -3554,12 +3543,6 @@ TECHNICAL REQUIREMENTS:
 - Maintain professional advertising quality
 - Use high contrast for text visibility
 - Keep mobile-first design principles
-
-VISUAL QUALITY GUIDELINES:
-- Add some depth and dimension to avoid flat presentations
-- Make the product look premium and desirable
-- Include subtle visual elements that enhance without overwhelming
-- Focus on professional presentation over artistic complexity
 
 AVOID REPETITIVE PATTERNS:
 - Don't always center everything
