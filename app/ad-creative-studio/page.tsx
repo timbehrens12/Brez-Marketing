@@ -3360,13 +3360,20 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        console.log('🔍 Response not OK:', response.status, response.statusText)
+        const errorData = await response.json().catch(e => {
+          console.error('Failed to parse error JSON:', e)
+          return { error: 'Unknown error' }
+        })
+        console.log('🔍 Error data:', errorData)
         updateCreativeStatus(creativeId, 'failed')
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
+          console.log('🔍 Showing policy violation toast')
           toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
         } else {
+          console.log('🔍 Showing generic error toast')
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         }
         return
@@ -3433,9 +3440,15 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       toast.success('Creative generated successfully!')
 
     } catch (error) {
-      // Silent error handling
+      console.log('🔍 Outer catch error:', error)
       updateCreativeStatus(creativeId, 'failed')
-      toast.error('Failed to generate creative. Please try again.')
+      
+      // Check if this is a policy violation that wasn't caught earlier
+      if (error instanceof Error && error.message.includes('Content Policy Violation')) {
+        toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+      } else {
+        toast.error('Failed to generate creative. Please try again.')
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -3758,13 +3771,20 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        console.log('🔍 Response not OK:', response.status, response.statusText)
+        const errorData = await response.json().catch(e => {
+          console.error('Failed to parse error JSON:', e)
+          return { error: 'Unknown error' }
+        })
+        console.log('🔍 Error data:', errorData)
         updateCreativeStatus(creativeId, 'failed')
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
+          console.log('🔍 Showing policy violation toast')
           toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
         } else {
+          console.log('🔍 Showing generic error toast')
           toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
         }
         return
@@ -3861,11 +3881,13 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       
       toast.success(`🎨 Image generated successfully!`);
     } catch (error) {
-      // Silent error handling
+      console.log('🔍 Modal outer catch error:', error)
       updateCreativeStatus(creativeId, 'failed')
       
-      // Check if it's an image size error
-      if (error instanceof Error && error.message.includes('too large even after maximum compression')) {
+      // Check if this is a policy violation that wasn't caught earlier
+      if (error instanceof Error && error.message.includes('Content Policy Violation')) {
+        toast.error('🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.')
+      } else if (error instanceof Error && error.message.includes('too large even after maximum compression')) {
         toast.error('❌ Image is too large to process. Please use a smaller image or crop it before uploading.')
       } else if (error instanceof Error && error.message.includes('Failed to compress image')) {
         toast.error('❌ Failed to process image. Please try a different image format or smaller file size.')
