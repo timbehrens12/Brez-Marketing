@@ -1266,12 +1266,12 @@ export default function MarketingAssistantPage() {
                 {/* Nested widgets under Blended Metrics */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Ad Creative Breakdown */}
-                  <div className="h-[400px]">
+                  <div className="h-[500px]">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
 
                   {/* Performance Chart */}
-                  <div className="h-[400px]">
+                  <div className="h-[500px]">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1279,8 +1279,8 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right: AI Daily Report - 30% width, matches left column height */}
-              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 400px)' }}>
+              {/* Right: AI Daily Report - 30% width, matches left column height exactly */}
+              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 500px)' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 

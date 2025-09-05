@@ -1485,7 +1485,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </TabsList>
 
             {/* Tab Content */}
-            <div className="mt-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+            <div className="mt-4 max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
               <TabsContent value="all" className="mt-0">
                 {renderPlatformContent('all')}
               </TabsContent>
