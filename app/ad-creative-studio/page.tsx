@@ -2947,10 +2947,10 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
             return `${r.fileName} (${dims})`
           })
           
-          toast.error(
-            `Only portrait images are allowed. The following ${nonPortraitFiles.length} file(s) are landscape:\n\n${landscapeFiles.join('\n')}\n\nPlease use images that are taller than they are wide.`,
-            { duration: 8000 }
-          )
+          // Simple error message that should definitely show
+          toast.error(`Only portrait images allowed! ${nonPortraitFiles.length} file(s) rejected. Files must be taller than wide. Square images (like ${nonPortraitFiles[0].fileName}) are not accepted.`, {
+            duration: 6000
+          })
           console.log(`❌ Upload blocked: ${nonPortraitFiles.length} landscape files detected`)
           return false
         }
@@ -2968,6 +2968,12 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const isValidOrientation = await checkPortraitImages(imageFiles)
       if (!isValidOrientation) {
         console.log('🚫 Upload cancelled due to orientation validation failure')
+        // Additional fallback toast in case the first one didn't show
+        setTimeout(() => {
+          toast.error('❌ Upload failed: Only portrait images (taller than wide) are accepted!', {
+            duration: 5000
+          })
+        }, 100)
         return
       }
     } catch (error) {
