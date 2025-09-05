@@ -282,8 +282,12 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      // Build the content array for Gemini
-      const contentArray = [prompt]; // Start with the prompt
+      // Build the content array for Gemini - CRITICAL: Add explicit image generation instruction
+      const imageGenPrompt = `GENERATE AN IMAGE: ${prompt}
+      
+      CRITICAL: You must return an IMAGE, not text. This is an image generation request, not a text generation request.`;
+      
+      const contentArray = [imageGenPrompt]; // Start with the enhanced prompt
       
       // Add the primary image
       contentArray.push({
@@ -332,7 +336,20 @@ ${backgroundPreset.prompt}`;
       console.log('📋 Content array structure:', contentArray.map((item, i) => 
         i === 0 ? 'prompt' : `image-${i} (${item.inlineData?.mimeType})`
       ));
-      const imageGenerationResult = await imageModel.generateContent(contentArray);
+      
+      // Try with explicit generation config to force image output
+      const generationConfig = {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+        responseMimeType: "image/jpeg" // Try to force image response
+      };
+      
+      const imageGenerationResult = await imageModel.generateContent({
+        contents: [{ role: "user", parts: contentArray }],
+        generationConfig
+      });
 
       // Extract the generated image from the response
       let generatedImageData = null;
