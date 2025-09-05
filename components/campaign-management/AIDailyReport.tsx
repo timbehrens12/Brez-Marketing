@@ -465,28 +465,25 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-2 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
                           flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-5 h-5 text-white" />
+              <Brain className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">AI Daily Report</h2>
-              <div className="flex items-center gap-2">
-                <p className="text-gray-400 font-medium text-xs">Campaign insights</p>
-                {report?.generatedAt && (
-                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#2a2a2a]">
-                    {new Date(report.generatedAt).toLocaleString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                )}
-              </div>
+              <h2 className="text-lg font-bold tracking-tight text-white">AI Report</h2>
+              {report?.generatedAt && (
+                <div className="text-xs text-gray-500">
+                  {new Date(report.generatedAt).toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </div>
+              )}
             </div>
           </div>
           
@@ -495,13 +492,13 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
       
-      <div className="flex-1 p-2 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
-        <div className="flex-1 flex flex-col space-y-2">
+      <div className="flex-1 p-1 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
+        <div className="flex-1 flex flex-col space-y-1">
           {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-2' : 'flex-1'}`}>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3 backdrop-blur-sm h-full flex items-center justify-center">
+          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-1' : 'flex-1'}`}>
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
-                <p className="text-xs text-gray-200 leading-relaxed max-w-4xl mx-auto">
+                <p className="text-xs text-gray-200 leading-tight max-w-4xl mx-auto">
                   {report.summary}
                 </p>
               </div>
@@ -526,11 +523,11 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                 </div>
               </div>
               <div className="grid gap-1">
-                {report.topPriorities.slice(0, 2).map((priority, index) => (
+                {report.topPriorities.slice(0, 1).map((priority, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-2">
-                      <div className="flex items-start gap-2">
-                        <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
+                    <CardContent className="p-1.5">
+                      <div className="flex items-start gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
                           <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
                         </div>
                         <p className="text-xs text-gray-300 leading-tight flex-1">{priority}</p>
@@ -554,12 +551,12 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                 </div>
               </div>
               <div className="grid gap-1">
-                {report.successHighlights.slice(0, 2).map((highlight, index) => (
+                {report.successHighlights.slice(0, 1).map((highlight, index) => (
                   <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-2">
-                      <div className="flex items-start gap-2">
-                        <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-                          <CheckCircle className="w-3 h-3 text-emerald-400" />
+                    <CardContent className="p-1.5">
+                      <div className="flex items-start gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
+                          <CheckCircle className="w-2 h-2 text-emerald-400" />
                         </div>
                         <p className="text-xs text-gray-300 leading-tight flex-1">{highlight}</p>
                       </div>

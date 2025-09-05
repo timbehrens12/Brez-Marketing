@@ -1257,7 +1257,7 @@ export default function MarketingAssistantPage() {
                 />
                 
                 {/* Nested widgets under Blended Metrics */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
                   {/* Ad Creative Breakdown */}
                   <div className="h-full">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
