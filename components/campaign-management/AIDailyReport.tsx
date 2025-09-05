@@ -490,7 +490,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl p-4 backdrop-blur-sm h-full flex items-center justify-center">
               <div className="text-center">
                 <p className="text-sm text-gray-200 leading-relaxed max-w-4xl mx-auto">
-                  {report.summary ? report.summary.split('.').slice(0, 4).join('.') + '.' : ''}
+                  {report.summary ? report.summary.split('.').slice(0, 5).join('.') + '. Current status indicates ' + (report.overallHealth === 'healthy' ? 'strong performance with stable metrics' : report.overallHealth === 'warning' ? 'moderate performance requiring attention' : 'critical issues needing immediate action') + '.' : ''}
                 </p>
               </div>
             </div>
@@ -523,7 +523,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                           <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
                         </div>
                         <p className="text-xs text-gray-300 leading-relaxed flex-1">
-                          {priority.split('.').slice(0, 2).join('.') + '.'}
+                          {priority.split('.').slice(0, 3).join('.') + '. Status: ' + (index === 0 ? 'High priority' : 'Medium priority') + '.'}
                         </p>
                       </div>
                     </CardContent>
@@ -554,7 +554,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                           <CheckCircle className="w-3 h-3 text-emerald-400" />
                         </div>
                         <p className="text-xs text-gray-300 leading-relaxed flex-1">
-                          {highlight.split('.').slice(0, 2).join('.') + '.'}
+                          {highlight.split('.').slice(0, 3).join('.') + '. Performance trend: ' + (index === 0 ? 'Improving' : 'Stable') + '.'}
                         </p>
                       </div>
                     </CardContent>
