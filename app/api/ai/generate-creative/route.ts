@@ -173,10 +173,84 @@ export async function POST(request: NextRequest) {
       return { buffer: convertedBuffer, mimeType: 'image/jpeg' };
     };
 
+    // Helper function to standardize product images for consistent AI generation
+    const standardizeProductImage = async (buffer: Buffer): Promise<Buffer> => {
+      console.log('🔧 Standardizing product image for optimal AI generation...');
+      
+      // Target dimensions: 512x768 (2:3 ratio, perfect for portrait ads)
+      const TARGET_WIDTH = 512;
+      const TARGET_HEIGHT = 768;
+      
+      // Get original image metadata
+      const metadata = await sharp(buffer).metadata();
+      const originalWidth = metadata.width || 1;
+      const originalHeight = metadata.height || 1;
+      const originalRatio = originalWidth / originalHeight;
+      const targetRatio = TARGET_WIDTH / TARGET_HEIGHT;
+      
+      console.log(`📏 Original: ${originalWidth}x${originalHeight} (ratio: ${originalRatio.toFixed(2)})`);
+      console.log(`🎯 Target: ${TARGET_WIDTH}x${TARGET_HEIGHT} (ratio: ${targetRatio.toFixed(2)})`);
+      
+      // Strategy: Smart crop to target ratio, then resize
+      // This prevents stretching and maintains product proportions
+      
+      let processedBuffer: Buffer;
+      
+      if (Math.abs(originalRatio - targetRatio) < 0.1) {
+        // Ratios are close enough, just resize
+        console.log('✅ Ratios match, simple resize');
+        processedBuffer = await sharp(buffer)
+          .resize(TARGET_WIDTH, TARGET_HEIGHT, { 
+            fit: 'fill',
+            background: { r: 255, g: 255, b: 255, alpha: 1 }
+          })
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      } else if (originalRatio > targetRatio) {
+        // Image is wider than target, crop width
+        const cropWidth = Math.floor(originalHeight * targetRatio);
+        const cropX = Math.floor((originalWidth - cropWidth) / 2);
+        
+        console.log(`📐 Cropping width: ${cropWidth}px from center`);
+        processedBuffer = await sharp(buffer)
+          .extract({ 
+            left: cropX, 
+            top: 0, 
+            width: cropWidth, 
+            height: originalHeight 
+          })
+          .resize(TARGET_WIDTH, TARGET_HEIGHT)
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      } else {
+        // Image is taller than target, crop height
+        const cropHeight = Math.floor(originalWidth / targetRatio);
+        const cropY = Math.floor((originalHeight - cropHeight) / 2);
+        
+        console.log(`📐 Cropping height: ${cropHeight}px from center`);
+        processedBuffer = await sharp(buffer)
+          .extract({ 
+            left: 0, 
+            top: cropY, 
+            width: originalWidth, 
+            height: cropHeight 
+          })
+          .resize(TARGET_WIDTH, TARGET_HEIGHT)
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      }
+      
+      console.log(`🎉 Standardized to ${TARGET_WIDTH}x${TARGET_HEIGHT}`);
+      return processedBuffer;
+    };
+
     // Step 1: Convert images to supported formats if needed
-    const { buffer: imageBuffer, mimeType: imageMimeType } = await convertToSupportedFormat(imageFile);
+    const { buffer: rawImageBuffer, mimeType: imageMimeType } = await convertToSupportedFormat(imageFile);
+    
+    // Step 2: Standardize image dimensions for consistent AI generation
+    const imageBuffer = await standardizeProductImage(rawImageBuffer);
     const base64Image = imageBuffer.toString('base64');
-    const imageDataUrl = `data:${imageMimeType};base64,${base64Image}`;
+    const imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
 
     // Convert example creative if provided
     let exampleBuffer: Buffer | null = null;
@@ -185,10 +259,11 @@ export async function POST(request: NextRequest) {
     
     if (exampleCreativeFile) {
       const convertedExample = await convertToSupportedFormat(exampleCreativeFile);
-      exampleBuffer = convertedExample.buffer;
-      exampleMimeType = convertedExample.mimeType;
+      // Also standardize example creative for consistency
+      exampleBuffer = await standardizeProductImage(convertedExample.buffer);
+      exampleMimeType = 'image/jpeg'; // Always JPEG after standardization
       exampleBase64 = exampleBuffer.toString('base64');
-      console.log('📋 Example creative converted to:', exampleMimeType);
+      console.log('📋 Example creative standardized to 512x768');
     }
 
     // Step 2: Analyze the uploaded image to get a detailed description
@@ -285,7 +360,7 @@ ${backgroundPreset.prompt}`;
       // Build the content array for Gemini - Ultra-strict text boundaries and instruction following
       const contentArray = [
         {
-          text: `Create a professional advertisement image with this product. Make it visually appealing with text overlays.
+          text: `Create a professional advertisement image with this product. The product image has been pre-standardized to 512x768 dimensions for optimal composition. Make it visually appealing with text overlays.
 
 🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
 - ALL TEXT MUST BE COMPLETELY INSIDE THE 1024x1536 CANVAS
@@ -296,12 +371,18 @@ ${backgroundPreset.prompt}`;
 - Use compact, centered text layouts only
 - NO side text, NO edge text, NO corner text - CENTER ONLY
 
+📐 PRODUCT POSITIONING GUIDELINES:
+- Product image is standardized 512x768 (2:3 ratio) - optimal for portrait layouts
+- Position product to occupy center 40-60% of canvas vertically
+- Leave ample space above and below product for text
+- Product should never exceed 70% of canvas width
+
 📝 USER INSTRUCTION COMPLIANCE - FOLLOW EXACTLY:
 ${customPromptModifiers ? `MANDATORY REQUIREMENTS FROM USER: ${customPromptModifiers}` : ''}
 
 LAYOUT STRATEGY:
-- Product prominently displayed in center
-- All text elements clustered in safe center zones
+- Product prominently displayed in center, but not dominating entire canvas
+- All text elements clustered in safe center zones above/below product
 - Use tight, compact text groupings
 - Ensure high contrast between text and background
 - Make text punchy and readable
