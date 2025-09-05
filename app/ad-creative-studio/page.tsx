@@ -3148,28 +3148,17 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging, environmental way. NO LAZY GRADIENT BACKGROUNDS OR SIMPLE TEXT OVERLAYS.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
 
-MANDATORY CREATIVE APPROACHES - Choose ONE of these ONLY:
-1. REAL ENVIRONMENT: Product being used by real people in authentic, detailed settings (modern home, busy office, outdoor adventure, gym workout, trendy café, city street, etc.)
-2. LIFESTYLE SCENE: Product naturally integrated into realistic lifestyle contexts with rich environmental details
-3. MODEL SHOWCASE: Attractive people wearing/using/holding the product in photorealistic professional environments with depth and atmosphere
-4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation in realistic settings
-5. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments with authentic environmental backdrops
-
-FORBIDDEN APPROACHES - NEVER DO THESE:
-❌ Simple gradient backgrounds with floating text
-❌ Minimalist white/black backgrounds with centered product
-❌ Plain colored backgrounds with basic text overlay
-❌ Generic studio-style product shots
-❌ Lazy floating product + simple text combinations
-
-ENVIRONMENTAL REQUIREMENTS:
-- ALWAYS include rich, detailed, photorealistic backgrounds
-- Show real-world contexts where the product would actually be used
-- Include environmental elements: furniture, architecture, nature, people, lighting
-- Create depth and atmosphere in every scene
-- Make backgrounds feel authentic and lived-in, not artificial
+DESIGN VARIETY - Choose ONE of these creative approaches:
+1. HERO PRODUCT: Large product as main focus with minimal text overlay
+2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
+3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
+4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
+5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+7. TESTIMONIAL STYLE: Include review quotes or social proof elements
+8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
@@ -3183,7 +3172,7 @@ LAYOUT FLEXIBILITY:
 - Product size and position should vary based on the chosen approach
 - Use creative typography - different fonts, sizes, styles for emphasis
 - Experiment with text layouts: diagonal, curved, stacked, scattered
-- Background must be rich, detailed, and environmental - NO minimalist or simple gradients
+- Background can be minimalist, gradient, textured, or environmental
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
@@ -3199,7 +3188,7 @@ AVOID REPETITIVE PATTERNS:
 - Try different color schemes and moods
 - Experiment with product presentation angles
 
-CREATE SOMETHING CINEMATIC: Make each ad feel like a premium lifestyle campaign, not a basic product advertisement.${autoInstructions}${textPromptAddition}`
+CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3546,7 +3535,7 @@ LAYOUT FLEXIBILITY:
 - Product size and position should vary based on the chosen approach
 - Use creative typography - different fonts, sizes, styles for emphasis
 - Experiment with text layouts: diagonal, curved, stacked, scattered
-- Background must be rich, detailed, and environmental - NO minimalist or simple gradients
+- Background can be minimalist, gradient, textured, or environmental
 
 TECHNICAL REQUIREMENTS:
 - Canvas: 1024×1536 portrait format
@@ -3562,7 +3551,7 @@ AVOID REPETITIVE PATTERNS:
 - Try different color schemes and moods
 - Experiment with product presentation angles
 
-CREATE SOMETHING CINEMATIC: Make each ad feel like a premium lifestyle campaign, not a basic product advertisement.${autoInstructions}${textPromptAddition}`
+CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
