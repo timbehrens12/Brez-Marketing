@@ -5739,7 +5739,7 @@ GENERATE: Professional mobile ad creative using these EXACT y-coordinates (700, 
                       // For copy/custom/auto workflows, also mark template as completed since it's skipped
                       if (step.key === 'upload' || step.key === 'creative-type') {
                         isCompleted = true
-                      } else if (step.key === 'template-selection' && (selectedCreativeType === 'copy' || selectedCreativeType === 'custom' || selectedCreativeType === 'auto')) {
+                      } else if (step.key === 'template-selection' && (selectedCreativeType === 'copy' || selectedCreativeType === 'custom' || selectedCreativeType === 'auto' || selectedCreativeType === 'custom-template')) {
                         isCompleted = true
                       }
                     } else {
