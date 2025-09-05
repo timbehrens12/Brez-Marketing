@@ -2885,12 +2885,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         
-        // If creative not found, it might be a timing issue with unsaved creatives
-        if (response.status === 404 && errorData.code === 'CREATIVE_NOT_FOUND') {
+        // If creative not found, silently return without any logging
+        if (response.status === 404) {
           return
         }
         
-        throw new Error(`Failed to fetch creative images: ${response.status} ${errorData.error || response.statusText}`)
+        // Only log non-404 errors
+        console.error(`Failed to fetch creative images: ${response.status} ${errorData.error || response.statusText}`)
+        return
       }
 
       const data = await response.json()
@@ -3138,10 +3140,12 @@ CRITICAL FORMAT REQUIREMENTS:
 DESIGN VARIETY - Choose ONE of these creative approaches:
 1. HERO PRODUCT: Large product as main focus with minimal text overlay
 2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
-3. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
-4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
-5. TESTIMONIAL STYLE: Include review quotes or social proof elements
-6. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
+3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
+4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
+5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+7. TESTIMONIAL STYLE: Include review quotes or social proof elements
+8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
@@ -3499,10 +3503,12 @@ CRITICAL FORMAT REQUIREMENTS:
 DESIGN VARIETY - Choose ONE of these creative approaches:
 1. HERO PRODUCT: Large product as main focus with minimal text overlay
 2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
-3. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
-4. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
-5. TESTIMONIAL STYLE: Include review quotes or social proof elements
-6. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
+3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
+4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
+5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
+6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
+7. TESTIMONIAL STYLE: Include review quotes or social proof elements
+8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
