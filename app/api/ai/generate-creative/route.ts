@@ -282,12 +282,26 @@ ${backgroundPreset.prompt}`;
     let generatedImageUrl = null;
 
     try {
-      // Build the content array for Gemini - CRITICAL: Add explicit image generation instruction
-      const imageGenPrompt = `GENERATE AN IMAGE: ${prompt}
+      // Build the content array for Gemini - Use much shorter prompt to avoid 400 error
+      const shortPrompt = `Create a professional advertisement image featuring this product.
+
+Use one of these approaches:
+1. Hero product shot with bold text
+2. Lifestyle scene showing product in use
+3. Real environment with people using the product
+4. Model showcase with professional setting
+5. Benefit-focused with key features highlighted
+
+Requirements:
+- 1024x1536 portrait format
+- Professional advertising quality
+- Mobile-optimized design
+- Clear, readable text within image boundaries
+- Preserve exact product details and colors
+
+Generate an IMAGE, not text.`;
       
-      CRITICAL: You must return an IMAGE, not text. This is an image generation request, not a text generation request.`;
-      
-      const contentArray = [imageGenPrompt]; // Start with the enhanced prompt
+      const contentArray = [shortPrompt]; // Start with the shortened prompt
       
       // Add the primary image
       contentArray.push({
@@ -337,13 +351,12 @@ ${backgroundPreset.prompt}`;
         i === 0 ? 'prompt' : `image-${i} (${item.inlineData?.mimeType})`
       ));
       
-      // Try with explicit generation config to force image output
+      // Use simpler generation config
       const generationConfig = {
         temperature: 0.7,
         topP: 0.95,
         topK: 40,
-        maxOutputTokens: 8192,
-        responseMimeType: "image/jpeg" // Try to force image response
+        maxOutputTokens: 8192
       };
       
       const imageGenerationResult = await imageModel.generateContent({
