@@ -3360,24 +3360,13 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       })
 
       if (!response.ok) {
-        console.log('🔍 Response not OK:', response.status, response.statusText)
-        const errorData = await response.json().catch(e => {
-          console.error('Failed to parse error JSON:', e)
-          return { error: 'Unknown error' }
-        })
-        console.log('🔍 Error data:', errorData)
+        const errorData = await response.json().catch(e => ({ error: 'Unknown error' }))
         updateCreativeStatus(creativeId, 'failed')
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
-          console.log('🔍 Showing policy violation toast')
-          const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
-          toast.error(errorMessage)
-          // Fallback alert to ensure user sees the message
-          setTimeout(() => alert(errorMessage), 100)
-        } else {
-          console.log('🔍 Showing generic error toast')
-          toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+          const errorMessage = 'Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+          alert(errorMessage)
         }
         return
       }
@@ -3443,16 +3432,12 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       toast.success('Creative generated successfully!')
 
     } catch (error) {
-      console.log('🔍 Outer catch error:', error)
       updateCreativeStatus(creativeId, 'failed')
       
       // Check if this is a policy violation that wasn't caught earlier
       if (error instanceof Error && error.message.includes('Content Policy Violation')) {
-        const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
-        toast.error(errorMessage)
-        setTimeout(() => alert(errorMessage), 100)
-      } else {
-        toast.error('Failed to generate creative. Please try again.')
+        const errorMessage = 'Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+        alert(errorMessage)
       }
     } finally {
       setIsGenerating(false)
@@ -3776,24 +3761,13 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       })
 
       if (!response.ok) {
-        console.log('🔍 Response not OK:', response.status, response.statusText)
-        const errorData = await response.json().catch(e => {
-          console.error('Failed to parse error JSON:', e)
-          return { error: 'Unknown error' }
-        })
-        console.log('🔍 Error data:', errorData)
+        const errorData = await response.json().catch(e => ({ error: 'Unknown error' }))
         updateCreativeStatus(creativeId, 'failed')
         
         // Handle policy violations specifically
         if (response.status === 400 && errorData.error === 'Content Policy Violation') {
-          console.log('🔍 Showing policy violation toast')
-          const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
-          toast.error(errorMessage)
-          // Fallback alert to ensure user sees the message
-          setTimeout(() => alert(errorMessage), 100)
-        } else {
-          console.log('🔍 Showing generic error toast')
-          toast.error(`${errorData.error}${errorData.suggestion ? ` - ${errorData.suggestion}` : ''}`)
+          const errorMessage = 'Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+          alert(errorMessage)
         }
         return
       }
@@ -3889,20 +3863,12 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       
       toast.success(`🎨 Image generated successfully!`);
     } catch (error) {
-      console.log('🔍 Modal outer catch error:', error)
       updateCreativeStatus(creativeId, 'failed')
       
       // Check if this is a policy violation that wasn't caught earlier
       if (error instanceof Error && error.message.includes('Content Policy Violation')) {
-        const errorMessage = '🚫 Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
-        toast.error(errorMessage)
-        setTimeout(() => alert(errorMessage), 100)
-      } else if (error instanceof Error && error.message.includes('too large even after maximum compression')) {
-        toast.error('❌ Image is too large to process. Please use a smaller image or crop it before uploading.')
-      } else if (error instanceof Error && error.message.includes('Failed to compress image')) {
-        toast.error('❌ Failed to process image. Please try a different image format or smaller file size.')
-      } else {
-        toast.error('Failed to generate image. Check console for details.')
+        const errorMessage = 'Our creative generator cannot create this content as it violates safety policies. Please use appropriate product images and descriptions.'
+        alert(errorMessage)
       }
     } finally {
       setIsGenerating(false)
