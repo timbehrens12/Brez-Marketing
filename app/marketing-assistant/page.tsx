@@ -1242,10 +1242,15 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
+          {/* Dynamic Grid Layout - Campaign Management at top, then other widgets below */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
+            {/* Top Section - Campaign Management spans full width */}
+            <div className="w-full">
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+            </div>
+
+            {/* Second Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
             <div className="flex gap-6 items-start">
               
               {/* Left: Blended Performance Metrics with nested widgets below - 70% width */}
@@ -1277,11 +1282,6 @@ export default function MarketingAssistantPage() {
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
-            </div>
-
-            {/* Bottom Section - Campaign Management spans full width */}
-            <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
 
           </div>
