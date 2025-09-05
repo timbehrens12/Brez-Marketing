@@ -1242,12 +1242,14 @@ export default function MarketingAssistantPage() {
             className="px-12 lg:px-24 xl:px-32" 
           />
 
-          {/* Dynamic Grid Layout - Campaign Management at top, then other widgets below */}
+          {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Campaign Management spans full width */}
+            {/* Top Section - Campaign Management spans full width with scrolling */}
             <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              <div className="h-[400px] overflow-hidden">
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              </div>
             </div>
 
             {/* Second Section - Left side: Blended Metrics + nested widgets, Right side: AI Report */}
@@ -1264,12 +1266,12 @@ export default function MarketingAssistantPage() {
                 {/* Nested widgets under Blended Metrics */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Ad Creative Breakdown */}
-                  <div className="h-[500px]">
+                  <div className="h-[400px]">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
 
                   {/* Performance Chart */}
-                  <div className="h-[500px]">
+                  <div className="h-[400px]">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1278,7 +1280,7 @@ export default function MarketingAssistantPage() {
               </div>
 
               {/* Right: AI Daily Report - 30% width, matches left column height */}
-              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 500px)' }}>
+              <div className="flex-1" style={{ flexBasis: '30%', height: 'calc(200px + 24px + 400px)' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
