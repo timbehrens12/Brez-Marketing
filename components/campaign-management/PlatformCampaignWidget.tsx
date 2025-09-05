@@ -1370,27 +1370,27 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       */}
       
       {/* Compact Header */}
-      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg pb-3">
+      <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg max-h-[400px]">
+        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg 
                             flex items-center justify-center border border-white/10 shadow-lg">
-                <Target className="w-6 h-6 text-white" />
+                <Target className="w-4 h-4 text-white" />
               </div>
               <div>
-                <CardTitle className="text-white text-2xl font-bold tracking-tight">Campaign Management</CardTitle>
-                <p className="text-gray-400 text-base font-medium">Optimize your advertising campaigns</p>
+                <CardTitle className="text-white text-lg font-bold tracking-tight">Campaign Management</CardTitle>
+                <p className="text-gray-400 text-xs">Optimize campaigns</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
                 <Input
                   placeholder="Search campaigns..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-gray-500 w-64"
+                  className="pl-8 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-gray-500 w-48 h-8 text-sm"
                 />
               </div>
               <DropdownMenu>
