@@ -3219,6 +3219,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
 
     try {
       // Multi-product mode handling
+      alert(`Debug: isMultiMode=${isMultiMode}, uploadedImages.length=${uploadedImages.length}, templateStyle.id=${templateStyle.id}`)
       if (isMultiMode && uploadedImages.length > 1) {
 
 
@@ -5594,6 +5595,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                     toast.error('Please upload a product image first')
                     return
                   }
+                  
+                  // Always use the same function - it handles multi-product internally
                   await generateImageFromTemplate(selectedTemplate!)
                 }}
                 className="relative w-full h-full rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 border-none text-white flex-col overflow-hidden group min-h-[100px]"
