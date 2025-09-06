@@ -1846,8 +1846,26 @@ export default function AdCreativeStudioPage() {
         const collageDataUrl = await createProductCollage(images)
 
 
-        // Get user's additional instructions from autoPromptAdditions
-        const userInstructions = autoPromptAdditions.trim()
+        // Get user's instructions based on template type
+        let userInstructions = ''
+        let templateSpecificPrompt = ''
+
+        if (style.id === 'auto-generation') {
+          userInstructions = autoPromptAdditions.trim()
+          templateSpecificPrompt = userInstructions ? `🎯 MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''
+        } else if (style.id === 'copy-generation') {
+          userInstructions = copyPromptAdditions.trim()
+          templateSpecificPrompt = userInstructions ? `🎯 COPY CREATIVE ADDITIONAL INSTRUCTIONS: ${userInstructions}` : ''
+          
+          if (exampleCreativeImage) {
+            templateSpecificPrompt += `
+
+🎨 COPY CREATIVE MODE: You also have an example creative to reference for styling inspiration. Study the example's composition, lighting, background, text placement, colors, and mood. Apply similar styling to this product collage while keeping all ${images.length} products visible.`
+          }
+        } else if (style.id === 'custom-template') {
+          userInstructions = customInstructions.trim()
+          templateSpecificPrompt = userInstructions ? `🎯 CUSTOM TEMPLATE REQUIREMENTS: ${userInstructions}` : ''
+        }
         
         // Create enhanced prompt for styling the product collage
         const multiProductPrompt = `🎯 PRODUCT COLLAGE STYLING TASK:
@@ -1861,7 +1879,7 @@ I'm providing you with a collage image that contains ${images.length} products a
 - Maintain the 1024x1536 portrait format
 - Make the products look like a high-end advertisement
 
-${userInstructions ? `🎯 MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''}
+${templateSpecificPrompt}
 
 🚨 CRITICAL TEXT PLACEMENT RULES:
 - Add text elements as specified in user requirements
@@ -1901,6 +1919,11 @@ Generate the enhanced advertisement now, keeping ALL ${images.length} products v
         // Mark this as a collage-based multi-product request (no additional images needed)
         formData.append('multiProductCount', images.length.toString())
         formData.append('isProductCollage', 'true')
+
+        // Add example creative for copy mode
+        if (style.id === 'copy-generation' && exampleCreativeImage) {
+          formData.append('exampleCreative', exampleCreativeImage)
+        }
 
         // Map background type
         const backgroundTypeMapping: { [key: string]: string } = {
