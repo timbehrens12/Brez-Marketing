@@ -244,6 +244,55 @@ export async function POST(request: NextRequest) {
       return processedBuffer;
     };
 
+    // Helper function to standardize example creatives with padding (preserves full layout)
+    const standardizeExampleCreative = async (buffer: Buffer): Promise<Buffer> => {
+      console.log('🎨 Standardizing example creative with padding preservation...');
+      
+      // Target dimensions: 512x768 (2:3 ratio)
+      const TARGET_WIDTH = 512;
+      const TARGET_HEIGHT = 768;
+      
+      // Get original image metadata
+      const metadata = await sharp(buffer).metadata();
+      const originalWidth = metadata.width || 1;
+      const originalHeight = metadata.height || 1;
+      const originalRatio = originalWidth / originalHeight;
+      const targetRatio = TARGET_WIDTH / TARGET_HEIGHT;
+      
+      console.log(`📏 Example original: ${originalWidth}x${originalHeight} (ratio: ${originalRatio.toFixed(2)})`);
+      console.log(`🎯 Example target: ${TARGET_WIDTH}x${TARGET_HEIGHT} (ratio: ${targetRatio.toFixed(2)})`);
+      
+      // Strategy: Use padding/letterboxing to preserve full creative context
+      // This maintains all text and layout elements for better copying
+      
+      let processedBuffer: Buffer;
+      
+      if (Math.abs(originalRatio - targetRatio) < 0.1) {
+        // Ratios are close enough, just resize
+        console.log('✅ Example ratios match, simple resize');
+        processedBuffer = await sharp(buffer)
+          .resize(TARGET_WIDTH, TARGET_HEIGHT, { 
+            fit: 'fill',
+            background: { r: 0, g: 0, b: 0, alpha: 1 }
+          })
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      } else {
+        // Use letterboxing/pillarboxing to preserve full content
+        console.log('📦 Adding letterboxing to preserve full example creative');
+        processedBuffer = await sharp(buffer)
+          .resize(TARGET_WIDTH, TARGET_HEIGHT, { 
+            fit: 'contain', // This preserves aspect ratio and adds padding
+            background: { r: 0, g: 0, b: 0, alpha: 1 } // Black padding
+          })
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      }
+      
+      console.log(`🎉 Example creative standardized to ${TARGET_WIDTH}x${TARGET_HEIGHT} with full content preserved`);
+      return processedBuffer;
+    };
+
     // Step 1: Convert images to supported formats if needed
     const { buffer: rawImageBuffer, mimeType: imageMimeType } = await convertToSupportedFormat(imageFile);
     
@@ -259,11 +308,11 @@ export async function POST(request: NextRequest) {
     
     if (exampleCreativeFile) {
       const convertedExample = await convertToSupportedFormat(exampleCreativeFile);
-      // Also standardize example creative for consistency
-      exampleBuffer = await standardizeProductImage(convertedExample.buffer);
+      // Use special padding-based standardization for example creatives to preserve layout
+      exampleBuffer = await standardizeExampleCreative(convertedExample.buffer);
       exampleMimeType = 'image/jpeg'; // Always JPEG after standardization
       exampleBase64 = exampleBuffer.toString('base64');
-      console.log('📋 Example creative standardized to 512x768');
+      console.log('📋 Example creative standardized with full content preservation');
     }
 
     // Step 2: Analyze the uploaded image to get a detailed description
