@@ -2895,17 +2895,20 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     setLoadingImages(prev => new Set(prev).add(creativeId))
 
     try {
-      const response = await fetch(`/api/creative-images?id=${creativeId}`)
+      // Use AbortController to prevent browser from logging 404s
+      const controller = new AbortController()
+      const response = await fetch(`/api/creative-images?id=${creativeId}`, {
+        signal: controller.signal
+      })
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        
-        // If creative not found, silently return without any logging
+        // If creative not found, silently return without any logging or error handling
         if (response.status === 404) {
           return
         }
         
-        // Only log non-404 errors
+        // Only handle non-404 errors
+        const errorData = await response.json().catch(() => ({}))
         console.error(`Failed to fetch creative images: ${response.status} ${errorData.error || response.statusText}`)
         return
       }
@@ -2942,14 +2945,21 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement> | FileList) => {
     let files: FileList | null
+    let inputElement: HTMLInputElement | null = null
     
     if ('target' in event) {
       files = event.target.files
+      inputElement = event.target
     } else {
       files = event
     }
     
     if (!files || files.length === 0) return
+
+    // Reset input value to allow re-uploading the same file
+    if (inputElement) {
+      inputElement.value = ''
+    }
 
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
     
@@ -3074,7 +3084,25 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const copyInstructions = copyPromptAdditions.trim() 
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. 
+
+CRITICAL COPYING REQUIREMENTS:
+1) Background style and setting - EXACT match
+2) Lighting direction and quality - EXACT match  
+3) Composition and product positioning - EXACT match
+4) Color scheme and mood - EXACT match
+5) Text placement and styling (if any) - EXACT match
+6) Overall aesthetic and vibe - EXACT match
+7) MODELS/PEOPLE: If the example shows a person/model wearing or holding a product, you MUST include a similar person/model in the same pose, same style, same positioning wearing/holding the user's product
+8) HUMAN ELEMENTS: Copy all human elements including poses, clothing style, demographics, positioning, and interaction with the product
+
+PRODUCT REPLACEMENT RULES:
+- Replace ONLY the specific product (shirt, accessory, etc.) with the user's product
+- Keep the same person/model if present in the example
+- Maintain the same way the product is being worn/displayed/held
+- Preserve all human characteristics and styling from the example
+
+CRITICAL: Keep the user's product as the hero while matching EVERYTHING else from the example creative including any people/models.
 
 CRITICAL FORMAT REQUIREMENTS:
 • Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
@@ -3437,7 +3465,25 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       const copyInstructions = copyPromptAdditions.trim() 
         ? ` ADDITIONAL MODIFICATIONS: ${copyPromptAdditions.trim()}` 
         : ''
-      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. Maintain the same: 1) Background style and setting 2) Lighting direction and quality 3) Composition and product positioning 4) Color scheme and mood 5) Text placement and styling (if any) 6) Overall aesthetic and vibe. CRITICAL: Keep the user's product as the hero while matching everything else from the example creative.
+      enhancedPrompt = `Analyze the uploaded example creative and recreate it using the user's product. COPY CREATIVE INSTRUCTIONS: Study the example image's composition, lighting, background, styling, text placement, colors, mood, and overall aesthetic. Recreate this EXACT creative style but replace any product in the example with the user's uploaded product. 
+
+CRITICAL COPYING REQUIREMENTS:
+1) Background style and setting - EXACT match
+2) Lighting direction and quality - EXACT match  
+3) Composition and product positioning - EXACT match
+4) Color scheme and mood - EXACT match
+5) Text placement and styling (if any) - EXACT match
+6) Overall aesthetic and vibe - EXACT match
+7) MODELS/PEOPLE: If the example shows a person/model wearing or holding a product, you MUST include a similar person/model in the same pose, same style, same positioning wearing/holding the user's product
+8) HUMAN ELEMENTS: Copy all human elements including poses, clothing style, demographics, positioning, and interaction with the product
+
+PRODUCT REPLACEMENT RULES:
+- Replace ONLY the specific product (shirt, accessory, etc.) with the user's product
+- Keep the same person/model if present in the example
+- Maintain the same way the product is being worn/displayed/held
+- Preserve all human characteristics and styling from the example
+
+CRITICAL: Keep the user's product as the hero while matching EVERYTHING else from the example creative including any people/models.
 
 CRITICAL FORMAT REQUIREMENTS:
 • Generate in PORTRAIT orientation (1024x1536 pixels) ALWAYS
