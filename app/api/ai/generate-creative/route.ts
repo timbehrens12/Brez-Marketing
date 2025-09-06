@@ -361,6 +361,9 @@ SESSION RESET: Previous requests and their themes (like "back to school", season
     // Check if this is a multi-product request with custom prompt
     if (customPrompt && multiProductCount) {
       console.log('🎨 Using custom multi-product prompt...');
+      console.log('🎨 MULTI-PRODUCT PROMPT DEBUG:');
+      console.log('📝 Prompt length:', customPrompt.length);
+      console.log('📝 First 500 chars:', customPrompt.substring(0, 500));
       // Use the custom multi-product prompt directly
       prompt = sessionReset + customPrompt;
     } else {
@@ -464,12 +467,16 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
       if (customPrompt && multiProductCount && additionalImages) {
         try {
           const additionalImagesArray = JSON.parse(additionalImages);
-          console.log(`🖼️ Adding ${additionalImagesArray.length} additional images for multi-product generation`);
+          console.log(`🖼️ MULTI-PRODUCT DEBUG: Adding ${additionalImagesArray.length} additional images for multi-product generation`);
+          console.log(`🖼️ Total images being sent to AI: 1 main + ${additionalImagesArray.length} additional = ${1 + additionalImagesArray.length} total`);
+          console.log(`🖼️ multiProductCount parameter: ${multiProductCount}`);
           
           additionalImagesArray.forEach((imageData: string, index: number) => {
             // Extract base64 data and mime type from data URL
             const [mimeTypePart, base64Part] = imageData.split(',');
             const mimeType = mimeTypePart.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+            
+            console.log(`🖼️ Adding additional image ${index + 2}: ${mimeType}, data length: ${base64Part.length}`);
             
             contentArray.push({
               inlineData: {
@@ -478,6 +485,8 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
               }
             });
           });
+          
+          console.log(`🖼️ Final contentArray length: ${contentArray.length} items sent to Gemini AI`);
         } catch (parseError) {
           console.error('❌ Error parsing additional images:', parseError);
         }
