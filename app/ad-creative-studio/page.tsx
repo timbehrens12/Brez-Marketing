@@ -1780,11 +1780,11 @@ export default function AdCreativeStudioPage() {
       const gridCols = 2
       const gridRows = Math.ceil(images.length / gridCols)
       
-      // Use upper 60% of canvas for products, leave bottom 40% for text
-      const gridAreaHeight = canvasHeight * 0.6
-      const gridStartY = canvasHeight * 0.1 // Start 10% from top
+      // Use upper 70% of canvas for products, leave bottom 30% for text
+      const gridAreaHeight = canvasHeight * 0.7
+      const gridStartY = canvasHeight * 0.05 // Start 5% from top
       
-      const productWidth = (canvasWidth * 0.8) / gridCols // 80% width divided by columns
+      const productWidth = (canvasWidth * 0.9) / gridCols // 90% width divided by columns
       const productHeight = gridAreaHeight / gridRows
       const marginX = (canvasWidth - (productWidth * gridCols)) / 2
       
@@ -1801,7 +1801,7 @@ export default function AdCreativeStudioPage() {
           const y = gridStartY + (row * productHeight)
           
           // Draw image to fit in the grid cell while maintaining aspect ratio
-          const scale = Math.min(productWidth / img.width, productHeight / img.height) * 0.8 // 80% to add padding
+          const scale = Math.min(productWidth / img.width, productHeight / img.height) * 0.95 // 95% to add minimal padding
           const scaledWidth = img.width * scale
           const scaledHeight = img.height * scale
           
@@ -5809,7 +5809,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                       onMouseEnter={() => setShowProductPopup(true)}
                       onMouseLeave={() => setShowProductPopup(false)}
                     >
-                      <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[80px] lg:w-[120px] h-[80px] lg:h-[120px]">
+                      <div className={`bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[80px] lg:w-[120px] ${isMultiMode && uploadedImages.length > 1 ? 'h-[90px] lg:h-[135px]' : 'h-[80px] lg:h-[120px]'}`}>
                         <div className="text-center space-y-1">
                           <span className="text-xs text-gray-400 font-medium">YOUR PRODUCT</span>
                           <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a]">
@@ -5820,7 +5820,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                             />
                           </div>
                           {isMultiMode && uploadedImages.length > 1 && (
-                            <span className="text-xs text-blue-400">{uploadedImages.length} items</span>
+                            <span className="text-xs text-blue-400 mt-1">{uploadedImages.length} items</span>
                           )}
                         </div>
                       </div>
