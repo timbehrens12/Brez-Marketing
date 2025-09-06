@@ -51,7 +51,6 @@ const compressImage = async (file: File, maxSizeMB: number = 2): Promise<string>
           }
           
           const sizeMB = blob.size / (1024 * 1024)
-          // console.log(`🗜️ Compressed image: ${sizeMB.toFixed(2)}MB at quality ${quality}`)
           
           if (sizeMB <= maxSizeMB) {
             // Convert to base64
@@ -1541,7 +1540,6 @@ export default function AdCreativeStudioPage() {
     setLoadingImages(new Set()) // Clear loading images
     
     try {
-      // console.log('📚 Loading creatives for brand:', selectedBrandId)
         const response = await fetch(`/api/creative-generations?brandId=${selectedBrandId}&limit=50`)
         
         if (!response.ok) {
@@ -1550,11 +1548,9 @@ export default function AdCreativeStudioPage() {
 
         const data = await response.json()
         setGeneratedCreatives(data.creatives || [])
-        // console.log('✅ Loaded', data.creatives?.length || 0, 'creatives out of', data.pagination?.total || 0, 'total')
         
         // If there are more creatives than what we loaded, show a message
         if (data.pagination?.hasMore) {
-          // console.log('📄 More creatives available:', data.pagination.total - data.creatives.length, 'additional creatives')
         }
         
       } catch (error) {
@@ -1644,14 +1640,12 @@ export default function AdCreativeStudioPage() {
   }
 
   const updateCreativeStatus = (id: string, status: GeneratedCreative['status'], generatedImageUrl?: string) => {
-    // console.log(`🔄 Updating creative ${id} status to ${status}`, { generatedImageUrl: generatedImageUrl ? 'provided' : 'none' })
     setGeneratedCreatives(prev => {
       const updated = prev.map(creative => 
         creative.id === id 
           ? { ...creative, status, ...(generatedImageUrl && { generated_image_url: generatedImageUrl }) }
           : creative
       )
-      // console.log(`✅ Creative status updated. Found creative: ${updated.some(c => c.id === id)}`)
       return updated
     })
   }
@@ -1665,13 +1659,11 @@ export default function AdCreativeStudioPage() {
     // Check if creative exists in current state before attempting deletion
     const creativeExists = generatedCreatives.some(creative => creative.id === id)
     if (!creativeExists) {
-      console.log('Creative not found in current state - already deleted')
       return
     }
 
     // Prevent double-deletion attempts
     if (deletingCreativeId === id) {
-      console.log('Deletion already in progress for this creative')
       return
     }
 
@@ -1688,21 +1680,19 @@ export default function AdCreativeStudioPage() {
         
         // If it's a 404 (not found), treat it as success since the goal is achieved
         if (response.status === 404) {
-          console.log('Creative not found in database - removing from frontend state')
+          // Creative not found in database - removing from frontend state
         } else if (response.status === 403) {
-          console.warn('Access denied for creative deletion:', errorData.message)
-          // Still remove from frontend to keep UI consistent
+          // Access denied for creative deletion - still remove from frontend to keep UI consistent
         } else {
-          console.warn('Delete API error:', errorData.error || 'Unknown error')
-          // Still remove from frontend to keep UI consistent
+          // Delete API error - still remove from frontend to keep UI consistent
         }
       } else {
         // Success response
         const result = await response.json().catch(() => ({ success: true }))
         if (result.alreadyDeleted) {
-          console.log('Creative was already deleted - cleanup completed')
+          // Creative was already deleted - cleanup completed
         } else {
-          console.log('Creative deleted successfully')
+          // Creative deleted successfully
         }
       }
 
@@ -1782,20 +1772,33 @@ export default function AdCreativeStudioPage() {
         const base64Images = await Promise.all(imagePromises)
 
 
-        // Create enhanced prompt for multi-product extraction
-        const multiProductPrompt = `GENERATE AN IMAGE: Create a stunning fashion display featuring ${images.length} different clothing items extracted from the provided ${images.length} separate product images.
+        // Get user's additional instructions from autoPromptAdditions
+        const userInstructions = autoPromptAdditions.trim()
+        
+        // Create enhanced prompt for multi-product extraction with user instructions
+        const multiProductPrompt = `GENERATE AN IMAGE: Create a stunning display featuring ${images.length} different items extracted from the provided ${images.length} separate product images.
 
-TASK: Extract each clothing item from the separate images I'm providing and arrange them together in one beautiful composition on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
+TASK: Extract each item from the separate images I'm providing and arrange them together in one beautiful composition on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
 
 CRITICAL REQUIREMENTS:
-- EXTRACT each clothing item from its respective image (I'm providing ${images.length} separate images)
+- EXTRACT each item from its respective image (I'm providing ${images.length} separate images)
 - ARRANGE all ${images.length} items together in one elegant, professional layout
 - Use ${style.id === 'concrete-floor' ? 'urban street style' : style.id === 'white-background' ? 'minimalist clean aesthetic' : style.id === 'marble-surface' ? 'luxury boutique style' : 'premium product photography'} aesthetic
 - Ensure each item is clearly visible and professionally presented
 - Maintain consistent lighting and shadows across all items
-- Create a cohesive, high-end fashion display in 1024x1536 portrait format
+- Create a cohesive, high-end display in 1024x1536 portrait format
 
-DO NOT ask for more images - I am providing all ${images.length} images now. Generate the combined fashion display image immediately.`
+${userInstructions ? `MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''}
+
+🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
+- ALL text must be contained within the image boundaries with generous margins
+- Use minimum 80px margins from all edges for any text elements
+- Position text in the center 60% of the canvas only
+- Leave 15-20% exclusion zones at top, bottom, left, and right edges
+- Text must be large, bold, and highly readable
+- NEVER place text near image boundaries
+
+DO NOT ask for more images - I am providing all ${images.length} images now. Generate the combined display image immediately.`
 
         // Create FormData for the API call
         const formData = new FormData()
@@ -1838,7 +1841,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
 
 
-        console.log(`🚀 Sending multi-product request with ${images.length} images...`)
         
         const response = await fetch('/api/ai/generate-creative', {
           method: 'POST',
@@ -1847,7 +1849,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
         if (!response.ok) {
           const errorData = await response.json()
-          console.error('Multi-product generation failed:', errorData)
           // Silent error handling
           reject(new Error(errorData.error || 'Failed to generate multi-product creative'))
           return
@@ -2095,7 +2096,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
   // Apply crop to the selected creative
   const handleApplyCrop = async () => {
-    console.log('✂️ Apply crop called for creative:', cropCreativeId)
     try {
       const croppedImageUrl = await applyCrop(cropImageUrl, cropArea)
       
@@ -2381,13 +2381,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       // Generate the enhanced prompt with custom issue fix (no custom instructions for quick retries)
       const enhancedPrompt = `${style.prompt} CRITICAL CUSTOM FIX: ${customIssue}`
 
-      // console.log('🔄 RETRY GENERATION:')
-      // console.log('📝 Enhanced Prompt:', enhancedPrompt)
-      // console.log('🎨 Style ID:', style.id)
-      // console.log('📷 Image size:', base64Image.length, 'characters')
-      // console.log('🔧 Custom Issue:', customIssue)
-      // console.log('🏷️ Brand ID:', selectedBrandId)
-      // console.log('🆔 Creative ID:', actualRetryId)
 
       // Validation
       if (!selectedBrandId) {
@@ -2404,7 +2397,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
 
-      // console.log('🚀 Sending API request...')
       
       const response = await fetch('/api/generate-background', {
         method: 'POST',
@@ -2424,10 +2416,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       })
 
       clearTimeout(timeoutId) // Clear timeout if request succeeds
-      // console.log('✅ API request completed')
 
-      // console.log('📡 API Response Status:', response.status)
-      // console.log('📡 API Response OK:', response.ok)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -2436,11 +2425,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       }
 
       const data = await response.json()
-      // console.log('📦 API Response Data:', data)
       
       // Check if we have an imageUrl (API doesn't always include 'success' field)
       if (data.imageUrl) {
-        // console.log('✅ Generation successful, updating status to completed')
         updateCreativeStatus(actualRetryId, 'completed', data.imageUrl)
         toast.success('Retry generation completed!')
         
@@ -2909,7 +2896,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         if (response.status === 404) {
           return
         }
-        console.error(`Failed to fetch creative images: ${response.status}`)
         return
       }
 
@@ -2923,7 +2909,6 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         }
       }))
       
-      // console.log('✅ Images loaded for creative:', creativeId)
     } catch (error) {
       // Silently handle errors - don't spam console or show error toasts
       // Mark as "loaded" with empty state to prevent retry attempts
@@ -2956,11 +2941,9 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     
     // Early return if no files - but don't reset input yet
     if (!files || files.length === 0) {
-      console.log('No files selected or upload cancelled')
       return
     }
 
-    console.log(`Processing ${files.length} files from upload...`)
 
     // Reset input value AFTER processing to allow re-uploading the same file
     if (inputElement) {
@@ -3371,8 +3354,6 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       }
 
       const data = await response.json()
-      // console.log('✅ API Success Response:', data)
-      // console.log('🖼️ Generated image URL length:', data.imageUrl?.length || 'no imageUrl')
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
 
@@ -3729,12 +3710,6 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         reader.readAsDataURL(uploadedImage);
       });
 
-      // Debug logging
-      // console.log('🚀 SENDING TO API:')
-      // console.log('📝 Final Prompt:', enhancedPrompt)
-      // console.log('🎨 Style ID:', modalStyle.id)
-      // console.log('📷 Image size:', base64Image.length, 'characters')
-      // console.log('📋 Text overlays:', customText)
 
       // Create FormData for the new Gemini API
       const formData = new FormData();
@@ -3792,8 +3767,6 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       }
 
       const data = await response.json()
-      // console.log('✅ API Success Response:', data)
-      // console.log('🖼️ Generated image URL length:', data.imageUrl?.length || 'no imageUrl')
       updateCreativeStatus(creativeId, 'completed', data.imageUrl)
       setGeneratedImage(data.imageUrl)
       await refreshUsage() // Refresh usage count from database
