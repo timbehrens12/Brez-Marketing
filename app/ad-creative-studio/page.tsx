@@ -2958,63 +2958,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       return
     }
 
-    // Check if all images are portrait (height > width)
-    const checkPortraitImages = async (files: File[]) => {
-      const promises = files.map((file, index) => {
-        return new Promise<{ file: File, isPortrait: boolean, fileName: string, dimensions?: { width: number, height: number } }>((resolve) => {
-          const img = new Image()
-          img.onload = () => {
-            const isPortrait = img.height > img.width
-            resolve({ 
-              file, 
-              isPortrait, 
-              fileName: file.name,
-              dimensions: { width: img.width, height: img.height }
-            })
-            // Clean up the object URL
-            URL.revokeObjectURL(img.src)
-          }
-          img.onerror = (error) => {
-            alert(`Failed to load image: ${file.name}`)
-            resolve({ file, isPortrait: false, fileName: file.name })
-            URL.revokeObjectURL(img.src)
-          }
-          img.src = URL.createObjectURL(file)
-        })
-      })
-      
-      try {
-        const results = await Promise.all(promises)
-        const nonPortraitFiles = results.filter(r => !r.isPortrait)
-        
-        if (nonPortraitFiles.length > 0) {
-          const landscapeFiles = nonPortraitFiles.map(r => {
-            const dims = r.dimensions ? `${r.dimensions.width}x${r.dimensions.height}` : 'unknown dimensions'
-            return `${r.fileName} (${dims})`
-          })
-          
-          const errorMessage = `Only portrait images allowed!\n\n${nonPortraitFiles.length} file(s) rejected:\n${landscapeFiles.join('\n')}\n\nPlease use images that are taller than wide.\nSquare images are not accepted.`
-          
-          alert(errorMessage)
-          return false
-        }
-        return true
-      } catch (error) {
-        console.error('❌ Error during portrait validation:', error)
-        toast.error('Error validating image orientation. Please try again.')
-        return false
-      }
-    }
 
-    try {
-      const isValidOrientation = await checkPortraitImages(imageFiles)
-      if (!isValidOrientation) {
-        return
-      }
-    } catch (error) {
-      alert('Failed to validate image orientation. Please try again.')
-      return
-    }
+    // Portrait validation removed - backend preprocessing now handles all aspect ratios!
 
     // Check if we're adding to existing images or starting fresh
     const hasExistingImages = uploadedImages.length > 0 || uploadedImage !== null
@@ -4066,7 +4011,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 <div>
                   <h4 className="text-orange-400 font-semibold mb-2">📸 Pro Tips for Best Results</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
-                      <li>• <strong>Portrait images only</strong> - Only taller-than-wide images are accepted for optimal AI generation</li>
+                      <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI will optimize automatically</li>
                       <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
                       <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
                     <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
