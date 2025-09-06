@@ -3369,13 +3369,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
           // Switch to generated tab
           setActiveTab('generated')
           
-          // Clear the uploaded images after everything is complete
-          setTimeout(() => {
-            setUploadedImages([])
-            setUploadedImageUrls([])
-            setIsMultiMode(false)
-            setCollageUrl('')
-          }, 1000) // Small delay to ensure everything is saved
+          // Don't clear the uploaded images - keep them for additional generations
+          // Images will only clear when user navigates away or manually clears them
 
         } catch (generationError) {
           // Silent error handling
