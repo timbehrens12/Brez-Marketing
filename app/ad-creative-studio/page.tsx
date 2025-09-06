@@ -1465,6 +1465,16 @@ export default function AdCreativeStudioPage() {
     fetchUsageData()
   }, [])
 
+  // Cleanup when component unmounts (user navigates away)
+  useEffect(() => {
+    return () => {
+      // Clear all persistent form data when leaving the page
+      setCustomInstructions('')
+      setAutoPromptAdditions('')
+      setCopyPromptAdditions('')
+    }
+  }, []) // Empty dependency array means this only runs on mount/unmount
+
   // Set custom template when entering custom template step
   useEffect(() => {
     if (currentStep === 'custom-template-prompt') {
@@ -1490,6 +1500,24 @@ export default function AdCreativeStudioPage() {
     // Clear auto instructions when a new product image is uploaded
     if (autoPromptAdditions.trim()) {
       setAutoPromptAdditions('')
+    }
+  }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
+
+  // Clear custom instructions when switching away from custom template
+  useEffect(() => {
+    if (selectedCreativeType && selectedCreativeType !== 'custom') {
+      // Clear custom instructions when switching to a different creative type
+      if (customInstructions.trim()) {
+        setCustomInstructions('')
+      }
+    }
+  }, [selectedCreativeType, customInstructions])
+
+  // Clear custom instructions when uploading a new image/product
+  useEffect(() => {
+    // Clear custom instructions when a new product image is uploaded
+    if (customInstructions.trim()) {
+      setCustomInstructions('')
     }
   }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
 
