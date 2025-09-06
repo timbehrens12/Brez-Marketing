@@ -1579,9 +1579,8 @@ export default function AdCreativeStudioPage() {
     
     // Load images for all completed creatives with valid UUIDs with a slight delay for better UX
     completedCreatives.forEach((creative, index) => {
-      // Only attempt to load images for creatives with valid UUID IDs AND imageUrl
+      // Only attempt to load images for creatives with valid UUID IDs
       if (uuidRegex.test(creative.id) && 
-          creative.imageUrl && 
           !loadedImages[creative.id] && 
           !loadingImages.has(creative.id)) {
         // Stagger the loading to prevent overwhelming the server
@@ -1839,6 +1838,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
 
 
+        console.log(`🚀 Sending multi-product request with ${images.length} images...`)
+        
         const response = await fetch('/api/ai/generate-creative', {
           method: 'POST',
           body: formData,
@@ -1846,6 +1847,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
 
         if (!response.ok) {
           const errorData = await response.json()
+          console.error('Multi-product generation failed:', errorData)
           // Silent error handling
           reject(new Error(errorData.error || 'Failed to generate multi-product creative'))
           return
@@ -2571,6 +2573,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     ? filteredStyleOptions.filter(style =>
         style.id === 'multi-product-showcase' ||
         style.id === 'custom-template' ||
+        style.id === 'auto-generation' ||
+        style.id === 'copy-generation' ||
         style.category === 'all'
       )
     : filteredStyleOptions
@@ -2878,8 +2882,8 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
         return
       }
       
-      // If it already has imageUrl, don't fetch again
-      if (creative.imageUrl) {
+      // If it already has generated_image_url, don't fetch again
+      if (creative.generated_image_url) {
         return
       }
       
@@ -2898,18 +2902,14 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     setLoadingImages(prev => new Set(prev).add(creativeId))
 
     try {
-      // Check if creative has imageUrl first to avoid unnecessary API calls
-      const creative = generatedCreatives.find(c => c.id === creativeId)
-      if (creative && !creative.imageUrl) {
-        // Skip API call if creative doesn't have imageUrl - prevents 404s
-        return
-      }
-
-      // Use a more aggressive approach to suppress 404s
       const response = await fetch(`/api/creative-images?id=${creativeId}`)
       
       if (!response.ok) {
-        // Silently handle all errors to prevent console spam
+        // Silently handle 404s (creative not found) but log other errors
+        if (response.status === 404) {
+          return
+        }
+        console.error(`Failed to fetch creative images: ${response.status}`)
         return
       }
 
