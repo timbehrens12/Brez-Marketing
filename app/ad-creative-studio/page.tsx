@@ -1755,7 +1755,78 @@ export default function AdCreativeStudioPage() {
     }
   }
 
-  // Collage generation function
+  // Collage generation function for multi-product
+  const createProductCollage = async (images: File[]): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'))
+        return
+      }
+      
+      // Set canvas to portrait format for final creative
+      const canvasWidth = 1024
+      const canvasHeight = 1536
+      canvas.width = canvasWidth
+      canvas.height = canvasHeight
+      
+      // Fill with white background
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+      
+      // Calculate grid layout (2x2 for 4 products, centered in upper portion)
+      const gridCols = 2
+      const gridRows = Math.ceil(images.length / gridCols)
+      
+      // Use upper 60% of canvas for products, leave bottom 40% for text
+      const gridAreaHeight = canvasHeight * 0.6
+      const gridStartY = canvasHeight * 0.1 // Start 10% from top
+      
+      const productWidth = (canvasWidth * 0.8) / gridCols // 80% width divided by columns
+      const productHeight = gridAreaHeight / gridRows
+      const marginX = (canvasWidth - (productWidth * gridCols)) / 2
+      
+      let loadedImages = 0
+      const totalImages = images.length
+      
+      images.forEach((file, index) => {
+        const img = new Image()
+        img.onload = () => {
+          const col = index % gridCols
+          const row = Math.floor(index / gridCols)
+          
+          const x = marginX + (col * productWidth)
+          const y = gridStartY + (row * productHeight)
+          
+          // Draw image to fit in the grid cell while maintaining aspect ratio
+          const scale = Math.min(productWidth / img.width, productHeight / img.height) * 0.8 // 80% to add padding
+          const scaledWidth = img.width * scale
+          const scaledHeight = img.height * scale
+          
+          const centerX = x + (productWidth - scaledWidth) / 2
+          const centerY = y + (productHeight - scaledHeight) / 2
+          
+          ctx.drawImage(img, centerX, centerY, scaledWidth, scaledHeight)
+          
+          loadedImages++
+          if (loadedImages === totalImages) {
+            // All images loaded, return the collage as data URL
+            resolve(canvas.toDataURL('image/jpeg', 0.9))
+          }
+        }
+        
+        img.onerror = () => {
+          reject(new Error(`Failed to load image ${index + 1}`))
+        }
+        
+        // Convert file to object URL
+        img.src = URL.createObjectURL(file)
+      })
+    })
+  }
+
   // New multi-product generation function
   const generateMultiProductCreative = async (images: File[], style: StyleOption, customText: any, finalName: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
@@ -1770,60 +1841,66 @@ export default function AdCreativeStudioPage() {
         }))
 
         const base64Images = await Promise.all(imagePromises)
+        
+        // Create a collage of all products first
+        const collageDataUrl = await createProductCollage(images)
 
 
         // Get user's additional instructions from autoPromptAdditions
         const userInstructions = autoPromptAdditions.trim()
         
-        // Create enhanced prompt for multi-product extraction with user instructions
-        const multiProductPrompt = `🎯 MULTI-PRODUCT CREATIVE GENERATION TASK:
+        // Create enhanced prompt for styling the product collage
+        const multiProductPrompt = `🎯 PRODUCT COLLAGE STYLING TASK:
 
-I am providing you with ${images.length} separate product images. You MUST extract ALL ${images.length} products from these images and combine them into ONE single creative.
+I'm providing you with a collage image that contains ${images.length} products arranged in a grid layout. Your task is to enhance this collage by adding professional styling, background, and text elements.
 
-📋 EXTRACTION REQUIREMENTS:
-- Image 1: Extract the main product and include it in the final creative
-- Image 2: Extract the product from this image and include it in the final creative  
-- Image 3: Extract the product from this image and include it in the final creative
-${images.length > 3 ? `- Image 4: Extract the product from this image and include it in the final creative` : ''}
-- ALL ${images.length} products must appear together in the final creative
-
-🎨 LAYOUT REQUIREMENTS:
-- Arrange all ${images.length} products in an attractive grid or layout
-- Each product should be clearly visible and well-positioned
-- Use consistent lighting and professional styling
-- Background: ${style.id === 'concrete-floor' ? 'concrete surface' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}
-- Format: 1024x1536 portrait orientation
+🎨 STYLING REQUIREMENTS:
+- Keep ALL ${images.length} products visible and clearly displayed
+- Add a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background behind the products
+- Enhance the overall composition with professional lighting and shadows
+- Maintain the 1024x1536 portrait format
+- Make the products look like a high-end advertisement
 
 ${userInstructions ? `🎯 MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''}
 
-🚨 CRITICAL: You MUST use ALL ${images.length} images I'm providing. Do not use just one image - extract products from ALL images and combine them into one creative showing all products together.
+🚨 CRITICAL TEXT PLACEMENT RULES:
+- Add text elements as specified in user requirements
+- Ensure ALL text is contained within image boundaries with 80px margins minimum
+- Use professional typography that complements the products
+- Position text in areas that don't cover the products
 
-Generate the multi-product creative now with ALL ${images.length} products visible.`
+✨ ENHANCEMENT GOALS:
+- Transform this product collage into a stunning advertisement
+- Keep all products prominently displayed
+- Add visual appeal while maintaining product visibility
+- Create a cohesive, professional look
 
-        // Create FormData for the API call
+Generate the enhanced advertisement now, keeping ALL ${images.length} products visible and properly styled.`
+
+        // Create FormData for the API call using the collage
         const formData = new FormData()
 
-        // Add the first image as the base (API expects one primary image)
-        const base64Data = base64Images[0].split(',')[1]
-        const byteCharacters = atob(base64Data)
+        // Convert collage data URL to File
+        const collageBase64Data = collageDataUrl.split(',')[1]
+        const byteCharacters = atob(collageBase64Data)
         const byteNumbers = new Array(byteCharacters.length)
         for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i)
         }
         const byteArray = new Uint8Array(byteNumbers)
-        const imageBlob = new Blob([byteArray], { type: images[0].type || 'image/jpeg' })
-        const imageFile = new File([imageBlob], images[0].name || 'multi-product.jpg', { type: images[0].type || 'image/jpeg' })
+        const collageBlob = new Blob([byteArray], { type: 'image/jpeg' })
+        const collageFile = new File([collageBlob], `multi-product-collage-${images.length}.jpg`, { type: 'image/jpeg' })
 
-        formData.append('image', imageFile)
+        formData.append('image', collageFile)
         formData.append('prompt', multiProductPrompt)
         formData.append('styleId', style.id)
         formData.append('aspectRatio', 'portrait')
         formData.append('quality', 'hd')
         formData.append('textOverlays', JSON.stringify(customText))
 
-        // Add additional context about multiple products
+        // Mark this as a collage-based multi-product request (no additional images needed)
         formData.append('multiProductCount', images.length.toString())
-        formData.append('additionalImages', JSON.stringify(base64Images.slice(1)))
+        formData.append('isProductCollage', 'true')
 
         // Map background type
         const backgroundTypeMapping: { [key: string]: string } = {

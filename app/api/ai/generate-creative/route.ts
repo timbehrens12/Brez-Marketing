@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
     const customPrompt = formData.get('prompt') as string;
     const multiProductCount = formData.get('multiProductCount') as string;
     const additionalImages = formData.get('additionalImages') as string;
+    const isProductCollage = formData.get('isProductCollage') as string;
 
     if (!imageFile || !backgroundType) {
       return NextResponse.json(
@@ -463,8 +464,8 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
         });
       }
 
-      // If this is a multi-product request, add additional images
-      if (customPrompt && multiProductCount && additionalImages) {
+      // If this is a multi-product request, add additional images (unless it's a pre-made collage)
+      if (customPrompt && multiProductCount && !isProductCollage && additionalImages) {
         try {
           const additionalImagesArray = JSON.parse(additionalImages);
           console.log(`🖼️ MULTI-PRODUCT DEBUG: Adding ${additionalImagesArray.length} additional images for multi-product generation`);
@@ -490,6 +491,9 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
         } catch (parseError) {
           console.error('❌ Error parsing additional images:', parseError);
         }
+      } else if (isProductCollage && multiProductCount) {
+        console.log(`🎨 PRODUCT COLLAGE MODE: Using pre-made collage with ${multiProductCount} products`);
+        console.log(`🖼️ Single collage image being sent for styling and enhancement`);
       }
 
       console.log(`🚀 Sending ${contentArray.length - 1} images to Gemini for generation`);
