@@ -413,7 +413,7 @@ ${backgroundPreset.prompt}`;
       // Build the content array for Gemini - Ultra-strict text boundaries and instruction following
       const contentArray = [
         {
-          text: `Create a professional advertisement image with this product. The product image has been pre-standardized to 512x768 dimensions for optimal composition. Make it visually appealing with text overlays.
+          text: isProductCollage && customPrompt ? customPrompt : `Create a professional advertisement image with this product. The product image has been pre-standardized to 512x768 dimensions for optimal composition. Make it visually appealing with text overlays.
 
 🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
 - ALL TEXT MUST BE COMPLETELY INSIDE THE 1024x1536 CANVAS
@@ -494,6 +494,7 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
       } else if (isProductCollage && multiProductCount) {
         console.log(`🎨 PRODUCT COLLAGE MODE: Using pre-made collage with ${multiProductCount} products`);
         console.log(`🖼️ Single collage image being sent for styling and enhancement`);
+        console.log(`📝 Using custom multi-product prompt: ${customPrompt ? 'YES' : 'NO'}`);
       }
 
       console.log(`🚀 Sending ${contentArray.length - 1} images to Gemini for generation`);
