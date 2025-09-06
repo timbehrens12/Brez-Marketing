@@ -1579,8 +1579,11 @@ export default function AdCreativeStudioPage() {
     
     // Load images for all completed creatives with valid UUIDs with a slight delay for better UX
     completedCreatives.forEach((creative, index) => {
-      // Only attempt to load images for creatives with valid UUID IDs
-      if (uuidRegex.test(creative.id) && !loadedImages[creative.id] && !loadingImages.has(creative.id)) {
+      // Only attempt to load images for creatives with valid UUID IDs AND imageUrl
+      if (uuidRegex.test(creative.id) && 
+          creative.imageUrl && 
+          !loadedImages[creative.id] && 
+          !loadingImages.has(creative.id)) {
         // Stagger the loading to prevent overwhelming the server
         setTimeout(() => {
           loadCreativeImages(creative.id)
@@ -2010,7 +2013,7 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     setCropCreativeId(creativeId)
     setCropImageUrl(imageUrl)
     
-    // Initialize crop area to fit the actual image (will be updated when image loads)
+    // Initialize crop area to full container - will be updated to image bounds when image loads
     setCropArea({ x: 0, y: 0, width: 100, height: 100 })
     
     // Store original URL if not already stored (for undo functionality)
@@ -2895,21 +2898,18 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
     setLoadingImages(prev => new Set(prev).add(creativeId))
 
     try {
-      // Use AbortController to prevent browser from logging 404s
-      const controller = new AbortController()
-      const response = await fetch(`/api/creative-images?id=${creativeId}`, {
-        signal: controller.signal
-      })
+      // Check if creative has imageUrl first to avoid unnecessary API calls
+      const creative = generatedCreatives.find(c => c.id === creativeId)
+      if (creative && !creative.imageUrl) {
+        // Skip API call if creative doesn't have imageUrl - prevents 404s
+        return
+      }
+
+      // Use a more aggressive approach to suppress 404s
+      const response = await fetch(`/api/creative-images?id=${creativeId}`)
       
       if (!response.ok) {
-        // If creative not found, silently return without any logging or error handling
-        if (response.status === 404) {
-          return
-        }
-        
-        // Only handle non-404 errors
-        const errorData = await response.json().catch(() => ({}))
-        console.error(`Failed to fetch creative images: ${response.status} ${errorData.error || response.statusText}`)
+        // Silently handle all errors to prevent console spam
         return
       }
 
@@ -2954,11 +2954,20 @@ DO NOT ask for more images - I am providing all ${images.length} images now. Gen
       files = event
     }
     
-    if (!files || files.length === 0) return
+    // Early return if no files - but don't reset input yet
+    if (!files || files.length === 0) {
+      console.log('No files selected or upload cancelled')
+      return
+    }
 
-    // Reset input value to allow re-uploading the same file
+    console.log(`Processing ${files.length} files from upload...`)
+
+    // Reset input value AFTER processing to allow re-uploading the same file
     if (inputElement) {
-      inputElement.value = ''
+      // Use setTimeout to ensure the file processing completes first
+      setTimeout(() => {
+        inputElement.value = ''
+      }, 100)
     }
 
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
@@ -5341,7 +5350,18 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         {/* Header */}
         <div className="flex items-center gap-4 mb-3">
           <Button
-            onClick={() => setCurrentStep('creative-type')}
+            onClick={() => {
+              // Clear copy creative state when leaving
+              setExampleCreativeImage(null)
+              setCopyPromptAdditions('')
+              if (exampleCreativeUrl) {
+                if (exampleCreativeUrl.startsWith('blob:')) {
+                  URL.revokeObjectURL(exampleCreativeUrl)
+                }
+                setExampleCreativeUrl('')
+              }
+              setCurrentStep('creative-type')
+            }}
             variant="ghost"
             className="text-gray-400 hover:text-white transition-colors"
           >
@@ -5995,7 +6015,15 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                       height: img.naturalHeight
                     })
                     // Calculate and store image bounds for cropping
-                    calculateImageCropArea(img, container)
+                    const imageBounds = calculateImageCropArea(img, container)
+                    
+                    // Initialize crop area to the actual image bounds (not container bounds)
+                    setCropArea({
+                      x: imageBounds.x,
+                      y: imageBounds.y,
+                      width: imageBounds.width,
+                      height: imageBounds.height
+                    })
                   }}
                 />
               )}
