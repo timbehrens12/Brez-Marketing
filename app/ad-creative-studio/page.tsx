@@ -1776,29 +1776,29 @@ export default function AdCreativeStudioPage() {
         const userInstructions = autoPromptAdditions.trim()
         
         // Create enhanced prompt for multi-product extraction with user instructions
-        const multiProductPrompt = `GENERATE AN IMAGE: Create a stunning display featuring ${images.length} different items extracted from the provided ${images.length} separate product images.
+        const multiProductPrompt = `🎯 MULTI-PRODUCT CREATIVE GENERATION TASK:
 
-TASK: Extract each item from the separate images I'm providing and arrange them together in one beautiful composition on a ${style.id === 'concrete-floor' ? 'concrete background' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}.
+I am providing you with ${images.length} separate product images. You MUST extract ALL ${images.length} products from these images and combine them into ONE single creative.
 
-CRITICAL REQUIREMENTS:
-- EXTRACT each item from its respective image (I'm providing ${images.length} separate images)
-- ARRANGE all ${images.length} items together in one elegant, professional layout
-- Use ${style.id === 'concrete-floor' ? 'urban street style' : style.id === 'white-background' ? 'minimalist clean aesthetic' : style.id === 'marble-surface' ? 'luxury boutique style' : 'premium product photography'} aesthetic
-- Ensure each item is clearly visible and professionally presented
-- Maintain consistent lighting and shadows across all items
-- Create a cohesive, high-end display in 1024x1536 portrait format
+📋 EXTRACTION REQUIREMENTS:
+- Image 1: Extract the main product and include it in the final creative
+- Image 2: Extract the product from this image and include it in the final creative  
+- Image 3: Extract the product from this image and include it in the final creative
+${images.length > 3 ? `- Image 4: Extract the product from this image and include it in the final creative` : ''}
+- ALL ${images.length} products must appear together in the final creative
 
-${userInstructions ? `MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''}
+🎨 LAYOUT REQUIREMENTS:
+- Arrange all ${images.length} products in an attractive grid or layout
+- Each product should be clearly visible and well-positioned
+- Use consistent lighting and professional styling
+- Background: ${style.id === 'concrete-floor' ? 'concrete surface' : style.id === 'white-background' ? 'clean white background' : style.id === 'marble-surface' ? 'luxurious marble surface' : 'premium background'}
+- Format: 1024x1536 portrait orientation
 
-🚨 CRITICAL TEXT PLACEMENT RULES - ZERO TOLERANCE FOR CLIPPING:
-- ALL text must be contained within the image boundaries with generous margins
-- Use minimum 80px margins from all edges for any text elements
-- Position text in the center 60% of the canvas only
-- Leave 15-20% exclusion zones at top, bottom, left, and right edges
-- Text must be large, bold, and highly readable
-- NEVER place text near image boundaries
+${userInstructions ? `🎯 MANDATORY USER REQUIREMENTS: ${userInstructions}` : ''}
 
-DO NOT ask for more images - I am providing all ${images.length} images now. Generate the combined display image immediately.`
+🚨 CRITICAL: You MUST use ALL ${images.length} images I'm providing. Do not use just one image - extract products from ALL images and combine them into one creative showing all products together.
+
+Generate the multi-product creative now with ALL ${images.length} products visible.`
 
         // Create FormData for the API call
         const formData = new FormData()
@@ -3219,7 +3219,6 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
 
     try {
       // Multi-product mode handling
-      alert(`Debug: isMultiMode=${isMultiMode}, uploadedImages.length=${uploadedImages.length}, templateStyle.id=${templateStyle.id}`)
       if (isMultiMode && uploadedImages.length > 1) {
 
 
@@ -3290,12 +3289,16 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
           // Refresh usage from database
           await refreshUsage()
 
-          // Clear the uploaded images after successful generation
-          setUploadedImages([])
-          setUploadedImageUrls([])
-
           // Switch to generated tab
           setActiveTab('generated')
+          
+          // Clear the uploaded images after everything is complete
+          setTimeout(() => {
+            setUploadedImages([])
+            setUploadedImageUrls([])
+            setIsMultiMode(false)
+            setCollageUrl('')
+          }, 1000) // Small delay to ensure everything is saved
 
         } catch (generationError) {
           // Silent error handling
