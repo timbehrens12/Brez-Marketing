@@ -1521,6 +1521,14 @@ export default function AdCreativeStudioPage() {
     }
   }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
 
+  // Clear custom instructions when not on custom template step
+  useEffect(() => {    
+    if (currentStep !== 'custom-template-prompt' && customInstructions.trim()) {
+      // Clear custom instructions when user is not on the custom template step
+      setCustomInstructions('')
+    }
+  }, [currentStep, customInstructions])
+
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
   // Function to refresh usage count from database
