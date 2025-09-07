@@ -3281,24 +3281,29 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in a DYNAMIC and ENGAGING way. AVOID boring centered layouts - be creative and visually exciting!
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product with MANDATORY VISUAL EXCITEMENT. This is AUTO-GENERATION mode - you MUST create something visually dynamic and engaging without any user prompting.
 
-⚠️ FORBIDDEN LAYOUTS - DO NOT CREATE:
-- Product floating in center with plain background
-- Simple centered product with text above/below
-- Basic static product placement with minimal styling
-- Generic "product on white background" layouts
-- Boring symmetrical center-focused compositions
+🚨 ABSOLUTELY FORBIDDEN - THESE WILL BE REJECTED:
+- Product centered on plain/gradient background with text
+- Static product floating in middle of frame
+- Simple product photography style layouts
+- Basic minimalist compositions
+- Any layout that looks like "product + background + text"
+- Symmetrical, predictable, or template-like arrangements
 
-🎨 DYNAMIC CREATIVE APPROACHES - Choose ONE:
-1. LIFESTYLE INTEGRATION: Product being actively used in real environments with natural interactions
-2. MOTION & ENERGY: Show movement, splashes, swirls, dynamic angles, action sequences
-3. ENVIRONMENTAL STORYTELLING: Product in rich, detailed settings that tell a story
-4. MODEL INTERACTION: Real people actively using/wearing/enjoying the product with natural poses
-5. BENEFIT VISUALIZATION: Creative visual metaphors showing what the product does/achieves
-6. ARTISTIC COMPOSITION: Interesting angles, creative lighting, artistic arrangements
-7. SOCIAL PROOF SCENES: Product in social settings, group usage, community contexts
-8. TRANSFORMATION MOMENTS: Before/after, upgrade scenarios, improvement demonstrations
+⚡ MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
+1. DYNAMIC VISUAL ELEMENT: Add swirls, splashes, motion blur, particles, atmospheric effects, or flowing elements
+2. ASYMMETRICAL COMPOSITION: Product positioned using rule of thirds, NOT centered
+3. RICH ENVIRONMENT: Complex background with depth, texture, and visual interest
+4. EMOTIONAL ATMOSPHERE: Create mood through lighting, color psychology, and ambiance
+5. INTERACTIVE CONTEXT: Show product being used, held, or in action (not just displayed)
+
+🎨 FORCED CREATIVITY APPROACHES - PICK THE MOST EXCITING:
+- MOTION SHOWCASE: Swirling ingredients, flowing liquids, dynamic movement around product
+- ATMOSPHERIC DRAMA: Dramatic lighting, mist, particles, cinematic effects
+- LIFESTYLE ACTION: People actively using product in realistic, engaging scenarios
+- ENVIRONMENTAL IMMERSION: Product integrated into rich, detailed real-world settings
+- ARTISTIC INTERPRETATION: Creative angles, unexpected perspectives, artistic lighting
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
@@ -3341,7 +3346,21 @@ AVOID REPETITIVE PATTERNS:
 - Is the background plain? → Add texture, atmosphere, or setting
 - Does it look static? → Add movement, energy, or dynamic angles
 
-CREATE SOMETHING EXCITING: Every auto-generated ad must be visually dynamic and engaging - NO boring centered layouts allowed!${autoInstructions}${textPromptAddition}`
+🚨 FINAL VALIDATION - AUTO-GENERATION MUST PASS ALL CHECKS:
+- Does this look like a basic product photo? → REJECTED, add dynamic elements
+- Is the product centered on a simple background? → REJECTED, use asymmetrical layout
+- Would this look boring without additional prompting? → REJECTED, increase visual excitement
+- Does this have swirls, motion, or atmospheric effects? → REQUIRED for approval
+- Is there environmental context or interaction? → MANDATORY for dynamic feel
+
+⚡ SUCCESS CRITERIA - ONLY GENERATE IF ALL ARE TRUE:
+✓ Product positioned off-center using rule of thirds
+✓ Complex background with visual depth and interest  
+✓ Dynamic elements like motion, particles, or atmospheric effects
+✓ Emotional mood through lighting and color psychology
+✓ Product shown in context or action, not just displayed
+
+🎯 AUTO-GENERATION PROMISE: Create ads so visually exciting that users never need to prompt for "more dynamic" - deliver maximum visual impact automatically!${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3732,7 +3751,21 @@ AVOID REPETITIVE PATTERNS:
 - Is the background plain? → Add texture, atmosphere, or setting
 - Does it look static? → Add movement, energy, or dynamic angles
 
-CREATE SOMETHING EXCITING: Every auto-generated ad must be visually dynamic and engaging - NO boring centered layouts allowed!${autoInstructions}${textPromptAddition}`
+🚨 FINAL VALIDATION - AUTO-GENERATION MUST PASS ALL CHECKS:
+- Does this look like a basic product photo? → REJECTED, add dynamic elements
+- Is the product centered on a simple background? → REJECTED, use asymmetrical layout
+- Would this look boring without additional prompting? → REJECTED, increase visual excitement
+- Does this have swirls, motion, or atmospheric effects? → REQUIRED for approval
+- Is there environmental context or interaction? → MANDATORY for dynamic feel
+
+⚡ SUCCESS CRITERIA - ONLY GENERATE IF ALL ARE TRUE:
+✓ Product positioned off-center using rule of thirds
+✓ Complex background with visual depth and interest  
+✓ Dynamic elements like motion, particles, or atmospheric effects
+✓ Emotional mood through lighting and color psychology
+✓ Product shown in context or action, not just displayed
+
+🎯 AUTO-GENERATION PROMISE: Create ads so visually exciting that users never need to prompt for "more dynamic" - deliver maximum visual impact automatically!${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
