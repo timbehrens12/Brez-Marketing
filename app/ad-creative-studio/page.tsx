@@ -4298,18 +4298,25 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 setCurrentStep('template-selection')
               }
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col justify-end"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col"
           >
-            <div className="text-center">
-                <div className="text-8xl mb-3 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+            <div className="text-center h-full flex flex-col">
+              {/* Fixed height container for icon to ensure alignment */}
+              <div className="h-24 flex items-center justify-center mb-6">
+                <div className="text-8xl group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
                   {typeof type.icon === 'string' ? (
                     <span>{type.icon}</span>
                   ) : (
                     <type.icon className="w-20 h-20 text-gray-300" />
                   )}
                 </div>
-              <h3 className="text-lg font-bold text-white mb-2">{type.name}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              </div>
+              {/* Fixed height for title to ensure alignment */}
+              <div className="h-8 flex items-center justify-center mb-3">
+                <h3 className="text-lg font-bold text-white">{type.name}</h3>
+              </div>
+              {/* Flexible description area */}
+              <p className="text-gray-400 text-sm leading-relaxed flex-1">{type.description}</p>
             </div>
           </div>
         ))}
@@ -5716,21 +5723,21 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
           <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
-              {/* Product → Template Preview (Fully Responsive) */}
+              {/* Product → Template Preview (Scale Transform Responsive) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-1 sm:right-2 lg:right-8 z-30 max-w-[90%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[50%]">
-                  <div className="flex items-center gap-0.5 sm:gap-1 lg:gap-3 flex-nowrap justify-end">
+                <div className="absolute top-1 right-1 sm:right-2 lg:right-8 z-30 origin-top-right transform scale-[0.7] xs:scale-[0.8] sm:scale-90 md:scale-100">
+                  <div className="flex items-center gap-2 lg:gap-3 flex-nowrap justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
                       className="relative"
                       onMouseEnter={() => setShowProductPopup(true)}
                       onMouseLeave={() => setShowProductPopup(false)}
                     >
-                      <div className={`bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-lg sm:rounded-xl p-1 sm:p-1.5 lg:p-2 cursor-pointer hover:border-white/20 transition-colors min-w-[45px] w-[45px] sm:w-[60px] md:w-[80px] lg:w-[120px] flex-shrink-0 ${isMultiMode && uploadedImages.length > 1 ? 'h-[55px] sm:h-[70px] md:h-[90px] lg:h-[135px]' : 'h-[45px] sm:h-[60px] md:h-[80px] lg:h-[120px]'}`}>
+                      <div className={`bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[80px] lg:w-[120px] flex-shrink-0 ${isMultiMode && uploadedImages.length > 1 ? 'h-[90px] lg:h-[135px]' : 'h-[80px] lg:h-[120px]'}`}>
                         <div className="text-center h-full flex flex-col justify-between">
-                          <span className="text-[8px] sm:text-[10px] lg:text-xs text-gray-400 font-medium leading-tight">YOUR PRODUCT</span>
-                          <div className="w-6 sm:w-8 md:w-10 lg:w-16 h-6 sm:h-8 md:h-10 lg:h-16 mx-auto rounded-md lg:rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                          <span className="text-xs text-gray-400 font-medium leading-tight">YOUR PRODUCT</span>
+                          <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                             <img
                               src={collageUrl || uploadedImageUrl || uploadedImageUrls[0]}
                               alt="Uploaded product"
@@ -5738,7 +5745,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                             />
                           </div>
                           {isMultiMode && uploadedImages.length > 1 && (
-                            <span className="text-[7px] sm:text-[8px] lg:text-[10px] text-blue-400 leading-tight">{uploadedImages.length} items</span>
+                            <span className="text-xs text-blue-400 leading-tight">{uploadedImages.length} items</span>
                           )}
                         </div>
                       </div>
@@ -5835,19 +5842,19 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     {selectedTemplate && (
                       <>
                         <div className="text-gray-400 flex-shrink-0">
-                          <ChevronRight className="w-2 sm:w-3 lg:w-4 xl:w-5 h-2 sm:h-3 lg:h-4 xl:h-5" />
+                          <ChevronRight className="w-5 h-5" />
                         </div>
-                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-lg sm:rounded-xl p-1 sm:p-1.5 lg:p-2 min-w-[45px] w-[45px] sm:w-[60px] md:w-[80px] lg:w-[120px] h-[45px] sm:h-[60px] md:h-[80px] lg:h-[120px] flex-shrink-0">
+                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[80px] lg:w-[120px] h-[80px] lg:h-[120px] flex-shrink-0">
                           <div className="text-center h-full flex flex-col justify-between">
-                            <span className="text-[8px] sm:text-[10px] lg:text-xs text-gray-400 font-medium leading-tight">TEMPLATE</span>
-                            <div className="w-6 sm:w-8 md:w-10 lg:w-16 h-6 sm:h-8 md:h-10 lg:h-16 mx-auto rounded-md lg:rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                            <span className="text-xs text-gray-400 font-medium leading-tight">TEMPLATE</span>
+                            <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                               <img
                                 src={selectedTemplate.thumbnail}
                                 alt={selectedTemplate.name}
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <div className="text-[7px] sm:text-[8px] lg:text-[10px] text-gray-400 px-0.5 lg:px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
+                            <div className="text-xs text-gray-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
                               <span className="truncate max-w-full">{selectedTemplate.name}</span>
                             </div>
                           </div>
