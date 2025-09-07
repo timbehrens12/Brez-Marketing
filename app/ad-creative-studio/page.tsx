@@ -1505,7 +1505,7 @@ export default function AdCreativeStudioPage() {
 
   // Clear custom instructions when switching away from custom template
   useEffect(() => {
-    if (selectedCreativeType && selectedCreativeType !== 'custom') {
+    if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
       // Clear custom instructions when switching to a different creative type
       if (customInstructions.trim()) {
         setCustomInstructions('')
