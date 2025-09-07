@@ -3285,24 +3285,31 @@ CRITICAL FORMAT REQUIREMENTS:
 
 🔴 MANDATORY SCENE CREATION - NO PRODUCT PHOTOGRAPHY ALLOWED:
 
-STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST
-- Start with a real location: bedroom, office desk, coffee shop, home, gym, car, workspace, kitchen counter
-- Add realistic lighting: natural window light, room lamps, overhead lighting, desk lamps
-- Include realistic furniture: beds, chairs, desks, tables, nightstands, bookshelves, coffee tables
-- Add environmental details: walls, floors, textures, everyday objects, laptops, books, magazines, plants
+STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST (CHOOSE BASED ON PRODUCT TYPE)
+- REAL LOCATIONS: bedroom, bathroom, kitchen, office, gym, coffee shop, living room, workspace, car, outdoor spaces, store, closet
+- REALISTIC LIGHTING: natural window light, room lamps, overhead lighting, desk lamps, bathroom lighting, kitchen lighting
+- APPROPRIATE FURNITURE: beds, chairs, desks, tables, nightstands, bookshelves, coffee tables, kitchen counters, bathroom vanities, gym equipment
+- ENVIRONMENTAL DETAILS: walls, floors, textures, everyday objects, laptops, books, magazines, plants, mirrors, appliances, workout gear
 
-STEP 2: PLACE THE PRODUCT NATURALLY IN THIS ENVIRONMENT - OBEY PHYSICS
-- FOR CLOTHING: Must follow REAL PHYSICS - clothes cannot float or stand up by themselves
-  CLOTHING PLACEMENT: laid flat on bed/table, draped over chair arm, hanging on hook/hanger, crumpled in basket, folded on shelf
+STEP 2: PLACE ANY PRODUCT NATURALLY IN THIS ENVIRONMENT - OBEY PHYSICS FOR ALL ITEMS
 
-- FOR TECH/GADGETS (AirPods, phones, headphones, etc.): Must be placed in REALISTIC USAGE CONTEXTS
-  TECH PLACEMENT: on desk next to laptop, in someone's hand being used, charging on nightstand, in gym bag, on coffee table, sitting on book/magazine
+UNIVERSAL REALISTIC PLACEMENT RULES FOR ALL PRODUCTS:
+- CLOTHING: laid on bed/table, draped over chair, hanging on hooks, folded on shelf, in laundry basket
+- TECH/GADGETS: on desk, in hands being used, charging stations, in bags, on coffee tables, with laptops
+- BEAUTY/SKINCARE: on bathroom counter, vanity table, in makeup bag, next to mirror, on bedside table
+- KITCHEN TOOLS: on counter next to ingredients, in hands while cooking, on cutting board, in kitchen drawer
+- FITNESS GEAR: in gym setting, on workout mat, in gym bag, being used during exercise, on floor
+- HOME GOODS: on shelves, coffee tables, integrated into room decor, on kitchen counter, in natural home setting
+- BOOKS/MEDIA: on bookshelf, coffee table, in hands being read, on desk, stacked on nightstand
+- JEWELRY/ACCESSORIES: on vanity, in jewelry box, being worn in lifestyle setting, on dresser
+- TOYS/GAMES: on floor during play, on table mid-game, in toy box, being used by hands
 
-- FOR ALL PRODUCTS: NO FLOATING: Products cannot hover, levitate, or be suspended in air
-- NO PEDESTALS: Don't place products on blocks, platforms, or display stands - that's not natural
-- NO PERFECT POSITIONING: Products should look casually placed, not perfectly arranged for photos
-- GRAVITY RULES: All products must be supported by something solid (furniture, hands, surfaces)
-- NO COSMIC/SPACE BACKGROUNDS: Real environments only (rooms, desks, tables, real spaces)
+UNIVERSAL PHYSICS RULES FOR ALL PRODUCTS:
+- NO FLOATING: Nothing can hover, levitate, or be suspended in air without support
+- NO PEDESTALS: No blocks, platforms, cubes, or display stands - products exist naturally in real spaces
+- NO COSMIC/SPACE BACKGROUNDS: Only real environments (rooms, kitchens, offices, gyms, homes, outdoors)
+- GRAVITY ALWAYS APPLIES: Every product must be supported by solid surfaces, furniture, or hands
+- REALISTIC CONTEXTS: Show products where people would actually use or find them in real life
 
 STEP 3: ADD DYNAMIC ELEMENTS TO THE SCENE
 - Natural lighting effects, atmospheric mood, environmental storytelling
