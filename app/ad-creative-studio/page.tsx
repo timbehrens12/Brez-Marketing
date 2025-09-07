@@ -3291,10 +3291,13 @@ STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST
 - Include realistic furniture: beds, chairs, hangers, shelves, tables
 - Add environmental details: walls, floors, textures, everyday objects
 
-STEP 2: PLACE THE PRODUCT NATURALLY IN THIS ENVIRONMENT
-- FOR CLOTHING: Must be hanging on hangers, laid on furniture, draped over objects, or placed in realistic storage
-- Product should look like it belongs in this space naturally
-- NO floating, NO centering, NO product photography poses
+STEP 2: PLACE THE PRODUCT NATURALLY IN THIS ENVIRONMENT - OBEY PHYSICS
+- FOR CLOTHING: Must follow REAL PHYSICS - clothes cannot float or stand up by themselves
+- CLOTHING PLACEMENT OPTIONS: laid flat on bed/table, draped over chair arm, hanging on hook/hanger, crumpled in basket, folded on shelf
+- NO FLOATING: Clothing cannot hover, stand upright without support, or be suspended in air
+- NO PEDESTALS: Don't place clothing on blocks, platforms, or display stands - that's not natural
+- NO PERFECT POSITIONING: Clothing should look casually placed, not perfectly arranged for photos
+- GRAVITY RULES: All clothing must be supported by something solid (furniture, hangers, surfaces)
 
 STEP 3: ADD DYNAMIC ELEMENTS TO THE SCENE
 - Natural lighting effects, atmospheric mood, environmental storytelling
@@ -3306,6 +3309,9 @@ REQUIRED APPROACH: Start with a realistic environment and place the product natu
 🚨 ABSOLUTELY FORBIDDEN - INSTANT REJECTION:
 - PRODUCT PHOTOGRAPHY: Any image that looks like a product photo with the item centered or floating
 - FLOATING CLOTHING: Hoodies, shirts, pants suspended in air with backgrounds/effects behind them
+- PEDESTAL DISPLAYS: Clothing standing on blocks, platforms, cubes, or display stands
+- DEFYING PHYSICS: Clothing that stands upright without support or hovers in space
+- PERFECT PRODUCT POSES: Clothing arranged too perfectly like in a catalog or store display
 - PRODUCT + BACKGROUND FORMULA: Taking a product image and placing fancy backgrounds around it
 - SMOKE/MIST AROUND PRODUCTS: Adding atmospheric effects around floating clothing items
 - COSMIC/SPACE THEMES: Any space, galaxy, cosmic, or abstract backgrounds with floating products
