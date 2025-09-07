@@ -1496,13 +1496,12 @@ export default function AdCreativeStudioPage() {
         setAutoPromptAdditions('')
       }
     }
-    // ALSO clear custom instructions when switching away from custom template
-    if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
-      if (customInstructions.trim()) {
-        setCustomInstructions('')
-      }
-    }
-  }, [selectedCreativeType, autoPromptAdditions, customInstructions])
+  }, [selectedCreativeType, autoPromptAdditions])
+
+  // NUCLEAR: Clear custom instructions on ANY navigation
+  useEffect(() => {
+    setCustomInstructions('')
+  }, [currentStep, selectedCreativeType])
 
   // Clear auto AND custom instructions when uploading a new image/product
   useEffect(() => {
