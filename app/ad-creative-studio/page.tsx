@@ -4262,7 +4262,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
          <p className="text-gray-300 text-base">What type of creative do you want to generate?</p>
        </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto min-h-[400px] items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto h-[500px] items-stretch">
         {CREATIVE_TYPES.map((type) => (
           <div
             key={type.id}
@@ -4298,7 +4298,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 setCurrentStep('template-selection')
               }
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col justify-center min-h-[200px]"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col justify-end"
           >
             <div className="text-center">
               <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
@@ -5716,21 +5716,21 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
           <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
-              {/* Product → Template Preview (Absolute Top Right of Widget) */}
+              {/* Product → Template Preview (Responsive Top Right) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-2 lg:right-8 z-30 max-w-[50%]">
-                  <div className="flex items-center gap-1 lg:gap-3 flex-wrap justify-end">
+                <div className="absolute top-1 right-2 lg:right-8 z-30 max-w-[45%] sm:max-w-[40%] lg:max-w-[50%]">
+                  <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 flex-nowrap justify-end overflow-hidden">
                     {/* YOUR PRODUCT */}
                     <div 
                       className="relative"
                       onMouseEnter={() => setShowProductPopup(true)}
                       onMouseLeave={() => setShowProductPopup(false)}
                     >
-                      <div className={`bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 cursor-pointer hover:border-white/20 transition-colors w-[80px] lg:w-[120px] ${isMultiMode && uploadedImages.length > 1 ? 'h-[90px] lg:h-[135px]' : 'h-[80px] lg:h-[120px]'}`}>
-                        <div className="text-center space-y-1">
-                          <span className="text-xs text-gray-400 font-medium">YOUR PRODUCT</span>
-                          <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a]">
+                      <div className={`bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-1.5 sm:p-2 cursor-pointer hover:border-white/20 transition-colors w-[60px] sm:w-[80px] lg:w-[120px] flex-shrink-0 ${isMultiMode && uploadedImages.length > 1 ? 'h-[70px] sm:h-[90px] lg:h-[135px]' : 'h-[60px] sm:h-[80px] lg:h-[120px]'}`}>
+                        <div className="text-center space-y-1 h-full flex flex-col justify-between">
+                          <span className="text-[10px] sm:text-xs text-gray-400 font-medium leading-tight">YOUR PRODUCT</span>
+                          <div className="w-8 sm:w-10 lg:w-16 h-8 sm:h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                             <img
                               src={collageUrl || uploadedImageUrl || uploadedImageUrls[0]}
                               alt="Uploaded product"
@@ -5738,7 +5738,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                             />
                           </div>
                           {isMultiMode && uploadedImages.length > 1 && (
-                            <span className="text-xs text-blue-400 mt-1">{uploadedImages.length} items</span>
+                            <span className="text-[10px] sm:text-xs text-blue-400 leading-tight">{uploadedImages.length} items</span>
                           )}
                         </div>
                       </div>
@@ -5834,20 +5834,20 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     {/* Arrow and Template (shows when template is selected) */}
                     {selectedTemplate && (
                       <>
-                        <div className="text-gray-400">
-                          <ChevronRight className="w-5 h-5" />
+                        <div className="text-gray-400 flex-shrink-0">
+                          <ChevronRight className="w-3 sm:w-4 lg:w-5 h-3 sm:h-4 lg:h-5" />
                         </div>
-                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-2 w-[80px] lg:w-[120px] h-[80px] lg:h-[120px]">
-                          <div className="text-center h-full flex flex-col">
-                            <span className="text-xs text-gray-400 font-medium mb-1">TEMPLATE</span>
-                            <div className="w-10 lg:w-16 h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
+                        <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-1.5 sm:p-2 w-[60px] sm:w-[80px] lg:w-[120px] h-[60px] sm:h-[80px] lg:h-[120px] flex-shrink-0">
+                          <div className="text-center h-full flex flex-col justify-between">
+                            <span className="text-[10px] sm:text-xs text-gray-400 font-medium leading-tight">TEMPLATE</span>
+                            <div className="w-8 sm:w-10 lg:w-16 h-8 sm:h-10 lg:h-16 mx-auto rounded-lg overflow-hidden border border-[#333] bg-[#2a2a2a] flex-shrink-0">
                               <img
                                 src={selectedTemplate.thumbnail}
                                 alt={selectedTemplate.name}
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <div className="text-xs text-gray-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
+                            <div className="text-[10px] sm:text-xs text-gray-400 px-1 leading-tight flex-1 flex items-center justify-center min-h-0">
                               <span className="truncate max-w-full">{selectedTemplate.name}</span>
                             </div>
                           </div>
