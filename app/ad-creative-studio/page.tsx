@@ -5723,10 +5723,10 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
           <div className="flex lg:gap-3 py-2 lg:items-start">
             {/* Left Side - Flow Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] relative overflow-hidden lg:w-[70%] flex-shrink-0 h-[720px]">
-              {/* Product → Template Preview (Scale Transform Responsive) */}
+              {/* Product → Template Preview (Dynamic Viewport Responsive) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-1 sm:right-2 lg:right-8 z-30 origin-top-right transform scale-[0.7] xs:scale-[0.8] sm:scale-90 md:scale-100">
+                <div className="absolute bottom-1 right-1 sm:right-2 lg:right-8 z-30 origin-bottom-right" style={{transform: 'scale(min(1, max(0.6, (100vw - 300px) / 800)))'}}>
                   <div className="flex items-center gap-2 lg:gap-3 flex-nowrap justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
@@ -5752,12 +5752,12 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
 
                       {/* Hover Bridge - invisible element to bridge the gap */}
                       {showProductPopup && (
-                        <div className="absolute top-full left-0 right-0 h-2 z-40"></div>
+                        <div className="absolute bottom-full left-0 right-0 h-2 z-40"></div>
                       )}
 
                       {/* Hover Popup */}
                       {showProductPopup && (
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
                           <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-4 shadow-2xl min-w-[280px]">
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="text-white font-semibold text-sm">Your Product Images</h4>
@@ -5831,8 +5831,8 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                           </div>
                           
                           {/* Popup Arrow */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2">
-                            <div className="w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-[#333]"></div>
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#333]"></div>
                           </div>
                         </div>
                       )}
