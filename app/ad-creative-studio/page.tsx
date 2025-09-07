@@ -1868,7 +1868,7 @@ export default function AdCreativeStudioPage() {
         }))
 
         const base64Images = await Promise.all(imagePromises)
-        
+
         // Create a high-quality collage of all products
         const collageDataUrl = await createProductCollage(images)
 
@@ -2009,7 +2009,7 @@ ${templateSpecificPrompt}
 
 
 
-        
+
         const response = await fetch('/api/ai/generate-creative', {
           method: 'POST',
           body: formData,
@@ -3291,6 +3291,8 @@ CRITICAL FORMAT REQUIREMENTS:
 - Any layout that looks like "product + background + text"
 - Symmetrical, predictable, or template-like arrangements
 - CLOTHING FLOATING IN SPACE: Never show clothing items just floating with fancy backgrounds - clothes must be worn by people or shown in lifestyle contexts
+- CLOTHING PRODUCT SHOTS: NEVER create product photography of clothing items - they must be worn by actual people with visible faces/bodies
+- COSMIC CLOTHING DISPLAYS: FORBIDDEN to show hoodies, shirts, pants floating in space/cosmic backgrounds - must show humans wearing them
 - TOOLS/OBJECTS WITHOUT CONTEXT: Don't just add effects around products - show them being used by real people in real situations
 
 ⚡ MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
@@ -3300,8 +3302,14 @@ CRITICAL FORMAT REQUIREMENTS:
 4. EMOTIONAL ATMOSPHERE: Create mood through lighting, color psychology, and ambiance
 5. LIFESTYLE INTEGRATION: Show product in natural use context - clothing being worn by people, tools being used by hands, products in real environments (NOT just floating product photos with fancy backgrounds)
 
-🎨 PRODUCT-SPECIFIC CREATIVE REQUIREMENTS:
-- CLOTHING/APPAREL: Must show people wearing the items in lifestyle settings (gym, street, home, work) - NEVER floating clothes with effects
+🚨 CLOTHING/APPAREL MANDATORY RULES - ZERO TOLERANCE:
+- CLOTHING MUST BE WORN BY REAL PEOPLE - NOT floating, hanging, or displayed as product shots
+- SHOW ACTUAL HUMANS wearing the clothing in realistic scenarios (walking, working, relaxing, exercising)
+- INCLUDE VISIBLE PERSON/MODEL - face, hands, body parts must be visible with the clothing
+- CONTEXTUAL ENVIRONMENT - gym, street, coffee shop, home, office, outdoors where people naturally wear clothes
+- NATURAL POSES - sitting, standing, moving, interacting - NOT mannequin-like or product display poses
+
+🎨 OTHER PRODUCT-SPECIFIC REQUIREMENTS:
 - KITCHEN/TOOLS: Must show hands using the tools in realistic cooking/work scenarios - NEVER just tools with background effects  
 - TECH/GADGETS: Show devices being used by people in natural environments - NEVER just floating gadgets with particles
 - BEAUTY/SKINCARE: Show products being applied or results on real people - NEVER just bottles with atmospheric effects
@@ -3368,6 +3376,7 @@ AVOID REPETITIVE PATTERNS:
 ✓ Dynamic elements like motion, particles, or atmospheric effects
 ✓ Emotional mood through lighting and color psychology
 ✓ Product shown in context or action, not just displayed
+✓ FOR CLOTHING: Visible person/model wearing the item in natural pose and environment
 
 🎯 AUTO-GENERATION PROMISE: Create ads so visually exciting that users never need to prompt for "more dynamic" - deliver maximum visual impact automatically!${autoInstructions}${textPromptAddition}`
     } else {
@@ -3773,6 +3782,7 @@ AVOID REPETITIVE PATTERNS:
 ✓ Dynamic elements like motion, particles, or atmospheric effects
 ✓ Emotional mood through lighting and color psychology
 ✓ Product shown in context or action, not just displayed
+✓ FOR CLOTHING: Visible person/model wearing the item in natural pose and environment
 
 🎯 AUTO-GENERATION PROMISE: Create ads so visually exciting that users never need to prompt for "more dynamic" - deliver maximum visual impact automatically!${autoInstructions}${textPromptAddition}`
     } else {
@@ -4447,12 +4457,12 @@ AVOID REPETITIVE PATTERNS:
               {/* Fixed height container for icon alignment */}
               <div className="h-24 flex items-center justify-center mb-6">
                 <div className="text-8xl group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
-                  {typeof type.icon === 'string' ? (
-                    <span>{type.icon}</span>
-                  ) : (
+                {typeof type.icon === 'string' ? (
+                  <span>{type.icon}</span>
+                ) : (
                     <type.icon className="w-20 h-20 text-gray-300" />
-                  )}
-                </div>
+                )}
+              </div>
               </div>
               {/* Fixed height container for title alignment */}
               <div className="h-7 flex items-center justify-center mb-3">
@@ -4460,7 +4470,7 @@ AVOID REPETITIVE PATTERNS:
               </div>
               {/* Fixed height container for description alignment */}
               <div className="h-16 flex items-center justify-center">
-                <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
               </div>
             </div>
           </div>
@@ -5356,7 +5366,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm leading-relaxed"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
-            </div>
+                </div>
 
 
             {/* Pro Tips Widget */}
