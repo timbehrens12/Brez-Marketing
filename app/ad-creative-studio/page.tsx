@@ -4312,7 +4312,7 @@ AVOID REPETITIVE PATTERNS:
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-orange-400 font-semibold mb-2">📸 Pro Tips for Best Results</h4>
+                  <h4 className="text-orange-400 font-semibold mb-2">✨ How It Works & Capabilities</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
                       <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI will optimize automatically</li>
                       <li>• <strong>Upload multiple products</strong> - Create collections, brand drops, or comparison ads with professional grid layouts</li>
