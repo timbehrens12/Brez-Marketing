@@ -4300,11 +4300,11 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
             }}
             className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col"
           >
-            <div className="text-center h-full flex flex-col justify-end">
-              {/* Spacer to push content to bottom */}
+            <div className="text-center h-full flex flex-col justify-end pb-16">
+              {/* Spacer to push content up from bottom */}
               <div className="flex-1"></div>
-              {/* Icon */}
-              <div className="mb-6">
+              {/* Fixed height container for icon alignment */}
+              <div className="h-24 flex items-center justify-center mb-6">
                 <div className="text-8xl group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
                   {typeof type.icon === 'string' ? (
                     <span>{type.icon}</span>
@@ -4313,12 +4313,14 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   )}
                 </div>
               </div>
-              {/* Title */}
-              <div className="mb-3">
+              {/* Fixed height container for title alignment */}
+              <div className="h-7 flex items-center justify-center mb-3">
                 <h3 className="text-lg font-bold text-white">{type.name}</h3>
               </div>
-              {/* Description */}
-              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              {/* Fixed height container for description alignment */}
+              <div className="h-16 flex items-center justify-center">
+                <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              </div>
             </div>
           </div>
         ))}
