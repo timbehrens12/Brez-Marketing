@@ -3290,9 +3290,10 @@ You MUST create REALISTIC SCENES where products exist in REAL ENVIRONMENTS.
 FOR CLOTHING: Think "Where would someone actually find this hoodie in real life?" 
 - Hanging in a closet on hangers
 - Laid on a bed or dresser  
-- Being worn by a real person
+- Draped over a chair or furniture
 - In a gym bag or suitcase
 - On a clothing rack in a store
+- Folded on shelves or surfaces
 
 NEVER EVER create cosmic/space backgrounds with floating clothing. ALWAYS show clothing as REAL OBJECTS in REAL SPACES.
 
@@ -3317,21 +3318,22 @@ NEVER EVER create cosmic/space backgrounds with floating clothing. ALWAYS show c
 
 🚨 CLOTHING/APPAREL REALISTIC SCENARIOS - PICK ONE IMMEDIATELY:
 
-FOR CLOTHING PRODUCTS (hoodie, shirt, pants, etc.), CREATE ONE OF THESE REAL-WORLD SITUATIONS:
+FOR CLOTHING PRODUCTS (hoodie, shirt, pants, etc.), CREATE ONE OF THESE REAL-WORLD OBJECT PLACEMENTS:
 
 SCENARIO 1: WARDROBE/CLOSET SCENE - Clothing hanging on wooden hangers in a stylish closet or bedroom wardrobe with natural lighting
-SCENARIO 2: FLOOR/SURFACE PLACEMENT - Clothing neatly laid on concrete floor, wooden table, bed, or marble surface in realistic room setting
-SCENARIO 3: PERSON WEARING - Real person (visible face/body) wearing the clothing in natural environment (coffee shop, street, home, gym)
-SCENARIO 4: LIFESTYLE CONTEXT - Clothing in real environment like laundry room, bedroom dresser, suitcase, gym bag with realistic surroundings
-SCENARIO 5: MODEL SHOWCASE - Professional model wearing the clothing in real studio or outdoor setting with natural poses and lighting
+SCENARIO 2: SURFACE PLACEMENT - Clothing neatly laid on concrete floor, wooden table, bed, marble surface, or bench in realistic room setting
+SCENARIO 3: LIFESTYLE CONTEXT - Clothing in real environment like laundry room, bedroom dresser, suitcase, gym bag, or clothing rack with realistic surroundings
+SCENARIO 4: STORE/RETAIL DISPLAY - Clothing hanging on store racks, folded on shelves, or displayed in realistic retail environment
+SCENARIO 5: HOME ENVIRONMENT - Clothing draped over chair, on bed, in laundry basket, or other natural home placement
 
 MANDATORY REALISM REQUIREMENTS:
-- REAL PHYSICAL ENVIRONMENTS (bedroom, closet, street, coffee shop, gym)
+- REAL PHYSICAL ENVIRONMENTS (bedroom, closet, laundry room, store, home spaces)
 - NATURAL LIGHTING (window light, room lighting, outdoor sun)
-- REALISTIC TEXTURES (wood, concrete, fabric, marble, metal)
+- REALISTIC TEXTURES (wood, concrete, fabric, marble, metal, brick)
 - NO COSMIC/SPACE BACKGROUNDS 
 - NO FLOATING IN VOID WITH EFFECTS
-- SHOW CLOTHING AS REAL OBJECT IN REAL SPACE
+- NO PEOPLE/MODELS WEARING CLOTHING (unless specifically requested)
+- SHOW CLOTHING AS REAL OBJECTS IN REAL SPACES
 
 🎨 OTHER PRODUCT-SPECIFIC REQUIREMENTS:
 - KITCHEN/TOOLS: Must show hands using the tools in realistic cooking/work scenarios - NEVER just tools with background effects  
