@@ -1159,15 +1159,17 @@ export default function AdCreativeStudioPage() {
   }, [selectedCreativeType])
 
   // Debug function for console inspection
-  (window as any).debugCustomInstructions = () => {
-    console.log('🔍 DEBUG STATE:')
-    console.log('- customInstructions state:', customInstructions)
-    console.log('- customInstructions length:', customInstructions.length)
-    console.log('- DOM value:', customInstructionsRef.current?.value)
-    console.log('- DOM element:', customInstructionsRef.current)
-    console.log('- currentStep:', currentStep)
-    console.log('- selectedCreativeType:', selectedCreativeType)
-  }
+  useEffect(() => {
+    (window as any).debugCustomInstructions = () => {
+      console.log('🔍 DEBUG STATE:')
+      console.log('- customInstructions state:', customInstructions)
+      console.log('- customInstructions length:', customInstructions.length)
+      console.log('- DOM value:', customInstructionsRef.current?.value)
+      console.log('- DOM element:', customInstructionsRef.current)
+      console.log('- currentStep:', currentStep)
+      console.log('- selectedCreativeType:', selectedCreativeType)
+    }
+  }, [customInstructions, currentStep, selectedCreativeType])
 
   // NUCLEAR function to clear custom instructions completely
   const nuclearClearCustomInstructions = () => {
