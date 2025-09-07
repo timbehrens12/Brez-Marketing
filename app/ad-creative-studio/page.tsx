@@ -3290,20 +3290,29 @@ CRITICAL FORMAT REQUIREMENTS:
 - Basic minimalist compositions
 - Any layout that looks like "product + background + text"
 - Symmetrical, predictable, or template-like arrangements
+- CLOTHING FLOATING IN SPACE: Never show clothing items just floating with fancy backgrounds - clothes must be worn by people or shown in lifestyle contexts
+- TOOLS/OBJECTS WITHOUT CONTEXT: Don't just add effects around products - show them being used by real people in real situations
 
 ⚡ MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
 1. DYNAMIC VISUAL ELEMENT: Add swirls, splashes, motion blur, particles, atmospheric effects, or flowing elements
 2. ASYMMETRICAL COMPOSITION: Product positioned using rule of thirds, NOT centered
 3. RICH ENVIRONMENT: Complex background with depth, texture, and visual interest
 4. EMOTIONAL ATMOSPHERE: Create mood through lighting, color psychology, and ambiance
-5. INTERACTIVE CONTEXT: Show product being used, held, or in action (not just displayed)
+5. LIFESTYLE INTEGRATION: Show product in natural use context - clothing being worn by people, tools being used by hands, products in real environments (NOT just floating product photos with fancy backgrounds)
+
+🎨 PRODUCT-SPECIFIC CREATIVE REQUIREMENTS:
+- CLOTHING/APPAREL: Must show people wearing the items in lifestyle settings (gym, street, home, work) - NEVER floating clothes with effects
+- KITCHEN/TOOLS: Must show hands using the tools in realistic cooking/work scenarios - NEVER just tools with background effects  
+- TECH/GADGETS: Show devices being used by people in natural environments - NEVER just floating gadgets with particles
+- BEAUTY/SKINCARE: Show products being applied or results on real people - NEVER just bottles with atmospheric effects
+- FITNESS/SPORTS: Show equipment being used during actual activities - NEVER just gear floating with motion blur
 
 🎨 FORCED CREATIVITY APPROACHES - PICK THE MOST EXCITING:
-- MOTION SHOWCASE: Swirling ingredients, flowing liquids, dynamic movement around product
-- ATMOSPHERIC DRAMA: Dramatic lighting, mist, particles, cinematic effects
-- LIFESTYLE ACTION: People actively using product in realistic, engaging scenarios
-- ENVIRONMENTAL IMMERSION: Product integrated into rich, detailed real-world settings
-- ARTISTIC INTERPRETATION: Creative angles, unexpected perspectives, artistic lighting
+- LIFESTYLE INTEGRATION: Real people using/wearing products in natural, engaging environments
+- ACTION SEQUENCES: Dynamic moments showing products in active use scenarios
+- ENVIRONMENTAL STORYTELLING: Products placed in rich, contextual real-world settings
+- HUMAN INTERACTION: Focus on people engaging with products authentically
+- CONTEXTUAL DRAMA: Products shown in their intended use environment with cinematic lighting
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
