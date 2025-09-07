@@ -4301,15 +4301,15 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
             className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col justify-end"
           >
             <div className="text-center">
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+              <div className="text-[12rem] mb-6 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
                 {typeof type.icon === 'string' ? (
                   <span>{type.icon}</span>
                 ) : (
-                  <type.icon className="w-10 h-10 text-gray-300" />
+                  <type.icon className="w-32 h-32 text-gray-300" />
                 )}
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">{type.name}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              <h3 className="text-xl font-bold text-white mb-3">{type.name}</h3>
+              <p className="text-gray-400 text-base leading-relaxed">{type.description}</p>
             </div>
           </div>
         ))}
@@ -5719,8 +5719,9 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* Product → Template Preview (Responsive Top Right) */}
               {(uploadedImageUrl || (uploadedImageUrls.length > 0) || collageUrl) && 
                (currentStep === 'creative-type' || currentStep === 'clothing-subcategory' || currentStep === 'template-selection' || currentStep === 'custom-template-prompt' || currentStep === 'copy-creative-setup' || currentStep === 'auto-creative-setup' || currentStep === 'customization') && (
-                <div className="absolute top-1 right-2 lg:right-8 z-30 max-w-[45%] sm:max-w-[40%] lg:max-w-[50%]">
-                  <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 flex-nowrap justify-end overflow-hidden">
+                <div className="absolute top-1 right-2 lg:right-8 z-30">
+                  {/* Mobile: Stack vertically, Desktop: Horizontal */}
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 lg:gap-3 justify-end">
                     {/* YOUR PRODUCT */}
                     <div 
                       className="relative"
@@ -5834,8 +5835,12 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     {/* Arrow and Template (shows when template is selected) */}
                     {selectedTemplate && (
                       <>
-                        <div className="text-gray-400 flex-shrink-0">
+                        <div className="text-gray-400 flex-shrink-0 sm:block hidden">
                           <ChevronRight className="w-3 sm:w-4 lg:w-5 h-3 sm:h-4 lg:h-5" />
+                        </div>
+                        {/* Mobile: Down arrow */}
+                        <div className="text-gray-400 flex-shrink-0 sm:hidden block rotate-90">
+                          <ChevronRight className="w-3 h-3" />
                         </div>
                         <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.05] border border-white/10 rounded-xl p-1.5 sm:p-2 w-[60px] sm:w-[80px] lg:w-[120px] h-[60px] sm:h-[80px] lg:h-[120px] flex-shrink-0">
                           <div className="text-center h-full flex flex-col justify-between">
