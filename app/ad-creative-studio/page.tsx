@@ -1521,13 +1521,7 @@ export default function AdCreativeStudioPage() {
     }
   }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
 
-  // Clear custom instructions when not on custom template step
-  useEffect(() => {    
-    if (currentStep !== 'custom-template-prompt' && customInstructions.trim()) {
-      // Clear custom instructions when user is not on the custom template step
-      setCustomInstructions('')
-    }
-  }, [currentStep, customInstructions])
+  // Custom instructions are cleared manually in navigation buttons
 
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
@@ -5181,7 +5175,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
-          onClick={() => setCurrentStep('creative-type')}
+          onClick={() => {
+            setCustomInstructions('')
+            setCurrentStep('creative-type')
+          }}
           variant="ghost"
           className="text-gray-400 hover:text-white transition-colors"
         >
