@@ -1153,11 +1153,6 @@ export default function AdCreativeStudioPage() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'auto-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   
-  // Simple function to clear custom instructions
-  const clearCustomInstructions = () => {
-    setCustomInstructions('')
-    setCustomInstructionsKey(prev => prev + 1)
-  }
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
@@ -1300,8 +1295,6 @@ export default function AdCreativeStudioPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
-  const [customInstructionsKey, setCustomInstructionsKey] = useState(0) // Force re-render
-  const customInstructionsRef = useRef<HTMLTextAreaElement>(null) // DOM manipulation
   const [customTemplatePrompt, setCustomTemplatePrompt] = useState('')
   const [exampleCreativeImage, setExampleCreativeImage] = useState<File | null>(null)
   const [exampleCreativeUrl, setExampleCreativeUrl] = useState<string>('')
@@ -1491,7 +1484,7 @@ export default function AdCreativeStudioPage() {
         setSelectedTemplate(customTemplate)
       }
       // Clear custom instructions when entering this step
-      clearCustomInstructions()
+      setCustomInstructions('')
     }
   }, [currentStep])
 
@@ -1517,7 +1510,7 @@ export default function AdCreativeStudioPage() {
   useEffect(() => {
     if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
       if (customInstructions.trim()) {
-        clearCustomInstructions()
+        setCustomInstructions('')
       }
     }
   }, [selectedCreativeType, customInstructions])
@@ -4310,7 +4303,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               }
               // Clear custom instructions if not selecting custom template
               if (type.id !== 'custom-template') {
-                clearCustomInstructions()
+                setCustomInstructions('')
               }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
@@ -4678,16 +4671,9 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
-                ref={customInstructionsRef}
-                key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                data-form-type="other"
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
@@ -4903,16 +4889,9 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
-                ref={customInstructionsRef}
-                key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                data-form-type="other"
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm"
                 style={{ height: 'calc(100% - 2.5rem)' }}
               />
@@ -5209,7 +5188,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => {
-            clearCustomInstructions()
+            setCustomInstructions('')
             setCurrentStep('creative-type')
           }}
           variant="ghost"
