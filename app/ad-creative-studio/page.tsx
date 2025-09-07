@@ -1816,26 +1816,22 @@ export default function AdCreativeStudioPage() {
           const cellX = marginX + (col * cellWidth)
           const cellY = gridStartY + (row * cellHeight)
           
-          // Center the square product in its cell
-          const productX = cellX + (cellWidth - productSize) / 2
-          const productY = cellY + (cellHeight - productSize) / 2
+          // Calculate scaling to fit product in cell while preserving aspect ratio
+          const scale = Math.min(cellWidth / img.width, cellHeight / img.height) * 0.9 // 90% to add padding
+          const scaledWidth = img.width * scale
+          const scaledHeight = img.height * scale
           
-          // Create a square crop of the product image
-          const sourceSize = Math.min(img.width, img.height)
-          const sourceX = (img.width - sourceSize) / 2
-          const sourceY = (img.height - sourceSize) / 2
+          // Center the product in its cell
+          const productX = cellX + (cellWidth - scaledWidth) / 2
+          const productY = cellY + (cellHeight - scaledHeight) / 2
           
-          // Draw the image as a square
-          ctx.drawImage(
-            img,
-            sourceX, sourceY, sourceSize, sourceSize, // Source rectangle (square crop)
-            productX, productY, productSize, productSize // Destination rectangle (square)
-          )
+          // Draw the complete image preserving aspect ratio
+          ctx.drawImage(img, productX, productY, scaledWidth, scaledHeight)
           
           // Add subtle border around each product
           ctx.strokeStyle = '#f0f0f0'
-          ctx.lineWidth = 2
-          ctx.strokeRect(productX, productY, productSize, productSize)
+          ctx.lineWidth = 1
+          ctx.strokeRect(productX, productY, scaledWidth, scaledHeight)
           
           loadedImages++
           if (loadedImages === totalImages) {
@@ -1868,6 +1864,9 @@ export default function AdCreativeStudioPage() {
         }))
 
         const base64Images = await Promise.all(imagePromises)
+        
+        // Create a high-quality collage of all products
+        const collageDataUrl = await createProductCollage(images)
 
 
         // Get user's instructions based on template type
@@ -1892,77 +1891,74 @@ export default function AdCreativeStudioPage() {
         }
         
         // Create enhanced prompt for multi-product generation
-        const multiProductPrompt = `🎯 EXACT PRODUCT EXTRACTION & ARRANGEMENT:
+        const multiProductPrompt = `🎯 PRODUCT COLLAGE ENHANCEMENT & STYLING:
 
-I am providing you with ${images.length} separate product images. You MUST use the EXACT products shown in these images - do NOT create new or different products.
+I'm providing you with a collage image that contains ${images.length} REAL products arranged together. These are the ACTUAL products that must appear in the final advertisement - do NOT replace them with different items.
 
-🚨 CRITICAL EXTRACTION RULES:
-- EXTRACT the EXACT products from each provided image
-- Do NOT generate new products or variations
-- Do NOT create similar-looking alternatives
-- Use ONLY the specific products I have uploaded
-- Each product must be the EXACT item from the corresponding image
-- Maintain every detail, color, design, text, and feature of the original products
+🚨 CRITICAL PRODUCT PRESERVATION RULES:
+- Use the EXACT products shown in this collage image
+- Do NOT create new, different, or similar-looking products
+- Do NOT replace any product with AI-generated alternatives
+- Keep every product EXACTLY as it appears in the collage
+- Preserve all text, logos, colors, card numbers, and design elements
+- Maintain the complete shape and details of each product
 
-🎨 PRODUCT PROCESSING:
-- Remove the background from each uploaded product image
-- Keep the EXACT product with all its original details intact
-- Preserve all text, logos, colors, and design elements exactly as shown
-- Do not modify, alter, or recreate any aspect of the products
-- Extract cleanly without cutting off edges or corners
-
-🏗️ ARRANGEMENT & LAYOUT:
-- Arrange the ${images.length} EXTRACTED products in a ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced 2x2 or line arrangement' : 'organized grid pattern'}
-- Position each extracted product professionally with proper spacing
-- Ensure all products are clearly visible and well-spaced
-- Create a balanced, professional arrangement
-- Leave space for text overlays (top/bottom areas)
-
-🎭 BACKGROUND & STYLING:
-- Place the extracted products on a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background
-- Add professional lighting and realistic shadows
+🎨 ENHANCEMENT REQUIREMENTS:
+- Enhance the background with a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} setting
+- Improve lighting and add professional shadows
+- Enhance the overall composition and visual appeal
+- Make it look like a high-end advertisement
 - Maintain the 1024x1536 portrait format
-- Make it look like a high-end product showcase
+
+🏗️ LAYOUT REQUIREMENTS:
+- Keep the products in a similar arrangement as the collage
+- Ensure ALL ${images.length} products remain fully visible
+- Maintain proper spacing and professional positioning
+- Leave adequate space for text overlays (top/bottom areas)
+- Do not crop or cut off any part of any product
 
 ${templateSpecificPrompt}
 
-🔍 QUALITY REQUIREMENTS:
-- Use ONLY the exact products from the uploaded images
-- Perfect background removal with clean edges
-- All product details preserved exactly as photographed
-- Professional product placement and lighting
-- High-quality advertisement composition
+🔍 QUALITY STANDARDS:
+- Professional advertisement quality
+- Enhanced lighting and shadows
+- Improved background and composition
+- All original product details preserved exactly
+- Clean, high-end visual presentation
 
-⚠️ ABSOLUTELY DO NOT:
-- Create new products that look similar to the uploaded ones
-- Generate variations or alternatives
-- Modify colors, designs, or any product features
-- Add products not present in the uploaded images
+⚠️ ABSOLUTELY FORBIDDEN:
+- Replacing products with AI-generated versions
+- Creating new products that look similar
+- Modifying product designs, colors, or text
+- Removing or altering any product from the collage
 
 ✨ FINAL RESULT:
-Extract the EXACT ${images.length} products from the provided images, remove their backgrounds cleanly, and arrange them professionally in a stunning advertisement layout.`
+Transform this product collage into a stunning advertisement while keeping ALL ${images.length} products EXACTLY as they appear in the collage image - just enhance the background, lighting, and overall presentation.`
 
-        // Create FormData for the API call using individual images
+        // Create FormData for the API call using the collage
         const formData = new FormData()
 
-        // Use the first image as the main image
-        formData.append('image', images[0])
-        
-        // Add additional images as JSON array (excluding the first one)
-        if (images.length > 1) {
-          const additionalImages = base64Images.slice(1)
-          formData.append('additionalImages', JSON.stringify(additionalImages))
+        // Convert collage data URL to File
+        const collageBase64Data = collageDataUrl.split(',')[1]
+        const byteCharacters = atob(collageBase64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
         }
+        const byteArray = new Uint8Array(byteNumbers)
+        const collageBlob = new Blob([byteArray], { type: 'image/jpeg' })
+        const collageFile = new File([collageBlob], `multi-product-collage-${images.length}.jpg`, { type: 'image/jpeg' })
 
+        formData.append('image', collageFile)
         formData.append('prompt', multiProductPrompt)
         formData.append('styleId', style.id)
         formData.append('aspectRatio', 'portrait')
         formData.append('quality', 'hd')
         formData.append('textOverlays', JSON.stringify(customText))
 
-        // Mark this as a multi-product request with individual images (not collage)
+        // Mark this as a collage-based multi-product request
         formData.append('multiProductCount', images.length.toString())
-        formData.append('isProductCollage', 'false')
+        formData.append('isProductCollage', 'true')
 
         // Add example creative for copy mode
         if (style.id === 'copy-generation' && exampleCreativeImage) {
