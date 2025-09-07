@@ -1521,13 +1521,7 @@ export default function AdCreativeStudioPage() {
     }
   }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
 
-  // Clear custom instructions when not on custom template step
-  useEffect(() => {    
-    if (currentStep !== 'custom-template-prompt' && customInstructions.trim()) {
-      // Clear custom instructions when user is not on the custom template step
-      setCustomInstructions('')
-    }
-  }, [currentStep, customInstructions])
+  // Custom instructions are cleared manually in navigation buttons
 
   const usagePercentage = (usageData.current / WEEKLY_LIMIT) * 100
 
@@ -4305,6 +4299,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               if (type.id !== 'clothing') {
                 setSelectedClothingSubType('')
               }
+              // Clear custom instructions if not selecting custom template
+              if (type.id !== 'custom-template') {
+                setCustomInstructions('')
+              }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
               } else if (type.id === 'custom-template') {
@@ -4350,7 +4348,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
     <div className="max-w-5xl mx-auto">
       <div className="flex items-start justify-between mb-4">
         <Button
-          onClick={() => setCurrentStep('creative-type')}
+          onClick={() => {
+            setCustomInstructions('')
+            setCurrentStep('creative-type')
+          }}
           variant="ghost"
           className="text-gray-400 hover:text-white"
         >
@@ -4467,7 +4468,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
-          onClick={() => setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : selectedCreativeType === 'auto' ? 'auto-creative-setup' : 'template-selection')}
+          onClick={() => {
+            setCustomInstructions('')
+            setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : selectedCreativeType === 'auto' ? 'auto-creative-setup' : 'template-selection')
+          }}
           variant="ghost"
           className="text-gray-400 hover:text-white transition-colors"
         >
@@ -5645,7 +5649,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button
-            onClick={() => setCurrentStep('creative-type')}
+            onClick={() => {
+              setCustomInstructions('')
+              setCurrentStep('creative-type')
+            }}
             variant="ghost"
             className="text-gray-400 hover:text-white transition-colors"
           >
