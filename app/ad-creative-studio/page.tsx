@@ -4262,7 +4262,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
          <p className="text-gray-300 text-base">What type of creative do you want to generate?</p>
        </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto min-h-[400px] items-stretch">
         {CREATIVE_TYPES.map((type) => (
           <div
             key={type.id}
@@ -4298,7 +4298,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 setCurrentStep('template-selection')
               }
             }}
-            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group h-[180px] flex flex-col justify-center"
+            className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl p-6 cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col justify-center min-h-[200px]"
           >
             <div className="text-center">
               <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
