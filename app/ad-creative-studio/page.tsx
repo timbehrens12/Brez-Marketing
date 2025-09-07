@@ -5185,7 +5185,10 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <Button
-          onClick={() => setCurrentStep('creative-type')}
+          onClick={() => {
+            setCustomInstructions('')
+            setCurrentStep('creative-type')
+          }}
           variant="ghost"
           className="text-gray-400 hover:text-white transition-colors"
         >
