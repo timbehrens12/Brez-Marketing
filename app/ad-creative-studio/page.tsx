@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
@@ -1157,6 +1157,21 @@ export default function AdCreativeStudioPage() {
   useEffect(() => {
     console.log('🎯 selectedCreativeType changed to:', selectedCreativeType)
   }, [selectedCreativeType])
+
+  // NUCLEAR function to clear custom instructions completely
+  const nuclearClearCustomInstructions = () => {
+    console.log('💥 NUCLEAR CLEAR: Clearing custom instructions via state AND DOM')
+    setCustomInstructions('')
+    setCustomInstructionsKey(prev => prev + 1)
+    
+    // Also manually clear the DOM element
+    setTimeout(() => {
+      if (customInstructionsRef.current) {
+        customInstructionsRef.current.value = ''
+        console.log('💥 DOM cleared manually')
+      }
+    }, 0)
+  }
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
@@ -1300,6 +1315,7 @@ export default function AdCreativeStudioPage() {
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
   const [customInstructionsKey, setCustomInstructionsKey] = useState(0) // Force re-render
+  const customInstructionsRef = useRef<HTMLTextAreaElement>(null) // DOM manipulation
   const [customTemplatePrompt, setCustomTemplatePrompt] = useState('')
   const [exampleCreativeImage, setExampleCreativeImage] = useState<File | null>(null)
   const [exampleCreativeUrl, setExampleCreativeUrl] = useState<string>('')
@@ -1490,8 +1506,7 @@ export default function AdCreativeStudioPage() {
       }
       // NUCLEAR OPTION: Always clear custom instructions when entering this step
       console.log('🧹 NUCLEAR: Clearing custom instructions when entering custom template step')
-      setCustomInstructions('')
-      setCustomInstructionsKey(prev => prev + 1) // Force re-render
+      nuclearClearCustomInstructions()
     }
   }, [currentStep])
 
@@ -4314,8 +4329,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               // Clear custom instructions if not selecting custom template
               if (type.id !== 'custom-template') {
                 console.log('🧹 CLEARING custom instructions in creative type selection, selected:', type.id)
-                setCustomInstructions('')
-                setCustomInstructionsKey(prev => prev + 1)
+                nuclearClearCustomInstructions()
               }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
@@ -4683,6 +4697,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
+                ref={customInstructionsRef}
                 key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
@@ -4902,6 +4917,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
+                ref={customInstructionsRef}
                 key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
@@ -5203,8 +5219,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         <Button
           onClick={() => {
             console.log('🔙 Custom template BACK button clicked - clearing instructions')
-            setCustomInstructions('')
-            setCustomInstructionsKey(prev => prev + 1)
+            nuclearClearCustomInstructions()
             setCurrentStep('creative-type')
           }}
           variant="ghost"
