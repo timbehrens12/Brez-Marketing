@@ -1779,17 +1779,30 @@ export default function AdCreativeStudioPage() {
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, canvasWidth, canvasHeight)
       
-      // Calculate grid layout (2x2 for 4 products, centered in upper portion)
-      const gridCols = 2
-      const gridRows = Math.ceil(images.length / gridCols)
+      // Calculate grid layout based on number of products
+      let gridCols, gridRows
+      if (images.length <= 2) {
+        gridCols = images.length
+        gridRows = 1
+      } else if (images.length <= 4) {
+        gridCols = 2
+        gridRows = 2
+      } else {
+        gridCols = 3
+        gridRows = Math.ceil(images.length / 3)
+      }
       
-      // Use upper 70% of canvas for products, leave bottom 30% for text
-      const gridAreaHeight = canvasHeight * 0.7
-      const gridStartY = canvasHeight * 0.05 // Start 5% from top
+      // Use upper 75% of canvas for products, leave bottom 25% for text
+      const gridAreaHeight = canvasHeight * 0.75
+      const gridStartY = canvasHeight * 0.1 // Start 10% from top
       
-      const productWidth = (canvasWidth * 0.9) / gridCols // 90% width divided by columns
-      const productHeight = gridAreaHeight / gridRows
-      const marginX = (canvasWidth - (productWidth * gridCols)) / 2
+      // Calculate uniform cell sizes with better spacing
+      const cellWidth = (canvasWidth * 0.85) / gridCols
+      const cellHeight = gridAreaHeight / gridRows
+      const marginX = (canvasWidth - (cellWidth * gridCols)) / 2
+      
+      // Determine uniform product size (square for consistency)
+      const productSize = Math.min(cellWidth, cellHeight) * 0.8 // 80% of cell size for padding
       
       let loadedImages = 0
       const totalImages = images.length
@@ -1800,18 +1813,29 @@ export default function AdCreativeStudioPage() {
           const col = index % gridCols
           const row = Math.floor(index / gridCols)
           
-          const x = marginX + (col * productWidth)
-          const y = gridStartY + (row * productHeight)
+          const cellX = marginX + (col * cellWidth)
+          const cellY = gridStartY + (row * cellHeight)
           
-          // Draw image to fit in the grid cell while maintaining aspect ratio
-          const scale = Math.min(productWidth / img.width, productHeight / img.height) * 0.95 // 95% to add minimal padding
-          const scaledWidth = img.width * scale
-          const scaledHeight = img.height * scale
+          // Center the square product in its cell
+          const productX = cellX + (cellWidth - productSize) / 2
+          const productY = cellY + (cellHeight - productSize) / 2
           
-          const centerX = x + (productWidth - scaledWidth) / 2
-          const centerY = y + (productHeight - scaledHeight) / 2
+          // Create a square crop of the product image
+          const sourceSize = Math.min(img.width, img.height)
+          const sourceX = (img.width - sourceSize) / 2
+          const sourceY = (img.height - sourceSize) / 2
           
-          ctx.drawImage(img, centerX, centerY, scaledWidth, scaledHeight)
+          // Draw the image as a square
+          ctx.drawImage(
+            img,
+            sourceX, sourceY, sourceSize, sourceSize, // Source rectangle (square crop)
+            productX, productY, productSize, productSize // Destination rectangle (square)
+          )
+          
+          // Add subtle border around each product
+          ctx.strokeStyle = '#f0f0f0'
+          ctx.lineWidth = 2
+          ctx.strokeRect(productX, productY, productSize, productSize)
           
           loadedImages++
           if (loadedImages === totalImages) {
@@ -4091,7 +4115,13 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
     <div className="w-full flex flex-col items-center -mt-4 transform translate-x-3">
       <div className="text-center mb-6 w-full">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
-        <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
+        <p className="text-gray-300 text-base mb-2">Start by uploading one or more product images to create your ad creative</p>
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-3 max-w-2xl mx-auto">
+          <p className="text-blue-300 text-sm">
+            <span className="font-semibold">💡 Pro Tip:</span> Upload multiple products to create collections, brand drops, or comparison ads! 
+            Products will be arranged nicely in a professional grid layout.
+          </p>
+        </div>
       </div>
       
       <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 w-full max-w-5xl">
