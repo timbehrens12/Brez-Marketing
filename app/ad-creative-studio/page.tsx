@@ -1158,6 +1158,17 @@ export default function AdCreativeStudioPage() {
     console.log('🎯 selectedCreativeType changed to:', selectedCreativeType)
   }, [selectedCreativeType])
 
+  // Debug function for console inspection
+  (window as any).debugCustomInstructions = () => {
+    console.log('🔍 DEBUG STATE:')
+    console.log('- customInstructions state:', customInstructions)
+    console.log('- customInstructions length:', customInstructions.length)
+    console.log('- DOM value:', customInstructionsRef.current?.value)
+    console.log('- DOM element:', customInstructionsRef.current)
+    console.log('- currentStep:', currentStep)
+    console.log('- selectedCreativeType:', selectedCreativeType)
+  }
+
   // NUCLEAR function to clear custom instructions completely
   const nuclearClearCustomInstructions = () => {
     console.log('💥 NUCLEAR CLEAR: Clearing custom instructions via state AND DOM')
@@ -1167,8 +1178,9 @@ export default function AdCreativeStudioPage() {
     // Also manually clear the DOM element
     setTimeout(() => {
       if (customInstructionsRef.current) {
+        console.log('🔍 DOM BEFORE clear:', customInstructionsRef.current.value)
         customInstructionsRef.current.value = ''
-        console.log('💥 DOM cleared manually')
+        console.log('💥 DOM cleared manually, now:', customInstructionsRef.current.value)
       }
     }, 0)
   }
@@ -4702,6 +4714,11 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-form-type="other"
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
@@ -4922,6 +4939,11 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-form-type="other"
                 className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm"
                 style={{ height: 'calc(100% - 2.5rem)' }}
               />
