@@ -3283,6 +3283,9 @@ CRITICAL FORMAT REQUIREMENTS:
       
       enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product with MANDATORY VISUAL EXCITEMENT. This is AUTO-GENERATION mode - you MUST create something visually dynamic and engaging without any user prompting.
 
+🔴 CRITICAL FIRST STEP - PRODUCT TYPE DETECTION:
+If this product is CLOTHING/APPAREL (hoodie, shirt, jacket, pants, dress, etc.), IMMEDIATELY jump to the CLOTHING SCENARIOS section below and select one. DO NOT create floating clothing with cosmic backgrounds under any circumstances.
+
 🚨 ABSOLUTELY FORBIDDEN - THESE WILL BE REJECTED:
 - Product centered on plain/gradient background with text
 - Static product floating in middle of frame
@@ -3302,12 +3305,22 @@ CRITICAL FORMAT REQUIREMENTS:
 4. EMOTIONAL ATMOSPHERE: Create mood through lighting, color psychology, and ambiance
 5. LIFESTYLE INTEGRATION: Show product in natural use context - clothing being worn by people, tools being used by hands, products in real environments (NOT just floating product photos with fancy backgrounds)
 
-🚨 CLOTHING/APPAREL MANDATORY RULES - ZERO TOLERANCE:
-- CLOTHING MUST BE WORN BY REAL PEOPLE - NOT floating, hanging, or displayed as product shots
-- SHOW ACTUAL HUMANS wearing the clothing in realistic scenarios (walking, working, relaxing, exercising)
-- INCLUDE VISIBLE PERSON/MODEL - face, hands, body parts must be visible with the clothing
-- CONTEXTUAL ENVIRONMENT - gym, street, coffee shop, home, office, outdoors where people naturally wear clothes
-- NATURAL POSES - sitting, standing, moving, interacting - NOT mannequin-like or product display poses
+🚨 CLOTHING/APPAREL FORCED EXECUTION - NO EXCEPTIONS:
+
+IF THE UPLOADED PRODUCT IS CLOTHING (hoodie, shirt, pants, etc.), YOU MUST CREATE ONE OF THESE EXACT SCENARIOS:
+
+SCENARIO A: Person wearing the clothing item walking down a city street with visible face and natural movement
+SCENARIO B: Person wearing the clothing item sitting in a coffee shop or casual indoor environment  
+SCENARIO C: Person wearing the clothing item during exercise/gym activity with visible body and natural pose
+SCENARIO D: Person wearing the clothing item in a home/lifestyle setting (couch, kitchen, bedroom)
+SCENARIO E: Person wearing the clothing item outdoors (park, beach, hiking) in natural lighting
+
+MANDATORY ELEMENTS FOR ALL CLOTHING:
+- VISIBLE HUMAN FACE and/or hands
+- PERSON'S BODY wearing the clothing naturally
+- REALISTIC ENVIRONMENT (not space, not cosmic, not abstract)
+- NATURAL LIGHTING (not magical/cosmic effects)
+- PERSON ENGAGED IN NORMAL ACTIVITY (walking, sitting, standing, moving)
 
 🎨 OTHER PRODUCT-SPECIFIC REQUIREMENTS:
 - KITCHEN/TOOLS: Must show hands using the tools in realistic cooking/work scenarios - NEVER just tools with background effects  
