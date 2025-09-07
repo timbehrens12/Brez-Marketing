@@ -1152,6 +1152,11 @@ export default function AdCreativeStudioPage() {
   // Progressive flow state
   const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'auto-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
+  
+  // Debug: Track when selectedCreativeType changes
+  useEffect(() => {
+    console.log('🎯 selectedCreativeType changed to:', selectedCreativeType)
+  }, [selectedCreativeType])
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
@@ -1482,6 +1487,9 @@ export default function AdCreativeStudioPage() {
       if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
         setSelectedTemplate(customTemplate)
       }
+      // NUCLEAR OPTION: Always clear custom instructions when entering this step
+      console.log('🧹 NUCLEAR: Clearing custom instructions when entering custom template step')
+      setCustomInstructions('')
     }
   }, [currentStep])
 
