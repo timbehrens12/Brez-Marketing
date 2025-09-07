@@ -1775,9 +1775,13 @@ export default function AdCreativeStudioPage() {
       canvas.width = canvasWidth
       canvas.height = canvasHeight
       
-      // Fill with white background
+      // Fill with high-quality white background
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+      
+      // Set high-quality rendering
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
       
       // Calculate grid layout based on number of products
       let gridCols, gridRows
@@ -1835,8 +1839,8 @@ export default function AdCreativeStudioPage() {
           
           loadedImages++
           if (loadedImages === totalImages) {
-            // All images loaded, return the collage as data URL
-            resolve(canvas.toDataURL('image/jpeg', 0.9))
+            // All images loaded, return the collage as high-quality data URL
+            resolve(canvas.toDataURL('image/png')) // Use PNG for lossless quality
           }
         }
         
@@ -1891,17 +1895,23 @@ export default function AdCreativeStudioPage() {
         }
         
         // Create enhanced prompt for multi-product generation
-        const multiProductPrompt = `🎯 PRODUCT COLLAGE ENHANCEMENT & STYLING:
+        const multiProductPrompt = `🎯 COLLAGE ENHANCEMENT ONLY - NO PRODUCT REPLACEMENT:
 
-I'm providing you with a collage image that contains ${images.length} REAL products arranged together. These are the ACTUAL products that must appear in the final advertisement - do NOT replace them with different items.
+I'm providing you with a collage containing ${images.length} REAL product images. Your ONLY job is to enhance the background and lighting - DO NOT touch, modify, or replace ANY of the products themselves.
 
-🚨 CRITICAL PRODUCT PRESERVATION RULES:
-- Use the EXACT products shown in this collage image
-- Do NOT create new, different, or similar-looking products
-- Do NOT replace any product with AI-generated alternatives
-- Keep every product EXACTLY as it appears in the collage
-- Preserve all text, logos, colors, card numbers, and design elements
-- Maintain the complete shape and details of each product
+🚨 ABSOLUTE PROHIBITION - DO NOT:
+- Replace ANY product with a different one
+- Generate new products that look similar  
+- Modify ANY product's appearance, colors, or design
+- Change ANY text, logos, or details on products
+- Create variations or alternatives of ANY product
+- "Fix" or "improve" ANY product - they are perfect as-is
+
+✅ WHAT YOU CAN DO:
+- Enhance the background only
+- Improve overall lighting and shadows
+- Add professional atmosphere around the products
+- Maintain the exact collage layout as provided
 
 🎨 ENHANCEMENT REQUIREMENTS:
 - Enhance the background with a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} setting
@@ -1926,14 +1936,19 @@ ${templateSpecificPrompt}
 - All original product details preserved exactly
 - Clean, high-end visual presentation
 
-⚠️ ABSOLUTELY FORBIDDEN:
-- Replacing products with AI-generated versions
-- Creating new products that look similar
-- Modifying product designs, colors, or text
-- Removing or altering any product from the collage
+⚠️ ZERO TOLERANCE RULES:
+- If a product looks blurry in the collage, DO NOT "fix" it by creating a new one
+- If a product has unusual colors, DO NOT "correct" them  
+- If a product appears damaged or imperfect, DO NOT replace it
+- EVERY product in the collage must appear IDENTICALLY in the result
 
-✨ FINAL RESULT:
-Transform this product collage into a stunning advertisement while keeping ALL ${images.length} products EXACTLY as they appear in the collage image - just enhance the background, lighting, and overall presentation.`
+🔒 CRITICAL SUCCESS CRITERIA:
+- Customer must be able to identify their EXACT uploaded products
+- No product should look "too perfect" or newly generated
+- Preserve every imperfection, reflection, and detail exactly
+
+✨ FINAL INSTRUCTION:
+Enhance ONLY the background and lighting around the products. The ${images.length} products themselves are UNTOUCHABLE - copy them pixel-perfect from the collage to the final result.`
 
         // Create FormData for the API call using the collage
         const formData = new FormData()
@@ -1946,8 +1961,8 @@ Transform this product collage into a stunning advertisement while keeping ALL $
           byteNumbers[i] = byteCharacters.charCodeAt(i)
         }
         const byteArray = new Uint8Array(byteNumbers)
-        const collageBlob = new Blob([byteArray], { type: 'image/jpeg' })
-        const collageFile = new File([collageBlob], `multi-product-collage-${images.length}.jpg`, { type: 'image/jpeg' })
+        const collageBlob = new Blob([byteArray], { type: 'image/png' })
+        const collageFile = new File([collageBlob], `multi-product-collage-${images.length}.png`, { type: 'image/png' })
 
         formData.append('image', collageFile)
         formData.append('prompt', multiProductPrompt)
