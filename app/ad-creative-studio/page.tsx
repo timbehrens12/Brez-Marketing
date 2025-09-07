@@ -1860,7 +1860,7 @@ export default function AdCreativeStudioPage() {
       try {
 
 
-        // Convert all images to base64
+        // Convert all images to base64 for individual processing
         const imagePromises = images.map(file => new Promise<string>((resolve) => {
           const reader = new FileReader()
           reader.onload = () => resolve(reader.result as string)
@@ -1868,9 +1868,6 @@ export default function AdCreativeStudioPage() {
         }))
 
         const base64Images = await Promise.all(imagePromises)
-        
-        // Create a collage of all products first
-        const collageDataUrl = await createProductCollage(images)
 
 
         // Get user's instructions based on template type
@@ -1887,65 +1884,73 @@ export default function AdCreativeStudioPage() {
           if (exampleCreativeImage) {
             templateSpecificPrompt += `
 
-🎨 COPY CREATIVE MODE: You also have an example creative to reference for styling inspiration. Study the example's composition, lighting, background, text placement, colors, and mood. Apply similar styling to this product collage while keeping all ${images.length} products visible.`
+🎨 COPY CREATIVE MODE: You also have an example creative to reference for styling inspiration. Study the example's composition, lighting, background, text placement, colors, and mood. Apply similar styling to the multi-product arrangement while keeping all ${images.length} products visible and properly arranged.`
           }
         } else if (style.id === 'custom-template') {
-          userInstructions = customInstructions.trim()
+          userInstructions = customTemplatePrompt.trim()
           templateSpecificPrompt = userInstructions ? `🎯 CUSTOM TEMPLATE REQUIREMENTS: ${userInstructions}` : ''
         }
         
-        // Create enhanced prompt for styling the product collage
-        const multiProductPrompt = `🎯 PRODUCT COLLAGE STYLING TASK:
+        // Create enhanced prompt for multi-product generation
+        const multiProductPrompt = `🎯 MULTI-PRODUCT ADVERTISEMENT CREATION:
 
-I'm providing you with a collage image that contains ${images.length} products arranged in a grid layout. Your task is to enhance this collage by adding professional styling, background, and text elements.
+I'm providing you with ${images.length} separate product images. Your task is to create a professional advertisement that showcases ALL ${images.length} products together in one cohesive creative.
 
-🎨 STYLING REQUIREMENTS:
-- Keep ALL ${images.length} products visible and clearly displayed
-- Add a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background behind the products
-- Enhance the overall composition with professional lighting and shadows
+🎨 PRODUCT EXTRACTION & ARRANGEMENT REQUIREMENTS:
+- Extract each product individually from its original background
+- Maintain COMPLETE product integrity - don't crop or cut off any part of any product
+- Ensure each product is fully visible and professionally presented
+- Arrange all ${images.length} products in an elegant, balanced layout
+- Each product should be clearly distinguishable and properly sized
+- Use professional product photography principles for positioning
+
+🏗️ LAYOUT & COMPOSITION:
+- Create a ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced 2x2 or line arrangement' : 'organized grid pattern'} 
+- Maintain proper spacing between products for clarity
+- Ensure no product overlaps or obscures another
+- Position products naturally as if arranged by a professional photographer
+- Leave adequate space for text overlays (top/bottom areas)
+
+🎭 BACKGROUND & STYLING:
+- Add a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background
+- Apply consistent, professional lighting across all products
+- Create realistic shadows and depth for each product
 - Maintain the 1024x1536 portrait format
-- Make the products look like a high-end advertisement
+- Make it look like a high-end advertisement
 
 ${templateSpecificPrompt}
 
-🚨 CRITICAL TEXT PLACEMENT RULES:
-- Add text elements as specified in user requirements
-- Ensure ALL text is contained within image boundaries with 80px margins minimum
-- Use professional typography that complements the products
-- Position text in areas that don't cover the products
+🚨 CRITICAL REQUIREMENTS:
+- ALL ${images.length} products must be fully visible and complete
+- No cropping or cutting off of product edges
+- Each product maintains its original proportions and quality
+- Professional spacing and arrangement
+- Text areas preserved for overlays
 
-✨ ENHANCEMENT GOALS:
-- Transform this product collage into a stunning advertisement
-- Keep all products prominently displayed
-- Add visual appeal while maintaining product visibility
-- Create a cohesive, professional look
+✨ FINAL RESULT:
+Create a stunning multi-product advertisement that showcases all ${images.length} products professionally, with each item clearly visible, properly arranged, and beautifully styled.`
 
-Generate the enhanced advertisement now, keeping ALL ${images.length} products visible and properly styled.`
-
-        // Create FormData for the API call using the collage
+        // Create FormData for the API call using individual images
         const formData = new FormData()
 
-        // Convert collage data URL to File
-        const collageBase64Data = collageDataUrl.split(',')[1]
-        const byteCharacters = atob(collageBase64Data)
-        const byteNumbers = new Array(byteCharacters.length)
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        // Use the first image as the main image
+        formData.append('image', images[0])
+        
+        // Add additional images as JSON array (excluding the first one)
+        if (images.length > 1) {
+          const additionalImages = base64Images.slice(1)
+          formData.append('additionalImages', JSON.stringify(additionalImages))
         }
-        const byteArray = new Uint8Array(byteNumbers)
-        const collageBlob = new Blob([byteArray], { type: 'image/jpeg' })
-        const collageFile = new File([collageBlob], `multi-product-collage-${images.length}.jpg`, { type: 'image/jpeg' })
 
-        formData.append('image', collageFile)
         formData.append('prompt', multiProductPrompt)
         formData.append('styleId', style.id)
         formData.append('aspectRatio', 'portrait')
         formData.append('quality', 'hd')
         formData.append('textOverlays', JSON.stringify(customText))
 
-        // Mark this as a collage-based multi-product request (no additional images needed)
+        // Mark this as a multi-product request with individual images (not collage)
         formData.append('multiProductCount', images.length.toString())
-        formData.append('isProductCollage', 'true')
+        formData.append('isProductCollage', 'false')
 
         // Add example creative for copy mode
         if (style.id === 'copy-generation' && exampleCreativeImage) {
