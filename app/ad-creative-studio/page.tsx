@@ -3281,17 +3281,24 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in an engaging way. Be creative with the design approach while ensuring professional quality.
+      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product in a DYNAMIC and ENGAGING way. AVOID boring centered layouts - be creative and visually exciting!
 
-DESIGN VARIETY - Choose ONE of these creative approaches:
-1. HERO PRODUCT: Large product as main focus with minimal text overlay
-2. LIFESTYLE SCENE: Product in use/context with atmospheric background  
-3. REAL ENVIRONMENT: Product being used by real people in authentic settings (home, office, outdoors, gym, café, etc.)
-4. MODEL SHOWCASE: Attractive models wearing/using/holding the product in professional settings
-5. BENEFIT-FOCUSED: Highlight key product benefits with supporting visuals
-6. COMPARISON/BEFORE-AFTER: Show product advantage or transformation
-7. TESTIMONIAL STYLE: Include review quotes or social proof elements
-8. SEASONAL/TRENDING: Tie into current trends, seasons, or cultural moments
+⚠️ FORBIDDEN LAYOUTS - DO NOT CREATE:
+- Product floating in center with plain background
+- Simple centered product with text above/below
+- Basic static product placement with minimal styling
+- Generic "product on white background" layouts
+- Boring symmetrical center-focused compositions
+
+🎨 DYNAMIC CREATIVE APPROACHES - Choose ONE:
+1. LIFESTYLE INTEGRATION: Product being actively used in real environments with natural interactions
+2. MOTION & ENERGY: Show movement, splashes, swirls, dynamic angles, action sequences
+3. ENVIRONMENTAL STORYTELLING: Product in rich, detailed settings that tell a story
+4. MODEL INTERACTION: Real people actively using/wearing/enjoying the product with natural poses
+5. BENEFIT VISUALIZATION: Creative visual metaphors showing what the product does/achieves
+6. ARTISTIC COMPOSITION: Interesting angles, creative lighting, artistic arrangements
+7. SOCIAL PROOF SCENES: Product in social settings, group usage, community contexts
+8. TRANSFORMATION MOMENTS: Before/after, upgrade scenarios, improvement demonstrations
 
 MESSAGING CREATIVITY - Avoid generic phrases. Instead use:
 - Specific product benefits (not just "perfect fit" or "essential")
@@ -3321,7 +3328,20 @@ AVOID REPETITIVE PATTERNS:
 - Try different color schemes and moods
 - Experiment with product presentation angles
 
-CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
+🚀 DYNAMIC REQUIREMENTS - MANDATORY FOR AUTO-GENERATION:
+- NEVER place product in perfect center - use rule of thirds, off-center positioning  
+- Include at least ONE dynamic element (movement, interaction, environment)
+- Add atmospheric elements (particles, mist, light rays, textures)
+- Use creative angles and asymmetrical compositions
+- Show the product "in action" rather than static display
+
+⚡ ANTI-BORING ENFORCEMENT:
+- Is the product just floating? → Add environment or interaction
+- Is everything centered? → Use asymmetrical composition  
+- Is the background plain? → Add texture, atmosphere, or setting
+- Does it look static? → Add movement, energy, or dynamic angles
+
+CREATE SOMETHING EXCITING: Every auto-generated ad must be visually dynamic and engaging - NO boring centered layouts allowed!${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
@@ -3699,7 +3719,20 @@ AVOID REPETITIVE PATTERNS:
 - Try different color schemes and moods
 - Experiment with product presentation angles
 
-CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a template.${autoInstructions}${textPromptAddition}`
+🚀 DYNAMIC REQUIREMENTS - MANDATORY FOR AUTO-GENERATION:
+- NEVER place product in perfect center - use rule of thirds, off-center positioning  
+- Include at least ONE dynamic element (movement, interaction, environment)
+- Add atmospheric elements (particles, mist, light rays, textures)
+- Use creative angles and asymmetrical compositions
+- Show the product "in action" rather than static display
+
+⚡ ANTI-BORING ENFORCEMENT:
+- Is the product just floating? → Add environment or interaction
+- Is everything centered? → Use asymmetrical composition  
+- Is the background plain? → Add texture, atmosphere, or setting
+- Does it look static? → Add movement, energy, or dynamic angles
+
+CREATE SOMETHING EXCITING: Every auto-generated ad must be visually dynamic and engaging - NO boring centered layouts allowed!${autoInstructions}${textPromptAddition}`
     } else {
       // For regular templates, use template prompt + custom instructions + regeneration feedback
       const customInstructionsAddition = customInstructions.trim() 
