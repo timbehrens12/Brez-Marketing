@@ -1299,6 +1299,7 @@ export default function AdCreativeStudioPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showRetryModal, setShowRetryModal] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
+  const [customInstructionsKey, setCustomInstructionsKey] = useState(0) // Force re-render
   const [customTemplatePrompt, setCustomTemplatePrompt] = useState('')
   const [exampleCreativeImage, setExampleCreativeImage] = useState<File | null>(null)
   const [exampleCreativeUrl, setExampleCreativeUrl] = useState<string>('')
@@ -1490,6 +1491,7 @@ export default function AdCreativeStudioPage() {
       // NUCLEAR OPTION: Always clear custom instructions when entering this step
       console.log('🧹 NUCLEAR: Clearing custom instructions when entering custom template step')
       setCustomInstructions('')
+      setCustomInstructionsKey(prev => prev + 1) // Force re-render
     }
   }, [currentStep])
 
@@ -4313,6 +4315,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               if (type.id !== 'custom-template') {
                 console.log('🧹 CLEARING custom instructions in creative type selection, selected:', type.id)
                 setCustomInstructions('')
+                setCustomInstructionsKey(prev => prev + 1)
               }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
@@ -4680,6 +4683,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
+                key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
@@ -4898,6 +4902,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 Custom Instructions
               </h3>
               <textarea
+                key={customInstructionsKey}
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Lighting, background, angles, etc..."
@@ -5199,6 +5204,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
           onClick={() => {
             console.log('🔙 Custom template BACK button clicked - clearing instructions')
             setCustomInstructions('')
+            setCustomInstructionsKey(prev => prev + 1)
             setCurrentStep('creative-type')
           }}
           variant="ghost"
