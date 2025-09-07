@@ -3281,45 +3281,22 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `You are creating a SCENE-BASED advertisement, NOT a product photo. Your goal is to create a realistic ENVIRONMENT where the product naturally exists.
+      enhancedPrompt = `Create a realistic advertisement scene with the product placed naturally in a real environment.
 
-🔴 MANDATORY SCENE CREATION - NO PRODUCT PHOTOGRAPHY ALLOWED:
+ENVIRONMENT REQUIREMENTS:
+- Use a real location: office, bedroom, kitchen, living room, coffee shop
+- Include real furniture: desk, table, chair, bed, counter, shelves
+- Add everyday objects: laptop, books, coffee cup, phone, keys, plants
 
-STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST (CHOOSE BASED ON PRODUCT TYPE)
-- REAL LOCATIONS: bedroom, bathroom, kitchen, office, gym, coffee shop, living room, workspace, car, outdoor spaces, store, closet
-- REALISTIC LIGHTING: natural window light, room lamps, overhead lighting, desk lamps, bathroom lighting, kitchen lighting
-- APPROPRIATE FURNITURE: beds, chairs, desks, tables, nightstands, bookshelves, coffee tables, kitchen counters, bathroom vanities, gym equipment
-- ENVIRONMENTAL DETAILS: walls, floors, textures, everyday objects, laptops, books, magazines, plants, mirrors, appliances, workout gear
+PRODUCT PLACEMENT RULES:
+- Product must be ON a solid surface (desk, table, counter, nightstand)
+- NO floating products or cosmic backgrounds
+- NO blue swirls, galaxy effects, or abstract backgrounds
+- Show product in natural usage context
 
-STEP 2: PLACE ANY PRODUCT NATURALLY IN THIS ENVIRONMENT - OBEY PHYSICS FOR ALL ITEMS
+FOR HEADPHONES: Place on desk with laptop, on nightstand with phone, on coffee table with magazines, or in person's hands
 
-UNIVERSAL REALISTIC PLACEMENT RULES FOR ALL PRODUCTS:
-- CLOTHING: laid on bed/table, draped over chair, hanging on hooks, folded on shelf, in laundry basket
-- TECH/GADGETS: on desk, in hands being used, charging stations, in bags, on coffee tables, with laptops
-- BEAUTY/SKINCARE: on bathroom counter, vanity table, in makeup bag, next to mirror, on bedside table
-- KITCHEN TOOLS: on counter next to ingredients, in hands while cooking, on cutting board, in kitchen drawer
-- FITNESS GEAR: in gym setting, on workout mat, in gym bag, being used during exercise, on floor
-- HOME GOODS: on shelves, coffee tables, integrated into room decor, on kitchen counter, in natural home setting
-- BOOKS/MEDIA: on bookshelf, coffee table, in hands being read, on desk, stacked on nightstand
-- JEWELRY/ACCESSORIES: on vanity, in jewelry box, being worn in lifestyle setting, on dresser
-- TOYS/GAMES: on floor during play, on table mid-game, in toy box, being used by hands
-
-UNIVERSAL PHYSICS RULES FOR ALL PRODUCTS:
-- NO FLOATING: Nothing can hover, levitate, or be suspended in air without support
-- NO PEDESTALS: No blocks, platforms, cubes, or display stands - products exist naturally in real spaces
-- NO COSMIC/SPACE BACKGROUNDS: Only real environments (rooms, kitchens, offices, gyms, homes, outdoors)
-- GRAVITY ALWAYS APPLIES: Every product must be supported by solid surfaces, furniture, or hands
-- REALISTIC CONTEXTS: Show products where people would actually use or find them in real life
-
-STEP 3: ADD DYNAMIC ELEMENTS TO THE SCENE
-- Natural lighting effects, atmospheric mood, environmental storytelling
-- Make the scene feel alive and realistic, not staged
-
-FORBIDDEN APPROACH: Starting with the product and adding a background around it
-REQUIRED APPROACH: Start with a realistic environment and place the product naturally within it
-
-🚨 ABSOLUTELY FORBIDDEN - INSTANT REJECTION:
-- PRODUCT PHOTOGRAPHY: Any image that looks like a product photo with the item centered or floating
+Make it dynamic and sales-focused while keeping the product grounded in reality
 - FLOATING CLOTHING: Hoodies, shirts, pants suspended in air with backgrounds/effects behind them
 - PEDESTAL DISPLAYS: Clothing standing on blocks, platforms, cubes, or display stands
 - DEFYING PHYSICS: Clothing that stands upright without support or hovers in space
