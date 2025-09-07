@@ -1483,8 +1483,8 @@ export default function AdCreativeStudioPage() {
       if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
         setSelectedTemplate(customTemplate)
       }
-      // Clear custom instructions when entering this step
-      setCustomInstructions('')
+      // Clear custom template prompt when entering this step
+      setCustomTemplatePrompt('')
     }
   }, [currentStep])
 
@@ -1498,9 +1498,9 @@ export default function AdCreativeStudioPage() {
     }
   }, [selectedCreativeType, autoPromptAdditions])
 
-  // NUCLEAR: Clear custom instructions on ANY navigation
+  // NUCLEAR: Clear custom template prompt on ANY navigation
   useEffect(() => {
-    setCustomInstructions('')
+    setCustomTemplatePrompt('')
   }, [currentStep, selectedCreativeType])
 
   // Clear auto AND custom instructions when uploading a new image/product
@@ -1509,9 +1509,9 @@ export default function AdCreativeStudioPage() {
     if (autoPromptAdditions.trim()) {
       setAutoPromptAdditions('')
     }
-    // Clear custom instructions when a new product image is uploaded
-    if (customInstructions.trim()) {
-      setCustomInstructions('')
+    // Clear custom template prompt when a new product image is uploaded
+    if (customTemplatePrompt.trim()) {
+      setCustomTemplatePrompt('')
     }
   }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
 
@@ -4295,7 +4295,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               }
               // Clear custom instructions if not selecting custom template
               if (type.id !== 'custom-template') {
-                setCustomInstructions('')
+                setCustomTemplatePrompt('')
               }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
@@ -4343,7 +4343,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-start justify-between mb-4">
         <Button
           onClick={() => {
-            setCustomInstructions('')
+            setCustomTemplatePrompt('')
             setCurrentStep('creative-type')
           }}
           variant="ghost"
@@ -4463,7 +4463,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => {
-            setCustomInstructions('')
+            setCustomTemplatePrompt('')
             setCurrentStep(selectedCreativeType === 'custom-template' ? 'creative-type' : selectedCreativeType === 'copy' ? 'copy-creative-setup' : selectedCreativeType === 'auto' ? 'auto-creative-setup' : 'template-selection')
           }}
           variant="ghost"
@@ -5180,7 +5180,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => {
-            setCustomInstructions('')
+            setCustomTemplatePrompt('')
             setCurrentStep('creative-type')
           }}
           variant="ghost"
@@ -5647,7 +5647,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
         <div className="flex items-center gap-4 mb-4">
           <Button
             onClick={() => {
-              setCustomInstructions('')
+              setCustomTemplatePrompt('')
               setCurrentStep('creative-type')
             }}
             variant="ghost"
