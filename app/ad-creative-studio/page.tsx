@@ -1153,6 +1153,22 @@ export default function AdCreativeStudioPage() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'auto-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   
+  // NUCLEAR function to clear custom instructions completely
+  const nuclearClearCustomInstructions = useCallback(() => {
+    console.log('💥 NUCLEAR CLEAR: Clearing custom instructions via state AND DOM')
+    setCustomInstructions('')
+    setCustomInstructionsKey(prev => prev + 1)
+    
+    // Also manually clear the DOM element
+    setTimeout(() => {
+      if (customInstructionsRef.current) {
+        console.log('🔍 DOM BEFORE clear:', customInstructionsRef.current.value)
+        customInstructionsRef.current.value = ''
+        console.log('💥 DOM cleared manually, now:', customInstructionsRef.current.value)
+      }
+    }, 0)
+  }, [])
+
   // Debug: Track when selectedCreativeType changes
   useEffect(() => {
     console.log('🎯 selectedCreativeType changed to:', selectedCreativeType)
@@ -1170,22 +1186,6 @@ export default function AdCreativeStudioPage() {
       console.log('- selectedCreativeType:', selectedCreativeType)
     }
   }, [customInstructions, currentStep, selectedCreativeType])
-
-  // NUCLEAR function to clear custom instructions completely
-  const nuclearClearCustomInstructions = () => {
-    console.log('💥 NUCLEAR CLEAR: Clearing custom instructions via state AND DOM')
-    setCustomInstructions('')
-    setCustomInstructionsKey(prev => prev + 1)
-    
-    // Also manually clear the DOM element
-    setTimeout(() => {
-      if (customInstructionsRef.current) {
-        console.log('🔍 DOM BEFORE clear:', customInstructionsRef.current.value)
-        customInstructionsRef.current.value = ''
-        console.log('💥 DOM cleared manually, now:', customInstructionsRef.current.value)
-      }
-    }, 0)
-  }
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
