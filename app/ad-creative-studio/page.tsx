@@ -3281,33 +3281,35 @@ CRITICAL FORMAT REQUIREMENTS:
         ? ` ADDITIONAL REQUIREMENTS: ${autoPromptAdditions.trim()}` 
         : ''
       
-      enhancedPrompt = `Create a compelling, sales-focused advertisement that showcases this product with MANDATORY VISUAL EXCITEMENT. This is AUTO-GENERATION mode - you MUST create something visually dynamic and engaging without any user prompting.
+      enhancedPrompt = `You are creating a SCENE-BASED advertisement, NOT a product photo. Your goal is to create a realistic ENVIRONMENT where the product naturally exists.
 
-🔴 OVERRIDE ALL TEMPLATE THINKING - FORCE REALISM:
-This is NOT a product photography session. This is NOT about creating floating items with fancy backgrounds. 
-You MUST create REALISTIC SCENES where products exist in REAL ENVIRONMENTS.
+🔴 MANDATORY SCENE CREATION - NO PRODUCT PHOTOGRAPHY ALLOWED:
 
-FOR CLOTHING: Think "Where would someone actually find this hoodie in real life?" 
-- Hanging in a closet on hangers
-- Laid on a bed or dresser  
-- Draped over a chair or furniture
-- In a gym bag or suitcase
-- On a clothing rack in a store
-- Folded on shelves or surfaces
+STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST
+- Start with a real location: bedroom, closet, store, home, laundry room
+- Add realistic lighting: natural window light, room lamps, overhead lighting
+- Include realistic furniture: beds, chairs, hangers, shelves, tables
+- Add environmental details: walls, floors, textures, everyday objects
 
-NEVER EVER create cosmic/space backgrounds with floating clothing. ALWAYS show clothing as REAL OBJECTS in REAL SPACES.
+STEP 2: PLACE THE PRODUCT NATURALLY IN THIS ENVIRONMENT
+- FOR CLOTHING: Must be hanging on hangers, laid on furniture, draped over objects, or placed in realistic storage
+- Product should look like it belongs in this space naturally
+- NO floating, NO centering, NO product photography poses
 
-🚨 ABSOLUTELY FORBIDDEN - THESE WILL BE REJECTED:
-- Product centered on plain/gradient background with text
-- Static product floating in middle of frame
-- Simple product photography style layouts
-- Basic minimalist compositions
-- Any layout that looks like "product + background + text"
-- Symmetrical, predictable, or template-like arrangements
-- CLOTHING FLOATING IN SPACE: Never show clothing items just floating with fancy backgrounds - clothes must be worn by people or shown in lifestyle contexts
-- CLOTHING PRODUCT SHOTS: NEVER create product photography of clothing items - they must be worn by actual people with visible faces/bodies
-- COSMIC CLOTHING DISPLAYS: FORBIDDEN to show hoodies, shirts, pants floating in space/cosmic backgrounds - must show humans wearing them
-- TOOLS/OBJECTS WITHOUT CONTEXT: Don't just add effects around products - show them being used by real people in real situations
+STEP 3: ADD DYNAMIC ELEMENTS TO THE SCENE
+- Natural lighting effects, atmospheric mood, environmental storytelling
+- Make the scene feel alive and realistic, not staged
+
+FORBIDDEN APPROACH: Starting with the product and adding a background around it
+REQUIRED APPROACH: Start with a realistic environment and place the product naturally within it
+
+🚨 ABSOLUTELY FORBIDDEN - INSTANT REJECTION:
+- PRODUCT PHOTOGRAPHY: Any image that looks like a product photo with the item centered or floating
+- FLOATING CLOTHING: Hoodies, shirts, pants suspended in air with backgrounds/effects behind them
+- PRODUCT + BACKGROUND FORMULA: Taking a product image and placing fancy backgrounds around it
+- SMOKE/MIST AROUND PRODUCTS: Adding atmospheric effects around floating clothing items
+- COSMIC/SPACE THEMES: Any space, galaxy, cosmic, or abstract backgrounds with floating products
+- CENTERED COMPOSITIONS: Product placed in the middle of the frame like a catalog photo
 
 ⚡ MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
 1. DYNAMIC VISUAL ELEMENT: Add swirls, splashes, motion blur, particles, atmospheric effects, or flowing elements
