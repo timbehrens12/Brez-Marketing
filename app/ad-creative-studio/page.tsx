@@ -4115,13 +4115,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
     <div className="w-full flex flex-col items-center -mt-4 transform translate-x-3">
       <div className="text-center mb-6 w-full">
         <h2 className="text-3xl font-bold text-white mb-3">Upload Your Product Images</h2>
-        <p className="text-gray-300 text-base mb-2">Start by uploading one or more product images to create your ad creative</p>
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-3 max-w-2xl mx-auto">
-          <p className="text-blue-300 text-sm">
-            <span className="font-semibold">💡 Pro Tip:</span> Upload multiple products to create collections, brand drops, or comparison ads! 
-            Products will be arranged nicely in a professional grid layout.
-          </p>
-        </div>
+        <p className="text-gray-300 text-base">Start by uploading one or more product images to create your ad creative</p>
       </div>
       
       <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 w-full max-w-5xl">
@@ -4172,6 +4166,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                   <h4 className="text-orange-400 font-semibold mb-2">📸 Pro Tips for Best Results</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
                       <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI will optimize automatically</li>
+                      <li>• <strong>Upload multiple products</strong> - Create collections, brand drops, or comparison ads with professional grid layouts</li>
                       <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
                       <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
                     <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
