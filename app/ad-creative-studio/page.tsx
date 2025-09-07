@@ -1505,9 +1505,11 @@ export default function AdCreativeStudioPage() {
 
   // Clear custom instructions when switching away from custom template
   useEffect(() => {
+    console.log('🔍 Custom clearing check:', { selectedCreativeType, customInstructions: customInstructions.length })
     if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
       // Clear custom instructions when switching to a different creative type
       if (customInstructions.trim()) {
+        console.log('🧹 CLEARING custom instructions because selectedCreativeType is:', selectedCreativeType)
         setCustomInstructions('')
       }
     }
@@ -4301,6 +4303,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               }
               // Clear custom instructions if not selecting custom template
               if (type.id !== 'custom-template') {
+                console.log('🧹 CLEARING custom instructions in creative type selection, selected:', type.id)
                 setCustomInstructions('')
               }
               if (type.id === 'clothing') {
@@ -5186,6 +5189,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => {
+            console.log('🔙 Custom template BACK button clicked - clearing instructions')
             setCustomInstructions('')
             setCurrentStep('creative-type')
           }}
