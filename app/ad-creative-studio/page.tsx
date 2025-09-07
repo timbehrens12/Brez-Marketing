@@ -4422,16 +4422,16 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
                 setSelectedTemplate(template)
                 setCurrentStep('customization')
               }}
-              className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl overflow-hidden cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group flex flex-col h-[400px]"
+              className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] rounded-xl overflow-hidden cursor-pointer hover:border-[#555] hover:shadow-xl transition-all duration-300 group"
             >
-              <div className="flex-1 relative overflow-hidden">
+              <div className="aspect-[3/4] relative overflow-hidden">
                 <img
                   src={template.thumbnail}
                   alt={template.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
-              <div className="p-4 flex-shrink-0">
+              <div className="p-4">
                 <h3 className="text-lg font-semibold text-white mb-2">{template.name}</h3>
                 <p className="text-gray-400 text-sm">{template.description}</p>
               </div>
