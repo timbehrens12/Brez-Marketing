@@ -1895,23 +1895,29 @@ export default function AdCreativeStudioPage() {
         }
         
         // Create enhanced prompt for multi-product generation
-        const multiProductPrompt = `🎯 COLLAGE ENHANCEMENT ONLY - NO PRODUCT REPLACEMENT:
+        const multiProductPrompt = `🎯 PRODUCT EXTRACTION & PROFESSIONAL RE-ARRANGEMENT:
 
-I'm providing you with a collage containing ${images.length} REAL product images. Your ONLY job is to enhance the background and lighting - DO NOT touch, modify, or replace ANY of the products themselves.
+I'm providing you with a collage containing ${images.length} REAL product images. Your task is to EXTRACT each individual product from this collage and RE-ARRANGE them professionally in a new layout.
 
-🚨 ABSOLUTE PROHIBITION - DO NOT:
-- Replace ANY product with a different one
-- Generate new products that look similar  
-- Modify ANY product's appearance, colors, or design
-- Change ANY text, logos, or details on products
-- Create variations or alternatives of ANY product
-- "Fix" or "improve" ANY product - they are perfect as-is
+🔍 EXTRACTION PROCESS:
+- Identify and extract ALL ${images.length} products from the collage
+- Each product must be extracted with 100% fidelity - preserve every detail exactly
+- Remove each product cleanly from its collage background
+- Maintain original colors, text, logos, reflections, and imperfections
+- Do NOT create new products - only extract what's already there
 
-✅ WHAT YOU CAN DO:
-- Enhance the background only
-- Improve overall lighting and shadows
-- Add professional atmosphere around the products
-- Maintain the exact collage layout as provided
+🎨 RE-ARRANGEMENT REQUIREMENTS:
+- Arrange the extracted products in a professional ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced grid or elegant arrangement' : 'organized grid pattern'}
+- Give each product proper spacing and positioning
+- Create a balanced, aesthetically pleasing composition
+- Ensure all products are clearly visible and well-presented
+
+🚨 CRITICAL PRESERVATION RULES:
+- Extract products with pixel-perfect accuracy
+- Do NOT modify, enhance, or "fix" any product details
+- Preserve every aspect of each product exactly as shown in collage
+- No color correction, sharpening, or quality "improvements"
+- Keep text, numbers, logos, and designs identical
 
 🎨 ENHANCEMENT REQUIREMENTS:
 - Enhance the background with a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} setting
@@ -1936,19 +1942,25 @@ ${templateSpecificPrompt}
 - All original product details preserved exactly
 - Clean, high-end visual presentation
 
-⚠️ ZERO TOLERANCE RULES:
-- If a product looks blurry in the collage, DO NOT "fix" it by creating a new one
-- If a product has unusual colors, DO NOT "correct" them  
-- If a product appears damaged or imperfect, DO NOT replace it
-- EVERY product in the collage must appear IDENTICALLY in the result
+💎 QUALITY PRESERVATION:
+- Extract products at full resolution without quality loss
+- Maintain original product clarity and sharpness
+- Preserve natural lighting and shadows from original photos
+- Keep authentic product appearance and texture
 
-🔒 CRITICAL SUCCESS CRITERIA:
-- Customer must be able to identify their EXACT uploaded products
-- No product should look "too perfect" or newly generated
-- Preserve every imperfection, reflection, and detail exactly
+🔒 SUCCESS CRITERIA:
+- Customer must recognize their EXACT uploaded products
+- Each product should look like it was professionally photographed individually
+- Products should be better positioned than the collage but identical in appearance
+- No artificial enhancements or AI "corrections" to the products themselves
 
-✨ FINAL INSTRUCTION:
-Enhance ONLY the background and lighting around the products. The ${images.length} products themselves are UNTOUCHABLE - copy them pixel-perfect from the collage to the final result.`
+✨ FINAL WORKFLOW:
+1. Extract each product from the collage with perfect fidelity
+2. Arrange them professionally in the new layout
+3. Add premium background and lighting around them
+4. Result: Professional arrangement of authentic products with enhanced presentation
+
+REMEMBER: You're creating a new professional layout using the exact products from the collage - not enhancing the collage itself.`
 
         // Create FormData for the API call using the collage
         const formData = new FormData()
