@@ -240,27 +240,6 @@ interface CreativeType {
 
 const CREATIVE_TYPES: CreativeType[] = [
   {
-    id: 'clothing',
-    name: 'Clothing',
-    description: 'Professional clothing displays with models, backgrounds, and environments',
-    icon: '👕',
-    hasSubcategories: true
-  },
-  {
-    id: 'physical-products',
-    name: 'Physical Products',
-    description: 'Perfect for non-clothing items like accessories, gadgets, and more',
-    icon: '📦',
-    subcategories: ['product-studio-white', 'glossy-black-pedestal', 'marble-kitchen-counter', 'hand-held-product', 'glass-cube-display', 'wooden-crate-warehouse', 'forest-floor-natural', 'spa-bathtub-edge', 'floating-clouds-ethereal', 'concrete-podium-harsh', 'water-reflection-hover', 'kitchen-table-morning', 'neon-product-shelf', 'crystal-museum-case', 'floating-motion-blur', 'desert-rock-golden-hour', 'rustic-desk-flatlay', 'futuristic-tech-lab', 'rotating-display-platform', 'freezer-cold-storage', 'cracked-glass-industrial', 'rustic-cafe-table', 'unboxing-desk-setup']
-  },
-  {
-    id: 'multiproducts',
-    name: 'Multi-Products',
-    description: 'Combine multiple products into one creative showcase',
-    icon: '🔄',
-    subcategories: ['multi-product-template']
-  },
-  {
     id: 'custom-template',
     name: 'Custom Template',
     description: 'Create your own completely custom template with full prompt control',
@@ -268,18 +247,18 @@ const CREATIVE_TYPES: CreativeType[] = [
     subcategories: ['custom-template']
   },
   {
-    id: 'copy',
-    name: 'Copy',
-    description: 'Upload an example creative and recreate it using your product',
-    icon: '✍️',
-    subcategories: ['copy-generation']
-  },
-  {
     id: 'auto',
     name: 'Auto Creative Generator',
     description: 'AI analyzes your product and automatically creates optimized ad creatives for maximum sales',
     icon: '🤖',
     subcategories: ['auto-generation']
+  },
+  {
+    id: 'copy',
+    name: 'Copy Creative Style',
+    description: 'Upload an example creative and recreate it using your product',
+    icon: '✍️',
+    subcategories: ['copy-generation']
   }
 ]
 
@@ -5201,8 +5180,8 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
           {/* Left Column: Stacked widgets */}
           <div className="lg:col-span-11 space-y-3">
             
-            {/* Custom Prompt Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[200px]">
+            {/* Custom Prompt Widget - Expanded */}
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[380px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
                   <Settings className="w-4 h-4 text-white" />
@@ -5212,145 +5191,21 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               <textarea
                 value={customTemplatePrompt}
                 onChange={(e) => setCustomTemplatePrompt(e.target.value)}
-                placeholder="Describe your creative vision! Include background, lighting, setting, mood, colors, style, and any specific elements you want. Be descriptive and detailed about your product display."
-                className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-xs"
+                placeholder="Describe your creative vision in detail! Include everything you want in your ad:
+
+• Background & Setting: (e.g., 'modern minimalist studio', 'outdoor urban environment', 'luxury marble surface')
+• Lighting & Mood: (e.g., 'soft natural lighting', 'dramatic shadows', 'bright and airy')
+• Colors & Style: (e.g., 'warm earth tones', 'high contrast black and white', 'vibrant neon accents')
+• Product Display: (e.g., 'floating product shot', 'lifestyle in-use scene', 'flat lay arrangement')
+• Text & Messaging: (e.g., 'Add text saying NEW ARRIVAL', 'Include call-to-action SHOP NOW', 'Emphasize limited time offer')
+• Additional Elements: (e.g., 'add geometric shapes', 'include lifestyle props', 'show multiple angles')
+
+Be as descriptive as possible - the AI will follow your instructions exactly!"
+                className="w-full bg-[#333] border-[#444] rounded px-3 py-2 text-white placeholder-gray-400 focus:border-[#555] focus:outline-none resize-none text-sm leading-relaxed"
                 style={{ height: 'calc(100% - 3.5rem)' }}
               />
             </div>
 
-            {/* Text Overlays Widget */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[160px] hover:border-[#444]/80 transition-all duration-200">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-bold text-white">T</span>
-                </div>
-                Text Overlays
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {/* Top Text */}
-                <div className="space-y-2">
-                  <label className="text-xs text-gray-400 font-medium">Top Text</label>
-                  <div className="grid grid-cols-2 gap-1">
-                    <button
-                      onClick={() => {
-                        setSelectedTopPreset('none')
-                        setCustomValues(prev => ({ ...prev, topValue: '' }))
-                        setCustomText(prev => ({ ...prev, top: '' }))
-                      }}
-                      className={`p-1.5 text-xs rounded-md transition-all border ${
-                        selectedTopPreset === 'none'
-                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
-                          : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
-                      }`}
-                    >
-                      None
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedTopPreset('custom')
-                        setCustomValues(prev => ({ ...prev, topValue: '' }))
-                        setCustomText(prev => ({ ...prev, top: '' }))
-                      }}
-                      className={`p-1.5 text-xs rounded-md transition-all border ${
-                        selectedTopPreset === 'custom'
-                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
-                          : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
-                      }`}
-                    >
-                      Custom
-                    </button>
-                  </div>
-
-                  {selectedTopPreset === 'custom' && (
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={customValues.topValue}
-                        onChange={(e) => {
-                          setCustomValues(prev => ({ ...prev, topValue: e.target.value }))
-                          setCustomText(prev => ({ ...prev, top: e.target.value }))
-                        }}
-                        placeholder="SWIPE UP..."
-                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
-                      />
-                      {selectedTopPreset === 'custom' && (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="color"
-                            value={textColors.top}
-                            onChange={(e) => setTextColors(prev => ({ ...prev, top: e.target.value }))}
-                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
-                          />
-                          <span className="text-xs text-gray-500">{textColors.top}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Text */}
-                <div className="space-y-2">
-                  <label className="text-xs text-gray-400 font-medium">Bottom Text</label>
-                  <div className="grid grid-cols-2 gap-1">
-                    <button
-                      onClick={() => {
-                        setSelectedBottomPreset('none')
-                        setCustomValues(prev => ({ ...prev, bottomValue: '' }))
-                        setCustomText(prev => ({ ...prev, bottom: '' }))
-                      }}
-                      className={`p-1.5 text-xs rounded-md transition-all border ${
-                        selectedBottomPreset === 'none'
-                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
-                          : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
-                      }`}
-                    >
-                      None
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedBottomPreset('custom')
-                        setCustomValues(prev => ({ ...prev, bottomValue: '' }))
-                        setCustomText(prev => ({ ...prev, bottom: '' }))
-                      }}
-                      className={`p-1.5 text-xs rounded-md transition-all border ${
-                        selectedBottomPreset === 'custom'
-                          ? 'bg-gradient-to-r from-gray-700/40 to-gray-800/40 text-white border-gray-600/50 shadow-md'
-                          : 'bg-[#333]/80 text-gray-400 hover:bg-[#3a3a3a]/90 border-[#444]/60 hover:border-[#555]/80 hover:text-white'
-                      }`}
-                    >
-                      Custom
-                    </button>
-                  </div>
-
-                  {selectedBottomPreset === 'custom' && (
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={customValues.bottomValue}
-                        onChange={(e) => {
-                          setCustomValues(prev => ({ ...prev, bottomValue: e.target.value }))
-                          setCustomText(prev => ({ ...prev, bottom: e.target.value }))
-                        }}
-                        placeholder="LINK IN BIO..."
-                        className="w-full bg-[#333] border-[#444] rounded px-2 py-1.5 text-white text-xs placeholder-gray-500 focus:border-[#555] focus:outline-none"
-                      />
-                      {selectedBottomPreset === 'custom' && (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="color"
-                            value={textColors.bottom}
-                            onChange={(e) => setTextColors(prev => ({ ...prev, bottom: e.target.value }))}
-                            className="w-6 h-6 rounded border-[#444] cursor-pointer"
-                          />
-                          <span className="text-xs text-gray-500">{textColors.bottom}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Pro Tips Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
