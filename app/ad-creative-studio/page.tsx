@@ -1892,43 +1892,55 @@ export default function AdCreativeStudioPage() {
         }
         
         // Create enhanced prompt for multi-product generation
-        const multiProductPrompt = `🎯 MULTI-PRODUCT ADVERTISEMENT CREATION:
+        const multiProductPrompt = `🎯 EXACT PRODUCT EXTRACTION & ARRANGEMENT:
 
-I'm providing you with ${images.length} separate product images. Your task is to create a professional advertisement that showcases ALL ${images.length} products together in one cohesive creative.
+I am providing you with ${images.length} separate product images. You MUST use the EXACT products shown in these images - do NOT create new or different products.
 
-🎨 PRODUCT EXTRACTION & ARRANGEMENT REQUIREMENTS:
-- Extract each product individually from its original background
-- Maintain COMPLETE product integrity - don't crop or cut off any part of any product
-- Ensure each product is fully visible and professionally presented
-- Arrange all ${images.length} products in an elegant, balanced layout
-- Each product should be clearly distinguishable and properly sized
-- Use professional product photography principles for positioning
+🚨 CRITICAL EXTRACTION RULES:
+- EXTRACT the EXACT products from each provided image
+- Do NOT generate new products or variations
+- Do NOT create similar-looking alternatives
+- Use ONLY the specific products I have uploaded
+- Each product must be the EXACT item from the corresponding image
+- Maintain every detail, color, design, text, and feature of the original products
 
-🏗️ LAYOUT & COMPOSITION:
-- Create a ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced 2x2 or line arrangement' : 'organized grid pattern'} 
-- Maintain proper spacing between products for clarity
-- Ensure no product overlaps or obscures another
-- Position products naturally as if arranged by a professional photographer
-- Leave adequate space for text overlays (top/bottom areas)
+🎨 PRODUCT PROCESSING:
+- Remove the background from each uploaded product image
+- Keep the EXACT product with all its original details intact
+- Preserve all text, logos, colors, and design elements exactly as shown
+- Do not modify, alter, or recreate any aspect of the products
+- Extract cleanly without cutting off edges or corners
+
+🏗️ ARRANGEMENT & LAYOUT:
+- Arrange the ${images.length} EXTRACTED products in a ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced 2x2 or line arrangement' : 'organized grid pattern'}
+- Position each extracted product professionally with proper spacing
+- Ensure all products are clearly visible and well-spaced
+- Create a balanced, professional arrangement
+- Leave space for text overlays (top/bottom areas)
 
 🎭 BACKGROUND & STYLING:
-- Add a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background
-- Apply consistent, professional lighting across all products
-- Create realistic shadows and depth for each product
+- Place the extracted products on a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} background
+- Add professional lighting and realistic shadows
 - Maintain the 1024x1536 portrait format
-- Make it look like a high-end advertisement
+- Make it look like a high-end product showcase
 
 ${templateSpecificPrompt}
 
-🚨 CRITICAL REQUIREMENTS:
-- ALL ${images.length} products must be fully visible and complete
-- No cropping or cutting off of product edges
-- Each product maintains its original proportions and quality
-- Professional spacing and arrangement
-- Text areas preserved for overlays
+🔍 QUALITY REQUIREMENTS:
+- Use ONLY the exact products from the uploaded images
+- Perfect background removal with clean edges
+- All product details preserved exactly as photographed
+- Professional product placement and lighting
+- High-quality advertisement composition
+
+⚠️ ABSOLUTELY DO NOT:
+- Create new products that look similar to the uploaded ones
+- Generate variations or alternatives
+- Modify colors, designs, or any product features
+- Add products not present in the uploaded images
 
 ✨ FINAL RESULT:
-Create a stunning multi-product advertisement that showcases all ${images.length} products professionally, with each item clearly visible, properly arranged, and beautifully styled.`
+Extract the EXACT ${images.length} products from the provided images, remove their backgrounds cleanly, and arrange them professionally in a stunning advertisement layout.`
 
         // Create FormData for the API call using individual images
         const formData = new FormData()
