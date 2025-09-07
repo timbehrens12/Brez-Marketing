@@ -3286,18 +3286,23 @@ CRITICAL FORMAT REQUIREMENTS:
 🔴 MANDATORY SCENE CREATION - NO PRODUCT PHOTOGRAPHY ALLOWED:
 
 STEP 1: CREATE A REALISTIC ENVIRONMENT FIRST
-- Start with a real location: bedroom, closet, store, home, laundry room
-- Add realistic lighting: natural window light, room lamps, overhead lighting
-- Include realistic furniture: beds, chairs, hangers, shelves, tables
-- Add environmental details: walls, floors, textures, everyday objects
+- Start with a real location: bedroom, office desk, coffee shop, home, gym, car, workspace, kitchen counter
+- Add realistic lighting: natural window light, room lamps, overhead lighting, desk lamps
+- Include realistic furniture: beds, chairs, desks, tables, nightstands, bookshelves, coffee tables
+- Add environmental details: walls, floors, textures, everyday objects, laptops, books, magazines, plants
 
 STEP 2: PLACE THE PRODUCT NATURALLY IN THIS ENVIRONMENT - OBEY PHYSICS
 - FOR CLOTHING: Must follow REAL PHYSICS - clothes cannot float or stand up by themselves
-- CLOTHING PLACEMENT OPTIONS: laid flat on bed/table, draped over chair arm, hanging on hook/hanger, crumpled in basket, folded on shelf
-- NO FLOATING: Clothing cannot hover, stand upright without support, or be suspended in air
-- NO PEDESTALS: Don't place clothing on blocks, platforms, or display stands - that's not natural
-- NO PERFECT POSITIONING: Clothing should look casually placed, not perfectly arranged for photos
-- GRAVITY RULES: All clothing must be supported by something solid (furniture, hangers, surfaces)
+  CLOTHING PLACEMENT: laid flat on bed/table, draped over chair arm, hanging on hook/hanger, crumpled in basket, folded on shelf
+
+- FOR TECH/GADGETS (AirPods, phones, headphones, etc.): Must be placed in REALISTIC USAGE CONTEXTS
+  TECH PLACEMENT: on desk next to laptop, in someone's hand being used, charging on nightstand, in gym bag, on coffee table, sitting on book/magazine
+
+- FOR ALL PRODUCTS: NO FLOATING: Products cannot hover, levitate, or be suspended in air
+- NO PEDESTALS: Don't place products on blocks, platforms, or display stands - that's not natural
+- NO PERFECT POSITIONING: Products should look casually placed, not perfectly arranged for photos
+- GRAVITY RULES: All products must be supported by something solid (furniture, hands, surfaces)
+- NO COSMIC/SPACE BACKGROUNDS: Real environments only (rooms, desks, tables, real spaces)
 
 STEP 3: ADD DYNAMIC ELEMENTS TO THE SCENE
 - Natural lighting effects, atmospheric mood, environmental storytelling
