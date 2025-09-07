@@ -1496,27 +1496,20 @@ export default function AdCreativeStudioPage() {
         setAutoPromptAdditions('')
       }
     }
-  }, [selectedCreativeType, autoPromptAdditions])
-
-  // Clear auto instructions when uploading a new image/product
-  useEffect(() => {
-    // Clear auto instructions when a new product image is uploaded
-    if (autoPromptAdditions.trim()) {
-      setAutoPromptAdditions('')
-    }
-  }, [uploadedImageUrl, collageUrl]) // Trigger when main image or collage changes
-
-  // Clear custom instructions when switching away from custom template
-  useEffect(() => {
+    // ALSO clear custom instructions when switching away from custom template
     if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
       if (customInstructions.trim()) {
         setCustomInstructions('')
       }
     }
-  }, [selectedCreativeType, customInstructions])
+  }, [selectedCreativeType, autoPromptAdditions, customInstructions])
 
-  // Clear custom instructions when uploading a new image/product
+  // Clear auto AND custom instructions when uploading a new image/product
   useEffect(() => {
+    // Clear auto instructions when a new product image is uploaded
+    if (autoPromptAdditions.trim()) {
+      setAutoPromptAdditions('')
+    }
     // Clear custom instructions when a new product image is uploaded
     if (customInstructions.trim()) {
       setCustomInstructions('')
