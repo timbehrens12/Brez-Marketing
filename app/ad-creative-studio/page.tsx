@@ -1153,39 +1153,11 @@ export default function AdCreativeStudioPage() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'creative-type' | 'clothing-subcategory' | 'template-selection' | 'custom-template-prompt' | 'copy-creative-setup' | 'auto-creative-setup' | 'customization' | 'library'>('upload')
   const [selectedCreativeType, setSelectedCreativeType] = useState<string>('')
   
-  // NUCLEAR function to clear custom instructions completely
-  const nuclearClearCustomInstructions = useCallback(() => {
-    console.log('💥 NUCLEAR CLEAR: Clearing custom instructions via state AND DOM')
+  // Simple function to clear custom instructions
+  const clearCustomInstructions = () => {
     setCustomInstructions('')
     setCustomInstructionsKey(prev => prev + 1)
-    
-    // Also manually clear the DOM element
-    setTimeout(() => {
-      if (customInstructionsRef.current) {
-        console.log('🔍 DOM BEFORE clear:', customInstructionsRef.current.value)
-        customInstructionsRef.current.value = ''
-        console.log('💥 DOM cleared manually, now:', customInstructionsRef.current.value)
-      }
-    }, 0)
-  }, [])
-
-  // Debug: Track when selectedCreativeType changes
-  useEffect(() => {
-    console.log('🎯 selectedCreativeType changed to:', selectedCreativeType)
-  }, [selectedCreativeType])
-
-  // Debug function for console inspection
-  useEffect(() => {
-    (window as any).debugCustomInstructions = () => {
-      console.log('🔍 DEBUG STATE:')
-      console.log('- customInstructions state:', customInstructions)
-      console.log('- customInstructions length:', customInstructions.length)
-      console.log('- DOM value:', customInstructionsRef.current?.value)
-      console.log('- DOM element:', customInstructionsRef.current)
-      console.log('- currentStep:', currentStep)
-      console.log('- selectedCreativeType:', selectedCreativeType)
-    }
-  }, [customInstructions, currentStep, selectedCreativeType])
+  }
   const [selectedClothingSubType, setSelectedClothingSubType] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<StyleOption | null>(null)
   
@@ -1518,9 +1490,8 @@ export default function AdCreativeStudioPage() {
       if (customTemplate && (!selectedTemplate || selectedTemplate.id !== 'custom-template')) {
         setSelectedTemplate(customTemplate)
       }
-      // NUCLEAR OPTION: Always clear custom instructions when entering this step
-      console.log('🧹 NUCLEAR: Clearing custom instructions when entering custom template step')
-      nuclearClearCustomInstructions()
+      // Clear custom instructions when entering this step
+      clearCustomInstructions()
     }
   }, [currentStep])
 
@@ -1544,12 +1515,9 @@ export default function AdCreativeStudioPage() {
 
   // Clear custom instructions when switching away from custom template
   useEffect(() => {
-    console.log('🔍 Custom clearing check:', { selectedCreativeType, customInstructions: customInstructions.length })
     if (selectedCreativeType && selectedCreativeType !== 'custom-template') {
-      // Clear custom instructions when switching to a different creative type
       if (customInstructions.trim()) {
-        console.log('🧹 CLEARING custom instructions because selectedCreativeType is:', selectedCreativeType)
-        setCustomInstructions('')
+        clearCustomInstructions()
       }
     }
   }, [selectedCreativeType, customInstructions])
@@ -4342,8 +4310,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
               }
               // Clear custom instructions if not selecting custom template
               if (type.id !== 'custom-template') {
-                console.log('🧹 CLEARING custom instructions in creative type selection, selected:', type.id)
-                nuclearClearCustomInstructions()
+                clearCustomInstructions()
               }
               if (type.id === 'clothing') {
                 setCurrentStep('clothing-subcategory')
@@ -5242,8 +5209,7 @@ CREATE SOMETHING UNIQUE: Make each ad feel distinct and memorable, not like a te
       <div className="flex items-center gap-4 mb-4">
         <Button
           onClick={() => {
-            console.log('🔙 Custom template BACK button clicked - clearing instructions')
-            nuclearClearCustomInstructions()
+            clearCustomInstructions()
             setCurrentStep('creative-type')
           }}
           variant="ghost"
