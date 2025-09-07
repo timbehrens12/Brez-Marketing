@@ -1895,29 +1895,29 @@ export default function AdCreativeStudioPage() {
         }
         
         // Create enhanced prompt for multi-product generation
-        const multiProductPrompt = `🎯 PRODUCT EXTRACTION & PROFESSIONAL RE-ARRANGEMENT:
+        const multiProductPrompt = `🎯 PROFESSIONAL LAYOUT WITH DETAIL PRESERVATION:
 
-I'm providing you with a collage containing ${images.length} REAL product images. Your task is to EXTRACT each individual product from this collage and RE-ARRANGE them professionally in a new layout.
+I'm providing you with a collage containing ${images.length} REAL product images arranged in a transport grid. Your task is to create a professional advertisement while preserving every product detail exactly.
 
-🔍 EXTRACTION PROCESS:
-- Identify and extract ALL ${images.length} products from the collage
-- Each product must be extracted with 100% fidelity - preserve every detail exactly
-- Remove each product cleanly from its collage background
-- Maintain original colors, text, logos, reflections, and imperfections
-- Do NOT create new products - only extract what's already there
+🔒 ABSOLUTE DETAIL PRESERVATION:
+- Use the EXACT products shown in this collage - copy every pixel precisely
+- Preserve ALL text, logos, colors, reflections, scratches, and imperfections
+- Do NOT modify, enhance, sharpen, or "improve" any product details
+- Keep every number, letter, and design element identical to the collage
+- Maintain authentic product appearance and natural lighting
 
-🎨 RE-ARRANGEMENT REQUIREMENTS:
-- Arrange the extracted products in a professional ${images.length <= 2 ? 'horizontal layout' : images.length <= 4 ? 'balanced grid or elegant arrangement' : 'organized grid pattern'}
-- Give each product proper spacing and positioning
-- Create a balanced, aesthetically pleasing composition
-- Ensure all products are clearly visible and well-presented
+🎨 LAYOUT OPTIMIZATION (ONLY):
+- Improve the positioning and spacing from the collage's grid layout
+- Create a more professional ${images.length <= 2 ? 'horizontal arrangement' : images.length <= 4 ? 'balanced composition' : 'elegant grid layout'}
+- Better spacing between products for visual appeal
+- Professional centering and alignment
+- Remove the rigid grid structure for more natural placement
 
-🚨 CRITICAL PRESERVATION RULES:
-- Extract products with pixel-perfect accuracy
-- Do NOT modify, enhance, or "fix" any product details
-- Preserve every aspect of each product exactly as shown in collage
-- No color correction, sharpening, or quality "improvements"
-- Keep text, numbers, logos, and designs identical
+🎭 BACKGROUND & PRESENTATION:
+- Replace the white collage background with premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist' : style.id === 'marble-surface' ? 'marble' : 'professional'} setting
+- Add sophisticated lighting and realistic shadows
+- Enhance overall composition and visual hierarchy
+- Maintain 1024x1536 portrait format
 
 🎨 ENHANCEMENT REQUIREMENTS:
 - Enhance the background with a premium ${style.id === 'concrete-floor' ? 'concrete' : style.id === 'white-background' ? 'minimalist white' : style.id === 'marble-surface' ? 'luxury marble' : 'professional'} setting
@@ -1942,25 +1942,26 @@ ${templateSpecificPrompt}
 - All original product details preserved exactly
 - Clean, high-end visual presentation
 
-💎 QUALITY PRESERVATION:
-- Extract products at full resolution without quality loss
-- Maintain original product clarity and sharpness
-- Preserve natural lighting and shadows from original photos
-- Keep authentic product appearance and texture
+🎯 THE PERFECT BALANCE:
+- Products: Copy exactly pixel-for-pixel from collage (ZERO changes)
+- Layout: Improve spacing, positioning, and arrangement (BETTER than collage)
+- Background: Replace with premium professional setting (ENHANCED)
 
-🔒 SUCCESS CRITERIA:
-- Customer must recognize their EXACT uploaded products
-- Each product should look like it was professionally photographed individually
-- Products should be better positioned than the collage but identical in appearance
-- No artificial enhancements or AI "corrections" to the products themselves
+⚠️ CRITICAL DISTINCTION:
+- The collage layout is just for transport - it's uneven and basic
+- Your job: Keep the products identical but make the layout professional
+- Think: "Same products, better arrangement, premium background"
 
-✨ FINAL WORKFLOW:
-1. Extract each product from the collage with perfect fidelity
-2. Arrange them professionally in the new layout
-3. Add premium background and lighting around them
-4. Result: Professional arrangement of authentic products with enhanced presentation
+✨ SUCCESS FORMULA:
+1. Copy each product exactly as it appears in the collage
+2. Arrange them in a more professional, balanced layout
+3. Replace the basic white background with premium styling
+4. Result: Your authentic products in a magazine-quality arrangement
 
-REMEMBER: You're creating a new professional layout using the exact products from the collage - not enhancing the collage itself.`
+🔒 FINAL CHECK:
+- Products look identical to collage ✓
+- Layout looks professional (not like the transport grid) ✓
+- Background is premium and sophisticated ✓`
 
         // Create FormData for the API call using the collage
         const formData = new FormData()
