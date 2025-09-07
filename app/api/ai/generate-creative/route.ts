@@ -537,6 +537,18 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
         } else if (part.text) {
           console.log('📝 Text response from Gemini:', part.text.substring(0, 200) + '...');
           
+          const textContent = part.text.trim();
+          
+          // Check for empty code blocks (silent safety filter)
+          if (textContent === '```\n```' || textContent === '``````' || textContent === '') {
+            console.log('🚫 Creative generation blocked by safety filters (empty response)');
+            return NextResponse.json({
+              error: 'Content Policy Violation',
+              message: 'This image cannot be used for creative generation due to safety policies. Credit cards, financial instruments, and sensitive documents are not supported. Please try with a different product image.',
+              userFriendly: true
+            }, { status: 400 });
+          }
+          
           // Check if this is a content policy refusal
           const refusalKeywords = [
             'cannot fulfill this request',
@@ -552,7 +564,7 @@ Format: 1024x1536 portrait. Professional quality with PERFECT text containment a
           ];
           
           const isRefusal = refusalKeywords.some(keyword => 
-            part.text.toLowerCase().includes(keyword.toLowerCase())
+            textContent.toLowerCase().includes(keyword.toLowerCase())
           );
           
           if (isRefusal) {
