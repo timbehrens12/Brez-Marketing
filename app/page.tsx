@@ -300,8 +300,8 @@ export default function HomePage() {
                     "1 Brand Connection",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "AI Marketing Assistant",
-                    "Creative Studio",
+                    "50 AI Assistant Messages/month",
+                    "100 Creative Generations/month",
                     "Basic Reporting"
                   ],
                   advancedFeatures: [],
@@ -318,15 +318,15 @@ export default function HomePage() {
                     "Up to 10 Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "AI Marketing Assistant",
-                    "Creative Studio",
+                    "200 AI Assistant Messages/month",
+                    "500 Creative Generations/month",
                     "Advanced Reporting"
                   ],
                   advancedFeatures: [
-                    "Lead Generation & Scraping",
-                    "Outreach Automation",
+                    "1,000 Lead Generations/month",
+                    "5,000 Outreach Emails/month",
                     "Campaign Optimization",
-                    "API Access"
+                    "API Access (1,000 calls/month)"
                   ],
                   teamFeatures: [],
                   whiteLabel: false
@@ -341,15 +341,15 @@ export default function HomePage() {
                     "Up to 25 Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "AI Marketing Assistant",
-                    "Creative Studio",
+                    "1,000 AI Assistant Messages/month",
+                    "2,500 Creative Generations/month",
                     "Advanced Reporting"
                   ],
                   advancedFeatures: [
-                    "Lead Generation & Scraping",
-                    "Outreach Automation",
+                    "5,000 Lead Generations/month",
+                    "25,000 Outreach Emails/month",
                     "Campaign Optimization",
-                    "API Access"
+                    "API Access (10,000 calls/month)"
                   ],
                   teamFeatures: [
                     "Team Collaboration (5 users)",
@@ -368,15 +368,15 @@ export default function HomePage() {
                     "Unlimited Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "AI Marketing Assistant",
-                    "Creative Studio",
-                    "Advanced Reporting"
+                    "Unlimited AI Assistant Messages",
+                    "Unlimited Creative Generations",
+                    "Advanced Reporting & Analytics"
                   ],
                   advancedFeatures: [
-                    "Lead Generation & Scraping",
-                    "Outreach Automation",
+                    "Unlimited Lead Generations",
+                    "Unlimited Outreach Emails",
                     "Campaign Optimization",
-                    "API Access"
+                    "Unlimited API Access"
                   ],
                   teamFeatures: [
                     "Unlimited Team Members",
