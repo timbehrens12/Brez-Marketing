@@ -1245,37 +1245,33 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Blended Metrics (70%) and AI Report (30%) */}
+            {/* Top Section - Left Column (Blended + smaller widgets) and Right Column (AI Report) */}
             <div className="flex gap-6">
               
-              {/* Left: Blended Performance Metrics - 70% width */}
-              <div className="flex-1" style={{ flexBasis: '70%' }}>
+              {/* Left Column - 70% width */}
+              <div className="flex-1 space-y-4" style={{ flexBasis: '70%' }}>
+                {/* Blended Performance Metrics */}
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
                   layout="horizontal"
                 />
+                
+                {/* Ad Creative Performance & Performance Trends - smaller, side by side */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-64">
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  </div>
+                  <div className="h-64">
+                    <PerformanceChart 
+                      preloadedPerformanceData={preloadedData.performanceData}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Right: AI Daily Report - 30% width */}
+              {/* Right Column - AI Daily Report - 30% width */}
               <div className="flex-1" style={{ flexBasis: '30%' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-              </div>
-
-            </div>
-
-            {/* Middle Section - Ad Creative Performance & Performance Trends */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              {/* Ad Creative Performance */}
-              <div className="h-full">
-                <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-              </div>
-
-              {/* Performance Trends */}
-              <div className="h-full">
-                <PerformanceChart 
-                  preloadedPerformanceData={preloadedData.performanceData}
-                />
               </div>
 
             </div>
