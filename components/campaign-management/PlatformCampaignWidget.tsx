@@ -1264,7 +1264,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
           {/* Campaigns table */}
           <div className="px-4 pb-3">
-            <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar max-h-96">
               {filteredCampaigns.map(renderCampaignCard)}
                     </div>
                     </div>
@@ -1405,7 +1405,7 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
         {/* Campaigns table */}
         <div className="px-4 pb-3">
-          <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar max-h-96">
             {filteredCampaigns.map(renderCampaignCard)}
           </div>
         </div>
