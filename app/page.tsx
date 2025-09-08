@@ -283,52 +283,236 @@ export default function HomePage() {
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Choose Your Plan</h2>
               <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-                Transparent pricing with everything included. No hidden fees, no surprises.
+                Simple, transparent pricing that scales with your business. More features unlock as you grow.
               </p>
             </div>
+            
+            {/* Feature Comparison Table */}
             <div className="grid lg:grid-cols-4 gap-8 items-start">
               {[
-                { name: "Brand Owner", description: "Perfect for managing your own brand", price: 147, period: "month", popular: false, icon: "👤", features: ["1 Brand Connection", "Meta Ads + Shopify analytics", "10 AI consultant chats/day", "Basic lead generation", "Email support", "90-day data retention"], limitations: ["No team features", "Basic reporting"] },
-                { name: "Brand Scaler", description: "For scaling multiple brands", price: 347, period: "month", popular: true, icon: "🚀", features: ["Up to 10 brand connections", "Advanced Meta + Shopify analytics", "25 AI consultant chats/day", "Advanced lead generation & scraping", "White-label reporting", "Priority support", "Unlimited data retention", "Automated daily reports"], limitations: ["No team features"] },
-                { name: "Agency Pro", description: "For agencies with teams", price: 647, period: "month", popular: false, icon: "⚡", features: ["Up to 25 brand connections", "Multi-platform analytics", "50 AI consultant chats/day", "Full outreach CRM & automation", "Team collaboration (5 users)", "Client portal access", "Advanced reporting & exports", "Custom dashboard widgets", "API access"], limitations: ["5 team member limit"] },
-                { name: "Enterprise", description: "For large-scale operations", price: 997, period: "month", popular: false, icon: "👑", features: ["Unlimited brands & clients", "Everything in Agency Pro", "Unlimited team members", "Custom integrations", "Dedicated success manager", "Custom AI workflows", "White-label everything", "Priority enterprise support", "Advanced security features"], limitations: [] }
-              ].map((plan) => (
-                <div key={plan.name} className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 group ${plan.popular ? 'border-gray-400 bg-white/5 scale-105' : 'border-white/10 bg-[#141414] hover:border-white/20'}`}>
+                { 
+                  name: "Solo Brand", 
+                  description: "Perfect for single brand owners", 
+                  price: 147, 
+                  popular: false, 
+                  icon: "👤",
+                  coreFeatures: [
+                    "1 Brand Connection",
+                    "Meta Ads Analytics", 
+                    "Shopify Integration",
+                    "AI Marketing Assistant",
+                    "Creative Studio",
+                    "Basic Reporting"
+                  ],
+                  advancedFeatures: [],
+                  teamFeatures: [],
+                  whiteLabel: false
+                },
+                { 
+                  name: "Multi-Brand", 
+                  description: "Scale across multiple brands", 
+                  price: 347, 
+                  popular: true, 
+                  icon: "🚀",
+                  coreFeatures: [
+                    "Up to 10 Brand Connections",
+                    "Meta Ads Analytics", 
+                    "Shopify Integration",
+                    "AI Marketing Assistant",
+                    "Creative Studio",
+                    "Advanced Reporting"
+                  ],
+                  advancedFeatures: [
+                    "Lead Generation & Scraping",
+                    "Outreach Automation",
+                    "Campaign Optimization",
+                    "API Access"
+                  ],
+                  teamFeatures: [],
+                  whiteLabel: false
+                },
+                { 
+                  name: "Agency", 
+                  description: "For agencies serving clients", 
+                  price: 647, 
+                  popular: false, 
+                  icon: "⚡",
+                  coreFeatures: [
+                    "Up to 25 Brand Connections",
+                    "Meta Ads Analytics", 
+                    "Shopify Integration",
+                    "AI Marketing Assistant",
+                    "Creative Studio",
+                    "Advanced Reporting"
+                  ],
+                  advancedFeatures: [
+                    "Lead Generation & Scraping",
+                    "Outreach Automation",
+                    "Campaign Optimization",
+                    "API Access"
+                  ],
+                  teamFeatures: [
+                    "Team Collaboration (5 users)",
+                    "Client Portal Access",
+                    "Role-Based Permissions"
+                  ],
+                  whiteLabel: true
+                },
+                { 
+                  name: "Enterprise", 
+                  description: "Large-scale operations", 
+                  price: 997, 
+                  popular: false, 
+                  icon: "👑",
+                  coreFeatures: [
+                    "Unlimited Brand Connections",
+                    "Meta Ads Analytics", 
+                    "Shopify Integration",
+                    "AI Marketing Assistant",
+                    "Creative Studio",
+                    "Advanced Reporting"
+                  ],
+                  advancedFeatures: [
+                    "Lead Generation & Scraping",
+                    "Outreach Automation",
+                    "Campaign Optimization",
+                    "API Access"
+                  ],
+                  teamFeatures: [
+                    "Unlimited Team Members",
+                    "Client Portal Access",
+                    "Role-Based Permissions",
+                    "Custom Integrations"
+                  ],
+                  whiteLabel: true
+                }
+              ].map((plan, index) => (
+                <div key={plan.name} className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 group ${plan.popular ? 'border-white/30 bg-white/5 scale-105 shadow-2xl' : 'border-white/10 bg-[#141414] hover:border-white/20'}`}>
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-white px-4 py-1 text-sm font-semibold rounded-full shadow-lg shadow-gray-700/20">Most Popular</div>
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 text-sm font-bold rounded-full shadow-lg">
+                      Most Popular
+                    </div>
                   )}
-                  <div className="p-8">
-                    <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                    <p className="text-gray-400 mb-6">{plan.description}</p>
+                  
+                  {/* Header */}
+                  <div className="p-6 pb-4">
+                    <div className="text-4xl mb-4">{plan.icon}</div>
+                    <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4">{plan.description}</p>
                     <div className="mb-6">
-                      <span className="text-5xl font-extrabold text-white">${plan.price}</span>
-                      <span className="text-gray-500">/month</span>
+                      <span className="text-4xl font-extrabold text-white">${plan.price}</span>
+                      <span className="text-gray-500 text-lg">/month</span>
                     </div>
                     <Link href="/login">
-                      <Button className={`w-full ${plan.popular ? 'bg-white text-black hover:bg-gray-100' : 'bg-white/10 text-white hover:bg-white/20'}`}>Choose Plan</Button>
+                      <Button className={`w-full mb-6 ${plan.popular ? 'bg-white text-black hover:bg-gray-100' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                        Get Started
+                      </Button>
                     </Link>
                   </div>
-                  <div className="p-8 pt-0 flex-1">
-                    <ul className="space-y-3">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start">
-                          <Check className="w-4 h-4 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                          <span className="text-gray-300">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                     {plan.limitations.length > 0 && (
-                       <div className="border-t border-white/10 mt-6 pt-6">
-                         <div className="space-y-2">
-                           {plan.limitations.map((limitation, i) => (
-                             <div key={i} className="flex items-start">
-                               <X className="w-4 h-4 text-red-500 mr-3 mt-1 flex-shrink-0" />
-                               <span className="text-gray-500">{limitation}</span>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     )}
+
+                  {/* Features */}
+                  <div className="px-6 pb-6 flex-1">
+                    {/* Core Features */}
+                    <div className="mb-6">
+                      <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Core Features</h4>
+                      <div className="space-y-2">
+                        {plan.coreFeatures.map((feature, i) => (
+                          <div key={i} className="flex items-start">
+                            <Check className="w-4 h-4 text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-300 text-sm">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Advanced Features */}
+                    {plan.advancedFeatures.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Growth Tools</h4>
+                        <div className="space-y-2">
+                          {plan.advancedFeatures.map((feature, i) => (
+                            <div key={i} className="flex items-start">
+                              <Check className="w-4 h-4 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-300 text-sm">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Team Features */}
+                    {plan.teamFeatures.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Team & Clients</h4>
+                        <div className="space-y-2">
+                          {plan.teamFeatures.map((feature, i) => (
+                            <div key={i} className="flex items-start">
+                              <Check className="w-4 h-4 text-purple-400 mr-3 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-300 text-sm">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* White Label */}
+                    {plan.whiteLabel && (
+                      <div className="border border-amber-500/30 bg-amber-500/10 rounded-lg p-3">
+                        <div className="flex items-start">
+                          <Check className="w-4 h-4 text-amber-400 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="text-amber-200 text-sm font-medium">Full White-Label Rights</span>
+                        </div>
+                        <p className="text-amber-200/80 text-xs mt-1 ml-6">Rebrand as your own software</p>
+                      </div>
+                    )}
+
+                    {/* Missing Features for Lower Tiers */}
+                    {index < 3 && (
+                      <div className="mt-6 pt-4 border-t border-white/10">
+                        <div className="space-y-2">
+                          {index === 0 && (
+                            <>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">Lead Generation</span>
+                              </div>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">Team Features</span>
+                              </div>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">White-Label Rights</span>
+                              </div>
+                            </>
+                          )}
+                          {index === 1 && (
+                            <>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">Team Collaboration</span>
+                              </div>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">White-Label Rights</span>
+                              </div>
+                            </>
+                          )}
+                          {index === 2 && (
+                            <>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">Unlimited Team Members</span>
+                              </div>
+                              <div className="flex items-start opacity-50">
+                                <X className="w-4 h-4 text-gray-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-500 text-sm">Custom Integrations</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
