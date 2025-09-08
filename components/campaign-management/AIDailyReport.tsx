@@ -509,10 +509,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             </div>
           </div>
 
-          {/* Quick Summary - Much Shorter */}
+          {/* Quick Summary - Concise but Complete */}
           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
             <p className="text-xs text-gray-300 leading-relaxed">
-              {report.summary.length > 80 ? report.summary.substring(0, 80) + '...' : report.summary}
+              {report.summary.length > 150 ? report.summary.substring(0, 150) + '...' : report.summary}
             </p>
           </div>
 
