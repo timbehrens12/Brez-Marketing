@@ -74,6 +74,38 @@ interface Campaign {
   account_name?: string
   last_refresh_date?: string
   platform?: string // Added to identify platform
+  // Additional Meta fields from dashboard
+  reach?: number
+  frequency?: number
+  cost_per_result?: number
+  results?: number
+  purchase_value?: number
+  link_clicks?: number
+  video_views?: number
+  video_25_percent_views?: number
+  video_50_percent_views?: number
+  video_75_percent_views?: number
+  video_100_percent_views?: number
+  video_avg_watch_time?: number
+  landing_page_views?: number
+  leads?: number
+  cost_per_lead?: number
+  add_to_cart?: number
+  cost_per_add_to_cart?: number
+  initiate_checkout?: number
+  cost_per_initiate_checkout?: number
+  purchases?: number
+  cost_per_purchase?: number
+  outbound_clicks?: number
+  cost_per_outbound_click?: number
+  unique_clicks?: number
+  unique_ctr?: number
+  unique_link_clicks_ctr?: number
+  actions?: any[]
+  action_values?: any[]
+  created_time?: string
+  start_time?: string
+  stop_time?: string
   recommendation?: {
     action: string
     reasoning: string
@@ -920,7 +952,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
         {/* Compact Metrics Grid */}
         <div className="p-3">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
+          {/* Primary Metrics Row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-2">
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Budget</div>
               <div className="text-sm font-bold text-white">{formatCurrency(campaign.budget)}</div>
@@ -949,6 +982,34 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
               <div className={`text-sm font-bold ${getROASColor(campaign.roas)}`}>
                 {campaign.roas?.toFixed(2) || '0.00'}x
               </div>
+            </div>
+          </div>
+
+          {/* Extended Metrics Row - All Dashboard Data */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Reach</div>
+              <div className="text-sm font-bold text-white">{formatNumber(campaign.reach || 0)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Frequency</div>
+              <div className="text-sm font-bold text-white">{(campaign.frequency || 0).toFixed(2)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Link Clicks</div>
+              <div className="text-sm font-bold text-white">{formatNumber(campaign.link_clicks || 0)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Leads</div>
+              <div className="text-sm font-bold text-white">{formatNumber(campaign.leads || 0)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Cost/Lead</div>
+              <div className="text-sm font-bold text-white">{formatCurrency(campaign.cost_per_lead || 0)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Purchase Value</div>
+              <div className="text-sm font-bold text-white">{formatCurrency(campaign.purchase_value || 0)}</div>
             </div>
           </div>
 
