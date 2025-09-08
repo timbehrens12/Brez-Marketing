@@ -299,7 +299,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   }
 
   return (
-    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-[690px]">
+    <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg h-full flex flex-col">
       {/* Header - matches other widgets style */}
       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
         <div className="flex items-center justify-between">
