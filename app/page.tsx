@@ -37,10 +37,7 @@ export default function HomePage() {
         <header className="py-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
             <img src="https://i.imgur.com/PZCtbwG.png" alt="Brez Marketing" className="h-10 w-auto"/>
-            <div className="flex items-center gap-2">
-              <Link href="/login">
-                <Button variant="ghost" className="text-white hover:bg-white/10">Sign In</Button>
-              </Link>
+            <div className="flex items-center">
               <Link href="/dashboard">
                 <Button variant="outline" className="border-[#444] text-white hover:bg-[#2A2A2A] backdrop-blur-sm">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
               </Link>
@@ -236,20 +233,22 @@ export default function HomePage() {
                 No hype, no exaggeration. Here's exactly what our platform includes.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[
-                { icon: BarChart3, title: "Meta Ads Analytics", desc: "Real-time campaign tracking, performance metrics, audience insights, and automated reporting. Connect unlimited ad accounts.", available: true, size: 'large' },
+                { icon: BarChart3, title: "Meta Ads Analytics", desc: "Real-time campaign tracking, performance metrics, audience insights, and automated reporting. Connect unlimited ad accounts.", available: true },
                 { icon: Rocket, title: "Shopify Integration", desc: "Complete e-commerce data sync with order tracking, customer analytics, inventory management, and sales performance monitoring.", available: true },
                 { icon: Brain, title: "AI Marketing Consultant", desc: "24/7 AI assistant providing strategic recommendations, campaign optimization suggestions, and growth strategies based on your data.", available: true },
                 { icon: Zap, title: "Lead Generation", desc: "Automated prospecting using Google Places API with lead scoring, qualification, and business intelligence data enrichment.", available: true },
-                { icon: Palette, title: "Creative Studio", desc: "AI-powered ad creative generation with professional backgrounds, product photography enhancement, and creative asset management.", available: true, size: 'large' },
+                { icon: Palette, title: "Creative Studio", desc: "AI-powered ad creative generation with professional backgrounds, product photography enhancement, and creative asset management.", available: true },
                 { icon: Send, title: "Outreach Automation", desc: "Complete email marketing suite with campaign management, lead tracking, response analytics, and automated follow-up sequences.", available: true },
                 { icon: FileText, title: "Automated Reports", desc: "Daily and monthly performance reports with white-label branding, client-ready presentations, and automated distribution.", available: true },
-                { icon: Globe, title: "Google Ads (Coming Soon)", desc: "Full Google Ads integration with campaign management, performance tracking, and automated optimization (Q2 2024).", available: false },
+                { icon: Target, title: "Campaign Optimization", desc: "AI-powered bid management, audience targeting optimization, and automated budget reallocation based on performance data.", available: true },
                 { icon: Users, title: "Team Collaboration", desc: "Multi-user workspaces with role-based permissions, client portal access, and collaborative project management tools.", available: true },
-                { icon: Shield, title: "Enterprise Security", desc: "SOC 2 Type II compliant, GDPR compliant, bank-level encryption, and 99.9% uptime SLA with enterprise support.", available: true, size: 'large' },
+                { icon: Settings, title: "API & Integrations", desc: "RESTful API access, webhook support, and custom integration capabilities for enterprise clients and developers.", available: true },
+                { icon: Shield, title: "Enterprise Security", desc: "SOC 2 Type II compliant, GDPR compliant, bank-level encryption, and 99.9% uptime SLA with enterprise support.", available: true },
+                { icon: Globe, title: "Google Ads (Coming Soon)", desc: "Full Google Ads integration with campaign management, performance tracking, and automated optimization (Q2 2024).", available: false },
               ].map((feature, i) => (
-                <div key={i} className={`group relative bg-white/[.03] border border-white/10 rounded-2xl p-6 overflow-hidden transition-all duration-300 hover:border-gray-500/50 hover:bg-white/5 ${feature.size === 'large' ? 'lg:col-span-2' : ''}`}>
+                <div key={i} className="group relative bg-white/[.03] border border-white/10 rounded-2xl p-6 overflow-hidden transition-all duration-300 hover:border-gray-500/50 hover:bg-white/5">
                   <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
