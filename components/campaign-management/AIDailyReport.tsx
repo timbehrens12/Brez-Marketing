@@ -509,10 +509,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             </div>
           </div>
 
-          {/* Shortened Summary - Bigger Text */}
-          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-            <p className="text-base text-gray-300 leading-relaxed">
-              {report.summary.length > 120 ? report.summary.substring(0, 120) + '...' : report.summary}
+          {/* Full Summary - Complete Report */}
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
+            <p className="text-sm text-gray-300 leading-relaxed">
+              {report.summary}
             </p>
           </div>
 
@@ -521,33 +521,33 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
 
 
-          {/* Marketing Assistant Actions - Bigger Text */}
-          <div className="space-y-3">
+          {/* Marketing Assistant Actions - Condensed & Actionable */}
+          <div className="space-y-2">
             {/* Priority Action with Marketing Assistant Context */}
             {report?.topPriorities && report.topPriorities.length > 0 && (
-              <div className="bg-[#0f0f0f] border border-amber-500/20 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <RefreshCw className="w-4 h-4 text-amber-400" />
-                  <h3 className="text-sm font-semibold text-amber-400">Action Needed</h3>
+              <div className="bg-[#0f0f0f] border border-amber-500/20 rounded-lg p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <RefreshCw className="w-3 h-3 text-amber-400" />
+                  <h3 className="text-xs font-semibold text-amber-400">Action Needed</h3>
                 </div>
-                <p className="text-sm text-gray-300">
-                  {report.topPriorities[0].length > 80 
-                    ? report.topPriorities[0].substring(0, 80) + '...' 
+                <p className="text-xs text-gray-300">
+                  {report.topPriorities[0].length > 60 
+                    ? report.topPriorities[0].substring(0, 60) + '...' 
                     : report.topPriorities[0]}
                 </p>
               </div>
             )}
 
             {/* Marketing Assistant Recommendations */}
-            <div className="bg-[#0f0f0f] border border-blue-500/20 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-semibold text-blue-400">AI Recommendations</h3>
+            <div className="bg-[#0f0f0f] border border-blue-500/20 rounded-lg p-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Brain className="w-3 h-3 text-blue-400" />
+                <h3 className="text-xs font-semibold text-blue-400">AI Recommendations</h3>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">• Refresh campaign data</p>
-                <p className="text-sm text-gray-300">• Check ad creatives below</p>
-                <p className="text-sm text-gray-300">• Review performance trends</p>
+              <div className="space-y-1">
+                <p className="text-xs text-gray-300">• Refresh campaign data for latest insights</p>
+                <p className="text-xs text-gray-300">• Check ad creatives performance below</p>
+                <p className="text-xs text-gray-300">• Review performance charts for trends</p>
               </div>
             </div>
           </div>
