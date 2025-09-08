@@ -439,7 +439,9 @@ export default function BlendedWidgetsTable({
                     prefix="$"
                     decimals={2}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.adSpend.toFixed(2)}`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
                     ]}
                   />
                 </div>
@@ -452,7 +454,9 @@ export default function BlendedWidgetsTable({
                     value={metaMetrics.impressions}
                     change={metaMetrics.impressionGrowth}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.impressions.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
                     ]}
                   />
                 </div>
@@ -465,7 +469,9 @@ export default function BlendedWidgetsTable({
                     value={metaMetrics.clicks}
                     change={metaMetrics.clickGrowth}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.clicks.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
                     ]}
                   />
                 </div>
@@ -478,7 +484,9 @@ export default function BlendedWidgetsTable({
                     value={metaMetrics.conversions}
                     change={metaMetrics.conversionGrowth}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.conversions.toLocaleString(), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0", active: false }
                     ]}
                   />
                 </div>
@@ -494,7 +502,9 @@ export default function BlendedWidgetsTable({
                     suffix="%"
                     decimals={2}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.ctr.toFixed(2)}%`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00%", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00%", active: false }
                     ]}
                   />
                 </div>
@@ -509,7 +519,9 @@ export default function BlendedWidgetsTable({
                     prefix="$"
                     decimals={2}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `$${metaMetrics.cpc.toFixed(2)}`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "$0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "$0.00", active: false }
                     ]}
                   />
                 </div>
@@ -524,7 +536,9 @@ export default function BlendedWidgetsTable({
                     suffix="x"
                     decimals={2}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: `${metaMetrics.roas.toFixed(2)}x`, active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00x", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00x", active: false }
                     ]}
                   />
                 </div>
@@ -538,7 +552,9 @@ export default function BlendedWidgetsTable({
                     change={null}
                     decimals={2}
                     platforms={[
-                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true }
+                      { name: "Meta", icon: "https://i.imgur.com/6hyyRrs.png", value: metaMetrics.frequency.toFixed(2), active: true },
+                      { name: "TikTok", icon: "https://i.imgur.com/AXHa9UT.png", value: "0.00", active: false },
+                      { name: "Google Ads", icon: "https://i.imgur.com/TavV4UJ.png", value: "0.00", active: false }
                     ]}
                   />
                 </div>
