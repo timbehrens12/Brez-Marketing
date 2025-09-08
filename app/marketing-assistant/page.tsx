@@ -1245,10 +1245,10 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Blended Metrics left vertical, other widgets stacked right */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Blended Performance Metrics (70%) and AI Daily Report (30%) */}
+            {/* Top Section - Blended Metrics (70%) and AI Report (30%) */}
             <div className="flex gap-6">
               
-              {/* Left: Horizontal Blended Performance Metrics - 70% width */}
+              {/* Left: Blended Performance Metrics - 70% width */}
               <div className="flex-1" style={{ flexBasis: '70%' }}>
                 <BlendedWidgetsTable 
                   metaMetrics={metaMetrics}
@@ -1263,26 +1263,26 @@ export default function MarketingAssistantPage() {
 
             </div>
 
-            {/* Middle Section - Campaign Management spans full width */}
-            <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-            </div>
-
-            {/* Bottom Section */}
+            {/* Middle Section - Ad Creative Performance & Performance Trends */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              {/* Ad Creative Breakdown */}
+              {/* Ad Creative Performance */}
               <div className="h-full">
                 <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
               </div>
 
-              {/* Performance Chart */}
+              {/* Performance Trends */}
               <div className="h-full">
                 <PerformanceChart 
                   preloadedPerformanceData={preloadedData.performanceData}
                 />
               </div>
 
+            </div>
+
+            {/* Bottom Section - Campaign Metrics spans full width */}
+            <div className="w-full">
+              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
 
           </div>
