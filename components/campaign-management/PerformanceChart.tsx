@@ -78,22 +78,140 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     }
   }, [preloadedPerformanceData])
 
-  // Always use preloaded data - don't fetch separately to avoid data mismatch
+  // Fetch performance data - only if no preloaded data
   useEffect(() => {
     if (!selectedBrandId) return
 
     if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
-      setPerformanceData(preloadedPerformanceData)
-    } else {
-      setPerformanceData([])
+      // console.log('[PerformanceChart] Using preloaded data, skipping fetch')
+      return
     }
+
+    const fetchPerformanceData = async (forceRefresh = false) => {
+      // console.log('[PerformanceChart] No preloaded data, fetching from API...')
+      // Remove loading state
+      // setIsLoading(true)
+      try {
+        const response = await fetch('/api/ai/daily-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+          body: JSON.stringify({ 
+            brandId: selectedBrandId,
+            forceRegenerate: forceRefresh,
+            timestamp: Date.now()
+          })
+        })
+        if (response.ok) {
+          const data = await response.json()
+          
+          // console.log('[PerformanceChart] API Response:', data)
+          // console.log('[PerformanceChart] Weekly Performance:', data.report?.weeklyPerformance)
+          
+          // Transform the data to include all platforms - use same structure as AI Daily Report
+          const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
+            day: day.day,
+            date: day.date,
+            meta: {
+              spend: day.spend || 0,
+              roas: day.roas || 0,
+              impressions: day.impressions || 0,
+              clicks: day.clicks || 0,
+              conversions: day.conversions || 0
+            },
+            // Placeholder data for other platforms - in real implementation, fetch from respective APIs
+            tiktok: {
+              spend: 0,
+              roas: 0,
+              impressions: 0,
+              clicks: 0,
+              conversions: 0
+            },
+            google: {
+              spend: 0,
+              roas: 0,
+              impressions: 0,
+              clicks: 0,
+              conversions: 0
+            }
+          })) || []
+          
+          setPerformanceData(transformedData)
+        }
+      } catch (error) {
+        console.error('Error fetching performance data:', error)
+      } finally {
+        // Remove loading state
+        // setIsLoading(false)
+      }
+    }
+
+    fetchPerformanceData(false)
   }, [selectedBrandId, preloadedPerformanceData])
 
-  // Listen for refresh events - only refresh when page refreshes data, don't fetch independently
+  // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event: CustomEvent) => {
       if (event.detail?.brandId === selectedBrandId) {
-        // Don't fetch data independently - wait for parent to provide new preloaded data
+        // console.log('[PerformanceChart] Refresh event triggered, forcing fresh data...', { source: event.detail.source })
+        
+        // Force regeneration when new data is detected
+        const fetchData = async () => {
+          try {
+            const response = await fetch('/api/ai/daily-report', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              },
+              body: JSON.stringify({ 
+                brandId: selectedBrandId,
+                forceRegenerate: true, // Force regeneration for fresh data
+                timestamp: Date.now()
+              })
+            })
+            if (response.ok) {
+              const data = await response.json()
+              
+              // console.log('[PerformanceChart] Refresh API Response:', data)
+              // console.log('[PerformanceChart] Refresh Weekly Performance:', data.report?.weeklyPerformance)
+              
+              const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
+                day: day.day,
+                date: day.date,
+                meta: {
+                  spend: day.spend || 0,
+                  roas: day.roas || 0,
+                  impressions: day.impressions || 0,
+                  clicks: day.clicks || 0,
+                  conversions: day.conversions || 0
+                },
+                tiktok: {
+                  spend: 0,
+                  roas: 0,
+                  impressions: 0,
+                  clicks: 0,
+                  conversions: 0
+                },
+                google: {
+                  spend: 0,
+                  roas: 0,
+                  impressions: 0,
+                  clicks: 0,
+                  conversions: 0
+                }
+              })) || []
+              setPerformanceData(transformedData)
+            }
+          } catch (error) {
+            console.error('Error refreshing performance data:', error)
+          }
+        }
+        fetchData()
       }
     }
 
@@ -159,8 +277,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     }
     
     if (enabledPlatforms.meta) {
-      const metaValue = day.meta[selectedMetric] || 0
-      dataPoint.Meta = metaValue
+      dataPoint.Meta = day.meta[selectedMetric] || 0
     }
     if (enabledPlatforms.tiktok) {
       dataPoint.TikTok = day.tiktok[selectedMetric] || 0
@@ -313,10 +430,11 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" opacity={0.5} />
                 <XAxis 
-                  dataKey="day" 
+                  dataKey="date" 
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  tickFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEE')}
                   interval="preserveStartEnd"
                 />
                 <YAxis 
@@ -335,7 +453,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
                   }}
                   labelStyle={{ color: '#fff', fontWeight: '500', marginBottom: '4px' }}
-                  labelFormatter={(label) => label}
+                  labelFormatter={(dateStr) => format(new Date(`${dateStr}T00:00:00`), 'EEE')}
                   formatter={(value: any, name: string, props: any) => {
                     // Ensure we're getting the right value
                     const formattedValue = formatValue(Number(value) || 0)
