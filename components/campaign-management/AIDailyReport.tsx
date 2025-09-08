@@ -497,14 +497,10 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       
         <div className="flex-1 p-3 overflow-auto">
           <div className="space-y-3">
-            {/* AI Summary - Larger Text */}
-              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+            {/* AI Summary - No Truncation */}
+              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4 flex-1">
                 <p className="text-lg text-gray-300 leading-relaxed">
-                  {report.summary ? (
-                    report.summary.length > 800 
-                      ? report.summary.substring(0, 800) + '...'
-                      : report.summary
-                  ) : 'No summary available.'}
+                  {report.summary || 'No summary available.'}
                 </p>
               </div>
 
@@ -530,16 +526,16 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
               </div>
             )}
 
-            {/* Marketing Assistant Recommendations */}
-            <div className="bg-[#0f0f0f] border border-blue-500/20 rounded-lg p-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Brain className="w-3 h-3 text-blue-400" />
-                <h3 className="text-xs font-semibold text-blue-400">AI Recommendations</h3>
+            {/* AI Recommendations - Matching Style */}
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Brain className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg font-semibold text-blue-400">AI Recommendations</h3>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-300">• Refresh campaign data for latest insights</p>
-                <p className="text-xs text-gray-300">• Check ad creatives performance below</p>
-                <p className="text-xs text-gray-300">• Review performance charts for trends</p>
+              <div className="space-y-2">
+                <p className="text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
+                <p className="text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
+                <p className="text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
               </div>
             </div>
           </div>
