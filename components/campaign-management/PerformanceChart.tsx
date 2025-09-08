@@ -78,140 +78,22 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     }
   }, [preloadedPerformanceData])
 
-  // Fetch performance data - only if no preloaded data
+  // Always use preloaded data - don't fetch separately to avoid data mismatch
   useEffect(() => {
     if (!selectedBrandId) return
 
     if (preloadedPerformanceData && preloadedPerformanceData.length > 0) {
-      // console.log('[PerformanceChart] Using preloaded data, skipping fetch')
-      return
+      setPerformanceData(preloadedPerformanceData)
+    } else {
+      setPerformanceData([])
     }
-
-    const fetchPerformanceData = async (forceRefresh = false) => {
-      // console.log('[PerformanceChart] No preloaded data, fetching from API...')
-      // Remove loading state
-      // setIsLoading(true)
-      try {
-        const response = await fetch('/api/ai/daily-report', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          },
-          body: JSON.stringify({ 
-            brandId: selectedBrandId,
-            forceRegenerate: forceRefresh,
-            timestamp: Date.now()
-          })
-        })
-        if (response.ok) {
-          const data = await response.json()
-          
-          // console.log('[PerformanceChart] API Response:', data)
-          // console.log('[PerformanceChart] Weekly Performance:', data.report?.weeklyPerformance)
-          
-          // Transform the data to include all platforms - use same structure as AI Daily Report
-          const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
-            day: day.day,
-            date: day.date,
-            meta: {
-              spend: day.spend || 0,
-              roas: day.roas || 0,
-              impressions: day.impressions || 0,
-              clicks: day.clicks || 0,
-              conversions: day.conversions || 0
-            },
-            // Placeholder data for other platforms - in real implementation, fetch from respective APIs
-            tiktok: {
-              spend: 0,
-              roas: 0,
-              impressions: 0,
-              clicks: 0,
-              conversions: 0
-            },
-            google: {
-              spend: 0,
-              roas: 0,
-              impressions: 0,
-              clicks: 0,
-              conversions: 0
-            }
-          })) || []
-          
-          setPerformanceData(transformedData)
-        }
-      } catch (error) {
-        console.error('Error fetching performance data:', error)
-      } finally {
-        // Remove loading state
-        // setIsLoading(false)
-      }
-    }
-
-    fetchPerformanceData(false)
   }, [selectedBrandId, preloadedPerformanceData])
 
-  // Listen for refresh events
+  // Listen for refresh events - only refresh when page refreshes data, don't fetch independently
   useEffect(() => {
     const handleRefresh = (event: CustomEvent) => {
       if (event.detail?.brandId === selectedBrandId) {
-        // console.log('[PerformanceChart] Refresh event triggered, forcing fresh data...', { source: event.detail.source })
-        
-        // Force regeneration when new data is detected
-        const fetchData = async () => {
-          try {
-            const response = await fetch('/api/ai/daily-report', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-              },
-              body: JSON.stringify({ 
-                brandId: selectedBrandId,
-                forceRegenerate: true, // Force regeneration for fresh data
-                timestamp: Date.now()
-              })
-            })
-            if (response.ok) {
-              const data = await response.json()
-              
-              // console.log('[PerformanceChart] Refresh API Response:', data)
-              // console.log('[PerformanceChart] Refresh Weekly Performance:', data.report?.weeklyPerformance)
-              
-              const transformedData = data.report?.weeklyPerformance?.map((day: any) => ({
-                day: day.day,
-                date: day.date,
-                meta: {
-                  spend: day.spend || 0,
-                  roas: day.roas || 0,
-                  impressions: day.impressions || 0,
-                  clicks: day.clicks || 0,
-                  conversions: day.conversions || 0
-                },
-                tiktok: {
-                  spend: 0,
-                  roas: 0,
-                  impressions: 0,
-                  clicks: 0,
-                  conversions: 0
-                },
-                google: {
-                  spend: 0,
-                  roas: 0,
-                  impressions: 0,
-                  clicks: 0,
-                  conversions: 0
-                }
-              })) || []
-              setPerformanceData(transformedData)
-            }
-          } catch (error) {
-            console.error('Error refreshing performance data:', error)
-          }
-        }
-        fetchData()
+        // Don't fetch data independently - wait for parent to provide new preloaded data
       }
     }
 
@@ -277,7 +159,8 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
     }
     
     if (enabledPlatforms.meta) {
-      dataPoint.Meta = day.meta[selectedMetric] || 0
+      const metaValue = day.meta[selectedMetric] || 0
+      dataPoint.Meta = metaValue
     }
     if (enabledPlatforms.tiktok) {
       dataPoint.TikTok = day.tiktok[selectedMetric] || 0

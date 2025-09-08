@@ -713,11 +713,11 @@ export default function MarketingAssistantPage() {
               day: day.day,
               date: day.date,
               meta: {
-                spend: day.spend || 0,
-                roas: day.roas || 0,
-                impressions: day.impressions || 0,
-                clicks: day.clicks || 0,
-                conversions: day.conversions || 0
+                spend: parseFloat(day.spend) || 0,
+                roas: parseFloat(day.roas) || 0,
+                impressions: parseInt(day.impressions) || 0,
+                clicks: parseInt(day.clicks) || 0,
+                conversions: parseInt(day.conversions) || 0
               },
               tiktok: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 },
               google: { spend: 0, roas: 0, impressions: 0, clicks: 0, conversions: 0 }
