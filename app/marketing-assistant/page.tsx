@@ -1261,12 +1261,12 @@ export default function MarketingAssistantPage() {
                   layout="horizontal"
                 />
                 
-                {/* Ad Creative Performance & Performance Trends - same height as AI Report */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="h-96 flex flex-col">
+                {/* Ad Creative Performance & Performance Trends - full height */}
+                <div className="grid grid-cols-2 gap-4 h-80">
+                  <div className="h-full">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
-                  <div className="h-96 flex flex-col">
+                  <div className="h-full">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1274,8 +1274,8 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report - same height */}
-              <div className="flex-1 h-96 flex flex-col" style={{ flexBasis: '30%' }}>
+              {/* Right Column - AI Daily Report - exact same height */}
+              <div className="flex-1 h-80" style={{ flexBasis: '30%' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
