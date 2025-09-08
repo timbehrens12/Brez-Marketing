@@ -1404,52 +1404,59 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
   // Generate comprehensive factual summary with time-aware context
   const summaryParts = []
   
-  // Add time-specific opening (shorter)
+  // Add time-specific opening (expanded)
   if (currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)) {
-    summaryParts.push(`Early ${timeOfDay} review: Today's data developing, using yesterday's insights.`)
+    summaryParts.push(`Early ${timeOfDay} campaign review: Today's advertising data is still developing, so we're analyzing yesterday's performance metrics and overall trends to provide optimization insights for your marketing strategy.`)
   } else {
-    summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} analysis: Campaign data shows active operations.`)
+    summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} performance analysis: Current campaign data shows active advertising operations with measurable results across your Meta advertising platform.`)
   }
   
   // Campaign Overview with Context - Add variability based on time
   const currentMinute = now.getMinutes()
   const variationSeed = currentMinute % 3 // 3 different variations
   
-  const campaignOverview = `${meta.activeCampaigns} of ${meta.campaignCount} campaigns active. `
+  const campaignOverview = `Currently managing ${meta.activeCampaigns} active campaign${meta.activeCampaigns !== 1 ? 's' : ''} out of ${meta.campaignCount} total campaigns in your advertising portfolio. `
   
   if (meta.activeCampaigns === 0) {
-    summaryParts.push(campaignOverview + "All paused - no traffic or conversions.")
+    summaryParts.push(campaignOverview + "All campaigns are currently paused, which means no new traffic or conversions are being generated at this time. This could be intentional for budget management or indicate campaigns requiring attention.")
   } else if (meta.activeCampaigns / meta.campaignCount < 0.5 && meta.campaignCount > 2) {
-    summaryParts.push(campaignOverview + "Partial activity - opportunities to reactivate.")
+    summaryParts.push(campaignOverview + "A significant portion of campaigns are inactive, suggesting opportunities to reactivate successful campaigns or consolidate budget into top performers for better efficiency.")
   } else {
-    summaryParts.push(campaignOverview + "Healthy portfolio diversification.")
+    summaryParts.push(campaignOverview + "This active campaign ratio indicates a healthy, managed advertising approach with good portfolio diversification across different targeting strategies.")
   }
   
-  // Financial Performance Analysis - Shortened
+  // Financial Performance Analysis - Expanded
   const spendAnalysis = currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)
-    ? `$${meta.yesterdayStats.spend.toFixed(2)} spent yesterday, ${(meta.yesterdayStats.revenue / (meta.yesterdayStats.spend || 1)).toFixed(2)}x ROAS. `
-    : `$${dailySpend.toFixed(2)} invested, ${dailyROAS.toFixed(2)}x ROAS. `
+    ? `Yesterday's advertising investment totaled $${meta.yesterdayStats.spend.toFixed(2)} and generated a return on ad spend (ROAS) of ${(meta.yesterdayStats.revenue / (meta.yesterdayStats.spend || 1)).toFixed(2)}x, while today's campaigns are just beginning their optimization cycle. `
+    : `Total advertising investment of $${dailySpend.toFixed(2)} is currently generating an average return on ad spend (ROAS) of ${dailyROAS.toFixed(2)}x across your active campaign portfolio. `
   
   if (dailyROAS >= 4.0) {
-    summaryParts.push(spendAnalysis + "Excellent performance above industry standards.")
+    summaryParts.push(spendAnalysis + "This excellent performance significantly exceeds industry benchmarks, indicating highly efficient advertising campaigns with strong audience targeting and compelling creative assets.")
   } else if (dailyROAS >= 3.0) {
-    summaryParts.push(spendAnalysis + "Good performance meeting industry benchmarks.")
+    summaryParts.push(spendAnalysis + "This good performance meets industry standards and indicates profitable campaigns that are operating efficiently within healthy market parameters.")
   } else if (dailyROAS >= 2.0) {
-    summaryParts.push(spendAnalysis + "Fair performance, room for optimization.")
+    summaryParts.push(spendAnalysis + "This fair performance shows profitable returns, though there's room to optimize toward industry standards for enhanced growth potential.")
   } else if (dailyROAS >= 1.0) {
-    summaryParts.push(spendAnalysis + "Breaking even, needs optimization.")
+    summaryParts.push(spendAnalysis + "Current performance indicates breakeven results - while not losing money, there's significant room for optimization to achieve profitable advertising.")
   } else {
-    summaryParts.push(spendAnalysis + "Negative returns, requires immediate attention.")
+    summaryParts.push(spendAnalysis + "Performance shows negative returns, requiring immediate optimization or strategic pausing to prevent further losses.")
   }
   
   
-  // Simplified Trend Analysis
+  // Trend Analysis - Expanded
   if (meta.trends.roasTrend > 5) {
-    summaryParts.push(`ROAS trending up ${meta.trends.roasTrend.toFixed(1)}% week-over-week.`)
+    summaryParts.push(`Performance is trending strongly upward with ROAS improving ${meta.trends.roasTrend.toFixed(1)}% week-over-week, indicating effective optimization efforts and favorable market conditions for your campaigns.`)
   } else if (meta.trends.roasTrend < -5) {
-    summaryParts.push(`ROAS declining ${Math.abs(meta.trends.roasTrend).toFixed(1)}% week-over-week.`)
+    summaryParts.push(`Performance is showing decline with ROAS decreasing ${Math.abs(meta.trends.roasTrend).toFixed(1)}% week-over-week, which could indicate increased competition or the need for campaign optimization.`)
   } else {
-    summaryParts.push(`ROAS stable (${meta.trends.roasTrend.toFixed(1)}% change).`)
+    summaryParts.push(`Performance remains stable with ROAS holding steady week-over-week (${meta.trends.roasTrend.toFixed(1)}% change), indicating consistent campaign effectiveness despite market fluctuations.`)
+  }
+  
+  // Add final context about campaign health
+  if (meta.issues.length > 0) {
+    summaryParts.push(`Current analysis identifies ${meta.issues.length} area${meta.issues.length > 1 ? 's' : ''} requiring attention that may be impacting overall campaign efficiency.`)
+  } else if (meta.activeCampaigns > 0) {
+    summaryParts.push(`All active campaigns are operating within optimal parameters with no critical issues detected.`)
   }
   
 
