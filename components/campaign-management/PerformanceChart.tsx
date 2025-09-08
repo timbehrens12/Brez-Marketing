@@ -310,7 +310,7 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Performance Trends</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-white">Performance Trends</h2>
               <p className="text-gray-400 font-medium text-base">{getMetricLabel()} across platforms</p>
             </div>
           </div>

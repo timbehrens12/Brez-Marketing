@@ -1432,16 +1432,16 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       
       {/* Compact Header */}
       <Card className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg pb-2 pt-3">
+        <CardHeader className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] border-b border-[#333] rounded-t-lg pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                             flex items-center justify-center border border-white/10 shadow-lg">
-                <Target className="w-5 h-5 text-white" />
+                <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-white text-xl font-bold tracking-tight">Campaign Management</CardTitle>
-                <p className="text-gray-400 text-sm font-medium">Optimize your advertising campaigns</p>
+                <CardTitle className="text-white text-2xl font-bold tracking-tight">Campaign Management</CardTitle>
+                <p className="text-gray-400 text-base font-medium">Optimize your advertising campaigns</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

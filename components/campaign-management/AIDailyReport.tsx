@@ -467,15 +467,15 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                           flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-5 h-5 text-white" />
+              <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">AI Daily Report</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-white">AI Daily Report</h2>
               <div className="flex items-center gap-2">
-                <p className="text-gray-400 font-medium text-xs">Campaign insights</p>
+                <p className="text-gray-400 font-medium text-base">Campaign insights</p>
                 {report?.generatedAt && (
                   <div className="text-xs text-gray-500 bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#2a2a2a]">
                     {new Date(report.generatedAt).toLocaleString(undefined, {
@@ -495,14 +495,14 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
       
-      <div className="flex-1 p-3 overflow-auto">
-        <div className="space-y-3">
-          {/* Full Summary - Complete Report */}
-          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
-            <p className="text-lg text-gray-300 leading-relaxed">
-              {report.summary}
-            </p>
-          </div>
+        <div className="flex-1 p-3 overflow-auto">
+          <div className="space-y-3">
+            {/* AI Summary - Larger Text */}
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+              <p className="text-lg text-gray-300 leading-relaxed">
+                {report.summary ? report.summary.split('.').slice(0, 3).join('.') + '.' : 'No summary available.'}
+              </p>
+            </div>
 
 
 
