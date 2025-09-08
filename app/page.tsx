@@ -24,7 +24,9 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans overflow-x-hidden">
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div className="min-h-screen bg-[#0D0D0D] text-white font-sans overflow-x-hidden">
       <div className="absolute top-0 left-0 w-full h-full z-0">
         <div className="absolute inset-0 z-0">
         <GridOverlay />
@@ -53,9 +55,9 @@ export default function HomePage() {
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
                   Professional Brand Scaling Infrastructure
               </p>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-6">
-                Scaling Brands<br />
-                <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">Has Never Been Easier</span>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-6" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>
+                SCALING BRANDS<br />
+                <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">HAS NEVER BEEN EASIER</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-10">
                 The complete AI-powered toolkit for freelance brand scalers. Real-time analytics, automated lead generation, and professional tools to scale brands to 7+ figures.
@@ -200,7 +202,7 @@ export default function HomePage() {
         <section className="py-24 sm:py-32">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Everything In One Place</h2>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>EVERYTHING IN ONE PLACE</h2>
                     <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
                         Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard.
                     </p>
@@ -235,7 +237,7 @@ export default function HomePage() {
         <section className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Every Feature You Need</h2>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>EVERY FEATURE YOU NEED</h2>
               <p className="text-lg text-gray-400 max-w-3xl mx-auto">
                 No hype, no exaggeration. Here's exactly what our platform includes.
               </p>
@@ -281,7 +283,7 @@ export default function HomePage() {
         <section className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Choose Your Plan</h2>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>CHOOSE YOUR PLAN</h2>
               <p className="text-lg text-gray-400 max-w-3xl mx-auto">
                 Simple, transparent pricing that scales with your business. More features unlock as you grow.
               </p>
@@ -526,7 +528,7 @@ export default function HomePage() {
         <section className="py-24 sm:py-32">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Frequently Asked Questions</h2>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>FREQUENTLY ASKED QUESTIONS</h2>
                <p className="text-lg text-gray-400">Honest answers about what we offer and how it works.</p>
             </div>
             <div className="space-y-4">
@@ -558,10 +560,10 @@ export default function HomePage() {
         {/* Final CTA */}
         <section className="py-24 sm:py-32">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 className="text-5xl md:text-6xl font-extrabold tracking-tighter mb-6">
-                    Ready to Scale<br />
-                    <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">Like a Pro?</span>
-            </h2>
+                <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>
+                    READY TO SCALE<br />
+                    <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">LIKE A PRO?</span>
+                </h2>
                 <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
                     Join the growing community of brand scalers who have transformed their businesses with our platform. Start your free trial today and see the difference professional tools make.
             </p>
@@ -721,5 +723,6 @@ export default function HomePage() {
         }
       `}</style>
     </div>
+    </>
   )
 }
