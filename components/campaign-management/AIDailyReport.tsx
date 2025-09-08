@@ -497,21 +497,9 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       
       <div className="flex-1 p-3 overflow-auto">
         <div className="space-y-3">
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
-              <p className="text-xs text-gray-400 mb-1">Total Spend</p>
-              <p className="text-lg font-bold text-white">{formatCurrency(report.totalSpend)}</p>
-            </div>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
-              <p className="text-xs text-gray-400 mb-1">ROAS</p>
-              <p className="text-lg font-bold text-white">{report.totalROAS.toFixed(2)}x</p>
-            </div>
-          </div>
-
           {/* Full Summary - Complete Report */}
           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
-            <p className="text-base text-gray-300 leading-relaxed">
+            <p className="text-lg text-gray-300 leading-relaxed">
               {report.summary}
             </p>
           </div>

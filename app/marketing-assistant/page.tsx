@@ -1253,28 +1253,20 @@ export default function MarketingAssistantPage() {
               />
             </div>
             
-            {/* Middle Section - Widgets fill height and align */}
-            <div className="flex gap-6">
-              
-              {/* Left Column - 70% width */}
-              <div className="flex-1 flex flex-col gap-4" style={{ flexBasis: '70%' }}>
-                {/* Campaign Management */}
+            {/* Second Row - Campaign Management & AI Report */}
+            <div className="flex gap-6 items-stretch">
+              <div className="flex-1" style={{ flexBasis: '70%' }}>
                 <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
-                
-                {/* Ad Creative & Performance Trends take up remaining space */}
-                <div className="grid grid-cols-2 gap-4 flex-1">
-                  <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                  <PerformanceChart 
-                    preloadedPerformanceData={preloadedData.performanceData}
-                  />
-                </div>
               </div>
-
-              {/* Right Column - AI Daily Report fills height */}
               <div className="flex-1" style={{ flexBasis: '30%' }}>
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
+            </div>
 
+            {/* Third Row - Ad Creative & Performance Trends */}
+            <div className="grid grid-cols-2 gap-6">
+              <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+              <PerformanceChart preloadedPerformanceData={preloadedData.performanceData} />
             </div>
 
           </div>
