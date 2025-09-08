@@ -497,12 +497,16 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
       
         <div className="flex-1 p-3 overflow-auto">
           <div className="space-y-3">
-            {/* AI Summary - Full Text Display */}
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-              <p className="text-lg text-gray-300 leading-relaxed">
-                {report.summary || 'No summary available.'}
-              </p>
-            </div>
+            {/* AI Summary - Larger Text */}
+              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+                <p className="text-lg text-gray-300 leading-relaxed">
+                  {report.summary ? (
+                    report.summary.length > 800 
+                      ? report.summary.substring(0, 800) + '...'
+                      : report.summary
+                  ) : 'No summary available.'}
+                </p>
+              </div>
 
 
 
