@@ -1141,27 +1141,27 @@ export default function MarketingAssistantPage() {
           {/* Loading phases checklist */}
                       <div className="text-left space-y-2 text-sm text-gray-400">
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 15 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 15 ? 'bg-green-400' : loadingProgress >= 15 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Loading advertising data</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Syncing latest performance data</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>AI analyzing campaign performance</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Loading creative insights</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-green-400' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Preparing AI marketing consultant</span>
               </div>
               <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                 <span>Finalizing dashboard</span>
               </div>
             </div>
@@ -1245,9 +1245,12 @@ export default function MarketingAssistantPage() {
           {/* Dynamic Grid Layout - Campaign Management at top, then other widgets */}
           <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Section - Campaign Management spans full width */}
+            {/* Top Section - Blended Performance Metrics spans full width */}
             <div className="w-full">
-              <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
+              <BlendedWidgetsTable 
+                metaMetrics={metaMetrics}
+                layout="horizontal"
+              />
             </div>
             
             {/* Middle Section - Widgets fill height and align */}
@@ -1255,11 +1258,8 @@ export default function MarketingAssistantPage() {
               
               {/* Left Column - 70% width */}
               <div className="flex-1 flex flex-col gap-4" style={{ flexBasis: '70%' }}>
-                {/* Blended Performance Metrics */}
-                <BlendedWidgetsTable 
-                  metaMetrics={metaMetrics}
-                  layout="horizontal"
-                />
+                {/* Campaign Management */}
+                <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 
                 {/* Ad Creative & Performance Trends take up remaining space */}
                 <div className="grid grid-cols-2 gap-4 flex-1">
