@@ -1404,79 +1404,42 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
   // Generate comprehensive factual summary with time-aware context
   const summaryParts = []
   
-  // Add time-specific opening (no emoji, better formatting)
+  // Add time-specific opening (shorter)
   if (currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)) {
-    summaryParts.push(`Early ${timeOfDay} campaign review: While today's data is still developing, yesterday's performance and overall trends provide valuable insights for optimization planning.`)
+    summaryParts.push(`Early ${timeOfDay} review: Today's data developing, using yesterday's insights.`)
   } else {
-    summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} performance analysis: Current campaign data shows active advertising operations with measurable results.`)
+    summaryParts.push(`${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)} analysis: Campaign data shows active operations.`)
   }
   
   // Campaign Overview with Context - Add variability based on time
   const currentMinute = now.getMinutes()
   const variationSeed = currentMinute % 3 // 3 different variations
   
-  const campaignOverview = `Currently managing ${meta.activeCampaigns} active campaign${meta.activeCampaigns !== 1 ? 's' : ''} out of ${meta.campaignCount} total campaigns. `
+  const campaignOverview = `${meta.activeCampaigns} of ${meta.campaignCount} campaigns active. `
   
   if (meta.activeCampaigns === 0) {
-    const pausedVariations = [
-      "All campaigns are currently paused, which means no new traffic or conversions are being generated. This could be intentional for budget management or indicate campaigns needing attention.",
-      "With all campaigns inactive, there's zero advertising spend but also no customer acquisition happening. Consider reactivating proven performers to maintain market presence.",
-      "No active campaigns detected - this pause could be strategic for budget conservation or may indicate campaigns requiring optimization before relaunch."
-    ]
-    summaryParts.push(campaignOverview + pausedVariations[variationSeed])
+    summaryParts.push(campaignOverview + "All paused - no traffic or conversions.")
   } else if (meta.activeCampaigns / meta.campaignCount < 0.5 && meta.campaignCount > 2) {
-    const partialActiveVariations = [
-      "A significant portion of campaigns are inactive, suggesting opportunities to reactivate successful campaigns or consolidate budget into top performers.",
-      "With less than half of campaigns active, there may be untapped scaling opportunities in paused campaigns that previously showed promise.",
-      "The current active-to-total campaign ratio indicates selective campaign management - potentially focusing budget on proven performers while keeping others in reserve."
-    ]
-    summaryParts.push(campaignOverview + partialActiveVariations[variationSeed])
+    summaryParts.push(campaignOverview + "Partial activity - opportunities to reactivate.")
   } else {
-    const healthyVariations = [
-      "This active campaign ratio indicates a healthy, managed advertising approach with good portfolio diversification.",
-      "The campaign portfolio shows active management with a balanced approach to risk distribution across multiple advertising efforts.",
-      "Current campaign activity suggests strategic budget allocation with proper diversification to reduce dependency on single traffic sources."
-    ]
-    summaryParts.push(campaignOverview + healthyVariations[variationSeed])
+    summaryParts.push(campaignOverview + "Healthy portfolio diversification.")
   }
   
-  // Financial Performance Analysis - Use today's data with time-aware context
+  // Financial Performance Analysis - Shortened
   const spendAnalysis = currentHour < 6 || (meta.todayStats.spend === 0 && currentHour < 10)
-    ? `Yesterday's advertising investment of $${meta.yesterdayStats.spend.toFixed(2)} generated a return on ad spend (ROAS) of ${(meta.yesterdayStats.revenue / (meta.yesterdayStats.spend || 1)).toFixed(2)}x, while today's campaigns are just beginning. `
-    : `Total advertising investment of $${dailySpend.toFixed(2)} is generating an average return on ad spend (ROAS) of ${dailyROAS.toFixed(2)}x. `
-    
-  const roasVariationSeed = (now.getMinutes() + currentHour) % 2 // 2 different approaches
+    ? `$${meta.yesterdayStats.spend.toFixed(2)} spent yesterday, ${(meta.yesterdayStats.revenue / (meta.yesterdayStats.spend || 1)).toFixed(2)}x ROAS. `
+    : `$${dailySpend.toFixed(2)} invested, ${dailyROAS.toFixed(2)}x ROAS. `
   
   if (dailyROAS >= 4.0) {
-    const excellentROASVariations = [
-      "This ROAS significantly exceeds industry benchmarks (typically 3-4x for e-commerce), indicating highly efficient advertising campaigns with strong audience targeting and compelling creative assets.",
-      "Outstanding performance with ROAS well above industry standards - your campaigns are delivering exceptional value with premium optimization and market positioning."
-    ]
-    summaryParts.push(spendAnalysis + excellentROASVariations[roasVariationSeed])
+    summaryParts.push(spendAnalysis + "Excellent performance above industry standards.")
   } else if (dailyROAS >= 3.0) {
-    const goodROASVariations = [
-      "This ROAS meets industry standards and indicates profitable campaigns. Most e-commerce businesses target 3-4x ROAS for sustainable growth.",
-      "Solid performance hitting industry benchmarks - campaigns are operating profitably with healthy returns that support business scaling."
-    ]
-    summaryParts.push(spendAnalysis + goodROASVariations[roasVariationSeed])
+    summaryParts.push(spendAnalysis + "Good performance meeting industry benchmarks.")
   } else if (dailyROAS >= 2.0) {
-    const fairROASVariations = [
-      "This ROAS is below optimal levels but still profitable. Industry best practices suggest targeting 3-4x ROAS for healthy business growth.",
-      "Moderate performance with profitable returns, though there's room to optimize toward the industry standard of 3-4x ROAS for enhanced growth potential."
-    ]
-    summaryParts.push(spendAnalysis + fairROASVariations[roasVariationSeed])
+    summaryParts.push(spendAnalysis + "Fair performance, room for optimization.")
   } else if (dailyROAS >= 1.0) {
-    const breakEvenVariations = [
-      "This ROAS indicates breakeven performance. While not losing money, there's significant room for optimization to achieve profitable advertising.",
-      "Campaigns are covering their costs but need optimization to generate profit - focus on improving targeting, creative, or landing page conversion rates."
-    ]
-    summaryParts.push(spendAnalysis + breakEvenVariations[roasVariationSeed])
+    summaryParts.push(spendAnalysis + "Breaking even, needs optimization.")
   } else {
-    const lossVariations = [
-      "This ROAS indicates campaigns are spending more than they're generating in revenue, requiring immediate optimization or pausing to prevent further losses.",
-      "Current performance shows negative returns - immediate action needed to stop losses through campaign optimization, audience refinement, or strategic pausing."
-    ]
-    summaryParts.push(spendAnalysis + lossVariations[roasVariationSeed])
+    summaryParts.push(spendAnalysis + "Negative returns, requires immediate attention.")
   }
   
   // Daily Performance Context
