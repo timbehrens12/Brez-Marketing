@@ -1263,21 +1263,27 @@ export default function MarketingAssistantPage() {
                 
                 {/* Ad Creative Performance & Performance Trends - fixed height containers */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="h-80 overflow-hidden">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                  <div className="h-96">
+                    <div className="h-full overflow-y-auto">
+                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                    </div>
                   </div>
-                  <div className="h-80 overflow-hidden">
-                    <PerformanceChart 
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
+                  <div className="h-96">
+                    <div className="h-full overflow-y-auto">
+                      <PerformanceChart 
+                        preloadedPerformanceData={preloadedData.performanceData}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Right Column - AI Daily Report - 30% width with matching total height */}
               <div className="flex-1" style={{ flexBasis: '30%' }}>
-                <div className="h-80 overflow-hidden">
-                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                <div className="h-96">
+                  <div className="h-full overflow-y-auto">
+                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                  </div>
                 </div>
               </div>
 
