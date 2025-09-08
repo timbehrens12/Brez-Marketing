@@ -196,30 +196,37 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Key Features Section */}
+        {/* Value Proposition Section */}
         <section className="py-24 sm:py-32">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">The Operating System for Brand Scalers</h2>
-                    <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-                        A unified platform to manage clients, analyze data, generate leads, and create winning ad creatives.
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Everything In One Place</h2>
+                    <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
+                        Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard.
                     </p>
                 </div>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
                     {[
-                        { icon: BarChart3, title: "Real-Time Analytics", desc: "Live Data" },
-                        { icon: Brain, title: "AI Marketing Consultant", desc: "Custom AI we built" },
-                        { icon: Zap, title: "Lead Generation", desc: "Automated Pipeline" },
-                        { icon: Palette, title: "Creative Studio", desc: "Instant Creatives" },
+                        { icon: Zap, title: "All-In-One Platform", desc: "Replace Zapier, HubSpot, Canva, Google Analytics, and 8+ other tools with one login." },
+                        { icon: Palette, title: "Fully White-Labelable", desc: "Rebrand everything as your own software. Your logo, your colors, your domain - clients never see our name." },
+                        { icon: Shield, title: "Own Your Business", desc: "No dependencies on external tools. Everything runs under your brand with enterprise-grade reliability." },
                     ].map((feature, i) => (
-                        <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-6 text-center group hover:bg-white/10 transition-all duration-300">
-                             <div className="inline-block p-4 bg-gray-500/10 rounded-lg mb-4">
+                        <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-8 text-center group hover:bg-white/10 transition-all duration-300">
+                             <div className="inline-block p-4 bg-gray-500/10 rounded-lg mb-6">
                                 <feature.icon className="w-8 h-8 text-gray-400" />
                              </div>
-                             <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                             <p className="text-gray-400">{feature.desc}</p>
+                             <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
+                             <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
                         </div>
                     ))}
+                </div>
+                
+                <div className="bg-gradient-to-r from-white/5 to-white/10 border border-white/20 rounded-2xl p-8 text-center">
+                    <h3 className="text-2xl font-bold text-white mb-4">Your Clients Think It's Your Software</h3>
+                    <p className="text-gray-300 text-lg max-w-4xl mx-auto">
+                        Complete white-label solution means you can sell this as your own proprietary platform. 
+                        Charge premium prices for "your" custom-built marketing software while we handle all the backend infrastructure.
+                    </p>
                 </div>
             </div>
         </section>
