@@ -1250,8 +1250,8 @@ export default function MarketingAssistantPage() {
               <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
             </div>
             
-            {/* Middle Section - Left Column (Blended + smaller widgets) and Right Column (AI Report) */}
-            <div className="flex gap-6 items-start">
+            {/* Middle Section - All widgets same height, aligned at bottom */}
+            <div className="flex gap-6 items-end">
               
               {/* Left Column - 70% width */}
               <div className="flex-1 space-y-4" style={{ flexBasis: '70%' }}>
@@ -1261,30 +1261,22 @@ export default function MarketingAssistantPage() {
                   layout="horizontal"
                 />
                 
-                {/* Ad Creative Performance & Performance Trends - fixed height containers */}
+                {/* Ad Creative Performance & Performance Trends - same height as AI Report */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="h-96">
-                    <div className="h-full overflow-y-auto">
-                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
-                    </div>
+                  <div className="h-96 flex flex-col">
+                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
-                  <div className="h-96">
-                    <div className="h-full overflow-y-auto">
-                      <PerformanceChart 
-                        preloadedPerformanceData={preloadedData.performanceData}
-                      />
-                    </div>
+                  <div className="h-96 flex flex-col">
+                    <PerformanceChart 
+                      preloadedPerformanceData={preloadedData.performanceData}
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report - 30% width with matching total height */}
-              <div className="flex-1" style={{ flexBasis: '30%' }}>
-                <div className="h-96">
-                  <div className="h-full overflow-y-auto">
-                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
-                  </div>
-                </div>
+              {/* Right Column - AI Daily Report - same height */}
+              <div className="flex-1 h-96 flex flex-col" style={{ flexBasis: '30%' }}>
+                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 
             </div>
