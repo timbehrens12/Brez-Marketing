@@ -1274,9 +1274,11 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report - 30% width spans full height */}
-              <div className="flex-1" style={{ flexBasis: '30%' }}>
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              {/* Right Column - AI Daily Report - 30% width with constrained height */}
+              <div className="flex-1 flex flex-col" style={{ flexBasis: '30%' }}>
+                <div className="h-96">
+                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                </div>
               </div>
 
             </div>
