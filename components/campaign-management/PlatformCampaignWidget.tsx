@@ -952,11 +952,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
         {/* Compact Metrics Grid */}
         <div className="p-3">
+          {/* Metrics Grid - First Row */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
-            <div className="text-center">
-              <div className="text-xs text-gray-500 mb-1">Budget</div>
-              <div className="text-sm font-bold text-white">{formatCurrency(campaign.budget)}</div>
-            </div>
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Spent</div>
               <div className="text-sm font-bold text-white">{formatCurrency(campaign.spent)}</div>
@@ -988,8 +985,12 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             </div>
           </div>
  
-          {/* Extended Metrics Row - All Dashboard Data */}
+          {/* Metrics Grid - Second Row */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Budget</div>
+              <div className="text-sm font-bold text-white">{formatCurrency(campaign.budget)}</div>
+            </div>
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Reach</div>
               <div className="text-sm font-bold text-white">{formatNumber(campaign.reach || 0)}</div>
@@ -997,10 +998,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Frequency</div>
               <div className="text-sm font-bold text-white">{(campaign.frequency || 0).toFixed(2)}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-gray-500 mb-1">Link Clicks</div>
-              <div className="text-sm font-bold text-white">{formatNumber(campaign.link_clicks || 0)}</div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Leads</div>
