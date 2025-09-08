@@ -272,17 +272,18 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
   const chartData = performanceData.map(day => {
     const dataPoint: any = {
       day: day.day,
-      date: day.date
+      date: day.date,
+      fullDate: day.date // Add full date for debugging
     }
     
     if (enabledPlatforms.meta) {
-      dataPoint.Meta = day.meta[selectedMetric]
+      dataPoint.Meta = day.meta[selectedMetric] || 0
     }
     if (enabledPlatforms.tiktok) {
-      dataPoint.TikTok = day.tiktok[selectedMetric]
+      dataPoint.TikTok = day.tiktok[selectedMetric] || 0
     }
     if (enabledPlatforms.google) {
-      dataPoint.Google = day.google[selectedMetric]
+      dataPoint.Google = day.google[selectedMetric] || 0
     }
     
     return dataPoint
@@ -451,33 +452,38 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
                   }}
                   labelStyle={{ color: '#fff', fontWeight: '500', marginBottom: '4px' }}
-                  formatter={(value: any, name: string) => [
-                    <span key={name} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      {name === 'Meta' && (
-                        <img 
-                          src="https://i.imgur.com/6hyyRrs.png" 
-                          alt="Meta" 
-                          style={{ width: '14px', height: '14px', objectFit: 'contain' }}
-                        />
-                      )}
-                      {name === 'TikTok' && (
-                        <img 
-                          src="https://i.imgur.com/AXHa9UT.png" 
-                          alt="TikTok" 
-                          style={{ width: '14px', height: '14px', objectFit: 'contain' }}
-                        />
-                      )}
-                      {name === 'Google' && (
-                        <img 
-                          src="https://i.imgur.com/TavV4UJ.png" 
-                          alt="Google Ads" 
-                          style={{ width: '14px', height: '14px', objectFit: 'contain' }}
-                        />
-                      )}
-                      {formatValue(value)}
-                    </span>,
-                    name
-                  ]}
+                  labelFormatter={(label) => label}
+                  formatter={(value: any, name: string, props: any) => {
+                    // Ensure we're getting the right value
+                    const formattedValue = formatValue(Number(value) || 0)
+                    return [
+                      <span key={name} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {name === 'Meta' && (
+                          <img 
+                            src="https://i.imgur.com/6hyyRrs.png" 
+                            alt="Meta" 
+                            style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+                          />
+                        )}
+                        {name === 'TikTok' && (
+                          <img 
+                            src="https://i.imgur.com/AXHa9UT.png" 
+                            alt="TikTok" 
+                            style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+                          />
+                        )}
+                        {name === 'Google' && (
+                          <img 
+                            src="https://i.imgur.com/TavV4UJ.png" 
+                            alt="Google Ads" 
+                            style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+                          />
+                        )}
+                        {formattedValue}
+                      </span>,
+                      name
+                    ]
+                  }}
                   cursor={false}
                 />
                 
