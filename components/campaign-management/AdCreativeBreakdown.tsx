@@ -389,7 +389,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       </CardHeader>
 
       {/* Content */}
-      <div className="p-6">
+      <CardContent className="p-6 flex-1 overflow-hidden">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -405,7 +405,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {filteredAndSortedAds.map((ad) => {
               const roas = calculateROAS(ad.conversions, ad.spent)
               
@@ -575,7 +575,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             })}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   )
 } 
