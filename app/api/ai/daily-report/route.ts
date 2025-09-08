@@ -1442,81 +1442,16 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
     summaryParts.push(spendAnalysis + "Negative returns, requires immediate attention.")
   }
   
-  // Daily Performance Context
-  const todayVsYesterday = meta.todayStats.spend !== 0 || meta.yesterdayStats.spend !== 0
-  if (todayVsYesterday) {
-    const spendChange = ((meta.todayStats.spend - meta.yesterdayStats.spend) / (meta.yesterdayStats.spend || 1)) * 100
-    const dailyContext = `Today's advertising spend of $${meta.todayStats.spend.toFixed(2)} represents a ${Math.abs(spendChange).toFixed(1)}% ${spendChange >= 0 ? 'increase' : 'decrease'} from yesterday's $${meta.yesterdayStats.spend.toFixed(2)}. `
-    
-    if (meta.todayStats.impressions > 0) {
-      const ctr = (meta.todayStats.clicks / meta.todayStats.impressions) * 100
-      const engagementContext = `Current engagement shows ${meta.todayStats.impressions.toLocaleString()} impressions generating ${meta.todayStats.clicks} clicks (${ctr.toFixed(2)}% CTR). `
-      summaryParts.push(dailyContext + engagementContext + `Industry average CTRs range from 0.9-2.0% depending on industry and ad placement.`)
-    } else {
-      summaryParts.push(dailyContext + "Limited impression data available for today's performance analysis.")
-    }
-  }
   
-  // Trend Analysis with Market Context
-  if (meta.trends.roasTrend > 10) {
-    summaryParts.push(`Performance trending strongly upward with ROAS improving ${meta.trends.roasTrend.toFixed(1)}% week-over-week. This positive momentum suggests effective optimization efforts, improved audience targeting, or favorable market conditions for your product category.`)
-  } else if (meta.trends.roasTrend > 5) {
-    summaryParts.push(`Performance showing positive growth with ROAS improving ${meta.trends.roasTrend.toFixed(1)}% week-over-week. This steady improvement indicates campaigns are being effectively optimized and market conditions remain favorable.`)
-  } else if (meta.trends.roasTrend < -10) {
-    summaryParts.push(`Performance declining with ROAS decreasing ${Math.abs(meta.trends.roasTrend).toFixed(1)}% week-over-week. This could indicate increased competition, seasonal factors, audience fatigue, or need for creative refresh. Market volatility and external factors like economic conditions can also impact performance.`)
+  // Simplified Trend Analysis
+  if (meta.trends.roasTrend > 5) {
+    summaryParts.push(`ROAS trending up ${meta.trends.roasTrend.toFixed(1)}% week-over-week.`)
   } else if (meta.trends.roasTrend < -5) {
-    summaryParts.push(`Performance showing slight decline with ROAS decreasing ${Math.abs(meta.trends.roasTrend).toFixed(1)}% week-over-week. This minor fluctuation is common in advertising and could be due to natural market variations or the need for campaign optimization.`)
+    summaryParts.push(`ROAS declining ${Math.abs(meta.trends.roasTrend).toFixed(1)}% week-over-week.`)
   } else {
-    summaryParts.push(`Performance remains stable with ROAS holding steady week-over-week (${meta.trends.roasTrend.toFixed(1)}% change). This consistency indicates well-optimized campaigns maintaining their effectiveness despite market fluctuations.`)
+    summaryParts.push(`ROAS stable (${meta.trends.roasTrend.toFixed(1)}% change).`)
   }
   
-  // Audience Demographics Analysis
-  console.log(`[AIDailyReport] Demographics condition check:`, {
-    hasDemographics: !!meta.demographics,
-    ageLength: meta.demographics?.age?.length || 0,
-    genderLength: meta.demographics?.gender?.length || 0,
-    devicesLength: meta.demographics?.devices?.length || 0
-  })
-  if (meta.demographics && (meta.demographics.age.length > 0 || meta.demographics.gender.length > 0 || meta.demographics.devices.length > 0)) {
-    const demographicInsights = []
-    
-    // Age demographics analysis
-    if (meta.demographics.age.length > 0) {
-      const topAgeSegment = meta.demographics.age[0]
-      const totalAgeImpressions = meta.demographics.age.reduce((sum, segment) => sum + (parseInt(segment.impressions) || 0), 0)
-      const agePercentage = totalAgeImpressions > 0 ? ((parseInt(topAgeSegment.impressions) || 0) / totalAgeImpressions * 100) : 0
-      
-      if (agePercentage > 40) {
-        demographicInsights.push(`Your primary audience is the ${topAgeSegment.breakdown_value} age group, representing ${agePercentage.toFixed(0)}% of total impressions`)
-      } else {
-        demographicInsights.push(`Audience is well-distributed across age groups, with ${topAgeSegment.breakdown_value} leading at ${agePercentage.toFixed(0)}%`)
-      }
-    }
-    
-    // Gender demographics analysis  
-    if (meta.demographics.gender.length > 0) {
-      const topGenderSegment = meta.demographics.gender[0]
-      const totalGenderImpressions = meta.demographics.gender.reduce((sum, segment) => sum + (parseInt(segment.impressions) || 0), 0)
-      const genderPercentage = totalGenderImpressions > 0 ? ((parseInt(topGenderSegment.impressions) || 0) / totalGenderImpressions * 100) : 0
-      
-      if (genderPercentage > 60) {
-        demographicInsights.push(`with ${topGenderSegment.breakdown_value} audience dominating at ${genderPercentage.toFixed(0)}% of engagement`)
-      }
-    }
-    
-    // Device performance analysis
-    if (meta.demographics.devices.length > 0) {
-      const topDevice = meta.demographics.devices[0]
-      const totalDeviceImpressions = meta.demographics.devices.reduce((sum, device) => sum + (parseInt(device.impressions) || 0), 0)
-      const devicePercentage = totalDeviceImpressions > 0 ? ((parseInt(topDevice.impressions) || 0) / totalDeviceImpressions * 100) : 0
-      
-      demographicInsights.push(`Most engagement occurs on ${topDevice.breakdown_value} devices (${devicePercentage.toFixed(0)}%)`)
-    }
-    
-    if (demographicInsights.length > 0) {
-      summaryParts.push(`Audience analysis reveals ${demographicInsights.join(', ')}. Understanding these demographic patterns helps optimize targeting strategies and creative messaging to maximize campaign effectiveness.`)
-    }
-  }
 
   // Geographic and Customer Analysis from Shopify
   console.log(`[AIDailyReport] Geographic condition check:`, {
