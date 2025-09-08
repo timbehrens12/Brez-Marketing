@@ -389,17 +389,15 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       </CardHeader>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      <CardContent className="flex-1 flex flex-col p-6 overflow-hidden">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                          flex items-center justify-center border border-white/10 shadow-lg mx-auto mb-4">
-              <ImageIcon className="h-8 w-8 text-gray-500" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
+              <ImageIcon className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-xl font-medium text-white truncate mb-2">No Ad Creatives Found</h3>
-            <p className="text-gray-400 max-w-md mx-auto">
-              {searchQuery ? 
-                `No ads match your search "${searchQuery}". Try adjusting your filters.` :
+            <h3 className="text-lg font-semibold text-white">No Ad Creatives Found</h3>
+            <p className="text-sm text-gray-400 mt-2 max-w-xs mx-auto">
+              {
                 'No ad creatives found for your selected criteria. Try adjusting your filters or check if your Meta campaigns have active ads.'
               }
             </p>
@@ -575,7 +573,7 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
             })}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   )
 } 
