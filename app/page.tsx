@@ -25,8 +25,8 @@ export default function HomePage() {
 
   return (
     <>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      <div className="min-h-screen bg-[#0D0D0D] text-white font-sans overflow-x-hidden">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+      <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
       <div className="absolute top-0 left-0 w-full h-full z-0">
         <div className="absolute inset-0 z-0">
         <GridOverlay />
@@ -51,7 +51,7 @@ export default function HomePage() {
         <section className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
             <div className="text-center lg:text-left">
-              <p className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 text-sm font-medium text-gray-300">
+              <p className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 text-sm font-medium text-gray-300" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
                   Professional Brand Scaling Infrastructure
               </p>
@@ -59,7 +59,7 @@ export default function HomePage() {
                 SCALING BRANDS<br />
                 <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">HAS NEVER BEEN EASIER</span>
               </h1>
-              <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-10">
+              <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-10" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                 The complete AI-powered toolkit for freelance brand scalers. Real-time analytics, automated lead generation, and professional tools to scale brands to 7+ figures.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -203,7 +203,7 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>EVERYTHING IN ONE PLACE</h2>
-                    <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
+                    <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                         Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard.
                     </p>
                 </div>
@@ -218,14 +218,14 @@ export default function HomePage() {
                                 <feature.icon className="w-8 h-8 text-gray-400" />
                              </div>
                              <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
-                             <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
+                             <p className="text-gray-400 leading-relaxed" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{feature.desc}</p>
                         </div>
                     ))}
                 </div>
                 
                 <div className="bg-gradient-to-r from-white/5 to-white/10 border border-white/20 rounded-2xl p-8 text-center">
                     <h3 className="text-2xl font-bold text-white mb-4">Your Clients Think It's Your Software</h3>
-                    <p className="text-gray-300 text-lg max-w-4xl mx-auto">
+                    <p className="text-gray-300 text-lg max-w-4xl mx-auto" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                         Complete white-label solution means you can sell this as your own proprietary platform. 
                         Charge premium prices for "your" custom-built marketing software while we handle all the backend infrastructure.
                     </p>
@@ -238,7 +238,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>EVERY FEATURE YOU NEED</h2>
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              <p className="text-lg text-gray-400 max-w-3xl mx-auto" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                 No hype, no exaggeration. Here's exactly what our platform includes.
               </p>
             </div>
@@ -271,7 +271,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
+                    <p className="text-sm text-gray-400 leading-relaxed" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{feature.desc}</p>
                   </div>
                 </div>
               ))}
@@ -284,7 +284,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>CHOOSE YOUR PLAN</h2>
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              <p className="text-lg text-gray-400 max-w-3xl mx-auto" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                 Simple, transparent pricing that scales with your business. More features unlock as you grow.
               </p>
             </div>
@@ -402,7 +402,7 @@ export default function HomePage() {
                       <plan.icon className="w-12 h-12 text-gray-400" />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                    <p className="text-gray-400 text-sm mb-4">{plan.description}</p>
+                    <p className="text-gray-400 text-sm mb-4" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{plan.description}</p>
                     <div className="mb-6">
                       <span className="text-4xl font-extrabold text-white">${plan.price}</span>
                       <span className="text-gray-500 text-lg">/month</span>
@@ -423,7 +423,7 @@ export default function HomePage() {
                         {plan.coreFeatures.map((feature, i) => (
                           <div key={i} className="flex items-start">
                             <Check className="w-4 h-4 text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-300 text-sm">{feature}</span>
+                            <span className="text-gray-300 text-sm" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{feature}</span>
                           </div>
                         ))}
                         </div>
@@ -437,7 +437,7 @@ export default function HomePage() {
                           {plan.advancedFeatures.map((feature, i) => (
                             <div key={i} className="flex items-start">
                               <Check className="w-4 h-4 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-                              <span className="text-gray-300 text-sm">{feature}</span>
+                              <span className="text-gray-300 text-sm" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{feature}</span>
                             </div>
                           ))}
                         </div>
@@ -452,7 +452,7 @@ export default function HomePage() {
                           {plan.teamFeatures.map((feature, i) => (
                             <div key={i} className="flex items-start">
                               <Check className="w-4 h-4 text-purple-400 mr-3 mt-0.5 flex-shrink-0" />
-                              <span className="text-gray-300 text-sm">{feature}</span>
+                              <span className="text-gray-300 text-sm" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{feature}</span>
                             </div>
                           ))}
                         </div>
@@ -529,7 +529,7 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4" style={{fontFamily: 'Oswald, Inter, sans-serif'}}>FREQUENTLY ASKED QUESTIONS</h2>
-               <p className="text-lg text-gray-400">Honest answers about what we offer and how it works.</p>
+                               <p className="text-lg text-gray-400" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>Honest answers about what we offer and how it works.</p>
             </div>
             <div className="space-y-4">
               {[
@@ -548,7 +548,7 @@ export default function HomePage() {
                   </button>
                   {expandedFaq === i && (
                     <div className="px-6 pb-6 border-t border-white/10">
-                      <p className="text-gray-400 pt-4 leading-relaxed">{faq.a}</p>
+                      <p className="text-gray-400 pt-4 leading-relaxed" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -564,7 +564,7 @@ export default function HomePage() {
                     READY TO SCALE<br />
                     <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">LIKE A PRO?</span>
                 </h2>
-                <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
+                <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                     Join the growing community of brand scalers who have transformed their businesses with our platform. Start your free trial today and see the difference professional tools make.
             </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -585,10 +585,10 @@ export default function HomePage() {
         <footer className="py-12 border-t border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <img src="https://i.imgur.com/PZCtbwG.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6"/>
-              <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 text-sm" style={{fontFamily: 'JetBrains Mono, Space Mono, monospace'}}>
                     © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
                     Trusted by brand scalers worldwide • Cancel anytime
-              </p>
+                </p>
             </div>
         </footer>
       </div>
