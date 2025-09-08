@@ -1453,68 +1453,6 @@ function generateFactualSummary(platformData: PlatformAnalysis, userTimezone: st
   }
   
 
-  // Geographic and Customer Analysis from Shopify
-  console.log(`[AIDailyReport] Geographic condition check:`, {
-    shopifyConnected: shopify.isConnected,
-    hasGeographic: !!shopify.geographic,
-    hasRepeatCustomers: !!shopify.repeatCustomers,
-    geographicLocations: shopify.geographic?.locations?.length || 0
-  })
-  if (shopify.isConnected && (shopify.geographic || shopify.repeatCustomers)) {
-    const customerInsights = []
-    
-    // Geographic distribution analysis
-    if (shopify.geographic && shopify.geographic.locations.length > 0) {
-      const totalCustomers = shopify.geographic.totalCustomers
-      const topLocation = shopify.geographic.locations[0]
-      const locationPercentage = totalCustomers > 0 ? ((topLocation.customerCount || 0) / totalCustomers * 100) : 0
-      
-      if (locationPercentage > 50) {
-        customerInsights.push(`Customer base is heavily concentrated in ${topLocation.country || topLocation.state || topLocation.city} (${locationPercentage.toFixed(0)}% of customers)`)
-      } else if (shopify.geographic.locations.length > 3) {
-        customerInsights.push(`Customer base is geographically diverse across ${shopify.geographic.locations.length} locations, with ${topLocation.country || topLocation.state || topLocation.city} leading at ${locationPercentage.toFixed(0)}%`)
-      } else {
-        customerInsights.push(`Primary customer markets include ${shopify.geographic.locations.slice(0, 3).map(loc => loc.country || loc.state || loc.city).join(', ')}`)
-      }
-    }
-    
-    // Repeat customer analysis
-    if (shopify.repeatCustomers && shopify.repeatCustomers.totalOrders > 0) {
-      const repeatRate = shopify.repeatCustomers.repeatCustomerRate
-      const avgOrderValue = shopify.repeatCustomers.averageOrderValue
-      
-      if (repeatRate > 30) {
-        customerInsights.push(`Strong customer loyalty with ${repeatRate.toFixed(1)}% repeat purchase rate and $${avgOrderValue.toFixed(0)} average order value`)
-      } else if (repeatRate > 15) {
-        customerInsights.push(`Healthy customer retention at ${repeatRate.toFixed(1)}% repeat purchase rate generating $${avgOrderValue.toFixed(0)} average orders`)
-      } else if (repeatRate > 0) {
-        customerInsights.push(`Developing customer loyalty with ${repeatRate.toFixed(1)}% repeat purchase rate - opportunity to improve retention strategies`)
-      }
-    }
-    
-    if (customerInsights.length > 0) {
-      summaryParts.push(`Customer analysis shows ${customerInsights.join(', ')}. This geographic and behavioral data provides valuable insights for market expansion and customer lifetime value optimization.`)
-    }
-  }
-
-  // Budget Utilization Insights
-  if (meta.dailyBudget > 0) {
-    const budgetUtilization = (meta.todayStats.spend / meta.dailyBudget) * 100
-    if (budgetUtilization < 50) {
-      summaryParts.push(`Budget utilization at ${budgetUtilization.toFixed(0)}% indicates conservative spending patterns. This could signal opportunities to scale successful campaigns or adjust targeting parameters to capture more qualified traffic.`)
-    } else if (budgetUtilization > 90) {
-      summaryParts.push(`High budget utilization at ${budgetUtilization.toFixed(0)}% shows aggressive market capture. While this maximizes reach, consider budget increases for top-performing campaigns to avoid missing conversion opportunities.`)
-    } else {
-      summaryParts.push(`Optimal budget utilization at ${budgetUtilization.toFixed(0)}% demonstrates efficient spending patterns that balance reach with cost control.`)
-    }
-  }
-  
-  // Issues Context
-  if (meta.issues.length > 0) {
-    summaryParts.push(`Current analysis identifies ${meta.issues.length} area${meta.issues.length > 1 ? 's' : ''} requiring attention. These factors may be impacting overall campaign efficiency and represent optimization opportunities to improve performance metrics.`)
-  } else if (meta.activeCampaigns > 0) {
-    summaryParts.push(`All active campaigns are operating within optimal parameters with no critical issues detected. This indicates well-maintained campaign health and effective ongoing management.`)
-  }
   
   return summaryParts.join(' ')
 }
