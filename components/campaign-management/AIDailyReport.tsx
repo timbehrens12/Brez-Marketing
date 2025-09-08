@@ -2,64 +2,26 @@
 
 import { useState, useEffect } from "react"
 import { useBrandContext } from "@/lib/context/BrandContext"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  TrendingUp, 
-  TrendingDown,
-  Eye,
-  DollarSign,
-  Target,
-  Calendar,
+import {
+  AlertTriangle,
+  CheckCircle,
   Brain,
-  Zap,
-  BarChart3,
-  PieChart,
-  Activity,
-  ArrowUp,
-  ArrowDown,
-  CircleDollarSign,
-  Wallet,
-  TrendingUp as TrendIcon,
   RefreshCw,
-  Loader2
+  Target,
+  Zap
 } from "lucide-react"
 import { toast } from "sonner"
-import { Skeleton } from "@/components/ui/skeleton"
-import Image from "next/image"
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, PieChart as RechartsPieChart, Cell, BarChart, Bar, Tooltip, Pie, Area, AreaChart } from 'recharts'
-
-interface PlatformStatus {
-  platform: string
-  logo: string
-  status: 'healthy' | 'attention' | 'critical' | 'inactive'
-  summary: string
-  keyMetrics: {
-    spend: number
-    performance: number
-    issues: number
-  }
-  recommendations: string[]
-  lastUpdated: string
-}
 
 interface DailyReport {
   overallHealth: 'excellent' | 'good' | 'fair' | 'poor'
   summary: string
   totalSpend: number
   totalROAS: number
-  platformStatuses: PlatformStatus[]
   topPriorities: string[]
   successHighlights: string[]
   generatedAt: string
-  // Enhanced data fields
-  dailyBudget: number
-  weeklyPerformance: any[]
   todayStats: {
     spend: number
     impressions: number
@@ -83,15 +45,12 @@ interface AIDailyReportProps {
 export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = {}) {
   const { selectedBrandId } = useBrandContext()
   const [report, setReport] = useState<DailyReport | null>(preloadedReport || null)
-  // Remove loading states
-  // const [isLoading, setIsLoading] = useState(true) // Start with true to show loading on initial load
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [isFetching, setIsFetching] = useState(false) // Guard against multiple simultaneous calls
+  const [isFetching, setIsFetching] = useState(false)
 
   // Use preloaded report when it changes
   useEffect(() => {
     if (preloadedReport) {
-      // console.log('[AIDailyReport] Using preloaded report data')
       setReport(preloadedReport)
       setLastRefresh(new Date())
     }
@@ -100,62 +59,41 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   // Auto-load report when component mounts or brand changes - only if no preloaded data
   useEffect(() => {
     if (selectedBrandId && !isFetching && !preloadedReport && !report) {
-      // console.log('[AIDailyReport] No preloaded data available, fetching report...')
-      // Force refresh on mount to ensure latest data
       fetchDailyReport(true)
     }
   }, [selectedBrandId, preloadedReport])
 
-  // Listen for refresh events with simplified handling
+  // Listen for refresh events
   useEffect(() => {
     if (!selectedBrandId) return
 
-    let refreshTimeout: NodeJS.Timeout
-
     const handleRefreshEvent = (event: CustomEvent) => {
       const { brandId, source } = event.detail
-      
-      // Only refresh if it's for the current brand, not from this widget, and not already fetching
+
       if (brandId === selectedBrandId && source !== 'AIDailyReport' && !isFetching) {
-        // console.log('[AIDailyReport] Refresh event triggered, updating report...', { source })
-        
-        // Shorter debounce for better responsiveness
-        clearTimeout(refreshTimeout)
-        refreshTimeout = setTimeout(() => {
-          if (!isFetching) { // Double-check before fetching
+        setTimeout(() => {
+          if (!isFetching) {
             fetchDailyReport(true)
           }
-        }, 300) // Reduced from 1000ms to 300ms
+        }, 300)
       }
     }
 
-    // Simplified event handling - only listen to essential events
     window.addEventListener('metaDataRefreshed', handleRefreshEvent as EventListener)
     window.addEventListener('global-refresh-all', handleRefreshEvent as EventListener)
     window.addEventListener('newDayDetected', handleRefreshEvent as EventListener)
 
     return () => {
-      clearTimeout(refreshTimeout)
       window.removeEventListener('metaDataRefreshed', handleRefreshEvent as EventListener)
       window.removeEventListener('global-refresh-all', handleRefreshEvent as EventListener)
       window.removeEventListener('newDayDetected', handleRefreshEvent as EventListener)
     }
-  }, [selectedBrandId, preloadedReport]) // Removed isFetching dependency to prevent re-triggers
+  }, [selectedBrandId, preloadedReport])
 
   const fetchDailyReport = async (forceRegenerate = false) => {
-    if (!selectedBrandId || isFetching) {
-      // console.log('[AIDailyReport] Skipping fetch - no brand selected or already fetching')
-      return
-    }
+    if (!selectedBrandId || isFetching) return
 
     setIsFetching(true)
-    // Remove loading state
-    // setIsLoading(true)
-    // Clear the report to prevent showing old data while loading
-    if (forceRegenerate) {
-      setReport(null)
-    }
-    // console.log(`[AIDailyReport] Fetching daily report for brand: ${selectedBrandId}`)
 
     try {
       const response = await fetch('/api/ai/daily-report', {
@@ -170,54 +108,46 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         }),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
       const data = await response.json()
-      
+
       if (data.success && data.report) {
-        // console.log('[AIDailyReport] Report fetched successfully')
         setReport(data.report)
         setLastRefresh(new Date())
-        
-        // Dispatch refresh event for other components
+
         window.dispatchEvent(new CustomEvent('daily-report-refreshed', {
           detail: { brandId: selectedBrandId, timestamp: Date.now() }
         }))
       } else {
-        console.error('[AIDailyReport] Failed to fetch report:', data.error)
         toast.error('Failed to generate advertising report')
       }
     } catch (error) {
-      console.error('[AIDailyReport] Error fetching daily report:', error)
       toast.error('Error generating advertising report')
     } finally {
-      // Remove loading state
-      // setIsLoading(false)
       setIsFetching(false)
     }
   }
 
   const getHealthBadge = (health: string) => {
     const healthConfig = {
-      'excellent': { 
-        text: 'Excellent', 
+      'excellent': {
+        text: 'Excellent',
         className: 'bg-[#222] text-emerald-400 border-[#333]',
         dotColor: 'bg-emerald-400'
       },
-      'good': { 
-        text: 'Good', 
+      'good': {
+        text: 'Good',
         className: 'bg-[#222] text-blue-400 border-[#333]',
         dotColor: 'bg-blue-400'
       },
-      'fair': { 
-        text: 'Fair', 
+      'fair': {
+        text: 'Fair',
         className: 'bg-[#222] text-amber-400 border-[#333]',
         dotColor: 'bg-amber-400'
       },
-      'poor': { 
-        text: 'Poor', 
+      'poor': {
+        text: 'Poor',
         className: 'bg-[#222] text-red-400 border-[#333]',
         dotColor: 'bg-red-400'
       }
@@ -242,321 +172,115 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
     }).format(amount)
   }
 
-  // Real data from API - use yesterday's data if today is empty (unless forcing today)
-  const generateBudgetData = () => {
-    const dailyBudget = report?.dailyBudget || 0
-    
-    // Force today's data at midnight transition (like blended widgets) - use local time
-    const now = new Date()
-    const localHour = now.getHours() // This is already in local time
-    const shouldForceToday = (localHour === 0 && now.getMinutes() < 30) // First 30 minutes of new day in local time
-    
-    // Check if today has meaningful data
-    const todayHasData = report?.todayStats && (
-      (report.todayStats.spend || 0) > 0 ||
-      (report.todayStats.impressions || 0) > 0 ||
-      (report.todayStats.clicks || 0) > 0
-    )
-    
-    // Use today's data if it has meaningful data OR if we should force today (midnight)
-    const useToday = todayHasData || shouldForceToday
-    const relevantStats = useToday ? report?.todayStats : report?.yesterdayStats
-    const spentAmount = relevantStats?.spend || 0
-    const remainingBudget = Math.max(0, dailyBudget - spentAmount)
-    const spentPercentage = dailyBudget > 0 ? (spentAmount / dailyBudget) * 100 : 0
-
-    return {
-      dailyBudget,
-      spentAmount,
-      remainingBudget,
-      spentPercentage: Math.min(100, spentPercentage),
-      usingYesterday: !useToday
-    }
-  }
-
-  const generatePerformanceData = () => {
-    // Use real weekly performance data from API
-    if (report?.weeklyPerformance && report.weeklyPerformance.length > 0) {
-      return report.weeklyPerformance.map((data: any) => ({
-        day: data.day,
-        date: data.date,
-        spend: data.spend,
-        roas: data.roas,
-        impressions: data.impressions || 0,
-        clicks: data.clicks || 0,
-        conversions: data.conversions || 0
-      }))
-    }
-    
-    // Fallback to empty array if no data
-    return []
-  }
-
-  const generatePlatformDistribution = () => {
-    if (!report?.platformStatuses) return []
-    
-    return report.platformStatuses
-      .filter(p => p.status !== 'inactive')
-      .map((platform) => ({
-        name: platform.platform,
-        value: platform.keyMetrics.spend,
-        percentage: 0 // Will calculate after
-      }))
-  }
-
-  // Calculate percentage change from yesterday
-  const calculatePercentageChange = (today: number, yesterday: number) => {
-    if (yesterday === 0) return 0
-    return ((today - yesterday) / yesterday) * 100
-  }
-
-  // Get the most relevant stats to display
-  const getRelevantStats = () => {
-    // Force today's data at midnight transition (like blended widgets) - use local time
-    const now = new Date()
-    const localHour = now.getHours() // This is already in local time
-    const shouldForceToday = (localHour === 0 && now.getMinutes() < 30) // First 30 minutes of new day in local time
-    
-    // Check if today has meaningful data
-    const todayHasData = report?.todayStats && (
-      (report.todayStats.spend || 0) > 0 ||
-      (report.todayStats.impressions || 0) > 0 ||
-      (report.todayStats.clicks || 0) > 0
-    )
-    
-    // Use today's data if it has meaningful data OR if we should force today (midnight)
-    const useToday = todayHasData || shouldForceToday
-    const relevantStats = useToday ? report?.todayStats : report?.yesterdayStats
-    
-    return {
-      stats: relevantStats,
-      isToday: useToday,
-      label: useToday ? 'Today' : 'Yesterday'
-    }
-  }
-
-  // Get percentage changes for key metrics
-  const getPercentageChanges = () => {
-    if (!report?.todayStats || !report?.yesterdayStats) {
-      // console.log('[AIDailyReport] Missing stats data:', {
-        // todayStats: report?.todayStats,
-        // yesterdayStats: report?.yesterdayStats
-      // })
-      return {
-        spendChange: 0,
-        conversionsChange: 0,
-        roasChange: 0,
-        impressionsChange: 0,
-        clicksChange: 0,
-        revenueChange: 0
-      }
-    }
-
-    // console.log('[AIDailyReport] Calculating percentage changes:', {
-      // todayStats: report.todayStats,
-      // yesterdayStats: report.yesterdayStats
-    // })
-
-    return {
-      spendChange: calculatePercentageChange(report.todayStats.spend, report.yesterdayStats.spend),
-      conversionsChange: calculatePercentageChange(report.todayStats.conversions, report.yesterdayStats.conversions),
-      roasChange: calculatePercentageChange(
-        report.todayStats.revenue > 0 && report.todayStats.spend > 0 ? report.todayStats.revenue / report.todayStats.spend : 0,
-        report.yesterdayStats.revenue > 0 && report.yesterdayStats.spend > 0 ? report.yesterdayStats.revenue / report.yesterdayStats.spend : 0
-      ),
-      impressionsChange: calculatePercentageChange(report.todayStats.impressions, report.yesterdayStats.impressions),
-      clicksChange: calculatePercentageChange(report.todayStats.clicks, report.yesterdayStats.clicks),
-      revenueChange: calculatePercentageChange(report.todayStats.revenue, report.yesterdayStats.revenue)
-    }
-  }
-
-  // Remove loading state check - always show content
-  // if (isLoading) {
-  //   return (
-  //     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-  //       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-  //         <div className="flex items-center justify-between">
-  //           <div className="flex items-center gap-4">
-  //             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-  //                           flex items-center justify-center border border-white/10 shadow-lg">
-  //               <Brain className="w-6 h-6 text-white" />
-  //             </div>
-  //             <div>
-  //               <CardTitle className="text-3xl text-white font-bold tracking-tight">Advertising Report</CardTitle>
-  //               <p className="text-gray-400 font-medium text-base">Loading fresh insights...</p>
-  //             </div>
-  //           </div>
-  //         </div>
-  //       </div>
-        
-  //       <div className="flex-1 p-6 flex items-center justify-center">
-  //         <div className="text-center">
-  //           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-  //             <Brain className="w-8 h-8 text-gray-400" />
-  //           </div>
-  //           <p className="text-gray-400 text-lg font-medium">Analyzing performance data...</p>
-  //           <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   )
-  // }
-
   if (!report) {
     return (
       <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
-                            flex items-center justify-center border border-white/10 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-3xl text-white font-bold tracking-tight">Detailed Advertising Report</CardTitle>
-                <p className="text-gray-400 font-medium text-base">AI-powered campaign insights</p>
-              </div>
+        <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-4 border-b border-[#333]">
+          <div className="flex items-center gap-3">
+            <Brain className="w-5 h-5 text-white" />
+            <div>
+              <h2 className="text-lg font-bold text-white">Marketing Assistant</h2>
+              <p className="text-xs text-gray-400">No data available</p>
             </div>
           </div>
         </div>
-        
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center max-w-md">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-                <Brain className="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">No Report Available</h3>
-              <p className="text-gray-400 mb-6 leading-relaxed">
-                No advertising data available for this brand. Connect your advertising platforms to see comprehensive insights and AI-powered recommendations.
-              </p>
-              <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-                <div className="p-3 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <span className="text-blue-400 font-bold">M</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Meta Ads</p>
-                </div>
-                <div className="p-3 bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-red-500/10 rounded-lg flex items-center justify-center">
-                    <span className="text-red-400 font-bold">G</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Google Ads</p>
-                </div>
-              </div>
-            </div>
+        <div className="flex-1 p-4 flex items-center justify-center">
+          <div className="text-center">
+            <Brain className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">Connect your ad platforms to see AI insights</p>
           </div>
         </div>
       </div>
     )
   }
 
-  const budgetData = generateBudgetData()
-  const performanceData = generatePerformanceData()
-  const platformDistribution = generatePlatformDistribution()
-  const percentageChanges = getPercentageChanges()
-  const relevantStats = getRelevantStats()
-  
-  // Calculate percentages for platform distribution
-  const totalPlatformSpend = platformDistribution.reduce((sum, p) => sum + p.value, 0)
-  platformDistribution.forEach(p => {
-    p.percentage = totalPlatformSpend > 0 ? (p.value / totalPlatformSpend) * 100 : 0
-  })
-
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-2 border-b border-[#333]">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg
-                          flex items-center justify-center border border-white/10">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <Brain className="w-5 h-5 text-white" />
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-white">AI Report</h2>
-              <div className="flex items-center gap-2">
-                <p className="text-gray-400 font-medium text-xs">Insights</p>
-                {report?.generatedAt && (
-                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-1.5 py-0.5 rounded border border-[#2a2a2a]">
-                    {new Date(report.generatedAt).toLocaleString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                )}
-              </div>
+              <h2 className="text-lg font-bold text-white">Marketing Assistant</h2>
+              <p className="text-xs text-gray-400">Quick campaign insights</p>
             </div>
           </div>
-
-          {/* Compact health badge */}
-          {report && (
-            <div className="scale-75">
-              {getHealthBadge(report.overallHealth)}
-            </div>
-          )}
+          {getHealthBadge(report.overallHealth)}
         </div>
       </div>
-      
-      <div className="flex-1 p-2 overflow-auto">
-        <div className="space-y-2">
-          {/* Ultra Compact Stats Grid */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
-              <p className="text-xs text-gray-400 mb-0.5">Spend</p>
-              <p className="text-sm font-bold text-white">{formatCurrency(report.totalSpend)}</p>
+
+      {/* Content */}
+      <div className="flex-1 p-3 overflow-auto">
+        <div className="space-y-3">
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
+              <p className="text-xs text-gray-400 mb-1">Daily Spend</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(report.totalSpend)}</p>
             </div>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
-              <p className="text-xs text-gray-400 mb-0.5">ROAS</p>
-              <p className="text-sm font-bold text-white">{report.totalROAS.toFixed(1)}x</p>
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
+              <p className="text-xs text-gray-400 mb-1">ROAS</p>
+              <p className="text-xl font-bold text-white">{report.totalROAS.toFixed(2)}x</p>
             </div>
           </div>
 
-          {/* Very Short Summary */}
-          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
-            <p className="text-xs text-gray-300 leading-snug">
-              {report.summary.length > 120 ? report.summary.substring(0, 120) + '...' : report.summary}
+          {/* Quick Status */}
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
+            <h3 className="text-sm font-semibold text-white mb-2">What's Happening</h3>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              {report.summary.length > 150 ? report.summary.substring(0, 150) + '...' : report.summary}
             </p>
           </div>
 
-
-
-
-
-
-          {/* Only ONE Key Item - Priority or Success */}
-          {((report?.topPriorities && report.topPriorities.length > 0) ||
-            (report?.successHighlights && report.successHighlights.length > 0)) && (
-            <div>
-              {/* Show priority if exists, otherwise show success */}
-              {report?.topPriorities && report.topPriorities.length > 0 ? (
-                <div className="bg-[#0f0f0f] border border-amber-500/20 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <AlertTriangle className="w-3 h-3 text-amber-400" />
-                    <h3 className="text-xs font-semibold text-amber-400">Action</h3>
-                  </div>
-                  <p className="text-xs text-gray-300 leading-snug">
-                    {report.topPriorities[0].length > 80
-                      ? report.topPriorities[0].substring(0, 80) + '...'
-                      : report.topPriorities[0]}
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-[#0f0f0f] border border-emerald-500/20 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    <h3 className="text-xs font-semibold text-emerald-400">Success</h3>
-                  </div>
-                  <p className="text-xs text-gray-300 leading-snug">
-                    {report.successHighlights[0].length > 80
-                      ? report.successHighlights[0].substring(0, 80) + '...'
-                      : report.successHighlights[0]}
-                  </p>
-                </div>
-              )}
+          {/* Action Items */}
+          {report?.topPriorities && report.topPriorities.length > 0 && (
+            <div className="bg-[#0f0f0f] border border-amber-500/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-semibold text-amber-400">Needs Attention</h3>
+              </div>
+              <p className="text-xs text-gray-300">
+                Campaign "{report.topPriorities[0].length > 80
+                  ? report.topPriorities[0].substring(0, 80) + '...'
+                  : report.topPriorities[0]}"
+              </p>
             </div>
           )}
+
+          {/* Success Highlight */}
+          {report?.successHighlights && report.successHighlights.length > 0 && (
+            <div className="bg-[#0f0f0f] border border-emerald-500/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-semibold text-emerald-400">AI Recommendation Ready</h3>
+              </div>
+              <p className="text-xs text-gray-300">
+                {report.successHighlights[0].length > 80
+                  ? report.successHighlights[0].substring(0, 80) + '...'
+                  : report.successHighlights[0]}
+              </p>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3">
+            <h3 className="text-sm font-semibold text-white mb-2">Quick Actions</h3>
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-xs justify-start"
+                onClick={() => fetchDailyReport(true)}
+                disabled={isFetching}
+              >
+                <RefreshCw className={`w-3 h-3 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                Refresh AI Insights
+              </Button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
