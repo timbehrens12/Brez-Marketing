@@ -464,7 +464,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
   })
 
   return (
-    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full min-h-[600px] flex flex-col">
+    <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
       <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
