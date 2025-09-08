@@ -465,19 +465,19 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-2 border-b border-[#333]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
-                          flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-white/5 to-white/10 rounded-lg
+                          flex items-center justify-center border border-white/10">
+              <Brain className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">AI Daily Report</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">AI Report</h2>
               <div className="flex items-center gap-2">
-                <p className="text-gray-400 font-medium text-xs">Campaign insights</p>
+                <p className="text-gray-400 font-medium text-xs">Insights</p>
                 {report?.generatedAt && (
-                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#2a2a2a]">
+                  <div className="text-xs text-gray-500 bg-[#1a1a1a] px-1.5 py-0.5 rounded border border-[#2a2a2a]">
                     {new Date(report.generatedAt).toLocaleString(undefined, {
                       month: 'short',
                       day: 'numeric',
@@ -489,23 +489,35 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
               </div>
             </div>
           </div>
-          
-          {/* Show health badge in header */}
-          {report && getHealthBadge(report.overallHealth)}
+
+          {/* Compact health badge */}
+          {report && (
+            <div className="scale-75">
+              {getHealthBadge(report.overallHealth)}
+            </div>
+          )}
         </div>
       </div>
       
-      <div className="flex-1 p-2 overflow-auto bg-gradient-to-br from-[#0a0a0a] to-[#111] flex flex-col">
-        <div className="flex-1 flex flex-col space-y-2">
-          {/* Main Summary - Enhanced with professional background and centered text */}
-          <div className={`${(report?.topPriorities?.length > 0 || report?.successHighlights?.length > 0) ? 'mb-2' : 'flex-1'}`}>
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3 backdrop-blur-sm h-full flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-xs text-gray-200 leading-relaxed max-w-4xl mx-auto">
-                  {report.summary}
-                </p>
-              </div>
+      <div className="flex-1 p-2 overflow-auto">
+        <div className="space-y-2">
+          {/* Ultra Compact Stats Grid */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
+              <p className="text-xs text-gray-400 mb-0.5">Spend</p>
+              <p className="text-sm font-bold text-white">{formatCurrency(report.totalSpend)}</p>
             </div>
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
+              <p className="text-xs text-gray-400 mb-0.5">ROAS</p>
+              <p className="text-sm font-bold text-white">{report.totalROAS.toFixed(1)}x</p>
+            </div>
+          </div>
+
+          {/* Very Short Summary */}
+          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-2">
+            <p className="text-xs text-gray-300 leading-snug">
+              {report.summary.length > 120 ? report.summary.substring(0, 120) + '...' : report.summary}
+            </p>
           </div>
 
 
@@ -513,60 +525,36 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
 
 
-
-          {/* Top Priorities Section - Enhanced */}
-          {report?.topPriorities && report.topPriorities.length > 0 && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+          {/* Only ONE Key Item - Priority or Success */}
+          {((report?.topPriorities && report.topPriorities.length > 0) ||
+            (report?.successHighlights && report.successHighlights.length > 0)) && (
+            <div>
+              {/* Show priority if exists, otherwise show success */}
+              {report?.topPriorities && report.topPriorities.length > 0 ? (
+                <div className="bg-[#0f0f0f] border border-amber-500/20 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                    <h3 className="text-xs font-semibold text-amber-400">Action</h3>
+                  </div>
+                  <p className="text-xs text-gray-300 leading-snug">
+                    {report.topPriorities[0].length > 80
+                      ? report.topPriorities[0].substring(0, 80) + '...'
+                      : report.topPriorities[0]}
+                  </p>
                 </div>
-                <div>
-                  <h3 className="text-xs font-semibold text-white">Top Priorities</h3>
+              ) : (
+                <div className="bg-[#0f0f0f] border border-emerald-500/20 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <CheckCircle className="w-3 h-3 text-emerald-400" />
+                    <h3 className="text-xs font-semibold text-emerald-400">Success</h3>
+                  </div>
+                  <p className="text-xs text-gray-300 leading-snug">
+                    {report.successHighlights[0].length > 80
+                      ? report.successHighlights[0].substring(0, 80) + '...'
+                      : report.successHighlights[0]}
+                  </p>
                 </div>
-              </div>
-              <div className="grid gap-1">
-                {report.topPriorities.slice(0, 2).map((priority, index) => (
-                  <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-2">
-                      <div className="flex items-start gap-2">
-                        <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
-                          <span className="text-amber-400 font-bold text-xs">{index + 1}</span>
-                        </div>
-                        <p className="text-xs text-gray-300 leading-tight flex-1">{priority}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Success Highlights Section - Enhanced */}
-          {report?.successHighlights && report.successHighlights.length > 0 && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                  <CheckCircle className="w-3 h-3 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-semibold text-white">Success Highlights</h3>
-                </div>
-              </div>
-              <div className="grid gap-1">
-                {report.successHighlights.slice(0, 2).map((highlight, index) => (
-                  <Card key={index} className="bg-[#0f0f0f] border-[#1a1a1a] shadow-lg">
-                    <CardContent className="p-2">
-                      <div className="flex items-start gap-2">
-                        <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-                          <CheckCircle className="w-3 h-3 text-emerald-400" />
-                        </div>
-                        <p className="text-xs text-gray-300 leading-tight flex-1">{highlight}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              )}
             </div>
           )}
         </div>
