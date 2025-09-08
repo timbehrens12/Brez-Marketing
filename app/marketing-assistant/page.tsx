@@ -1251,7 +1251,7 @@ export default function MarketingAssistantPage() {
             </div>
             
             {/* Middle Section - Left Column (Blended + smaller widgets) and Right Column (AI Report) */}
-            <div className="flex gap-6 items-start">
+            <div className="flex gap-6">
               
               {/* Left Column - 70% width */}
               <div className="flex-1 space-y-4" style={{ flexBasis: '70%' }}>
@@ -1261,12 +1261,12 @@ export default function MarketingAssistantPage() {
                   layout="horizontal"
                 />
                 
-                {/* Ad Creative Performance & Performance Trends - smaller, side by side, aligned heights */}
+                {/* Ad Creative Performance & Performance Trends - smaller, side by side */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex">
+                  <div className="h-80">
                     <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   </div>
-                  <div className="flex">
+                  <div className="h-80">
                     <PerformanceChart 
                       preloadedPerformanceData={preloadedData.performanceData}
                     />
@@ -1274,9 +1274,11 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report - 30% width */}
-              <div className="flex-1" style={{ flexBasis: '30%' }}>
-                <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              {/* Right Column - AI Daily Report - 30% width - Match height */}
+              <div className="flex-1 h-full" style={{ flexBasis: '30%' }}>
+                <div className="h-full">
+                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                </div>
               </div>
 
             </div>
