@@ -389,8 +389,8 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       </CardHeader>
 
       {/* Content */}
-      <CardContent className="flex-1 p-6 flex flex-col">
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+      <CardContent className="flex-1 p-6 overflow-hidden">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
         {filteredAndSortedAds.length === 0 && !(preloadedAds && preloadedAds.length > 0 && ads.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
