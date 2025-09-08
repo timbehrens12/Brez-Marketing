@@ -27,23 +27,23 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans overflow-x-hidden">
       <div className="absolute top-0 left-0 w-full h-full z-0">
         <div className="absolute inset-0 z-0">
-          <GridOverlay />
+        <GridOverlay />
         </div>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[600px] bg-gray-600/10 rounded-full blur-3xl filter pointer-events-none opacity-40"></div>
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
+      {/* Header */}
         <header className="py-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
             <img src="https://i.imgur.com/PZCtbwG.png" alt="Brez Marketing" className="h-10 w-auto"/>
             <div className="flex items-center">
-              <Link href="/dashboard">
+            <Link href="/dashboard">
                 <Button variant="outline" className="border-[#444] text-white hover:bg-[#2A2A2A] backdrop-blur-sm">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
-              </Link>
-            </div>
+            </Link>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Hero Section */}
         <section className="py-24 sm:py-32">
@@ -51,7 +51,7 @@ export default function HomePage() {
             <div className="text-center lg:text-left">
               <p className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 text-sm font-medium text-gray-300">
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
-                Professional Brand Scaling Infrastructure
+                  Professional Brand Scaling Infrastructure
               </p>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-6">
                 Scaling Brands<br />
@@ -67,7 +67,7 @@ export default function HomePage() {
                 <Button size="lg" variant="outline" className="border-[#444] text-white hover:bg-[#2A2A2A] backdrop-blur-sm"><Play className="mr-2 h-5 w-5" /> Watch Demo</Button>
               </div>
             </div>
-            
+
             <div className="relative h-[28rem]">
               <div className="absolute inset-0 bg-white/5 border border-white/10 rounded-2xl transform-gpu rotate-3 transition-all duration-500 hover:rotate-0 hover:scale-105 backdrop-blur-md"></div>
               <div className="absolute inset-0 bg-[#1A1A1A] border border-white/20 rounded-2xl p-6 transform-gpu -rotate-1 transition-all duration-500 hover:rotate-0 hover:scale-105 shadow-2xl shadow-gray-500/10 backdrop-blur-md flex flex-col">
@@ -86,9 +86,9 @@ export default function HomePage() {
                             <preview.icon className={`w-4 h-4 transition-colors duration-200 ${activePreview === preview.id ? 'text-white' : 'text-gray-500'}`} />
                             <span className={`text-xs font-semibold hidden sm:inline transition-colors duration-200 ${activePreview === preview.id ? 'text-white' : 'text-gray-500'}`}>{preview.title}</span>
                         </button>
-                    ))}
-                </div>
-                
+              ))}
+            </div>
+
                 <div className="w-full flex-grow bg-white/5 rounded-lg p-4 flex items-center justify-center overflow-hidden">
                     {activePreview === 'analytics' && (
                         <svg viewBox="0 0 100 60" className="w-full h-full opacity-70">
@@ -195,7 +195,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-        
+
         {/* Value Proposition Section */}
         <section className="py-24 sm:py-32">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -262,11 +262,11 @@ export default function HomePage() {
                       <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
                         <feature.icon className="w-6 h-6 text-gray-400" />
                       </div>
-                       {!feature.available && (
+                      {!feature.available && (
                          <span className="bg-orange-500/20 text-orange-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-orange-500/30">
-                           Coming Soon
+                          Coming Soon
                          </span>
-                       )}
+                      )}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
                     <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
@@ -286,22 +286,22 @@ export default function HomePage() {
                 Simple, transparent pricing that scales with your business. More features unlock as you grow.
               </p>
             </div>
-            
+
             {/* Feature Comparison Table */}
             <div className="grid lg:grid-cols-4 gap-8 items-start">
               {[
-                { 
+                {
                   name: "Solo Brand", 
                   description: "Perfect for single brand owners", 
-                  price: 147, 
-                  popular: false, 
-                  icon: "👤",
+                  price: 147,
+                  popular: false,
+                  icon: Users,
                   coreFeatures: [
                     "1 Brand Connection",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "50 AI Assistant Messages/month",
-                    "100 Creative Generations/month",
+                    "10 AI Assistant Chats/day",
+                    "25 Creative Generations/month",
                     "Basic Reporting"
                   ],
                   advancedFeatures: [],
@@ -311,22 +311,22 @@ export default function HomePage() {
                 { 
                   name: "Multi-Brand", 
                   description: "Scale across multiple brands", 
-                  price: 347, 
-                  popular: true, 
-                  icon: "🚀",
+                  price: 347,
+                  popular: true,
+                  icon: Rocket,
                   coreFeatures: [
                     "Up to 10 Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "200 AI Assistant Messages/month",
-                    "500 Creative Generations/month",
+                    "25 AI Assistant Chats/day",
+                    "100 Creative Generations/month",
                     "Advanced Reporting"
                   ],
                   advancedFeatures: [
-                    "1,000 Lead Generations/month",
-                    "5,000 Outreach Emails/month",
+                    "500 Lead Generations/month",
+                    "1,000 Outreach Emails/month",
                     "Campaign Optimization",
-                    "API Access (1,000 calls/month)"
+                    "API Access"
                   ],
                   teamFeatures: [],
                   whiteLabel: false
@@ -334,22 +334,22 @@ export default function HomePage() {
                 { 
                   name: "Agency", 
                   description: "For agencies serving clients", 
-                  price: 647, 
-                  popular: false, 
-                  icon: "⚡",
+                  price: 647,
+                  popular: false,
+                  icon: Zap,
                   coreFeatures: [
                     "Up to 25 Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "1,000 AI Assistant Messages/month",
-                    "2,500 Creative Generations/month",
+                    "50 AI Assistant Chats/day",
+                    "250 Creative Generations/month",
                     "Advanced Reporting"
                   ],
                   advancedFeatures: [
-                    "5,000 Lead Generations/month",
-                    "25,000 Outreach Emails/month",
+                    "2,500 Lead Generations/month",
+                    "5,000 Outreach Emails/month",
                     "Campaign Optimization",
-                    "API Access (10,000 calls/month)"
+                    "Priority API Access"
                   ],
                   teamFeatures: [
                     "Team Collaboration (5 users)",
@@ -358,25 +358,25 @@ export default function HomePage() {
                   ],
                   whiteLabel: true
                 },
-                { 
-                  name: "Enterprise", 
+                {
+                  name: "Enterprise",
                   description: "Large-scale operations", 
-                  price: 997, 
-                  popular: false, 
-                  icon: "👑",
+                  price: 997,
+                  popular: false,
+                  icon: Award,
                   coreFeatures: [
                     "Unlimited Brand Connections",
                     "Meta Ads Analytics", 
                     "Shopify Integration",
-                    "Unlimited AI Assistant Messages",
-                    "Unlimited Creative Generations",
+                    "Unlimited AI Assistant Chats",
+                    "500 Creative Generations/month",
                     "Advanced Reporting & Analytics"
                   ],
                   advancedFeatures: [
-                    "Unlimited Lead Generations",
-                    "Unlimited Outreach Emails",
+                    "10,000 Lead Generations/month",
+                    "25,000 Outreach Emails/month",
                     "Campaign Optimization",
-                    "Unlimited API Access"
+                    "Enterprise API Access"
                   ],
                   teamFeatures: [
                     "Unlimited Team Members",
@@ -390,13 +390,15 @@ export default function HomePage() {
                 <div key={plan.name} className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 group ${plan.popular ? 'border-white/30 bg-white/5 scale-105 shadow-2xl' : 'border-white/10 bg-[#141414] hover:border-white/20'}`}>
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 text-sm font-bold rounded-full shadow-lg">
-                      Most Popular
+                        Most Popular
                     </div>
                   )}
-                  
+
                   {/* Header */}
                   <div className="p-6 pb-4">
-                    <div className="text-4xl mb-4">{plan.icon}</div>
+                    <div className="mb-4">
+                      <plan.icon className="w-12 h-12 text-gray-400" />
+                    </div>
                     <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
                     <p className="text-gray-400 text-sm mb-4">{plan.description}</p>
                     <div className="mb-6">
@@ -422,7 +424,7 @@ export default function HomePage() {
                             <span className="text-gray-300 text-sm">{feature}</span>
                           </div>
                         ))}
-                      </div>
+                        </div>
                     </div>
 
                     {/* Advanced Features */}
@@ -437,7 +439,7 @@ export default function HomePage() {
                             </div>
                           ))}
                         </div>
-                      </div>
+                              </div>
                     )}
 
                     {/* Team Features */}
@@ -463,7 +465,7 @@ export default function HomePage() {
                           <span className="text-amber-200 text-sm font-medium">Full White-Label Rights</span>
                         </div>
                         <p className="text-amber-200/80 text-xs mt-1 ml-6">Rebrand as your own software</p>
-                      </div>
+                  </div>
                     )}
 
                     {/* Missing Features for Lower Tiers */}
@@ -559,21 +561,21 @@ export default function HomePage() {
                 <h2 className="text-5xl md:text-6xl font-extrabold tracking-tighter mb-6">
                     Ready to Scale<br />
                     <span className="bg-gradient-to-r from-gray-300 to-gray-500 text-transparent bg-clip-text">Like a Pro?</span>
-                </h2>
+            </h2>
                 <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
                     Join the growing community of brand scalers who have transformed their businesses with our platform. Start your free trial today and see the difference professional tools make.
-                </p>
+            </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                    <Link href="/login">
+              <Link href="/login">
                       <Button size="lg" className="bg-white text-black hover:bg-gray-100">Get Started Now <ArrowRight className="ml-2 h-5 w-5" /></Button>
-                    </Link>
+              </Link>
                     <Button size="lg" variant="outline" className="border-[#444] text-white hover:bg-[#2A2A2A] backdrop-blur-sm"><MessageSquare className="mr-2 h-5 w-5" /> Talk to Sales</Button>
-                </div>
-                 <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
                     <div className="flex items-center justify-center gap-3 text-gray-400"><Shield className="w-5 h-5 text-gray-400" /> SOC 2 Compliant</div>
                     <div className="flex items-center justify-center gap-3 text-gray-400"><Award className="w-5 h-5 text-gray-400" /> 99.9% Uptime</div>
                     <div className="flex items-center justify-center gap-3 text-gray-400"><Clock className="w-5 h-5 text-gray-400" /> 24/7 Support</div>
-                </div>
+              </div>
             </div>
         </section>
 
@@ -581,10 +583,10 @@ export default function HomePage() {
         <footer className="py-12 border-t border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <img src="https://i.imgur.com/PZCtbwG.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6"/>
-                <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-sm">
                     © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
                     Trusted by brand scalers worldwide • Cancel anytime
-                </p>
+              </p>
             </div>
         </footer>
       </div>
