@@ -1251,7 +1251,7 @@ export default function MarketingAssistantPage() {
             </div>
             
             {/* Middle Section - Left Column (Blended + smaller widgets) and Right Column (AI Report) */}
-            <div className="flex gap-6">
+            <div className="flex gap-6 items-end">
               
               {/* Left Column - 70% width */}
               <div className="flex-1 space-y-4" style={{ flexBasis: '70%' }}>
@@ -1261,23 +1261,29 @@ export default function MarketingAssistantPage() {
                   layout="horizontal"
                 />
                 
-                {/* Ad Creative Performance & Performance Trends - smaller, side by side */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="h-96">
-                    <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                {/* Ad Creative Performance & Performance Trends - same height containers */}
+                <div className="grid grid-cols-2 gap-4 h-96">
+                  <div className="h-full flex">
+                    <div className="w-full">
+                      <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
+                    </div>
                   </div>
-                  <div className="h-96">
-                    <PerformanceChart 
-                      preloadedPerformanceData={preloadedData.performanceData}
-                    />
+                  <div className="h-full flex">
+                    <div className="w-full">
+                      <PerformanceChart 
+                        preloadedPerformanceData={preloadedData.performanceData}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report - 30% width with constrained height */}
-              <div className="flex-1 flex flex-col" style={{ flexBasis: '30%' }}>
-                <div className="h-96">
-                  <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+              {/* Right Column - AI Daily Report - 30% width exactly same height */}
+              <div className="flex-1" style={{ flexBasis: '30%' }}>
+                <div className="h-96 flex">
+                  <div className="w-full">
+                    <AIDailyReport preloadedReport={preloadedData.dailyReport} />
+                  </div>
                 </div>
               </div>
 
