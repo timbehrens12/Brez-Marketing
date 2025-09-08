@@ -1262,7 +1262,7 @@ export default function MarketingAssistantPage() {
                 <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 
                 {/* Ad Creative & Performance Trends take up remaining space */}
-                <div className="grid grid-cols-2 gap-4 flex-1 min-h-96">
+                <div className="grid grid-cols-2 gap-4 flex-1 max-h-96">
                   <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   <PerformanceChart 
                     preloadedPerformanceData={preloadedData.performanceData}
