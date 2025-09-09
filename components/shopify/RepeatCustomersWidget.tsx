@@ -207,7 +207,7 @@ export function RepeatCustomersWidget({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="h-4 w-4 text-blue-400" />
+              <Users className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Total Customers</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -227,7 +227,7 @@ export function RepeatCustomersWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-green-400" />
+              <TrendingUp className="h-4 w-4 text-purple-400" />
               <span className="text-sm text-gray-400">Repeat Rate</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -237,7 +237,7 @@ export function RepeatCustomersWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-orange-400" />
+              <Calendar className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Avg Days Between</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -252,7 +252,7 @@ export function RepeatCustomersWidget({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                 <span className="text-sm font-medium text-white">Frequent (≤30 days)</span>
               </div>
               <div className="text-lg font-bold text-white">{data.frequencySegments.frequent.count}</div>
@@ -261,7 +261,7 @@ export function RepeatCustomersWidget({
 
             <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
                 <span className="text-sm font-medium text-white">Regular (31-90 days)</span>
               </div>
               <div className="text-lg font-bold text-white">{data.frequencySegments.regular.count}</div>
@@ -270,7 +270,7 @@ export function RepeatCustomersWidget({
 
             <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
                 <span className="text-sm font-medium text-white">Occasional (&gt;90 days)</span>
               </div>
               <div className="text-lg font-bold text-white">{data.frequencySegments.occasional.count}</div>

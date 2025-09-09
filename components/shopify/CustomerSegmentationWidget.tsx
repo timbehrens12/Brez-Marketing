@@ -204,7 +204,7 @@ export function CustomerSegmentationWidget({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="h-4 w-4 text-blue-400" />
+              <Users className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Total Customers</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -214,7 +214,7 @@ export function CustomerSegmentationWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-green-400" />
+              <TrendingUp className="h-4 w-4 text-purple-400" />
               <span className="text-sm text-gray-400">Total Revenue</span>
               <TooltipProvider>
                 <Tooltip>
@@ -254,7 +254,7 @@ export function CustomerSegmentationWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Globe className="h-4 w-4 text-orange-400" />
+              <Globe className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Locations</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -285,8 +285,8 @@ export function CustomerSegmentationWidget({
             {data.topLocations.slice(0, 6).map((location, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-[#222] rounded-lg border border-[#333]">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/30 border border-blue-500/20 flex items-center justify-center">
-                    <span className="text-xs font-bold text-blue-400">#{index + 1}</span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500/20 to-gray-600/30 border border-gray-500/20 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-400">#{index + 1}</span>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-white">
