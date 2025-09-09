@@ -37,7 +37,7 @@ export function Footer() {
   
   return (
     <footer className="w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] pt-4 pb-4 px-6">
-      <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4 min-h-[64px]">
         <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="text-white">
@@ -60,13 +60,13 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 lg:gap-4">
           {/* Direct Feedback Button */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleFeedback}
-            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white"
+            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs lg:text-sm"
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Feedback
@@ -75,19 +75,19 @@ export function Footer() {
           {/* Legal links */}
           <Link 
             href="/terms" 
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             Terms of Service
           </Link>
           <Link 
             href="/privacy" 
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             Privacy Policy
           </Link>
           <Link 
             href="/data-security" 
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             Data Security
           </Link>
@@ -95,19 +95,19 @@ export function Footer() {
             href="https://www.instagram.com/brezmarketing/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
           >
-            <Instagram className="w-4 h-4" />
-            <span className="hidden sm:inline">Instagram</span>
+            <Instagram className="w-3 h-3 lg:w-4 lg:h-4" />
+            <span className="hidden md:inline">Instagram</span>
           </a>
           <a 
             href="https://brezmarketing.net" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
           >
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline">Website</span>
+            <ExternalLink className="w-3 h-3 lg:w-4 lg:h-4" />
+            <span className="hidden md:inline">Website</span>
           </a>
         </div>
         

@@ -13,6 +13,13 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { AuthenticatedProviders } from '@/components/AuthenticatedProviders'
 import { OnboardingCheck } from '@/components/OnboardingCheck'
 
+// Extend Window interface for console override tracking
+declare global {
+  interface Window {
+    _consoleOverrideApplied?: boolean;
+  }
+}
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -381,9 +388,10 @@ export default function RootLayout({
                 return fetchPromise
               }
 
-              // Override console.log to catch network request logs
-              const originalLog = console.log
-              console.log = function(...args) {
+              // Override console.log to catch network request logs (with safety check)
+              if (!window._consoleOverrideApplied) {
+                const originalLog = console.log
+                console.log = function(...args) {
                 if (args.some(arg =>
                   typeof arg === 'string' && (
                     arg.includes('409 (Conflict)') ||
@@ -427,6 +435,8 @@ export default function RootLayout({
                   return // Suppress these logs
                 }
                 originalLog.apply(console, args)
+                }
+                window._consoleOverrideApplied = true
               }
 
               // Also suppress specific error messages
