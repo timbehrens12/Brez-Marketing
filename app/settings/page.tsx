@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { GridOverlay } from "@/components/GridOverlay"
@@ -1551,12 +1551,12 @@ export default function SettingsPage() {
   }
 
   // Check if agency branding is completed
-  const isAgencyBrandingComplete = () => {
+  const isAgencyBrandingComplete = useMemo(() => {
     return agencySettings.agency_name && agencySettings.agency_name.trim().length > 0
-  }
+  }, [agencySettings.agency_name])
 
-  // Define navigation items with lock logic
-  const navigationItems = [
+  // Define navigation items with lock logic - memoized to prevent re-creation
+  const navigationItems = useMemo(() => [
     {
       id: 'agency-branding',
       label: 'Agency Branding',
@@ -1570,7 +1570,7 @@ export default function SettingsPage() {
       label: 'Connection Management',
       icon: Tag,
       description: 'Manage brand profiles and connections',
-      locked: !isAgencyBrandingComplete(),
+      locked: !isAgencyBrandingComplete,
       lockReason: 'Complete agency branding first'
     },
     {
@@ -1578,7 +1578,7 @@ export default function SettingsPage() {
       label: 'Access Management',
       icon: Share2,
       description: 'Control brand sharing and permissions',
-      locked: !isAgencyBrandingComplete(),
+      locked: !isAgencyBrandingComplete,
       lockReason: 'Complete agency branding first'
     },
     {
@@ -1586,7 +1586,7 @@ export default function SettingsPage() {
       label: 'Operator Account',
       icon: Shield,
       description: 'Your account settings',
-      locked: !isAgencyBrandingComplete(),
+      locked: !isAgencyBrandingComplete,
       lockReason: 'Complete agency branding first'
     },
     {
@@ -1597,7 +1597,7 @@ export default function SettingsPage() {
       locked: false,
       lockReason: null
     }
-  ]
+  ], [isAgencyBrandingComplete])
 
   // Ensure user can't navigate to locked tabs
   useEffect(() => {
@@ -1606,7 +1606,7 @@ export default function SettingsPage() {
       setActiveTab('agency-branding')
       router.push('/settings?tab=agency-branding', { scroll: false })
     }
-  }, [activeTab, agencySettings, router])
+  }, [activeTab, navigationItems, router])
 
   // Handle tab parameter from URL with lock protection
   useEffect(() => {
@@ -1622,7 +1622,7 @@ export default function SettingsPage() {
         setActiveTab(tab)
       }
     }
-  }, [searchParams, agencySettings, router])
+  }, [searchParams, navigationItems, router])
 
   return (
     <DashboardErrorBoundary>
