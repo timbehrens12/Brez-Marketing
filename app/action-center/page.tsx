@@ -145,7 +145,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     icon: Send,
     category: 'tools',
     href: '/outreach-tool',
-    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
+    features: ['Email Campaigns', 'Lead Tracking', 'Response Management'],
     dependencyType: 'user' // Depends on user having leads/campaigns
   },
   {

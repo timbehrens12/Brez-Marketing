@@ -111,7 +111,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     icon: Send,
     category: 'tools',
     href: '/outreach-tool',
-    features: ['Campaign Management', 'Lead Tracking', 'Response Management'],
+    features: ['Email Campaigns', 'Lead Tracking', 'Response Management'],
     dependencyType: 'user',
     frequency: '25 per day'
   },
@@ -140,11 +140,11 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
     id: 'creative-studio',
     name: 'Creative Studio',
-    description: 'Generate professional product images with AI backgrounds',
+    description: 'Generate professional ad creatives, product images, and custom templates with AI',
     icon: Settings,
     category: 'ai-powered',
     href: '/ad-creative-studio',
-    features: ['AI Backgrounds', 'Product Photography', 'Creative Generation'],
+    features: ['AI Backgrounds', 'Product Photography', 'Custom Templates'],
     dependencyType: 'user',
     frequency: '10 per week'
   },

@@ -553,9 +553,9 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
                   ))
                 ) : (
                   <>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Analyze campaign performance in Campaign Management above</p>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Review ad creative metrics and optimize underperformers</p>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Monitor performance trends to identify optimization opportunities</p>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
                   </>
                 )}
               </div>

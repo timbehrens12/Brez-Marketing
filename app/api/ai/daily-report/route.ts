@@ -941,12 +941,11 @@ async function generateDailyReport(platformData: PlatformAnalysis, userTimezone:
     }
   ]
 
-  // Generate factual highlights and actionable priorities
+  // Generate factual highlights without recommendations
   const factualHighlights = generateFactualHighlights(meta)
   const detectedIssues = detectFactualIssues(meta)
   const marketInsights = generateMarketInsights(meta)
   const performanceContext = generatePerformanceContext(meta)
-  const topPriorities = generateTopPriorities(meta)
 
   return {
     overallHealth,
@@ -958,7 +957,6 @@ async function generateDailyReport(platformData: PlatformAnalysis, userTimezone:
     detectedIssues,
     marketInsights,
     performanceContext,
-    topPriorities,
     generatedAt: new Date().toISOString(),
     // Enhanced data fields
     dailyBudget: meta.dailyBudget,
@@ -1265,49 +1263,47 @@ function generateTopPriorities(meta: any): string[] {
   const priorities = []
   
   if (!meta.isConnected) {
-    priorities.push('Connect Meta advertising account to begin tracking performance')
+    priorities.push('Connect Meta advertising account to begin tracking')
     return priorities
   }
   
-  // Performance-based recommendations
-  if (meta.totalROAS < 2.0 && meta.todayStats.spend > 0) {
-    priorities.push('Optimize campaigns in Campaign Management - current ROAS below profitable threshold')
-  }
-  if (meta.trends.roasTrend < -10) {
-    priorities.push('Performance declining - review ad creatives and adjust targeting strategies')
-  }
-  if (meta.totalROAS === 0 && meta.todayStats.spend > 0) {
-    priorities.push('No conversions detected - verify tracking setup and review audience targeting')
-  }
-  
-  // Budget optimization
+  // Daily budget utilization
   if (meta.dailyBudget > 0 && meta.todayStats.spend > 0) {
     const budgetUtilization = (meta.todayStats.spend / meta.dailyBudget) * 100
     if (budgetUtilization < 30) {
-      priorities.push('Increase daily budgets for high-performing campaigns to capture more traffic')
+      priorities.push('Low budget utilization - consider increasing bids or expanding targeting')
     } else if (budgetUtilization > 90) {
-      priorities.push('Scale winning campaigns - daily budgets are fully utilized')
+      priorities.push('Daily budget nearly exhausted - consider increasing budget for more reach')
     }
   }
   
-  // Creative optimization
-  if (meta.todayStats.impressions > 1000 && (meta.todayStats.clicks / meta.todayStats.impressions) < 0.01) {
-    priorities.push('Test new ad creatives - current CTR indicates creative fatigue')
+  // Performance issues
+  if (meta.trends.roasTrend < -15) {
+    priorities.push('Urgent: ROAS declining significantly - review campaign settings immediately')
+  }
+  if (meta.totalROAS === 0 && meta.todayStats.spend > 0) {
+    priorities.push('No conversions recorded - verify conversion tracking and optimize targeting')
+  }
+  if (meta.issues.includes('campaigns with ROAS below 2.0')) {
+    priorities.push('Optimize or pause underperforming campaigns to reduce budget waste')
+  }
+  if (meta.issues.includes('campaigns with CPC above $3.00')) {
+    priorities.push('Review bidding strategies for high-cost campaigns')
   }
   
-  // Campaign management
+  // Campaign status
   if (meta.activeCampaigns === 0) {
-    priorities.push('Launch new campaigns to start generating traffic and conversions')
-  } else if (meta.activeCampaigns === 1 && meta.totalROAS > 2.0) {
-    priorities.push('Duplicate successful campaigns with audience variations to scale performance')
+    priorities.push('No active campaigns - activate campaigns to start advertising')
+  } else if (meta.activeCampaigns === 1) {
+    priorities.push('Consider testing additional campaigns to diversify ad performance')
   }
   
-  // Advanced optimization
-  if (meta.totalROAS > 4.0) {
-    priorities.push('Excellent performance - consider increasing budgets and expanding to new audiences')
+  // Engagement optimization
+  if (meta.todayStats.impressions > 0 && meta.todayStats.clicks === 0) {
+    priorities.push('Zero clicks with impressions - review ad creative and messaging')
   }
   
-  return priorities.slice(0, 3)
+  return priorities.slice(0, 4)
 }
 
 function generateSuccessHighlights(meta: any): string[] {
