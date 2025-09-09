@@ -140,11 +140,11 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   {
     id: 'creative-studio',
     name: 'Creative Studio',
-    description: 'Generate professional ad creatives, product images, and custom templates with AI',
+    description: 'Create high-converting ad creatives with AI-powered generation and custom templates',
     icon: Settings,
     category: 'ai-powered',
     href: '/ad-creative-studio',
-    features: ['AI Backgrounds', 'Product Photography', 'Custom Templates'],
+    features: ['Auto Creative Generation', 'Custom Templates', 'Copy Creative Style'],
     dependencyType: 'user',
     frequency: '10 per week'
   },
