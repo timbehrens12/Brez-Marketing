@@ -17,6 +17,7 @@ import { OnboardingCheck } from '@/components/OnboardingCheck'
 declare global {
   interface Window {
     _consoleOverrideApplied?: boolean;
+    _consoleErrorOverrideApplied?: boolean;
   }
 }
 
@@ -388,60 +389,55 @@ export default function RootLayout({
                 return fetchPromise
               }
 
-              // Override console.log to catch network request logs (with safety check)
+              // Override console methods with safety check to prevent duplicate declarations
               if (!window._consoleOverrideApplied) {
+                // Store original console methods
                 const originalLog = console.log
+                const originalWarn = console.warn
+                
+                // Override console.log to suppress various unwanted messages
                 console.log = function(...args) {
-                if (args.some(arg =>
-                  typeof arg === 'string' && (
-                    arg.includes('409 (Conflict)') ||
-                    arg.includes('disconnect-platform 409') ||
-                    arg.includes('POST https://') && arg.includes('409')
-                  )
-                )) {
-                  return // Suppress these logs
+                  if (args.some(arg =>
+                    typeof arg === 'string' && (
+                      // Network request logs
+                      arg.includes('409 (Conflict)') ||
+                      arg.includes('disconnect-platform 409') ||
+                      arg.includes('POST https://') && arg.includes('409') ||
+                      // Browser extension logs
+                      arg.includes('content-script.js') ||
+                      arg.includes('AdUnit') ||
+                      arg.includes('Document already loaded') ||
+                      arg.includes('Attempting to initialize') ||
+                      arg.includes('initialized successfully')
+                    )
+                  )) {
+                    return // Suppress these logs
+                  }
+                  originalLog.apply(console, args)
                 }
-                originalLog.apply(console, args)
-              }
 
-              // Override console.warn to suppress GoTrueClient warnings
-              const originalWarn = console.warn
-              console.warn = function(...args) {
-                if (args.some(arg =>
-                  typeof arg === 'string' && (
-                    arg.includes('Multiple GoTrueClient instances detected') ||
-                    arg.includes('Failed to parse URL from /pipeline') ||
-                    arg.includes('Redis client was initialized without url or token')
-                  )
-                )) {
-                  return // Suppress these warnings
+                // Override console.warn to suppress GoTrueClient warnings
+                console.warn = function(...args) {
+                  if (args.some(arg =>
+                    typeof arg === 'string' && (
+                      arg.includes('Multiple GoTrueClient instances detected') ||
+                      arg.includes('Failed to parse URL from /pipeline') ||
+                      arg.includes('Redis client was initialized without url or token')
+                    )
+                  )) {
+                    return // Suppress these warnings
+                  }
+                  originalWarn.apply(console, args)
                 }
-                originalWarn.apply(console, args)
-              }
-
-              // Suppress browser extension console.log messages
-              const originalLog = console.log
-              console.log = function(...args) {
-                if (args.some(arg =>
-                  typeof arg === 'string' && (
-                    // Filter out browser extension logs
-                    arg.includes('content-script.js') ||
-                    arg.includes('AdUnit') ||
-                    arg.includes('Document already loaded') ||
-                    arg.includes('Attempting to initialize') ||
-                    arg.includes('initialized successfully')
-                  )
-                )) {
-                  return // Suppress these logs
-                }
-                originalLog.apply(console, args)
-                }
+                
+                // Mark as applied to prevent duplicate overrides
                 window._consoleOverrideApplied = true
               }
 
-              // Also suppress specific error messages
-              const originalError = console.error
-              console.error = function(...args) {
+              // Also suppress specific error messages (inside same safety check)
+              if (!window._consoleErrorOverrideApplied) {
+                const originalError = console.error
+                console.error = function(...args) {
                 if (args.some(arg =>
                   typeof arg === 'string' && (
                     arg.includes('400 Bad Request') ||
@@ -465,6 +461,8 @@ export default function RootLayout({
                   return // Suppress these errors
                 }
                 originalError.apply(console, args)
+                }
+                window._consoleErrorOverrideApplied = true
               }
 
               // Add global error handler for uncaught promise rejections (extension errors)
