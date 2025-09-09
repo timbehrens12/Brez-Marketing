@@ -140,7 +140,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
   },
   {
     id: 'outreach-tool',
-    name: 'Outreach Tool',
+    name: 'Outreach Messages',
     description: 'Manage lead outreach campaigns and follow-ups',
     icon: Send,
     category: 'tools',
