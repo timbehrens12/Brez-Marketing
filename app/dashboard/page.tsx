@@ -47,7 +47,6 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
-import { SignupCompletionHandler } from "@/components/SignupCompletionHandler"
 import { GridOverlay } from "@/components/GridOverlay"
 
 import { Button } from "@/components/ui/button"
