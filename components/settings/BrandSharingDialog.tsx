@@ -70,7 +70,6 @@ export default function BrandSharingDialog({ brand, trigger }: BrandSharingDialo
         setShareLinks(data.shareLinks || [])
       }
     } catch (error) {
-      console.error('Error loading share links:', error)
     } finally {
       setLoading(false)
     }

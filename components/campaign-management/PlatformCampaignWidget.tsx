@@ -417,7 +417,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[CampaignWidget] API Error Response:', errorText)
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
       }
 
@@ -470,7 +469,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }
 
     } catch (error) {
-      console.error('[CampaignWidget] Error generating recommendation:', error)
       toast.error('Failed to generate AI recommendation')
     } finally {
       setCampaignsGeneratingRecommendations(prev => {
@@ -530,7 +528,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       })
       
       if (!response.ok) {
-          console.error('[CampaignWidget] Campaign fetch error:', response.status, response.statusText)
           throw new Error(`HTTP error! status: ${response.status}`)
       }
 
@@ -571,7 +568,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           // Remove loading state
           // setIsRefreshing(false)
         } else {
-          console.warn('[CampaignWidget] No campaigns array in response:', data)
           setLocalCampaigns([])
         setPlatforms(prev => ({
           ...prev,
@@ -582,7 +578,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
       }
 
     } catch (error) {
-        console.error('[CampaignWidget] Error fetching campaigns:', error)
         
       setPlatforms(prev => ({
         ...prev,
@@ -1973,7 +1968,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
 
                        setRecommendationDialogOpen(false);
                      } catch (error) {
-                       console.error('Error marking recommendation as completed:', error);
                        
                        // Revert local state on error
                        setLocalCampaigns(prev => prev.map(c => 

@@ -114,7 +114,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
 
       // For Shopify tab, skip global refresh and go straight to nuclear sequence
       if (currentTab === 'shopify' && activePlatforms.shopify) {
-        console.log('🔥 [GlobalRefresh] Starting NUCLEAR REFRESH SEQUENCE')
         
         // STEP 1: Block premature widget refreshes
         window.dispatchEvent(new CustomEvent('shopify-sync-starting', {
@@ -135,16 +134,11 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
           }).then(async response => {
             const result = await response.json()
             if (response.ok) {
-              console.log(`🔥 [GlobalRefresh] - Processed: ${result.ordersProcessed} orders`);
-              console.log(`🔥 [GlobalRefresh] - NEW orders found: ${result.newOrders}`);
-              console.log(`🔥 [GlobalRefresh] - Shopify total: ${result.totalOrdersFromShopify}`);
               return true;
             } else {
-              console.error('🔥 [GlobalRefresh] NUCLEAR SYNC FAILED:', result);
               return false;
             }
           }).catch(error => {
-            console.error('🔥 [GlobalRefresh] NUCLEAR SYNC ERROR:', error);
             return false;
           });
 
@@ -164,7 +158,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
             }))
           });
         } else {
-          console.warn('[GlobalRefresh] No active Shopify connection found for brand:', brandId);
           // Still refresh widgets even without active connection
           window.dispatchEvent(new CustomEvent('force-shopify-refresh', {
             detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh-no-connection' }
@@ -205,7 +198,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       toast.success("All data refreshed successfully", { id: "global-refresh" })
       
     } catch (error) {
-      console.error('[GlobalRefresh] Error during refresh:', error)
       toast.error("Failed to refresh data", { id: "global-refresh" })
     } finally {
       setIsRefreshing(false)

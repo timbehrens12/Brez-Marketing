@@ -86,7 +86,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return
         
         if (!response.ok) {
-          console.error('Failed to load agency settings:', response.status)
           setAgencySettings(defaultAgencySettings)
           return
         }
@@ -102,7 +101,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('❌ Error loading agency settings:', error)
           setAgencySettings(defaultAgencySettings)
         }
       } finally {
@@ -139,7 +137,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (!response.ok) {
-        console.error('Failed to update agency settings:', response.status)
         return false
       }
       
@@ -153,7 +150,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       
       return false
     } catch (error) {
-      console.error('❌ Error updating agency settings:', error)
       return false
     }
   }
@@ -187,7 +183,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error loading team data:', error)
     } finally {
       setIsLoadingTeam(false)
     }

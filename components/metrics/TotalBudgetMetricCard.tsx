@@ -76,7 +76,6 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
         throw new Error(data.error || 'Unknown error')
       }
     } catch (error) {
-      console.error('Error fetching total budget:', error)
       if (!unifiedLoading) {
       toast.error('Failed to fetch total budget')
       }

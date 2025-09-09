@@ -119,7 +119,6 @@ export default function AgencyTeamManagement({ agencyName, agencyLogo }: AgencyT
         toast.error('Failed to load team data')
       }
     } catch (error) {
-      console.error('Error loading team data:', error)
       toast.error('Error loading team data')
     }
   }
@@ -157,7 +156,6 @@ export default function AgencyTeamManagement({ agencyName, agencyLogo }: AgencyT
         toast.error(data.error || 'Failed to create invitation link')
       }
     } catch (error) {
-      console.error('Error creating invitation link:', error)
       toast.error('Error creating invitation link')
     } finally {
       setIsCreating(false)
@@ -187,7 +185,6 @@ export default function AgencyTeamManagement({ agencyName, agencyLogo }: AgencyT
         toast.error(data.error || 'Failed to revoke invitation link')
       }
     } catch (error) {
-      console.error('Error revoking invitation link:', error)
       toast.error('Error revoking invitation link')
     }
   }
@@ -216,7 +213,6 @@ export default function AgencyTeamManagement({ agencyName, agencyLogo }: AgencyT
         toast.error(data.error || 'Failed to remove team member')
       }
     } catch (error) {
-      console.error('Error removing team member:', error)
       toast.error('Error removing team member')
     }
   }

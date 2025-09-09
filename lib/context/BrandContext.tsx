@@ -85,7 +85,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         .order('name')
 
       if (ownedError) {
-        console.error('Error loading owned brands:', ownedError)
         throw ownedError
       }
 
@@ -98,7 +97,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         .order('granted_at')
 
       if (sharedError) {
-        console.error('Error loading shared brands access:', sharedError)
         throw sharedError
       }
 
@@ -113,7 +111,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
           .in('id', sharedBrandIds)
 
         if (sharedBrandError) {
-          console.error('Error loading shared brand details:', sharedBrandError)
         } else {
                       // Get agency info for shared brands
             const agencyOwnerIds = [...new Set((sharedBrandDetails || []).map(brand => brand.user_id))]
@@ -123,7 +120,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
               .in('user_id', agencyOwnerIds)
 
             if (agencyError) {
-              console.error('Error loading agency info:', agencyError)
             }
 
                       // Combine access info with brand details and agency info
@@ -155,7 +151,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       const owned = (ownedBrands as unknown as Brand[]) || []
       const loadedBrands = [...owned, ...sharedBrands]
       
-      console.log('Loaded brands:', loadedBrands.length, 'owned:', owned.length, 'shared:', sharedBrands.length)
       setBrands(loadedBrands)
       
       // Validate that the selected brand still exists
@@ -164,7 +159,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         setSelectedBrandIdWithPersistence(null)
       }
     } catch (error) {
-      console.error('Error in refreshBrands:', error)
       setBrands([])
     } finally {
       setIsLoading(false)
@@ -205,7 +199,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
 
         if (ownedError) {
-          console.error('Error loading owned brands:', ownedError);
+;
           throw ownedError;
         }
 
@@ -220,7 +214,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
 
         if (sharedError) {
-          console.error('Error loading shared brands access:', sharedError);
+;
           throw sharedError;
         }
 
@@ -237,7 +231,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
           if (cancelled) return;
 
           if (sharedBrandError) {
-            console.error('Error loading shared brand details:', sharedBrandError)
           } else {
             // Get agency info for shared brands
             const agencyOwnerIds = [...new Set((sharedBrandDetails || []).map(brand => brand.user_id))]
@@ -249,7 +242,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
             if (cancelled) return;
 
             if (agencyError) {
-              console.error('Error loading agency info:', agencyError)
             }
 
             // Combine access info with brand details and agency info
@@ -291,7 +283,6 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Error in loadBrands:', error);
           setBrands([]);
         }
       } finally {
@@ -313,16 +304,13 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   // Listen for brand access granted events
   useEffect(() => {
     const handleBrandAccessGranted = (event: CustomEvent) => {
-      console.log('Brand access granted event received:', event.detail)
       // Add a small delay to ensure database is updated
       setTimeout(() => {
-        console.log('Refreshing brands after access granted...')
         refreshBrands()
       }, 1000)
     }
 
     const handleBrandSelected = (event: CustomEvent) => {
-      console.log('Brand selected event received:', event.detail)
       // Refresh brands when a brand is selected (in case data changed)
       refreshBrands()
     }

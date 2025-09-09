@@ -339,8 +339,6 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
       // Keep the special marker using type assertion
       (newRange as any)._preset = 'yesterday';
       
-      console.log(`Setting yesterday preset with special marker - exact same date for both`);
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
     }
     else if (preset.value === 'thisWeek') {
       // Additional validation for this week preset
@@ -353,8 +351,6 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
       newRange.from = startOfDay(startDate);
       newRange.to = endOfDay(today);
       
-      console.log(`Setting this week preset with explicit date calculation`);
-      console.log(`Date range: ${format(newRange.from, 'yyyy-MM-dd')} to ${format(newRange.to, 'yyyy-MM-dd')}`);
     }
     
     // Set the active preset
@@ -382,11 +378,6 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
         to: tempDateRange.to || tempDateRange.from
       };
       
-      // Log what we're applying
-      console.log('Applying date range:', {
-        from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0]
-      });
       
       setDateRange(finalRange);
     }

@@ -55,7 +55,6 @@ export function PlatformCard({
       if (error) throw error
       window.location.reload() // Refresh to update UI
     } catch (error) {
-      console.error('Error disconnecting platform:', error)
     } finally {
       setLoading(false)
     }
