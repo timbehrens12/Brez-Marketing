@@ -897,6 +897,55 @@ export default function SettingsPage() {
     setRemoveSignature(false)
   }, [agencySettings.agency_name, agencySettings.signature_name])
 
+  // Check if agency branding is completed
+  const isAgencyBrandingComplete = () => {
+    return !!(agencySettings.agency_name && agencySettings.agency_name.trim().length > 0)
+  }
+
+  // Define navigation items with locking logic
+  const navigationItems = [
+    {
+      id: 'agency-branding',
+      label: 'Agency Branding',
+      icon: Building2,
+      description: 'Customize your agency identity',
+      locked: false,
+      lockReason: null
+    },
+    {
+      id: 'brand-management',
+      label: 'Connection Management',
+      icon: Tag,
+      description: 'Manage brand profiles and connections',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
+    },
+    {
+      id: 'brand-access',
+      label: 'Access Management',
+      icon: Share2,
+      description: 'Control brand sharing and permissions',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
+    },
+    {
+      id: 'operator-account',
+      label: 'Operator Account',
+      icon: Shield,
+      description: 'Your account settings',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
+    },
+    {
+      id: 'legal-privacy',
+      label: 'Legal & Privacy',
+      icon: Info,
+      description: 'Terms and privacy policies',
+      locked: false, // Always accessible
+      lockReason: null
+    }
+  ]
+
   // Handle tab parameter from URL and enforce branding completion
   useEffect(() => {
     const tab = searchParams.get('tab')
@@ -904,7 +953,6 @@ export default function SettingsPage() {
     // If agency branding is not complete, force user to agency branding tab
     if (!isAgencyBrandingComplete() && tab !== 'agency-branding' && tab !== 'legal-privacy') {
       setActiveTab('agency-branding')
-      router.replace('/settings?tab=agency-branding', { scroll: false })
       return
     }
     
@@ -916,10 +964,9 @@ export default function SettingsPage() {
       } else if (tabItem && tabItem.locked) {
         // Redirect to agency branding if trying to access locked tab
         setActiveTab('agency-branding')
-        router.replace('/settings?tab=agency-branding', { scroll: false })
       }
     }
-  }, [searchParams, agencySettings.agency_name])
+  }, [searchParams, agencySettings.agency_name, navigationItems, isAgencyBrandingComplete])
 
 
 
@@ -1573,55 +1620,6 @@ export default function SettingsPage() {
     )
   }
 
-  // Check if agency branding is completed
-  const isAgencyBrandingComplete = () => {
-    return !!(agencySettings.agency_name && agencySettings.agency_name.trim().length > 0)
-  }
-
-  // Define navigation items with locking logic
-  const navigationItems = [
-    {
-      id: 'agency-branding',
-      label: 'Agency Branding',
-      icon: Building2,
-      description: 'Customize your agency identity',
-      locked: false,
-      lockReason: null
-    },
-    {
-      id: 'brand-management',
-      label: 'Connection Management',
-      icon: Tag,
-      description: 'Manage brand profiles and connections',
-      locked: !isAgencyBrandingComplete(),
-      lockReason: 'Complete agency branding setup first'
-    },
-    {
-      id: 'brand-access',
-      label: 'Access Management',
-      icon: Share2,
-      description: 'Control brand sharing and permissions',
-      locked: !isAgencyBrandingComplete(),
-      lockReason: 'Complete agency branding setup first'
-    },
-    {
-      id: 'operator-account',
-      label: 'Operator Account',
-      icon: Shield,
-      description: 'Your account settings',
-      locked: !isAgencyBrandingComplete(),
-      lockReason: 'Complete agency branding setup first'
-    },
-    {
-      id: 'legal-privacy',
-      label: 'Legal & Privacy',
-      icon: Info,
-      description: 'Terms and privacy policies',
-      locked: false, // Always accessible
-      lockReason: null
-    }
-  ]
-
   return (
     <DashboardErrorBoundary>
       <TooltipProvider>
@@ -1654,7 +1652,10 @@ export default function SettingsPage() {
                         onClick={() => {
                           if (!isLocked) {
                             setActiveTab(item.id)
-                            router.push(`/settings?tab=${item.id}`, { scroll: false })
+                            // Use replace instead of push to avoid navigation stack issues
+                            if (typeof window !== 'undefined') {
+                              window.history.replaceState(null, '', `/settings?tab=${item.id}`)
+                            }
                           }
                         }}
                         disabled={isLocked}
