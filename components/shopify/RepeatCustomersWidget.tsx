@@ -198,7 +198,7 @@ export function RepeatCustomersWidget({
     <Card className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
-          <Repeat className="h-5 w-5 text-purple-400" />
+          <Repeat className="h-5 w-5 text-gray-400" />
           Repeat Customer Analysis
         </CardTitle>
       </CardHeader>
@@ -217,7 +217,7 @@ export function RepeatCustomersWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Repeat className="h-4 w-4 text-purple-400" />
+              <Repeat className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Repeat Customers</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -227,7 +227,7 @@ export function RepeatCustomersWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-purple-400" />
+              <TrendingUp className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Repeat Rate</span>
             </div>
             <div className="text-xl font-bold text-white">
@@ -252,7 +252,7 @@ export function RepeatCustomersWidget({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 <span className="text-sm font-medium text-white">Frequent (≤30 days)</span>
               </div>
               <div className="text-lg font-bold text-white">{data.frequencySegments.frequent.count}</div>
@@ -287,8 +287,8 @@ export function RepeatCustomersWidget({
               {data.topRepeaters.slice(0, 5).map((customer, index) => (
                 <div key={customer.id} className="flex items-center justify-between p-3 bg-[#222] rounded-lg border border-[#333]">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/20 to-purple-600/30 border border-purple-500/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-purple-400">#{index + 1}</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500/20 to-gray-600/30 border border-gray-500/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-gray-400">#{index + 1}</span>
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">
@@ -314,9 +314,9 @@ export function RepeatCustomersWidget({
         )}
 
         {/* Revenue Impact */}
-        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-4 border border-purple-500/20">
+        <div className="bg-gradient-to-r from-gray-500/10 to-gray-600/10 rounded-lg p-4 border border-gray-500/20">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-5 w-5 text-purple-400" />
+            <TrendingUp className="h-5 w-5 text-gray-400" />
             <span className="text-lg font-semibold text-white">Repeat Customer Impact</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -326,7 +326,7 @@ export function RepeatCustomersWidget({
             </div>
             <div>
               <div className="text-sm text-gray-400">% of Total Revenue</div>
-              <div className="text-2xl font-bold text-purple-400">{formatPercentage(data.overview.repeatRevenuePercentage)}</div>
+              <div className="text-2xl font-bold text-gray-400">{formatPercentage(data.overview.repeatRevenuePercentage)}</div>
             </div>
           </div>
         </div>

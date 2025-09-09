@@ -214,7 +214,7 @@ export function CustomerSegmentationWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-purple-400" />
+              <TrendingUp className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Total Revenue</span>
               <TooltipProvider>
                 <Tooltip>
@@ -234,7 +234,7 @@ export function CustomerSegmentationWidget({
 
           <div className="bg-[#222] rounded-lg p-4 border border-[#333]">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="h-4 w-4 text-purple-400" />
+              <Users className="h-4 w-4 text-gray-400" />
               <span className="text-sm text-gray-400">Avg CLV</span>
               <TooltipProvider>
                 <Tooltip>
