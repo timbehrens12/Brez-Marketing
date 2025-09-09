@@ -142,7 +142,6 @@ export default function PerformanceChart({ preloadedPerformanceData }: Performan
           setPerformanceData(transformedData)
         }
       } catch (error) {
-        console.error('Error fetching performance data:', error)
       } finally {
         // Remove loading state
         // setIsLoading(false)

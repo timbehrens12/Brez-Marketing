@@ -186,11 +186,9 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
           detail: { brandId: selectedBrandId, timestamp: Date.now() }
         }))
       } else {
-        console.error('[AIDailyReport] Failed to fetch report:', data.error)
         toast.error('Failed to generate advertising report')
       }
     } catch (error) {
-      console.error('[AIDailyReport] Error fetching daily report:', error)
       toast.error('Error generating advertising report')
     } finally {
       // Remove loading state

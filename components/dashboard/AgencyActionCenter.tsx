@@ -532,7 +532,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           outreachResponse = { data: [], error: { message: 'API call failed' } }
         }
       } catch (error) {
-        console.error('[DEBUG] API call error:', error)
         outreachResponse = { data: [], error: error as any }
       }
 
@@ -595,7 +594,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
       // Prevent multiple simultaneous calls
       if (toolUsageLoadingRef.current) {
-        console.log('[AgencyActionCenter] Tool usage data already loading, skipping duplicate call')
         return
       }
 
@@ -680,26 +678,21 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
             const today = new Date().toDateString()
             if (parsed.date === today && parsed.usage !== undefined) {
               cachedUsage = parsed.usage
-              console.log('[AgencyActionCenter] Using cached AI consultant usage:', cachedUsage)
             }
           }
         } catch (error) {
-          console.log('[AgencyActionCenter] No valid cached usage data')
         }
 
         // If cached usage shows user is maxed out, don't make API call
         if (cachedUsage >= 15) {
-          console.log('[AgencyActionCenter] User at limit from cache, skipping API call')
           newToolUsageData.aiConsultant[userId] = 15
         } else {
           // Only make API call if not already loading and user might not be maxed out
           if (toolUsageLoadingRef.current) {
-            console.log('[AgencyActionCenter] Marketing consultant API call skipped - already loading')
             newToolUsageData.aiConsultant[userId] = cachedUsage // Use cached value
           } else {
             toolUsageLoadingRef.current = true // Set loading flag for API call
             try {
-              console.log('[AgencyActionCenter] Making marketing consultant API call for usage check')
               const response = await fetch('/api/ai/marketing-consultant', {
                 method: 'POST',
                 headers: {
@@ -711,7 +704,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 }),
               })
 
-              console.log('[AgencyActionCenter] Marketing consultant API response status:', response.status)
 
               if (response.ok) {
                 const data = await response.json()
@@ -729,7 +721,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     usage: dailyUsageCount
                   }))
                 } catch (error) {
-                  console.log('[AgencyActionCenter] Failed to cache usage data')
                 }
               } else if (response.status === 429) {
                 // User is maxed out - set to 15 used
@@ -742,14 +733,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     usage: 15
                   }))
                 } catch (error) {
-                  console.log('[AgencyActionCenter] Failed to cache maxed out status')
                 }
               } else {
                 // If API fails, use cached value or set to 0
                 newToolUsageData.aiConsultant[userId] = cachedUsage || 0
               }
             } catch (error) {
-              console.error('[AgencyActionCenter] Error in marketing consultant API call:', error)
               // If API fails, use cached value or set to 0
               newToolUsageData.aiConsultant[userId] = cachedUsage || 0
             } finally {
@@ -779,7 +768,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         
         setToolUsageData(newToolUsageData)
       } catch (error) {
-        console.error('Error loading tool usage data:', error)
       } finally {
         toolUsageLoadingRef.current = false
       }
@@ -798,7 +786,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (currentAiUsage < 15) {
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping periodic refresh - AI consultant limit reached')
         }
       }
     }, 15000) // 15 seconds - faster refresh for better usage sync (updated to prevent 429 errors - redeploy attempt)
@@ -811,7 +798,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (currentAiUsage < 15) {
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping focus refresh - AI consultant limit reached')
         }
       }
     }
@@ -824,7 +810,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (currentAiUsage < 15) {
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping visibility refresh - AI consultant limit reached')
         }
       }
     }
@@ -837,23 +822,18 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (currentAiUsage < 15) {
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping creative studio update - AI consultant limit reached')
         }
       }
     }
 
     // Listen for AI consultant usage updates
     const handleAIConsultantUpdate = () => {
-      console.log('[AgencyActionCenter] AI consultant usage update event received')
       if (userId) {
         // Only refresh if we don't already know the user is maxed out
         const currentUsage = toolUsageData.aiConsultant?.[userId] || 0
-        console.log('[AgencyActionCenter] Current AI consultant usage:', currentUsage)
         if (currentUsage < 15) {
-          console.log('[AgencyActionCenter] Calling loadToolUsageData from event handler')
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping AI consultant update - user already at limit')
         }
       }
     }
@@ -866,7 +846,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         if (currentAiUsage < 15) {
           loadToolUsageData()
         } else {
-          console.log('[AgencyActionCenter] Skipping storage change refresh - AI consultant limit reached')
         }
       }
     }
@@ -2074,13 +2053,11 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     
     // Robust loading guard to prevent any duplicate calls
     if (brandHealthLoadingRef.current) {
-      // console.log('[Brand Health] Already loading, skipping duplicate call')
       return
     }
     brandHealthLoadingRef.current = true
     
     setIsLoadingBrandHealth(true)
-    // console.log('[Brand Health] Starting data load...', forceRefresh ? '(FORCE REFRESH)' : '')
     
     try {
       const supabase = await getSupabaseClient()
@@ -2114,7 +2091,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const brands = [...(ownedBrands || []), ...sharedBrands]
 
       if (!brands?.length) {
-        // console.log('[Brand Health] No brands found')
         setBrandHealthData([])
         return
       }
@@ -2136,12 +2112,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       )
 
       if (!brandsWithAdPlatforms.length) {
-        // console.log('[Brand Health] No brands with ad platforms found')
         setBrandHealthData([])
         return
       }
 
-      // console.log(`[Brand Health] Found ${brandsWithAdPlatforms.length} brands with ad platforms`)
 
       // Step 3: Calculate date ranges (use provided dateRange or default to today)
       const now = new Date()
@@ -2171,11 +2145,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       const localFromDate = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0, 0)
       const localToDate = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999)
 
-      // console.log(`[Brand Health] Analyzing date range: ${fromDateStr} to ${toDateStr}`)
 
       // Step 4.5: Trigger fresh data sync if force refresh is requested
       if (forceRefresh) {
-        // console.log('[Brand Health] Force refresh triggered - syncing latest Meta data...')
         for (const brand of brandsWithAdPlatforms) {
           try {
             // Trigger fresh sync for recent data for each brand
@@ -2187,7 +2159,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               })
             })
             if (syncResponse.ok) {
-              // console.log(`[Brand Health] ${brand.name} - Fresh sync completed`)
             } else {
 
             }
@@ -2197,19 +2168,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         }
         // Wait a moment for the sync to complete
         await new Promise(resolve => setTimeout(resolve, 2000))
-        // console.log('[Brand Health] Force refresh sync completed, proceeding with data load...')
       }
 
       // Step 5: Process each brand
       const brandHealthPromises = brandsWithAdPlatforms.map(async (brand) => {
-        // console.log(`[Brand Health] Processing ${brand.name}...`)
 
         // Get brand connections
         const brandConnections = allConnections?.filter(conn => conn.brand_id === brand.id) || []
         
         // Debug: Log what we're looking for
-        // console.log(`[Brand Health] ${brand.name} - Looking for Meta data in range:`, { from: fromDateStr, to: toDateStr })
-        // console.log(`[Brand Health] ${brand.name} - Brand ID:`, brand.id)
         
         // Get Meta data from meta_campaign_daily_stats (the correct table)
         // Add cache-busting to ensure we get fresh data
@@ -2236,8 +2203,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           .order('created_at', { ascending: false }) // Get the most recent records first
 
         // Debug: Log what we got back
-        // console.log(`[Brand Health] ${brand.name} - Meta query result:`, { metaData, metaError })
-        // console.log(`[Brand Health] ${brand.name} - Meta data count:`, metaData?.length || 0)
 
         // Get Shopify data if connected (need to check for Shopify connections separately)
         const { data: shopifyConnections } = await supabase
@@ -2293,8 +2258,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         })
         
         // Debug: Log raw data count
-        // console.log(`[Brand Health] ${brand.name} - Raw Meta data for range:`, rawMetaData.length, 'records')
-        // console.log(`[Brand Health] ${brand.name} - Filtered to original date range:`, filteredMetaData.length, 'records')
         
         // Deduplicate by date - keep only the most recent record per date to prevent doubling
         const metaDataByDate = new Map()
@@ -2308,7 +2271,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         const totalMeta = Array.from(metaDataByDate.values())
         
         // Debug: Log deduplicated data
-        // console.log(`[Brand Health] ${brand.name} - Deduplicated Meta data:`, totalMeta.length, 'records (was', filteredMetaData.length, ')')
 
         // Validate that we only use today's data and ensure all metrics are real numbers
         // Use the same date format as the query to avoid timezone issues
@@ -2439,7 +2401,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 hasShopifyData: (shopifyData?.length || 0) > 0
               }
 
-              // console.log(`[Brand Health] ${brand.name} - Generating AI synopsis...`)
               
               const aiResponse = await fetch('/api/ai/generate-analysis', {
                 method: 'POST',
@@ -2453,7 +2414,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
               if (aiResponse.ok) {
                 const aiResult = await aiResponse.json()
                 synopsis = aiResult.analysis || `${brand.name} performance data is being analyzed.`
-                // console.log(`[Brand Health] ${brand.name} - AI synopsis generated successfully`)
               } else {
                 throw new Error('AI synthesis failed')
               }
@@ -2481,7 +2441,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
         const hasData = todayData.length > 0 || totalOrders.length > 0
 
-        // console.log(`[Brand Health] ${brand.name} - Status: ${status}, Spend: $${totalSpend}, ROAS: ${avgROAS.toFixed(2)}`)
 
         // Fetch enhanced metrics for this brand
         let enhancedMetrics = {
@@ -2539,7 +2498,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       })
 
       const results = await Promise.all(brandHealthPromises)
-      // console.log(`[Brand Health] Processed ${results.length} brands`)
       setBrandHealthData(results)
       
     } catch (error) {

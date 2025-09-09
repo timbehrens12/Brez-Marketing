@@ -150,12 +150,10 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
                   allAds.push(...enhancedAds)
                 }
               } catch (error) {
-                console.error(`[AdCreativeBreakdown] Error fetching ads for adset ${adSet.adset_id}:`, error)
               }
             }
           }
         } catch (error) {
-          console.error(`[AdCreativeBreakdown] Error fetching adsets for campaign ${campaign.campaign_id}:`, error)
         }
       }
 
@@ -171,7 +169,6 @@ export default function AdCreativeBreakdown({ preloadedAds }: AdCreativeBreakdow
       // console.log(`[AdCreativeBreakdown] Successfully loaded ${allAds.length} ads`)
 
     } catch (error: any) {
-      console.error('[AdCreativeBreakdown] Error:', error)
       
       if (isTokenExpired(error)) {
         emitMetaApiError(error)

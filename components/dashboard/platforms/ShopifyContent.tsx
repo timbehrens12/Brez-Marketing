@@ -22,11 +22,9 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
   // Trigger refresh when Shopify content is mounted/brandId changes
   useEffect(() => {
     if (brandId) {
-      console.log('[ShopifyContent] Page loaded/brand changed - forcing fresh data refresh')
       
       // Small delay to ensure components are mounted
       const timer = setTimeout(async () => {
-        console.log('[ShopifyContent] Page loaded - starting NUCLEAR SYNC SEQUENCE')
         
         // STEP 1: Set refreshing state for MetricCards
         setIsRefreshingData(true)
@@ -38,7 +36,6 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
         
         // STEP 3: NUCLEAR OPTION - Hard refresh from Shopify API  
         try {
-          console.log('🔥 [ShopifyContent] NUCLEAR SYNC STARTING...')
           const syncResponse = await fetch('/api/shopify/hard-refresh', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -47,8 +44,6 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
           
           const syncResult = await syncResponse.json()
           if (syncResponse.ok) {
-            console.log(`🔥 [ShopifyContent] NUCLEAR SYNC SUCCESS: ${syncResult.newOrders} new orders found!`)
-            console.log(`🔥 [ShopifyContent] Total processed: ${syncResult.ordersProcessed} orders`)
           } else {
             console.error('🔥 [ShopifyContent] NUCLEAR SYNC FAILED:', syncResult.error)
           }
@@ -60,7 +55,6 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
         await new Promise(resolve => setTimeout(resolve, 500))
 
         // STEP 5: Force metrics refresh and clear refreshing state
-        console.log('🔥 [ShopifyContent] NUCLEAR SYNC COMPLETE - Triggering metrics refresh')
         
         // Force refresh of parent metrics data
         window.dispatchEvent(new CustomEvent('force-metrics-refresh', {
@@ -77,7 +71,6 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
         
         // Clear refreshing state and refresh widgets
         setIsRefreshingData(false)
-        console.log('🔥 [ShopifyContent] Refreshing widgets with fresh data')
         window.dispatchEvent(new CustomEvent('force-widget-refresh', {
           detail: { 
             brandId, 
@@ -96,12 +89,10 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
   // Listen for refresh button events
   useEffect(() => {
     const handleGlobalRefresh = async () => {
-      console.log('[ShopifyContent] Refresh button detected - setting loading state')
       setIsRefreshingData(true)
       
       // Wait for nuclear sync to complete (listen for completion event)
       const handleSyncComplete = () => {
-        console.log('[ShopifyContent] Refresh button sync complete - triggering metrics refresh')
         
         // Force refresh of parent metrics data
         window.dispatchEvent(new CustomEvent('force-metrics-refresh', {
@@ -114,7 +105,6 @@ export function ShopifyContent({ brandId, dateRange, connections, metrics, isLoa
         }))
         
         setTimeout(() => {
-          console.log('[ShopifyContent] Refresh button sync complete - clearing loading state')
           setIsRefreshingData(false)
         }, 1000) // Give more time for metrics to update
         

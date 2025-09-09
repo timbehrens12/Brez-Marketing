@@ -300,7 +300,6 @@ export default function MarketingAssistantPage() {
   // Main sync function - database-based refresh like home page
   const syncMetaInsights = useCallback(async () => {
     if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
-      console.error("[MarketingAssistant] Cannot sync data - missing brand ID or date range")
       return
     }
     

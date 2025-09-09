@@ -135,7 +135,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
           }).then(async response => {
             const result = await response.json()
             if (response.ok) {
-              console.log('🔥 [GlobalRefresh] NUCLEAR SYNC COMPLETED!');
               console.log(`🔥 [GlobalRefresh] - Processed: ${result.ordersProcessed} orders`);
               console.log(`🔥 [GlobalRefresh] - NEW orders found: ${result.newOrders}`);
               console.log(`🔥 [GlobalRefresh] - Shopify total: ${result.totalOrdersFromShopify}`);
@@ -151,7 +150,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
 
           // STEP 3: After nuclear sync completes, refresh widgets with fresh data
           syncPromise.then((syncSuccess) => {
-            console.log('🔥 [GlobalRefresh] NUCLEAR SYNC COMPLETED - Refreshing widgets with fresh data');
             
             // Single comprehensive refresh event after sync is complete
             window.dispatchEvent(new CustomEvent('force-widget-refresh', {

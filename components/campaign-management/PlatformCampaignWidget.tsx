@@ -312,7 +312,6 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           }
         })
         .catch(error => {
-        console.error('[CampaignWidget] Error checking campaign statuses:', error)
         if (!isInitialLoad) {
           toast.error('Failed to refresh campaign statuses')
         }
@@ -368,10 +367,8 @@ export default function PlatformCampaignWidget({ preloadedCampaigns }: PlatformC
           // console.log('[CampaignWidget] Updated campaigns with recommendations')
         }
       } else {
-        console.error('[CampaignWidget] Failed to fetch recommendations:', response.statusText)
       }
     } catch (error) {
-      console.error('[CampaignWidget] Error loading saved recommendations:', error)
     } finally {
       isLoadingRecommendations.current = false
     }

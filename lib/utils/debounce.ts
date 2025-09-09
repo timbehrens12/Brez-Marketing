@@ -39,7 +39,6 @@ export function createDebouncedRefresh(
     }
 
     timeoutId = setTimeout(async () => {
-      console.log(`[Debounced Refresh] Executing refresh for events: ${pendingEvents.join(', ')}`)
       pendingEvents = []
       timeoutId = null
       

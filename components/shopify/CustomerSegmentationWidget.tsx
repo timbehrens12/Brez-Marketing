@@ -63,7 +63,6 @@ export function CustomerSegmentationWidget({
         const fromDate = format(dateRange.from, 'yyyy-MM-dd')
         const toDate = format(dateRange.to, 'yyyy-MM-dd')
         url += `&from=${fromDate}&to=${toDate}`
-        console.log(`[CustomerSegmentation] 📅 Fetching data for date range: ${fromDate} to ${toDate}`)
       }
       
       // Add cache busting to ensure fresh data
@@ -82,9 +81,7 @@ export function CustomerSegmentationWidget({
         setData(result.data)
         const fromStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : 'all-time'
         const toStr = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'all-time'
-        console.log(`[CustomerSegmentation] ✅ Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, $${result.data?.overview?.totalRevenue || 0} revenue (${fromStr} to ${toStr})`)
       } else {
-        console.warn('[CustomerSegmentation] No data received')
       }
 
       // Ensure minimum loading duration of 500ms for visual feedback
@@ -94,7 +91,6 @@ export function CustomerSegmentationWidget({
         await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
       }
     } catch (error) {
-      console.error('[CustomerSegmentation] Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -114,7 +110,6 @@ export function CustomerSegmentationWidget({
   useEffect(() => {
     const handleRefresh = (event?: any) => {
       const eventSource = event?.detail?.source || event?.type || 'unknown'
-      console.log('[CustomerSegmentation] Refresh event received:', eventSource)
       
       // Show loading immediately when refresh is triggered
       setLoading(true)

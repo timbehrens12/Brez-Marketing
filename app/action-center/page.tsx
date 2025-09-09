@@ -239,7 +239,6 @@ export default function ActionCenterPage() {
         return getStandardSupabaseClient()
       }
     } catch (error) {
-      console.error('[Action Center] ❌ Error getting client:', error)
       return getStandardSupabaseClient()
     }
   }, [getToken])
@@ -284,7 +283,6 @@ export default function ActionCenterPage() {
 
       // Handle leads count
       if (leadsResponse.error) {
-        console.error('[Action Center] Error loading leads:', leadsResponse.error)
       } else {
         setUserLeadsCount(leadsResponse.count || 0)
         console.log(`[Action Center] User has ${leadsResponse.count || 0} leads`)
@@ -292,7 +290,6 @@ export default function ActionCenterPage() {
 
       // Handle campaigns count
       if (campaignsResponse.error) {
-        console.error('[Action Center] Error loading campaigns:', campaignsResponse.error)
       } else {
         setUserCampaignsCount(campaignsResponse.count || 0)
         console.log(`[Action Center] User has ${campaignsResponse.count || 0} campaigns`)
@@ -300,7 +297,6 @@ export default function ActionCenterPage() {
 
       // Handle usage data
       if (usageResponse.error) {
-        console.error('[Action Center] Error loading usage:', usageResponse.error)
       } else {
         setUserUsageData(usageResponse.data || [])
         console.log('[Action Center] User usage data:', usageResponse.data)
@@ -308,14 +304,12 @@ export default function ActionCenterPage() {
 
       // Handle agency settings
       if (agencyResponse.error) {
-        console.error('[Action Center] Error loading agency settings:', agencyResponse.error)
       } else {
         setAgencySettingsState(agencyResponse.data)
         console.log('[Action Center] Agency settings:', agencyResponse.data)
       }
 
     } catch (error) {
-      console.error('[Action Center] Error loading user data:', error)
     } finally {
       setIsLoadingUserData(false)
     }
@@ -340,13 +334,11 @@ export default function ActionCenterPage() {
         .eq('status', 'active')
 
       if (connectionsError) {
-        console.error('[Action Center] Error loading connections:', connectionsError)
       } else {
         console.log('[Action Center] Loaded connections:', connectionsData?.length || 0)
         setConnections(connectionsData as PlatformConnection[] || [])
       }
     } catch (error) {
-      console.error('[Action Center] Error loading connections:', error)
     } finally {
       setIsLoadingConnections(false)
     }

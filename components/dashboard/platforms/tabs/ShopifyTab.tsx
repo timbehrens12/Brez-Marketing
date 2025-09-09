@@ -256,11 +256,9 @@ export function ShopifyTab({
     
     // Smart debouncing: Only fetch if forced, cache key changed, or 5+ seconds passed
     if (!force && comparisonCacheRef.current === cacheKey && (now - lastComparisonFetchRef.current) < 5000) {
-      console.log('[ShopifyTab] Skipping comparison fetch - too recent');
       return;
     }
 
-    console.log('[ShopifyTab] Fetching fresh comparison data...');
     setIsLoadingPrevious(true);
     lastComparisonFetchRef.current = now;
     comparisonCacheRef.current = cacheKey;
@@ -272,7 +270,6 @@ export function ShopifyTab({
       if (response.ok) {
         const prevData = await response.json();
         setPreviousMetrics(prevData);
-        console.log('[ShopifyTab] ✅ Comparison data updated:', { totalSales: prevData.totalSales, ordersPlaced: prevData.ordersPlaced });
       }
     } catch (error) {
       console.error('[ShopifyTab] Error fetching comparison data:', error);
@@ -447,7 +444,6 @@ export function ShopifyTab({
   useEffect(() => {
     // Only refresh comparison if we have valid main metrics and they've changed
     if (brandId && dateRange?.from && dateRange?.to && metrics.totalSales !== undefined) {
-      console.log('[ShopifyTab] Main metrics updated, refreshing comparison data...');
       fetchPreviousMetrics();
     }
   }, [metrics.totalSales, metrics.ordersPlaced, metrics.averageOrderValue, brandId, dateRange, fetchPreviousMetrics]);

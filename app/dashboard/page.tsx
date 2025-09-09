@@ -633,7 +633,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleForceDateRefresh = (event: any) => {
       if (event.detail?.brandId === selectedBrandId) {
-        console.log('[Dashboard] Force date range refresh triggered - incrementing refresh counter')
         
         // Instead of changing date range (which causes flickering), increment refresh counter
         // This forces widgets to re-render with the same date range but fresh data

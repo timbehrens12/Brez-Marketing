@@ -87,9 +87,7 @@ export function RepeatCustomersWidget({
 
       if (result.success) {
         setData(result.data)
-        console.log(`[RepeatCustomers] Loaded data: ${result.data?.overview?.totalCustomers || 0} customers, ${result.data?.overview?.repeatCustomers || 0} repeat customers`)
       } else {
-        console.warn('[RepeatCustomers] No data received')
       }
 
       // Ensure minimum loading duration of 500ms for visual feedback
@@ -99,7 +97,6 @@ export function RepeatCustomersWidget({
         await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
       }
     } catch (error) {
-      console.error('[RepeatCustomers] Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -112,7 +109,6 @@ export function RepeatCustomersWidget({
   // Listen for refresh events
   useEffect(() => {
     const handleRefresh = (event?: any) => {
-      console.log('[RepeatCustomers] Refresh event received:', event?.detail?.source || 'unknown')
       
       // Show loading immediately when refresh is triggered
       setLoading(true)
