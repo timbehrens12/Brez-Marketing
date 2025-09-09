@@ -465,7 +465,7 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-3 border-b border-[#333]">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] p-6 border-b border-[#333] rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
@@ -526,16 +526,38 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
               </div>
             )}
 
-            {/* AI Recommendations - Matching Style */}
+            {/* AI Recommendations - Dynamic & Live */}
             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
               <div className="flex items-center gap-3 mb-3">
                 <Brain className="w-5 h-5 text-blue-400" />
                 <h3 className="text-lg font-semibold text-blue-400">AI Recommendations</h3>
               </div>
               <div className="space-y-2">
-                <p className="text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
-                <p className="text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
-                <p className="text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
+                {report?.topPriorities && report.topPriorities.length > 0 ? (
+                  report.topPriorities.slice(0, 3).map((priority, index) => (
+                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                      • {priority}
+                    </p>
+                  ))
+                ) : report?.detectedIssues && report.detectedIssues.length > 0 ? (
+                  report.detectedIssues.slice(0, 3).map((issue, index) => (
+                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                      • {issue}
+                    </p>
+                  ))
+                ) : report?.factualHighlights && report.factualHighlights.length > 0 ? (
+                  report.factualHighlights.slice(0, 3).map((highlight, index) => (
+                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                      • {highlight}
+                    </p>
+                  ))
+                ) : (
+                  <>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
+                    <p className="text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
