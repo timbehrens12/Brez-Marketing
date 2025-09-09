@@ -1235,14 +1235,14 @@ export default function MarketingAssistantPage() {
       <div className="relative z-10">
         <>
 
-          {/* Meta Connection Status Banner */}
+          {/* Meta Connection Status Banner - Responsive padding */}
           <MetaConnectionStatus 
             brandId={selectedBrandId} 
-            className="px-12 lg:px-24 xl:px-32" 
+            className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32" 
           />
 
-          {/* Dynamic Grid Layout - Campaign Management at top, then other widgets */}
-          <div className="px-12 lg:px-24 xl:px-32 space-y-6 animate-in fade-in duration-300">
+          {/* Dynamic Grid Layout - Responsive across all screen sizes */}
+          <div className="px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 space-y-4 lg:space-y-6 animate-in fade-in duration-300">
             
             {/* Top Section - Blended Performance Metrics spans full width */}
             <div className="w-full">
@@ -1252,16 +1252,15 @@ export default function MarketingAssistantPage() {
               />
             </div>
             
-            {/* Middle Section - Widgets fill height and align */}
-            <div className="flex gap-6">
+            {/* Main Section - Responsive layout for widgets */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
               
-              {/* Left Column - 70% width */}
-              <div className="flex-1 flex flex-col gap-4" style={{ flexBasis: '70%' }}>
-                {/* Campaign Management */}
+              {/* Campaign Management - Full width on mobile, spans 2 cols on xl */}
+              <div className="xl:col-span-2 space-y-4">
                 <PlatformCampaignWidget preloadedCampaigns={preloadedData.campaigns} />
                 
-                {/* Ad Creative & Performance Trends take up remaining space */}
-                <div className="grid grid-cols-2 gap-4 flex-1">
+                {/* Ad Creative & Performance - Stack on mobile, side-by-side on larger screens */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <AdCreativeBreakdown preloadedAds={preloadedData.adCreatives} />
                   <PerformanceChart 
                     preloadedPerformanceData={preloadedData.performanceData}
@@ -1269,8 +1268,8 @@ export default function MarketingAssistantPage() {
                 </div>
               </div>
 
-              {/* Right Column - AI Daily Report fills height */}
-              <div className="flex-1" style={{ flexBasis: '30%' }}>
+              {/* AI Daily Report - Full width on mobile, right column on xl */}
+              <div className="xl:col-span-1">
                 <AIDailyReport preloadedReport={preloadedData.dailyReport} />
               </div>
 

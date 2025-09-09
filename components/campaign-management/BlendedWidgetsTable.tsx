@@ -397,19 +397,19 @@ export default function BlendedWidgetsTable({
           </div>
         </div>
         
-        {/* Horizontal Content - Budget pill on left, 8 metrics in 2x4 grid on right */}
+        {/* Horizontal Content - Responsive layout for budget and metrics */}
         <div className="p-4">
-          <div className="flex gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             
-            {/* Left: Budget Usage Pill (Vertical) */}
-            <div className="flex-shrink-0 w-40">
-              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full">
+            {/* Budget Usage Pill - Full width on mobile, fixed width on desktop */}
+            <div className="flex-shrink-0 lg:w-40 w-full">
+              <div className="bg-[#0A0A0A] border border-[#222] rounded-lg p-4 h-full min-h-[120px]">
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-gray-600/20 to-gray-700/30 rounded-lg flex items-center justify-center mb-3">
                     <CreditCard className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-sm font-medium text-gray-300 mb-2">Budget Usage</h3>
-                  <div className="text-2xl font-semibold text-white mb-1">
+                  <div className="text-xl lg:text-2xl font-semibold text-white mb-1">
                     {(budgetData.budgetUsedPercentage).toFixed(1)}%
                   </div>
                   <div className="text-xs text-gray-400">
@@ -425,9 +425,9 @@ export default function BlendedWidgetsTable({
               </div>
             </div>
 
-            {/* Right: 8 Metrics in 2x4 Grid */}
+            {/* Metrics Grid - Responsive columns */}
             <div className="flex-1">
-              <div className="grid grid-cols-4 gap-3 h-full">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2 lg:gap-3 h-full">
                 {/* Row 1 - Top 4 metrics */}
                 <div>
                   <BlendedMetricCard

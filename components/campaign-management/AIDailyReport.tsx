@@ -463,17 +463,17 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
 
   return (
     <div className="bg-gradient-to-br from-[#111] to-[#0A0A0A] border border-[#333] rounded-lg h-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-4 py-5 border-b border-[#333] rounded-t-lg">
+      <div className="bg-gradient-to-r from-[#0f0f0f] to-[#1a1a1a] px-3 lg:px-4 py-3 lg:py-5 border-b border-[#333] rounded-t-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="w-10 h-10 lg:w-14 lg:h-14 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl 
                           flex items-center justify-center border border-white/10 shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
+              <Brain className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">AI Daily Report</h2>
+              <h2 className="text-lg lg:text-2xl font-bold tracking-tight text-white">AI Daily Report</h2>
               <div className="flex items-center gap-2">
-                <p className="text-gray-400 font-medium text-base">Campaign insights</p>
+                <p className="text-gray-400 font-medium text-sm lg:text-base">Campaign insights</p>
                 {report?.generatedAt && (
                   <div className="text-xs text-gray-500 bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#2a2a2a]">
                     {new Date(report.generatedAt).toLocaleString(undefined, {
@@ -493,11 +493,11 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
         </div>
       </div>
       
-        <div className="flex-1 p-3 overflow-auto">
-          <div className="space-y-3">
-            {/* AI Summary - No Truncation */}
-              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4 flex-1">
-                <p className="text-lg text-gray-300 leading-relaxed">
+        <div className="flex-1 p-2 lg:p-3 overflow-auto">
+          <div className="space-y-2 lg:space-y-3">
+            {/* AI Summary - Responsive text sizing */}
+              <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3 lg:p-4 flex-1">
+                <p className="text-sm lg:text-lg text-gray-300 leading-relaxed">
                   {report.summary || 'No summary available.'}
                 </p>
               </div>
@@ -525,35 +525,35 @@ export default function AIDailyReport({ preloadedReport }: AIDailyReportProps = 
             )}
 
             {/* AI Recommendations - Dynamic & Live */}
-            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <Brain className="w-5 h-5 text-blue-400" />
-                <h3 className="text-lg font-semibold text-blue-400">AI Recommendations</h3>
+            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-3 lg:p-4">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                <Brain className="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
+                <h3 className="text-sm lg:text-lg font-semibold text-blue-400">AI Recommendations</h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 lg:space-y-2">
                 {report?.topPriorities && report.topPriorities.length > 0 ? (
                   report.topPriorities.slice(0, 3).map((priority, index) => (
-                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                    <p key={index} className="text-xs lg:text-lg text-gray-300 leading-relaxed break-words">
                       • {priority}
                     </p>
                   ))
                 ) : report?.detectedIssues && report.detectedIssues.length > 0 ? (
                   report.detectedIssues.slice(0, 3).map((issue, index) => (
-                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                    <p key={index} className="text-xs lg:text-lg text-gray-300 leading-relaxed break-words">
                       • {issue}
                     </p>
                   ))
                 ) : report?.factualHighlights && report.factualHighlights.length > 0 ? (
                   report.factualHighlights.slice(0, 3).map((highlight, index) => (
-                    <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                    <p key={index} className="text-xs lg:text-lg text-gray-300 leading-relaxed break-words">
                       • {highlight}
                     </p>
                   ))
                 ) : (
                   <>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
-                    <p className="text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
+                    <p className="text-xs lg:text-lg text-gray-300 leading-relaxed">• Refresh campaign data for latest insights</p>
+                    <p className="text-xs lg:text-lg text-gray-300 leading-relaxed">• Check ad creatives performance below</p>
+                    <p className="text-xs lg:text-lg text-gray-300 leading-relaxed">• Review performance charts for trends</p>
                   </>
                 )}
               </div>
