@@ -360,11 +360,6 @@ export function DateRangePicker({ dateRange, setDateRange, disabled = false }: D
     // Set the active preset
     setActivePreset(preset.value)
     
-    // Important: explicitly log what we're setting to help with debugging
-    console.log(`Setting date range from preset ${preset.value}: `, {
-      from: format(newRange.from, 'yyyy-MM-dd'),
-      to: format(newRange.to, 'yyyy-MM-dd')
-    });
     
     setTempDateRange(newRange)
     setSelectionStep('complete')

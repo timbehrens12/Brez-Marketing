@@ -411,6 +411,24 @@ export default function RootLayout({
                 originalWarn.apply(console, args)
               }
 
+              // Suppress browser extension console.log messages
+              const originalLog = console.log
+              console.log = function(...args) {
+                if (args.some(arg =>
+                  typeof arg === 'string' && (
+                    // Filter out browser extension logs
+                    arg.includes('content-script.js') ||
+                    arg.includes('AdUnit') ||
+                    arg.includes('Document already loaded') ||
+                    arg.includes('Attempting to initialize') ||
+                    arg.includes('initialized successfully')
+                  )
+                )) {
+                  return // Suppress these logs
+                }
+                originalLog.apply(console, args)
+              }
+
               // Also suppress specific error messages
               const originalError = console.error
               console.error = function(...args) {
@@ -451,10 +469,7 @@ export default function RootLayout({
                   event.reason.message.includes('Document already loaded')
                 )) {
                   event.preventDefault() // Suppress these extension errors
-                  // Log suppressed extension errors for debugging (optional)
-                  if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-                    console.log('[Extension Error Suppressed]:', event.reason.message)
-                  }
+                  // Suppress extension errors completely (no logging even in dev)
                 }
               })
 

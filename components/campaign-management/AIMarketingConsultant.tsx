@@ -451,15 +451,10 @@ export default function AIMarketingConsultant(
 
   // Debug logging for brand selection
   useEffect(() => {
-    console.log('[AI Marketing] selectedBrandId changed:', selectedBrandId)
-    console.log('[AI Marketing] brands available:', brands.length)
   }, [selectedBrandId, brands.length])
 
   // Debug function to show ROAS calculation details
   const showROASDebug = () => {
-    console.log('[AI Marketing] Current brand:', selectedBrandId)
-    console.log('[AI Marketing] Available brands:', brands)
-    console.log('[AI Marketing] User ID:', user?.id)
   }
 
   // Add debug button in development
@@ -492,7 +487,6 @@ export default function AIMarketingConsultant(
           setMessages(parsedMessages)
         }
       } catch (error) {
-        console.error('Error loading saved messages:', error)
       }
     }
     setIsInitialized(true)
@@ -504,7 +498,6 @@ export default function AIMarketingConsultant(
       try {
         localStorage.setItem(`ai-chat-${user.id}-${selectedBrandId}`, JSON.stringify(messages))
       } catch (error) {
-        console.error('Error saving messages:', error)
       }
     }
   }, [messages, user?.id, selectedBrandId, isInitialized])
@@ -541,7 +534,6 @@ I can help with literally anything marketing-related for your brand - performanc
       const shouldRefresh = !selectedBrandId || brandId === selectedBrandId
 
       if (shouldRefresh && source !== 'AIMarketingConsultant') {
-        console.log('[AIMarketingConsultant] Refresh event triggered, resetting conversation for fresh data analysis...', { source, brandId: selectedBrandId })
         
         // Clear existing conversation and reset
         clearTimeout(refreshTimeout)
@@ -621,7 +613,6 @@ I can help with literally anything marketing-related for your brand - performanc
 
     // Only run if we have brands but no selected brand
     if (!selectedBrandId && brands.length > 0) {
-      console.log('[AI Marketing] Auto-selecting first available brand:', brands[0].id)
       setSelectedBrandId(brands[0].id)
       initialSetupDoneRef.current = true
     }
@@ -633,7 +624,6 @@ I can help with literally anything marketing-related for your brand - performanc
     if (user?.id && selectedBrandId && usageCheckedBrandRef.current !== selectedBrandId && !usageCheckRunningRef.current) {
       // Skip if we're already at the limit
       if (remainingUses === 0 || isLimitReached) {
-        console.log('[AI Marketing] BLOCKED: Skipping usage check - user already at limit')
         usageCheckedBrandRef.current = selectedBrandId // Mark as checked to prevent re-runs
         return
       }
@@ -642,14 +632,11 @@ I can help with literally anything marketing-related for your brand - performanc
       usageCheckedBrandRef.current = selectedBrandId
 
       const checkInitialUsage = async () => {
-        console.log(`[${new Date().toISOString()}] [AI Marketing] Checking initial usage for selected brand:`, selectedBrandId)
 
         try {
-          console.log(`[${new Date().toISOString()}] [AI Marketing] Making usage check API call for brand:`, selectedBrandId)
 
           // Last check before making API call
           if (remainingUses === 0 || isLimitReached) {
-            console.log('[AI Marketing] BLOCKED: Final check - user at limit before usage API call')
             usageCheckRunningRef.current = false
             return
           }
@@ -686,7 +673,6 @@ I can help with literally anything marketing-related for your brand - performanc
                 usage: usedCount
               }))
             } catch (error) {
-              console.log('[AI Marketing] Failed to cache usage data')
             }
           } else if (response.status === 429) {
             setRemainingUses(0)
@@ -699,13 +685,11 @@ I can help with literally anything marketing-related for your brand - performanc
                 usage: 15
               }))
             } catch (error) {
-              console.log('[AI Marketing] Failed to cache maxed out status')
             }
           } else {
             setRemainingUses(15)
           }
         } catch (error) {
-          console.error('[AI Marketing] Failed to check initial usage:', error)
         } finally {
           usageCheckRunningRef.current = false
         }
@@ -724,12 +708,10 @@ I can help with literally anything marketing-related for your brand - performanc
   const handlePromptSelect = async (prompt: PromptSuggestion) => {
     // Extra protection: completely block if at limit
     if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
-      console.log('[AI Marketing] BLOCKED: User at daily limit')
       return
     }
 
     if (isLoading || !selectedBrandId) {
-      console.log('[AI Marketing] Skipping prompt select - loading:', isLoading, 'limit reached:', isLimitReached, 'brandId:', selectedBrandId)
       return
     }
 
@@ -756,7 +738,6 @@ I can help with literally anything marketing-related for your brand - performanc
     try {
       await analyzeAndRespond(prompt.prompt, assistantMessage.id)
     } catch (error) {
-      console.error('Error getting AI response:', error)
       
       // Update the loading message with error
       setMessages(prev => prev.map(msg => 
@@ -774,7 +755,6 @@ I can help with literally anything marketing-related for your brand - performanc
   const handleCustomInput = async (customPrompt: string) => {
     // Extra protection: completely block if at limit
     if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
-      console.log('[AI Marketing] BLOCKED: User at daily limit')
       return
     }
 
@@ -817,7 +797,6 @@ I can help with literally anything marketing-related for your brand - performanc
     try {
       await analyzeAndRespond(customPrompt, assistantMessage.id)
     } catch (error) {
-      console.error('Error getting AI response:', error)
       
       // Update the loading message with error
       setMessages(prev => prev.map(msg => 
@@ -835,13 +814,11 @@ I can help with literally anything marketing-related for your brand - performanc
   const analyzeAndRespond = async (prompt: string, messageId: string) => {
     // Prevent multiple simultaneous API calls
     if (analyzeRunningRef.current) {
-      console.log('[AI Marketing] API call already in progress, skipping duplicate request')
       return
     }
 
     // Extra protection: completely block if at limit
     if (isLimitReached || (remainingUses !== null && remainingUses <= 0)) {
-      console.log('[AI Marketing] BLOCKED: Cannot make API call - user at daily limit')
       return
     }
 
@@ -850,17 +827,13 @@ I can help with literally anything marketing-related for your brand - performanc
     try {
       // Validate required parameters
       if (!selectedBrandId) {
-        console.error('[AI Marketing] No brandId selected for API call')
         throw new Error('No brand selected')
       }
 
       if (!user?.id) {
-        console.error('[AI Marketing] No user ID available for API call')
         throw new Error('User not authenticated')
       }
 
-      console.log('[AI Marketing] Making API call for brand:', selectedBrandId)
-      console.log('[AI Marketing] Full context:', {
         userId: user?.id,
         selectedBrandId,
         brandsCount: brands.length,
@@ -870,17 +843,14 @@ I can help with literally anything marketing-related for your brand - performanc
       // Use current selectedBrandId or auto-select if none available
       let brandIdToUse = selectedBrandId
       if (!brandIdToUse && brands.length > 0) {
-        console.log('[AI Marketing] Auto-selecting first available brand:', brands[0].id)
         brandIdToUse = brands[0].id
         // Don't set selectedBrandId here to avoid triggering useEffect again
       }
 
       if (!brandIdToUse) {
-        console.error('[AI Marketing] No brand available for API call')
         throw new Error('Please select a brand first')
       }
 
-      console.log(`[${new Date().toISOString()}] [AI Marketing] About to make fetch call to marketing consultant API for prompt:`, prompt.substring(0, 50) + '...')
 
       const response = await fetch('/api/ai/marketing-consultant', {
         method: 'POST',
@@ -901,11 +871,9 @@ I can help with literally anything marketing-related for your brand - performanc
         }),
       })
 
-      console.log('[AI Marketing] Received response with status:', response.status)
 
       const data = await response.json()
 
-      console.log('[AI Marketing] Response data:', { status: response.status, error: data.error, remainingUses: data.remainingUses })
 
       if (!response.ok) {
         // Handle rate limiting
@@ -920,7 +888,6 @@ I can help with literally anything marketing-related for your brand - performanc
               usage: 15
             }))
           } catch (error) {
-            console.log('[AI Marketing] Failed to cache maxed out status')
           }
           
           setMessages(prev => prev.map(msg =>
@@ -957,9 +924,7 @@ I can help with literally anything marketing-related for your brand - performanc
       }
       
       // Update remaining uses
-      // console.log('[AI Marketing Frontend] API Response:', data)
       if (data.remainingUses !== undefined) {
-        // console.log('[AI Marketing Frontend] Setting remaining uses:', data.remainingUses)
         setRemainingUses(data.remainingUses)
         if (data.remainingUses <= 0) {
           setIsLimitReached(true)
@@ -973,14 +938,11 @@ I can help with literally anything marketing-related for your brand - performanc
             usage: usedCount
           }))
         } catch (error) {
-          console.log('[AI Marketing] Failed to cache updated usage data')
         }
         
         // Trigger dashboard update
-        console.log('[AI Marketing] Dispatching ai-consultant-usage-updated event')
         window.dispatchEvent(new CustomEvent('ai-consultant-usage-updated'))
       } else {
-        // console.log('[AI Marketing Frontend] No remainingUses in response!')
       }
       
       // Clean up the response content
@@ -994,7 +956,6 @@ I can help with literally anything marketing-related for your brand - performanc
       ))
 
     } catch (error) {
-      console.error('Error in analyzeAndRespond:', error)
       throw error
     } finally {
       analyzeRunningRef.current = false
@@ -1130,7 +1091,6 @@ I can help with literally anything marketing-related for your brand - performanc
 
             <div className="w-full">
               <BrandSelector onSelect={(brandId) => {
-                console.log('[AI Marketing] Brand selected:', brandId)
                 setSelectedBrandId(brandId)
               }} />
             </div>
