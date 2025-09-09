@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
-import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, Rocket, AlertTriangle } from "lucide-react"
+import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, Rocket, AlertTriangle, Lock } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -897,13 +897,6 @@ export default function SettingsPage() {
     setRemoveSignature(false)
   }, [agencySettings.agency_name, agencySettings.signature_name])
 
-  // Handle tab parameter from URL
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab && ['agency-branding', 'onboarding-guide', 'brand-management', 'brand-access', 'operator-account', 'legal-privacy'].includes(tab)) {
-      setActiveTab(tab)
-    }
-  }, [searchParams])
 
 
 
@@ -1557,45 +1550,79 @@ export default function SettingsPage() {
     )
   }
 
-  // Define navigation items
+  // Check if agency branding is completed
+  const isAgencyBrandingComplete = () => {
+    return agencySettings.agency_name && agencySettings.agency_name.trim().length > 0
+  }
+
+  // Define navigation items with lock logic
   const navigationItems = [
     {
       id: 'agency-branding',
       label: 'Agency Branding',
       icon: Building2,
-      description: 'Customize your agency identity'
-    },
-    {
-      id: 'onboarding-guide',
-      label: 'Setup Guide',
-      icon: Rocket,
-      description: 'View the onboarding guide again'
+      description: 'Customize your agency identity',
+      locked: false,
+      lockReason: null
     },
     {
       id: 'brand-management',
       label: 'Connection Management',
       icon: Tag,
-      description: 'Manage brand profiles and connections'
+      description: 'Manage brand profiles and connections',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding first'
     },
     {
       id: 'brand-access',
       label: 'Access Management',
       icon: Share2,
-      description: 'Control brand sharing and permissions'
+      description: 'Control brand sharing and permissions',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding first'
     },
     {
       id: 'operator-account',
       label: 'Operator Account',
       icon: Shield,
-      description: 'Your account settings'
+      description: 'Your account settings',
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding first'
     },
     {
       id: 'legal-privacy',
       label: 'Legal & Privacy',
       icon: Info,
-      description: 'Terms and privacy policies'
+      description: 'Terms and privacy policies',
+      locked: false,
+      lockReason: null
     }
   ]
+
+  // Ensure user can't navigate to locked tabs
+  useEffect(() => {
+    const currentTab = navigationItems.find(item => item.id === activeTab)
+    if (currentTab && currentTab.locked) {
+      setActiveTab('agency-branding')
+      router.push('/settings?tab=agency-branding', { scroll: false })
+    }
+  }, [activeTab, agencySettings, router])
+
+  // Handle tab parameter from URL with lock protection
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['agency-branding', 'brand-management', 'brand-access', 'operator-account', 'legal-privacy'].includes(tab)) {
+      // Check if the requested tab is locked
+      const requestedTab = navigationItems.find(item => item.id === tab)
+      if (requestedTab && requestedTab.locked) {
+        // Redirect to agency branding if tab is locked
+        setActiveTab('agency-branding')
+        router.push('/settings?tab=agency-branding', { scroll: false })
+      } else {
+        setActiveTab(tab)
+      }
+    }
+  }, [searchParams, agencySettings, router])
 
   return (
     <DashboardErrorBoundary>
@@ -1621,19 +1648,25 @@ export default function SettingsPage() {
                   {navigationItems.map((item) => {
                     const Icon = item.icon
                     const isActive = activeTab === item.id
+                    const isLocked = item.locked
                     
-                    return (
+                    const button = (
                       <button
                         key={item.id}
                         onClick={() => {
-                          setActiveTab(item.id)
-                          router.push(`/settings?tab=${item.id}`, { scroll: false })
+                          if (!isLocked) {
+                            setActiveTab(item.id)
+                            router.push(`/settings?tab=${item.id}`, { scroll: false })
+                          }
                         }}
+                        disabled={isLocked}
                         className={cn(
-                          "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200",
+                          "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 relative",
                           isActive 
                             ? "bg-gradient-to-r from-white to-gray-200 text-black shadow-lg" 
-                            : "text-gray-300 hover:bg-white/10 hover:text-white"
+                            : isLocked
+                            ? "text-gray-500 cursor-not-allowed opacity-60"
+                            : "text-gray-300 hover:bg-white/10 hover:text-white cursor-pointer"
                         )}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
@@ -1641,13 +1674,32 @@ export default function SettingsPage() {
                           <p className="font-medium">{item.label}</p>
                           <p className={cn(
                             "text-xs leading-tight",
-                            isActive ? "text-gray-600" : "text-gray-500"
+                            isActive ? "text-gray-600" : isLocked ? "text-gray-600" : "text-gray-500"
                           )}>
                             {item.description}
                           </p>
                         </div>
+                        {isLocked && (
+                          <Lock className="w-4 h-4 flex-shrink-0 text-gray-500" />
+                        )}
                       </button>
                     )
+
+                    // Wrap locked items in tooltip
+                    if (isLocked && item.lockReason) {
+                      return (
+                        <Tooltip key={item.id}>
+                          <TooltipTrigger asChild>
+                            {button}
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="bg-[#1a1a1a] border border-[#333] text-white">
+                            <p>{item.lockReason}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    }
+
+                    return button
                   })}
                 </nav>
               </div>
