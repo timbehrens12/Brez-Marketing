@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { GridOverlay } from "@/components/GridOverlay"
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
-import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, Rocket, AlertTriangle, Lock } from "lucide-react"
+import { Trash2, Edit2, Plus, Upload, X, ExternalLink, Save, Check, Info, Camera, Building2, Tag, Briefcase, Image, Users, Share2, Eye, UserX, Clock, Shield, Calendar, User, FileText, AlertTriangle, Lock } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -897,6 +897,29 @@ export default function SettingsPage() {
     setRemoveSignature(false)
   }, [agencySettings.agency_name, agencySettings.signature_name])
 
+  // Handle tab parameter from URL and enforce branding completion
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    
+    // If agency branding is not complete, force user to agency branding tab
+    if (!isAgencyBrandingComplete() && tab !== 'agency-branding' && tab !== 'legal-privacy') {
+      setActiveTab('agency-branding')
+      router.replace('/settings?tab=agency-branding', { scroll: false })
+      return
+    }
+    
+    if (tab && ['agency-branding', 'brand-management', 'brand-access', 'operator-account', 'legal-privacy'].includes(tab)) {
+      // Check if the tab is locked
+      const tabItem = navigationItems.find(item => item.id === tab)
+      if (tabItem && !tabItem.locked) {
+        setActiveTab(tab)
+      } else if (tabItem && tabItem.locked) {
+        // Redirect to agency branding if trying to access locked tab
+        setActiveTab('agency-branding')
+        router.replace('/settings?tab=agency-branding', { scroll: false })
+      }
+    }
+  }, [searchParams, agencySettings.agency_name])
 
 
 
@@ -1551,12 +1574,12 @@ export default function SettingsPage() {
   }
 
   // Check if agency branding is completed
-  const isAgencyBrandingComplete = useMemo(() => {
-    return agencySettings.agency_name && agencySettings.agency_name.trim().length > 0
-  }, [agencySettings.agency_name])
+  const isAgencyBrandingComplete = () => {
+    return !!(agencySettings.agency_name && agencySettings.agency_name.trim().length > 0)
+  }
 
-  // Define navigation items with lock logic - memoized to prevent re-creation
-  const navigationItems = useMemo(() => [
+  // Define navigation items with locking logic
+  const navigationItems = [
     {
       id: 'agency-branding',
       label: 'Agency Branding',
@@ -1570,59 +1593,34 @@ export default function SettingsPage() {
       label: 'Connection Management',
       icon: Tag,
       description: 'Manage brand profiles and connections',
-      locked: !isAgencyBrandingComplete,
-      lockReason: 'Complete agency branding first'
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
     },
     {
       id: 'brand-access',
       label: 'Access Management',
       icon: Share2,
       description: 'Control brand sharing and permissions',
-      locked: !isAgencyBrandingComplete,
-      lockReason: 'Complete agency branding first'
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
     },
     {
       id: 'operator-account',
       label: 'Operator Account',
       icon: Shield,
       description: 'Your account settings',
-      locked: !isAgencyBrandingComplete,
-      lockReason: 'Complete agency branding first'
+      locked: !isAgencyBrandingComplete(),
+      lockReason: 'Complete agency branding setup first'
     },
     {
       id: 'legal-privacy',
       label: 'Legal & Privacy',
       icon: Info,
       description: 'Terms and privacy policies',
-      locked: false,
+      locked: false, // Always accessible
       lockReason: null
     }
-  ], [isAgencyBrandingComplete])
-
-  // Ensure user can't navigate to locked tabs
-  useEffect(() => {
-    const currentTab = navigationItems.find(item => item.id === activeTab)
-    if (currentTab && currentTab.locked) {
-      setActiveTab('agency-branding')
-      router.push('/settings?tab=agency-branding', { scroll: false })
-    }
-  }, [activeTab, navigationItems, router])
-
-  // Handle tab parameter from URL with lock protection
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab && ['agency-branding', 'brand-management', 'brand-access', 'operator-account', 'legal-privacy'].includes(tab)) {
-      // Check if the requested tab is locked
-      const requestedTab = navigationItems.find(item => item.id === tab)
-      if (requestedTab && requestedTab.locked) {
-        // Redirect to agency branding if tab is locked
-        setActiveTab('agency-branding')
-        router.push('/settings?tab=agency-branding', { scroll: false })
-      } else {
-        setActiveTab(tab)
-      }
-    }
-  }, [searchParams, navigationItems, router])
+  ]
 
   return (
     <DashboardErrorBoundary>
@@ -1650,7 +1648,7 @@ export default function SettingsPage() {
                     const isActive = activeTab === item.id
                     const isLocked = item.locked
                     
-                    const button = (
+                    const NavigationButton = (
                       <button
                         key={item.id}
                         onClick={() => {
@@ -1662,11 +1660,11 @@ export default function SettingsPage() {
                         disabled={isLocked}
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 relative",
-                          isActive 
+                          isActive && !isLocked
                             ? "bg-gradient-to-r from-white to-gray-200 text-black shadow-lg" 
                             : isLocked
                             ? "text-gray-500 cursor-not-allowed opacity-60"
-                            : "text-gray-300 hover:bg-white/10 hover:text-white cursor-pointer"
+                            : "text-gray-300 hover:bg-white/10 hover:text-white"
                         )}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
@@ -1674,7 +1672,7 @@ export default function SettingsPage() {
                           <p className="font-medium">{item.label}</p>
                           <p className={cn(
                             "text-xs leading-tight",
-                            isActive ? "text-gray-600" : isLocked ? "text-gray-600" : "text-gray-500"
+                            isActive && !isLocked ? "text-gray-600" : "text-gray-500"
                           )}>
                             {item.description}
                           </p>
@@ -1684,22 +1682,17 @@ export default function SettingsPage() {
                         )}
                       </button>
                     )
-
-                    // Wrap locked items in tooltip
-                    if (isLocked && item.lockReason) {
-                      return (
-                        <Tooltip key={item.id}>
-                          <TooltipTrigger asChild>
-                            {button}
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="bg-[#1a1a1a] border border-[#333] text-white">
-                            <p>{item.lockReason}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )
-                    }
-
-                    return button
+                    
+                    return isLocked && item.lockReason ? (
+                      <Tooltip key={item.id}>
+                        <TooltipTrigger asChild>
+                          {NavigationButton}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.lockReason}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : NavigationButton
                   })}
                 </nav>
               </div>
@@ -2075,137 +2068,9 @@ export default function SettingsPage() {
               )}
 
 
-              {/* Onboarding Guide Tab */}
-              {activeTab === 'onboarding-guide' && (
-                <div className="space-y-6">
-                  {/* Hero Section */}
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border border-[#333] p-8 shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] via-gray-500/[0.01] to-white/[0.02]" />
-                    <div className="relative z-10 text-center">
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#333] to-[#222] rounded-2xl flex items-center justify-center shadow-2xl mx-auto mb-6 border border-[#444]">
-                        <Rocket className="w-8 h-8 text-white" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-white mb-3">Agency Setup Guide</h2>
-                      <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-                        Complete these essential steps to transform your account into a full-scale marketing agency
-                      </p>
-                      <Button 
-                        className="bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                        onClick={() => router.push('/onboarding')}
-                      >
-                        <Rocket className="w-4 h-4 mr-2" />
-                        View Full Onboarding Guide
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Quick Setup Cards */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl hover:shadow-2xl transition-all duration-300">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-[#333]/20 to-[#222]/20 rounded-xl flex items-center justify-center border border-[#444]">
-                            <Building2 className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg text-white">Agency Branding</CardTitle>
-                            <CardDescription className="text-gray-400 text-sm">Essential for professional reports</CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 text-sm mb-4">
-                          Upload your agency logo and set up digital signature for branded reports and contracts.
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-[#333]/20 border-[#444] text-gray-300 hover:bg-[#333]/40 hover:border-[#555] hover:text-white"
-                          onClick={() => setActiveTab('agency-branding')}
-                        >
-                          Set Up Branding
-                        </Button>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl hover:shadow-2xl transition-all duration-300">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-[#333]/20 to-[#222]/20 rounded-xl flex items-center justify-center border border-[#444]">
-                            <Tag className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg text-white">Connect Platforms</CardTitle>
-                            <CardDescription className="text-gray-400 text-sm">Link Meta Ads & Shopify</CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 text-sm mb-4">
-                          Connect your first brand's Meta Ads and Shopify accounts to start analyzing performance.
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-[#333]/20 border-[#444] text-gray-300 hover:bg-[#333]/40 hover:border-[#555] hover:text-white"
-                          onClick={() => setActiveTab('brand-management')}
-                        >
-                          Manage Connections
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Progress Overview */}
-                  <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-3">
-                        <Check className="w-5 h-5 text-green-400" />
-                        Setup Progress
-                      </CardTitle>
-                      <CardDescription className="text-gray-400">
-                        Track your agency setup completion
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] rounded-lg border border-[#333]">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${agencySettings.agency_logo_url ? 'bg-green-400' : 'bg-gray-500'}`} />
-                            <span className="text-gray-300 text-sm">Agency Logo</span>
-                          </div>
-                          <Badge variant={agencySettings.agency_logo_url ? 'default' : 'secondary'} className="text-xs">
-                            {agencySettings.agency_logo_url ? 'Complete' : 'Pending'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] rounded-lg border border-[#333]">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${agencySettings.signature_image ? 'bg-green-400' : 'bg-gray-500'}`} />
-                            <span className="text-gray-300 text-sm">Digital Signature</span>
-                          </div>
-                          <Badge variant={agencySettings.signature_image ? 'default' : 'secondary'} className="text-xs">
-                            {agencySettings.signature_image ? 'Complete' : 'Pending'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] rounded-lg border border-[#333]">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${brands.length > 0 ? 'bg-green-400' : 'bg-gray-500'}`} />
-                            <span className="text-gray-300 text-sm">Brand Connected</span>
-                          </div>
-                          <Badge variant={brands.length > 0 ? 'default' : 'secondary'} className="text-xs">
-                            {brands.length > 0 ? `${brands.length} Brand${brands.length > 1 ? 's' : ''}` : 'None'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
 
               {/* Connection Management Tab */}
-              {activeTab === 'brand-management' && (
+              {activeTab === 'brand-management' && !navigationItems.find(item => item.id === 'brand-management')?.locked && (
                 <div className="space-y-8">
                   {/* Header Section */}
                   <div className="space-y-2">
@@ -2470,7 +2335,7 @@ export default function SettingsPage() {
               )}
 
               {/* Brand Access Tab */}
-              {activeTab === 'brand-access' && (
+              {activeTab === 'brand-access' && !navigationItems.find(item => item.id === 'brand-access')?.locked && (
                 <div className="space-y-6">
                   {/* Overview Stats */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2571,7 +2436,7 @@ export default function SettingsPage() {
               )}
 
               {/* Operator Account Tab */}
-              {activeTab === 'operator-account' && (
+              {activeTab === 'operator-account' && !navigationItems.find(item => item.id === 'operator-account')?.locked && (
                 <div className="space-y-8">
                   <Card className="bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] border-[#333] shadow-xl">
                     <CardHeader className="border-b border-[#333]">
