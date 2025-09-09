@@ -834,12 +834,6 @@ I can help with literally anything marketing-related for your brand - performanc
         throw new Error('User not authenticated')
       }
 
-        userId: user?.id,
-        selectedBrandId,
-        brandsCount: brands.length,
-        prompt: prompt.substring(0, 50) + '...'
-      })
-
       // Use current selectedBrandId or auto-select if none available
       let brandIdToUse = selectedBrandId
       if (!brandIdToUse && brands.length > 0) {
