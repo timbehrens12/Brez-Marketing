@@ -16,13 +16,17 @@ export async function GET(request: NextRequest) {
     
     console.log('[Test] Table structure check:', { tableStructure, structureError })
     
-    // Try to insert a simple test record
+    // Try to insert a simple test record with required adset_id
     const testRecord = {
       brand_id: brandId,
       connection_id: connectionId,
       account_id: 'act_498473601902770',
+      campaign_id: 'test_campaign_456',
+      campaign_name: 'Test Campaign',
+      adset_id: 'test_adset_789', // Required field
+      adset_name: 'Test Ad Set',
       ad_id: 'test_ad_123',
-      campaign_id: 'test_campaign_456', 
+      ad_name: 'Test Ad',
       impressions: 100,
       clicks: 5,
       spend: 10.50,
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
     console.log('[Test] Attempting to insert:', testRecord)
     
     const { data: insertResult, error: insertError } = await supabase
-      .from('meta_ad_insights')
+      .from('meta_ad_daily_insights')
       .insert(testRecord)
       .select()
     
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
     
     // Clean up the test record
     await supabase
-      .from('meta_ad_insights')
+      .from('meta_ad_daily_insights')
       .delete()
       .eq('ad_id', 'test_ad_123')
     
