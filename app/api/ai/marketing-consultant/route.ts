@@ -1392,6 +1392,10 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
   
   // Calculate averages - use Meta revenue for Meta ROAS (show whatever Meta API returns)
   const averageROAS = totalSpend > 0 ? metaOnlyRevenue / totalSpend : 0
+  
+  // Check for unrealistic attribution (high ROAS with low spend might indicate attribution issues)
+  const attributionWarning = averageROAS > 20 && totalSpend < 100 ? 
+    'Note: High ROAS on low spend may indicate attribution discrepancies between Meta and actual sales tracking.' : null
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
   
@@ -1501,6 +1505,7 @@ function analyzeCampaignData(campaigns: any[], adSets: any[], ads: any[], dailyS
     topAds,
     campaignSpendDistribution,
     audiencePerformance,
+    attributionWarning, // Warning about potentially unrealistic attribution
     // Additional insights
     costPerConversion: totalRevenue > 0 ? totalSpend / (totalRevenue / 50) : 0,
     impressionShare: totalImpressions,
@@ -1634,6 +1639,8 @@ CRITICAL DATA ACCURACY REQUIREMENTS:
 - NEVER say things like "solid performance" or "good ROAS" when the actual ROAS is 0.00
 - Be transparent about data attribution: Meta spend + Shopify revenue does not automatically mean all revenue came from ads
 - CRITICAL: Only discuss "Meta ROAS" or "Facebook ROAS" when referring to platform-specific attribution
+- When attribution warnings are present in the data, acknowledge them and explain that high ROAS on low spend may indicate attribution discrepancies
+- TRANSPARENCY: If you see very high ROAS (>20x) with low spend (<$100), mention that this might indicate attribution issues between Meta's tracking and actual sales sources
 
 You are an expert marketing consultant providing personalized advice to ${userName} for ${brandName}. ${nicheContext}
 
@@ -1697,7 +1704,7 @@ Current Context:
 
 === EXACT VALUES TO USE (DO NOT MODIFY OR ESTIMATE) ===
 - Total Ad Spend: $${(analysis.totalSpend || 0).toFixed(2)}
-- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x ← USE THIS EXACT VALUE ONLY
+- Average ROAS: ${(analysis.averageROAS || 0).toFixed(2)}x ← USE THIS EXACT VALUE ONLY${analysis.attributionWarning ? ` (${analysis.attributionWarning})` : ''}
 - Total Impressions: ${(analysis.totalImpressions || 0).toLocaleString()}
 - Average CTR: ${(analysis.averageCTR || 0).toFixed(2)}%
 - Total Campaigns: ${campaigns.length}
