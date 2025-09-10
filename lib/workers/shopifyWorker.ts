@@ -694,6 +694,14 @@ export class ShopifyWorker {
 if (process.env.NODE_ENV === 'production' || process.env.WORKER_MODE === 'true') {
   ShopifyWorker.initialize()
   
+  // Also initialize Meta worker
+  import('@/lib/workers/metaWorker').then(({ MetaWorker }) => {
+    MetaWorker.initialize()
+    console.log('[Worker] Both Shopify and Meta workers initialized')
+  }).catch(error => {
+    console.error('[Worker] Failed to initialize Meta worker:', error)
+  })
+  
   // Run cleanup every hour
   setInterval(ShopifyWorker.cleanup, 60 * 60 * 1000)
 }

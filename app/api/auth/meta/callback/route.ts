@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs'
-import { DataBackfillService } from '@/lib/services/dataBackfillService'
+import { MetaQueueService } from '@/lib/services/metaQueueService'
 
 export async function GET(request: NextRequest) {
   console.log('=== META CALLBACK START ===')
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    const { error: dbError } = await supabase
+    const { data: connectionData, error: dbError } = await supabase
       .from('platform_connections')
       .upsert({
         brand_id: state,
@@ -62,20 +62,48 @@ export async function GET(request: NextRequest) {
         access_token: tokenData.access_token,
         status: 'active',
         user_id: userId,
-        sync_status: 'pending'
+        sync_status: 'bulk_importing'
       })
+      .select('id')
+      .single()
 
-    if (dbError) {
+    if (dbError || !connectionData) {
       console.error('Database error:', dbError)
       return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=db_error')
     }
 
-    console.log(`[Meta Callback] Connection created successfully, triggering data backfill for brand ${state}`)
+    console.log(`[Meta Callback] Connection created successfully, triggering Redis queue backfill for brand ${state}`)
     
-    // Trigger automatic data backfill in the background
-    DataBackfillService.triggerInitialBackfill(state, 'meta', tokenData.access_token)
+    // Get Meta account ID for the queue jobs
+    let accountId = ''
+    try {
+      const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
+      const meData = await meResponse.json()
+      accountId = meData.data?.[0]?.id || ''
+      console.log(`[Meta Callback] Found account ID: ${accountId}`)
+    } catch (error) {
+      console.warn(`[Meta Callback] Could not fetch account ID:`, error)
+    }
+    
+    // Trigger Redis queue-based historical backfill in the background
+    MetaQueueService.queueCompleteHistoricalSync(
+      state, 
+      connectionData.id, 
+      tokenData.access_token, 
+      accountId
+    )
+      .then(result => {
+        console.log(`[Meta Callback] Successfully queued ${result.totalJobs} backfill jobs, estimated completion: ${result.estimatedCompletion}`)
+      })
       .catch(error => {
-        console.error('[Meta Callback] Background backfill failed:', error)
+        console.error('[Meta Callback] Background queue backfill failed:', error)
+        // Mark sync as failed in database
+        supabase
+          .from('platform_connections')
+          .update({ sync_status: 'failed' })
+          .eq('id', connectionData.id)
+          .then(() => console.log('Updated sync status to failed'))
+          .catch(err => console.error('Failed to update sync status:', err))
       })
 
     // Clear auth cookie
