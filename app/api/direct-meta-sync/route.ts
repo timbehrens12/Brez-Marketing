@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[Direct Meta Sync] Syncing ${range.label}: ${range.start} to ${range.end}`)
         
-        // Fetch insights for this date range - include adset_id which is required
-        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=impressions,clicks,spend,reach,cpm,cpc,ctr,adset_id,adset_name,campaign_name&level=ad&limit=100`
+        // Fetch insights for this date range - only get fields we need for our table
+        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=impressions,clicks,spend,reach,cpm,cpc,ctr,adset_id,ad_id,date_start&level=ad&limit=100`
         
         const insightsResponse = await fetch(insightsUrl)
         const insightsData = await insightsResponse.json()
@@ -69,9 +69,12 @@ export async function GET(request: NextRequest) {
         // Store insights in database
         let stored = 0
         console.log(`[Direct Meta Sync] Sample insight structure:`, insights[0])
+        console.log(`[Direct Meta Sync] All insight keys:`, insights.map(i => Object.keys(i)))
         
         for (const insight of insights) {
           try {
+            console.log(`[Direct Meta Sync] Processing insight:`, insight)
+            
             // Log the insight data we're trying to store - match actual table structure
           const insightData = {
             brand_id: brandId,
@@ -104,6 +107,12 @@ export async function GET(request: NextRequest) {
             }
             
             console.log(`[Direct Meta Sync] Storing insight:`, insightData)
+            console.log(`[Direct Meta Sync] Missing fields check:`, {
+              ad_id: insight.ad_id || 'MISSING',
+              adset_id: insight.adset_id || 'MISSING', 
+              date_start: insight.date_start || 'MISSING',
+              spend: insight.spend || 'MISSING'
+            })
             
             const { error: insertError } = await supabase
               .from('meta_ad_daily_insights')
