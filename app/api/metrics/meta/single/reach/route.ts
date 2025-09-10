@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // UPDATED: Query meta_campaign_daily_stats for reach data
+    // UPDATED: Query meta_ad_daily_insights for reach data
     // This table has deduplicated reach values that are more accurate 
     const { data: campaignStats, error: statsError } = await supabase
-      .from('meta_campaign_daily_stats')
+      .from('meta_ad_daily_insights')
       .select('date, reach')
       .eq('brand_id', brandId)
       .gte('date', from)

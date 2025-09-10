@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
 
-    console.log(`CTR SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`CTR SINGLE METRIC API (from meta_ad_daily_insights): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
 
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
 
     // CTR = (Clicks / Impressions) * 100
     const { data: dailyStats, error: dbError } = await supabase
-      .from('meta_campaign_daily_stats') 
+      .from('meta_ad_daily_insights') 
       .select('date, clicks, impressions') // Need clicks and impressions
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
     if (dbError) {
-      console.error(`CTR SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      console.error(`CTR SINGLE METRIC API: Error retrieving from meta_ad_daily_insights:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_ad_daily_insights' }
       })
     }
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         from: fromDate,
         to: toDate,
         records: filteredStats.length,
-        source: 'meta_campaign_daily_stats'
+        source: 'meta_ad_daily_insights'
       }
     }
     return NextResponse.json(result)
