@@ -182,7 +182,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const selectedBrandId = 'all'
   
   // Brand selection working correctly now
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   const [navigatingToolId, setNavigatingToolId] = useState<string | null>(null)
   
@@ -1419,24 +1418,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     return tools
   }, [isLoadingConnections, isLoadingUserData, userLeadsCount, userCampaignsCount, userUsageData, connections, toolUsageData, brandReportAvailability, campaignOptimizationAvailability, selectedBrandFilter, brands])
 
-  // Helper functions for categories and status (exactly like action center)
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'automation': return <Zap className="h-4 w-4" />
-      case 'analytics': return <TrendingUp className="h-4 w-4" />
-      case 'tools': return <Settings className="h-4 w-4" />
-      default: return <CheckSquare className="h-4 w-4" />
-    }
-  }
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'automation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'analytics': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'tools': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      default: return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-    }
-  }
 
   const getStatusBadge = (tool: ReusableTool) => {
     if (tool.dependencyType === 'user') {
@@ -1804,11 +1785,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       });
     }
     
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      tools = tools.filter(tool => tool.category === selectedCategory);
-    }
-    
     // Sort by dependency type: user (agency-dependent) first, then brand-dependent
     return tools.sort((a, b) => {
       const order = { 'user': 0, 'brand': 1, 'none': 2 }
@@ -1816,42 +1792,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     });
   })()
 
-  const categories = useMemo(() => {
-    // Get base tools considering brand filter
-    let baseTools = reusableTools.filter(t => t.status === 'available');
-    
-    // Apply brand filter if specific brand is selected
-    if (selectedBrandFilter !== 'all') {
-      baseTools = baseTools.filter(tool => {
-        // User-dependent tools are always available regardless of brand
-        if (tool.dependencyType === 'user') return true;
-        
-        // Brand-dependent tools need to check if the selected brand has the required platforms
-        if (tool.dependencyType === 'brand') {
-          const selectedBrand = brands.find(b => b.id === selectedBrandFilter);
-          if (!selectedBrand) return false;
-          
-          // Check if the tool has required platforms
-          if (tool.requiresPlatforms) {
-            const brandConnections = connections.filter(c => c.brand_id === selectedBrandFilter);
-            const availablePlatforms = brandConnections.map(c => c.platform_type);
-            return tool.requiresPlatforms.some(platform => availablePlatforms.includes(platform));
-          }
-          
-          return true; // No platform requirements
-        }
-        
-        return true;
-      });
-    }
-    
-    return [
-      { id: 'all', name: 'Brand Availability', count: baseTools.length },
-      { id: 'automation', name: 'Automation', count: baseTools.filter(t => t.category === 'automation').length },
-      { id: 'analytics', name: 'Analytics', count: baseTools.filter(t => t.category === 'analytics').length },
-      { id: 'tools', name: 'Tools', count: baseTools.filter(t => t.category === 'tools').length }
-    ];
-  }, [reusableTools, selectedBrandFilter, brands, connections])
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandFilter)
   
@@ -3372,7 +3312,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       >
                         <Filter className="h-3 w-3 mr-1" />
                         {selectedBrandFilter === 'all' ? (
-                          `Brand Availability (${reusableTools.filter(t => t.status === 'available').length})`
+                          `All Brands (${reusableTools.filter(t => t.status === 'available').length})`
                         ) : (
                           <div className="flex items-center gap-1">
                             {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
@@ -3392,7 +3332,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         )}
                       >
                         <Tag className="h-4 w-4 mr-2" />
-                        Brand Availability ({reusableTools.filter(t => t.status === 'available').length})
+                        All Brands ({reusableTools.filter(t => t.status === 'available').length})
                       </DropdownMenuItem>
                       {brands.map((brand: any) => {
                         // Calculate available tools for this specific brand
@@ -3438,27 +3378,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Category Filter */}
-                  {categories.map((category) => (
-                    <Button
-                      key={category.id}
-                      variant={selectedCategory === category.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={cn(
-                        "h-8 text-xs",
-                        selectedCategory === category.id 
-                          ? "bg-[#2A2A2A] hover:bg-[#333] text-white" 
-                          : "bg-transparent border-[#333] text-[#9ca3af] hover:bg-[#333] hover:text-white"
-                      )}
-                    >
-                      {getCategoryIcon(category.id)}
-                      <span className="ml-1">{category.name}</span>
-                      <Badge variant="secondary" className="ml-2 h-4 text-xs px-1">
-                        {category.count}
-                      </Badge>
-                    </Button>
-                  ))}
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
