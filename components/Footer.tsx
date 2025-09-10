@@ -37,7 +37,7 @@ export function Footer() {
   
   return (
     <footer className="w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] pt-4 pb-4 px-6">
-      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4 min-h-[64px]">
+      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="text-white">

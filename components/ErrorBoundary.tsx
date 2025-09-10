@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Button } from '@/components/ui/button'
+import { GridOverlay } from '@/components/GridOverlay'
 
 interface ErrorBoundaryState {
   hasError: boolean
@@ -91,6 +92,8 @@ export class DashboardErrorBoundary extends React.Component<
               backgroundSize: '20px 20px'
             }}></div>
           </div>
+          {/* Grid overlay for graph paper effect */}
+          <GridOverlay />
 
           <div className="relative z-10 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-8 max-w-lg shadow-2xl">
             {/* Header */}
