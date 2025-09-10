@@ -54,7 +54,7 @@ export function Footer() {
   
   return (
     <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-6 transition-all duration-300 ${
-      sidebarExpanded ? 'pt-4 pb-4' : 'pt-3 pb-3'
+      sidebarExpanded ? 'py-4' : 'py-2'
     }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
