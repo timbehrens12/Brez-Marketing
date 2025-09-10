@@ -356,8 +356,9 @@ export class MetaQueueService {
       // Step 1: Add recent sync for immediate UI (high priority)
       await this.addRecentSyncJob(brandId, connectionId, accessToken, accountId)
       
-      // Step 2: Queue all historical backfill jobs
-      await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
+      // Step 2: TEMPORARILY DISABLED - Queue all historical backfill jobs
+      // await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
+      console.log(`[Meta Queue] Historical backfill temporarily disabled - only recent sync will run`)
       
       // Calculate estimated completion time
       const chunks = this.createDateChunks(
@@ -365,8 +366,8 @@ export class MetaQueueService {
         new Date(), 
         90
       )
-      const totalJobs = 1 + (chunks.length * 3) // recent + (campaigns + demographics + insights) * chunks
-      const estimatedMinutes = Math.ceil(totalJobs * 2) // Estimate 2 minutes per job average
+      const totalJobs = 1 // Only recent sync for now
+      const estimatedMinutes = 2 // Only recent sync, should be fast
       
       console.log(`[Meta Queue] Queued ${totalJobs} total jobs, estimated completion: ${estimatedMinutes} minutes`)
       
