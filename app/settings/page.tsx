@@ -2521,7 +2521,7 @@ export default function SettingsPage() {
                         Data Security
                       </Button>
                       <p className="text-xs text-gray-500 mt-3">
-                        Last updated: {new Date().toLocaleDateString()}
+                        Last updated: August 13, 2025
                       </p>
                     </CardContent>
                   </Card>

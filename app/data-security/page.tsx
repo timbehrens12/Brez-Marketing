@@ -31,7 +31,7 @@ export default function DataSecurity() {
             <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-8 rounded-lg border border-[#333] text-white shadow-xl">
           <div className="prose max-w-none">
             <p className="mb-6 text-sm text-gray-400">
-              Last updated: December 17, 2024
+              Last updated: August 13, 2025
             </p>
 
             <div className="mb-8 p-6 bg-gradient-to-r from-green-900/20 to-green-800/20 border border-green-700/30 rounded-lg">
@@ -301,7 +301,7 @@ export default function DataSecurity() {
 
             <div className="mt-8 p-6 bg-gradient-to-r from-gray-800/20 to-gray-700/20 border border-gray-600/30 rounded-lg">
               <p className="text-sm text-gray-300 leading-relaxed">
-                This Data Security documentation is reviewed and updated regularly to reflect our current security practices and compliance requirements. Last security review: December 17, 2024.
+                This Data Security documentation is reviewed and updated regularly to reflect our current security practices and compliance requirements. Last security review: August 13, 2025.
               </p>
             </div>
           </div>
