@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
 
-    console.log(`ADSPEND SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`ADSPEND SINGLE METRIC API (from meta_ad_daily_insights): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
 
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: dailyStats, error: dbError } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select('date, spend')
+      .from('meta_ad_daily_insights')
+      .select('date, spent')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
 
     if (dbError) {
-      console.error(`ADSPEND SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      console.error(`ADSPEND SINGLE METRIC API: Error retrieving from meta_ad_daily_insights:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
 
@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
       console.log(`[ADSPEND SINGLE METRIC API] No data found for ${fromDate} to ${toDate}, returning 0`)
       return NextResponse.json({ 
         value: 0,
-        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_ad_daily_insights' }
       })
     }
 
     const totalSpend = filteredStats.reduce((sum, item) => {
-      const spendVal = parseFloat(item.spend || '0')
+      const spendVal = parseFloat(item.spent || '0')
       return sum + (isNaN(spendVal) ? 0 : spendVal)
     }, 0)
 
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         from: fromDate,
         to: toDate,
         records: filteredStats.length,
-        source: 'meta_campaign_daily_stats'
+        source: 'meta_ad_daily_insights'
       }
     }
     return NextResponse.json(result)
