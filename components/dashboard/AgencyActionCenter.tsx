@@ -83,7 +83,7 @@ interface ReusableTool {
   name: string
   description: string
   icon: any
-  category: 'automation' | 'creative' | 'analytics' | 'tools'
+  category: 'automation' | 'analytics' | 'tools'
   status: 'available' | 'coming-soon' | 'unavailable'
   href: string
   features: string[]
@@ -121,7 +121,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'AI Chatbot',
     description: 'Get personalized marketing advice and strategy recommendations',
     icon: MessageSquare,
-    category: 'creative',
+    category: 'automation',
     href: '/ai-marketing-consultant',
     features: ['Strategic Insights', 'Marketing Analysis', '24/7 Availability'],
     dependencyType: 'user',
@@ -143,7 +143,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'Creative Studio',
     description: 'Create high-converting ad creatives with AI-powered generation and custom templates',
     icon: Settings,
-    category: 'creative',
+    category: 'automation',
     href: '/ad-creative-studio',
     features: ['Auto Creative Generation', 'Custom Templates', 'Copy Creative Style'],
     dependencyType: 'user',
@@ -1422,8 +1422,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Helper functions for categories and status (exactly like action center)
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'automation': return <Calendar className="h-4 w-4" />
-      case 'creative': return <Paintbrush className="h-4 w-4" />
+      case 'automation': return <Zap className="h-4 w-4" />
       case 'analytics': return <TrendingUp className="h-4 w-4" />
       case 'tools': return <Settings className="h-4 w-4" />
       default: return <CheckSquare className="h-4 w-4" />
@@ -1433,7 +1432,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'automation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'creative': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
       case 'analytics': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
       case 'tools': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
       default: return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
@@ -1848,8 +1846,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     }
     
     return [
-      { id: 'all', name: 'All Available', count: baseTools.length },
-      { id: 'creative', name: 'Creative', count: baseTools.filter(t => t.category === 'creative').length },
+      { id: 'all', name: 'Brand Availability', count: baseTools.length },
+      { id: 'automation', name: 'Automation', count: baseTools.filter(t => t.category === 'automation').length },
       { id: 'analytics', name: 'Analytics', count: baseTools.filter(t => t.category === 'analytics').length },
       { id: 'tools', name: 'Tools', count: baseTools.filter(t => t.category === 'tools').length }
     ];
@@ -3374,7 +3372,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       >
                         <Filter className="h-3 w-3 mr-1" />
                         {selectedBrandFilter === 'all' ? (
-                          `All Tools (${reusableTools.filter(t => t.status === 'available').length})`
+                          `Brand Availability (${reusableTools.filter(t => t.status === 'available').length})`
                         ) : (
                           <div className="flex items-center gap-1">
                             {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
@@ -3394,7 +3392,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         )}
                       >
                         <Tag className="h-4 w-4 mr-2" />
-                        All Tools ({reusableTools.filter(t => t.status === 'available').length})
+                        Brand Availability ({reusableTools.filter(t => t.status === 'available').length})
                       </DropdownMenuItem>
                       {brands.map((brand: any) => {
                         // Calculate available tools for this specific brand
