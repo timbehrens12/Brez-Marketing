@@ -12,10 +12,16 @@ import {
 import { useState, useEffect } from "react"
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  // Use a static year or suppress hydration warning
+  const [currentYear, setCurrentYear] = useState(2025)
   
   // Track sidebar state for dynamic footer height
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  
+  // Update year on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear())
+  }, [])
   
   // Listen for sidebar state changes
   useEffect(() => {
@@ -53,8 +59,8 @@ export function Footer() {
   }
   
   return (
-    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-6 transition-all duration-300 ${
-      sidebarExpanded ? 'py-4' : 'py-2'
+    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-6 transition-all duration-300 mt-auto ${
+      sidebarExpanded ? 'pt-4 pb-4' : 'pt-[14px] pb-[14px]'
     }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
