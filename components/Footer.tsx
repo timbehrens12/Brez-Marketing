@@ -10,8 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useState, useEffect } from "react"
+import dynamic from 'next/dynamic'
 
-export function Footer() {
+// Suppress hydration warnings for this component
+const FooterContent = dynamic(() => Promise.resolve(FooterContentComponent), {
+  ssr: false
+})
+
+function FooterContentComponent() {
   // Use a static year or suppress hydration warning
   const [currentYear, setCurrentYear] = useState(2025)
   
@@ -148,5 +154,11 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+export function Footer() {
+  return (
+    <FooterContent />
   )
 } 

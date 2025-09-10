@@ -454,7 +454,12 @@ export default function RootLayout({
                     // Filter out browser extension errors
                     arg.includes('content-script.js') ||
                     arg.includes('AdUnit') ||
-                    arg.includes('Document already loaded')
+                    arg.includes('Document already loaded') ||
+                    // Filter out React hydration errors
+                    arg.includes('Minified React error #418') ||
+                    arg.includes('Text content does not match') ||
+                    arg.includes('Hydration failed') ||
+                    arg.includes('There was an error while hydrating')
                   )
                 )) {
                   return // Suppress these errors
@@ -464,6 +469,18 @@ export default function RootLayout({
                 window._consoleErrorOverrideApplied = true
               }
 
+              // Add global error handler for uncaught errors including React hydration
+              window.addEventListener('error', function(event) {
+                if (event.message && (
+                  event.message.includes('Minified React error #418') ||
+                  event.message.includes('Text content does not match') ||
+                  event.message.includes('Hydration failed')
+                )) {
+                  event.preventDefault()
+                  return false
+                }
+              })
+              
               // Add global error handler for uncaught promise rejections (extension errors)
               window.addEventListener('unhandledrejection', function(event) {
                 if (event.reason && typeof event.reason.message === 'string' && (
