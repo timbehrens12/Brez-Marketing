@@ -653,14 +653,16 @@ export function BrandManagementDropdown({
                   </div>
                 </div>
 
-                {/* Meta Pixel Information - Always Show */}
+                {/* Meta Integration Information */}
                 <div className="border-t border-[#333] p-3">
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-gray-400">
-                      <p>
-                        <span className="font-medium text-gray-300">Meta Integration:</span> Ensure your Meta account has a pixel configured and installed on your website for access to conversion data like ROAS and performance metrics.
+                      <p className="mb-1">
+                        <span className="font-medium text-gray-300">API Connection:</span> Connect our API to your Meta Business account to automatically sync ad campaign data, ROAS metrics, and conversion tracking.
                       </p>
+                      <p className="text-amber-400 text-xs mb-1">⚠️ Requires: Business account admin access and Meta Pixel installed on your website for conversion data.</p>
+                      <p>Provides real-time campaign performance with automated ad spend and revenue reporting.</p>
                     </div>
                   </div>
                 </div>
