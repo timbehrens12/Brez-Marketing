@@ -658,11 +658,8 @@ export function BrandManagementDropdown({
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-gray-400">
-                      <p className="mb-1">
-                        <span className="font-medium text-gray-300">Meta Integration:</span> Connect your Facebook/Instagram ad accounts to track campaign performance and ROAS.
-                      </p>
                       <p>
-                        <span className="font-medium text-gray-300">Pixel Setup:</span> Install Meta Pixel ID <code className="bg-[#333] px-1 rounded text-gray-200">247438798136653</code> on your website for conversion tracking.
+                        <span className="font-medium text-gray-300">Pixel Required:</span> Ensure your Meta account has a pixel set up so we have access to conversion data like ROAS, cost per acquisition, and other performance metrics.
                       </p>
                     </div>
                   </div>

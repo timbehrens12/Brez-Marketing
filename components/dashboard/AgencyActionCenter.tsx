@@ -2129,15 +2129,15 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         .eq('status', 'active')
         .in('platform_type', ['meta', 'google', 'tiktok', 'shopify']) // Include Shopify for logos/context
 
-      // Filter brands to only those with ad platforms connected (but include shopify data)
-      const brandsWithAdPlatforms = brands.filter(brand => 
+      // Filter brands to those with any platform connected (ad platforms or shopify)
+      const brandsWithPlatforms = brands.filter(brand => 
         allConnections?.some(conn => 
           conn.brand_id === brand.id && 
-          ['meta', 'google', 'tiktok'].includes(conn.platform_type)
+          ['meta', 'google', 'tiktok', 'shopify'].includes(conn.platform_type)
         )
       )
 
-      if (!brandsWithAdPlatforms.length) {
+      if (!brandsWithPlatforms.length) {
         setBrandHealthData([])
         return
       }
@@ -2197,7 +2197,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
       }
 
       // Step 5: Process each brand
-      const brandHealthPromises = brandsWithAdPlatforms.map(async (brand) => {
+      const brandHealthPromises = brandsWithPlatforms.map(async (brand) => {
 
         // Get brand connections
         const brandConnections = allConnections?.filter(conn => conn.brand_id === brand.id) || []
