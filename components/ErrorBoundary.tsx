@@ -82,12 +82,17 @@ export class DashboardErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] relative">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-red-500/5 animate-pulse"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(239,68,68,0.05),rgba(0,0,0,0.8))]"></div>
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+              backgroundSize: '20px 20px'
+            }}></div>
+          </div>
 
-          <div className="relative z-10 bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 max-w-lg shadow-2xl">
+          <div className="relative z-10 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-8 max-w-lg shadow-2xl">
             {/* Header */}
             <div className="text-center mb-6">
               <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-xl relative overflow-hidden">
@@ -97,12 +102,12 @@ export class DashboardErrorBoundary extends React.Component<
                 </div>
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">Oops! Something went wrong</h1>
-              <p className="text-slate-400 text-base">We encountered an unexpected error while loading your dashboard</p>
+              <p className="text-[#9ca3af] text-base">We encountered an unexpected error while loading your dashboard</p>
             </div>
 
             {/* Error Description */}
-            <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 mb-6">
-              <p className="text-slate-300 text-sm leading-relaxed">
+            <div className="bg-[#0f0f0f] border border-[#333] rounded-xl p-4 mb-6">
+              <p className="text-gray-300 text-sm leading-relaxed">
                 This is usually a temporary issue related to data loading or component initialization.
                 Don't worry - your data is safe and you can try again.
               </p>
@@ -110,12 +115,12 @@ export class DashboardErrorBoundary extends React.Component<
 
             {/* Specific Error Handling */}
             {this.state.error?.message.includes('310') && (
-              <div className="bg-amber-950/30 border border-amber-700/30 rounded-xl p-4 mb-4">
+              <div className="bg-orange-950/20 border border-orange-700/30 rounded-xl p-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                  <p className="text-amber-200 font-medium text-sm">React Error #310 Detected</p>
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                  <p className="text-orange-200 font-medium text-sm">React Error #310 Detected</p>
                 </div>
-                <p className="text-amber-300/80 text-xs">
+                <p className="text-orange-300/80 text-xs">
                   This is typically caused by useEffect dependency issues or multiple Supabase client instances.
                   A retry should resolve this automatically.
                 </p>
@@ -126,7 +131,7 @@ export class DashboardErrorBoundary extends React.Component<
             <div className="flex gap-3 mb-6">
               <Button
                 onClick={this.handleRetry}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium h-12 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-200"
+                className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-white font-medium h-12 rounded-xl shadow-lg border border-[#444] transition-all duration-200"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -137,7 +142,7 @@ export class DashboardErrorBoundary extends React.Component<
               <Button
                 onClick={() => window.location.reload()}
                 variant="outline"
-                className="flex-1 border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700 hover:text-white h-12 rounded-xl transition-all duration-200"
+                className="flex-1 border-[#333] bg-[#1a1a1a] text-[#9ca3af] hover:bg-[#333] hover:text-white h-12 rounded-xl transition-all duration-200"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -147,12 +152,12 @@ export class DashboardErrorBoundary extends React.Component<
             </div>
 
             {/* Help Section */}
-            <div className="bg-slate-900/30 border border-slate-700/30 rounded-xl p-4">
+            <div className="bg-[#0f0f0f] border border-[#333] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <p className="text-green-300 font-medium text-sm">Need Help?</p>
               </div>
-              <p className="text-slate-400 text-xs">
+              <p className="text-[#9ca3af] text-xs">
                 If this problem persists, try clearing your browser cache or contact our support team.
               </p>
             </div>
@@ -160,17 +165,17 @@ export class DashboardErrorBoundary extends React.Component<
             {/* Dev Error Details */}
             {process.env.NODE_ENV === 'development' && (
               <details className="mt-4">
-                <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-400 transition-colors">
+                <summary className="text-xs text-[#9ca3af] cursor-pointer hover:text-gray-300 transition-colors">
                   🔧 Error Details (Development Only)
                 </summary>
-                <div className="mt-3 bg-slate-950/50 border border-slate-800/50 rounded-lg p-3">
-                  <div className="text-xs text-slate-400 font-mono space-y-1">
+                <div className="mt-3 bg-[#0f0f0f] border border-[#333] rounded-lg p-3">
+                  <div className="text-xs text-[#9ca3af] font-mono space-y-1">
                     <div><strong>ID:</strong> {this.state.errorId}</div>
                     <div><strong>Message:</strong> {this.state.error?.message}</div>
                     {this.state.error?.stack && (
                       <div>
                         <strong>Stack:</strong>
-                        <div className="mt-1 bg-slate-900/50 p-2 rounded text-xs overflow-auto max-h-20">
+                        <div className="mt-1 bg-[#1a1a1a] border border-[#333] p-2 rounded text-xs overflow-auto max-h-20">
                           {this.state.error.stack.slice(0, 300)}...
                         </div>
                       </div>
