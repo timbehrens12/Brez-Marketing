@@ -17,12 +17,19 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .eq('status', 'active')
-      .single()
+      .maybeSingle()
 
-    if (connError || !connection) {
+    if (connError) {
       return NextResponse.json({ 
-        error: 'No active Meta connection found',
-        details: connError?.message 
+        error: 'Database error',
+        details: connError.message 
+      }, { status: 500 })
+    }
+
+    if (!connection) {
+      return NextResponse.json({ 
+        error: 'No active Meta connection found - please reconnect Meta first',
+        brandId 
       }, { status: 404 })
     }
 
@@ -42,6 +49,29 @@ export async function GET(request: NextRequest) {
     const accountCreatedDate = account.created_time
 
     console.log(`[Force Meta Sync] Found account: ${accountId}, created: ${accountCreatedDate}`)
+
+    // First, clear any old failed/stuck jobs for this brand
+    const { metaQueue } = await import('@/lib/services/metaQueueService')
+    
+    console.log(`[Force Meta Sync] Clearing old jobs for brand ${brandId}...`)
+    
+    // Get and remove old failed jobs
+    const failedJobs = await metaQueue.getFailed()
+    const brandFailedJobs = failedJobs.filter(job => job.data?.brandId === brandId)
+    for (const job of brandFailedJobs) {
+      await metaQueue.removeJob(job.id)
+    }
+    
+    // Get and remove old waiting jobs with wrong connection ID
+    const waitingJobs = await metaQueue.getWaiting()
+    const brandWaitingJobs = waitingJobs.filter(job => 
+      job.data?.brandId === brandId && job.data?.connectionId !== connection.id
+    )
+    for (const job of brandWaitingJobs) {
+      await metaQueue.removeJob(job.id)
+    }
+    
+    console.log(`[Force Meta Sync] Cleared ${brandFailedJobs.length} failed and ${brandWaitingJobs.length} invalid waiting jobs`)
 
     // Update sync status to in_progress
     await supabase
