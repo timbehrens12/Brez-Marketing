@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
             const { error: insertError } = await supabase
               .from('meta_ad_daily_insights')
               .upsert(insightData, {
-                onConflict: 'brand_id,ad_id,date'
+                onConflict: 'ad_id,date'
               })
 
             if (insertError) {
