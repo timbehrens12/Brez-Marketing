@@ -16,27 +16,35 @@ export async function GET(request: NextRequest) {
     
     console.log('[Test] Table structure check:', { tableStructure, structureError })
     
-    // Try to insert a simple test record with required adset_id
+    // Try to insert a simple test record matching actual table structure
     const testRecord = {
       brand_id: brandId,
-      connection_id: connectionId,
-      account_id: '498473601902770',
-      campaign_id: 'test_campaign_456',
-      campaign_name: 'Test Campaign',
-      adset_id: 'test_adset_789', // Required field
-      adset_name: 'Test Ad Set',
       ad_id: 'test_ad_123',
-      ad_name: 'Test Ad',
+      adset_id: 'test_adset_789', // Required field
+      date: '2025-09-10',
+      spent: 10.50,
       impressions: 100,
       clicks: 5,
-      spend: 10.50,
-      reach: 80,
-      cpm: 105.0,
-      cpc: 2.10,
+      conversions: 0,
       ctr: 5.0,
-      date: '2025-09-10',
+      cpc: 2.10,
+      cost_per_conversion: 0,
+      reach: 80,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      results: 0,
+      cost_per_result: 0,
+      page_view_count: 0,
+      add_to_cart_count: 0,
+      initiate_checkout_count: 0,
+      add_payment_info_count: 0,
+      view_content_count: 0,
+      purchase_count: 0,
+      lead_count: 0,
+      complete_registration_count: 0,
+      funnel_conversion_rate: 0,
+      search_count: 0,
+      add_to_wishlist_count: 0
     }
     
     console.log('[Test] Attempting to insert:', testRecord)

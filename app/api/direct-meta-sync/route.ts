@@ -72,27 +72,35 @@ export async function GET(request: NextRequest) {
         
         for (const insight of insights) {
           try {
-            // Log the insight data we're trying to store - include required adset_id
+            // Log the insight data we're trying to store - match actual table structure
           const insightData = {
             brand_id: brandId,
-            connection_id: connection.id,
-            account_id: accountId.replace('act_', ''), // Remove act_ prefix to match database format
-              campaign_id: insight.campaign_id,
-              campaign_name: insight.campaign_name || '',
-              adset_id: insight.adset_id, // Required field
-              adset_name: insight.adset_name || '',
-              ad_id: insight.ad_id,
-              ad_name: insight.ad_name || '',
-              impressions: parseInt(insight.impressions) || 0,
-              clicks: parseInt(insight.clicks) || 0,
-              spend: parseFloat(insight.spend) || 0,
-              reach: parseInt(insight.reach) || 0,
-              cpm: parseFloat(insight.cpm) || 0,
-              cpc: parseFloat(insight.cpc) || 0,
-              ctr: parseFloat(insight.ctr) || 0,
-              date: insight.date_start,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+            ad_id: insight.ad_id,
+            adset_id: insight.adset_id, // Required field
+            date: insight.date_start,
+            spent: parseFloat(insight.spend) || 0,
+            impressions: parseInt(insight.impressions) || 0,
+            clicks: parseInt(insight.clicks) || 0,
+            conversions: 0, // Default for now
+            ctr: parseFloat(insight.ctr) || 0,
+            cpc: parseFloat(insight.cpc) || 0,
+            cost_per_conversion: 0, // Default for now
+            reach: parseInt(insight.reach) || 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            results: 0,
+            cost_per_result: 0,
+            page_view_count: 0,
+            add_to_cart_count: 0,
+            initiate_checkout_count: 0,
+            add_payment_info_count: 0,
+            view_content_count: 0,
+            purchase_count: 0,
+            lead_count: 0,
+            complete_registration_count: 0,
+            funnel_conversion_rate: 0,
+            search_count: 0,
+            add_to_wishlist_count: 0
             }
             
             console.log(`[Direct Meta Sync] Storing insight:`, insightData)
