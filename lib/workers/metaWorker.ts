@@ -75,10 +75,10 @@ export class MetaWorker {
       // Import Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // EMERGENCY FIX: Sync last 90 days for comprehensive data during "Syncing" status
+      // EMERGENCY FIX: Sync last 365 days (1 year) for comprehensive historical data
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 90) // Extended from 7 to 90 days
+      startDate.setDate(startDate.getDate() - 365) // Extended to 1 year for maximum coverage
       
       console.log(`[Meta Worker] Syncing recent data: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
       

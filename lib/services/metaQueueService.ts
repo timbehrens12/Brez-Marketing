@@ -110,9 +110,20 @@ export class MetaQueueService {
     accountId: string,
     accountCreatedDate?: string
   ): Promise<void> {
-    // Calculate date ranges for historical backfill
+    // Calculate date ranges for historical backfill  
     const endDate = new Date()
-    const startDate = new Date(accountCreatedDate || '2020-01-01') // Default to 2020 if no creation date
+    
+    // EMERGENCY FIX: Use a more reasonable start date if account creation date not provided
+    // Instead of 2020, use 1 year ago or account creation date (whichever is more recent)
+    let startDate: Date
+    if (accountCreatedDate) {
+      startDate = new Date(accountCreatedDate)
+    } else {
+      // Default to 1 year ago instead of 2020 to avoid hitting Meta API limits
+      startDate = new Date()
+      startDate.setFullYear(startDate.getFullYear() - 1)
+      console.log(`[Meta Queue] ⚠️ No account creation date provided, defaulting to 1 year ago: ${startDate.toISOString().split('T')[0]}`)
+    }
     
     console.log(`[Meta Queue] Planning historical backfill from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
@@ -356,18 +367,18 @@ export class MetaQueueService {
       // Step 1: Add recent sync for immediate UI (high priority)
       await this.addRecentSyncJob(brandId, connectionId, accessToken, accountId)
       
-      // Step 2: TEMPORARILY DISABLED - Queue all historical backfill jobs
-      // await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
-      console.log(`[Meta Queue] Historical backfill temporarily disabled - only recent sync will run`)
+      // Step 2: RE-ENABLE HISTORICAL BACKFILL - Queue all historical backfill jobs
+      await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
+      console.log(`[Meta Queue] Historical backfill re-enabled - full data sync will proceed`)
       
-      // Calculate estimated completion time
+      // Calculate estimated completion time with historical backfill
       const chunks = this.createDateChunks(
         new Date(accountCreatedDate || '2020-01-01'), 
         new Date(), 
         90
       )
-      const totalJobs = 1 // Only recent sync for now
-      const estimatedMinutes = 2 // Only recent sync, should be fast
+      const totalJobs = 1 + (chunks.length * 3) // Recent sync + (chunks * 3 job types)
+      const estimatedMinutes = Math.max(5, Math.ceil(totalJobs * 0.5)) // Estimate 30 seconds per job, min 5 minutes
       
       console.log(`[Meta Queue] Queued ${totalJobs} total jobs, estimated completion: ${estimatedMinutes} minutes`)
       

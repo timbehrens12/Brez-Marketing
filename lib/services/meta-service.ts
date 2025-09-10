@@ -302,6 +302,14 @@ export async function fetchMetaAdInsights(
         
         const insightsData = await fetchWithRetry(insightsUrl);
         
+        console.log(`[Meta] 🔍 DEBUG: API Response for account ${account.id}:`)
+        console.log(`[Meta] 🔍 Request URL: ${insightsUrl.substring(0, 150)}...`)
+        console.log(`[Meta] 🔍 Response data count: ${insightsData?.data?.length || 0}`)
+        if (insightsData?.data?.length > 0) {
+          console.log(`[Meta] 🔍 Date range in response: ${insightsData.data[0]?.date_start} to ${insightsData.data[insightsData.data.length - 1]?.date_stop}`)
+          console.log(`[Meta] 🔍 Sample record:`, JSON.stringify(insightsData.data[0], null, 2))
+        }
+        
         if (insightsData.error) {
           console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
           continue
