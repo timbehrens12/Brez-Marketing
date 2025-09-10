@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     const { data: connection, error: connError } = await supabase
       .from('platform_connections')
-      .select('id, access_token, platform_data')
+      .select('id, access_token')
       .eq('brand_id', brandId)
       .eq('platform', 'meta')
       .eq('status', 'active')
