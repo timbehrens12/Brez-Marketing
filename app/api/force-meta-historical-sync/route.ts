@@ -3,6 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { MetaQueueService } from '@/lib/services/metaQueueService'
 
 export async function GET(request: NextRequest) {
+  // Set a timeout to prevent hanging
+  const timeoutId = setTimeout(() => {
+    throw new Error('Request timeout after 10 seconds')
+  }, 10000)
+  
   try {
     // Hardcode the brand ID for easy testing
     const brandId = '0da80e8f-2df3-468d-9053-08fa4d24e6e8'
@@ -50,28 +55,10 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Force Meta Sync] Found account: ${accountId}, created: ${accountCreatedDate}`)
 
-    // First, clear any old failed/stuck jobs for this brand
+    // Import queue service
     const { metaQueue } = await import('@/lib/services/metaQueueService')
     
-    console.log(`[Force Meta Sync] Clearing old jobs for brand ${brandId}...`)
-    
-    // Get and remove old failed jobs
-    const failedJobs = await metaQueue.getFailed()
-    const brandFailedJobs = failedJobs.filter(job => job.data?.brandId === brandId)
-    for (const job of brandFailedJobs) {
-      await metaQueue.removeJob(job.id)
-    }
-    
-    // Get and remove old waiting jobs with wrong connection ID
-    const waitingJobs = await metaQueue.getWaiting()
-    const brandWaitingJobs = waitingJobs.filter(job => 
-      job.data?.brandId === brandId && job.data?.connectionId !== connection.id
-    )
-    for (const job of brandWaitingJobs) {
-      await metaQueue.removeJob(job.id)
-    }
-    
-    console.log(`[Force Meta Sync] Cleared ${brandFailedJobs.length} failed and ${brandWaitingJobs.length} invalid waiting jobs`)
+    console.log(`[Force Meta Sync] Using connection ID: ${connection.id}`)
 
     // Update sync status to in_progress
     await supabase
@@ -90,6 +77,9 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Force Meta Sync] Successfully queued ${result.totalJobs} jobs`)
 
+    // Clear timeout on success
+    clearTimeout(timeoutId)
+    
     return NextResponse.json({
       success: true,
       brandId,
@@ -100,6 +90,8 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
+    // Clear timeout on error  
+    clearTimeout(timeoutId)
     console.error('[Force Meta Sync] Error:', error)
     return NextResponse.json({ 
       error: 'Failed to force historical sync',
