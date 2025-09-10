@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Meta API Test</title>
+</head>
+<body>
+    <h1>Meta API Direct Test</h1>
+    <button onclick="testMetaAPI()">Test Meta API</button>
+    <div id="results"></div>
+
+<script>
+async function testMetaAPI() {
+    const accessToken = "EACEhm43ODp8BPYLducwVtxzFuHZB5vQkTYvoJXN0mtKWxpZCnyXDQfU9wX6Tsp2RTXzM7p78q78ZC9EhD29IInR6QRHeEAMi8meJdABlR7ZCseH762nokJJCQCVcF9pJ27c8m0umWy2wQ3softa3FS9wyyv4JwMq6bzZBdybPBafPs3QvvZCShhDcLjP8T75yFd4Mj5HYC8Uv4tKm77lNdfhzr9gB1xKq0zzFYHWA4mZAE0VhLGYzrwsCRUgB4Wta8EZCW8W07oXqmiwA9LTHg9n5RJ9nSvJZCYGBQkPM";
+    const accountId = "act_498473601902770";
+    
+    const results = document.getElementById('results');
+    results.innerHTML = '<p>Testing...</p>';
+    
+    // Test different date ranges
+    const tests = [
+        { name: "Last 7 days", since: "2025-09-03", until: "2025-09-10" },
+        { name: "Last 30 days", since: "2025-08-11", until: "2025-09-10" },
+        { name: "Since March", since: "2025-03-01", until: "2025-09-10" },
+        { name: "All 2025", since: "2025-01-01", until: "2025-09-10" }
+    ];
+    
+    let output = '';
+    
+    for (const test of tests) {
+        output += `<h3>Testing: ${test.name} (${test.since} to ${test.until})</h3>`;
+        
+        const url = `https://graph.facebook.com/v18.0/${accountId}/insights?fields=account_id,campaign_id,campaign_name,ad_id,ad_name,impressions,clicks,spend,reach,date_start,date_stop&level=ad&time_range={"since":"${test.since}","until":"${test.until}"}&time_increment=1&access_token=${accessToken}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                output += `<p style="color: red;">❌ Error: ${JSON.stringify(data.error)}</p>`;
+            } else {
+                const count = data.data ? data.data.length : 0;
+                output += `<p style="color: green;">✅ Records: ${count}</p>`;
+                
+                if (count > 0) {
+                    const dates = data.data.map(item => item.date_start);
+                    const uniqueDates = [...new Set(dates)].sort();
+                    const totalSpend = data.data.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+                    
+                    output += `<ul>`;
+                    output += `<li>Date span: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}</li>`;
+                    output += `<li>Unique dates: ${uniqueDates.length}</li>`;
+                    output += `<li>Total spend: $${totalSpend.toFixed(2)}</li>`;
+                    output += `<li>Sample dates: ${uniqueDates.slice(0, 10).join(', ')}</li>`;
+                    output += `</ul>`;
+                }
+            }
+        } catch (error) {
+            output += `<p style="color: red;">❌ Fetch error: ${error.message}</p>`;
+        }
+        
+        // Add delay between requests
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    results.innerHTML = output;
+}
+</script>
+</body>
+</html>
