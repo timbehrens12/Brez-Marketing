@@ -610,25 +610,37 @@ export async function fetchMetaAdInsights(
       
       // Use the deduplicated insights for storage
       
-      // Process in batches to avoid timeout on large datasets
-      const batchSize = 100
+      // EMERGENCY FIX: Use simple insert with delete-first approach to avoid conflicts and timeouts
       let insertError = null
       
-      for (let i = 0; i < enrichedInsights.length; i += batchSize) {
-        const batch = enrichedInsights.slice(i, i + batchSize)
-        console.log(`[Meta] Storing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(enrichedInsights.length/batchSize)} (${batch.length} records)`)
+      if (enrichedInsights.length > 0) {
+        console.log(`[Meta] Using emergency storage method for ${enrichedInsights.length} records`)
         
-        const { error: batchError } = await supabase
-          .from('meta_ad_insights')
-          .upsert(batch, {
-            onConflict: 'brand_id,ad_id,date',
-            ignoreDuplicates: false
-          })
-        
-        if (batchError) {
-          insertError = batchError
-          console.error(`[Meta] Error storing batch ${Math.floor(i/batchSize) + 1}:`, batchError)
-          break
+        // Store each record individually to avoid timeout and conflicts
+        for (let i = 0; i < enrichedInsights.length; i++) {
+          const insight = enrichedInsights[i]
+          console.log(`[Meta] Storing individual record ${i+1}/${enrichedInsights.length}: ${insight.ad_id} on ${insight.date}`)
+          
+          // Delete existing record first
+          await supabase
+            .from('meta_ad_insights')
+            .delete()
+            .eq('brand_id', insight.brand_id)
+            .eq('ad_id', insight.ad_id)
+            .eq('date', insight.date)
+          
+          // Insert new record
+          const { error: singleError } = await supabase
+            .from('meta_ad_insights')
+            .insert(insight)
+          
+          if (singleError) {
+            insertError = singleError
+            console.error(`[Meta] Error storing record ${i+1}:`, singleError)
+            break
+          } else {
+            console.log(`[Meta] ✅ Stored record ${i+1}: ${insight.ad_id} on ${insight.date}`)
+          }
         }
       }
       

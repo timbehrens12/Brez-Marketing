@@ -6,7 +6,14 @@ import { createClient } from '@/lib/supabase/server'
  * Meta Worker - Processes Meta sync queue jobs
  */
 export class MetaWorker {
+  static isInitialized = false
+  
   static initialize() {
+    if (this.isInitialized) {
+      console.log('[Meta Worker] Already initialized, skipping...')
+      return
+    }
+    
     console.log('[Meta Worker] Initializing Meta worker...')
     
     // Process different Meta job types
@@ -16,6 +23,8 @@ export class MetaWorker {
     metaQueue.process(MetaJobType.HISTORICAL_INSIGHTS, 1, this.processHistoricalInsights.bind(this))
     metaQueue.process(MetaJobType.DAILY_SYNC, 5, this.processDailySync.bind(this))
     metaQueue.process(MetaJobType.RECONCILE, 1, this.processReconcile.bind(this))
+    
+    this.isInitialized = true
     
     // Error handling
     metaQueue.on('error', (error) => {
