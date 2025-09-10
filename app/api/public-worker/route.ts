@@ -16,52 +16,97 @@ export async function POST(request: NextRequest) {
     
     // Import dependencies
     const { ShopifyWorker } = await import('@/lib/workers/shopifyWorker')
+    const { MetaWorker } = await import('@/lib/workers/metaWorker')
     const { shopifyQueue } = await import('@/lib/services/shopifyQueueService')
+    const { metaQueue } = await import('@/lib/services/metaQueueService')
+    
+    // Initialize Meta worker
+    MetaWorker.initialize()
     
     // Process waiting jobs
     let processedCount = 0
     const results = []
     
-    // Get waiting jobs
-    const waitingJobs = await shopifyQueue.getWaiting()
-    const activeJobs = await shopifyQueue.getActive()
+    // Get waiting jobs from both queues
+    const shopifyWaiting = await shopifyQueue.getWaiting()
+    const shopifyActive = await shopifyQueue.getActive()
+    const metaWaiting = await metaQueue.getWaiting()
+    const metaActive = await metaQueue.getActive()
     
-    console.log(`[Public Worker] Found ${waitingJobs.length} waiting, ${activeJobs.length} active jobs`)
+    console.log(`[Public Worker] Shopify: ${shopifyWaiting.length} waiting, ${shopifyActive.length} active`)
+    console.log(`[Public Worker] Meta: ${metaWaiting.length} waiting, ${metaActive.length} active`)
+    
+    // Combine jobs (prioritize Meta since it's been stuck)
+    const allWaitingJobs = [...metaWaiting, ...shopifyWaiting]
+    const totalActive = shopifyActive.length + metaActive.length
     
     // Process waiting jobs
-    for (let i = 0; i < Math.min(waitingJobs.length, maxJobs); i++) {
-      const job = waitingJobs[i]
+    for (let i = 0; i < Math.min(allWaitingJobs.length, maxJobs); i++) {
+      const job = allWaitingJobs[i]
       
       try {
         console.log(`[Public Worker] Processing ${job.name} job ${job.id}`)
         
-        // Process the job based on its type
-        switch (job.name) {
-          case 'recent_sync':
-            await ShopifyWorker.processRecentSync(job)
-            break
-          case 'bulk_orders':
-            await ShopifyWorker.processBulkOrders(job)
-            break
-          case 'bulk_customers':
-            await ShopifyWorker.processBulkCustomers(job)
-            break
-          case 'bulk_products':
-            await ShopifyWorker.processBulkProducts(job)
-            break
-          case 'real_time_order':
-            await ShopifyWorker.processRealTimeOrder(job)
-            break
-          case 'real_time_customer':
-            await ShopifyWorker.processRealTimeCustomer(job)
-            break
-          case 'real_time_product':
-            await ShopifyWorker.processRealTimeProduct(job)
-            break
-          default:
-            console.warn(`[Public Worker] Unknown job type: ${job.name}`)
-            await shopifyQueue.moveToFailed(job.id, new Error(`Unknown job type: ${job.name}`))
-            continue
+        // Determine if this is a Meta or Shopify job
+        const isMetaJob = metaWaiting.includes(job)
+        console.log(`[Public Worker] Job ${job.id} is ${isMetaJob ? 'Meta' : 'Shopify'} job`)
+        
+        // Process the job based on its type and origin
+        if (isMetaJob) {
+          // Meta jobs
+          switch (job.name) {
+            case 'recent_sync':
+              await MetaWorker.processRecentSync(job)
+              break
+            case 'historical_campaigns':
+              await MetaWorker.processHistoricalCampaigns(job)
+              break
+            case 'historical_demographics':
+              await MetaWorker.processHistoricalDemographics(job)
+              break
+            case 'historical_insights':
+              await MetaWorker.processHistoricalInsights(job)
+              break
+            case 'daily_sync':
+              await MetaWorker.processDailySync(job)
+              break
+            case 'reconcile':
+              await MetaWorker.processReconcile(job)
+              break
+            default:
+              console.warn(`[Public Worker] Unknown Meta job type: ${job.name}`)
+              await metaQueue.moveToFailed(job.id, new Error(`Unknown Meta job type: ${job.name}`))
+              continue
+          }
+        } else {
+          // Shopify jobs
+          switch (job.name) {
+            case 'recent_sync':
+              await ShopifyWorker.processRecentSync(job)
+              break
+            case 'bulk_orders':
+              await ShopifyWorker.processBulkOrders(job)
+              break
+            case 'bulk_customers':
+              await ShopifyWorker.processBulkCustomers(job)
+              break
+            case 'bulk_products':
+              await ShopifyWorker.processBulkProducts(job)
+              break
+            case 'real_time_order':
+              await ShopifyWorker.processRealTimeOrder(job)
+              break
+            case 'real_time_customer':
+              await ShopifyWorker.processRealTimeCustomer(job)
+              break
+            case 'real_time_product':
+              await ShopifyWorker.processRealTimeProduct(job)
+              break
+            default:
+              console.warn(`[Public Worker] Unknown Shopify job type: ${job.name}`)
+              await shopifyQueue.moveToFailed(job.id, new Error(`Unknown Shopify job type: ${job.name}`))
+              continue
+          }
         }
         
         results.push({
@@ -86,8 +131,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       processed: processedCount,
-      waiting: waitingJobs.length - processedCount,
-      active: activeJobs.length,
+      waiting: allWaitingJobs.length - processedCount,
+      active: totalActive,
+      shopify: {
+        waiting: shopifyWaiting.length,
+        active: shopifyActive.length
+      },
+      meta: {
+        waiting: metaWaiting.length,
+        active: metaActive.length
+      },
       results
     })
   } catch (error) {
