@@ -3430,8 +3430,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           <div
                             key={tool.id}
                             className={cn(
-                              "rounded-lg border p-4 transition-all hover:shadow-md flex flex-col h-full",
-                              getCategoryColor(tool.category),
+                              "rounded-lg border p-4 transition-all hover:shadow-md flex flex-col h-full border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg",
                               isDisabled && "opacity-60",
                               // Remove red border for maxed out tools - only button should be red
                               false
