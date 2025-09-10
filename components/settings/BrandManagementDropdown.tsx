@@ -658,11 +658,8 @@ export function BrandManagementDropdown({
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-gray-400">
-                      <p className="mb-1">
-                        <span className="font-medium text-gray-300">Meta Integration:</span> Ensure your Meta account has a pixel configured for access to conversion data like ROAS and performance metrics.
-                      </p>
                       <p>
-                        <span className="font-medium text-gray-300">Pixel Required:</span> Meta Pixel must be installed on your website for conversion tracking and campaign optimization.
+                        <span className="font-medium text-gray-300">Meta Integration:</span> Ensure your Meta account has a pixel configured and installed on your website for access to conversion data like ROAS and performance metrics.
                       </p>
                     </div>
                   </div>
