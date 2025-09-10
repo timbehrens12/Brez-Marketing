@@ -9,9 +9,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useState, useEffect } from "react"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  
+  // Track sidebar state for dynamic footer height
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  
+  // Listen for sidebar state changes
+  useEffect(() => {
+    const handleSidebarStateChange = (event: CustomEvent) => {
+      setSidebarExpanded(event.detail.expanded)
+    }
+    
+    window.addEventListener('sidebarStateChange', handleSidebarStateChange as EventListener)
+    
+    return () => {
+      window.removeEventListener('sidebarStateChange', handleSidebarStateChange as EventListener)
+    }
+  }, [])
   
   // Version information
   const packageVersion = "0.1.0" // This could be imported from package.json in a real setup
@@ -36,7 +53,9 @@ export function Footer() {
   }
   
   return (
-    <footer className="w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] pt-4 pb-4 px-6">
+    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-6 transition-all duration-300 ${
+      sidebarExpanded ? 'pt-4 pb-4' : 'pt-3 pb-3'
+    }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
