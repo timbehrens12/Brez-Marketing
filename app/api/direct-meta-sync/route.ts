@@ -68,35 +68,45 @@ export async function GET(request: NextRequest) {
 
         // Store insights in database
         let stored = 0
+        console.log(`[Direct Meta Sync] Sample insight structure:`, insights[0])
+        
         for (const insight of insights) {
           try {
+            // Log the insight data we're trying to store
+            const insightData = {
+              brand_id: brandId,
+              connection_id: connection.id,
+              account_id: accountId,
+              ad_id: insight.ad_id,
+              campaign_id: insight.campaign_id,
+              impressions: parseInt(insight.impressions) || 0,
+              clicks: parseInt(insight.clicks) || 0,
+              spend: parseFloat(insight.spend) || 0,
+              reach: parseInt(insight.reach) || 0,
+              cpm: parseFloat(insight.cpm) || 0,
+              cpc: parseFloat(insight.cpc) || 0,
+              ctr: parseFloat(insight.ctr) || 0,
+              date: insight.date_start,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+            
+            console.log(`[Direct Meta Sync] Storing insight:`, insightData)
+            
             const { error: insertError } = await supabase
               .from('meta_ad_insights')
-              .upsert({
-                brand_id: brandId,
-                connection_id: connection.id,
-                account_id: accountId,
-                ad_id: insight.ad_id,
-                campaign_id: insight.campaign_id,
-                impressions: parseInt(insight.impressions) || 0,
-                clicks: parseInt(insight.clicks) || 0,
-                spend: parseFloat(insight.spend) || 0,
-                reach: parseInt(insight.reach) || 0,
-                cpm: parseFloat(insight.cpm) || 0,
-                cpc: parseFloat(insight.cpc) || 0,
-                ctr: parseFloat(insight.ctr) || 0,
-                date: insight.date_start,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }, {
+              .upsert(insightData, {
                 onConflict: 'brand_id,ad_id,date'
               })
 
-            if (!insertError) {
+            if (insertError) {
+              console.error(`[Direct Meta Sync] Insert error:`, insertError)
+            } else {
               stored++
+              console.log(`[Direct Meta Sync] Successfully stored insight ${stored}`)
             }
           } catch (error) {
-            console.warn(`[Direct Meta Sync] Failed to store insight:`, error)
+            console.error(`[Direct Meta Sync] Failed to store insight:`, error)
           }
         }
 
