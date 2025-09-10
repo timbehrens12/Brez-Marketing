@@ -290,8 +290,8 @@ export async function fetchMetaAdInsights(
         // Add another delay before the insights request
         await delay(1000);
         
-        // Construct insights URL
-        let insightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
+        // Construct insights URL - REMOVED 'reach' to avoid 13-month historical data limitation
+        let insightsUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,inline_link_clicks,frequency,cpm,cpc,cpp,ctr,cost_per_action_type,cost_per_conversion,cost_per_unique_click,conversions,conversion_values,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking,objective&level=ad&access_token=${connection.access_token}`;
 
         if (isFetchingToday) {
           insightsUrl += `&date_preset=today`;
@@ -322,23 +322,24 @@ export async function fetchMetaAdInsights(
         try {
           console.log(`[Meta] Fetching demographic and device breakdowns for account ${account.id}`);
           
-          // Age breakdown - FIXED: Remove breakdown fields from fields param
-          let ageUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // FIXED: Remove 'reach' from breakdown queries to avoid 13-month limitation
+          // Age breakdown - WITHOUT reach to get full historical data
+          let ageUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=age&level=account&time_increment=1&access_token=${connection.access_token}`;
           
-          // Gender breakdown  
-          let genderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=gender&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Gender breakdown - WITHOUT reach to get full historical data  
+          let genderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=gender&level=account&time_increment=1&access_token=${connection.access_token}`;
           
-          // Age + Gender combined breakdown
-          let ageGenderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age,gender&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Age + Gender combined breakdown - WITHOUT reach to get full historical data
+          let ageGenderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=age,gender&level=account&time_increment=1&access_token=${connection.access_token}`;
           
-          // Device breakdown
-          let deviceUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=impression_device&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Device breakdown - WITHOUT reach to get full historical data
+          let deviceUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=impression_device&level=account&time_increment=1&access_token=${connection.access_token}`;
           
-          // Publisher platform breakdown (this works and shows placement info)
-          let placementUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Publisher platform breakdown - WITHOUT reach to get full historical data
+          let placementUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
           
-          // Platform breakdown
-          let platformUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Platform breakdown - WITHOUT reach to get full historical data
+          let platformUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
 
           // Add time range to all URLs
           const timeRange = `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}`;
@@ -1346,8 +1347,9 @@ export async function fetchMetaAdSets(
           // --- Fetch Total Reach for the period --- 
           let totalReachForPeriod = 0;
           try {
+            // REMOVED reach query to avoid 13-month limitation - get reach from main insights instead
             const totalReachResponse = await fetchWithRetry(
-              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=reach&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`,
+              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=impressions&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`,
               {},
               2, // Max 2 retries
               2000 // Initial 2 second backoff
@@ -1385,7 +1387,7 @@ export async function fetchMetaAdSets(
           
           try {
             const insightsResponse = await fetchWithRetry(
-              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`,
+              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`,
               {},
               2, // Max 2 retries
               2000 // Initial 2 second backoff
@@ -1743,7 +1745,7 @@ export async function fetchMetaAds(
         
         // Fetch insights for this ad
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${ad.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`
+          `https://graph.facebook.com/v18.0/${ad.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`
         );
         
         let totalSpent = 0;
