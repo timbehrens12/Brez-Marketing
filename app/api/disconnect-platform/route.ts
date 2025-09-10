@@ -49,7 +49,73 @@ export async function POST(request: Request) {
           console.warn('⚠️ Queue cleanup error:', cleanupError)
         }
 
-        // Try to delete the connections directly - if there are foreign key constraints, return 409
+        // STEP 2: Clean up platform-specific data BEFORE trying to delete connections
+        if (platformType === 'meta') {
+          console.log(`🧹 Cleaning up Meta data for brand ${brandId}`)
+          
+          // Delete all Meta-related data for this brand
+          const metaTables = [
+            'meta_campaigns',
+            'meta_campaign_daily_stats', 
+            'meta_ad_insights',
+            'meta_demographics',
+            'meta_device_performance',
+            'meta_sync_history'
+          ]
+
+          for (const table of metaTables) {
+            try {
+              const { count, error: countError } = await supabase
+                .from(table)
+                .select('*', { count: 'exact', head: true })
+                .eq('brand_id', brandId)
+
+              if (!countError && count && count > 0) {
+                console.log(`Deleting ${count} Meta records from ${table}`)
+                const { error: deleteError } = await supabase
+                  .from(table)
+                  .delete()
+                  .eq('brand_id', brandId)
+
+                if (deleteError) {
+                  console.error(`Error deleting Meta data from ${table}:`, deleteError)
+                } else {
+                  console.log(`✅ Successfully deleted ${count} records from ${table}`)
+                }
+              }
+            } catch (error) {
+              console.error(`Error handling Meta table ${table}:`, error)
+            }
+          }
+
+          // Also clean up any ETL jobs for this brand
+          try {
+            const { count: etlCount, error: etlCountError } = await supabase
+              .from('etl_job')
+              .select('*', { count: 'exact', head: true })
+              .eq('brand_id', brandId)
+              .like('job_type', 'meta_%')
+
+            if (!etlCountError && etlCount && etlCount > 0) {
+              console.log(`Deleting ${etlCount} Meta ETL jobs`)
+              const { error: etlDeleteError } = await supabase
+                .from('etl_job')
+                .delete()
+                .eq('brand_id', brandId)
+                .like('job_type', 'meta_%')
+
+              if (etlDeleteError) {
+                console.error('Error deleting Meta ETL jobs:', etlDeleteError)
+              } else {
+                console.log(`✅ Successfully deleted ${etlCount} Meta ETL jobs`)
+              }
+            }
+          } catch (error) {
+            console.error('Error handling Meta ETL jobs:', error)
+          }
+        }
+
+        // STEP 3: Try to delete the connections directly - if there are foreign key constraints, return 409
         const { error: connectionError } = await supabase
           .from('platform_connections')
           .delete()

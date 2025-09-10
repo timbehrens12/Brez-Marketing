@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       // Don't fail the response, just log the error
     }
 
-    return NextResponse.json({ success: true, redirect: '/settings?tab=connection-management&success=true&backfill=started' })
+    return NextResponse.json({ success: true, redirect: '/settings?tab=brand-management&success=true&backfill=started' })
   } catch (error) {
     console.error('Complete error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
