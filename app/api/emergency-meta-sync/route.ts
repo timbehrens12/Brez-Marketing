@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const { brandId } = await request.json()
-    
-    if (!brandId) {
-      return NextResponse.json({ error: 'brandId required' }, { status: 400 })
-    }
+    // Hardcode the brand ID for easy testing
+    const brandId = '0da80e8f-2df3-468d-9053-08fa4d24e6e8'
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
