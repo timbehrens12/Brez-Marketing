@@ -530,8 +530,11 @@ export async function fetchMetaAdInsights(
         console.error(`[Meta] Error clearing existing insights:`, deleteError)
       }
   
-      // Prepare and store the enriched insights
-      const enrichedInsights = allInsights.map((insight: any) => {
+      // Prepare and deduplicate the enriched insights
+      // Group by (brand_id, ad_id, date) and merge duplicates
+      const insightGroups = new Map<string, any>()
+      
+      allInsights.forEach((insight: any) => {
         // Ensure we have a valid date
         let recordDate = insight.date_start || startDateStr;
         
@@ -541,55 +544,93 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
-        // Get budget for this campaign if available
-        const budget = campaignBudgets.has(insight.campaign_id) ? campaignBudgets.get(insight.campaign_id) : 0;
+        const key = `${brandId}-${insight.ad_id}-${recordDate}`
         
-        return {
-          brand_id: brandId,
-          connection_id: connection.id,
-          account_id: insight.account_id,
-          account_name: insight.account_name,
-          campaign_id: insight.campaign_id,
-          campaign_name: insight.campaign_name,
-          adset_id: insight.adset_id,
-          adset_name: insight.adset_name,
-          ad_id: insight.ad_id,
-          ad_name: insight.ad_name,
-          impressions: parseInt(insight.impressions || '0'),
-          clicks: parseInt(insight.clicks || '0'),
-          spend: parseFloat(insight.spend || '0'),
-          reach: parseInt(insight.reach || '0'),
-          link_clicks: parseInt(insight.inline_link_clicks || '0'),
-          budget: budget,
-          date: recordDate,
-          actions: insight.actions || [],
-          action_values: insight.action_values || [],
-          frequency: parseFloat(insight.frequency || '0'),
-          cpm: parseFloat(insight.cpm || '0'),
-          cpc: parseFloat(insight.cpc || '0'),
-          cpp: parseFloat(insight.cpp || '0'),
-          ctr: parseFloat(insight.ctr || '0'),
-          cost_per_action_type: insight.cost_per_action_type || [],
-          cost_per_conversion: insight.cost_per_conversion || [],
-          cost_per_unique_click: parseFloat(insight.cost_per_unique_click || '0'),
-          video_p25_watched_actions: insight.video_p25_watched_actions || [],
-          video_p50_watched_actions: insight.video_p50_watched_actions || [],
-          video_p75_watched_actions: insight.video_p75_watched_actions || [],
-          video_p100_watched_actions: insight.video_p100_watched_actions || [],
-          quality_ranking: insight.quality_ranking,
-          engagement_rate_ranking: insight.engagement_rate_ranking,
-          conversion_rate_ranking: insight.conversion_rate_ranking,
-          objective: insight.objective,
-          updated_at: new Date().toISOString() // 🔥 FIX: Ensure updated_at is set on every upsert
-        };
+        if (insightGroups.has(key)) {
+          // Merge with existing record (sum numeric values)
+          const existing = insightGroups.get(key)
+          existing.impressions += parseInt(insight.impressions || '0')
+          existing.clicks += parseInt(insight.clicks || '0')
+          existing.spend += parseFloat(insight.spend || '0')
+          existing.reach += parseInt(insight.reach || '0')
+          existing.link_clicks += parseInt(insight.inline_link_clicks || '0')
+          
+          // Keep the most recent updated_at
+          existing.updated_at = new Date().toISOString()
+        } else {
+          // Get budget for this campaign if available
+          const budget = campaignBudgets.has(insight.campaign_id) ? campaignBudgets.get(insight.campaign_id) : 0;
+          
+          // Create new record
+          insightGroups.set(key, {
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: insight.account_id,
+            account_name: insight.account_name,
+            campaign_id: insight.campaign_id,
+            campaign_name: insight.campaign_name,
+            adset_id: insight.adset_id,
+            adset_name: insight.adset_name,
+            ad_id: insight.ad_id,
+            ad_name: insight.ad_name,
+            impressions: parseInt(insight.impressions || '0'),
+            clicks: parseInt(insight.clicks || '0'),
+            spend: parseFloat(insight.spend || '0'),
+            reach: parseInt(insight.reach || '0'),
+            link_clicks: parseInt(insight.inline_link_clicks || '0'),
+            budget: budget,
+            date: recordDate,
+            actions: insight.actions || [],
+            action_values: insight.action_values || [],
+            frequency: parseFloat(insight.frequency || '0'),
+            cpm: parseFloat(insight.cpm || '0'),
+            cpc: parseFloat(insight.cpc || '0'),
+            cpp: parseFloat(insight.cpp || '0'),
+            ctr: parseFloat(insight.ctr || '0'),
+            cost_per_action_type: insight.cost_per_action_type || [],
+            cost_per_conversion: insight.cost_per_conversion || [],
+            cost_per_unique_click: parseFloat(insight.cost_per_unique_click || '0'),
+            video_p25_watched_actions: insight.video_p25_watched_actions || [],
+            video_p50_watched_actions: insight.video_p50_watched_actions || [],
+            video_p75_watched_actions: insight.video_p75_watched_actions || [],
+            video_p100_watched_actions: insight.video_p100_watched_actions || [],
+            quality_ranking: insight.quality_ranking,
+            engagement_rate_ranking: insight.engagement_rate_ranking,
+            conversion_rate_ranking: insight.conversion_rate_ranking,
+            objective: insight.objective,
+            updated_at: new Date().toISOString()
+          })
+        }
       })
       
-      const { error: insertError } = await supabase
-        .from('meta_ad_insights')
-        .upsert(enrichedInsights, {
-          onConflict: 'brand_id,ad_id,date',
-          ignoreDuplicates: false
-        })
+      // Convert map to array
+      const enrichedInsights = Array.from(insightGroups.values())
+      
+      console.log(`[Meta] Deduplicated ${allInsights.length} raw insights into ${enrichedInsights.length} unique records`)
+      
+      // Use the deduplicated insights for storage
+      
+      // Process in batches to avoid timeout on large datasets
+      const batchSize = 100
+      let insertError = null
+      
+      for (let i = 0; i < enrichedInsights.length; i += batchSize) {
+        const batch = enrichedInsights.slice(i, i + batchSize)
+        console.log(`[Meta] Storing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(enrichedInsights.length/batchSize)} (${batch.length} records)`)
+        
+        const { error: batchError } = await supabase
+          .from('meta_ad_insights')
+          .upsert(batch, {
+            onConflict: 'brand_id,ad_id,date',
+            ignoreDuplicates: false
+          })
+        
+        if (batchError) {
+          insertError = batchError
+          console.error(`[Meta] Error storing batch ${Math.floor(i/batchSize) + 1}:`, batchError)
+          break
+        }
+      }
       
       if (insertError) {
         console.error(`[Meta] Error storing insights:`, insertError)
