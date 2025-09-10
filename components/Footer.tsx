@@ -36,12 +36,16 @@ export function Footer() {
     }
   }, [])
   
-  // Version information
-  const packageVersion = "0.1.0" // This could be imported from package.json in a real setup
-  const deploymentNumber = process.env.NEXT_PUBLIC_DEPLOYMENT_NUMBER || "5357"
-  const gitHash = process.env.NEXT_PUBLIC_GIT_HASH || ""
+  // Version information - use static values to avoid hydration mismatch
+  const [versionString, setVersionString] = useState("v0.1.0.5357")
   
-  const versionString = `v${packageVersion}${deploymentNumber ? `.${deploymentNumber}` : ''}${gitHash ? ` (${gitHash.slice(0, 7)})` : ''}`
+  useEffect(() => {
+    // Update version string on client side only
+    const packageVersion = "0.1.0"
+    const deploymentNumber = process.env.NEXT_PUBLIC_DEPLOYMENT_NUMBER || "5357"
+    const gitHash = process.env.NEXT_PUBLIC_GIT_HASH || ""
+    setVersionString(`v${packageVersion}${deploymentNumber ? `.${deploymentNumber}` : ''}${gitHash ? ` (${gitHash.slice(0, 7)})` : ''}`)
+  }, [])
   
   const handleFeatureRequest = () => {
     // Option 1: GitHub Issues (replace with your actual repo)
