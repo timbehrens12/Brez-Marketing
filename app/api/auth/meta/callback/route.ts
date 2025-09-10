@@ -107,13 +107,13 @@ export async function GET(request: NextRequest) {
       })
 
     // Clear auth cookie
-    const response = NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?success=true&backfill=started')
+    const response = NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?tab=connection-management&success=true&backfill=started')
     response.cookies.delete('meta_auth_state')
     
     return response
 
   } catch (error) {
     console.error('Callback error:', error)
-    return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?error=server_error')
+    return NextResponse.redirect('https://www.brezmarketingdashboard.com/settings?tab=connection-management&error=server_error')
   }
 } 

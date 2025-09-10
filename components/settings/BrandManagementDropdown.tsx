@@ -81,6 +81,8 @@ export function BrandManagementDropdown({
   
   const [isShopifySyncing, setIsShopifySyncing] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isMetaSyncing, setIsMetaSyncing] = useState(false)
+  const [isMetaConnecting, setIsMetaConnecting] = useState(false)
   
   // Check for shopify_connected query param or recent connection to start loading state
   useEffect(() => {
@@ -205,6 +207,79 @@ export function BrandManagementDropdown({
       }
     }
   }, [brand.id, connections])
+
+  // Check for Meta backfill parameter and monitor sync status
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const metaBackfillParam = urlParams.get('backfill') === 'started'
+    const successParam = urlParams.get('success') === 'true'
+    
+    // Check if Meta connection is in bulk_importing status
+    const metaConnection = connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta')
+    const isMetaBulkImporting = metaConnection?.sync_status === 'bulk_importing'
+    
+    if ((metaBackfillParam && successParam) || isMetaBulkImporting) {
+      setIsMetaSyncing(true)
+      setIsMetaConnecting(true)
+      setIsExpanded(true) // Force expansion when syncing
+      
+      let checkCount = 0
+      const maxChecks = 60 // 2 minutes max (2 sec intervals) - Meta backfill takes longer
+      
+      const checkForMetaSyncCompletion = async () => {
+        try {
+          checkCount++
+          
+          // Check Meta sync status using our new API
+          const response = await fetch(`/api/meta/sync-status?brandId=${brand.id}`)
+          const statusData = await response.json()
+          
+          if (statusData.overallStatus === 'completed') {
+            setIsMetaSyncing(false)
+            setIsMetaConnecting(false)
+            // Clear the URL params
+            const newUrl = window.location.pathname + window.location.search.replace(/[?&]backfill=started/g, '').replace(/[?&]success=true/g, '')
+            window.history.replaceState({}, '', newUrl)
+            return
+          }
+          
+          // Continue checking if still syncing or if we haven't hit max checks
+          if (statusData.overallStatus === 'syncing' && checkCount < maxChecks) {
+            // Keep checking
+            return
+          }
+          
+          // Stop if completed, failed, or max checks reached
+          if (statusData.overallStatus === 'failed' || checkCount >= maxChecks) {
+            setIsMetaSyncing(false)
+            setIsMetaConnecting(false)
+          }
+        } catch (error) {
+          console.error('Error checking Meta sync status:', error)
+          if (checkCount >= maxChecks) {
+            setIsMetaSyncing(false)
+            setIsMetaConnecting(false)
+          }
+        }
+      }
+      
+      // Start checking after 2 seconds, then every 2 seconds
+      const timeoutId = setTimeout(() => {
+        checkForMetaSyncCompletion()
+        const intervalId = setInterval(checkForMetaSyncCompletion, 2000)
+        
+        // Clear interval after max time
+        setTimeout(() => {
+          clearInterval(intervalId)
+          setIsMetaSyncing(false)
+          setIsMetaConnecting(false)
+        }, 120000) // 2 minutes total max for Meta backfill
+      }, 2000)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [brand.id, connections])
+
   const [isExpanded, setIsExpanded] = useState(false)
 
 
@@ -550,7 +625,37 @@ export function BrandManagementDropdown({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {metaConnection && metaConnectionInfo ? (
+                    {/* Show syncing state if actively connecting, regardless of connection status */}
+                    {isMetaSyncing && isMetaConnecting ? (
+                      <>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-block">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  disabled
+                                  className="text-black text-xs py-1 px-2 rounded-md shadow-lg bg-blue-200 opacity-75 pointer-events-none"
+                                >
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                  Syncing
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm">
+                              <div className="space-y-2">
+                                <p className="font-medium">🔄 Syncing Meta Data</p>
+                                <p className="text-sm">Importing all historical campaign data, demographics, and insights</p>
+                                <p className="text-xs text-muted-foreground">
+                                  ⏱️ Usually takes 3-5 minutes for full historical backfill
+                                </p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
+                    ) : metaConnection && metaConnectionInfo ? (
                       <>
                         <div className="flex items-center gap-1">
                           <div className={`w-2 h-2 rounded-full ${
