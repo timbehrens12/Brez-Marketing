@@ -170,6 +170,33 @@ interface AgencyActionCenterProps {
   onLoadingStateChange?: (isLoading: boolean) => void
 }
 
+// Helper functions for category styling
+const getCategoryIcon = (category: ReusableTool['category']) => {
+  switch (category) {
+    case 'automation':
+      return Zap
+    case 'analytics':
+      return TrendingUp
+    case 'tools':
+      return Settings
+    default:
+      return Settings
+  }
+}
+
+const getCategoryColor = (category: ReusableTool['category']) => {
+  switch (category) {
+    case 'automation':
+      return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'analytics':
+      return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    case 'tools':
+      return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+    default:
+      return 'border-[#333] bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] shadow-lg'
+  }
+}
+
 export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyActionCenterProps) {
   const { userId, getToken } = useAuth()
   const router = useRouter()
