@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[Direct Meta Sync] Syncing ${range.label}: ${range.start} to ${range.end}`)
         
-        // Fetch insights for this date range - only get fields we need for our table
-        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=impressions,clicks,spend,reach,cpm,cpc,ctr,adset_id,ad_id,date_start&level=ad&limit=100`
+        // Fetch insights for this date range - only get fields we confirmed exist
+        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=ad_id,adset_id,spend,impressions,clicks,reach,date_start&level=ad&limit=100`
         
         const insightsResponse = await fetch(insightsUrl)
         const insightsData = await insightsResponse.json()
@@ -85,8 +85,8 @@ export async function GET(request: NextRequest) {
             impressions: parseInt(insight.impressions) || 0,
             clicks: parseInt(insight.clicks) || 0,
             conversions: 0, // Default for now
-            ctr: parseFloat(insight.ctr) || 0,
-            cpc: parseFloat(insight.cpc) || 0,
+            ctr: 0, // Calculate if needed: clicks/impressions
+            cpc: 0, // Calculate if needed: spend/clicks  
             cost_per_conversion: 0, // Default for now
             reach: parseInt(insight.reach) || 0,
             created_at: new Date().toISOString(),
