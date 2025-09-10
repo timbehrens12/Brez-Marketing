@@ -1777,22 +1777,82 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     return <Badge variant="outline">Unknown</Badge>
   }
 
-  const filteredTools = (selectedCategory === 'all' 
-    ? reusableTools 
-    : reusableTools.filter(tool => tool.category === selectedCategory)
-  ).sort((a, b) => {
+  const filteredTools = (() => {
+    let tools = reusableTools;
+    
+    // Filter by brand if a specific brand is selected
+    if (selectedBrandFilter !== 'all') {
+      tools = tools.filter(tool => {
+        // User-dependent tools are always available regardless of brand
+        if (tool.dependencyType === 'user') return true;
+        
+        // Brand-dependent tools need to check if the selected brand has the required platforms
+        if (tool.dependencyType === 'brand') {
+          const selectedBrand = brands.find(b => b.id === selectedBrandFilter);
+          if (!selectedBrand) return false;
+          
+          // Check if the tool has required platforms
+          if (tool.requiresPlatforms) {
+            const brandConnections = connections.filter(c => c.brand_id === selectedBrandFilter);
+            const availablePlatforms = brandConnections.map(c => c.platform_type);
+            return tool.requiresPlatforms.some(platform => availablePlatforms.includes(platform));
+          }
+          
+          return true; // No platform requirements
+        }
+        
+        return true;
+      });
+    }
+    
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      tools = tools.filter(tool => tool.category === selectedCategory);
+    }
+    
     // Sort by dependency type: user (agency-dependent) first, then brand-dependent
-    const order = { 'user': 0, 'brand': 1, 'none': 2 }
-    return order[a.dependencyType] - order[b.dependencyType]
-  })
+    return tools.sort((a, b) => {
+      const order = { 'user': 0, 'brand': 1, 'none': 2 }
+      return order[a.dependencyType] - order[b.dependencyType]
+    });
+  })()
 
-  const categories = [
-    { id: 'all', name: 'All Tools', count: reusableTools.length },
-
-    { id: 'ai-powered', name: 'AI-Powered', count: reusableTools.filter(t => t.category === 'ai-powered').length },
-    { id: 'analytics', name: 'Analytics', count: reusableTools.filter(t => t.category === 'analytics').length },
-    { id: 'tools', name: 'Tools', count: reusableTools.filter(t => t.category === 'tools').length }
-  ]
+  const categories = useMemo(() => {
+    // Get base tools considering brand filter
+    let baseTools = reusableTools.filter(t => t.status === 'available');
+    
+    // Apply brand filter if specific brand is selected
+    if (selectedBrandFilter !== 'all') {
+      baseTools = baseTools.filter(tool => {
+        // User-dependent tools are always available regardless of brand
+        if (tool.dependencyType === 'user') return true;
+        
+        // Brand-dependent tools need to check if the selected brand has the required platforms
+        if (tool.dependencyType === 'brand') {
+          const selectedBrand = brands.find(b => b.id === selectedBrandFilter);
+          if (!selectedBrand) return false;
+          
+          // Check if the tool has required platforms
+          if (tool.requiresPlatforms) {
+            const brandConnections = connections.filter(c => c.brand_id === selectedBrandFilter);
+            const availablePlatforms = brandConnections.map(c => c.platform_type);
+            return tool.requiresPlatforms.some(platform => availablePlatforms.includes(platform));
+          }
+          
+          return true; // No platform requirements
+        }
+        
+        return true;
+      });
+    }
+    
+    return [
+      { id: 'all', name: 'All Available', count: baseTools.length },
+      { id: 'ai-powered', name: 'AI-Powered', count: baseTools.filter(t => t.category === 'ai-powered').length },
+      { id: 'analytics', name: 'Analytics', count: baseTools.filter(t => t.category === 'analytics').length },
+      { id: 'tools', name: 'Tools', count: baseTools.filter(t => t.category === 'tools').length }
+    ];
+  }, [reusableTools, selectedBrandFilter, brands, connections])
 
   const selectedBrand = brands?.find((brand: any) => brand.id === selectedBrandFilter)
   
@@ -3313,11 +3373,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       >
                         <Filter className="h-3 w-3 mr-1" />
                         {selectedBrandFilter === 'all' ? (
-                          `All Brands (${brands.length})`
+                          `All Tools (${reusableTools.filter(t => t.status === 'available').length})`
                         ) : (
                           <div className="flex items-center gap-1">
                             {selectedBrand && renderBrandAvatar(selectedBrand, 'sm')}
-                            <span className="max-w-20 truncate">{selectedBrand?.name || 'Unknown'}</span>
+                            <span className="max-w-16 truncate">{selectedBrand?.name || 'Unknown'}</span>
+                            <span className="text-xs text-gray-500">({filteredTools.length})</span>
                           </div>
                         )}
                         <ChevronDown className="h-3 w-3 ml-1" />
@@ -3332,24 +3393,49 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         )}
                       >
                         <Tag className="h-4 w-4 mr-2" />
-                        All Brands ({brands.length})
+                        All Tools ({reusableTools.filter(t => t.status === 'available').length})
                       </DropdownMenuItem>
-                      {brands.map((brand: any) => (
-                        <DropdownMenuItem
-                          key={brand.id}
-                          onClick={() => setSelectedBrandFilter(brand.id)}
-                          className={cn(
-                            "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                            selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            {renderBrandAvatar(brand, 'sm')}
-                            <span className="truncate flex-1">{brand.name}</span>
-                            {renderConnectionIcons(brand.id)}
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
+                      {brands.map((brand: any) => {
+                        // Calculate available tools for this specific brand
+                        const brandTools = reusableTools.filter(tool => {
+                          if (tool.status !== 'available') return false;
+                          
+                          // User-dependent tools are always available regardless of brand
+                          if (tool.dependencyType === 'user') return true;
+                          
+                          // Brand-dependent tools need to check if this brand has the required platforms
+                          if (tool.dependencyType === 'brand') {
+                            // Check if the tool has required platforms
+                            if (tool.requiresPlatforms) {
+                              const brandConnections = connections.filter(c => c.brand_id === brand.id);
+                              const availablePlatforms = brandConnections.map(c => c.platform_type);
+                              return tool.requiresPlatforms.some(platform => availablePlatforms.includes(platform));
+                            }
+                            
+                            return true; // No platform requirements
+                          }
+                          
+                          return true;
+                        });
+                        
+                        return (
+                          <DropdownMenuItem
+                            key={brand.id}
+                            onClick={() => setSelectedBrandFilter(brand.id)}
+                            className={cn(
+                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                              selectedBrandFilter === brand.id && "bg-[#2A2A2A] text-white"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              {renderBrandAvatar(brand, 'sm')}
+                              <span className="truncate flex-1">{brand.name}</span>
+                              <span className="text-xs text-gray-500">({brandTools.length})</span>
+                              {renderConnectionIcons(brand.id)}
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
                     </DropdownMenuContent>
                   </DropdownMenu>
 
