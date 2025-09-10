@@ -371,31 +371,58 @@ export class MetaWorker {
     try {
       const supabase = createClient()
       
-      const { data: connection, error } = await supabase
+      // First check if ANY connection exists with this ID (regardless of status)
+      const { data: anyConnection, error: anyError } = await supabase
         .from('platform_connections')
-        .select('access_token, status')
+        .select('id, status, platform_type, brand_id, access_token')
         .eq('id', connectionId)
-        .single()
+        .maybeSingle()
 
-      if (error) {
-        return { error: `Database error: ${error.message}` }
+      if (anyError) {
+        console.error('[Meta Worker] Error checking connection existence:', anyError)
+        return { error: anyError.message }
       }
 
-      if (!connection) {
-        return { error: 'Connection not found' }
+      if (!anyConnection) {
+        console.error(`[Meta Worker] Connection ${connectionId} does not exist at all! This job should be cancelled.`)
+        
+        // Check what connections DO exist for debugging
+        const { data: allConnections } = await supabase
+          .from('platform_connections')
+          .select('id, status, platform_type, brand_id, created_at')
+          .eq('platform_type', 'meta')
+          .order('created_at', { ascending: false })
+          .limit(5)
+        
+        console.error('[Meta Worker] Recent Meta connections:', allConnections)
+        
+        // This is a hard error - the job should not be retried with a non-existent connection
+        throw new Error('FATAL: Connection does not exist - cancelling job permanently')
       }
 
-      if (connection.status !== 'active') {
-        return { error: `Connection status is ${connection.status}, expected active` }
+      // Log the connection status for debugging
+      console.log(`[Meta Worker] Found connection ${connectionId}:`, {
+        status: anyConnection.status,
+        platform_type: anyConnection.platform_type,
+        brand_id: anyConnection.brand_id,
+        has_token: !!anyConnection.access_token
+      })
+
+      if (anyConnection.status !== 'active') {
+        console.error(`[Meta Worker] Connection ${connectionId} status is '${anyConnection.status}', not 'active'`)
+        return { error: `Connection status is ${anyConnection.status}, not active` }
       }
 
-      if (!connection.access_token) {
-        return { error: 'Access token not found' }
+      if (!anyConnection.access_token) {
+        console.error('[Meta Worker] No access token found in connection:', connectionId)
+        return { error: 'No access token found in connection' }
       }
 
-      return { accessToken: connection.access_token }
+      console.log(`[Meta Worker] Retrieved access token for connection: ${connectionId}`)
+      return { accessToken: anyConnection.access_token }
     } catch (error) {
-      return { error: `Failed to fetch access token: ${error}` }
+      console.error('[Meta Worker] Error getting fresh access token:', error)
+      return { error: error instanceof Error ? error.message : 'Unknown error' }
     }
   }
 
