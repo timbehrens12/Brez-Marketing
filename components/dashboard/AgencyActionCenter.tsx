@@ -36,6 +36,7 @@ import {
   Settings,
   FileText,
   Target,
+  Paintbrush,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -82,7 +83,7 @@ interface ReusableTool {
   name: string
   description: string
   icon: any
-  category: 'automation' | 'ai-powered' | 'analytics' | 'tools'
+  category: 'automation' | 'creative' | 'analytics' | 'tools'
   status: 'available' | 'coming-soon' | 'unavailable'
   href: string
   features: string[]
@@ -98,7 +99,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'Lead Generator',
     description: 'Find and qualify leads using real business data',
     icon: Zap,
-    category: 'lead-generation',
+    category: 'tools',
     href: '/lead-generator',
     features: ['Google Places Integration', 'Lead Scoring', 'Business Intelligence'],
     dependencyType: 'user',
@@ -109,7 +110,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'Outreach Messages',
     description: 'Manage lead outreach campaigns and follow-ups',
     icon: Send,
-    category: 'lead-generation',
+    category: 'tools',
     href: '/outreach-tool',
     features: ['Email Campaigns', 'Lead Tracking', 'Response Management'],
     dependencyType: 'user',
@@ -120,7 +121,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'AI Chatbot',
     description: 'Get personalized marketing advice and strategy recommendations',
     icon: MessageSquare,
-    category: 'strategy',
+    category: 'creative',
     href: '/ai-marketing-consultant',
     features: ['Strategic Insights', 'Marketing Analysis', '24/7 Availability'],
     dependencyType: 'user',
@@ -131,7 +132,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'Brand Reports',
     description: 'Generate AI-powered daily and monthly performance reports',
     icon: FileText,
-    category: 'reporting',
+    category: 'analytics',
     href: '/brand-report',
     features: ['Daily Reports', 'Monthly Reports', 'Performance Insights'],
     dependencyType: 'brand',
@@ -153,7 +154,7 @@ const BASE_REUSABLE_TOOLS: Omit<ReusableTool, 'status'>[] = [
     name: 'Campaign Optimization',
     description: 'AI-powered campaign optimization recommendations',
     icon: Target,
-    category: 'optimization',
+    category: 'analytics',
     href: '/ai-marketing-consultant',
     features: ['Performance Analysis', 'Scaling Recommendations', 'Budget Optimization'],
     dependencyType: 'brand',
@@ -1421,22 +1422,20 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Helper functions for categories and status (exactly like action center)
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'lead-generation': return <Zap className="h-4 w-4" />
-      case 'creative': return <Settings className="h-4 w-4" />
-      case 'strategy': return <MessageSquare className="h-4 w-4" />
-      case 'reporting': return <FileText className="h-4 w-4" />
-      case 'optimization': return <Target className="h-4 w-4" />
+      case 'automation': return <Calendar className="h-4 w-4" />
+      case 'creative': return <Paintbrush className="h-4 w-4" />
+      case 'analytics': return <TrendingUp className="h-4 w-4" />
+      case 'tools': return <Settings className="h-4 w-4" />
       default: return <CheckSquare className="h-4 w-4" />
     }
   }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'lead-generation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'automation': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
       case 'creative': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'strategy': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'reporting': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
-      case 'optimization': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'analytics': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
+      case 'tools': return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
       default: return 'bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] text-gray-300 shadow-lg'
     }
   }
@@ -1850,11 +1849,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     
     return [
       { id: 'all', name: 'All Available', count: baseTools.length },
-      { id: 'lead-generation', name: 'Lead Generation', count: baseTools.filter(t => t.category === 'lead-generation').length },
       { id: 'creative', name: 'Creative', count: baseTools.filter(t => t.category === 'creative').length },
-      { id: 'strategy', name: 'Strategy', count: baseTools.filter(t => t.category === 'strategy').length },
-      { id: 'reporting', name: 'Reporting', count: baseTools.filter(t => t.category === 'reporting').length },
-      { id: 'optimization', name: 'Optimization', count: baseTools.filter(t => t.category === 'optimization').length }
+      { id: 'analytics', name: 'Analytics', count: baseTools.filter(t => t.category === 'analytics').length },
+      { id: 'tools', name: 'Tools', count: baseTools.filter(t => t.category === 'tools').length }
     ];
   }, [reusableTools, selectedBrandFilter, brands, connections])
 
