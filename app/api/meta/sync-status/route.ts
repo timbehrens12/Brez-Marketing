@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     const { data: connection } = await supabase
       .from('platform_connections')
-      .select('sync_status, last_synced_at, created_at')
+      .select('sync_status, last_sync_at, created_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .single()
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       estimatedCompletion,
       connection: {
         status: connection?.sync_status || 'not_found',
-        lastSynced: connection?.last_synced_at,
+        lastSynced: connection?.last_sync_at,
         createdAt: connection?.created_at
       },
       milestones: syncStatus.meta?.milestones || [],

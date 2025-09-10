@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       .from('platform_connections')
       .select('id, access_token')
       .eq('brand_id', brandId)
-      .eq('platform', 'meta')
+      .eq('platform_type', 'meta')
       .eq('status', 'active')
       .single()
 
