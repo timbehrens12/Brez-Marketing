@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const testRecord = {
       brand_id: brandId,
       connection_id: connectionId,
-      account_id: 'act_498473601902770',
+      account_id: '498473601902770',
       campaign_id: 'test_campaign_456',
       campaign_name: 'Test Campaign',
       adset_id: 'test_adset_789', // Required field

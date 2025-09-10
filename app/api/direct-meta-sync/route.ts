@@ -73,10 +73,10 @@ export async function GET(request: NextRequest) {
         for (const insight of insights) {
           try {
             // Log the insight data we're trying to store - include required adset_id
-            const insightData = {
-              brand_id: brandId,
-              connection_id: connection.id,
-              account_id: accountId,
+          const insightData = {
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: accountId.replace('act_', ''), // Remove act_ prefix to match database format
               campaign_id: insight.campaign_id,
               campaign_name: insight.campaign_name || '',
               adset_id: insight.adset_id, // Required field
