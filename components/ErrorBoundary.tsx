@@ -84,7 +84,7 @@ export class DashboardErrorBoundary extends React.Component<
       return (
         <div className="flex h-screen items-center justify-center bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] relative">
           {/* Background Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-red-500/5 animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20"></div>
           <div className="absolute inset-0 opacity-5">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
@@ -95,10 +95,12 @@ export class DashboardErrorBoundary extends React.Component<
           <div className="relative z-10 bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-[#333] rounded-2xl p-8 max-w-lg shadow-2xl">
             {/* Header */}
             <div className="text-center mb-6">
-              <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-red-400/30 rounded-2xl animate-ping"></div>
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center relative z-10">
-                  <span className="text-red-600 text-lg font-bold">⚠️</span>
+              <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-red-500/20 to-red-600/30 rounded-2xl flex items-center justify-center shadow-xl relative overflow-hidden border border-red-500/20">
+                <div className="absolute inset-0 bg-red-400/10 rounded-2xl animate-pulse"></div>
+                <div className="relative z-10">
+                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
                 </div>
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">Oops! Something went wrong</h1>
