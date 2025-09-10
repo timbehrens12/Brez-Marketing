@@ -2847,7 +2847,7 @@ export default function SettingsPage() {
                 className="flex-1 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-700 hover:via-red-600 hover:to-red-700 text-white font-bold h-12 rounded-xl shadow-xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105 relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <span className="relative z-10">🗑️ Yes, Disconnect</span>
+                <span className="relative z-10">Yes, Disconnect</span>
               </Button>
             </div>
           </div>

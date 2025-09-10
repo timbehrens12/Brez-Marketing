@@ -80,6 +80,86 @@ export async function POST(request: Request) {
           }
         }
       }
+
+      // For Meta, we need to handle related data first
+      if (platformType === 'meta') {
+        // Get brand_id for Meta data cleanup
+        const { data: connectionData } = await supabase
+          .from('platform_connections')
+          .select('brand_id')
+          .eq('id', connection.id)
+          .single()
+
+        if (connectionData?.brand_id) {
+          console.log(`Cleaning up Meta data for brand ${connectionData.brand_id}`)
+          
+          // Delete all Meta-related data for this brand
+          const metaTables = [
+            'meta_campaigns',
+            'meta_campaign_daily_stats', 
+            'meta_ad_insights',
+            'meta_demographics',
+            'meta_device_performance',
+            'meta_sync_history'
+          ]
+
+          for (const table of metaTables) {
+            try {
+              const { count, error: countError } = await supabase
+                .from(table)
+                .select('*', { count: 'exact', head: true })
+                .eq('brand_id', connectionData.brand_id)
+
+              if (countError) {
+                console.log(`Table ${table} doesn't exist or has no brand_id column`)
+                continue
+              }
+
+              if (count && count > 0) {
+                console.log(`Deleting ${count} Meta records from ${table}`)
+                const { error: deleteError } = await supabase
+                  .from(table)
+                  .delete()
+                  .eq('brand_id', connectionData.brand_id)
+
+                if (deleteError) {
+                  console.error(`Error deleting Meta data from ${table}:`, deleteError)
+                } else {
+                  console.log(`✅ Successfully deleted ${count} records from ${table}`)
+                }
+              }
+            } catch (error) {
+              console.error(`Error handling Meta table ${table}:`, error)
+            }
+          }
+
+          // Also clean up any ETL jobs for this brand
+          try {
+            const { count: etlCount, error: etlCountError } = await supabase
+              .from('etl_job')
+              .select('*', { count: 'exact', head: true })
+              .eq('brand_id', connectionData.brand_id)
+              .like('job_type', 'meta_%')
+
+            if (!etlCountError && etlCount && etlCount > 0) {
+              console.log(`Deleting ${etlCount} Meta ETL jobs`)
+              const { error: etlDeleteError } = await supabase
+                .from('etl_job')
+                .delete()
+                .eq('brand_id', connectionData.brand_id)
+                .like('job_type', 'meta_%')
+
+              if (etlDeleteError) {
+                console.error('Error deleting Meta ETL jobs:', etlDeleteError)
+              } else {
+                console.log(`✅ Successfully deleted ${etlCount} Meta ETL jobs`)
+              }
+            }
+          } catch (error) {
+            console.error('Error handling Meta ETL jobs:', error)
+          }
+        }
+      }
     }
 
     // Now delete all matching connections
