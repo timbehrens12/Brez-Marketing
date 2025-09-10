@@ -90,12 +90,20 @@ export class MetaQueueService {
     accessToken: string,
     accountId: string
   ): Promise<void> {
+    // Create ETL job for tracking recent sync
+    const etlJobId = await this.createEtlJob(
+      brandId,
+      'meta_recent_sync',
+      'recent_sync'
+    )
+    
     await this.addJob(MetaJobType.RECENT_SYNC, {
       brandId,
       connectionId,
       accessToken,
       accountId,
-      jobType: MetaJobType.RECENT_SYNC
+      jobType: MetaJobType.RECENT_SYNC,
+      etlJobId: etlJobId
     }, { priority: 10 }) // High priority for immediate UI
   }
 
@@ -127,6 +135,15 @@ export class MetaQueueService {
     // 1. Historical Campaigns (priority - need this first)
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
+      
+      // Create ETL job for tracking this chunk
+      const etlJobId = await this.createEtlJob(
+        brandId,
+        'meta_campaigns',
+        'historical_campaigns',
+        { start: chunk.start, end: chunk.end }
+      )
+      
       await this.addJob(MetaJobType.HISTORICAL_CAMPAIGNS, {
         brandId,
         connectionId,
@@ -136,6 +153,7 @@ export class MetaQueueService {
         startDate: chunk.start,
         endDate: chunk.end,
         entity: 'campaigns',
+        etlJobId: etlJobId,
         metadata: {
           chunkNumber: i + 1,
           totalChunks: chunks.length,
@@ -152,6 +170,15 @@ export class MetaQueueService {
     delayMs += 30000 // 30 second gap before starting demographics
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
+      
+      // Create ETL job for tracking this chunk
+      const etlJobId = await this.createEtlJob(
+        brandId,
+        'meta_demographics',
+        'historical_demographics',
+        { start: chunk.start, end: chunk.end }
+      )
+      
       await this.addJob(MetaJobType.HISTORICAL_DEMOGRAPHICS, {
         brandId,
         connectionId,
@@ -161,6 +188,7 @@ export class MetaQueueService {
         startDate: chunk.start,
         endDate: chunk.end,
         entity: 'demographics',
+        etlJobId: etlJobId,
         metadata: {
           chunkNumber: i + 1,
           totalChunks: chunks.length,
@@ -177,6 +205,15 @@ export class MetaQueueService {
     delayMs += 60000 // 1 minute gap before starting insights
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
+      
+      // Create ETL job for tracking this chunk
+      const etlJobId = await this.createEtlJob(
+        brandId,
+        'meta_ad_insights',
+        'historical_insights',
+        { start: chunk.start, end: chunk.end }
+      )
+      
       await this.addJob(MetaJobType.HISTORICAL_INSIGHTS, {
         brandId,
         connectionId,
@@ -186,6 +223,7 @@ export class MetaQueueService {
         startDate: chunk.start,
         endDate: chunk.end,
         entity: 'insights',
+        etlJobId: etlJobId,
         metadata: {
           chunkNumber: i + 1,
           totalChunks: chunks.length,
@@ -248,20 +286,19 @@ export class MetaQueueService {
         entity: entity,
         job_type: jobType,
         status: 'queued',
-        started_at: new Date().toISOString(),
-        metadata: dateRange ? { 
-          start_date: dateRange.start, 
-          end_date: dateRange.end 
-        } : null
+        started_at: new Date().toISOString()
+        // Note: Removed metadata field as it doesn't exist in the database schema
       })
       .select('id')
       .single()
 
     if (error) {
       console.error('[Meta Queue] Error creating ETL job:', error)
+      console.error('[Meta Queue] Failed job details:', { brandId, entity, jobType, dateRange })
       throw error
     }
 
+    console.log(`[Meta Queue] Created ETL job ${data.id} for ${entity} (${jobType}) ${dateRange ? `${dateRange.start} to ${dateRange.end}` : ''}`)
     return data.id
   }
 
@@ -301,12 +338,12 @@ export class MetaQueueService {
   static async getSyncStatus(brandId: string): Promise<any> {
     const supabase = createClient()
     
-    // Get Meta ETL jobs
+    // Get Meta ETL jobs (use job_type LIKE for Meta jobs)
     const { data: jobs, error } = await supabase
       .from('etl_job')
       .select('*')
       .eq('brand_id', brandId)
-      .like('job_type', 'meta_%')
+      .in('job_type', ['recent_sync', 'historical_campaigns', 'historical_demographics', 'historical_insights'])
       .order('created_at', { ascending: false })
 
     if (error) {
