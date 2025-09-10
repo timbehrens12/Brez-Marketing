@@ -41,7 +41,7 @@ export default function MetaCallback() {
         
         if (result.success) {
           setStatus('Success! Redirecting...')
-          setTimeout(() => router.push('/settings?success=true'), 1000)
+          setTimeout(() => router.push('/settings?tab=brand-management&success=true&backfill=started'), 1000)
         } else {
           throw new Error(result.error || 'Unknown error')
         }

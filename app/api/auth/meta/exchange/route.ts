@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { auth } from '@clerk/nextjs'
+import { MetaQueueService } from '@/lib/services/metaQueueService'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,22 +52,47 @@ export async function POST(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    const { error: dbError } = await supabase
+    const { data: connectionData, error: dbError } = await supabase
       .from('platform_connections')
       .upsert({
         brand_id: state,
         platform_type: 'meta',
         access_token: tokenData.access_token,
         status: 'active',
-        user_id: userId
+        user_id: userId,
+        sync_status: 'bulk_importing'
       })
+      .select('id')
+      .single()
 
-    if (dbError) {
+    if (dbError || !connectionData) {
       console.error('Database error:', dbError)
       return NextResponse.json(
         { success: false, error: 'Failed to store token' },
         { status: 500 }
       )
+    }
+
+    console.log(`[Meta Exchange] Connection created successfully, triggering Redis queue backfill for brand ${state}`)
+    
+    // Get Meta account ID and trigger backfill
+    try {
+      const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
+      const meData = await meResponse.json()
+      const accountId = meData.data?.[0]?.id || ''
+      
+      // Queue historical backfill
+      await MetaQueueService.queueCompleteHistoricalSync(
+        state,
+        connectionData.id,
+        tokenData.access_token,
+        accountId
+      )
+      
+      console.log(`[Meta Exchange] Queued historical backfill for brand ${state}`)
+    } catch (error) {
+      console.error('[Meta Exchange] Backfill queue failed:', error)
+      // Don't fail the response, just log the error
     }
 
     return NextResponse.json({ success: true })
