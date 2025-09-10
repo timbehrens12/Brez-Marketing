@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[Direct Meta Sync] Syncing ${range.label}: ${range.start} to ${range.end}`)
         
-        // Fetch insights for this date range
-        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=impressions,clicks,spend,reach,cpm,cpc,ctr&level=ad&limit=100`
+        // Fetch insights for this date range - include adset_id which is required
+        const insightsUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?access_token=${connection.access_token}&time_range={"since":"${range.start}","until":"${range.end}"}&fields=impressions,clicks,spend,reach,cpm,cpc,ctr,adset_id,adset_name,campaign_name&level=ad&limit=100`
         
         const insightsResponse = await fetch(insightsUrl)
         const insightsData = await insightsResponse.json()
@@ -72,13 +72,17 @@ export async function GET(request: NextRequest) {
         
         for (const insight of insights) {
           try {
-            // Log the insight data we're trying to store
+            // Log the insight data we're trying to store - include required adset_id
             const insightData = {
               brand_id: brandId,
               connection_id: connection.id,
               account_id: accountId,
-              ad_id: insight.ad_id,
               campaign_id: insight.campaign_id,
+              campaign_name: insight.campaign_name || '',
+              adset_id: insight.adset_id, // Required field
+              adset_name: insight.adset_name || '',
+              ad_id: insight.ad_id,
+              ad_name: insight.ad_name || '',
               impressions: parseInt(insight.impressions) || 0,
               clicks: parseInt(insight.clicks) || 0,
               spend: parseFloat(insight.spend) || 0,
@@ -94,7 +98,7 @@ export async function GET(request: NextRequest) {
             console.log(`[Direct Meta Sync] Storing insight:`, insightData)
             
             const { error: insertError } = await supabase
-              .from('meta_ad_insights')
+              .from('meta_ad_daily_insights')
               .upsert(insightData, {
                 onConflict: 'brand_id,ad_id,date'
               })
