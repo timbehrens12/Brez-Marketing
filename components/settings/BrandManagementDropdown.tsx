@@ -214,9 +214,9 @@ export function BrandManagementDropdown({
     const metaBackfillParam = urlParams.get('backfill') === 'started'
     const successParam = urlParams.get('success') === 'true'
     
-    // Check if Meta connection is in bulk_importing status
+    // Check if Meta connection is in progress status
     const metaConnection = connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta')
-    const isMetaBulkImporting = metaConnection?.sync_status === 'bulk_importing'
+    const isMetaBulkImporting = metaConnection?.sync_status === 'in_progress'
     
     if ((metaBackfillParam && successParam) || isMetaBulkImporting) {
       setIsMetaSyncing(true)

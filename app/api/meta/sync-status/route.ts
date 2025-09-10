@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     let estimatedCompletion = null
     
     if (connection) {
-      if (connection.sync_status === 'bulk_importing') {
+      if (connection.sync_status === 'in_progress') {
         overallStatus = 'syncing'
         
         // Calculate progress from ETL jobs
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       // Reset sync status and retry
       await supabase
         .from('platform_connections')
-        .update({ sync_status: 'bulk_importing' })
+        .update({ sync_status: 'in_progress' })
         .eq('id', connection.id)
 
       // Get account ID and queue historical sync
