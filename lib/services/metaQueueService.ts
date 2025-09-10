@@ -113,16 +113,21 @@ export class MetaQueueService {
     // Calculate date ranges for historical backfill  
     const endDate = new Date()
     
-    // EMERGENCY FIX: Use a more reasonable start date if account creation date not provided
-    // Instead of 2020, use 1 year ago or account creation date (whichever is more recent)
+    // FIXED: Use 12 months maximum to stay within Meta's reach limitation (13 months)
     let startDate: Date
     if (accountCreatedDate) {
-      startDate = new Date(accountCreatedDate)
+      const accountDate = new Date(accountCreatedDate)
+      const twelveMonthsAgo = new Date()
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+      
+      // Use the more recent date: account creation or 12 months ago
+      startDate = accountDate > twelveMonthsAgo ? accountDate : twelveMonthsAgo
+      console.log(`[Meta Queue] Using account creation date ${accountDate.toISOString().split('T')[0]} vs 12-month limit ${twelveMonthsAgo.toISOString().split('T')[0]}, chose: ${startDate.toISOString().split('T')[0]}`)
     } else {
-      // Default to 1 year ago instead of 2020 to avoid hitting Meta API limits
+      // Default to 12 months ago to stay within Meta's reach limitation
       startDate = new Date()
-      startDate.setFullYear(startDate.getFullYear() - 1)
-      console.log(`[Meta Queue] ⚠️ No account creation date provided, defaulting to 1 year ago: ${startDate.toISOString().split('T')[0]}`)
+      startDate.setMonth(startDate.getMonth() - 12)
+      console.log(`[Meta Queue] ⚠️ No account creation date provided, defaulting to 12 months ago: ${startDate.toISOString().split('T')[0]}`)
     }
     
     console.log(`[Meta Queue] Planning historical backfill from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
