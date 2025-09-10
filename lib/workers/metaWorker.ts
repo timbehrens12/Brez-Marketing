@@ -75,10 +75,10 @@ export class MetaWorker {
       // Import Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
       
-      // Sync last 7 days for immediate UI
+      // EMERGENCY FIX: Sync last 90 days for comprehensive data during "Syncing" status
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 7)
+      startDate.setDate(startDate.getDate() - 90) // Extended from 7 to 90 days
       
       console.log(`[Meta Worker] Syncing recent data: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
       
@@ -90,8 +90,13 @@ export class MetaWorker {
       
       console.log(`[Meta Worker] ✅ Recent sync completed for brand ${brandId}`)
       
+      // Update connection sync status to completed
+      await this.updateConnectionSyncStatus(connectionId, 'completed')
+      
     } catch (error) {
       console.error(`[Meta Worker] Recent sync failed for brand ${brandId}:`, error)
+      // Update connection sync status to failed
+      await this.updateConnectionSyncStatus(connectionId, 'failed')
       throw error
     }
   }
@@ -327,6 +332,35 @@ export class MetaWorker {
     } catch (error) {
       console.error(`[Meta Worker] Reconciliation failed for brand ${brandId}:`, error)
       throw error
+    }
+  }
+
+  /**
+   * Update connection sync status
+   */
+  static async updateConnectionSyncStatus(connectionId: string, status: 'completed' | 'failed'): Promise<void> {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: status,
+          metadata: {
+            queue_jobs_running: false,
+            sync_completed_at: status === 'completed' ? new Date().toISOString() : null,
+            sync_failed_at: status === 'failed' ? new Date().toISOString() : null
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', connectionId)
+      
+      if (error) {
+        console.error(`[Meta Worker] Error updating connection sync status:`, error)
+      } else {
+        console.log(`[Meta Worker] ✅ Updated connection ${connectionId} sync status to ${status}`)
+      }
+    } catch (error) {
+      console.error(`[Meta Worker] Error updating connection sync status:`, error)
     }
   }
 

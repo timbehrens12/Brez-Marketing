@@ -621,18 +621,13 @@ export async function fetchMetaAdInsights(
           const insight = enrichedInsights[i]
           console.log(`[Meta] Storing individual record ${i+1}/${enrichedInsights.length}: ${insight.ad_id} on ${insight.date}`)
           
-          // Delete existing record first
-          await supabase
-            .from('meta_ad_insights')
-            .delete()
-            .eq('brand_id', insight.brand_id)
-            .eq('ad_id', insight.ad_id)
-            .eq('date', insight.date)
-          
-          // Insert new record
+          // Use upsert instead of delete+insert to avoid race conditions
           const { error: singleError } = await supabase
             .from('meta_ad_insights')
-            .insert(insight)
+            .upsert(insight, { 
+              onConflict: 'brand_id,ad_id,date',
+              ignoreDuplicates: false 
+            })
           
           if (singleError) {
             insertError = singleError
