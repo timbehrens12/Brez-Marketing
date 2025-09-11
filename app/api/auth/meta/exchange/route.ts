@@ -83,86 +83,63 @@ export async function POST(request: NextRequest) {
       const meData = await meResponse.json()
       const accountId = meData.data?.[0]?.id || ''
 
-      // Import Meta service and do COMPLETE immediate sync of last 12 months
+      // Import Meta service and do HYBRID sync approach
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
 
-      console.log(`[Meta Exchange] 🚀 Starting COMPLETE immediate sync of last 12 months for brand ${state}`)
+      console.log(`[Meta Exchange] 🚀 Starting HYBRID sync approach for brand ${state}`)
 
-      // Sync FULL 12 months immediately for complete historical data
+      // PHASE 1: Fast sync of last 30 days (immediate)
+      console.log(`[Meta Exchange] ⚡ PHASE 1: Fast sync of last 30 days`)
       const endDate = new Date()
-      const startDate = new Date()
-      startDate.setMonth(startDate.getMonth() - 12) // Full 12 months
-
-      console.log(`[Meta Exchange] 📊 Syncing complete historical data: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+      const fastStartDate = new Date()
+      fastStartDate.setDate(fastStartDate.getDate() - 30)
 
       try {
-        // Use Promise.race to prevent timeout while still allowing completion
-        const syncPromise = fetchMetaAdInsights(state, startDate, endDate, false, false) // Include demographics for completeness
+        const fastSyncResult = await fetchMetaAdInsights(state, fastStartDate, endDate, false, true) // Skip demographics for speed
 
-        // Set a reasonable timeout (8 minutes for Vercel)
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('SYNC_TIMEOUT')), 8 * 60 * 1000) // 8 minutes
-        })
+        if (fastSyncResult.success) {
+          console.log(`[Meta Exchange] ✅ Phase 1 completed: ${fastSyncResult.count} records in last 30 days`)
 
-        const syncResult = await Promise.race([syncPromise, timeoutPromise])
-
-        if (syncResult.success) {
-          console.log(`[Meta Exchange] ✅ COMPLETE 12-month sync successful: ${syncResult.count} records`)
-
-          // Update sync status to completed since we have all historical data
+          // Update sync status to syncing (we're starting background work)
           await supabase
             .from('platform_connections')
             .update({
-              sync_status: 'completed',
+              sync_status: 'syncing',
               last_sync_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('id', connectionData.id)
-
-          console.log(`[Meta Exchange] ✅ Sync status updated to completed - all 12 months of historical data loaded`)
         } else {
-          console.error(`[Meta Exchange] ❌ Complete sync failed:`, syncResult.error)
-
-          // Still update sync status to completed if we got partial data
-          if (syncResult.count && syncResult.count > 0) {
-            console.log(`[Meta Exchange] 📊 Partial data received (${syncResult.count} records) - marking as completed`)
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                last_sync_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', connectionData.id)
-          }
+          console.error(`[Meta Exchange] ❌ Phase 1 failed:`, fastSyncResult.error)
+          // Continue anyway - we'll queue background work
         }
+
+        // PHASE 2: Queue background sync for remaining 11 months
+        console.log(`[Meta Exchange] 🔄 PHASE 2: Queueing background sync for remaining 11 months`)
+
+        const historicalStartDate = new Date()
+        historicalStartDate.setMonth(historicalStartDate.getMonth() - 12)
+
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+
+        try {
+          await MetaQueueService.addHistoricalBackfillJobs(
+            state,
+            connectionData.id,
+            tokenData.access_token,
+            accountId,
+            historicalStartDate.toISOString().split('T')[0]
+          )
+
+          console.log(`[Meta Exchange] ✅ Queued historical backfill for remaining 11 months`)
+        } catch (queueError) {
+          console.error(`[Meta Exchange] ❌ Failed to queue historical jobs:`, queueError)
+          // Don't fail the response - user still has immediate data
+        }
+
       } catch (syncError) {
-        console.error(`[Meta Exchange] ⚠️ Sync error:`, syncError)
-
-        if (syncError.message === 'SYNC_TIMEOUT') {
-          console.log(`[Meta Exchange] ⏰ Sync timed out after 8 minutes but may have partial data`)
-
-          // Check if we got any data despite timeout
-          const { data: existingData } = await supabase
-            .from('meta_ad_insights')
-            .select('id')
-            .eq('brand_id', state)
-            .limit(1)
-
-          if (existingData && existingData.length > 0) {
-            // We have some data, mark as completed
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                last_sync_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', connectionData.id)
-
-            console.log(`[Meta Exchange] 📈 Found existing data after timeout - marked sync as completed`)
-          }
-        }
+        console.error(`[Meta Exchange] ⚠️ Sync error in phase 1:`, syncError)
+        // Continue with background queuing even if fast sync failed
       }
 
     } catch (error) {
