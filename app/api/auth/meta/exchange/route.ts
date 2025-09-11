@@ -73,25 +73,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[Meta Exchange] Connection created successfully, triggering Redis queue backfill for brand ${state}`)
-    
-    // Get Meta account ID and trigger backfill
+    console.log(`[Meta Exchange] Connection created successfully, doing immediate sync for brand ${state}`)
+
+    // Get Meta account ID and do immediate sync
     try {
       const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
       const meData = await meResponse.json()
       const accountId = meData.data?.[0]?.id || ''
-      
-      // Queue historical backfill
-      await MetaQueueService.queueCompleteHistoricalSync(
-        state,
-        connectionData.id,
-        tokenData.access_token,
-        accountId
-      )
-      
-      console.log(`[Meta Exchange] Queued historical backfill for brand ${state}`)
+
+      // Import Meta service and do immediate sync of last 30 days
+      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+
+      console.log(`[Meta Exchange] Starting immediate sync of last 30 days for brand ${state}`)
+
+      // Sync last 30 days immediately (within Vercel timeout limits)
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 30)
+
+      const immediateResult = await fetchMetaAdInsights(state, startDate, endDate, false, true) // Skip demographics for speed
+
+      if (immediateResult.success) {
+        console.log(`[Meta Exchange] ✅ Immediate sync completed: ${immediateResult.count} records`)
+
+        // Queue historical backfill for remaining data (in background)
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+
+        // Queue only historical data (11 months) in chunks
+        const historicalStartDate = new Date()
+        historicalStartDate.setMonth(historicalStartDate.getMonth() - 12)
+        const historicalEndDate = new Date(startDate) // Start from where immediate sync ended
+
+        await MetaQueueService.addHistoricalBackfillJobs(
+          state,
+          connectionData.id,
+          tokenData.access_token,
+          accountId,
+          historicalStartDate.toISOString().split('T')[0] // Account creation date
+        )
+
+        console.log(`[Meta Exchange] Queued historical backfill for remaining 11 months`)
+      } else {
+        console.error(`[Meta Exchange] ❌ Immediate sync failed:`, immediateResult.error)
+      }
+
     } catch (error) {
-      console.error('[Meta Exchange] Backfill queue failed:', error)
+      console.error('[Meta Exchange] Immediate sync failed:', error)
       // Don't fail the response, just log the error
     }
 

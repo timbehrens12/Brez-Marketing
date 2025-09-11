@@ -40,7 +40,30 @@ export default function MetaCallback() {
         const result = await response.json()
         
         if (result.success) {
-          setStatus('Success! Redirecting...')
+          setStatus('Success! Starting background sync...')
+
+          // Trigger immediate processing of any queued jobs
+          try {
+            const workerResponse = await fetch('/api/public-worker', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                maxJobs: 5 // Process up to 5 jobs to get things started
+              })
+            })
+
+            if (workerResponse.ok) {
+              console.log('[Meta Callback] Background worker triggered successfully')
+            } else {
+              console.warn('[Meta Callback] Background worker trigger failed, but sync will continue')
+            }
+          } catch (workerError) {
+            console.warn('[Meta Callback] Error triggering background worker:', workerError)
+            // Don't fail the whole process if worker trigger fails
+          }
+
           setTimeout(() => router.push('/settings?tab=brand-management&success=true&backfill=started'), 1000)
         } else {
           throw new Error(result.error || 'Unknown error')

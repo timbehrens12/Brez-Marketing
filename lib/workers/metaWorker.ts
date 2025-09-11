@@ -189,7 +189,8 @@ export class MetaWorker {
       }
       
       // Fetch demographic data for this chunk (age, gender, device, placement breakdowns)
-      const result = await fetchMetaAdInsights(brandId, start, end, true) // true for demographics
+      // Note: Demographics processing can be slow, but for historical data we need it
+      const result = await fetchMetaAdInsights(brandId, start, end, false) // false for dryRun, demographics will be processed
       
       if (!result.success) {
         throw new Error(`Historical demographics sync failed for chunk ${metadata?.chunkNumber}: ${result.error}`)
@@ -430,12 +431,13 @@ export class MetaWorker {
    * Initialize worker (called when app starts)
    */
   static start() {
-    // Only initialize if worker mode is enabled or in production
-    const workerMode = process.env.WORKER_MODE === 'true' || process.env.NODE_ENV === 'production'
-    
+    // Always initialize in serverless environments to process jobs on-demand
+    const isServerless = process.env.VERCEL || process.env.NETLIFY || !process.env.WORKER_MODE
+    const workerMode = process.env.WORKER_MODE === 'true' || process.env.NODE_ENV === 'production' || isServerless
+
     if (workerMode) {
       this.initialize()
-      console.log('[Meta Worker] Worker mode enabled - processing Meta jobs')
+      console.log('[Meta Worker] Worker initialized - processing Meta jobs (serverless mode)')
     } else {
       console.log('[Meta Worker] Worker mode disabled - skipping Meta job processing')
     }
@@ -453,5 +455,9 @@ export class MetaWorker {
 
 // Auto-start worker in serverless environment
 if (typeof window === 'undefined') {
-  MetaWorker.start()
+  // Always start in serverless environments, regardless of WORKER_MODE
+  const isServerless = process.env.VERCEL || process.env.NETLIFY || !process.env.WORKER_MODE
+  if (isServerless || process.env.WORKER_MODE === 'true' || process.env.NODE_ENV === 'production') {
+    MetaWorker.start()
+  }
 }

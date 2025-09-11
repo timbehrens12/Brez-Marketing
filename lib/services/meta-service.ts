@@ -135,30 +135,31 @@ async function ensureAdAccountId(connection: any, brandId: string, supabase: any
 }
 
 export async function fetchMetaAdInsights(
-  brandId: string, 
-  startDate: Date, 
+  brandId: string,
+  startDate: Date,
   endDate: Date,
-  dryRun: boolean = false
+  dryRun: boolean = false,
+  skipDemographics: boolean = false
 ) {
-  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}`)
-  
+  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}${skipDemographics ? ' (skipping demographics)' : ''}`)
+
   // If this is a new day transition, handle it specially
   if (isNewDayTransition && newDayTransitionInfo) {
     console.log(`[Meta] 🌅 NEW DAY TRANSITION MODE ACTIVE for brand ${brandId}`);
     console.log(`[Meta] Previous date: ${newDayTransitionInfo.previousDate}, Current date: ${newDayTransitionInfo.currentDate}`);
-    
+
     // Extend the date range to include both the previous day and current day
     // This ensures we properly sync and separate data for both days
     const previousDate = new Date(newDayTransitionInfo.previousDate);
     const currentDate = new Date(newDayTransitionInfo.currentDate);
-    
+
     // Override the date range to fetch both days
     startDate = new Date(Math.min(startDate.getTime(), previousDate.getTime()));
     endDate = new Date(Math.max(endDate.getTime(), currentDate.getTime()));
-    
+
     console.log(`[Meta] 📅 Extended sync range to cover transition: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
   }
-  
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -315,11 +316,12 @@ export async function fetchMetaAdInsights(
           continue
         }
 
-        // Fetch demographic breakdowns (age, gender) in parallel
+        // Fetch demographic breakdowns (age, gender) in parallel - SKIP if requested
         let demographicData = { age: [], gender: [], ageGender: [] };
         let deviceData = { device: [], placement: [], platform: [] };
-        
-        try {
+
+        if (!skipDemographics) {
+          try {
           console.log(`[Meta] Fetching demographic and device breakdowns for account ${account.id}`);
           
           // RESTORED: Add 'reach' back to breakdown queries - limit to 12 months instead of going back years
@@ -458,8 +460,11 @@ export async function fetchMetaAdInsights(
 
           console.log(`[Meta] 🔥 FINAL COUNT: ${demographicData.age.length} age, ${demographicData.gender.length} gender, ${deviceData.device.length} device breakdowns`);
           
-        } catch (error) {
-          console.error(`[Meta] Error fetching demographic/device breakdowns for account ${account.id}:`, error);
+          } catch (error) {
+            console.error(`[Meta] Error fetching demographic/device breakdowns for account ${account.id}:`, error);
+          }
+        } else {
+          console.log(`[Meta] Skipping demographic and device data fetch for account ${account.id} (skipDemographics=true)`);
         }
 
         // Add account info to demographic data and aggregate
