@@ -18,19 +18,27 @@ export async function GET(request: NextRequest) {
     
     // Get connection info
     const supabase = createClient()
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connections, error: connectionError } = await supabase
       .from('platform_connections')
       .select('id, status, sync_status, last_sync_at, created_at, updated_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(5)
 
     console.log(`[Meta Sync Status] Connection lookup result:`, {
-      found: !!connection,
+      count: connections?.length || 0,
       error: connectionError?.message,
-      status: connection?.status,
-      sync_status: connection?.sync_status
+      connections: connections?.map(c => ({
+        id: c.id,
+        status: c.status,
+        sync_status: c.sync_status,
+        created_at: c.created_at
+      }))
     })
+
+    // Get the most recent active connection
+    const connection = connections?.find(c => c.status === 'active') || connections?.[0]
 
     // Calculate overall status
     let overallStatus = 'not_connected'
