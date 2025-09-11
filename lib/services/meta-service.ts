@@ -34,157 +34,45 @@ if (typeof window !== 'undefined') {
 // Helper function to delay execution (for rate limiting)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Helper function to process large date ranges in chunks for better reliability
-async function processChunkedSync(
-  brandId: string,
-  startDate: Date,
-  endDate: Date,
-  dryRun: boolean = false,
-  skipDemographics: boolean = false
-) {
-  console.log(`[Meta] 📦 Starting chunked sync for ${brandId}: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
 
-  const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-  const chunkSize = 30 // 30 days per chunk
-  const chunks = Math.ceil(daysDiff / chunkSize)
+// Helper function to perform API call with retries and exponential backoff
+async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initialBackoff = 5000) {
+  let retries = 0;
+  let backoff = initialBackoff;
 
-  console.log(`[Meta] 📊 Processing ${chunks} chunks of ~${chunkSize} days each`)
-
-  let totalRecords = 0
-  let allResults: any[] = []
-  let hasErrors = false
-
-  for (let i = 0; i < chunks; i++) {
-    const chunkStart = new Date(startDate)
-    chunkStart.setDate(startDate.getDate() + (i * chunkSize))
-
-    const chunkEnd = new Date(chunkStart)
-    chunkEnd.setDate(chunkStart.getDate() + chunkSize - 1)
-
-    // Ensure we don't go beyond the original end date
-    if (chunkEnd > endDate) {
-      chunkEnd.setTime(endDate.getTime())
-    }
-
-    console.log(`[Meta] 📦 Processing chunk ${i + 1}/${chunks}: ${chunkStart.toISOString().split('T')[0]} to ${chunkEnd.toISOString().split('T')[0]}`)
-
+  while (retries <= maxRetries) {
     try {
-      // Process this chunk by calling the main function recursively with smaller range
-      const chunkResult = await processSingleRangeSync(brandId, chunkStart, chunkEnd, dryRun, skipDemographics)
+      const response = await fetch(url, options);
+      const data = await response.json();
 
-      if (chunkResult.success) {
-        totalRecords += chunkResult.count || 0
-        if (chunkResult.insights) {
-          allResults.push(...chunkResult.insights)
-        }
-        console.log(`[Meta] ✅ Chunk ${i + 1}/${chunks} completed: ${chunkResult.count} records`)
-      } else {
-        console.error(`[Meta] ❌ Chunk ${i + 1}/${chunks} failed:`, chunkResult.error)
-        hasErrors = true
-      }
-
-      // Add a small delay between chunks to avoid rate limiting
-      if (i < chunks - 1) {
-        await delay(2000) // 2 second delay between chunks
-      }
-
-    } catch (chunkError) {
-      console.error(`[Meta] ❌ Chunk ${i + 1}/${chunks} exception:`, chunkError)
-      hasErrors = true
-    }
-  }
-
-  console.log(`[Meta] 📦 Chunked sync completed: ${totalRecords} total records across ${chunks} chunks`)
-
-  return {
-    success: !hasErrors || totalRecords > 0, // Success if we got some data even with errors
-    count: totalRecords,
-    insights: dryRun ? allResults : undefined,
-    message: hasErrors && totalRecords > 0 ?
-      `Partial sync completed: ${totalRecords} records (some chunks failed)` :
-      `Complete sync: ${totalRecords} records`
-  }
-}
-
-// Helper function to process a single date range (used by chunked sync)
-async function processSingleRangeSync(
-  brandId: string,
-  startDate: Date,
-  endDate: Date,
-  dryRun: boolean = false,
-  skipDemographics: boolean = false
-) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
-  try {
-    // Find the Meta connection for this brand
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
-
-    if (connectionError || !connection) {
-      return {
-        success: false,
-        error: 'No active Meta connection found'
-      }
-    }
-
-    // Call the original sync logic for this single range
-    return await performMetaSyncForRange(brandId, startDate, endDate, dryRun, skipDemographics, connection, supabase)
-
-  } catch (error) {
-    console.error(`[Meta] Error in single range sync:`, error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
-  }
-}
-
-// Original sync logic extracted into a separate function
-async function performMetaSyncForRange(
-  brandId: string,
-  startDate: Date,
-  endDate: Date,
-  dryRun: boolean,
-  skipDemographics: boolean,
-  connection: any,
-  supabase: any
-) {
-  // Ensure we have an ad account ID in the metadata
+      // Check if we hit rate limiting
+      if (data.error && (data.error.code === 80004 || data.error.message?.includes('too many calls'))) {
         if (retries >= maxRetries) {
           console.log(`[Meta] Rate limit exceeded after ${retries} retries. Returning rate limit error.`);
           return data;
         }
-        
+
         retries++;
         console.log(`[Meta] Rate limit hit, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
         await delay(backoff);
         backoff *= 2; // Exponential backoff
         continue;
       }
-      
+
       return data;
     } catch (error) {
       if (retries >= maxRetries) {
         console.log(`[Meta] API call failed after ${retries} retries.`);
         throw error;
       }
-      
+
       retries++;
       console.log(`[Meta] API call failed, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
       await delay(backoff);
       backoff *= 2; // Exponential backoff
     }
   }
-  
+
   throw new Error(`Failed after ${maxRetries} retries`);
 }
 
@@ -255,17 +143,6 @@ export async function fetchMetaAdInsights(
   skipDemographics: boolean = false
 ) {
   console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}${skipDemographics ? ' (skipping demographics)' : ''}`)
-
-  // Calculate date range in days to determine if we need chunking
-  const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-  console.log(`[Meta] 📊 Date range covers ${daysDiff} days`)
-
-  // For large date ranges (>90 days), use chunking to avoid timeouts and API limits
-  const shouldChunk = daysDiff > 90
-  if (shouldChunk) {
-    console.log(`[Meta] 📦 Large date range detected (${daysDiff} days) - using chunked processing`)
-    return await processChunkedSync(brandId, startDate, endDate, dryRun, skipDemographics)
-  }
 
   // If this is a new day transition, handle it specially
   if (isNewDayTransition && newDayTransitionInfo) {
