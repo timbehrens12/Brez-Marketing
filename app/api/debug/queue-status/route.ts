@@ -2,17 +2,63 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const brandId = '0da80e8f-2df3-468d-9053-08fa4d24e6e8'
-    
+    const url = new URL(request.url)
+    const brandId = url.searchParams.get('brandId') || '0da80e8f-2df3-468d-9053-08fa4d24e6e8'
+    const action = url.searchParams.get('action')
+
     // Import queue service
     const { metaQueue } = await import('@/lib/services/metaQueueService')
-    
+
+    if (action === 'cleanup') {
+      // Clean up orphaned jobs
+      const waiting = await metaQueue.getWaiting()
+      const active = await metaQueue.getActive()
+      let cleanedCount = 0
+
+      // Check Supabase for valid connections
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = createClient()
+
+      // Get all valid Meta connections
+      const { data: validConnections } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+
+      const validConnectionIds = new Set(validConnections?.map(c => c.id) || [])
+
+      // Clean waiting jobs
+      for (const job of waiting) {
+        if (job.data?.connectionId && !validConnectionIds.has(job.data.connectionId)) {
+          await metaQueue.remove(job.id)
+          console.log(`[Queue Cleanup] Removed orphaned job ${job.id} with invalid connection ${job.data.connectionId}`)
+          cleanedCount++
+        }
+      }
+
+      // Clean active jobs
+      for (const job of active) {
+        if (job.data?.connectionId && !validConnectionIds.has(job.data.connectionId)) {
+          await metaQueue.remove(job.id)
+          console.log(`[Queue Cleanup] Removed orphaned active job ${job.id} with invalid connection ${job.data.connectionId}`)
+          cleanedCount++
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Cleaned up ${cleanedCount} orphaned jobs`,
+        cleanedCount
+      })
+    }
+
     // Get queue stats
     const waiting = await metaQueue.getWaiting()
     const active = await metaQueue.getActive()
     const completed = await metaQueue.getCompleted()
     const failed = await metaQueue.getFailed()
-    
+
     // Filter for our brand
     const brandWaiting = waiting.filter(job => job.data?.brandId === brandId)
     const brandActive = active.filter(job => job.data?.brandId === brandId)

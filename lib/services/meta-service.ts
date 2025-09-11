@@ -624,32 +624,30 @@ export async function fetchMetaAdInsights(
       
       // Use the deduplicated insights for storage
       
-      // EMERGENCY FIX: Use simple insert with delete-first approach to avoid conflicts and timeouts
+      // OPTIMIZED: Use bulk upsert for better performance and to avoid timeouts
       let insertError = null
-      
+
       if (enrichedInsights.length > 0) {
-        console.log(`[Meta] Using emergency storage method for ${enrichedInsights.length} records`)
-        
-        // Store each record individually to avoid timeout and conflicts
-        for (let i = 0; i < enrichedInsights.length; i++) {
-          const insight = enrichedInsights[i]
-          console.log(`[Meta] Storing individual record ${i+1}/${enrichedInsights.length}: ${insight.ad_id} on ${insight.date}`)
-          
-          // Use upsert instead of delete+insert to avoid race conditions
-          const { error: singleError } = await supabase
+        console.log(`[Meta] Bulk upserting ${enrichedInsights.length} records`)
+
+        try {
+          // Use bulk upsert - much faster than individual inserts
+          const { error: bulkError } = await supabase
             .from('meta_ad_insights')
-            .upsert(insight, { 
+            .upsert(enrichedInsights, {
               onConflict: 'brand_id,ad_id,date',
-              ignoreDuplicates: false 
+              ignoreDuplicates: false
             })
-          
-          if (singleError) {
-            insertError = singleError
-            console.error(`[Meta] Error storing record ${i+1}:`, singleError)
-            break
+
+          if (bulkError) {
+            console.error(`[Meta] Bulk upsert failed:`, bulkError)
+            insertError = bulkError
           } else {
-            console.log(`[Meta] ✅ Stored record ${i+1}: ${insight.ad_id} on ${insight.date}`)
+            console.log(`[Meta] ✅ Successfully bulk upserted ${enrichedInsights.length} records`)
           }
+        } catch (bulkError) {
+          console.error(`[Meta] Bulk upsert exception:`, bulkError)
+          insertError = bulkError
         }
       }
       

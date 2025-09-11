@@ -386,7 +386,7 @@ export class MetaWorker {
 
       if (!anyConnection) {
         console.error(`[Meta Worker] Connection ${connectionId} does not exist at all! This job should be cancelled.`)
-        
+
         // Check what connections DO exist for debugging
         const { data: allConnections } = await supabase
           .from('platform_connections')
@@ -394,9 +394,18 @@ export class MetaWorker {
           .eq('platform_type', 'meta')
           .order('created_at', { ascending: false })
           .limit(5)
-        
+
         console.error('[Meta Worker] Recent Meta connections:', allConnections)
-        
+
+        // Clean up orphaned jobs by removing this job from the queue
+        try {
+          const { metaQueue } = await import('@/lib/services/metaQueueService')
+          // This job will be cleaned up by the queue cleanup endpoint
+          console.log(`[Meta Worker] Job with invalid connection ${connectionId} will be cleaned up`)
+        } catch (cleanupError) {
+          console.error('[Meta Worker] Error during cleanup:', cleanupError)
+        }
+
         // This is a hard error - the job should not be retried with a non-existent connection
         throw new Error('FATAL: Connection does not exist - cancelling job permanently')
       }

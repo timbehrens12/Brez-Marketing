@@ -44,5 +44,57 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return GET(request)
+  try {
+    const body = await request.json().catch(() => ({}))
+    const { brandId, action } = body
+
+    if (action === 'sync' && brandId) {
+      // Manual sync for testing
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = createClient()
+
+      // Get the active Meta connection for this brand
+      const { data: connection, error: connectionError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+        .single()
+
+      if (connectionError || !connection) {
+        return NextResponse.json({
+          success: false,
+          error: 'No active Meta connection found for this brand'
+        }, { status: 404 })
+      }
+
+      // Import Meta service and do a quick sync
+      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+
+      console.log(`[Meta Trigger Worker] Manual sync for brand ${brandId}`)
+
+      // Sync last 7 days
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 7)
+
+      const result = await fetchMetaAdInsights(brandId, startDate, endDate, false, false)
+
+      return NextResponse.json({
+        success: result.success,
+        message: result.success ? 'Manual sync completed' : 'Manual sync failed',
+        count: result.count,
+        error: result.error
+      })
+    }
+
+    return GET(request)
+  } catch (error) {
+    console.error('[Meta Trigger Worker] Error in POST:', error)
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }

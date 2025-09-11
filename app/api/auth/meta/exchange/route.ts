@@ -96,6 +96,19 @@ export async function POST(request: NextRequest) {
       if (immediateResult.success) {
         console.log(`[Meta Exchange] ✅ Immediate sync completed: ${immediateResult.count} records`)
 
+        // Verify connection still exists before queuing historical jobs
+        const { data: verifyConnection, error: verifyError } = await supabase
+          .from('platform_connections')
+          .select('id, status')
+          .eq('id', connectionData.id)
+          .eq('status', 'active')
+          .single()
+
+        if (verifyError || !verifyConnection) {
+          console.error(`[Meta Exchange] Connection verification failed:`, verifyError)
+          return NextResponse.json({ success: true }) // Still return success since immediate sync worked
+        }
+
         // Queue historical backfill for remaining data (in background)
         const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
@@ -104,15 +117,19 @@ export async function POST(request: NextRequest) {
         historicalStartDate.setMonth(historicalStartDate.getMonth() - 12)
         const historicalEndDate = new Date(startDate) // Start from where immediate sync ended
 
-        await MetaQueueService.addHistoricalBackfillJobs(
-          state,
-          connectionData.id,
-          tokenData.access_token,
-          accountId,
-          historicalStartDate.toISOString().split('T')[0] // Account creation date
-        )
-
-        console.log(`[Meta Exchange] Queued historical backfill for remaining 11 months`)
+        try {
+          await MetaQueueService.addHistoricalBackfillJobs(
+            state,
+            connectionData.id,
+            tokenData.access_token,
+            accountId,
+            historicalStartDate.toISOString().split('T')[0] // Account creation date
+          )
+          console.log(`[Meta Exchange] Queued historical backfill for remaining 11 months`)
+        } catch (queueError) {
+          console.error(`[Meta Exchange] Failed to queue historical jobs:`, queueError)
+          // Don't fail the whole response since immediate sync was successful
+        }
       } else {
         console.error(`[Meta Exchange] ❌ Immediate sync failed:`, immediateResult.error)
       }
