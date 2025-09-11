@@ -191,7 +191,7 @@ export class MetaWorker {
       // Update ETL job progress
       await this.updateEtlProgress(etlJobId, { progress_pct: 25 })
 
-      // Import Meta backfill service
+      // Import Meta backfill service methods directly
       const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
 
       const start = new Date(startDate!)
@@ -200,7 +200,7 @@ export class MetaWorker {
       // Update ETL job progress
       await this.updateEtlProgress(etlJobId, { progress_pct: 50 })
 
-      // Fetch campaign data for this chunk using the proper backfill service
+      // Fetch campaign data for this specific chunk
       console.log(`[Meta Worker] Fetching campaigns for date range: ${startDate} to ${endDate}`)
       const dateRange = {
         since: startDate,
@@ -208,7 +208,9 @@ export class MetaWorker {
       }
 
       try {
-        await DataBackfillService.backfillMetaData(brandId, accountId, freshToken, dateRange)
+        // Call the specific fetch methods directly with our date range
+        await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
+        await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
