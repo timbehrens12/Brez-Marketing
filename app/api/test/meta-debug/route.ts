@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     
     let connectionQuery = supabase
       .from('platform_connections')
-      .select('id, brand_id, status, sync_status, platform_type, account_id, access_token, created_at, updated_at')
+      .select('id, brand_id, status, sync_status, platform_type, access_token, created_at, updated_at, last_synced_at, metadata')
       .eq('platform_type', 'meta')
 
     if (brandId) {
@@ -40,11 +40,12 @@ export async function GET(request: NextRequest) {
         brand_id: conn.brand_id,
         status: conn.status,
         sync_status: conn.sync_status,
-        account_id: conn.account_id,
         has_access_token: !!conn.access_token,
         token_length: conn.access_token?.length || 0,
         created_at: conn.created_at,
-        updated_at: conn.updated_at
+        updated_at: conn.updated_at,
+        last_synced_at: conn.last_synced_at,
+        metadata: conn.metadata
       }))
     }
 
