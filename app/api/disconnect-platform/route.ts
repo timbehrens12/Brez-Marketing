@@ -53,14 +53,52 @@ export async function POST(request: Request) {
         if (platformType === 'meta') {
           console.log(`🧹 Cleaning up Meta data for brand ${brandId}`)
           
-          // Delete all Meta-related data for this brand
+          // Delete all Meta-related data for this brand - ALL 34 TABLES (FIXED DEPLOY v2)
           const metaTables = [
-            'meta_campaigns',
-            'meta_campaign_daily_stats', 
+            // Core Meta tables
             'meta_ad_insights',
             'meta_demographics',
             'meta_device_performance',
-            'meta_sync_history'
+            'meta_campaigns',
+            'meta_campaign_daily_stats',
+            'meta_sync_history',
+            
+            // Daily insights and ads
+            'meta_ad_daily_insights',
+            'meta_adset_daily_insights',
+            'meta_ads',
+            'meta_adsets',
+            'meta_adsets_daily_stats',
+            
+            // Enhanced tables
+            'meta_ads_enhanced',
+            'meta_adsets_enhanced',
+            'meta_campaigns_enhanced',
+            'meta_campaign_daily_insights',
+            'meta_campaign_insights',
+            
+            // Attribution and analytics
+            'meta_attribution_analysis',
+            'meta_attribution_data',
+            'meta_audience_demographics',
+            'meta_audience_performance',
+            'meta_bid_strategy_performance',
+            'meta_bidding_insights',
+            
+            // Creative and competitive insights
+            'meta_competitive_insights',
+            'meta_creative_insights',
+            'meta_creative_performance',
+            'meta_custom_audience_performance',
+            'meta_custom_conversions',
+            
+            // Performance breakdown tables
+            'meta_data_tracking',
+            'meta_frequency_analysis',
+            'meta_geographic_performance',
+            'meta_interest_performance',
+            'meta_placement_performance',
+            'meta_time_performance'
           ]
 
           for (const table of metaTables) {
