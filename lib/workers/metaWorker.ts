@@ -415,7 +415,8 @@ export class MetaWorker {
         status: anyConnection.status,
         platform_type: anyConnection.platform_type,
         brand_id: anyConnection.brand_id,
-        has_token: !!anyConnection.access_token
+        has_token: !!anyConnection.access_token,
+        token_length: anyConnection.access_token?.length || 0
       })
 
       if (anyConnection.status !== 'active') {
@@ -423,9 +424,9 @@ export class MetaWorker {
         return { error: `Connection status is ${anyConnection.status}, not active` }
       }
 
-      if (!anyConnection.access_token) {
-        console.error('[Meta Worker] No access token found in connection:', connectionId)
-        return { error: 'No access token found in connection' }
+      if (!anyConnection.access_token || anyConnection.access_token.length < 10) {
+        console.error('[Meta Worker] Invalid or missing access token in connection:', connectionId)
+        return { error: 'Invalid or missing access token in connection' }
       }
 
       console.log(`[Meta Worker] Retrieved access token for connection: ${connectionId}`)

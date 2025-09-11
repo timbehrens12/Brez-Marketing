@@ -60,7 +60,9 @@ export async function POST(request: NextRequest) {
         access_token: tokenData.access_token,
         status: 'active',
         user_id: userId,
-        sync_status: 'in_progress'
+        sync_status: 'in_progress',
+        connected_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select('id')
       .single()

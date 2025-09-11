@@ -18,40 +18,56 @@ export async function GET(request: NextRequest) {
     
     // Get connection info
     const supabase = createClient()
-    const { data: connection } = await supabase
+    const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('sync_status, last_sync_at, created_at')
+      .select('status, sync_status, last_sync_at, created_at, updated_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .single()
+
+    console.log(`[Meta Sync Status] Connection lookup result:`, {
+      found: !!connection,
+      error: connectionError?.message,
+      status: connection?.status,
+      sync_status: connection?.sync_status
+    })
 
     // Calculate overall status
     let overallStatus = 'not_connected'
     let progressPct = 0
     let estimatedCompletion = null
-    
-    if (connection) {
-      if (connection.sync_status === 'in_progress') {
-        overallStatus = 'syncing'
-        
-        // Calculate progress from ETL jobs
-        const milestones = syncStatus.meta?.milestones || []
-        if (milestones.length > 0) {
-          const totalProgress = milestones.reduce((sum: number, milestone: any) => 
-            sum + (milestone.progress_pct || 0), 0)
-          progressPct = Math.round(totalProgress / milestones.length)
-          
-          // Estimate completion based on progress and time elapsed
-          const startTime = new Date(connection.created_at).getTime()
-          const elapsed = Date.now() - startTime
-          const remaining = elapsed * ((100 - progressPct) / Math.max(progressPct, 1))
-          estimatedCompletion = new Date(Date.now() + remaining).toISOString()
+
+    if (connection && !connectionError) {
+      // Check if connection is active (has a valid status)
+      if (connection.status === 'active') {
+        if (connection.sync_status === 'in_progress') {
+          overallStatus = 'syncing'
+
+          // Calculate progress from ETL jobs
+          const milestones = syncStatus.meta?.milestones || []
+          if (milestones.length > 0) {
+            const totalProgress = milestones.reduce((sum: number, milestone: any) =>
+              sum + (milestone.progress_pct || 0), 0)
+            progressPct = Math.round(totalProgress / milestones.length)
+
+            // Estimate completion based on progress and time elapsed
+            const startTime = new Date(connection.created_at).getTime()
+            const elapsed = Date.now() - startTime
+            const remaining = elapsed * ((100 - progressPct) / Math.max(progressPct, 1))
+            estimatedCompletion = new Date(Date.now() + remaining).toISOString()
+          }
+        } else if (connection.sync_status === 'completed') {
+          overallStatus = 'completed'
+          progressPct = 100
+        } else if (connection.sync_status === 'failed') {
+          overallStatus = 'failed'
+        } else {
+          // Connection exists but sync hasn't started yet
+          overallStatus = 'connected'
+          progressPct = 0
         }
-      } else if (connection.sync_status === 'completed') {
-        overallStatus = 'completed'
-        progressPct = 100
-      } else if (connection.sync_status === 'failed') {
-        overallStatus = 'failed'
+      } else if (connection.status === 'inactive' || connection.status === 'disconnected') {
+        overallStatus = 'disconnected'
       }
     }
 

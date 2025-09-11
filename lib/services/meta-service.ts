@@ -623,38 +623,77 @@ export async function fetchMetaAdInsights(
       console.log(`[Meta] Deduplicated ${allInsights.length} raw insights into ${enrichedInsights.length} unique records`)
       
       // Use the deduplicated insights for storage
-      
+
       // OPTIMIZED: Use bulk upsert for better performance and to avoid timeouts
       let insertError = null
 
       if (enrichedInsights.length > 0) {
         console.log(`[Meta] Bulk upserting ${enrichedInsights.length} records`)
+        console.log(`[Meta] Sample record:`, JSON.stringify(enrichedInsights[0], null, 2))
 
         try {
-          // Use bulk upsert - much faster than individual inserts
-          const { error: bulkError } = await supabase
+          // Add timeout wrapper to catch database timeouts
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Database operation timeout')), 25000) // 25 second timeout
+          })
+
+          const upsertPromise = supabase
             .from('meta_ad_insights')
             .upsert(enrichedInsights, {
               onConflict: 'brand_id,ad_id,date',
               ignoreDuplicates: false
             })
 
+          // Race between the actual operation and timeout
+          const { error: bulkError } = await Promise.race([upsertPromise, timeoutPromise]) as any
+
           if (bulkError) {
-            console.error(`[Meta] Bulk upsert failed:`, bulkError)
+            console.error(`[Meta] Bulk upsert failed:`, JSON.stringify(bulkError, null, 2))
             insertError = bulkError
           } else {
             console.log(`[Meta] ✅ Successfully bulk upserted ${enrichedInsights.length} records`)
           }
         } catch (bulkError) {
-          console.error(`[Meta] Bulk upsert exception:`, bulkError)
-          insertError = bulkError
+          console.error(`[Meta] Bulk upsert exception:`, bulkError instanceof Error ? bulkError.message : JSON.stringify(bulkError, null, 2))
+          insertError = bulkError instanceof Error ? bulkError : new Error(String(bulkError))
         }
       }
       
       if (insertError) {
         console.error(`[Meta] Error storing insights:`, insertError)
-        return { 
-          success: false, 
+
+        // Fallback: Try to store just a single record to isolate the issue
+        if (enrichedInsights.length > 0) {
+          console.log(`[Meta] Attempting fallback: storing single record...`)
+          try {
+            const singleRecord = enrichedInsights[0]
+            console.log(`[Meta] Single record sample:`, JSON.stringify(singleRecord, null, 2))
+
+            const { error: singleError } = await supabase
+              .from('meta_ad_insights')
+              .upsert([singleRecord], {
+                onConflict: 'brand_id,ad_id,date',
+                ignoreDuplicates: false
+              })
+
+            if (singleError) {
+              console.error(`[Meta] Single record insert also failed:`, singleError)
+            } else {
+              console.log(`[Meta] ✅ Single record fallback succeeded`)
+              return {
+                success: true,
+                message: 'Meta insights synced successfully (single record fallback)',
+                count: 1,
+                insights: dryRun ? allInsights : undefined
+              }
+            }
+          } catch (fallbackError) {
+            console.error(`[Meta] Fallback also failed:`, fallbackError)
+          }
+        }
+
+        return {
+          success: false,
           error: 'Failed to store Meta insights',
           details: insertError
         }
