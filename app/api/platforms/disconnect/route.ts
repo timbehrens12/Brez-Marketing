@@ -96,11 +96,16 @@ export async function POST(request: Request) {
           // Delete all Meta-related data for this brand
           const metaTables = [
             'meta_campaigns',
-            'meta_campaign_daily_stats', 
+            'meta_campaign_daily_stats',
             'meta_ad_insights',
             'meta_demographics',
             'meta_device_performance',
-            'meta_sync_history'
+            'meta_sync_history',
+            'meta_ad_daily_insights',
+            'meta_adset_daily_insights',
+            'meta_ads',
+            'meta_adsets',
+            'meta_adsets_daily_stats'
           ]
 
           for (const table of metaTables) {
