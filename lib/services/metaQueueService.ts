@@ -73,8 +73,32 @@ export class MetaQueueService {
     }
 
     try {
-      await metaQueue.add(jobType, data, { ...defaultOptions, ...options })
-      console.log(`[Meta Queue] Added ${jobType} job for brand ${data.brandId}`)
+      // Create ETL job first to track progress
+      let etlJobId: number | undefined
+      try {
+        const entity = data.entity || jobType.replace('historical_', '').replace('_', '-')
+        etlJobId = await this.createEtlJob(
+          data.brandId,
+          entity,
+          jobType,
+          data.startDate && data.endDate ? {
+            start: data.startDate,
+            end: data.endDate
+          } : undefined
+        )
+        console.log(`[Meta Queue] Created ETL job ${etlJobId} for ${jobType}`)
+      } catch (etlError) {
+        console.warn(`[Meta Queue] Failed to create ETL job for ${jobType}, proceeding without tracking:`, etlError)
+      }
+
+      // Add ETL job ID to job data for tracking
+      const jobDataWithEtl = {
+        ...data,
+        etlJobId
+      }
+
+      await metaQueue.add(jobType, jobDataWithEtl, { ...defaultOptions, ...options })
+      console.log(`[Meta Queue] Added ${jobType} job for brand ${data.brandId} with ETL tracking`)
     } catch (error) {
       console.error(`[Meta Queue] Failed to add ${jobType} job:`, error)
       throw error

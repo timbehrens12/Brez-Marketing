@@ -58,48 +58,99 @@ export class MetaWorker {
   }
 
   /**
+   * Helper method to update ETL job progress
+   */
+  static async updateEtlProgress(etlJobId: number | undefined, updates: any): Promise<void> {
+    if (!etlJobId) return
+
+    try {
+      await MetaQueueService.updateEtlJob(etlJobId, updates)
+    } catch (error) {
+      console.error(`[Meta Worker] Failed to update ETL job ${etlJobId}:`, error)
+    }
+  }
+
+  /**
    * Process recent sync job - last 7 days for immediate UI
    */
   static async processRecentSync(job: Job<MetaJobData>): Promise<void> {
-    const { brandId, connectionId, accessToken, accountId } = job.data
+    const { brandId, connectionId, accessToken, accountId, etlJobId } = job.data
 
     console.log(`[Meta Worker] 🚀 Processing recent sync for brand ${brandId}`)
 
     try {
+      // Update ETL job to in_progress
+      await this.updateEtlProgress(etlJobId, {
+        status: 'in_progress',
+        progress_pct: 10
+      })
+
       // Get fresh access token from database
       const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          await this.updateEtlProgress(etlJobId, {
+            status: 'completed',
+            progress_pct: 100
+          })
           return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
+      // Update ETL job progress
+      await this.updateEtlProgress(etlJobId, { progress_pct: 25 })
+
       // Import Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-      
+
       // FIXED: Sync last 12 months (within Meta's reach limitation)
       const endDate = new Date()
       const startDate = new Date()
       startDate.setMonth(startDate.getMonth() - 12) // Exactly 12 months to stay within Meta's 13-month reach limit
-      
+
       console.log(`[Meta Worker] Syncing recent data: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-      
+
+      // Update ETL job progress
+      await this.updateEtlProgress(etlJobId, { progress_pct: 50 })
+
       const result = await fetchMetaAdInsights(brandId, startDate, endDate, false)
-      
+
       if (!result.success) {
+        await this.updateEtlProgress(etlJobId, {
+          status: 'failed',
+          error_message: result.error
+        })
         throw new Error(`Recent sync failed: ${result.error}`)
       }
-      
+
+      // Update ETL job progress
+      await this.updateEtlProgress(etlJobId, {
+        progress_pct: 90,
+        rows_written: result.count
+      })
+
       console.log(`[Meta Worker] ✅ Recent sync completed for brand ${brandId}`)
-      
+
       // Update connection sync status to completed
       await this.updateConnectionSyncStatus(connectionId, 'completed')
-      
+
+      // Mark ETL job as completed
+      await this.updateEtlProgress(etlJobId, {
+        status: 'completed',
+        progress_pct: 100,
+        completed_at: new Date().toISOString()
+      })
+
     } catch (error) {
       console.error(`[Meta Worker] Recent sync failed for brand ${brandId}:`, error)
+      // Update ETL job status to failed
+      await this.updateEtlProgress(etlJobId, {
+        status: 'failed',
+        error_message: error.message
+      })
       // Update connection sync status to failed
       await this.updateConnectionSyncStatus(connectionId, 'failed')
       throw error
@@ -110,60 +161,78 @@ export class MetaWorker {
    * Process historical campaigns job - chunk by chunk
    */
   static async processHistoricalCampaigns(job: Job<MetaHistoricalJobData>): Promise<void> {
-    const { brandId, connectionId, accessToken, accountId, startDate, endDate, metadata } = job.data
+    const { brandId, connectionId, accessToken, accountId, startDate, endDate, metadata, etlJobId } = job.data
 
     console.log(`[Meta Worker] 📊 Processing historical campaigns chunk ${metadata?.chunkNumber}/${metadata?.totalChunks} for brand ${brandId}`)
     console.log(`[Meta Worker] Date range: ${startDate} to ${endDate}`)
 
     try {
+      // Update ETL job to in_progress
+      await this.updateEtlProgress(etlJobId, {
+        status: 'in_progress',
+        progress_pct: 10
+      })
+
       // Get fresh access token
       const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          await this.updateEtlProgress(etlJobId, {
+            status: 'completed',
+            progress_pct: 100
+          })
           return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
+      // Update ETL job progress
+      await this.updateEtlProgress(etlJobId, { progress_pct: 25 })
+
       // Import Meta service
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-      
+
       const start = new Date(startDate!)
       const end = new Date(endDate!)
-      
-      // Update ETL job to processing
-      if (job.data.etlJobId) {
-        await MetaQueueService.updateEtlJob(job.data.etlJobId, {
-          status: 'processing',
-          progress_pct: 0
-        })
-      }
-      
+
+      // Update ETL job progress
+      await this.updateEtlProgress(etlJobId, { progress_pct: 50 })
+
       // Fetch campaign data for this chunk
       const result = await fetchMetaAdInsights(brandId, start, end, false)
-      
+
       if (!result.success) {
+        await this.updateEtlProgress(etlJobId, {
+          status: 'failed',
+          error_message: result.error
+        })
         throw new Error(`Historical campaigns sync failed for chunk ${metadata?.chunkNumber}: ${result.error}`)
       }
-      
-      // Update progress
-      const progressPct = metadata?.chunkNumber && metadata?.totalChunks ? 
-        Math.round((metadata.chunkNumber / metadata.totalChunks) * 100) : 100
-      
-      if (job.data.etlJobId) {
-        await MetaQueueService.updateEtlJob(job.data.etlJobId, {
-          status: 'processing',
-          progress_pct: progressPct,
-          rows_written: result.count || 0
-        })
-      }
-      
-      console.log(`[Meta Worker] ✅ Historical campaigns chunk ${metadata?.chunkNumber}/${metadata?.totalChunks} completed for brand ${brandId}`)
-      
+
+      // Update ETL job progress with results
+      await this.updateEtlProgress(etlJobId, {
+        progress_pct: 90,
+        rows_written: result.count
+      })
+
+      console.log(`[Meta Worker] ✅ Historical campaigns chunk ${metadata?.chunkNumber} completed: ${result.count} records`)
+
+      // Mark ETL job as completed
+      await this.updateEtlProgress(etlJobId, {
+        status: 'completed',
+        progress_pct: 100,
+        completed_at: new Date().toISOString()
+      })
+
     } catch (error) {
-      console.error(`[Meta Worker] Historical campaigns failed for brand ${brandId}:`, error)
+      console.error(`[Meta Worker] Historical campaigns failed for chunk ${metadata?.chunkNumber}:`, error)
+      // Update ETL job status to failed
+      await this.updateEtlProgress(etlJobId, {
+        status: 'failed',
+        error_message: error.message
+      })
       throw error
     }
   }
