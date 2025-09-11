@@ -83,18 +83,13 @@ export async function POST(request: Request) {
 
       // For Meta, we need to handle related data first
       if (platformType === 'meta') {
-        // Get brand_id for Meta data cleanup
-        const { data: connectionData } = await supabase
-          .from('platform_connections')
-          .select('brand_id')
-          .eq('id', connection.id)
-          .single()
-
-        if (connectionData?.brand_id) {
-          console.log(`Cleaning up Meta data for brand ${connectionData.brand_id}`)
+        console.log(`Cleaning up Meta data for brand ${brandId} (using brandId directly)`)
+        
+        // Use brandId directly since we already have it from the request
+        // This ensures we delete all Meta data for this brand regardless of connection state
           
-          // Delete all Meta-related data for this brand
-          const metaTables = [
+        // Delete all Meta-related data for this brand
+        const metaTables = [
             'meta_campaigns',
             'meta_campaign_daily_stats',
             'meta_ad_insights',
@@ -112,37 +107,22 @@ export async function POST(request: Request) {
             'meta_adsets_enhanced',
             'meta_attribution_analysis',
             'meta_attribution_data',
-            'meta_ad_daily_insights',
-            'meta_ad_insights',
-            'meta_ads',
-            'meta_adset_daily_insights',
-            'meta_adsets',
-            'meta_adsets_daily_stats',
-            'meta_campaign_daily_insights',
-            'meta_campaign_daily_stats',
+            'meta_audience_demographics',
+            'meta_audience_performance',
+            'meta_bid_strategy_performance',
+            'meta_bidding_insights',
             'meta_campaign_insights',
-            'meta_campaigns',
-            'meta_campaigns_enhanced',
             'meta_competitive_insights',
             'meta_creative_insights',
             'meta_creative_performance',
             'meta_custom_audience_performance',
             'meta_custom_conversions',
             'meta_data_tracking',
-            'meta_demographics',
-            'meta_device_performance',
             'meta_frequency_analysis',
             'meta_geographic_performance',
             'meta_interest_performance',
             'meta_placement_performance',
-            'meta_sync_history',
-            'meta_time_performance',
-            'meta_attribution_analysis',
-            'meta_attribution_data',
-            'meta_audience_demographics',
-            'meta_audience_performance',
-            'meta_bid_strategy_performance',
-            'meta_bidding_insights'
+            'meta_time_performance'
           ]
 
           for (const table of metaTables) {
@@ -150,7 +130,7 @@ export async function POST(request: Request) {
               const { count, error: countError } = await supabase
                 .from(table)
                 .select('*', { count: 'exact', head: true })
-                .eq('brand_id', connectionData.brand_id)
+                .eq('brand_id', brandId)
 
               if (countError) {
                 console.log(`Table ${table} doesn't exist or has no brand_id column`)
@@ -162,7 +142,7 @@ export async function POST(request: Request) {
                 const { error: deleteError } = await supabase
                   .from(table)
                   .delete()
-                  .eq('brand_id', connectionData.brand_id)
+                  .eq('brand_id', brandId)
 
                 if (deleteError) {
                   console.error(`Error deleting Meta data from ${table}:`, deleteError)
@@ -175,31 +155,30 @@ export async function POST(request: Request) {
             }
           }
 
-          // Also clean up any ETL jobs for this brand
-          try {
-            const { count: etlCount, error: etlCountError } = await supabase
+        // Also clean up any ETL jobs for this brand
+        try {
+          const { count: etlCount, error: etlCountError } = await supabase
+            .from('etl_job')
+            .select('*', { count: 'exact', head: true })
+            .eq('brand_id', brandId)
+            .like('job_type', 'meta_%')
+
+          if (!etlCountError && etlCount && etlCount > 0) {
+            console.log(`Deleting ${etlCount} Meta ETL jobs`)
+            const { error: etlDeleteError } = await supabase
               .from('etl_job')
-              .select('*', { count: 'exact', head: true })
-              .eq('brand_id', connectionData.brand_id)
+              .delete()
+              .eq('brand_id', brandId)
               .like('job_type', 'meta_%')
 
-            if (!etlCountError && etlCount && etlCount > 0) {
-              console.log(`Deleting ${etlCount} Meta ETL jobs`)
-              const { error: etlDeleteError } = await supabase
-                .from('etl_job')
-                .delete()
-                .eq('brand_id', connectionData.brand_id)
-                .like('job_type', 'meta_%')
-
-              if (etlDeleteError) {
-                console.error('Error deleting Meta ETL jobs:', etlDeleteError)
-              } else {
-                console.log(`✅ Successfully deleted ${etlCount} Meta ETL jobs`)
-              }
+            if (etlDeleteError) {
+              console.error('Error deleting Meta ETL jobs:', etlDeleteError)
+            } else {
+              console.log(`✅ Successfully deleted ${etlCount} Meta ETL jobs`)
             }
-          } catch (error) {
-            console.error('Error handling Meta ETL jobs:', error)
           }
+        } catch (error) {
+          console.error('Error handling Meta ETL jobs:', error)
         }
       }
     }
