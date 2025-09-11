@@ -124,9 +124,9 @@ export class DataBackfillService {
   }
 
   /**
-   * Fetch Meta campaigns and store in database
+   * PUBLIC: Fetch Meta campaigns and store in database
    */
-  private static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+  public static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
     const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?` + 
       `fields=id,name,status,objective,daily_budget,lifetime_budget,created_time,updated_time&` +
       `access_token=${accessToken}&limit=100`
@@ -192,9 +192,9 @@ export class DataBackfillService {
   }
 
   /**
-   * Fetch Meta daily insights for trend analysis
+   * PUBLIC: Fetch Meta daily insights for trend analysis
    */
-  private static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+  public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
     const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
       `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start&` +
       `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
