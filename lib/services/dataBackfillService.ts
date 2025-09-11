@@ -141,7 +141,7 @@ export class DataBackfillService {
         // Get campaign insights
         const insightsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/insights?` +
           `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,cpp&` +
-          `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
+          `time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}&` +
           `access_token=${accessToken}`
 
         const insightsResponse = await fetch(insightsUrl)
@@ -197,7 +197,7 @@ export class DataBackfillService {
   public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
     const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
       `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start&` +
-      `time_range={since:'${dateRange.since}',until:'${dateRange.until}'}&` +
+      `time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}&` +
       `time_increment=1&` +
       `access_token=${accessToken}&limit=100`
 

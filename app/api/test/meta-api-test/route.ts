@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     console.log(`[Meta API Test] Campaigns response:`, campaignsData)
 
     // Test 3: Get insights
-    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&time_range={"since":"2024-01-01","until":"2024-01-15"}&access_token=${connection.access_token}&limit=5`
+    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&time_range={"since":"2024-08-01","until":"2024-08-15"}&access_token=${connection.access_token}&limit=5`
     const insightsResponse = await fetch(insightsUrl)
     const insightsData = await insightsResponse.json()
 
