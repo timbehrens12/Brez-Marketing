@@ -1,76 +1,78 @@
-'use client'
-
-import { useState, useEffect } from 'react'
+"use client"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { MetaSyncStatus } from '@/components/MetaSyncStatus'
 
 export default function MetaTestPage() {
-  const [brandId, setBrandId] = useState('9f958c0f-d4f7-49c2-bbbb-0db0be4aa751')
-  const [result, setResult] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncStarted, setSyncStarted] = useState(false)
+  const brandId = '0da80e8f-2df3-468d-9053-08fa4d24e6e8' // Your brand ID
 
-  async function testConnection() {
-    setLoading(true)
-    setError(null)
-    
+  const startSync = async () => {
+    setSyncing(true)
     try {
-      // Direct database query using Supabase client
-      const res = await fetch('/api/meta/direct-test', {
+      const response = await fetch('/api/meta/queue-historical-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ brandId }),
+        body: JSON.stringify({ brandId })
       })
       
-      const data = await res.json()
-      console.log('Test result:', data)
-      setResult(data)
-    } catch (err: unknown) {
-      console.error('Test error:', err)
-      setError(typeof err === 'object' && err !== null && 'message' in err 
-        ? (err.message as string) 
-        : 'Unknown error')
+      const result = await response.json()
+      console.log('Sync started:', result)
+      setSyncStarted(true)
+    } catch (error) {
+      console.error('Error starting sync:', error)
     } finally {
-      setLoading(false)
+      setSyncing(false)
     }
   }
 
+  const handleSyncComplete = () => {
+    console.log('Sync completed!')
+    // You could refresh the page or update other components here
+  }
+
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Meta Connection Test</h1>
-      
-      <div className="mb-4">
-        <label className="block mb-2">Brand ID:</label>
-        <input 
-          type="text" 
-          value={brandId} 
-          onChange={(e) => setBrandId(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-      
-      <button
-        onClick={testConnection}
-        disabled={loading}
-        className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-      >
-        {loading ? 'Testing...' : 'Test Connection'}
-      </button>
-      
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 border border-red-400 rounded">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
-      
-      {result && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2">Result:</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-auto max-h-96 text-black">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </div>
-      )}
+    <div className="container mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Meta Historical Sync Test</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>
+            This will queue 12 months of Meta historical data sync jobs and show real-time progress.
+          </p>
+          
+          <Button 
+            onClick={startSync} 
+            disabled={syncing || syncStarted}
+            className="w-full"
+          >
+            {syncing ? 'Starting Sync...' : syncStarted ? 'Sync Started' : 'Start 12-Month Meta Sync'}
+          </Button>
+          
+          {syncStarted && (
+            <MetaSyncStatus 
+              brandId={brandId} 
+              onSyncComplete={handleSyncComplete}
+            />
+          )}
+          
+          <div className="text-sm text-gray-600">
+            <p><strong>What this does:</strong></p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Clears existing Meta data</li>
+              <li>Queues 12 months of historical sync jobs</li>
+              <li>Shows "Syncing..." status with progress</li>
+              <li>Jobs run in background via Redis/Upstash</li>
+              <li>When complete, dashboard will show all historical data</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
-} 
+}
