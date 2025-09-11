@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('status, sync_status, last_sync_at, created_at, updated_at')
+      .select('id, status, sync_status, last_sync_at, created_at, updated_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .single()
@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
       })
 
       // Check if connection is active (has a valid status)
-      if (connection.status === 'active') {
+      console.log(`[Meta Sync Status] Evaluating connection status: ${connection.status}, sync_status: ${connection.sync_status}`)
+
+      if (connection.status === 'active' || connection.status === 'connected') {
         if (connection.sync_status === 'in_progress') {
           overallStatus = 'syncing'
           console.log(`[Meta Sync Status] Status set to 'syncing' - connection is active and in progress`)
@@ -73,10 +75,26 @@ export async function GET(request: NextRequest) {
           overallStatus = 'failed'
           console.log(`[Meta Sync Status] Status set to 'failed'`)
         } else {
-          // Connection exists but sync hasn't started yet
-          overallStatus = 'connected'
-          progressPct = 0
-          console.log(`[Meta Sync Status] Status set to 'connected' - active connection with no sync status`)
+          // Connection exists but sync hasn't started yet - check if we have recent data
+          console.log(`[Meta Sync Status] Checking for recent data to determine status...`)
+
+          // Check if we have recent Meta data (last 7 days) to determine if sync is actually complete
+          const { data: recentData } = await supabase
+            .from('meta_ad_daily_insights')
+            .select('id')
+            .eq('brand_id', brandId)
+            .gte('date_range_start', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+            .limit(1)
+
+          if (recentData && recentData.length > 0) {
+            overallStatus = 'completed'
+            progressPct = 100
+            console.log(`[Meta Sync Status] Status set to 'completed' - found recent data`)
+          } else {
+            overallStatus = 'connected'
+            progressPct = 0
+            console.log(`[Meta Sync Status] Status set to 'connected' - active connection with no recent data`)
+          }
         }
       } else if (connection.status === 'inactive' || connection.status === 'disconnected') {
         overallStatus = 'disconnected'

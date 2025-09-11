@@ -72,7 +72,7 @@ export class MetaWorker {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
-          return { success: true, message: tokenError || 'Job completed due to connection status' }
+          return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
@@ -122,7 +122,7 @@ export class MetaWorker {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
-          return { success: true, message: tokenError || 'Job completed due to connection status' }
+          return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
@@ -184,7 +184,7 @@ export class MetaWorker {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
-          return { success: true, message: tokenError || 'Job completed due to connection status' }
+          return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
@@ -247,7 +247,7 @@ export class MetaWorker {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
-          return { success: true, message: tokenError || 'Job completed due to connection status' }
+          return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
@@ -308,7 +308,7 @@ export class MetaWorker {
         // Handle special cases where connection was deleted but brand has other connections
         if (freshToken === 'orphaned' || freshToken === 'new_brand') {
           console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
-          return { success: true, message: tokenError || 'Job completed due to connection status' }
+          return
         }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
