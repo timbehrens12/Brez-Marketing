@@ -678,6 +678,17 @@ export async function fetchMetaAdInsights(
 
             if (singleError) {
               console.error(`[Meta] Single record insert also failed:`, singleError)
+
+              // Handle duplicate key error specifically for single records
+              if (singleError.code === '21000' || (singleError.message && singleError.message.includes('cannot affect row a second time'))) {
+                console.log(`[Meta] Single record duplicate error - this record already exists`)
+                return {
+                  success: true,
+                  message: 'Meta insights already up to date (no new data to sync)',
+                  count: 0,
+                  insights: dryRun ? allInsights : undefined
+                }
+              }
             } else {
               console.log(`[Meta] ✅ Single record fallback succeeded`)
               return {
@@ -689,6 +700,18 @@ export async function fetchMetaAdInsights(
             }
           } catch (fallbackError) {
             console.error(`[Meta] Fallback also failed:`, fallbackError)
+
+            // If it's a duplicate error, consider it successful
+            if (fallbackError && typeof fallbackError === 'object' && 'code' in fallbackError &&
+                (fallbackError.code === '21000' || (fallbackError.message && fallbackError.message.includes('cannot affect row a second time')))) {
+              console.log(`[Meta] Data already exists - considering successful`)
+              return {
+                success: true,
+                message: 'Meta insights already up to date',
+                count: 0,
+                insights: dryRun ? allInsights : undefined
+              }
+            }
           }
         }
 

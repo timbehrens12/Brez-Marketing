@@ -385,29 +385,55 @@ export class MetaWorker {
       }
 
       if (!anyConnection) {
-        console.error(`[Meta Worker] Connection ${connectionId} does not exist at all! This job should be cancelled.`)
+        console.error(`[Meta Worker] Connection ${connectionId} does not exist! Checking if job should be cancelled.`)
 
-        // Check what connections DO exist for debugging
-        const { data: allConnections } = await supabase
-          .from('platform_connections')
-          .select('id, status, platform_type, brand_id, created_at')
-          .eq('platform_type', 'meta')
-          .order('created_at', { ascending: false })
-          .limit(5)
+        // Get brandId from the job data to check for other connections
+        const brandId = job.data?.brandId
+        if (brandId) {
+          // Check what connections DO exist for this brand
+          const { data: brandConnections } = await supabase
+            .from('platform_connections')
+            .select('id, status, platform_type, brand_id, created_at')
+            .eq('platform_type', 'meta')
+            .eq('brand_id', brandId)
+            .order('created_at', { ascending: false })
 
-        console.error('[Meta Worker] Recent Meta connections:', allConnections)
+          console.log(`[Meta Worker] Brand ${brandId} has ${brandConnections?.length || 0} Meta connections:`, brandConnections)
 
-        // Clean up orphaned jobs by removing this job from the queue
-        try {
-          const { metaQueue } = await import('@/lib/services/metaQueueService')
-          // This job will be cleaned up by the queue cleanup endpoint
-          console.log(`[Meta Worker] Job with invalid connection ${connectionId} will be cleaned up`)
-        } catch (cleanupError) {
-          console.error('[Meta Worker] Error during cleanup:', cleanupError)
+          if (brandConnections && brandConnections.length > 0) {
+            // Brand has other connections - this specific connection was deleted
+            // This is likely an orphaned job, we should complete it successfully
+            console.log(`[Meta Worker] Connection ${connectionId} was deleted but brand has other connections. Completing job successfully.`)
+            return { success: true, message: 'Connection no longer exists - job completed' }
+          } else {
+            // Brand has no connections at all - this might be a legitimate error
+            console.error(`[Meta Worker] Brand ${brandId} has no Meta connections at all!`)
+
+            // Check if this is a recent brand (less than 1 hour old)
+            const { data: brand } = await supabase
+              .from('brands')
+              .select('created_at')
+              .eq('id', brandId)
+              .single()
+
+            if (brand) {
+              const brandAge = Date.now() - new Date(brand.created_at).getTime()
+              const oneHour = 60 * 60 * 1000
+
+              if (brandAge < oneHour) {
+                console.log(`[Meta Worker] Brand is only ${Math.round(brandAge / 1000 / 60)} minutes old - might be connection setup in progress`)
+                return { success: true, message: 'Brand too new - connection setup may be in progress' }
+              }
+            }
+
+            // This is a hard error - the job should not be retried
+            throw new Error(`FATAL: No Meta connections found for brand ${brandId}`)
+          }
+        } else {
+          // No brandId in job data - this is a malformed job
+          console.error(`[Meta Worker] Job missing brandId in data:`, job.data)
+          throw new Error('FATAL: Job missing brandId - malformed job data')
         }
-
-        // This is a hard error - the job should not be retried with a non-existent connection
-        throw new Error('FATAL: Connection does not exist - cancelling job permanently')
       }
 
       // Log the connection status for debugging

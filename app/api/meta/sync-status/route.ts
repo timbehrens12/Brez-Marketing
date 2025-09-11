@@ -38,10 +38,19 @@ export async function GET(request: NextRequest) {
     let estimatedCompletion = null
 
     if (connection && !connectionError) {
+      console.log(`[Meta Sync Status] Connection found:`, {
+        id: connection.id || 'unknown',
+        status: connection.status,
+        sync_status: connection.sync_status,
+        created_at: connection.created_at,
+        updated_at: connection.updated_at
+      })
+
       // Check if connection is active (has a valid status)
       if (connection.status === 'active') {
         if (connection.sync_status === 'in_progress') {
           overallStatus = 'syncing'
+          console.log(`[Meta Sync Status] Status set to 'syncing' - connection is active and in progress`)
 
           // Calculate progress from ETL jobs
           const milestones = syncStatus.meta?.milestones || []
@@ -59,16 +68,26 @@ export async function GET(request: NextRequest) {
         } else if (connection.sync_status === 'completed') {
           overallStatus = 'completed'
           progressPct = 100
+          console.log(`[Meta Sync Status] Status set to 'completed'`)
         } else if (connection.sync_status === 'failed') {
           overallStatus = 'failed'
+          console.log(`[Meta Sync Status] Status set to 'failed'`)
         } else {
           // Connection exists but sync hasn't started yet
           overallStatus = 'connected'
           progressPct = 0
+          console.log(`[Meta Sync Status] Status set to 'connected' - active connection with no sync status`)
         }
       } else if (connection.status === 'inactive' || connection.status === 'disconnected') {
         overallStatus = 'disconnected'
+        console.log(`[Meta Sync Status] Status set to 'disconnected'`)
+      } else {
+        // Connection has some other status
+        overallStatus = 'connected'
+        console.log(`[Meta Sync Status] Status set to 'connected' - connection has status: ${connection.status}`)
       }
+    } else {
+      console.log(`[Meta Sync Status] No connection found or error:`, connectionError?.message)
     }
 
     const response = {
