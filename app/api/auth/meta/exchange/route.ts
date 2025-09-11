@@ -30,10 +30,19 @@ export async function POST(request: NextRequest) {
     tokenUrl.searchParams.append('code', code)
     tokenUrl.searchParams.append('redirect_uri', 'https://www.brezmarketingdashboard.com/settings/meta-callback')
 
+    console.log('🔍 DEBUG: META_APP_ID available:', !!process.env.META_APP_ID)
+    console.log('🔍 DEBUG: META_APP_SECRET available:', !!process.env.META_APP_SECRET)
+    console.log('🔍 DEBUG: REDIS_URL available:', !!process.env.REDIS_URL)
+    console.log('🔍 DEBUG: NEXT_PUBLIC_SUPABASE_URL available:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('🔍 DEBUG: SUPABASE_SERVICE_ROLE_KEY available:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+
     console.log('Exchanging code for token with URL:', tokenUrl.toString())
-    
+
     const tokenResponse = await fetch(tokenUrl.toString())
     const tokenData = await tokenResponse.json()
+
+    console.log('🔍 DEBUG: Token response status:', tokenResponse.status)
+    console.log('🔍 DEBUG: Token response data keys:', tokenData ? Object.keys(tokenData) : 'null')
 
     if (!tokenData.access_token) {
       console.error('Token exchange failed:', tokenData)
@@ -121,17 +130,35 @@ export async function POST(request: NextRequest) {
           const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
           try {
-            // Queue recent sync job for FULL 12 months via worker
-            await MetaQueueService.addRecentSyncJob(
+            // 🔄 QUEUE COMPLETE HISTORICAL SYNC (not just recent sync!)
+            console.log(`[Meta Exchange] 🔄 Calling MetaQueueService.queueCompleteHistoricalSync`)
+
+            // Check Redis availability first
+            const hasRedis = process.env.REDIS_HOST || process.env.REDIS_URL
+            console.log(`[Meta Exchange] Redis available: ${!!hasRedis} (REDIS_HOST: ${!!process.env.REDIS_HOST}, REDIS_URL: ${!!process.env.REDIS_URL})`)
+
+            const queueResult = await MetaQueueService.queueCompleteHistoricalSync(
               state,
-              connectionData.id, 
+              connectionData.id,
               tokenData.access_token,
-              accountId
+              accountId,
+              undefined // No account creation date available
             )
 
-            console.log(`[Meta Exchange] ✅ Queued COMPLETE 12-month background sync`)
-            
-            // Keep status as 'syncing' - background worker will update to 'completed'
+            if (queueResult.success) {
+              console.log(`[Meta Exchange] ✅ QueUED COMPLETE HISTORICAL SYNC:`, queueResult)
+              // Keep status as 'syncing' - background worker will update to 'completed'
+            } else {
+              console.log(`[Meta Exchange] ⚠️ Historical sync not queued:`, queueResult.estimatedCompletion)
+              // Update to completed since we have 30 days of data but no background sync
+              await supabase
+                .from('platform_connections')
+                .update({
+                  sync_status: 'completed',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', connectionData.id)
+            }
           } catch (queueError) {
             console.error(`[Meta Exchange] ❌ Failed to queue background jobs:`, queueError)
             // Update to completed anyway since we have 30 days of data

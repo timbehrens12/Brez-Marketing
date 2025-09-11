@@ -2,18 +2,31 @@ import Queue from 'bull'
 import { createClient } from '@/lib/supabase/server'
 
 // Create Redis connection for Meta queue (same as Shopify)
-const redisConfig = {
-  redis: {
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
-    password: process.env.REDIS_PASSWORD,
-    tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined, // Only enable TLS for Upstash
-    retryDelayOnFailover: 100,
-    enableReadyCheck: false,
-    maxRetriesPerRequest: 3,
-    lazyConnect: true,
-  },
+const getRedisConfig = () => {
+  const config = {
+    redis: {
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      host: process.env.REDIS_HOST?.replace('https://', '').replace('http://', '') || 'localhost',
+      password: process.env.REDIS_PASSWORD,
+      tls: process.env.REDIS_HOST?.includes('upstash') ? {} : undefined, // Only enable TLS for Upstash
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    },
+  }
+
+  console.log('[Meta Queue] Redis config:', {
+    host: config.redis.host,
+    port: config.redis.port,
+    hasPassword: !!config.redis.password,
+    isUpstash: config.redis.tls !== undefined
+  })
+
+  return config
 }
+
+const redisConfig = getRedisConfig()
 
 // Define Meta job queue
 export const metaQueue = new Queue('meta-sync', redisConfig)
@@ -73,6 +86,15 @@ export class MetaQueueService {
     }
 
     try {
+      console.log(`[Meta Queue] Attempting to add ${jobType} job for brand ${data.brandId}`)
+
+      // Check if Redis is available
+      if (!process.env.REDIS_HOST && !process.env.REDIS_URL) {
+        console.warn(`[Meta Queue] ⚠️ Redis not configured, cannot queue ${jobType} job`)
+        console.warn(`[Meta Queue] Missing: REDIS_HOST=${!!process.env.REDIS_HOST}, REDIS_URL=${!!process.env.REDIS_URL}`)
+        throw new Error('Redis not configured - cannot queue background jobs')
+      }
+
       // Create ETL job first to track progress
       let etlJobId: number | undefined
       try {
@@ -98,10 +120,11 @@ export class MetaQueueService {
       }
 
       await metaQueue.add(jobType, jobDataWithEtl, { ...defaultOptions, ...options })
-      console.log(`[Meta Queue] Added ${jobType} job for brand ${data.brandId} with ETL tracking`)
+      console.log(`[Meta Queue] ✅ Added ${jobType} job for brand ${data.brandId} with ETL tracking`)
     } catch (error) {
-      console.error(`[Meta Queue] Failed to add ${jobType} job:`, error)
-      throw error
+      console.error(`[Meta Queue] ❌ Failed to add ${jobType} job:`, error)
+      // Don't throw - let the sync continue without background jobs
+      console.warn(`[Meta Queue] ⚠️ Continuing without background sync for ${jobType}`)
     }
   }
 
@@ -392,25 +415,36 @@ export class MetaQueueService {
   ): Promise<{ success: boolean, estimatedCompletion: string, totalJobs: number }> {
     try {
       console.log(`[Meta Queue] Starting complete historical sync for brand ${brandId}`)
-      
+
+      // Check if Redis is available before attempting to queue
+      const hasRedis = process.env.REDIS_HOST || process.env.REDIS_URL
+      if (!hasRedis) {
+        console.warn(`[Meta Queue] ⚠️ Redis not configured - skipping background historical sync`)
+        return {
+          success: false,
+          estimatedCompletion: 'N/A - Redis not configured',
+          totalJobs: 0
+        }
+      }
+
       // Step 1: Add recent sync for immediate UI (high priority)
       await this.addRecentSyncJob(brandId, connectionId, accessToken, accountId)
-      
+
       // Step 2: RE-ENABLE HISTORICAL BACKFILL - Queue all historical backfill jobs
       await this.addHistoricalBackfillJobs(brandId, connectionId, accessToken, accountId, accountCreatedDate)
       console.log(`[Meta Queue] Historical backfill re-enabled - full data sync will proceed`)
-      
+
       // Calculate estimated completion time with historical backfill
       const chunks = this.createDateChunks(
-        new Date(accountCreatedDate || '2020-01-01'), 
-        new Date(), 
+        new Date(accountCreatedDate || '2020-01-01'),
+        new Date(),
         90
       )
       const totalJobs = 1 + (chunks.length * 3) // Recent sync + (chunks * 3 job types)
       const estimatedMinutes = Math.max(5, Math.ceil(totalJobs * 0.5)) // Estimate 30 seconds per job, min 5 minutes
-      
+
       console.log(`[Meta Queue] Queued ${totalJobs} total jobs, estimated completion: ${estimatedMinutes} minutes`)
-      
+
       return {
         success: true,
         estimatedCompletion: `${estimatedMinutes} minutes`,
@@ -418,7 +452,12 @@ export class MetaQueueService {
       }
     } catch (error) {
       console.error('[Meta Queue] Error queuing complete historical sync:', error)
-      throw error
+      // Return success=false instead of throwing so sync can continue without background jobs
+      return {
+        success: false,
+        estimatedCompletion: 'Failed to queue - check Redis configuration',
+        totalJobs: 0
+      }
     }
   }
 
