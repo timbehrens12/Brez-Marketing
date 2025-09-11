@@ -52,12 +52,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Meta API Test] Campaigns response:`, campaignsData)
 
-    // Test 3: Get insights
-    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&time_range={"since":"2024-08-01","until":"2024-08-15"}&access_token=${connection.access_token}&limit=5`
+    // Test 3: Get insights (try without date range first)
+    const insightsUrlNoDate = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&access_token=${connection.access_token}&limit=5`
+    const insightsResponseNoDate = await fetch(insightsUrlNoDate)
+    const insightsDataNoDate = await insightsResponseNoDate.json()
+
+    console.log(`[Meta API Test] Insights response (no date):`, insightsDataNoDate)
+
+    // Test with a broader date range
+    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&time_range={"since":"2024-01-01","until":"2024-12-31"}&access_token=${connection.access_token}&limit=5`
     const insightsResponse = await fetch(insightsUrl)
     const insightsData = await insightsResponse.json()
 
-    console.log(`[Meta API Test] Insights response:`, insightsData)
+    console.log(`[Meta API Test] Insights response (broad date):`, insightsData)
 
     return NextResponse.json({
       success: true,
@@ -76,6 +83,11 @@ export async function GET(request: NextRequest) {
         count: insightsData.data?.length || 0,
         first: insightsData.data?.[0],
         error: insightsData.error
+      },
+      insightsNoDate: {
+        count: insightsDataNoDate.data?.length || 0,
+        first: insightsDataNoDate.data?.[0],
+        error: insightsDataNoDate.error
       }
     })
 
