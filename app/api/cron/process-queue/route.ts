@@ -79,6 +79,72 @@ export async function GET(request: NextRequest) {
 }
 
 // Also support POST for manual triggering
+// POST endpoint for manual triggering (no auth required for testing)
 export async function POST(request: NextRequest) {
-  return GET(request)
+  console.log('[Cron Queue] Manual trigger via POST - bypassing auth check')
+
+  try {
+    console.log('[Cron Queue] Starting MANUAL queue processing...')
+
+    // Get the current request URL to ensure we call the same deployment
+    const requestUrl = new URL(request.url)
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
+    const workerUrl = `${baseUrl}/api/public-worker`
+
+    console.log(`[Cron Queue] Request URL: ${request.url}`)
+    console.log(`[Cron Queue] Base URL: ${baseUrl}`)
+    console.log(`[Cron Queue] PUBLIC Worker URL: ${workerUrl}`)
+
+    // Use external domain to bypass potential internal routing issues
+    const externalWorkerUrl = workerUrl.replace(requestUrl.host, 'www.brezmarketingdashboard.com')
+    console.log(`[Cron Queue] EXTERNAL Worker URL: ${externalWorkerUrl}`)
+
+    const response = await fetch(externalWorkerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'manual-trigger/1.0'
+      },
+      body: JSON.stringify({
+        maxJobs: 10 // Process more jobs for manual trigger
+      })
+    })
+
+    let result
+    try {
+      // Clone response before reading to avoid "Body is unusable" error
+      const responseClone = response.clone()
+      result = await response.json()
+    } catch (parseError) {
+      try {
+        const responseText = await response.clone().text()
+        console.error(`[Cron Queue] Failed to parse worker response as JSON. Status: ${response.status}, Response: ${responseText.substring(0, 500)}`)
+      } catch (textError) {
+        console.error(`[Cron Queue] Failed to read response as text or JSON. Status: ${response.status}`)
+      }
+      throw new Error(`Worker API returned invalid JSON. Status: ${response.status}`)
+    }
+
+    if (!response.ok) {
+      throw new Error(`Worker API failed: ${result.error || 'Unknown error'}`)
+    }
+
+    console.log('[Cron Queue] MANUAL queue processing completed:', result)
+
+    return NextResponse.json({
+      success: true,
+      message: 'MANUAL queue processing completed',
+      triggered: new Date().toISOString(),
+      workerResult: result
+    })
+
+  } catch (error) {
+    console.error('[Cron Queue] MANUAL Error processing queue:', error)
+
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      triggered: new Date().toISOString()
+    }, { status: 500 })
+  }
 }
