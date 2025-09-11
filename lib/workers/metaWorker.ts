@@ -67,8 +67,13 @@ export class MetaWorker {
 
     try {
       // Get fresh access token from database
-      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
+        // Handle special cases where connection was deleted but brand has other connections
+        if (freshToken === 'orphaned' || freshToken === 'new_brand') {
+          console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          return { success: true, message: tokenError || 'Job completed due to connection status' }
+        }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
@@ -112,8 +117,13 @@ export class MetaWorker {
 
     try {
       // Get fresh access token
-      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
+        // Handle special cases where connection was deleted but brand has other connections
+        if (freshToken === 'orphaned' || freshToken === 'new_brand') {
+          console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          return { success: true, message: tokenError || 'Job completed due to connection status' }
+        }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
@@ -169,8 +179,13 @@ export class MetaWorker {
 
     try {
       // Get fresh access token
-      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
+        // Handle special cases where connection was deleted but brand has other connections
+        if (freshToken === 'orphaned' || freshToken === 'new_brand') {
+          console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          return { success: true, message: tokenError || 'Job completed due to connection status' }
+        }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
@@ -227,8 +242,13 @@ export class MetaWorker {
 
     try {
       // Get fresh access token
-      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
+        // Handle special cases where connection was deleted but brand has other connections
+        if (freshToken === 'orphaned' || freshToken === 'new_brand') {
+          console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          return { success: true, message: tokenError || 'Job completed due to connection status' }
+        }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
@@ -283,8 +303,13 @@ export class MetaWorker {
 
     try {
       // Get fresh access token
-      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId)
+      const { accessToken: freshToken, error: tokenError } = await this.getFreshAccessToken(connectionId, brandId)
       if (tokenError || !freshToken) {
+        // Handle special cases where connection was deleted but brand has other connections
+        if (freshToken === 'orphaned' || freshToken === 'new_brand') {
+          console.log(`[Meta Worker] ${freshToken === 'orphaned' ? 'Orphaned connection' : 'New brand'} - completing job successfully`)
+          return { success: true, message: tokenError || 'Job completed due to connection status' }
+        }
         throw new Error(`Failed to get fresh access token: ${tokenError || 'Token not found'}`)
       }
 
@@ -368,10 +393,10 @@ export class MetaWorker {
   /**
    * Get fresh access token from database
    */
-  static async getFreshAccessToken(connectionId: string): Promise<{ accessToken?: string, error?: string }> {
+  static async getFreshAccessToken(connectionId: string, brandId?: string): Promise<{ accessToken?: string, error?: string }> {
     try {
       const supabase = createClient()
-
+      
       // First check if ANY connection exists with this ID (regardless of status)
       const { data: anyConnection, error: anyError } = await supabase
         .from('platform_connections')
@@ -385,20 +410,54 @@ export class MetaWorker {
       }
 
       if (!anyConnection) {
-        console.error(`[Meta Worker] Connection ${connectionId} does not exist!`)
-        return { error: `Connection ${connectionId} does not exist` }
-      }
+        console.error(`[Meta Worker] Connection ${connectionId} does not exist! Checking if job should be cancelled.`)
 
-      // Check if connection has required data
-      if (!anyConnection.access_token) {
-        console.error('[Meta Worker] No access token found in connection:', connectionId)
-        return { error: 'No access token found in connection' }
-      }
+        // Check if we have a brandId to work with
+        if (brandId) {
+          // Check what connections DO exist for this brand
+          const { data: brandConnections } = await supabase
+            .from('platform_connections')
+            .select('id, status, platform_type, brand_id, created_at')
+            .eq('platform_type', 'meta')
+            .eq('brand_id', brandId)
+            .order('created_at', { ascending: false })
 
-      // Check if connection is active
-      if (anyConnection.status !== 'active') {
-        console.error(`[Meta Worker] Connection ${connectionId} status is '${anyConnection.status}', not 'active'`)
-        return { error: `Connection status is ${anyConnection.status}, not active` }
+          console.log(`[Meta Worker] Brand ${brandId} has ${brandConnections?.length || 0} Meta connections:`, brandConnections)
+
+          if (brandConnections && brandConnections.length > 0) {
+            // Brand has other connections - this specific connection was deleted
+            // This is likely an orphaned job, we should complete it successfully
+            console.log(`[Meta Worker] Connection ${connectionId} was deleted but brand has other connections. Completing job successfully.`)
+            return { accessToken: 'orphaned', error: 'Connection deleted but brand has other connections' }
+          } else {
+            // Brand has no connections at all - this might be a legitimate error
+            console.error(`[Meta Worker] Brand ${brandId} has no Meta connections at all!`)
+
+            // Check if this is a recent brand (less than 1 hour old)
+            const { data: brand } = await supabase
+              .from('brands')
+              .select('created_at')
+              .eq('id', brandId)
+              .single()
+
+            if (brand) {
+              const brandAge = Date.now() - new Date(brand.created_at).getTime()
+              const oneHour = 60 * 60 * 1000
+
+              if (brandAge < oneHour) {
+                console.log(`[Meta Worker] Brand is only ${Math.round(brandAge / 1000 / 60)} minutes old - might be connection setup in progress`)
+                return { accessToken: 'new_brand', error: 'Brand too new - connection setup may be in progress' }
+              }
+            }
+
+            // This is a hard error - the job should not be retried
+            throw new Error(`FATAL: No Meta connections found for brand ${brandId}`)
+          }
+        } else {
+          // No brandId in job data - this is a malformed job
+          console.error(`[Meta Worker] Job missing brandId in data:`, job.data)
+          throw new Error('FATAL: Job missing brandId - malformed job data')
+        }
       }
 
       // Log the connection status for debugging
@@ -409,6 +468,16 @@ export class MetaWorker {
         has_token: !!anyConnection.access_token,
         token_length: anyConnection.access_token?.length || 0
       })
+
+      if (anyConnection.status !== 'active') {
+        console.error(`[Meta Worker] Connection ${connectionId} status is '${anyConnection.status}', not 'active'`)
+        return { error: `Connection status is ${anyConnection.status}, not active` }
+      }
+
+      if (!anyConnection.access_token || anyConnection.access_token.length < 10) {
+        console.error('[Meta Worker] Invalid or missing access token in connection:', connectionId)
+        return { error: 'Invalid or missing access token in connection' }
+      }
 
       console.log(`[Meta Worker] Retrieved access token for connection: ${connectionId}`)
       return { accessToken: anyConnection.access_token }

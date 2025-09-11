@@ -20,17 +20,10 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('id, status, sync_status, last_sync_at, created_at, updated_at, connected_at')
+      .select('status, sync_status, last_sync_at, created_at, updated_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .single()
-
-    console.log(`[Meta Sync Status] Raw database query result:`, {
-      connection,
-      connectionError,
-      brandId,
-      query: `brand_id = ${brandId}, platform_type = meta`
-    })
 
     console.log(`[Meta Sync Status] Connection lookup result:`, {
       found: !!connection,
