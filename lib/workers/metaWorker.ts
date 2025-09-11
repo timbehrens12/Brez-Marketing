@@ -191,8 +191,8 @@ export class MetaWorker {
       // Update ETL job progress
       await this.updateEtlProgress(etlJobId, { progress_pct: 25 })
 
-      // Import Meta service
-      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+      // Import Meta backfill service
+      const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
 
       const start = new Date(startDate!)
       const end = new Date(endDate!)
@@ -200,24 +200,27 @@ export class MetaWorker {
       // Update ETL job progress
       await this.updateEtlProgress(etlJobId, { progress_pct: 50 })
 
-      // Fetch campaign data for this chunk
-      const result = await fetchMetaAdInsights(brandId, start, end, false)
-
-      if (!result.success) {
-        await this.updateEtlProgress(etlJobId, {
-          status: 'failed',
-          error_message: result.error
-        })
-        throw new Error(`Historical campaigns sync failed for chunk ${metadata?.chunkNumber}: ${result.error}`)
+      // Fetch campaign data for this chunk using the proper backfill service
+      console.log(`[Meta Worker] Fetching campaigns for date range: ${startDate} to ${endDate}`)
+      const dateRange = {
+        since: startDate,
+        until: endDate
       }
 
-      // Update ETL job progress with results
-      await this.updateEtlProgress(etlJobId, {
-        progress_pct: 90,
-        rows_written: result.count
-      })
+      try {
+        await DataBackfillService.backfillMetaData(brandId, accountId, freshToken, dateRange)
 
-      console.log(`[Meta Worker] ✅ Historical campaigns chunk ${metadata?.chunkNumber} completed: ${result.count} records`)
+        // Update ETL job progress
+        await this.updateEtlProgress(etlJobId, {
+          progress_pct: 90,
+          rows_written: 1 // We'll track actual counts later
+        })
+
+        console.log(`[Meta Worker] ✅ Historical campaigns chunk ${metadata?.chunkNumber} completed`)
+      } catch (backfillError) {
+        console.error(`[Meta Worker] Backfill failed:`, backfillError)
+        throw new Error(`Historical campaigns sync failed for chunk ${metadata?.chunkNumber}: ${backfillError instanceof Error ? backfillError.message : 'Unknown error'}`)
+      }
 
       // Mark ETL job as completed
       await this.updateEtlProgress(etlJobId, {
