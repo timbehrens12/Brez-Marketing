@@ -241,6 +241,19 @@ export async function fetchMetaAdInsights(
     const todayStr = new Date().toISOString().split('T')[0];
     const isFetchingToday = startDateStr === todayStr && endDateStr === todayStr;
 
+    // Meta API limitation: Only data from the last 13 months is available
+    // Calculate the earliest date we can fetch (13 months ago)
+    const thirteenMonthsAgo = new Date();
+    thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+    const thirteenMonthsAgoStr = thirteenMonthsAgo.toISOString().split('T')[0];
+
+    // If start date is older than 13 months, adjust it
+    const adjustedStartDateStr = startDateStr < thirteenMonthsAgoStr ? thirteenMonthsAgoStr : startDateStr;
+
+    if (adjustedStartDateStr !== startDateStr) {
+      console.log(`[Meta] ⚠️ Adjusting start date from ${startDateStr} to ${adjustedStartDateStr} (Meta API limitation: 13 months max)`);
+    }
+
     let allInsights = []
     let campaignBudgets = new Map()
     
@@ -299,7 +312,7 @@ export async function fetchMetaAdInsights(
           insightsUrl += `&date_preset=today`;
           console.log(`[Meta] Using date_preset=today for account ${account.id}`);
         } else {
-          insightsUrl += `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&time_increment=1`;
+          insightsUrl += `&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&time_increment=1`;
         }
         
         const insightsData = await fetchWithRetry(insightsUrl);
@@ -326,32 +339,23 @@ export async function fetchMetaAdInsights(
           console.log(`[Meta] Fetching demographic and device breakdowns for account ${account.id}`);
           
           // RESTORED: Add 'reach' back to breakdown queries - limit to 12 months instead of going back years
-          // Age breakdown - WITH reach (limited to 12 months)
-          let ageUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age&level=account&time_increment=1&access_token=${connection.access_token}`;
-          
-          // Gender breakdown - WITH reach (limited to 12 months)
-          let genderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=gender&level=account&time_increment=1&access_token=${connection.access_token}`;
-          
-          // Age + Gender combined breakdown - WITH reach (limited to 12 months)
-          let ageGenderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age,gender&level=account&time_increment=1&access_token=${connection.access_token}`;
-          
-          // Device breakdown - WITH reach (limited to 12 months)
-          let deviceUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=impression_device&level=account&time_increment=1&access_token=${connection.access_token}`;
-          
-          // Publisher platform breakdown - WITH reach (limited to 12 months)
-          let placementUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
-          
-          // Platform breakdown - WITH reach (limited to 12 months)
-          let platformUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&access_token=${connection.access_token}`;
+          // Age breakdown - WITH reach (limited to 13 months)
+          let ageUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
 
-          // Add time range to all URLs
-          const timeRange = `&time_range={"since":"${startDateStr}","until":"${endDateStr}"}`;
-          ageUrl += timeRange;
-          genderUrl += timeRange;
-          ageGenderUrl += timeRange;
-          deviceUrl += timeRange;
-          placementUrl += timeRange;
-          platformUrl += timeRange;
+          // Gender breakdown - WITH reach (limited to 13 months)
+          let genderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=gender&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
+
+          // Age + Gender combined breakdown - WITH reach (limited to 13 months)
+          let ageGenderUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=age,gender&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
+
+          // Device breakdown - WITH reach (limited to 13 months)
+          let deviceUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=impression_device&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
+
+          // Publisher platform breakdown - WITH reach (limited to 13 months)
+          let placementUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
+
+          // Platform breakdown - WITH reach (limited to 13 months)
+          let platformUrl = `https://graph.facebook.com/v18.0/${account.id}/insights?fields=impressions,clicks,spend,reach,cpm,cpc,ctr,date_start,date_stop&breakdowns=publisher_platform&level=account&time_increment=1&time_range={"since":"${adjustedStartDateStr}","until":"${endDateStr}"}&access_token=${connection.access_token}`;
 
           console.log(`[Meta] 🔥 DEBUGGING - About to fetch demographic breakdowns with URLs:`);
           console.log(`[Meta] 🔥 Age URL: ${ageUrl}`);
