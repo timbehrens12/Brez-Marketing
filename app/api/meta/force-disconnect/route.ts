@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Meta Force Disconnect] 🧹 NUCLEAR cleanup for brand ${brandId}`)
     
-    // ALL 34 META TABLES - COMPREHENSIVE CLEANUP
+    // ALL 34 META TABLES - COMPREHENSIVE CLEANUP (FIXED: MISSING TABLES ADDED)
     const allMetaTables = [
       'meta_ad_insights',
       'meta_demographics', 
