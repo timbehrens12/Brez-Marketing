@@ -1,0 +1,234 @@
+[1mdiff --git a/app/api/test/meta-debug/route.ts b/app/api/test/meta-debug/route.ts[m
+[1mnew file mode 100644[m
+[1mindex 0000000..782e313[m
+[1m--- /dev/null[m
+[1m+++ b/app/api/test/meta-debug/route.ts[m
+[36m@@ -0,0 +1,228 @@[m
+[32m+[m[32mimport { NextRequest, NextResponse } from 'next/server'[m
+[32m+[m[32mimport { createClient } from '@/lib/supabase/server'[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * COMPREHENSIVE Meta Debug Endpoint[m
+[32m+[m[32m * Provides detailed information about Meta connections, data, and sync status[m
+[32m+[m[32m */[m
+[32m+[m[32mexport async function GET(request: NextRequest) {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    console.log('[Meta Debug] 🔍 Starting comprehensive Meta system analysis...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    const supabase = createClient()[m
+[32m+[m[32m    const searchParams = request.nextUrl.searchParams[m
+[32m+[m[32m    const brandId = searchParams.get('brandId')[m
+[32m+[m
+[32m+[m[32m    const debugInfo: any = {[m
+[32m+[m[32m      timestamp: new Date().toISOString(),[m
+[32m+[m[32m      brandFilter: brandId || 'ALL_BRANDS'[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 1. Check Meta platform connections[m
+[32m+[m[32m    console.log('[Meta Debug] 📊 Checking Meta platform connections...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    let connectionQuery = supabase[m
+[32m+[m[32m      .from('platform_connections')[m
+[32m+[m[32m      .select('id, brand_id, status, sync_status, platform_type, account_id, access_token, created_at, updated_at')[m
+[32m+[m[32m      .eq('platform_type', 'meta')[m
+[32m+[m
+[32m+[m[32m    if (brandId) {[m
+[32m+[m[32m      connectionQuery = connectionQuery.eq('brand_id', brandId)[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    const { data: connections, error: connectionsError } = await connectionQuery[m
+[32m+[m
+[32m+[m[32m    debugInfo.connections = {[m
+[32m+[m[32m      count: connections?.length || 0,[m
+[32m+[m[32m      error: connectionsError?.message,[m
+[32m+[m[32m      details: connections?.map(conn => ({[m
+[32m+[m[32m        id: conn.id,[m
+[32m+[m[32m        brand_id: conn.brand_id,[m
+[32m+[m[32m        status: conn.status,[m
+[32m+[m[32m        sync_status: conn.sync_status,[m
+[32m+[m[32m        account_id: conn.account_id,[m
+[32m+[m[32m        has_access_token: !!conn.access_token,[m
+[32m+[m[32m        token_length: conn.access_token?.length || 0,[m
+[32m+[m[32m        created_at: conn.created_at,[m
+[32m+[m[32m        updated_at: conn.updated_at[m
+[32m+[m[32m      }))[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 2. Check Meta data across all tables[m
+[32m+[m[32m    console.log('[Meta Debug] 📊 Checking Meta data across all tables...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    const metaTables = [[m
+[32m+[m[32m      'meta_ad_insights',[m
+[32m+[m[32m      'meta_demographics',[m[41m [m
+[32m+[m[32m      'meta_device_performance',[m
+[32m+[m[32m      'meta_campaigns',[m
+[32m+[m[32m      'meta_campaign_daily_stats'[m
+[32m+[m[32m    ][m
+[32m+[m
+[32m+[m[32m    debugInfo.dataAnalysis = {}[m
+[32m+[m
+[32m+[m[32m    for (const table of metaTables) {[m
+[32m+[m[32m      try {[m
+[32m+[m[32m        let dataQuery = supabase[m
+[32m+[m[32m          .from(table)[m
+[32m+[m[32m          .select('brand_id, connection_id, created_at, updated_at', { count: 'exact' })[m
+[32m+[m
+[32m+[m[32m        if (brandId) {[m
+[32m+[m[32m          dataQuery = dataQuery.eq('brand_id', brandId)[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        const { count, data, error } = await dataQuery.limit(5)[m
+[32m+[m
+[32m+[m[32m        // Get unique brands for this table[m
+[32m+[m[32m        const { data: uniqueBrands } = await supabase[m
+[32m+[m[32m          .from(table)[m
+[32m+[m[32m          .select('brand_id')[m
+[32m+[m[32m          .limit(1000)[m
+[32m+[m
+[32m+[m[32m        const brandSet = new Set(uniqueBrands?.map(row => row.brand_id) || [])[m
+[32m+[m
+[32m+[m[32m        debugInfo.dataAnalysis[table] = {[m
+[32m+[m[32m          total_records: count || 0,[m
+[32m+[m[32m          error: error?.message,[m
+[32m+[m[32m          unique_brands: Array.from(brandSet),[m
+[32m+[m[32m          unique_brand_count: brandSet.size,[m
+[32m+[m[32m          sample_records: data?.slice(0, 3),[m
+[32m+[m[32m          latest_record: data?.[0][m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m      } catch (err) {[m
+[32m+[m[32m        debugInfo.dataAnalysis[table] = {[m
+[32m+[m[32m          error: `Table query failed: ${err instanceof Error ? err.message : String(err)}`[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 3. Check Meta queue status[m
+[32m+[m[32m    console.log('[Meta Debug] 🔄 Checking Meta queue status...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const { metaQueue } = await import('@/lib/services/metaQueueService')[m
+[32m+[m[41m      [m
+[32m+[m[32m      const waitingJobs = await metaQueue.getJobs(['waiting'], 0, 50)[m
+[32m+[m[32m      const activeJobs = await metaQueue.getJobs(['active'], 0, 50)[m
+[32m+[m[32m      const failedJobs = await metaQueue.getJobs(['failed'], 0, 50)[m
+[32m+[m[32m      const delayedJobs = await metaQueue.getJobs(['delayed'], 0, 50)[m
+[32m+[m
+[32m+[m[32m      debugInfo.queueStatus = {[m
+[32m+[m[32m        waiting: waitingJobs.length,[m
+[32m+[m[32m        active: activeJobs.length,[m
+[32m+[m[32m        failed: failedJobs.length,[m
+[32m+[m[32m        delayed: delayedJobs.length,[m
+[32m+[m[32m        waitingJobDetails: waitingJobs.slice(0, 5).map(job => ({[m
+[32m+[m[32m          id: job.id,[m
+[32m+[m[32m          name: job.name,[m
+[32m+[m[32m          brandId: job.data?.brandId,[m
+[32m+[m[32m          connectionId: job.data?.connectionId,[m
+[32m+[m[32m          created: job.timestamp,[m
+[32m+[m[32m          attempts: job.attemptsMade[m
+[32m+[m[32m        })),[m
+[32m+[m[32m        failedJobDetails: failedJobs.slice(0, 5).map(job => ({[m
+[32m+[m[32m          id: job.id,[m
+[32m+[m[32m          name: job.name,[m
+[32m+[m[32m          brandId: job.data?.brandId,[m
+[32m+[m[32m          error: job.failedReason,[m
+[32m+[m[32m          attempts: job.attemptsMade[m
+[32m+[m[32m        }))[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m    } catch (queueError) {[m
+[32m+[m[32m      debugInfo.queueStatus = {[m
+[32m+[m[32m        error: `Queue connection failed: ${queueError instanceof Error ? queueError.message : String(queueError)}`[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 4. Check ETL job tracking[m
+[32m+[m[32m    console.log('[Meta Debug] 📋 Checking ETL job tracking...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    try {[m
+[32m+[m[32m      let etlQuery = supabase[m
+[32m+[m[32m        .from('etl_job')[m
+[32m+[m[32m        .select('*')[m
+[32m+[m[32m        .like('job_type', 'meta_%')[m
+[32m+[m[32m        .order('created_at', { ascending: false })[m
+[32m+[m
+[32m+[m[32m      if (brandId) {[m
+[32m+[m[32m        etlQuery = etlQuery.eq('brand_id', brandId)[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m      const { data: etlJobs, error: etlError } = await etlQuery.limit(10)[m
+[32m+[m
+[32m+[m[32m      debugInfo.etlJobs = {[m
+[32m+[m[32m        count: etlJobs?.length || 0,[m
+[32m+[m[32m        error: etlError?.message,[m
+[32m+[m[32m        recent_jobs: etlJobs?.map(job => ({[m
+[32m+[m[32m          id: job.id,[m
+[32m+[m[32m          brand_id: job.brand_id,[m
+[32m+[m[32m          job_type: job.job_type,[m
+[32m+[m[32m          status: job.status,[m
+[32m+[m[32m          created_at: job.created_at,[m
+[32m+[m[32m          updated_at: job.updated_at,[m
+[32m+[m[32m          error_message: job.error_message[m
+[32m+[m[32m        }))[m
+[32m+[m[32m      }[m
+[32m+[m
+[32m+[m[32m    } catch (etlError) {[m
+[32m+[m[32m      debugInfo.etlJobs = {[m
+[32m+[m[32m        error: `ETL query failed: ${etlError instanceof Error ? etlError.message : String(etlError)}`[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 5. Check environment and configuration[m
+[32m+[m[32m    console.log('[Meta Debug] ⚙️ Checking configuration...')[m
+[32m+[m[41m    [m
+[32m+[m[32m    debugInfo.environment = {[m
+[32m+[m[32m      has_meta_app_id: !!process.env.NEXT_PUBLIC_META_APP_ID,[m
+[32m+[m[32m      has_meta_app_secret: !!process.env.META_APP_SECRET,[m
+[32m+[m[32m      has_redis_url: !!process.env.REDIS_URL,[m
+[32m+[m[32m      app_url: process.env.NEXT_PUBLIC_APP_URL,[m
+[32m+[m[32m      deployment_environment: process.env.VERCEL_ENV || 'local'[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 6. Summary and recommendations[m
+[32m+[m[32m    debugInfo.summary = {[m
+[32m+[m[32m      total_meta_connections: debugInfo.connections.count,[m
+[32m+[m[32m      total_data_records: Object.values(debugInfo.dataAnalysis).reduce((sum: number, table: any) => sum + (table.total_records || 0), 0),[m
+[32m+[m[32m      queue_health: debugInfo.queueStatus.error ? 'ERROR' : 'OK',[m
+[32m+[m[32m      recommendations: [][m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (debugInfo.connections.count === 0) {[m
+[32m+[m[32m      debugInfo.summary.recommendations.push('❌ No Meta connections found - Connect Meta first')[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (debugInfo.summary.total_data_records === 0) {[m
+[32m+[m[32m      debugInfo.summary.recommendations.push('📭 No Meta data found - Sync may not have run')[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (debugInfo.queueStatus.failed > 0) {[m
+[32m+[m[32m      debugInfo.summary.recommendations.push(`⚠️ ${debugInfo.queueStatus.failed} failed queue jobs need attention`)[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (debugInfo.queueStatus.waiting > 0) {[m
+[32m+[m[32m      debugInfo.summary.recommendations.push(`🔄 ${debugInfo.queueStatus.waiting} jobs waiting to process`)[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    console.log('[Meta Debug] ✅ Analysis complete')[m
+[32m+[m[32m    console.log('[Meta Debug] 📊 Summary:', debugInfo.summary)[m
+[32m+[m
+[32m+[m[32m    return NextResponse.json(debugInfo, { status: 200 })[m
+[32m+[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    console.error('[Meta Debug] 💥 Error during analysis:', error)[m
+[32m+[m[41m    [m
+[32m+[m[32m    return NextResponse.json({[m
+[32m+[m[32m      success: false,[m
+[32m+[m[32m      error: error instanceof Error ? error.message : 'Unknown error',[m
+[32m+[m[32m      timestamp: new Date().toISOString()[m
+[32m+[m[32m    }, { status: 500 })[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mexport async function POST(request: NextRequest) {[m
+[32m+[m[32m  return GET(request)[m
+[32m+[m[32m}[m
