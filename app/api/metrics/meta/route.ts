@@ -334,24 +334,24 @@ export async function GET(request: NextRequest) {
     let insightsForProcessing: any[] = [];
     let error: any = null;
 
-    // MODIFIED: Always fetch data from meta_campaign_daily_stats for widgets showing totals
-         console.log(`[API /api/metrics/meta] Fetching from meta_campaign_daily_stats for date range: ${fromDate} to ${toDate}`);
+    // FIXED: Fetch data from meta_ad_daily_insights which has the historical data
+         console.log(`[API /api/metrics/meta] Fetching from meta_ad_daily_insights for date range: ${fromDate} to ${toDate}`);
         const { data: dailyStatsData, error: dailyStatsError } = await supabase
-          .from('meta_campaign_daily_stats')
-          .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
+          .from('meta_ad_daily_insights')
+          .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc')
           .eq('brand_id', brandId)
           .gte('date', fromDate)
           .lte('date', toDate)
           .order('date', { ascending: true });
 
         if (dailyStatsError) {
-          console.error(`[API /api/metrics/meta] Error fetching from meta_campaign_daily_stats:`, dailyStatsError);
+          console.error(`[API /api/metrics/meta] Error fetching from meta_ad_daily_insights:`, dailyStatsError);
       error = dailyStatsError;
         } else if (dailyStatsData && dailyStatsData.length > 0) {
-             console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_campaign_daily_stats.`);
+             console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_ad_daily_insights.`);
             insightsForProcessing = dailyStatsData;
         } else {
-          console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
+          console.log(`[API /api/metrics/meta] No records found in meta_ad_daily_insights for the range.`);
           
           // No data found for the requested date range - return zeros
           console.log(`[API /api/metrics/meta] No data found for date range, returning zeros`)
@@ -421,10 +421,10 @@ export async function GET(request: NextRequest) {
           
           if (syncResult.success) {
             console.log(`🔥🔥🔥 [META API] Today's data sync successful. Count: ${syncResult.count}`);
-            // After sync, check meta_campaign_daily_stats again
+            // After sync, check meta_ad_daily_insights again
             const { data: refreshedDailyStats, error: refreshError } = await supabase
-              .from('meta_campaign_daily_stats')
-              .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
+              .from('meta_ad_daily_insights')
+              .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc')
               .eq('brand_id', brandId)
               .gte('date', fromDate)
               .lte('date', toDate)
@@ -460,10 +460,10 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
       
-    // Format the insights (now always from meta_campaign_daily_stats for totals)
+    // Format the insights (now always from meta_ad_daily_insights for totals)
     let formattedInsights = insightsForProcessing.map(stat => ({
       date: stat.date,
-      spend: stat.spend?.toString() || "0",
+      spend: stat.spent?.toString() || "0",
       impressions: stat.impressions?.toString() || "0",
       clicks: stat.clicks?.toString() || "0",
       conversions: stat.conversions?.toString() || "0",
@@ -535,7 +535,7 @@ export async function GET(request: NextRequest) {
           isYesterdayPreset: isYesterdayPreset,
           isSingleDay: fromDate === toDate,
           actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || [],
-        dataSource: 'meta_campaign_daily_stats' // Added to indicate the source of data
+        dataSource: 'meta_ad_daily_insights' // Added to indicate the source of data
         }
       };
       
