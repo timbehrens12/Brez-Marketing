@@ -158,10 +158,75 @@ export async function POST(request: NextRequest) {
 // Also support GET for testing
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
-  const maxJobs = parseInt(url.searchParams.get('maxJobs') || '10')
+  const maxJobs = parseInt(url.searchParams.get('maxJobs') || '0') // Default to 0 instead of 10
+  const action = url.searchParams.get('action')
+  const brandId = url.searchParams.get('brandId')
 
-  // Process jobs if requested via GET
-  if (maxJobs > 0) {
+  console.log(`[Public Worker] GET request - action: ${action}, brandId: ${brandId}, maxJobs: ${maxJobs}`)
+
+  // Handle queue cleanup action FIRST
+  if (action === 'cleanup' || (action === undefined && maxJobs === 0)) {
+    console.log(`[Public Worker] Queue cleanup requested for brand ${brandId}`)
+    console.log(`[Public Worker] Trigger condition: action=${action}, maxJobs=${maxJobs}`)
+
+    try {
+      // Import queue service
+      const { metaQueue } = await import('@/lib/services/metaQueueService')
+
+      // Clean up orphaned jobs
+      const waiting = await metaQueue.getWaiting()
+      const active = await metaQueue.getActive()
+      let cleanedCount = 0
+
+      // Check Supabase for valid connections
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = createClient()
+
+      // Get all valid Meta connections
+      const { data: validConnections } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('platform_type', 'meta')
+        .eq('status', 'active')
+
+      const validConnectionIds = new Set(validConnections?.map(c => c.id) || [])
+
+      // Clean waiting jobs
+      for (const job of waiting) {
+        if (job.data?.connectionId && !validConnectionIds.has(job.data.connectionId)) {
+          await metaQueue.remove(job.id)
+          console.log(`[Queue Cleanup] Removed orphaned job ${job.id} with invalid connection ${job.data.connectionId}`)
+          cleanedCount++
+        }
+      }
+
+      // Clean active jobs
+      for (const job of active) {
+        if (job.data?.connectionId && !validConnectionIds.has(job.data.connectionId)) {
+          await metaQueue.remove(job.id)
+          console.log(`[Queue Cleanup] Removed orphaned active job ${job.id} with invalid connection ${job.data.connectionId}`)
+          cleanedCount++
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Cleaned up ${cleanedCount} orphaned jobs`,
+        cleanedCount,
+        validConnections: validConnections?.length || 0
+      })
+
+    } catch (error) {
+      console.error('[Public Worker] Cleanup error:', error)
+      return NextResponse.json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Cleanup failed'
+      }, { status: 500 })
+    }
+  }
+
+  // Process jobs if explicitly requested (not for cleanup)
+  if (maxJobs > 0 && action !== 'cleanup') {
     console.log(`[Public Worker] Processing ${maxJobs} jobs via GET request`)
 
     try {
@@ -311,7 +376,12 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     status: 'ready',
-    message: 'Public worker endpoint is ready (NO AUTH). Use ?maxJobs=N to process jobs',
+    message: 'Public worker endpoint is ready (NO AUTH)',
+    usage: {
+      'Process jobs': '?maxJobs=N',
+      'Cleanup orphaned jobs': '?action=cleanup&brandId=YOUR_BRAND_ID',
+      'Get status': 'No params - returns this message'
+    },
     timestamp: new Date().toISOString()
   })
 }
