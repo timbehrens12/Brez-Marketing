@@ -173,21 +173,20 @@ export class DataBackfillService {
         const campaignData = {
           campaign_id: campaign.id,
           brand_id: brandId,
-          name: campaign.name,
+          campaign_name: campaign.name,
           status: campaign.status,
           objective: campaign.objective,
-          daily_budget: campaign.daily_budget ? parseFloat(campaign.daily_budget) / 100 : null,
-          lifetime_budget: campaign.lifetime_budget ? parseFloat(campaign.lifetime_budget) / 100 : null,
+          budget: campaign.daily_budget ? parseFloat(campaign.daily_budget) / 100 : campaign.lifetime_budget ? parseFloat(campaign.lifetime_budget) / 100 : null,
+          budget_type: campaign.daily_budget ? 'daily' : campaign.lifetime_budget ? 'lifetime' : 'unknown',
           spent: spend,
           impressions: impressions,
           clicks: clicks,
-          purchases: parseInt(purchases),
-          revenue: parseFloat(revenue),
+          conversions: parseInt(purchases),
           ctr: ctr,
-          cpm: cpm,
-          created_time: campaign.created_time,
-          updated_time: campaign.updated_time,
-          last_synced_at: new Date().toISOString()
+          cpc: cpm, // Using cpm as cpc for now
+          created_time: campaign.created_time ? new Date(campaign.created_time) : new Date(),
+          updated_time: campaign.updated_time ? new Date(campaign.updated_time) : new Date(),
+          last_sync_time: new Date()
         }
 
         const { data, error } = await supabaseAdmin
