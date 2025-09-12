@@ -252,22 +252,52 @@ export class DataBackfillService {
     }
 
     console.log(`[DataBackfill] Calling ad account insights: ${insightsUrl}`)
-    const response = await fetch(insightsUrl)
-    const data = await response.json()
+    
+    // HANDLE PAGINATION - fetch ALL pages of data
+    let allInsights: any[] = []
+    let nextUrl = insightsUrl
+    let pageCount = 0
+    
+    while (nextUrl && pageCount < 10) { // Safety limit of 10 pages
+      pageCount++
+      console.log(`[DataBackfill] Fetching page ${pageCount}...`)
+      
+      const response = await fetch(nextUrl)
+      const data = await response.json()
 
-    console.log(`[DataBackfill] Ad account insights response:`, {
-      count: data.data?.length || 0,
-      error: data.error?.message || null,
-      hasDateRange: !!dateRange,
-      sample: data.data?.[0] || null
-    })
+      console.log(`[DataBackfill] Page ${pageCount} response:`, {
+        count: data.data?.length || 0,
+        error: data.error?.message || null,
+        hasNext: !!data.paging?.next,
+        sample: data.data?.[0] || null
+      })
 
-    if (data.data && data.data.length > 0) {
-      console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync for brand ${brandId}`)
-      console.log(`[DataBackfill] Sample insight:`, JSON.stringify(data.data[0], null, 2))
-      console.log(`[DataBackfill] Sample insight keys:`, Object.keys(data.data[0]))
+      if (data.error) {
+        console.error(`[DataBackfill] Error on page ${pageCount}:`, data.error)
+        break
+      }
 
-      for (const insight of data.data) {
+      if (data.data && data.data.length > 0) {
+        allInsights.push(...data.data)
+        console.log(`[DataBackfill] Added ${data.data.length} insights from page ${pageCount}. Total: ${allInsights.length}`)
+      }
+
+      // Check for next page
+      nextUrl = data.paging?.next || null
+      if (!nextUrl) {
+        console.log(`[DataBackfill] No more pages. Finished with ${pageCount} pages.`)
+        break
+      }
+    }
+
+    console.log(`[DataBackfill] 🔥 PAGINATION COMPLETE! Total insights fetched: ${allInsights.length} across ${pageCount} pages`)
+
+    if (allInsights && allInsights.length > 0) {
+      console.log(`[DataBackfill] Found ${allInsights.length} daily insights to sync for brand ${brandId}`)
+      console.log(`[DataBackfill] Sample insight:`, JSON.stringify(allInsights[0], null, 2))
+      console.log(`[DataBackfill] Sample insight keys:`, Object.keys(allInsights[0]))
+
+      for (const insight of allInsights) {
         console.log(`[DataBackfill] Processing insight:`, JSON.stringify(insight, null, 2))
         console.log(`[DataBackfill] Insight has spend field:`, 'spend' in insight)
         console.log(`[DataBackfill] Insight keys:`, Object.keys(insight))
@@ -297,7 +327,7 @@ export class DataBackfillService {
           })
       }
 
-      console.log(`[DataBackfill] Synced ${data.data.length} daily insights for brand ${brandId}`)
+      console.log(`[DataBackfill] Synced ${allInsights.length} daily insights for brand ${brandId}`)
     }
   }
 
