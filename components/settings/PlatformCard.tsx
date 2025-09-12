@@ -44,17 +44,45 @@ export function PlatformCard({
   }
 
   const handleDisconnect = async () => {
+    if (!confirm(`Are you sure you want to disconnect ${name}? This will remove all ${name} data.`)) {
+      return
+    }
+
     try {
       setLoading(true)
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('platform_connections')
-        .delete()
-        .match({ brand_id: brandId, platform_type: platformType })
-
-      if (error) throw error
+      
+      // Use comprehensive disconnect endpoint for Meta
+      if (platformType === 'meta') {
+        const response = await fetch('/api/meta/force-disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brandId })
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to disconnect Meta')
+        }
+        
+        // Meta disconnected successfully with comprehensive cleanup
+      } else {
+        // For other platforms, use the comprehensive disconnect endpoint
+        const response = await fetch('/api/platforms/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brandId, platformType })
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || `Failed to disconnect ${name}`)
+        }
+      }
+      
       window.location.reload() // Refresh to update UI
     } catch (error) {
+      console.error(`Error disconnecting ${name}:`, error)
+      alert(`Failed to disconnect ${name}: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setLoading(false)
     }
