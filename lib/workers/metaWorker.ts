@@ -227,6 +227,10 @@ export class MetaWorker {
         // Call the specific fetch methods directly with our date range - FORCE DEPLOY v6 FINAL
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
+        
+        // Also sync ad sets and ads for detailed campaign performance dropdown
+        console.log(`[Meta Worker] 📊 Syncing ad sets and ads for campaign dropdown...`)
+        await this.syncAdSetsAndAds(brandId, freshToken)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
@@ -596,6 +600,47 @@ export class MetaWorker {
       console.log('[Meta Worker] Worker initialized - processing Meta jobs (serverless mode)')
     } else {
       console.log('[Meta Worker] Worker mode disabled - skipping Meta job processing')
+    }
+  }
+
+  /**
+   * Sync ad sets and ads for campaign performance dropdown
+   */
+  private static async syncAdSetsAndAds(brandId: string, accessToken: string) {
+    try {
+      // Import meta service functions
+      const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
+      
+      // Get all campaigns for this brand that were just synced
+      const supabase = createClient()
+      const { data: campaigns } = await supabase
+        .from('meta_campaigns')
+        .select('campaign_id')
+        .eq('brand_id', brandId)
+        .limit(10) // Limit to avoid timeouts
+      
+      if (!campaigns || campaigns.length === 0) {
+        console.log(`[Meta Worker] No campaigns found for ad sets sync`)
+        return
+      }
+      
+      console.log(`[Meta Worker] Syncing ad sets for ${campaigns.length} campaigns`)
+      
+      // Sync ad sets for each campaign (limited to avoid timeout)
+      for (const campaign of campaigns.slice(0, 5)) { // Limit to 5 campaigns to avoid timeout
+        try {
+          await fetchMetaAdSets(brandId, campaign.campaign_id, true)
+          console.log(`[Meta Worker] ✅ Synced ad sets for campaign ${campaign.campaign_id}`)
+        } catch (error) {
+          console.error(`[Meta Worker] ❌ Failed to sync ad sets for campaign ${campaign.campaign_id}:`, error)
+          // Continue with other campaigns
+        }
+      }
+      
+      console.log(`[Meta Worker] ✅ Ad sets sync completed`)
+    } catch (error) {
+      console.error(`[Meta Worker] Error in syncAdSetsAndAds:`, error)
+      // Don't fail the whole job for ad sets sync issues
     }
   }
 
