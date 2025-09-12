@@ -227,16 +227,40 @@ export class DataBackfillService {
    * PUBLIC: Fetch Meta daily insights for trend analysis
    */
   public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
-    // Get insights WITHOUT date range first (Meta API works this way)
-    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
+    // Get insights WITH date range and daily breakdown for historical sync
+    let insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
       `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start,date_stop&` +
-      `access_token=${accessToken}&limit=100`
+      `access_token=${accessToken}&limit=500`
+
+    // Add date range and daily breakdown if dateRange spans more than 1 day
+    if (dateRange && dateRange.since && dateRange.until) {
+      const startDate = new Date(dateRange.since)
+      const endDate = new Date(dateRange.until)
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24))
+      
+      if (daysDiff > 7) {
+        // For historical sync spanning weeks/months, use daily breakdown
+        insightsUrl += `&time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}&time_increment=1`
+        console.log(`[DataBackfill] Using DAILY breakdown for ${daysDiff} days range`)
+      } else {
+        // For short ranges, just use the date range without daily breakdown
+        insightsUrl += `&time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}`
+        console.log(`[DataBackfill] Using standard range for ${daysDiff} days`)
+      }
+    } else {
+      console.log(`[DataBackfill] No date range specified - using default recent data`)
+    }
 
     console.log(`[DataBackfill] Calling ad account insights: ${insightsUrl}`)
     const response = await fetch(insightsUrl)
     const data = await response.json()
 
-    console.log(`[DataBackfill] Ad account insights response:`, JSON.stringify(data, null, 2))
+    console.log(`[DataBackfill] Ad account insights response:`, {
+      count: data.data?.length || 0,
+      error: data.error?.message || null,
+      hasDateRange: !!dateRange,
+      sample: data.data?.[0] || null
+    })
 
     if (data.data && data.data.length > 0) {
       console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync for brand ${brandId}`)

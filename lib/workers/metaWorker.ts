@@ -203,26 +203,24 @@ export class MetaWorker {
       // Fetch campaign data for this specific chunk
       console.log(`[Meta Worker] Original date range: ${startDate} to ${endDate}`)
 
-      // TEMPORARY FIX: Use a broader date range that actually has data
-      // Instead of using the chunk dates, use a recent range that we know has data
-      const originalStart = new Date(startDate!)
-      const originalEnd = new Date(endDate!)
-      const now = new Date()
-
-      // If the chunk is too old or too new, adjust to a range that has data
-      let adjustedStart = originalStart
-      let adjustedEnd = originalEnd
-
-      // Use last 90 days instead of the chunk dates for now
-      adjustedEnd = new Date(now)
-      adjustedStart = new Date(now)
-      adjustedStart.setDate(adjustedStart.getDate() - 90)
-
-      console.log(`[Meta Worker] Adjusted date range: ${adjustedStart.toISOString().split('T')[0]} to ${adjustedEnd.toISOString().split('T')[0]}`)
-
-      const dateRange = {
-        since: adjustedStart.toISOString().split('T')[0],
-        until: adjustedEnd.toISOString().split('T')[0]
+      // Use the date range from job data if available, otherwise use chunk dates
+      let dateRange
+      if (job.data.timeRange) {
+        // Use time range from job data (for full historical sync)
+        dateRange = {
+          since: job.data.timeRange.since,
+          until: job.data.timeRange.until
+        }
+        console.log(`[Meta Worker] Using job time range: ${dateRange.since} to ${dateRange.until}`)
+      } else {
+        // Use chunk dates (for regular chunked sync)
+        const adjustedStart = new Date(startDate!)
+        const adjustedEnd = new Date(endDate!)
+        dateRange = {
+          since: adjustedStart.toISOString().split('T')[0],
+          until: adjustedEnd.toISOString().split('T')[0]
+        }
+        console.log(`[Meta Worker] Using chunk date range: ${dateRange.since} to ${dateRange.until}`)
       }
 
       try {

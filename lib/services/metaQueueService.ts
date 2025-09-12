@@ -53,6 +53,12 @@ export interface MetaJobData {
   entity?: string
   metadata?: Record<string, any>
   etlJobId?: number
+  timeRange?: {
+    since: string
+    until: string
+  }
+  priority?: 'high' | 'normal' | 'low'
+  description?: string
 }
 
 export interface MetaHistoricalJobData extends MetaJobData {
