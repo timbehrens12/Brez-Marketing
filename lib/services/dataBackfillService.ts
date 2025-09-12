@@ -211,10 +211,9 @@ export class DataBackfillService {
    * PUBLIC: Fetch Meta daily insights for trend analysis
    */
   public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    // Get insights WITHOUT date range first (Meta API works this way)
     const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?` +
-      `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start&` +
-      `time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}&` +
-      `time_increment=1&` +
+      `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start,date_stop&` +
       `access_token=${accessToken}&limit=100`
 
     const response = await fetch(insightsUrl)
@@ -222,19 +221,22 @@ export class DataBackfillService {
 
     if (data.data && data.data.length > 0) {
       console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync for brand ${brandId}`)
-      console.log(`[DataBackfill] Sample insight:`, data.data[0])
+      console.log(`[DataBackfill] Sample insight:`, JSON.stringify(data.data[0], null, 2))
 
       for (const insight of data.data) {
         const actions = insight.actions || []
         const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
         const revenue = insight.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
 
+        // Extract spend - handle different data structures
+        const spend = parseFloat(insight.spend || '0')
+
         await supabaseAdmin
-          .from('meta_campaign_daily_stats')
+          .from('meta_ad_daily_insights')
           .upsert({
             brand_id: brandId,
             date: insight.date_start,
-            spend: parseFloat(insight.spend || '0'),
+            spend: spend,
             impressions: parseInt(insight.impressions || '0'),
             clicks: parseInt(insight.clicks || '0'),
             purchases: parseInt(purchases),
