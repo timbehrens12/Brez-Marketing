@@ -226,7 +226,7 @@ export class MetaWorker {
       }
 
       try {
-        // Call the specific fetch methods directly with our date range
+        // Call the specific fetch methods directly with our date range - FORCE DEPLOY v5
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
 
