@@ -227,6 +227,7 @@ export class MetaWorker {
         // Call the specific fetch methods directly with our date range - FORCE DEPLOY v6 FINAL
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
+        await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {

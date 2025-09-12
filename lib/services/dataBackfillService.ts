@@ -224,6 +224,36 @@ export class DataBackfillService {
   }
 
   /**
+   * PUBLIC: Fetch Meta demographics and device performance data for historical analysis
+   */
+  public static async fetchMetaDemographicsAndDevice(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+    
+    console.log(`[DataBackfill] Fetching Meta demographics and device data for brand ${brandId} from ${dateRange.since} to ${dateRange.until}`)
+    
+    try {
+      // Convert date range to Date objects
+      const startDate = new Date(dateRange.since)
+      const endDate = new Date(dateRange.until)
+      
+      // Call fetchMetaAdInsights which handles demographics and device performance
+      // Use skipDemographics: false to ensure demographics are included
+      const result = await fetchMetaAdInsights(brandId, startDate, endDate, false, false)
+      
+      if (result.success) {
+        console.log(`[DataBackfill] ✅ Successfully synced demographics and device data for ${brandId}`)
+      } else {
+        console.error(`[DataBackfill] ❌ Failed to sync demographics and device data:`, result.error)
+      }
+      
+      return result
+    } catch (error) {
+      console.error(`[DataBackfill] Error in fetchMetaDemographicsAndDevice:`, error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
+  /**
    * PUBLIC: Fetch Meta daily insights for trend analysis
    */
   public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
