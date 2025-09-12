@@ -1966,24 +1966,7 @@ export async function fetchMetaAds(
           } else {
             // Now save each daily insight
             if (ad.daily_insights && ad.daily_insights.length > 0) {
-              // Check for existing account-level data to avoid duplicates
-              const insightDates = ad.daily_insights.map(insight => insight.date)
-              const { data: existingAccountData } = await supabase
-                .from('meta_ad_daily_insights')
-                .select('date')
-                .eq('brand_id', brandId)
-                .eq('ad_id', 'account_level_data')
-                .in('date', insightDates)
-              
-              const existingAccountDates = new Set(existingAccountData?.map(d => d.date) || [])
-              
               for (const insight of ad.daily_insights) {
-                // Skip if account-level data already exists for this date
-                if (existingAccountDates.has(insight.date)) {
-                  console.log(`[Meta Service] ⚠️ Skipping ad-level data for ${insight.date} - account-level data exists`)
-                  continue
-                }
-                
                 const { error: insightError } = await supabase
                   .from('meta_ad_daily_insights')
                   .upsert({

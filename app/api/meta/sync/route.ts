@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
-// DISABLED: Old Meta service to prevent duplicates
-// import { fetchMetaAdInsights } from '@/lib/services/meta-service'
+import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
 // Set maximum duration for Meta sync (5 minutes)
 export const maxDuration = 300
@@ -50,9 +49,7 @@ export async function POST(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days)
 
     // Fetch insights with the dry run flag
-    // DISABLED: Old Meta sync to prevent duplicates
-    const insights = { success: true, message: 'Old sync system disabled', count: 0 }
-    // const insights = await fetchMetaAdInsights(brandId, startDate, endDate, dryRun)
+    const insights = await fetchMetaAdInsights(brandId, startDate, endDate, dryRun)
 
     return NextResponse.json({
       success: true,
