@@ -119,9 +119,31 @@ export async function POST(request: NextRequest) {
           until: '2025-09-12'   // Today
         }
 
-        console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
+        console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync + ad sets...`)
         await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
         await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
+        
+        // Always sync ad sets for campaign dropdown (even on reconnection)
+        console.log(`[Meta Exchange] 📊 Syncing ad sets for campaign dropdown...`)
+        const { fetchMetaAdSets } = await import('@/lib/services/meta-service')
+        
+        // Get campaigns that were just synced
+        const { data: campaigns } = await supabase
+          .from('meta_campaigns')
+          .select('campaign_id')
+          .eq('brand_id', state)
+          .limit(5) // Limit to avoid timeout
+        
+        if (campaigns && campaigns.length > 0) {
+          for (const campaign of campaigns) {
+            try {
+              await fetchMetaAdSets(state, campaign.campaign_id, true)
+              console.log(`[Meta Exchange] ✅ Synced ad sets for campaign ${campaign.campaign_id}`)
+            } catch (error) {
+              console.error(`[Meta Exchange] ❌ Failed to sync ad sets for campaign ${campaign.campaign_id}:`, error)
+            }
+          }
+        }
 
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
