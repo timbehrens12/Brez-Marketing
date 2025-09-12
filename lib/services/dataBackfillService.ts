@@ -313,6 +313,8 @@ export class DataBackfillService {
 
         const insertData = {
           brand_id: brandId,
+          ad_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights
+          adset_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights  
           date: insight.date_start,
           spent: spend,  // FIXED: Column name is 'spent' not 'spend'
           impressions: parseInt(insight.impressions || '0'),
