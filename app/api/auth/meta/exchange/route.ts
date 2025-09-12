@@ -125,25 +125,25 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
-        // PHASE 2: Queue full 6-month historical sync  
+        // PHASE 2: Queue full 12-month historical sync  
         const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
         try {
-          await MetaQueueService.addJob('historical_campaigns', {
-            connectionId: connectionData.id,
-            brandId: state,
-            accessToken: tokenData.access_token,  // REQUIRED FIELD
-            accountId: accountId,  // REQUIRED FIELD - was missing!
-            timeRange: {
-              since: '2025-03-01',  // Full 6 months
-              until: '2025-09-12'   // Today  
-            },
-            priority: 'high',
-            description: 'Complete 6-month historical sync with daily breakdown',
-            jobType: 'historical_campaigns' as any
-          })
+      await MetaQueueService.addJob('historical_campaigns', {
+        connectionId: connectionData.id,
+        brandId: state,
+        accessToken: tokenData.access_token,  // REQUIRED FIELD
+        accountId: accountId,  // REQUIRED FIELD - was missing!
+        timeRange: {
+          since: '2024-09-12',  // Full 12 months back
+          until: '2025-09-12'   // Today  
+        },
+        priority: 'high',
+        description: 'Complete 12-month historical sync with daily breakdown',
+        jobType: 'historical_campaigns' as any
+      })
 
-          console.log(`[Meta Exchange] ✅ Queued 6-month historical sync`)
+          console.log(`[Meta Exchange] ✅ Queued 12-month historical sync`)
           
           // Keep status as 'syncing' - worker will update to 'completed'
         } catch (queueError) {
