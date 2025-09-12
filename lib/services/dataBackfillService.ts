@@ -297,21 +297,15 @@ export class DataBackfillService {
       console.log(`[DataBackfill] Sample insight:`, JSON.stringify(allInsights[0], null, 2))
       console.log(`[DataBackfill] Sample insight keys:`, Object.keys(allInsights[0]))
 
-      for (const insight of allInsights) {
-        console.log(`[DataBackfill] Processing insight:`, JSON.stringify(insight, null, 2))
-        console.log(`[DataBackfill] Insight has spend field:`, 'spend' in insight)
-        console.log(`[DataBackfill] Insight keys:`, Object.keys(insight))
-
+      // BATCH INSERT: Process all records at once to avoid 15-second Vercel timeout
+      console.log(`[DataBackfill] 🚀 BATCH PROCESSING ${allInsights.length} records to avoid timeout...`)
+      
+      const batchData = allInsights.map((insight: any) => {
         const actions = insight.actions || []
         const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
-        const revenue = insight.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
-
-        // Extract spend - handle different data structures
-        console.log(`[DataBackfill] About to extract spend from:`, insight.spend)
         const spend = parseFloat(insight.spend || '0')
-        console.log(`[DataBackfill] Successfully extracted spend: ${spend}`)
 
-        const insertData = {
+        return {
           brand_id: brandId,
           ad_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights
           adset_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights  
@@ -323,21 +317,20 @@ export class DataBackfillService {
           ctr: parseFloat(insight.ctr || '0'),
           created_at: new Date().toISOString()
         }
+      })
 
-        console.log(`[DataBackfill] Inserting daily insight for ${insight.date_start}: $${spend}`)
+      // Insert all records in one batch operation to avoid timeout
+      const { data, error } = await supabaseAdmin
+        .from('meta_ad_daily_insights')
+        .upsert(batchData, {
+          onConflict: 'ad_id,date'
+        })
 
-        const { data, error } = await supabaseAdmin
-          .from('meta_ad_daily_insights')
-          .upsert(insertData, {
-            onConflict: 'ad_id,date'
-          })
-
-        if (error) {
-          console.error(`[DataBackfill] ❌ Database insert error for ${insight.date_start}:`, error)
-          console.error(`[DataBackfill] ❌ Insert data was:`, insertData)
-        } else {
-          console.log(`[DataBackfill] ✅ Successfully stored insight for ${insight.date_start}`)
-        }
+      if (error) {
+        console.error(`[DataBackfill] ❌ Batch insert error:`, error)
+        console.error(`[DataBackfill] ❌ Sample batch data:`, batchData.slice(0, 3))
+      } else {
+        console.log(`[DataBackfill] ✅ Successfully batch inserted ${batchData.length} daily insights for brand ${brandId}`)
       }
 
       console.log(`[DataBackfill] Synced ${allInsights.length} daily insights for brand ${brandId}`)
