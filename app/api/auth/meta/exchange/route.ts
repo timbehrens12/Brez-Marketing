@@ -132,6 +132,8 @@ export async function POST(request: NextRequest) {
           await MetaQueueService.addJob('historical_campaigns', {
             connectionId: connectionData.id,
             brandId: state,
+            accessToken: tokenData.access_token,  // REQUIRED FIELD
+            accountId: accountId,  // REQUIRED FIELD - was missing!
             timeRange: {
               since: '2025-03-01',  // Full 6 months
               until: '2025-09-12'   // Today  
