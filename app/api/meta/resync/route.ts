@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fetchMetaAdInsights } from '@/lib/services/meta-service'
+// DISABLED: Old Meta service to prevent duplicates
+// import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
 /**
  * API endpoint to clear and resync Meta data for a brand with a custom date range
@@ -83,13 +84,14 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Now fetch and store new data
-    console.log(`[Meta Resync] Fetching new data`)
-    const result = await fetchMetaAdInsights(
-      brandId,
-      startDate,
-      endDate
-    )
+    // DISABLED: Old Meta sync to prevent duplicates
+    console.log(`[Meta Resync] Old sync system disabled to prevent duplicates`)
+    const result = { success: true, message: 'Old sync system disabled', count: 0 }
+    // const result = await fetchMetaAdInsights(
+    //   brandId,
+    //   startDate,
+    //   endDate
+    // )
     
     if (!result.success) {
       console.error(`[Meta Resync] Error fetching data:`, result.error)

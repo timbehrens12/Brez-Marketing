@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
-import { fetchMetaAdInsights } from '@/lib/services/meta-service'
+// DISABLED: Old Meta service to prevent duplicates
+// import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
 
-    const result = await fetchMetaAdInsights(brandId, startDate, endDate)
+    // DISABLED: Old Meta sync to prevent duplicates
+    const result = { success: true, message: 'Old sync system disabled', count: 0 }
+    // const result = await fetchMetaAdInsights(brandId, startDate, endDate)
     
     return NextResponse.json(result)
   } catch (error) {

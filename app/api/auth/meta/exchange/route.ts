@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
       const meData = await meResponse.json()
       const accountId = meData.data?.[0]?.id || ''
 
-      // Import Meta service and do IMMEDIATE 30-day sync + queue background for 12 months
-      const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+      // DISABLED: Old Meta service to prevent duplicates
+      // const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
 
       console.log(`[Meta Exchange] 🚀 Starting FAST 30-day immediate sync + background 12-month queue for brand ${state}`)
 
