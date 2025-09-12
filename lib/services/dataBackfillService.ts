@@ -300,37 +300,55 @@ export class DataBackfillService {
       // BATCH INSERT: Process all records at once to avoid 15-second Vercel timeout
       console.log(`[DataBackfill] 🚀 BATCH PROCESSING ${allInsights.length} records to avoid timeout...`)
       
-      const batchData = allInsights.map((insight: any) => {
-        const actions = insight.actions || []
-        const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
-        const spend = parseFloat(insight.spend || '0')
-
-        return {
-          brand_id: brandId,
-          ad_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights
-          adset_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights  
-          date: insight.date_start,
-          spent: spend,  // FIXED: Column name is 'spent' not 'spend'
-          impressions: parseInt(insight.impressions || '0'),
-          clicks: parseInt(insight.clicks || '0'),
-          purchase_count: parseInt(purchases),  // FIXED: Column name is 'purchase_count'
-          ctr: parseFloat(insight.ctr || '0'),
-          created_at: new Date().toISOString()
-        }
-      })
-
-      // Insert all records in one batch operation to avoid timeout
-      const { data, error } = await supabaseAdmin
+      // Check if ad-level data already exists for these dates to avoid duplicates
+      const dates = allInsights.map(insight => insight.date_start)
+      const { data: existingData } = await supabaseAdmin
         .from('meta_ad_daily_insights')
-        .upsert(batchData, {
-          onConflict: 'ad_id,date'
+        .select('date')
+        .eq('brand_id', brandId)
+        .in('date', dates)
+        .neq('ad_id', 'account_level_data') // Only check for real ad-level data
+      
+      const existingDates = new Set(existingData?.map(d => d.date) || [])
+      console.log(`[DataBackfill] Found existing ad-level data for ${existingDates.size} dates, skipping those...`)
+      
+      const batchData = allInsights
+        .filter(insight => !existingDates.has(insight.date_start)) // Skip dates with existing ad-level data
+        .map((insight: any) => {
+          const actions = insight.actions || []
+          const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
+          const spend = parseFloat(insight.spend || '0')
+
+          return {
+            brand_id: brandId,
+            ad_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights
+            adset_id: 'account_level_data',  // REQUIRED FIELD - dummy value for account-level insights  
+            date: insight.date_start,
+            spent: spend,  // FIXED: Column name is 'spent' not 'spend'
+            impressions: parseInt(insight.impressions || '0'),
+            clicks: parseInt(insight.clicks || '0'),
+            purchase_count: parseInt(purchases),  // FIXED: Column name is 'purchase_count'
+            ctr: parseFloat(insight.ctr || '0'),
+            created_at: new Date().toISOString()
+          }
         })
 
-      if (error) {
-        console.error(`[DataBackfill] ❌ Batch insert error:`, error)
-        console.error(`[DataBackfill] ❌ Sample batch data:`, batchData.slice(0, 3))
+      // Insert all records in one batch operation to avoid timeout
+      if (batchData.length > 0) {
+        const { data, error } = await supabaseAdmin
+          .from('meta_ad_daily_insights')
+          .upsert(batchData, {
+            onConflict: 'ad_id,date'
+          })
+
+        if (error) {
+          console.error(`[DataBackfill] ❌ Batch insert error:`, error)
+          console.error(`[DataBackfill] ❌ Sample batch data:`, batchData.slice(0, 3))
+        } else {
+          console.log(`[DataBackfill] ✅ Successfully batch inserted ${batchData.length} daily insights for brand ${brandId}`)
+        }
       } else {
-        console.log(`[DataBackfill] ✅ Successfully batch inserted ${batchData.length} daily insights for brand ${brandId}`)
+        console.log(`[DataBackfill] ℹ️ No new records to insert (all dates have existing ad-level data)`)
       }
 
       console.log(`[DataBackfill] Synced ${allInsights.length} daily insights for brand ${brandId}`)
