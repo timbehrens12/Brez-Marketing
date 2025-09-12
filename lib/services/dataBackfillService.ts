@@ -216,20 +216,30 @@ export class DataBackfillService {
       `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,date_start,date_stop&` +
       `access_token=${accessToken}&limit=100`
 
+    console.log(`[DataBackfill] Calling ad account insights: ${insightsUrl}`)
     const response = await fetch(insightsUrl)
     const data = await response.json()
+
+    console.log(`[DataBackfill] Ad account insights response:`, JSON.stringify(data, null, 2))
 
     if (data.data && data.data.length > 0) {
       console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync for brand ${brandId}`)
       console.log(`[DataBackfill] Sample insight:`, JSON.stringify(data.data[0], null, 2))
+      console.log(`[DataBackfill] Sample insight keys:`, Object.keys(data.data[0]))
 
       for (const insight of data.data) {
+        console.log(`[DataBackfill] Processing insight:`, JSON.stringify(insight, null, 2))
+        console.log(`[DataBackfill] Insight has spend field:`, 'spend' in insight)
+        console.log(`[DataBackfill] Insight keys:`, Object.keys(insight))
+
         const actions = insight.actions || []
         const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
         const revenue = insight.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
 
         // Extract spend - handle different data structures
+        console.log(`[DataBackfill] About to extract spend from:`, insight.spend)
         const spend = parseFloat(insight.spend || '0')
+        console.log(`[DataBackfill] Successfully extracted spend: ${spend}`)
 
         await supabaseAdmin
           .from('meta_ad_daily_insights')
