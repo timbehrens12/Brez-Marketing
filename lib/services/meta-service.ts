@@ -1306,12 +1306,15 @@ export async function fetchMetaAdSets(
       return { success: false, error: 'No active Meta connection found for this brand' };
     }
     
-    // Get campaign to find ad account
-    const { data: campaign, error: campaignError } = await supabase
+    // Get campaign to find ad account (get most recent if multiple exist)
+    const { data: campaigns, error: campaignError } = await supabase
       .from('meta_campaigns')
       .select('account_id')
       .eq('campaign_id', campaignId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    const campaign = campaigns?.[0];
     
     if (campaignError || !campaign) {
       console.error('[Meta Service] Failed to find campaign:', campaignError);
@@ -1693,12 +1696,15 @@ export async function fetchMetaAds(
       return { success: false, error: 'No active Meta connection found for this brand' };
     }
     
-    // Get ad set to find campaign_id
-    const { data: adSet, error: adSetError } = await supabase
+    // Get ad set to find campaign_id (get most recent if multiple exist)
+    const { data: adSets, error: adSetError } = await supabase
       .from('meta_adsets')
       .select('campaign_id')
       .eq('adset_id', adsetId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    const adSet = adSets?.[0];
     
     if (adSetError || !adSet) {
       console.error('[Meta Service] Failed to find ad set:', adSetError);
