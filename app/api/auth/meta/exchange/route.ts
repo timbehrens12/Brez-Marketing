@@ -97,12 +97,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Meta Exchange] 🚀 Starting FAST 30-day immediate sync + background 12-month queue for brand ${state}`)
 
-      // PHASE 1: Fast sync of last 30 days (immediate within timeout limits)
-      const endDate = new Date()
-      const fastStartDate = new Date()
-      fastStartDate.setDate(fastStartDate.getDate() - 30) // Last 30 days only
-
-      console.log(`[Meta Exchange] ⚡ PHASE 1: Fast sync of last 30 days: ${fastStartDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+      // DIRECT 12-MONTH SYNC WITH DAILY BREAKDOWN
+      console.log(`[Meta Exchange] 🚀 DIRECT 12-MONTH SYNC: March 1, 2025 to Sept 12, 2025`)
 
       try {
         // Update sync status to syncing
@@ -115,82 +111,53 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', connectionData.id)
 
-        // Fast sync - just 30 days to avoid timeout
-        const fastSyncResult = await fetchMetaAdInsights(state, fastStartDate, endDate, false, true) // Skip demographics for speed
+        // Import our backfill service with daily breakdown support
+        const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
 
-        if (fastSyncResult.success) {
-          console.log(`[Meta Exchange] ✅ PHASE 1 completed: ${fastSyncResult.count} records in last 30 days`)
-
-          // PHASE 2: Queue background sync for FULL 12 months (replaces the 30 days)
-          console.log(`[Meta Exchange] 🔄 PHASE 2: Queueing COMPLETE 12-month background sync`)
-
-          const fullStartDate = new Date()
-          fullStartDate.setMonth(fullStartDate.getMonth() - 12) // Full 12 months
-
-          const { MetaQueueService } = await import('@/lib/services/metaQueueService')
-
-          try {
-            // 🔄 QUEUE COMPLETE HISTORICAL SYNC (not just recent sync!)
-            console.log(`[Meta Exchange] 🔄 Calling MetaQueueService.queueCompleteHistoricalSync`)
-
-            // Check Redis availability first
-            const hasRedis = process.env.REDIS_HOST || process.env.REDIS_URL
-            console.log(`[Meta Exchange] Redis available: ${!!hasRedis} (REDIS_HOST: ${!!process.env.REDIS_HOST}, REDIS_URL: ${!!process.env.REDIS_URL})`)
-
-            const queueResult = await MetaQueueService.queueCompleteHistoricalSync(
-              state,
-              connectionData.id,
-              tokenData.access_token,
-              accountId,
-              undefined // No account creation date available
-            )
-
-            if (queueResult.success) {
-              console.log(`[Meta Exchange] ✅ QueUED COMPLETE HISTORICAL SYNC:`, queueResult)
-              // Keep status as 'syncing' - background worker will update to 'completed'
-            } else {
-              console.log(`[Meta Exchange] ⚠️ Historical sync not queued:`, queueResult.estimatedCompletion)
-              // Update to completed since we have 30 days of data but no background sync
-              await supabase
-                .from('platform_connections')
-                .update({
-                  sync_status: 'completed',
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', connectionData.id)
-            }
-          } catch (queueError) {
-            console.error(`[Meta Exchange] ❌ Failed to queue background jobs:`, queueError)
-            // Update to completed anyway since we have 30 days of data
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', connectionData.id)
-          }
-        } else {
-          console.error(`[Meta Exchange] ❌ Phase 1 failed:`, fastSyncResult.error)
-          
-          // Update sync status to failed
-          await supabase
-            .from('platform_connections')
-            .update({
-              sync_status: 'failed',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', connectionData.id)
+        const dateRange = {
+          since: '2025-03-01',  // Your 6 months of data
+          until: '2025-09-12'   // Today
         }
 
+        // Sync campaigns with 6-month totals
+        console.log(`[Meta Exchange] 📊 Syncing campaigns...`)
+        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, dateRange)
+
+        // Sync daily insights with DAILY BREAKDOWN
+        console.log(`[Meta Exchange] 📈 Syncing daily insights with time_increment=1...`)
+        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, dateRange)
+
+        console.log(`[Meta Exchange] ✅ COMPLETE 12-MONTH SYNC FINISHED!`)
+
+        // Update sync status to completed
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'completed',
+            last_sync_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', connectionData.id)
+
       } catch (syncError) {
-        console.error(`[Meta Exchange] ⚠️ Sync error in phase 1:`, syncError)
-        // Continue with background queuing even if fast sync failed
+        console.error(`[Meta Exchange] ❌ 12-month sync failed:`, syncError)
+        
+        // Update sync status to failed
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'failed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', connectionData.id)
       }
 
     } catch (error) {
-      console.error('[Meta Exchange] Immediate sync failed:', error)
-      // Don't fail the response, just log the error
+      console.error('[Meta Exchange] OAuth exchange failed:', error)
+      return NextResponse.json(
+        { success: false, error: 'Sync failed' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ success: true })
