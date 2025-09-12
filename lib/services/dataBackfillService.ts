@@ -182,7 +182,7 @@ export class DataBackfillService {
         // Store campaign data
         console.log(`[DataBackfill] Storing campaign: ${campaign.name} (${campaign.id})`)
         console.log(`[DataBackfill] Campaign data:`, {
-          spent, impressions, clicks, purchases, revenue
+          spend, impressions, clicks, purchases, revenue
         })
 
         const campaignData = {
