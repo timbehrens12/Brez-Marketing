@@ -45,26 +45,26 @@ export async function GET(request: NextRequest) {
     const adAccountId = accountsData.data[0].id
     console.log(`[Meta API Test] Found ad account: ${adAccountId}`)
 
-    // Test 2: Get campaigns
-    const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?fields=id,name,status&access_token=${connection.access_token}&limit=5`
+    // Test 2: Get campaigns with insights (same as dataBackfillService)
+    const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,created_time,updated_time,insights{spend,impressions,clicks,ctr,cpm,actions,action_values}&access_token=${connection.access_token}&limit=3`
     const campaignsResponse = await fetch(campaignsUrl)
     const campaignsData = await campaignsResponse.json()
 
-    console.log(`[Meta API Test] Campaigns response:`, campaignsData)
+    console.log(`[Meta API Test] Campaigns response:`, JSON.stringify(campaignsData, null, 2))
 
-    // Test 3: Get insights (try without date range first)
-    const insightsUrlNoDate = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&access_token=${connection.access_token}&limit=5`
+    // Test 3: Get insights (try without date range first) - same fields as dataBackfillService
+    const insightsUrlNoDate = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,clicks,ctr,cpm,actions,action_values,date_start&access_token=${connection.access_token}&limit=3`
     const insightsResponseNoDate = await fetch(insightsUrlNoDate)
     const insightsDataNoDate = await insightsResponseNoDate.json()
 
-    console.log(`[Meta API Test] Insights response (no date):`, insightsDataNoDate)
+    console.log(`[Meta API Test] Insights response (no date):`, JSON.stringify(insightsDataNoDate, null, 2))
 
-    // Test with a broader date range
-    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,date_start&time_range={"since":"2024-01-01","until":"2024-12-31"}&access_token=${connection.access_token}&limit=5`
+    // Test with a broader date range - same as dataBackfillService uses
+    const insightsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=spend,impressions,clicks,ctr,cpm,actions,action_values,date_start&time_range={"since":"2024-08-01","until":"2024-09-11"}&access_token=${connection.access_token}&limit=3`
     const insightsResponse = await fetch(insightsUrl)
     const insightsData = await insightsResponse.json()
 
-    console.log(`[Meta API Test] Insights response (broad date):`, insightsData)
+    console.log(`[Meta API Test] Insights response (broad date):`, JSON.stringify(insightsData, null, 2))
 
     return NextResponse.json({
       success: true,
