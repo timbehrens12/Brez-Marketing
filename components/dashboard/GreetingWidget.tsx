@@ -873,9 +873,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           
           // Step 2: Get Meta ad data for the entire 7-day period
           const { data: adData, error: adError } = await supabase
-            .from('meta_ad_insights')
-            .select('spend, impressions, clicks, date')
-            .eq('connection_id', connectionId)
+            .from('meta_ad_daily_insights')
+            .select('spent, impressions, clicks, date')
+            .eq('brand_id', brandId)
             .gte('date', format(sixDaysAgo, 'yyyy-MM-dd'))
             .lte('date', format(to, 'yyyy-MM-dd'));
           
@@ -949,9 +949,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
               
               // Sum up ad spend for the day
               dayAdSpend = dayAdInsights.reduce((sum, insight) => {
-                const spend = typeof insight.spend === 'string' 
-                  ? parseFloat(insight.spend) 
-                  : (insight.spend || 0);
+                const spend = typeof insight.spent === 'string' 
+                  ? parseFloat(insight.spent) 
+                  : (insight.spent || 0);
                 return sum + spend;
               }, 0);
               
@@ -1115,9 +1115,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       
       // Step 2: Get Meta ad spend data if available
       const { data: adData, error: adError } = await supabase
-        .from('meta_ad_insights')
-        .select('spend, impressions, clicks')
-        .eq('connection_id', connectionId)
+        .from('meta_ad_daily_insights')
+        .select('spent, impressions, clicks')
+        .eq('brand_id', brandId)
         .gte('date', format(from, 'yyyy-MM-dd'))
         .lte('date', format(to, 'yyyy-MM-dd'));
       
@@ -1128,9 +1128,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         
         // Calculate ad metrics
         adSpend = adData.reduce((sum, insight) => {
-          const spend = typeof insight.spend === 'string' 
-            ? parseFloat(insight.spend) 
-            : (insight.spend || 0);
+          const spend = typeof insight.spent === 'string' 
+            ? parseFloat(insight.spent) 
+            : (insight.spent || 0);
           return sum + spend;
         }, 0);
         
