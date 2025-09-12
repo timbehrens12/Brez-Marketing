@@ -125,31 +125,17 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
-        // PHASE 2: Queue full 12-month historical sync  
-        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+        // PHASE 2: Check if historical data already exists before queueing sync
+        const { data: existingData } = await supabase
+          .from('meta_ad_daily_insights')
+          .select('date')
+          .eq('brand_id', state)
+          .lt('date', '2025-08-13') // Before the 30-day range
+          .limit(1)
 
-        try {
-      await MetaQueueService.addJob('historical_campaigns', {
-        connectionId: connectionData.id,
-        brandId: state,
-        accessToken: tokenData.access_token,  // REQUIRED FIELD
-        accountId: accountId,  // REQUIRED FIELD - was missing!
-        timeRange: {
-          since: '2024-09-12',  // Full 12 months back
-          until: '2025-09-12'   // Today  
-        },
-        priority: 'high',
-        description: 'Complete 12-month historical sync with daily breakdown',
-        jobType: 'historical_campaigns' as any
-      })
-
-          console.log(`[Meta Exchange] ✅ Queued 12-month historical sync`)
-          
-          // Keep status as 'syncing' - worker will update to 'completed'
-        } catch (queueError) {
-          console.warn(`[Meta Exchange] ⚠️ Failed to queue historical sync:`, queueError)
-          
-          // Update to completed since we have 30 days
+        if (existingData && existingData.length > 0) {
+          console.log(`[Meta Exchange] ℹ️ Historical data already exists - skipping 12-month sync`)
+          // Update to completed since we have both 30 days + historical data
           await supabase
             .from('platform_connections')
             .update({
@@ -158,6 +144,42 @@ export async function POST(request: NextRequest) {
               updated_at: new Date().toISOString()
             })
             .eq('id', connectionData.id)
+        } else {
+          console.log(`[Meta Exchange] 📅 No historical data found - queueing 12-month sync`)
+          
+          const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+
+          try {
+            await MetaQueueService.addJob('historical_campaigns', {
+              connectionId: connectionData.id,
+              brandId: state,
+              accessToken: tokenData.access_token,  // REQUIRED FIELD
+              accountId: accountId,  // REQUIRED FIELD - was missing!
+              timeRange: {
+                since: '2024-09-12',  // Full 12 months back
+                until: '2025-09-12'   // Today  
+              },
+              priority: 'high',
+              description: 'Complete 12-month historical sync with daily breakdown',
+              jobType: 'historical_campaigns' as any
+            })
+
+            console.log(`[Meta Exchange] ✅ Queued 12-month historical sync`)
+            
+            // Keep status as 'syncing' - worker will update to 'completed'
+          } catch (queueError) {
+            console.warn(`[Meta Exchange] ⚠️ Failed to queue historical sync:`, queueError)
+            
+            // Update to completed since we have 30 days
+            await supabase
+              .from('platform_connections')
+              .update({
+                sync_status: 'completed',
+                last_sync_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', connectionData.id)
+          }
         }
 
       } catch (syncError) {
