@@ -120,8 +120,22 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
-        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
-        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
+        
+        // Check if recent data already exists to avoid duplicates
+        const { data: recentData } = await supabase
+          .from('meta_ad_daily_insights')
+          .select('date')
+          .eq('brand_id', state)
+          .gte('date', '2025-08-13') // Within 30-day range
+          .limit(1)
+        
+        if (recentData && recentData.length > 0) {
+          console.log(`[Meta Exchange] ℹ️ Recent data already exists - skipping 30-day sync to prevent duplicates`)
+        } else {
+          await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
+          await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
+          console.log(`[Meta Exchange] ✅ 30-day sync completed`)
+        }
 
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
