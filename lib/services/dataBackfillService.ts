@@ -148,9 +148,22 @@ export class DataBackfillService {
         const insightsData = await insightsResponse.json()
 
         const insights = insightsData.data?.[0] || {}
-        
-        // Extract metrics
-        const spend = parseFloat(insights.spend || '0')
+
+        // DEBUG: Log the actual insights data structure
+        console.log(`[DataBackfill] Raw insights data:`, JSON.stringify(insights, null, 2))
+        console.log(`[DataBackfill] Insights keys:`, Object.keys(insights))
+
+        // Extract metrics - try different field names
+        let spend = 0
+        if (insights.spend !== undefined) {
+          spend = parseFloat(insights.spend)
+        } else if (insights.cost_per_action_type !== undefined) {
+          // Sometimes Meta returns cost_per_action_type
+          spend = parseFloat(insights.cost_per_action_type?.find((c: any) => c.action_type === 'purchase')?.value || '0')
+        } else {
+          console.log(`[DataBackfill] No spend field found in insights, available fields:`, Object.keys(insights))
+        }
+
         const impressions = parseInt(insights.impressions || '0')
         const clicks = parseInt(insights.clicks || '0')
         const ctr = parseFloat(insights.ctr || '0')
