@@ -329,7 +329,7 @@ export class DataBackfillService {
         const { data, error } = await supabaseAdmin
           .from('meta_ad_daily_insights')
           .upsert(insertData, {
-            onConflict: 'brand_id,date'
+            onConflict: 'ad_id,date'
           })
 
         if (error) {
