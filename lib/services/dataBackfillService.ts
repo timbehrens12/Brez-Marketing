@@ -124,7 +124,7 @@ export class DataBackfillService {
   }
 
   /**
-   * PUBLIC: Fetch Meta campaigns and store in database
+   * PUBLIC: Fetch Meta campaigns and store in database - FORCE REDEPLOY v4
    */
   public static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
     const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?` + 
