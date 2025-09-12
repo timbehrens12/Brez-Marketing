@@ -127,6 +127,21 @@ export class DataBackfillService {
    * PUBLIC: Fetch Meta campaigns and store in database - FORCE REDEPLOY v4
    */
   public static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+    // Get connection_id from platform_connections
+    const { data: connection } = await supabaseAdmin
+      .from('platform_connections')
+      .select('id')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+      .single()
+
+    if (!connection) {
+      throw new Error('No active Meta connection found for campaign sync')
+    }
+
+    const connectionId = connection.id
+    console.log(`[DataBackfill] Using connection_id: ${connectionId} for brand: ${brandId}`)
     const campaignsUrl = `https://graph.facebook.com/v18.0/${adAccountId}/campaigns?` + 
       `fields=id,name,status,objective,daily_budget,lifetime_budget,created_time,updated_time&` +
       `access_token=${accessToken}&limit=100`
@@ -173,6 +188,8 @@ export class DataBackfillService {
         const campaignData = {
           campaign_id: campaign.id,
           brand_id: brandId,
+          connection_id: connectionId, // REQUIRED FIELD
+          account_id: adAccountId,     // REQUIRED FIELD
           campaign_name: campaign.name,
           status: campaign.status,
           objective: campaign.objective,
