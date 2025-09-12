@@ -247,6 +247,12 @@ export class MetaWorker {
         completed_at: new Date().toISOString()
       })
 
+      // Update connection status to completed (for single historical job or final chunk)
+      if (!metadata?.chunkNumber || metadata?.chunkNumber === metadata?.totalChunks) {
+        console.log(`[Meta Worker] ✅ Historical sync completed - updating connection sync status to completed`)
+        await this.updateConnectionSyncStatus(connectionId, 'completed')
+      }
+
     } catch (error) {
       console.error(`[Meta Worker] Historical campaigns failed for chunk ${metadata?.chunkNumber}:`, error)
       // Update ETL job status to failed
