@@ -1310,28 +1310,26 @@ export default function SettingsPage() {
 
   // Handle deleting brand
   const handleDeleteBrand = async (brandId: string) => {
-    if (!confirm('Are you sure you want to delete this brand? This will also disconnect all platforms.')) return
+    if (!confirm('Are you sure you want to delete this brand? This will permanently remove ALL data including campaigns, orders, customers, and analytics.')) return
 
     try {
-      // First disconnect all platforms
-      const brandConnections = connections.filter(c => c.brand_id === brandId)
-      for (const connection of brandConnections) {
-        await handleDisconnect(connection.platform_type as 'shopify' | 'meta', brandId)
+      // Use comprehensive delete endpoint that handles foreign key constraints
+      const response = await fetch('/api/brands/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandId })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete brand')
       }
 
-      // Then delete the brand
-      const { error } = await supabase
-        .from('brands')
-        .delete()
-        .eq('id', brandId)
-
-      if (error) throw error
-
       await refreshBrands()
-      toast.success('Brand deleted successfully')
+      toast.success('Brand and all associated data deleted successfully')
     } catch (error) {
       console.error('Error deleting brand:', error)
-      toast.error('Failed to delete brand')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete brand')
     }
   }
 
@@ -1389,7 +1387,7 @@ export default function SettingsPage() {
         }
       }
 
-      const response = await silentFetch('/api/disconnect-platform', {
+      const response = await silentFetch('/api/platforms/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandId, platformType: platform }),
@@ -1410,7 +1408,7 @@ export default function SettingsPage() {
             console.log = () => {}
             console.warn = () => {}
 
-            const forceResponse = await fetch('/api/disconnect-platform/force', {
+            const forceResponse = await fetch('/api/platforms/disconnect', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ brandId, platformType: platform }),
