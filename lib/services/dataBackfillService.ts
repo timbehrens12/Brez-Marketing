@@ -138,11 +138,10 @@ export class DataBackfillService {
       console.log(`[DataBackfill] Found ${data.data.length} campaigns to sync`)
 
       for (const campaign of data.data) {
-        // Get campaign insights
+        // Get campaign insights - NO DATE RANGE (Meta API works this way)
         const insightsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/insights?` +
           `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,cpp&` +
-          `time_range={"since":"${dateRange.since}","until":"${dateRange.until}"}&` +
-          `access_token=${accessToken}`
+          `access_token=${accessToken}&limit=100`
 
         const insightsResponse = await fetch(insightsUrl)
         const insightsData = await insightsResponse.json()
@@ -153,17 +152,8 @@ export class DataBackfillService {
         console.log(`[DataBackfill] Raw insights data:`, JSON.stringify(insights, null, 2))
         console.log(`[DataBackfill] Insights keys:`, Object.keys(insights))
 
-        // Extract metrics - try different field names
-        let spend = 0
-        if (insights.spend !== undefined) {
-          spend = parseFloat(insights.spend)
-        } else if (insights.cost_per_action_type !== undefined) {
-          // Sometimes Meta returns cost_per_action_type
-          spend = parseFloat(insights.cost_per_action_type?.find((c: any) => c.action_type === 'purchase')?.value || '0')
-        } else {
-          console.log(`[DataBackfill] No spend field found in insights, available fields:`, Object.keys(insights))
-        }
-
+        // Extract metrics - Meta API returns aggregated data without date ranges
+        const spend = parseFloat(insights.spend || '0')
         const impressions = parseInt(insights.impressions || '0')
         const clicks = parseInt(insights.clicks || '0')
         const ctr = parseFloat(insights.ctr || '0')
