@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Meta Exchange] 🚀 Starting FAST 30-day immediate sync + background 12-month queue for brand ${state}`)
 
-      // DIRECT 12-MONTH SYNC WITH DAILY BREAKDOWN
-      console.log(`[Meta Exchange] 🚀 DIRECT 12-MONTH SYNC: March 1, 2025 to Sept 12, 2025`)
+      // FAST 30-day sync + queue background historical sync
+      console.log(`[Meta Exchange] ⚡ FAST 30-day sync + QUEUE 6-month historical`)
 
       try {
         // Update sync status to syncing
@@ -111,33 +111,52 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', connectionData.id)
 
-        // Import our backfill service with daily breakdown support
+        // PHASE 1: Fast 30-day sync (immediate)
         const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
-
-        const dateRange = {
-          since: '2025-03-01',  // Your 6 months of data
+        
+        const fastRange = {
+          since: '2025-08-13',  // Last 30 days only
           until: '2025-09-12'   // Today
         }
 
-        // Sync campaigns with 6-month totals
-        console.log(`[Meta Exchange] 📊 Syncing campaigns...`)
-        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, dateRange)
+        console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
+        await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
+        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
 
-        // Sync daily insights with DAILY BREAKDOWN
-        console.log(`[Meta Exchange] 📈 Syncing daily insights with time_increment=1...`)
-        await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, dateRange)
+        console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
-        console.log(`[Meta Exchange] ✅ COMPLETE 12-MONTH SYNC FINISHED!`)
+        // PHASE 2: Queue full 6-month historical sync  
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
-        // Update sync status to completed
-        await supabase
-          .from('platform_connections')
-          .update({
-            sync_status: 'completed',
-            last_sync_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        try {
+          await MetaQueueService.addJob('historical_campaigns', {
+            connectionId: connectionData.id,
+            brandId: state,
+            timeRange: {
+              since: '2025-03-01',  // Full 6 months
+              until: '2025-09-12'   // Today  
+            },
+            priority: 'high',
+            description: 'Complete 6-month historical sync with daily breakdown',
+            jobType: 'historical_campaigns' as any
           })
-          .eq('id', connectionData.id)
+
+          console.log(`[Meta Exchange] ✅ Queued 6-month historical sync`)
+          
+          // Keep status as 'syncing' - worker will update to 'completed'
+        } catch (queueError) {
+          console.warn(`[Meta Exchange] ⚠️ Failed to queue historical sync:`, queueError)
+          
+          // Update to completed since we have 30 days
+          await supabase
+            .from('platform_connections')
+            .update({
+              sync_status: 'completed',
+              last_sync_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', connectionData.id)
+        }
 
       } catch (syncError) {
         console.error(`[Meta Exchange] ❌ 12-month sync failed:`, syncError)
