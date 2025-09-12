@@ -30,33 +30,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Queue the historical sync job through Redis
-    const queueResult = await MetaQueueService.addJob('historical_campaigns', {
-      connectionId: connection.id,
-      brandId: brandId,
-      timeRange: {
-        since: '2025-03-01',  // 6 months ago
-        until: '2025-09-12'   // today
-      },
-      priority: 'high',
-      description: 'Full 6-month historical sync with daily breakdown'
-    })
+    try {
+      await MetaQueueService.addJob('historical_campaigns', {
+        connectionId: connection.id,
+        brandId: brandId,
+        timeRange: {
+          since: '2025-03-01',  // 6 months ago
+          until: '2025-09-12'   // today
+        },
+        priority: 'high',
+        description: 'Full 6-month historical sync with daily breakdown',
+        jobType: 'historical_campaigns' as any
+      })
 
-    if (queueResult.success) {
-      console.log(`[Queue Full Historical] Successfully queued job ${queueResult.jobId}`)
+      console.log(`[Queue Full Historical] Successfully queued 6-month historical sync`)
       
       return NextResponse.json({
         success: true,
         message: 'Successfully queued 6-month historical sync!',
-        jobId: queueResult.jobId,
         connectionId: connection.id,
         dateRange: '2025-03-01 to 2025-09-12',
         note: 'Check /api/test/meta-sync-debug for progress'
       })
-    } else {
+    } catch (queueError) {
+      console.error(`[Queue Full Historical] Failed to queue job:`, queueError)
       return NextResponse.json({
         success: false,
         error: 'Failed to queue historical sync',
-        details: queueResult.error
+        details: queueError instanceof Error ? queueError.message : 'Unknown queue error'
       }, { status: 500 })
     }
 
