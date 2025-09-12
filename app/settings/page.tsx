@@ -1387,10 +1387,19 @@ export default function SettingsPage() {
         }
       }
 
-      const response = await silentFetch('/api/platforms/disconnect', {
+      // Use comprehensive Meta disconnect endpoint for Meta, regular endpoint for others
+      const disconnectUrl = platform === 'meta' 
+        ? '/api/meta/force-disconnect'
+        : '/api/platforms/disconnect'
+      
+      const requestBody = platform === 'meta'
+        ? JSON.stringify({ brandId })  // Meta endpoint expects just brandId
+        : JSON.stringify({ brandId, platformType: platform })  // Regular endpoint expects both
+      
+      const response = await silentFetch(disconnectUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brandId, platformType: platform }),
+        body: requestBody,
       })
       
       if (!response.ok) {
@@ -1408,10 +1417,10 @@ export default function SettingsPage() {
             console.log = () => {}
             console.warn = () => {}
 
-            const forceResponse = await fetch('/api/platforms/disconnect', {
+            const forceResponse = await fetch(disconnectUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ brandId, platformType: platform }),
+              body: requestBody,
             })
 
             // Restore console methods
