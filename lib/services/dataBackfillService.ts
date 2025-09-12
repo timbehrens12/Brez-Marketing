@@ -311,20 +311,31 @@ export class DataBackfillService {
         const spend = parseFloat(insight.spend || '0')
         console.log(`[DataBackfill] Successfully extracted spend: ${spend}`)
 
-        await supabaseAdmin
+        const insertData = {
+          brand_id: brandId,
+          date: insight.date_start,
+          spent: spend,  // FIXED: Column name is 'spent' not 'spend'
+          impressions: parseInt(insight.impressions || '0'),
+          clicks: parseInt(insight.clicks || '0'),
+          purchase_count: parseInt(purchases),  // FIXED: Column name is 'purchase_count'
+          ctr: parseFloat(insight.ctr || '0'),
+          created_at: new Date().toISOString()
+        }
+
+        console.log(`[DataBackfill] Inserting daily insight for ${insight.date_start}: $${spend}`)
+
+        const { data, error } = await supabaseAdmin
           .from('meta_ad_daily_insights')
-          .upsert({
-            brand_id: brandId,
-            date: insight.date_start,
-            spent: spend,  // FIXED: Column name is 'spent' not 'spend'
-            impressions: parseInt(insight.impressions || '0'),
-            clicks: parseInt(insight.clicks || '0'),
-            purchase_count: parseInt(purchases),  // FIXED: Column name is 'purchase_count'
-            ctr: parseFloat(insight.ctr || '0'),
-            created_at: new Date().toISOString()
-          }, {
+          .upsert(insertData, {
             onConflict: 'brand_id,date'
           })
+
+        if (error) {
+          console.error(`[DataBackfill] ❌ Database insert error for ${insight.date_start}:`, error)
+          console.error(`[DataBackfill] ❌ Insert data was:`, insertData)
+        } else {
+          console.log(`[DataBackfill] ✅ Successfully stored insight for ${insight.date_start}`)
+        }
       }
 
       console.log(`[DataBackfill] Synced ${allInsights.length} daily insights for brand ${brandId}`)
