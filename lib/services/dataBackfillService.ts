@@ -162,29 +162,42 @@ export class DataBackfillService {
         const revenue = insights.action_values?.find((val: any) => val.action_type === 'purchase')?.value || '0'
 
         // Store campaign data
-        await supabaseAdmin
+        console.log(`[DataBackfill] Storing campaign: ${campaign.name} (${campaign.id})`)
+        console.log(`[DataBackfill] Campaign data:`, {
+          spent, impressions, clicks, purchases, revenue
+        })
+
+        const campaignData = {
+          campaign_id: campaign.id,
+          brand_id: brandId,
+          name: campaign.name,
+          status: campaign.status,
+          objective: campaign.objective,
+          daily_budget: campaign.daily_budget ? parseFloat(campaign.daily_budget) / 100 : null,
+          lifetime_budget: campaign.lifetime_budget ? parseFloat(campaign.lifetime_budget) / 100 : null,
+          spent: spend,
+          impressions: impressions,
+          clicks: clicks,
+          purchases: parseInt(purchases),
+          revenue: parseFloat(revenue),
+          ctr: ctr,
+          cpm: cpm,
+          created_time: campaign.created_time,
+          updated_time: campaign.updated_time,
+          last_synced_at: new Date().toISOString()
+        }
+
+        const { data, error } = await supabaseAdmin
           .from('meta_campaigns')
-          .upsert({
-            campaign_id: campaign.id,
-            brand_id: brandId,
-            name: campaign.name,
-            status: campaign.status,
-            objective: campaign.objective,
-            daily_budget: campaign.daily_budget ? parseFloat(campaign.daily_budget) / 100 : null,
-            lifetime_budget: campaign.lifetime_budget ? parseFloat(campaign.lifetime_budget) / 100 : null,
-            spent: spend,
-            impressions: impressions,
-            clicks: clicks,
-            purchases: parseInt(purchases),
-            revenue: parseFloat(revenue),
-            ctr: ctr,
-            cpm: cpm,
-            created_time: campaign.created_time,
-            updated_time: campaign.updated_time,
-            last_synced_at: new Date().toISOString()
-          }, {
+          .upsert(campaignData, {
             onConflict: 'campaign_id,brand_id'
           })
+
+        if (error) {
+          console.error(`[DataBackfill] Error storing campaign ${campaign.id}:`, error)
+        } else {
+          console.log(`[DataBackfill] ✅ Successfully stored campaign: ${campaign.name}`)
+        }
       }
 
       console.log(`[DataBackfill] Synced ${data.data.length} campaigns for brand ${brandId}`)
@@ -205,7 +218,8 @@ export class DataBackfillService {
     const data = await response.json()
 
     if (data.data && data.data.length > 0) {
-      console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync`)
+      console.log(`[DataBackfill] Found ${data.data.length} daily insights to sync for brand ${brandId}`)
+      console.log(`[DataBackfill] Sample insight:`, data.data[0])
 
       for (const insight of data.data) {
         const actions = insight.actions || []
