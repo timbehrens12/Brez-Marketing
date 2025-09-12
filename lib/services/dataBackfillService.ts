@@ -124,7 +124,7 @@ export class DataBackfillService {
   }
 
   /**
-   * PUBLIC: Fetch Meta campaigns and store in database - FORCE REDEPLOY v4
+   * PUBLIC: Fetch Meta campaigns and store in database - FORCE REDEPLOY v6 FINAL
    */
   public static async fetchMetaCampaigns(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
     // Get connection_id from platform_connections
