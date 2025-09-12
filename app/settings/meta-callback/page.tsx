@@ -55,7 +55,7 @@ export default function MetaCallback() {
             })
 
             if (workerResponse.ok) {
-              console.log('[Meta Callback] Background worker triggered successfully')
+              // Background worker triggered successfully
             } else {
               console.warn('[Meta Callback] Background worker trigger failed, but sync will continue')
             }
