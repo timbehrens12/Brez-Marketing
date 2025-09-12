@@ -286,13 +286,11 @@ export class DataBackfillService {
           .upsert({
             brand_id: brandId,
             date: insight.date_start,
-            spend: spend,
+            spent: spend,  // FIXED: Column name is 'spent' not 'spend'
             impressions: parseInt(insight.impressions || '0'),
             clicks: parseInt(insight.clicks || '0'),
-            purchases: parseInt(purchases),
-            revenue: parseFloat(revenue),
+            purchase_count: parseInt(purchases),  // FIXED: Column name is 'purchase_count'
             ctr: parseFloat(insight.ctr || '0'),
-            cpm: parseFloat(insight.cpm || '0'),
             created_at: new Date().toISOString()
           }, {
             onConflict: 'brand_id,date'
