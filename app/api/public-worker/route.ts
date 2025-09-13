@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     
     // Get the number of jobs to process
     const body = await request.json().catch(() => ({}))
-    const maxJobs = body.maxJobs || 10
+    const maxJobs = body.maxJobs || 1  // Process only 1 job per execution to avoid timeout
     
     console.log(`[Public Worker] Processing up to ${maxJobs} jobs`)
     
