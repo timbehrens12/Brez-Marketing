@@ -155,67 +155,33 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] 📅 Only ${uniqueDates.size} days found - queueing full 12-month sync`)
 
-        // Queue full 12-month historical sync in background
+        // Queue ONE comprehensive background job for everything
         const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
         try {
+            // Single job that does EVERYTHING: campaigns, insights, AND demographics
             await MetaQueueService.addJob('historical_campaigns', {
               connectionId: connectionData.id,
               brandId: state,
-              accessToken: tokenData.access_token,  // REQUIRED FIELD
-              accountId: accountId,  // REQUIRED FIELD - was missing!
+              accessToken: tokenData.access_token,
+              accountId: accountId,
               timeRange: {
                 since: '2024-09-12',  // Full 12 months back
                 until: '2025-09-12'   // Today  
               },
               priority: 'high',
-              description: 'Complete 12-month historical sync with daily breakdown',
-              jobType: 'historical_campaigns' as any
+              description: 'Complete 12-month sync: campaigns + insights + demographics',
+              jobType: 'historical_campaigns' as any,
+              includeEverything: true  // Flag to include demographics in main job
             })
-
-            // Queue separate demographics sync in small chunks to avoid timeout
-            const startDate = new Date('2024-09-12')
-            const endDate = new Date('2025-09-12')
-            const chunkSizeDays = 3 // 3-day chunks for demographics to prevent timeouts
             
-            let currentDate = new Date(startDate)
-            let chunkNumber = 1
-            
-            while (currentDate <= endDate) {
-              const chunkEnd = new Date(currentDate)
-              chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
-              
-              if (chunkEnd > endDate) {
-                chunkEnd.setTime(endDate.getTime())
-              }
-              
-              await MetaQueueService.addJob('historical_demographics', {
-                connectionId: connectionData.id,
-                brandId: state,
-                accessToken: tokenData.access_token,
-                accountId: accountId,
-                startDate: currentDate.toISOString().split('T')[0],
-                endDate: chunkEnd.toISOString().split('T')[0],
-                priority: 'normal',
-                description: `Demographics chunk ${chunkNumber} (${currentDate.toISOString().split('T')[0]} to ${chunkEnd.toISOString().split('T')[0]})`,
-                jobType: 'historical_demographics' as any,
-                metadata: {
-                  chunkNumber: chunkNumber,
-                  totalChunks: Math.ceil((endDate.getTime() - startDate.getTime()) / (chunkSizeDays * 24 * 60 * 60 * 1000))
-                }
-              })
-              
-              currentDate.setDate(currentDate.getDate() + chunkSizeDays)
-              chunkNumber++
-            }
-            
-            console.log(`[Meta Exchange] ✅ Queued 12-month historical sync + ${chunkNumber - 1} demographics chunks`)
+            console.log(`[Meta Exchange] ✅ Queued comprehensive 12-month sync (campaigns + insights + demographics)`)
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
             console.warn(`[Meta Exchange] ⚠️ Failed to queue historical sync:`, queueError)
             
-            // Update to completed since we have 30 days
+            // Update to completed if queue fails
             await supabase
               .from('platform_connections')
               .update({

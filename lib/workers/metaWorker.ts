@@ -228,8 +228,20 @@ export class MetaWorker {
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
         
-        // NOTE: Demographics are now handled separately to avoid timeouts
-        console.log(`[Meta Worker] ✅ Main data sync completed (demographics will be queued separately)`)
+        // Check if we should include demographics in this job
+        if (job.data.includeEverything) {
+          console.log(`[Meta Worker] 📊 Including demographics in comprehensive sync...`)
+          
+          try {
+            const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
+            await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)
+            console.log(`[Meta Worker] ✅ Demographics sync completed`)
+          } catch (demographicsError) {
+            console.error(`[Meta Worker] ⚠️ Demographics sync failed (continuing anyway):`, demographicsError)
+          }
+        }
+
+        console.log(`[Meta Worker] ✅ Comprehensive data sync completed (campaigns + insights + demographics)`)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
