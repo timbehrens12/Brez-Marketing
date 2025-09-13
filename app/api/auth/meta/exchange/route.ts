@@ -176,30 +176,32 @@ export async function POST(request: NextRequest) {
            })
            
            // Job 2: Demographics ONLY for periods with actual campaign data
-           // Query existing insights to find active date ranges
-           const { data: activeDates } = await supabase
-             .from('meta_ad_daily_insights')
-             .select('date')
-             .eq('brand_id', state)
-             .gte('date', '2024-09-12')
-             .lte('date', '2025-09-12')
-             .order('date')
+           // Query Meta API directly to find active date ranges (don't rely on existing DB data)
+           console.log('[Meta Exchange] 🔍 Querying Meta API to find active campaign periods...')
            
+           try {
+             const metaApiUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?fields=date_start,date_stop&access_token=${tokenData.access_token}&time_range={"since":"2024-09-12","until":"2025-09-12"}&time_increment=1&limit=500`
+             const metaResponse = await fetch(metaApiUrl)
+             const metaData = await metaResponse.json()
+             
+             const activeDates = metaData.data?.map(item => item.date_start).filter(Boolean) || []
+             console.log(`[Meta Exchange] 📊 Found ${activeDates.length} active dates from Meta API`)
+             
            if (activeDates && activeDates.length > 0) {
              // Group consecutive dates into chunks of 30 days max
              const dateChunks = []
-             let currentChunk = [activeDates[0].date]
+             let currentChunk = [activeDates[0]]
              
              for (let i = 1; i < activeDates.length; i++) {
-               const currentDate = new Date(activeDates[i].date)
+               const currentDate = new Date(activeDates[i])
                const chunkStart = new Date(currentChunk[0])
                const daysDiff = Math.floor((currentDate.getTime() - chunkStart.getTime()) / (1000 * 60 * 60 * 24))
                
                if (daysDiff <= 30 && currentChunk.length < 30) {
-                 currentChunk.push(activeDates[i].date)
+                 currentChunk.push(activeDates[i])
                } else {
                  dateChunks.push([...currentChunk])
-                 currentChunk = [activeDates[i].date]
+                 currentChunk = [activeDates[i]]
                }
              }
              if (currentChunk.length > 0) dateChunks.push(currentChunk)
@@ -230,7 +232,33 @@ export async function POST(request: NextRequest) {
              
              console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} smart demographics chunks (only active periods)`)
            } else {
-             console.log(`[Meta Exchange] ℹ️ No historical campaign data found, skipping demographics backfill`)
+             console.log(`[Meta Exchange] ℹ️ No active campaign dates found from Meta API, skipping demographics backfill`)
+           }
+           } catch (metaApiError) {
+             console.warn(`[Meta Exchange] ⚠️ Failed to query Meta API for active dates:`, metaApiError)
+             console.log(`[Meta Exchange] 🔄 Falling back to full 12-month demographics sync...`)
+             
+             // Fallback: Create a single comprehensive demographics job for full 12 months
+             await MetaQueueService.addJob('historical_demographics', {
+               connectionId: connectionData.id,
+               brandId: state,
+               accessToken: tokenData.access_token,
+               accountId: accountId,
+               timeRange: {
+                 since: '2024-09-12',
+                 until: '2025-09-12'
+               },
+               priority: 'medium',
+               description: 'Fallback: Full 12-month demographics sync',
+               jobType: 'historical_demographics' as any,
+               metadata: {
+                 chunkNumber: 1,
+                 totalChunks: 1,
+                 fallback: true
+               }
+             })
+             
+             console.log(`[Meta Exchange] ✅ Queued fallback demographics job`)
            }
             
             // Log message handled above in smart demographics section
