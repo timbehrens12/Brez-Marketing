@@ -175,41 +175,65 @@ export async function POST(request: NextRequest) {
              includeEverything: false  // No demographics in main job
            })
            
-           // Job 2: Demographics in small chunks to avoid timeout
-           // Create 7-day chunks for demographics (~52 chunks total)
-           const startDate = new Date('2024-09-12')
-           const endDate = new Date('2025-09-12')
-           const chunkDays = 7   // 7-day chunks to stay well under timeout
+           // Job 2: Demographics ONLY for periods with actual campaign data
+           // Query existing insights to find active date ranges
+           const { data: activeDates } = await supabase
+             .from('meta_ad_daily_insights')
+             .select('date')
+             .eq('brand_id', state)
+             .gte('date', '2024-09-12')
+             .lte('date', '2025-09-12')
+             .order('date')
            
-           let currentStart = new Date(startDate)
-           let chunkNumber = 1
-           
-           while (currentStart < endDate) {
-             const currentEnd = new Date(currentStart)
-             currentEnd.setDate(currentEnd.getDate() + chunkDays - 1)
-             if (currentEnd > endDate) currentEnd.setTime(endDate.getTime())
+           if (activeDates && activeDates.length > 0) {
+             // Group consecutive dates into chunks of 30 days max
+             const dateChunks = []
+             let currentChunk = [activeDates[0].date]
              
-             await MetaQueueService.addJob('historical_demographics', {
-               connectionId: connectionData.id,
-               brandId: state,
-               accessToken: tokenData.access_token,
-               accountId: accountId,
-               startDate: currentStart.toISOString().split('T')[0],
-               endDate: currentEnd.toISOString().split('T')[0],
-               priority: 'medium',
-               description: `Demographics chunk ${chunkNumber} (${currentStart.toISOString().split('T')[0]} to ${currentEnd.toISOString().split('T')[0]})`,
-               jobType: 'historical_demographics' as any,
-               metadata: {
-                 chunkNumber: chunkNumber,
-                 totalChunks: Math.ceil((endDate.getTime() - startDate.getTime()) / (chunkDays * 24 * 60 * 60 * 1000))
+             for (let i = 1; i < activeDates.length; i++) {
+               const currentDate = new Date(activeDates[i].date)
+               const chunkStart = new Date(currentChunk[0])
+               const daysDiff = Math.floor((currentDate.getTime() - chunkStart.getTime()) / (1000 * 60 * 60 * 24))
+               
+               if (daysDiff <= 30 && currentChunk.length < 30) {
+                 currentChunk.push(activeDates[i].date)
+               } else {
+                 dateChunks.push([...currentChunk])
+                 currentChunk = [activeDates[i].date]
                }
-             })
+             }
+             if (currentChunk.length > 0) dateChunks.push(currentChunk)
              
-             currentStart.setDate(currentStart.getDate() + chunkDays)
-             chunkNumber++
+             // Create jobs only for chunks with actual data
+             for (let i = 0; i < dateChunks.length; i++) {
+               const chunk = dateChunks[i]
+               const startDate = chunk[0]
+               const endDate = chunk[chunk.length - 1]
+               
+               await MetaQueueService.addJob('historical_demographics', {
+                 connectionId: connectionData.id,
+                 brandId: state,
+                 accessToken: tokenData.access_token,
+                 accountId: accountId,
+                 startDate: startDate,
+                 endDate: endDate,
+                 priority: 'medium',
+                 description: `Demographics for active period ${i + 1}/${dateChunks.length} (${startDate} to ${endDate})`,
+                 jobType: 'historical_demographics' as any,
+                 metadata: {
+                   chunkNumber: i + 1,
+                   totalChunks: dateChunks.length,
+                   activeDatesCount: chunk.length
+                 }
+               })
+             }
+             
+             console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} smart demographics chunks (only active periods)`)
+           } else {
+             console.log(`[Meta Exchange] ℹ️ No historical campaign data found, skipping demographics backfill`)
            }
             
-            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + ${chunkNumber-1} demographics chunks (7-day each)`)
+            // Log message handled above in smart demographics section
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
