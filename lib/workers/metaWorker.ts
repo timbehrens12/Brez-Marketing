@@ -227,7 +227,45 @@ export class MetaWorker {
         // Call the specific fetch methods directly with our date range - FORCE DEPLOY v6 FINAL
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
-        await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)
+        
+        // For demographics, use smaller chunks to avoid timeout (7 days max)
+        const chunkSizeDays = 7
+        const startDateObj = new Date(dateRange.since)
+        const endDateObj = new Date(dateRange.until)
+        
+        console.log(`[Meta Worker] Processing demographics in ${chunkSizeDays}-day chunks from ${dateRange.since} to ${dateRange.until}`)
+        
+        let currentDate = new Date(startDateObj)
+        let chunkNumber = 1
+        
+        while (currentDate <= endDateObj) {
+          const chunkEnd = new Date(currentDate)
+          chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
+          
+          if (chunkEnd > endDateObj) {
+            chunkEnd.setTime(endDateObj.getTime())
+          }
+          
+          const chunkRange = {
+            since: currentDate.toISOString().split('T')[0],
+            until: chunkEnd.toISOString().split('T')[0]
+          }
+          
+          console.log(`[Meta Worker] Demographics chunk ${chunkNumber}: ${chunkRange.since} to ${chunkRange.until}`)
+          
+          try {
+            await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, chunkRange)
+            console.log(`[Meta Worker] ✅ Demographics chunk ${chunkNumber} completed`)
+          } catch (chunkError) {
+            console.error(`[Meta Worker] ❌ Demographics chunk ${chunkNumber} failed:`, chunkError)
+            // Continue with other chunks even if one fails
+          }
+          
+          currentDate.setDate(currentDate.getDate() + chunkSizeDays)
+          chunkNumber++
+        }
+        
+        console.log(`[Meta Worker] ✅ All demographics chunks completed (${chunkNumber - 1} chunks processed)`)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
