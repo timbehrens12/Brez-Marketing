@@ -114,6 +114,17 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`[Brand Delete] ✅ Successfully deleted brand ${brandId} and all associated data`)
 
+    // Clean up any remaining queue jobs for this brand
+    try {
+      console.log(`[Brand Delete] Cleaning up queue jobs for brand ${brandId}`)
+      const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+      await MetaQueueService.cleanupJobsByBrand(brandId)
+      console.log(`[Brand Delete] ✅ Queue cleanup completed`)
+    } catch (queueError) {
+      console.warn(`[Brand Delete] ⚠️ Queue cleanup failed:`, queueError)
+      // Don't fail the deletion if queue cleanup fails
+    }
+
     return NextResponse.json({ 
       success: true, 
       message: 'Brand and all associated data deleted successfully',

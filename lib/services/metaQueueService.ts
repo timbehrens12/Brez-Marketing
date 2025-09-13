@@ -512,4 +512,33 @@ export class MetaQueueService {
 
     return data?.last_complete_at || null
   }
+
+  /**
+   * Clean up queue jobs for a deleted brand to prevent orphaned jobs
+   */
+  static async cleanupJobsByBrand(brandId: string): Promise<void> {
+    console.log(`[Meta Queue] Cleaning up jobs for brand ${brandId}`)
+    
+    try {
+      // Get all waiting and failed jobs
+      const waitingJobs = await metaQueue.getWaiting()
+      const failedJobs = await metaQueue.getFailed()
+      const allJobs = [...waitingJobs, ...failedJobs]
+      
+      let removedCount = 0
+      
+      for (const job of allJobs) {
+        if (job.data && job.data.brandId === brandId) {
+          await job.remove()
+          removedCount++
+          console.log(`[Meta Queue] Removed job ${job.id} for deleted brand ${brandId}`)
+        }
+      }
+      
+      console.log(`[Meta Queue] ✅ Removed ${removedCount} jobs for brand ${brandId}`)
+    } catch (error) {
+      console.error(`[Meta Queue] ❌ Error cleaning up jobs for brand ${brandId}:`, error)
+      throw error
+    }
+  }
 }

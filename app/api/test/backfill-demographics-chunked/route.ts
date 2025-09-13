@@ -30,14 +30,28 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Get account ID from metadata
+    // Get account ID from metadata or fetch it
     const metadata = connection.metadata as any
-    const accountId = metadata?.ad_account_id
+    let accountId = metadata?.ad_account_id
 
     if (!accountId) {
-      return NextResponse.json({
-        error: 'No ad account ID found in connection metadata'
-      }, { status: 400 })
+      // Try to get account ID from Meta API
+      try {
+        const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connection.access_token}&fields=id,name,account_status`)
+        const meData = await meResponse.json()
+        accountId = meData.data?.[0]?.id
+        
+        if (!accountId) {
+          return NextResponse.json({
+            error: 'Could not determine Meta ad account ID'
+          }, { status: 400 })
+        }
+      } catch (apiError) {
+        return NextResponse.json({
+          error: 'Failed to fetch Meta account ID',
+          details: apiError instanceof Error ? apiError.message : 'Unknown error'
+        }, { status: 500 })
+      }
     }
 
     console.log(`[Demographics Backfill] Using account ID: ${accountId}`)

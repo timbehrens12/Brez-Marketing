@@ -330,20 +330,19 @@ export class DataBackfillService {
       // BATCH INSERT: Process all records at once to avoid 15-second Vercel timeout
       console.log(`[DataBackfill] 🚀 BATCH PROCESSING ${allInsights.length} records to avoid timeout...`)
       
-      // Check if ad-level data already exists for these dates to avoid duplicates
+      // Check if ANY data already exists for these dates to avoid duplicates
       const dates = allInsights.map(insight => insight.date_start)
       const { data: existingData } = await supabaseAdmin
         .from('meta_ad_daily_insights')
         .select('date')
         .eq('brand_id', brandId)
         .in('date', dates)
-        .neq('ad_id', 'account_level_data') // Only check for real ad-level data
       
       const existingDates = new Set(existingData?.map(d => d.date) || [])
-      console.log(`[DataBackfill] Found existing ad-level data for ${existingDates.size} dates, skipping those...`)
+      console.log(`[DataBackfill] Found existing data for ${existingDates.size} dates, skipping those to prevent duplicates...`)
       
       const batchData = allInsights
-        .filter(insight => !existingDates.has(insight.date_start)) // Skip dates with existing ad-level data
+        .filter(insight => !existingDates.has(insight.date_start)) // Skip dates with existing data
         .map((insight: any) => {
           const actions = insight.actions || []
           const purchases = actions.find((action: any) => action.action_type === 'purchase')?.value || '0'
