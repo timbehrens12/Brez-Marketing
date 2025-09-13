@@ -121,16 +121,15 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
         
-        // Check if recent data already exists to avoid duplicates
+        // Check if ANY data already exists to avoid duplicates
         const { data: recentData } = await supabase
           .from('meta_ad_daily_insights')
           .select('date')
           .eq('brand_id', state)
-          .gte('date', '2025-08-13') // Within 30-day range
           .limit(1)
         
         if (recentData && recentData.length > 0) {
-          console.log(`[Meta Exchange] ℹ️ Recent data already exists - skipping 30-day sync to prevent duplicates`)
+          console.log(`[Meta Exchange] ℹ️ Data already exists - skipping all syncs to prevent duplicates`)
         } else {
           await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
           await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
@@ -144,12 +143,11 @@ export async function POST(request: NextRequest) {
           .from('meta_ad_daily_insights')
           .select('date')
           .eq('brand_id', state)
-          .lt('date', '2025-08-13') // Before the 30-day range
           .limit(1)
 
         if (existingData && existingData.length > 0) {
-          console.log(`[Meta Exchange] ℹ️ Historical data already exists - skipping 12-month sync`)
-          // Update to completed since we have both 30 days + historical data
+          console.log(`[Meta Exchange] ℹ️ Data already exists - skipping 12-month sync`)
+          // Update to completed since we have data
           await supabase
             .from('platform_connections')
             .update({
@@ -159,7 +157,7 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', connectionData.id)
         } else {
-          console.log(`[Meta Exchange] 📅 No historical data found - queueing 12-month sync`)
+          console.log(`[Meta Exchange] 📅 No data found - queueing 12-month sync`)
           
           const { MetaQueueService } = await import('@/lib/services/metaQueueService')
 
