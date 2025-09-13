@@ -228,44 +228,8 @@ export class MetaWorker {
         await DataBackfillService.fetchMetaCampaigns(brandId, accountId, freshToken, dateRange)
         await DataBackfillService.fetchMetaDailyInsights(brandId, accountId, freshToken, dateRange)
         
-        // For demographics, use smaller chunks to avoid timeout (7 days max)
-        const chunkSizeDays = 7
-        const startDateObj = new Date(dateRange.since)
-        const endDateObj = new Date(dateRange.until)
-        
-        console.log(`[Meta Worker] Processing demographics in ${chunkSizeDays}-day chunks from ${dateRange.since} to ${dateRange.until}`)
-        
-        let currentDate = new Date(startDateObj)
-        let chunkNumber = 1
-        
-        while (currentDate <= endDateObj) {
-          const chunkEnd = new Date(currentDate)
-          chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
-          
-          if (chunkEnd > endDateObj) {
-            chunkEnd.setTime(endDateObj.getTime())
-          }
-          
-          const chunkRange = {
-            since: currentDate.toISOString().split('T')[0],
-            until: chunkEnd.toISOString().split('T')[0]
-          }
-          
-          console.log(`[Meta Worker] Demographics chunk ${chunkNumber}: ${chunkRange.since} to ${chunkRange.until}`)
-          
-          try {
-            await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, chunkRange)
-            console.log(`[Meta Worker] ✅ Demographics chunk ${chunkNumber} completed`)
-          } catch (chunkError) {
-            console.error(`[Meta Worker] ❌ Demographics chunk ${chunkNumber} failed:`, chunkError)
-            // Continue with other chunks even if one fails
-          }
-          
-          currentDate.setDate(currentDate.getDate() + chunkSizeDays)
-          chunkNumber++
-        }
-        
-        console.log(`[Meta Worker] ✅ All demographics chunks completed (${chunkNumber - 1} chunks processed)`)
+        // NOTE: Demographics are now handled separately to avoid timeouts
+        console.log(`[Meta Worker] ✅ Main data sync completed (demographics will be queued separately)`)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
@@ -338,9 +302,15 @@ export class MetaWorker {
         })
       }
       
-      // Fetch demographic data for this chunk (age, gender, device, placement breakdowns)
-      // Note: Demographics processing can be slow, but for historical data we need it
-      const result = await fetchMetaAdInsights(brandId, start, end, false) // false for dryRun, demographics will be processed
+      // Fetch ONLY demographic data for this chunk to avoid timeout
+      const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
+      
+      const dateRange = {
+        since: startDate!,
+        until: endDate!
+      }
+      
+      const result = await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)
       
       if (!result.success) {
         throw new Error(`Historical demographics sync failed for chunk ${metadata?.chunkNumber}: ${result.error}`)

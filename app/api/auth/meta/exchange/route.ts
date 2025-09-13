@@ -176,7 +176,41 @@ export async function POST(request: NextRequest) {
               jobType: 'historical_campaigns' as any
             })
 
-            console.log(`[Meta Exchange] ✅ Queued 12-month historical sync`)
+            // Queue separate demographics sync in small chunks to avoid timeout
+            const startDate = new Date('2024-09-12')
+            const endDate = new Date('2025-09-12')
+            const chunkSizeDays = 14 // 2-week chunks for demographics
+            
+            let currentDate = new Date(startDate)
+            let chunkNumber = 1
+            
+            while (currentDate <= endDate) {
+              const chunkEnd = new Date(currentDate)
+              chunkEnd.setDate(chunkEnd.getDate() + chunkSizeDays - 1)
+              
+              if (chunkEnd > endDate) {
+                chunkEnd.setTime(endDate.getTime())
+              }
+              
+              await MetaQueueService.addJob('historical_demographics', {
+                connectionId: connectionData.id,
+                brandId: state,
+                accessToken: tokenData.access_token,
+                accountId: accountId,
+                timeRange: {
+                  since: currentDate.toISOString().split('T')[0],
+                  until: chunkEnd.toISOString().split('T')[0]
+                },
+                priority: 'normal',
+                description: `Demographics chunk ${chunkNumber} (${currentDate.toISOString().split('T')[0]} to ${chunkEnd.toISOString().split('T')[0]})`,
+                jobType: 'historical_demographics' as any
+              })
+              
+              currentDate.setDate(currentDate.getDate() + chunkSizeDays)
+              chunkNumber++
+            }
+            
+            console.log(`[Meta Exchange] ✅ Queued 12-month historical sync + ${chunkNumber - 1} demographics chunks`)
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
