@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
             // Queue separate demographics sync in small chunks to avoid timeout
             const startDate = new Date('2024-09-12')
             const endDate = new Date('2025-09-12')
-            const chunkSizeDays = 14 // 2-week chunks for demographics
+            const chunkSizeDays = 3 // 3-day chunks for demographics to prevent timeouts
             
             let currentDate = new Date(startDate)
             let chunkNumber = 1
