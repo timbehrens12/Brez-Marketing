@@ -134,8 +134,7 @@ export async function POST(request: NextRequest) {
         } else {
           await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
           await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
-          await DataBackfillService.fetchMetaDemographicsAndDevice(state, accountId, tokenData.access_token, fastRange)
-          console.log(`[Meta Exchange] ✅ 30-day sync completed with demographics and device data`)
+          console.log(`[Meta Exchange] ✅ 30-day sync completed (demographics will be synced in background)`)
         }
 
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
