@@ -255,9 +255,10 @@ export class MetaWorker {
           } catch (demographicsError) {
             console.error(`[Meta Worker] ⚠️ Demographics sync failed (continuing anyway):`, demographicsError)
           }
+          console.log(`[Meta Worker] ✅ Comprehensive data sync completed (campaigns + insights + demographics)`)
+        } else {
+          console.log(`[Meta Worker] ✅ Fast sync completed (campaigns + insights only, demographics queued separately)`)
         }
-
-        console.log(`[Meta Worker] ✅ Comprehensive data sync completed (campaigns + insights + demographics)`)
 
         // Update ETL job progress
         await this.updateEtlProgress(etlJobId, {
@@ -299,10 +300,21 @@ export class MetaWorker {
    * Process historical demographics job - chunk by chunk
    */
   static async processHistoricalDemographics(job: Job<MetaHistoricalJobData>): Promise<void> {
-    const { brandId, connectionId, accessToken, accountId, startDate, endDate, metadata } = job.data
+    const { brandId, connectionId, accessToken, accountId, startDate, endDate, metadata, timeRange } = job.data
 
-    console.log(`[Meta Worker] 👥 Processing historical demographics chunk ${metadata?.chunkNumber}/${metadata?.totalChunks} for brand ${brandId}`)
-    console.log(`[Meta Worker] Date range: ${startDate} to ${endDate}`)
+    console.log(`[Meta Worker] 👥 Processing historical demographics for brand ${brandId}`)
+    
+    // Handle both chunked jobs (startDate/endDate) and full-range jobs (timeRange)
+    const finalStartDate = startDate || timeRange?.since
+    const finalEndDate = endDate || timeRange?.until
+    
+    console.log(`[Meta Worker] Date range: ${finalStartDate} to ${finalEndDate}`)
+    
+    if (metadata?.chunkNumber) {
+      console.log(`[Meta Worker] Chunk ${metadata.chunkNumber}/${metadata.totalChunks}`)
+    } else {
+      console.log(`[Meta Worker] Full 12-month demographics sync`)
+    }
 
     try {
       // Get fresh access token
@@ -334,8 +346,8 @@ export class MetaWorker {
       const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
       
       const dateRange = {
-        since: startDate!,
-        until: endDate!
+        since: finalStartDate!,
+        until: finalEndDate!
       }
       
       const result = await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)

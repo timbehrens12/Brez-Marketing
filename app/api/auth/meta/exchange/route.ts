@@ -155,27 +155,42 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] 📅 Only ${uniqueDates.size} days found - queueing full 12-month sync`)
 
-        // Queue ONE comprehensive background job for everything
-        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
-
-        try {
-            // Single job that does EVERYTHING: campaigns, insights, AND demographics
-            await MetaQueueService.addJob('historical_campaigns', {
-              connectionId: connectionData.id,
-              brandId: state,
-              accessToken: tokenData.access_token,
-              accountId: accountId,
-              timeRange: {
-                since: '2024-09-12',  // Full 12 months back
-                until: '2025-09-12'   // Today  
-              },
-              priority: 'high',
-              description: 'Complete 12-month sync: campaigns + insights + demographics',
-              jobType: 'historical_campaigns' as any,
-              includeEverything: true  // Flag to include demographics in main job
-            })
+       // Queue TWO optimized background jobs
+       const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+       
+       try {
+           // Job 1: Fast campaigns + insights (no demographics to avoid timeout)
+           await MetaQueueService.addJob('historical_campaigns', {
+             connectionId: connectionData.id,
+             brandId: state,
+             accessToken: tokenData.access_token,
+             accountId: accountId,
+             timeRange: {
+               since: '2024-09-12',  // Full 12 months back
+               until: '2025-09-12'   // Today  
+             },
+             priority: 'high',
+             description: 'Fast 12-month sync: campaigns + insights only',
+             jobType: 'historical_campaigns' as any,
+             includeEverything: false  // No demographics in main job
+           })
+           
+           // Job 2: Demographics separately (can handle timeout better)
+           await MetaQueueService.addJob('historical_demographics', {
+             connectionId: connectionData.id,
+             brandId: state,
+             accessToken: tokenData.access_token,
+             accountId: accountId,
+             timeRange: {
+               since: '2024-09-12',  // Full 12 months back
+               until: '2025-09-12'   // Today  
+             },
+             priority: 'medium',
+             description: 'Demographics 12-month backfill',
+             jobType: 'historical_demographics' as any
+           })
             
-            console.log(`[Meta Exchange] ✅ Queued comprehensive 12-month sync (campaigns + insights + demographics)`)
+            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + separate demographics job`)
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
