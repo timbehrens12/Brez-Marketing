@@ -176,10 +176,10 @@ export async function POST(request: NextRequest) {
            })
            
            // Job 2: Demographics in small chunks to avoid timeout
-           // Create 30-day chunks for demographics (12 chunks total)
+           // Create 7-day chunks for demographics (~52 chunks total)
            const startDate = new Date('2024-09-12')
            const endDate = new Date('2025-09-12')
-           const chunkDays = 30  // 30-day chunks to stay well under timeout
+           const chunkDays = 7   // 7-day chunks to stay well under timeout
            
            let currentStart = new Date(startDate)
            let chunkNumber = 1
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
              chunkNumber++
            }
             
-            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + ${chunkNumber-1} demographics chunks`)
+            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + ${chunkNumber-1} demographics chunks (7-day each)`)
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
