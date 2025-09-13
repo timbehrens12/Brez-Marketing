@@ -31,8 +31,24 @@ export class MetaWorker {
       console.error('[Meta Worker] Queue error:', error)
     })
     
-    metaQueue.on('failed', (job, err) => {
-      console.error(`[Meta Worker] Job ${job.id} failed:`, err)
+    metaQueue.on('failed', async (job, err) => {
+      console.error(`[Meta Worker] Job ${job.id} failed:`, err.message)
+      
+      // Check if this is an orphaned connection error that should not be retried
+      const isOrphanedError = err.message.includes('Connection') && err.message.includes('does not exist') ||
+                             err.message.includes('FATAL: No Meta connections found') ||
+                             err.message.includes('Connection deleted but brand has other connections')
+      
+      if (isOrphanedError) {
+        console.log(`[Meta Worker] 🧹 Removing orphaned job ${job.id} - will not retry`)
+        try {
+          await job.remove()
+          console.log(`[Meta Worker] ✅ Successfully removed orphaned job ${job.id}`)
+        } catch (removeError) {
+          console.error(`[Meta Worker] ❌ Failed to remove orphaned job ${job.id}:`, removeError)
+        }
+      }
+      
       // Update ETL job status if available
       if (job.data.etlJobId) {
         MetaQueueService.updateEtlJob(job.data.etlJobId, {

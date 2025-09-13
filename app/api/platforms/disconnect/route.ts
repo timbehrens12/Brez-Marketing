@@ -34,6 +34,19 @@ export async function POST(request: Request) {
 
     console.log(`Found ${connections.length} connections to disconnect`)
 
+    // 🎯 CRITICAL FIRST: Clean up queue jobs BEFORE deleting connections to prevent orphaned jobs
+    if (platformType === 'meta') {
+      try {
+        console.log(`[Platform Disconnect] 🧹 Cleaning up Meta queue jobs for brand ${brandId}`)
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+        await MetaQueueService.cleanupJobsByBrand(brandId)
+        console.log(`[Platform Disconnect] ✅ Queue cleanup completed`)
+      } catch (queueError) {
+        console.error(`[Platform Disconnect] ⚠️ Queue cleanup failed:`, queueError)
+        // Continue with disconnect even if queue cleanup fails
+      }
+    }
+
     // For each connection, handle related data
     for (const connection of connections) {
       console.log('Processing connection:', connection.id)
@@ -88,35 +101,46 @@ export async function POST(request: Request) {
         // Use brandId directly since we already have it from the request
         // This ensures we delete all Meta data for this brand regardless of connection state
           
-        // Delete all Meta-related data for this brand
+        // Delete all Meta-related data for this brand - ALL 34 TABLES (COMPREHENSIVE FIX)
         const metaTables = [
-            'meta_campaigns',
-            'meta_campaign_daily_stats',
+            // Core Meta tables
             'meta_ad_insights',
             'meta_demographics',
             'meta_device_performance',
+            'meta_campaigns',
+            'meta_campaign_daily_stats',
             'meta_sync_history',
+            
+            // Daily insights and ads
             'meta_ad_daily_insights',
             'meta_adset_daily_insights',
             'meta_ads',
             'meta_adsets',
             'meta_adsets_daily_stats',
-            'meta_campaigns_enhanced',
-            'meta_campaign_daily_insights',
+            
+            // Enhanced tables
             'meta_ads_enhanced',
             'meta_adsets_enhanced',
+            'meta_campaigns_enhanced',
+            'meta_campaign_daily_insights',
+            'meta_campaign_insights',
+            
+            // Attribution and analytics
             'meta_attribution_analysis',
             'meta_attribution_data',
             'meta_audience_demographics',
             'meta_audience_performance',
             'meta_bid_strategy_performance',
             'meta_bidding_insights',
-            'meta_campaign_insights',
+            
+            // Creative and competitive insights
             'meta_competitive_insights',
             'meta_creative_insights',
             'meta_creative_performance',
             'meta_custom_audience_performance',
             'meta_custom_conversions',
+            
+            // Performance breakdown tables
             'meta_data_tracking',
             'meta_frequency_analysis',
             'meta_geographic_performance',

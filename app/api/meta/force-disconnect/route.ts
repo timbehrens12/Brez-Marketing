@@ -124,6 +124,19 @@ export async function POST(request: NextRequest) {
       console.log(`[Meta Force Disconnect] ✅ Meta ETL jobs removed`)
     }
 
+    // 🎯 CRITICAL: Clean up queue jobs for this brand to prevent future blocking
+    let queueCleanupSuccess = false
+    try {
+      console.log(`[Meta Force Disconnect] 🧹 Cleaning up queue jobs for brand ${brandId}`)
+      const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+      await MetaQueueService.cleanupJobsByBrand(brandId)
+      queueCleanupSuccess = true
+      console.log(`[Meta Force Disconnect] ✅ Queue cleanup completed`)
+    } catch (queueError) {
+      console.error(`[Meta Force Disconnect] ⚠️ Queue cleanup failed:`, queueError)
+      // Don't fail the whole operation if queue cleanup fails
+    }
+
     console.log(`[Meta Force Disconnect] 🎉 COMPLETE! Deleted ${totalDeleted} total records`)
 
     return NextResponse.json({
@@ -133,7 +146,8 @@ export async function POST(request: NextRequest) {
       tablesProcessed: allMetaTables.length,
       deletionResults,
       connectionDeleted: !connectionError,
-      etlJobsDeleted: !etlError
+      etlJobsDeleted: !etlError,
+      queueCleanupSuccess
     })
 
   } catch (error) {

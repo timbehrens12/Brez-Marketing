@@ -89,6 +89,9 @@ export class MetaQueueService {
       timeout: 45 * 60 * 1000, // 45 minute timeout per job (Meta API can be slow)
       stallInterval: 60000, // Check for stalled jobs every minute
       maxStalledCount: 3,
+      // 🎯 Auto-remove failed jobs that are clearly orphaned to prevent queue pollution
+      removeOnComplete: 50, // Keep more successful jobs for debugging
+      removeOnFail: 5, // Remove failed jobs quickly to prevent accumulation
     }
 
     try {
