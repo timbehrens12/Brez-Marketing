@@ -197,13 +197,15 @@ export async function POST(request: NextRequest) {
                 brandId: state,
                 accessToken: tokenData.access_token,
                 accountId: accountId,
-                timeRange: {
-                  since: currentDate.toISOString().split('T')[0],
-                  until: chunkEnd.toISOString().split('T')[0]
-                },
+                startDate: currentDate.toISOString().split('T')[0],
+                endDate: chunkEnd.toISOString().split('T')[0],
                 priority: 'normal',
                 description: `Demographics chunk ${chunkNumber} (${currentDate.toISOString().split('T')[0]} to ${chunkEnd.toISOString().split('T')[0]})`,
-                jobType: 'historical_demographics' as any
+                jobType: 'historical_demographics' as any,
+                metadata: {
+                  chunkNumber: chunkNumber,
+                  totalChunks: Math.ceil((endDate.getTime() - startDate.getTime()) / (chunkSizeDays * 24 * 60 * 60 * 1000))
+                }
               })
               
               currentDate.setDate(currentDate.getDate() + chunkSizeDays)
