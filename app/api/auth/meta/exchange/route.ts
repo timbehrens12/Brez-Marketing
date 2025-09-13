@@ -121,16 +121,21 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
         
-        // Check if ANY data already exists to avoid duplicates
+        // Check if SUBSTANTIAL data already exists (30+ days) to avoid duplicates
         const { data: recentData } = await supabase
           .from('meta_ad_daily_insights')
           .select('date')
           .eq('brand_id', state)
-          .limit(1)
+          .order('date', { ascending: false })
+          .limit(50)
         
-        if (recentData && recentData.length > 0) {
-          console.log(`[Meta Exchange] ℹ️ Data already exists - skipping all syncs to prevent duplicates`)
+        const uniqueDates = new Set(recentData?.map(d => d.date) || [])
+        const hasSubstantialData = uniqueDates.size >= 30 // 30+ days of data
+        
+        if (hasSubstantialData) {
+          console.log(`[Meta Exchange] ℹ️ Substantial data exists (${uniqueDates.size} days) - skipping 30-day sync`)
         } else {
+          console.log(`[Meta Exchange] 📅 Only ${uniqueDates.size} days found - proceeding with 30-day sync`)
           await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
           await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
           console.log(`[Meta Exchange] ✅ 30-day sync completed (demographics will be synced in background)`)
@@ -139,15 +144,10 @@ export async function POST(request: NextRequest) {
         console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
 
         // PHASE 2: Check if historical data already exists before queueing sync
-        const { data: existingData } = await supabase
-          .from('meta_ad_daily_insights')
-          .select('date')
-          .eq('brand_id', state)
-          .limit(1)
-
-        if (existingData && existingData.length > 0) {
-          console.log(`[Meta Exchange] ℹ️ Data already exists - skipping 12-month sync`)
-          // Update to completed since we have data
+        // Use the same substantial data check (reuse uniqueDates from above)
+        if (hasSubstantialData) {
+          console.log(`[Meta Exchange] ℹ️ Substantial historical data exists (${uniqueDates.size} days) - skipping 12-month queue`)
+          // Update to completed since we have substantial data
           await supabase
             .from('platform_connections')
             .update({
