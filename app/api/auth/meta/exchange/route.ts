@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
           until: '2025-09-12'   // Today
         }
 
-        console.log(`[Meta Exchange] ⚡ Phase 1: Fast 30-day sync...`)
+        console.log(`[Meta Exchange] ⚡ Queueing all syncs to background to prevent timeout...`)
         
         // Check if SUBSTANTIAL data already exists (30+ days) to avoid duplicates
         const { data: recentData } = await supabase
@@ -132,21 +132,10 @@ export async function POST(request: NextRequest) {
         const uniqueDates = new Set(recentData?.map(d => d.date) || [])
         const hasSubstantialData = uniqueDates.size >= 30 // 30+ days of data
         
+        console.log(`[Meta Exchange] 📊 Found ${uniqueDates.size} days of existing data`)
+        
         if (hasSubstantialData) {
-          console.log(`[Meta Exchange] ℹ️ Substantial data exists (${uniqueDates.size} days) - skipping 30-day sync`)
-        } else {
-          console.log(`[Meta Exchange] 📅 Only ${uniqueDates.size} days found - proceeding with 30-day sync`)
-          await DataBackfillService.fetchMetaCampaigns(state, accountId, tokenData.access_token, fastRange)
-          await DataBackfillService.fetchMetaDailyInsights(state, accountId, tokenData.access_token, fastRange)
-          console.log(`[Meta Exchange] ✅ 30-day sync completed (demographics will be synced in background)`)
-        }
-
-        console.log(`[Meta Exchange] ✅ Phase 1 complete - now queueing full historical sync`)
-
-        // PHASE 2: Check if historical data already exists before queueing sync
-        // Use the same substantial data check (reuse uniqueDates from above)
-        if (hasSubstantialData) {
-          console.log(`[Meta Exchange] ℹ️ Substantial historical data exists (${uniqueDates.size} days) - skipping 12-month queue`)
+          console.log(`[Meta Exchange] ℹ️ Substantial data exists (${uniqueDates.size} days) - skipping all syncs`)
           // Update to completed since we have substantial data
           await supabase
             .from('platform_connections')
@@ -156,12 +145,20 @@ export async function POST(request: NextRequest) {
               updated_at: new Date().toISOString()
             })
             .eq('id', connectionData.id)
-        } else {
-          console.log(`[Meta Exchange] 📅 No data found - queueing 12-month sync`)
           
-          const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+          return NextResponse.json({ 
+            success: true, 
+            message: 'Meta connected successfully - existing data found',
+            skipSync: true
+          })
+        }
 
-          try {
+        console.log(`[Meta Exchange] 📅 Only ${uniqueDates.size} days found - queueing full 12-month sync`)
+
+        // Queue full 12-month historical sync in background
+        const { MetaQueueService } = await import('@/lib/services/metaQueueService')
+
+        try {
             await MetaQueueService.addJob('historical_campaigns', {
               connectionId: connectionData.id,
               brandId: state,
@@ -227,7 +224,6 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString()
               })
               .eq('id', connectionData.id)
-          }
         }
 
       } catch (syncError) {
