@@ -175,22 +175,41 @@ export async function POST(request: NextRequest) {
              includeEverything: false  // No demographics in main job
            })
            
-           // Job 2: Demographics separately (can handle timeout better)
-           await MetaQueueService.addJob('historical_demographics', {
-             connectionId: connectionData.id,
-             brandId: state,
-             accessToken: tokenData.access_token,
-             accountId: accountId,
-             timeRange: {
-               since: '2024-09-12',  // Full 12 months back
-               until: '2025-09-12'   // Today  
-             },
-             priority: 'medium',
-             description: 'Demographics 12-month backfill',
-             jobType: 'historical_demographics' as any
-           })
+           // Job 2: Demographics in small chunks to avoid timeout
+           // Create 30-day chunks for demographics (12 chunks total)
+           const startDate = new Date('2024-09-12')
+           const endDate = new Date('2025-09-12')
+           const chunkDays = 30  // 30-day chunks to stay well under timeout
+           
+           let currentStart = new Date(startDate)
+           let chunkNumber = 1
+           
+           while (currentStart < endDate) {
+             const currentEnd = new Date(currentStart)
+             currentEnd.setDate(currentEnd.getDate() + chunkDays - 1)
+             if (currentEnd > endDate) currentEnd.setTime(endDate.getTime())
+             
+             await MetaQueueService.addJob('historical_demographics', {
+               connectionId: connectionData.id,
+               brandId: state,
+               accessToken: tokenData.access_token,
+               accountId: accountId,
+               startDate: currentStart.toISOString().split('T')[0],
+               endDate: currentEnd.toISOString().split('T')[0],
+               priority: 'medium',
+               description: `Demographics chunk ${chunkNumber} (${currentStart.toISOString().split('T')[0]} to ${currentEnd.toISOString().split('T')[0]})`,
+               jobType: 'historical_demographics' as any,
+               metadata: {
+                 chunkNumber: chunkNumber,
+                 totalChunks: Math.ceil((endDate.getTime() - startDate.getTime()) / (chunkDays * 24 * 60 * 60 * 1000))
+               }
+             })
+             
+             currentStart.setDate(currentStart.getDate() + chunkDays)
+             chunkNumber++
+           }
             
-            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + separate demographics job`)
+            console.log(`[Meta Exchange] ✅ Queued fast campaigns+insights job + ${chunkNumber-1} demographics chunks`)
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {

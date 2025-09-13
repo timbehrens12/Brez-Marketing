@@ -279,11 +279,9 @@ export class MetaWorker {
         completed_at: new Date().toISOString()
       })
 
-      // Update connection status to completed (for single historical job or final chunk)
-      if (!metadata?.chunkNumber || metadata?.chunkNumber === metadata?.totalChunks) {
-        console.log(`[Meta Worker] ✅ Historical sync completed - updating connection sync status to completed`)
-        await this.updateConnectionSyncStatus(connectionId, 'completed')
-      }
+      // DON'T update connection status here anymore - demographics chunks handle this
+      // The final demographics chunk will update the connection status to 'completed'
+      console.log(`[Meta Worker] ℹ️ Campaigns completed but demographics chunks still processing - keeping sync status as 'syncing'`)
 
     } catch (error) {
       console.error(`[Meta Worker] Historical campaigns failed for chunk ${metadata?.chunkNumber}:`, error)
@@ -369,6 +367,13 @@ export class MetaWorker {
       }
       
       console.log(`[Meta Worker] ✅ Historical demographics chunk ${metadata?.chunkNumber}/${metadata?.totalChunks} completed for brand ${brandId}`)
+      
+      // If this is the final demographics chunk, update connection status to completed
+      if (metadata?.chunkNumber && metadata?.totalChunks && metadata.chunkNumber === metadata.totalChunks) {
+        console.log(`[Meta Worker] 🎉 Final demographics chunk completed - updating connection status to completed`)
+        await this.updateConnectionSyncStatus(connectionId, 'completed')
+        console.log(`[Meta Worker] ✅ Updated connection ${connectionId} sync status to completed`)
+      }
       
     } catch (error) {
       console.error(`[Meta Worker] Historical demographics failed for brand ${brandId}:`, error)
