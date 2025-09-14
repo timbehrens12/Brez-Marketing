@@ -151,9 +151,31 @@ export default function DashboardPage() {
   const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
   
   // console.log('[Dashboard] useState calls starting')
-  const [dateRange, setDateRange] = useState({
-    from: startOfDay(new Date()),
-    to: endOfDay(new Date()),
+  // Initialize date range to "This year" instead of today-only
+  const [dateRange, setDateRange] = useState(() => {
+    // Check for saved date range first
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dashboard-date-range')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          return {
+            from: new Date(parsed.from),
+            to: new Date(parsed.to)
+          }
+        }
+      } catch (error) {
+        // console.error('Error loading saved date range:', error)
+      }
+    }
+    
+    // Default to "This year" (January 1st to today)
+    const now = new Date()
+    const startOfYear = new Date(now.getFullYear(), 0, 1) // January 1st of current year
+    return {
+      from: startOfDay(startOfYear),
+      to: endOfDay(now),
+    }
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
@@ -166,7 +188,7 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with cooldown
+  // Create a controlled setDateRange with cooldown and persistence
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
@@ -174,6 +196,18 @@ export default function DashboardPage() {
     
     setIsDateRangeLoading(true)
     setDateRange(range)
+    
+    // Save to localStorage for persistence across refreshes
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dashboard-date-range', JSON.stringify({
+          from: range.from.toISOString(),
+          to: range.to.toISOString()
+        }))
+      } catch (error) {
+        // console.error('Error saving date range:', error)
+      }
+    }
     
     // Set a minimum cooldown period
     setTimeout(() => {
