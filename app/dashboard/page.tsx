@@ -151,25 +151,9 @@ export default function DashboardPage() {
   const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
   
   // console.log('[Dashboard] useState calls starting')
-  // Initialize date range to "This year" instead of today-only
+  // Initialize date range to "This year" by default - ignore localStorage to always show full historical data
   const [dateRange, setDateRange] = useState(() => {
-    // Check for saved date range first
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('dashboard-date-range')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          return {
-            from: new Date(parsed.from),
-            to: new Date(parsed.to)
-          }
-        }
-      } catch (error) {
-        // console.error('Error loading saved date range:', error)
-      }
-    }
-    
-    // Default to "This year" (January 1st to today)
+    // ALWAYS default to "This year" (January 1st to today) for full historical data coverage
     const now = new Date()
     const startOfYear = new Date(now.getFullYear(), 0, 1) // January 1st of current year
     return {
