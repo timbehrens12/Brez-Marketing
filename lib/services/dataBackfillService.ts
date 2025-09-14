@@ -226,7 +226,7 @@ export class DataBackfillService {
   /**
    * PUBLIC: Fetch Meta demographics and device performance data for historical analysis
    */
-  public static async fetchMetaDemographicsAndDevice(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
+  public static async fetchMetaDemographicsAndDevice(brandId: string, adAccountId: string, accessToken: string, dateRange: any, connectionId?: string) {
     console.log(`[DataBackfill] 🚀 LIGHTWEIGHT demographics fetch for brand ${brandId} from ${dateRange.since} to ${dateRange.until}`)
     
     try {
@@ -237,17 +237,41 @@ export class DataBackfillService {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       )
       
-      // Get platform connection
-      const { data: connection } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('brand_id', brandId)
-        .eq('platform', 'meta')
-        .eq('status', 'connected')
-        .single()
-      
-      if (!connection) {
-        throw new Error('No active Meta connection found')
+      // Use provided connectionId or look up active connection
+      let connection
+      if (connectionId) {
+        console.log(`[DataBackfill] 📊 Using provided connectionId ${connectionId} for demographics backfill`)
+        connection = { id: connectionId }
+      } else {
+        // Get platform connection (try active first, then any connection for this brand)
+        let { data: activeConnection } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('platform', 'meta')
+          .eq('status', 'connected')
+          .single()
+        
+        // If no active connection, try to find any Meta connection for this brand (for historical jobs)
+        if (!activeConnection) {
+          const { data: anyConnection } = await supabase
+            .from('platform_connections')
+            .select('*')
+            .eq('brand_id', brandId)
+            .eq('platform', 'meta')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          
+          if (anyConnection) {
+            connection = anyConnection
+            console.log(`[DataBackfill] 📊 Using historical connection ${connection.id} for demographics backfill`)
+          } else {
+            throw new Error('No Meta connection found for this brand')
+          }
+        } else {
+          connection = activeConnection
+        }
       }
       
       // Convert date range to proper format

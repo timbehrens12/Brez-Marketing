@@ -348,7 +348,7 @@ export class MetaWorker {
         until: finalEndDate!
       }
       
-      const result = await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange)
+      const result = await DataBackfillService.fetchMetaDemographicsAndDevice(brandId, accountId, freshToken, dateRange, connectionId)
       
       if (!result.success) {
         throw new Error(`Historical demographics sync failed for chunk ${metadata?.chunkNumber}: ${result.error}`)
