@@ -323,13 +323,10 @@ export class DataBackfillService {
           updated_at: new Date().toISOString()
         }))
         
-        // Batch insert all records at once with proper duplicate prevention
+        // Batch insert all records at once (no upsert since no unique constraint exists)
         const { error: insertError } = await supabase
           .from('meta_demographics')
-          .upsert(demographicRecords, {
-            onConflict: 'brand_id,date_range_start,breakdown_type,breakdown_value',
-            ignoreDuplicates: true
-          })
+          .insert(demographicRecords)
         
         if (insertError) {
           throw new Error(`Database insert error: ${insertError.message}`)
