@@ -341,14 +341,11 @@ export async function GET(request: NextRequest) {
       const normalizedFromDate = normalizeDate(from);
       const normalizedToDate = normalizeDate(to);
       
-      // CRITICAL FIX: Use meta_ad_daily_insights table for historical data instead of meta_campaign_daily_stats
-      // meta_campaign_daily_stats only has recent data, meta_ad_daily_insights has full historical data
-      console.log(`[Meta Campaigns] Fetching historical daily campaign stats from meta_ad_daily_insights table for ${normalizedFromDate} to ${normalizedToDate}`)
-      
-      // Aggregate ad-level data to campaign level for full historical coverage
+      // Get daily ad stats for all campaigns in the date range from the correct table
+      console.log(`[Meta Campaigns] Fetching daily campaign stats from ${normalizedFromDate} to ${normalizedToDate}`)
       let { data: dailyAdStats, error: statsError } = await supabase
-        .from('meta_ad_daily_insights')
-        .select('campaign_id, date, spent, impressions, clicks, reach, conversions, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
+        .from('meta_campaign_daily_stats')
+        .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
         .lte('date', normalizedToDate);
@@ -358,74 +355,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
       }
 
-      // Aggregate ad-level data to campaign level by date
-      const campaignDailyStatsMap = new Map<string, any>()
-      
+      // Debug: Show what daily stats were found
+      console.log(`[Meta Campaigns API] Found ${dailyAdStats?.length || 0} daily campaign stats for date range ${normalizedFromDate} to ${normalizedToDate}`)
       if (dailyAdStats && dailyAdStats.length > 0) {
-        console.log(`[Meta Campaigns API] Found ${dailyAdStats.length} ad-level daily stats for date range ${normalizedFromDate} to ${normalizedToDate}`)
-        
-        // Group and aggregate by campaign_id + date
-        dailyAdStats.forEach((adStat: any) => {
-          const key = `${adStat.campaign_id}_${adStat.date}`
-          const existing = campaignDailyStatsMap.get(key)
-          
-          if (existing) {
-            // Aggregate the metrics
-            existing.spend += (adStat.spent || 0)
-            existing.impressions += (adStat.impressions || 0)
-            existing.clicks += (adStat.clicks || 0)
-            existing.reach += (adStat.reach || 0)
-            existing.conversions += (adStat.conversions || 0)
-            existing.purchase_count += (adStat.purchase_count || 0)
-            existing.page_view_count += (adStat.page_view_count || 0)
-            existing.add_to_cart_count += (adStat.add_to_cart_count || 0)
-            existing.initiate_checkout_count += (adStat.initiate_checkout_count || 0)
-            existing.add_payment_info_count += (adStat.add_payment_info_count || 0)
-            existing.view_content_count += (adStat.view_content_count || 0)
-            existing.lead_count += (adStat.lead_count || 0)
-            existing.complete_registration_count += (adStat.complete_registration_count || 0)
-            existing.search_count += (adStat.search_count || 0)
-            existing.add_to_wishlist_count += (adStat.add_to_wishlist_count || 0)
-          } else {
-            // Create new campaign daily stat entry
-            campaignDailyStatsMap.set(key, {
-              campaign_id: adStat.campaign_id,
-              date: adStat.date,
-              spend: adStat.spent || 0,
-              impressions: adStat.impressions || 0,
-              clicks: adStat.clicks || 0,
-              reach: adStat.reach || 0,
-              conversions: adStat.conversions || 0,
-              roas: 0, // Will calculate after aggregation
-              purchase_count: adStat.purchase_count || 0,
-              page_view_count: adStat.page_view_count || 0,
-              add_to_cart_count: adStat.add_to_cart_count || 0,
-              initiate_checkout_count: adStat.initiate_checkout_count || 0,
-              add_payment_info_count: adStat.add_payment_info_count || 0,
-              view_content_count: adStat.view_content_count || 0,
-              lead_count: adStat.lead_count || 0,
-              complete_registration_count: adStat.complete_registration_count || 0,
-              search_count: adStat.search_count || 0,
-              add_to_wishlist_count: adStat.add_to_wishlist_count || 0
-            })
-          }
-        })
-        
-        // Convert map back to array and calculate ROAS
-        dailyAdStats = Array.from(campaignDailyStatsMap.values()).map((stat: any) => {
-          // Calculate ROAS: revenue / spend
-          if (stat.spend > 0 && stat.purchase_count > 0) {
-            // Estimate revenue from purchase count (assuming some value per purchase)
-            const estimatedRevenue = stat.purchase_count * 50 // Rough estimate, adjust as needed
-            stat.roas = estimatedRevenue / stat.spend
-          } else {
-            stat.roas = 0
-          }
-          return stat
-        })
-        
-        console.log(`[Meta Campaigns API] Aggregated ${dailyAdStats.length} campaign daily stats from ad-level data`)
-        console.log(`[Meta Campaigns API] Sample aggregated stat:`, dailyAdStats[0])
+        console.log(`[Meta Campaigns API] Sample daily stat:`, dailyAdStats[0])
       } else {
         console.log(`[Meta Campaigns API] ⚠️  NO DAILY STATS FOUND for date range ${normalizedFromDate} to ${normalizedToDate}`)
         
@@ -445,29 +378,12 @@ export async function GET(request: NextRequest) {
             .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
             .eq('brand_id', brandId)
             .eq('date', yesterdayStr)
-            
+          
           if (!yesterdayError && yesterdayStats && yesterdayStats.length > 0) {
-            console.log(`[Meta Campaigns API] ✅ Found ${yesterdayStats.length} records for yesterday (${yesterdayStr}), using as fallback`)
+            console.log(`[Meta Campaigns API] Found ${yesterdayStats.length} fallback stats for yesterday (${yesterdayStr})`)
             dailyAdStats = yesterdayStats
           } else {
-            console.log(`[Meta Campaigns API] ❌ No data found for yesterday either (${yesterdayStr})`)
-            
-            // Last resort: get the most recent data available
-            console.log(`[Meta Campaigns API] Attempting to get most recent data available...`)
-            const { data: recentStats, error: recentError } = await supabase
-              .from('meta_campaign_daily_stats')
-              .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
-              .eq('brand_id', brandId)
-              .order('date', { ascending: false })
-              .limit(100)
-              
-            if (!recentError && recentStats && recentStats.length > 0) {
-              const mostRecentDate = recentStats[0].date
-              console.log(`[Meta Campaigns API] ✅ Found ${recentStats.length} records for most recent date (${mostRecentDate}), using as fallback`)
-              dailyAdStats = recentStats
-            } else {
-              console.log(`[Meta Campaigns API] ❌ No data found in database at all for brand ${brandId}`)
-            }
+            console.log(`[Meta Campaigns API] No fallback data available for yesterday either`)
           }
         }
       }
