@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
              console.log(`[Meta Exchange] 📊 Found ${activeDates.length} active dates from Meta API`)
              
            if (activeDates && activeDates.length > 0) {
-             // Group consecutive dates into chunks of 30 days max
+             // Group consecutive dates into chunks of 7 days max to avoid timeout
              const dateChunks = []
              let currentChunk = [activeDates[0]]
              
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
                const chunkStart = new Date(currentChunk[0])
                const daysDiff = Math.floor((currentDate.getTime() - chunkStart.getTime()) / (1000 * 60 * 60 * 24))
                
-               if (daysDiff <= 30 && currentChunk.length < 30) {
+               if (daysDiff <= 7 && currentChunk.length < 7) {
                  currentChunk.push(activeDates[i])
                } else {
                  dateChunks.push([...currentChunk])
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
                  startDate: startDate,
                  endDate: endDate,
                  priority: 'medium',
-                 description: `Demographics for active period ${i + 1}/${dateChunks.length} (${startDate} to ${endDate})`,
+                 description: `Demographics chunk ${i + 1}/${dateChunks.length}: ${startDate} to ${endDate} (${chunk.length} days)`,
                  jobType: 'historical_demographics' as any,
                  metadata: {
                    chunkNumber: i + 1,
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
                })
              }
              
-             console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} smart demographics chunks (only active periods)`)
+             console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} smart demographics chunks (7-day max, only active periods)`)
            } else {
              console.log(`[Meta Exchange] ℹ️ No active campaign dates found from Meta API, skipping demographics backfill`)
            }
