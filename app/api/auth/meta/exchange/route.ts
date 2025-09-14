@@ -232,37 +232,8 @@ export async function POST(request: NextRequest) {
             }
              
              console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} comprehensive demographics chunks (monthly coverage)`)
-           } else {
-             console.log(`[Meta Exchange] ℹ️ No active campaign dates found from Meta API, skipping demographics backfill`)
-           }
-           } catch (metaApiError) {
-             console.warn(`[Meta Exchange] ⚠️ Failed to query Meta API for active dates:`, metaApiError)
-             console.log(`[Meta Exchange] 🔄 Falling back to full 12-month demographics sync...`)
-             
-             // Fallback: Create a single comprehensive demographics job for full 12 months
-             await MetaQueueService.addJob('historical_demographics', {
-               connectionId: connectionData.id,
-               brandId: state,
-               accessToken: tokenData.access_token,
-               accountId: accountId,
-               timeRange: {
-                 since: '2024-09-12',
-                 until: '2025-09-12'
-               },
-               priority: 'medium',
-               description: 'Fallback: Full 12-month demographics sync',
-               jobType: 'historical_demographics' as any,
-               metadata: {
-                 chunkNumber: 1,
-                 totalChunks: 1,
-                 fallback: true
-               }
-             })
-             
-             console.log(`[Meta Exchange] ✅ Queued fallback demographics job`)
-           }
             
-            // Log message handled above in smart demographics section
+            // Demographics jobs queued successfully
             
             // Keep status as 'syncing' - worker will update to 'completed'
           } catch (queueError) {
