@@ -175,62 +175,63 @@ export async function POST(request: NextRequest) {
              includeEverything: false  // No demographics in main job
            })
            
-           // Job 2: Demographics ONLY for periods with actual campaign data
-           // Query Meta API directly to find active date ranges (don't rely on existing DB data)
-           console.log('[Meta Exchange] 🔍 Querying Meta API to find active campaign periods...')
-           
-           try {
-             const metaApiUrl = `https://graph.facebook.com/v18.0/${accountId}/insights?fields=date_start,date_stop&access_token=${tokenData.access_token}&time_range={"since":"2024-09-12","until":"2025-09-12"}&time_increment=1&limit=500`
-             const metaResponse = await fetch(metaApiUrl)
-             const metaData = await metaResponse.json()
+          // Job 2: COMPREHENSIVE Demographics sync (abandoned "smart" approach - only 10.8% coverage)
+          // Use monthly chunks to ensure ALL campaign dates get demographics coverage
+          console.log('[Meta Exchange] 📅 Setting up comprehensive 12-month demographics sync (monthly chunks)')
+          
+          const monthlyChunks = []
+          const currentDate = new Date()
+          
+          // Create 12 monthly chunks going back in time
+          for (let monthsBack = 0; monthsBack < 12; monthsBack++) {
+            const chunkEndDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - monthsBack, currentDate.getDate())
+            const chunkStartDate = new Date(chunkEndDate.getFullYear(), chunkEndDate.getMonth(), 1)
+            
+            // Don't include future months
+            if (chunkStartDate <= currentDate) {
+              monthlyChunks.push({
+                startDate: chunkStartDate.toISOString().split('T')[0],
+                endDate: chunkEndDate.toISOString().split('T')[0],
+                monthName: chunkStartDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+              })
+            }
+          }
+          
+          console.log(`[Meta Exchange] 📊 Created ${monthlyChunks.length} monthly chunks for comprehensive coverage`)
+          
+          // Queue each monthly chunk (no need for complex date grouping)
+          const dateChunks = monthlyChunks.map((chunk, index) => ({
+            startDate: chunk.startDate,
+            endDate: chunk.endDate,
+            monthName: chunk.monthName,
+            index: index + 1,
+            total: monthlyChunks.length
+          }))
              
-             const activeDates = metaData.data?.map(item => item.date_start).filter(Boolean) || []
-             console.log(`[Meta Exchange] 📊 Found ${activeDates.length} active dates from Meta API`)
+            // Create jobs for monthly chunks to ensure comprehensive coverage
+            for (let i = 0; i < dateChunks.length; i++) {
+              const chunk = dateChunks[i]
+              
+              await MetaQueueService.addJob('historical_demographics', {
+                connectionId: connectionData.id,
+                brandId: state,
+                accessToken: tokenData.access_token,
+                accountId: accountId,
+                startDate: chunk.startDate,
+                endDate: chunk.endDate,
+                priority: 'medium',
+                description: `Demographics ${chunk.monthName} (chunk ${chunk.index}/${chunk.total})`,
+                jobType: 'historical_demographics' as any,
+                metadata: {
+                  chunkNumber: chunk.index,
+                  totalChunks: chunk.total,
+                  monthName: chunk.monthName,
+                  comprehensive: true
+                }
+              })
+            }
              
-           if (activeDates && activeDates.length > 0) {
-             // Group consecutive dates into chunks of 7 days max to avoid timeout
-             const dateChunks = []
-             let currentChunk = [activeDates[0]]
-             
-             for (let i = 1; i < activeDates.length; i++) {
-               const currentDate = new Date(activeDates[i])
-               const chunkStart = new Date(currentChunk[0])
-               const daysDiff = Math.floor((currentDate.getTime() - chunkStart.getTime()) / (1000 * 60 * 60 * 24))
-               
-               if (daysDiff <= 7 && currentChunk.length < 7) {
-                 currentChunk.push(activeDates[i])
-               } else {
-                 dateChunks.push([...currentChunk])
-                 currentChunk = [activeDates[i]]
-               }
-             }
-             if (currentChunk.length > 0) dateChunks.push(currentChunk)
-             
-             // Create jobs only for chunks with actual data
-             for (let i = 0; i < dateChunks.length; i++) {
-               const chunk = dateChunks[i]
-               const startDate = chunk[0]
-               const endDate = chunk[chunk.length - 1]
-               
-               await MetaQueueService.addJob('historical_demographics', {
-                 connectionId: connectionData.id,
-                 brandId: state,
-                 accessToken: tokenData.access_token,
-                 accountId: accountId,
-                 startDate: startDate,
-                 endDate: endDate,
-                 priority: 'medium',
-                 description: `Demographics chunk ${i + 1}/${dateChunks.length}: ${startDate} to ${endDate} (${chunk.length} days)`,
-                 jobType: 'historical_demographics' as any,
-                 metadata: {
-                   chunkNumber: i + 1,
-                   totalChunks: dateChunks.length,
-                   activeDatesCount: chunk.length
-                 }
-               })
-             }
-             
-             console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} smart demographics chunks (7-day max, only active periods)`)
+             console.log(`[Meta Exchange] ✅ Queued ${dateChunks.length} comprehensive demographics chunks (monthly coverage)`)
            } else {
              console.log(`[Meta Exchange] ℹ️ No active campaign dates found from Meta API, skipping demographics backfill`)
            }
