@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'vercel-cron/1.0'
       },
       body: JSON.stringify({
-        maxJobs: 1 // Process only 1 job per cron run to avoid timeout
+        maxJobs: 3 // Process 3 jobs per cron run to clear demographics backlog faster
       })
     })
     
