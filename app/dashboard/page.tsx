@@ -153,6 +153,15 @@ export default function DashboardPage() {
   // console.log('[Dashboard] useState calls starting')
   // Initialize date range to TODAY by default
   const [dateRange, setDateRange] = useState(() => {
+    // Clear any existing localStorage to ensure fresh start
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('dashboard-date-range')
+      } catch (error) {
+        // console.error('Error clearing date range:', error)
+      }
+    }
+    
     // Default to TODAY (not this year)
     const now = new Date()
     return {
@@ -171,7 +180,7 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with cooldown and persistence
+  // Create a controlled setDateRange with cooldown (NO persistence to always default to today)
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
@@ -180,17 +189,7 @@ export default function DashboardPage() {
     setIsDateRangeLoading(true)
     setDateRange(range)
     
-    // Save to localStorage for persistence across refreshes
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('dashboard-date-range', JSON.stringify({
-          from: range.from.toISOString(),
-          to: range.to.toISOString()
-        }))
-      } catch (error) {
-        // console.error('Error saving date range:', error)
-      }
-    }
+    // NO localStorage persistence - always start fresh with TODAY default
     
     // Set a minimum cooldown period
     setTimeout(() => {
