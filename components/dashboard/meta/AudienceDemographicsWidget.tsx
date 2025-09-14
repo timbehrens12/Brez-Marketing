@@ -43,7 +43,7 @@ export function AudienceDemographicsWidget({
 }: AudienceDemographicsWidgetProps) {
   const [data, setData] = useState<DemographicData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBreakdown, setSelectedBreakdown] = useState('age')
+  const [selectedBreakdown, setSelectedBreakdown] = useState('age_gender')
 
   const fetchData = async () => {
     if (!connectionId) return
