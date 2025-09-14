@@ -1113,10 +1113,10 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         console.log('No Shopify orders found for the period, falling back to simulation');
       }
       
-      // Step 2: Get Meta ad spend data if available
+      // Step 2: Get Meta ad spend data from campaign stats (consistent with Campaign Performance widget)
       const { data: adData, error: adError } = await supabase
-        .from('meta_ad_daily_insights')
-        .select('spent, impressions, clicks')
+        .from('meta_campaign_daily_stats')
+        .select('spend, impressions, clicks')
         .eq('brand_id', brandId)
         .gte('date', format(from, 'yyyy-MM-dd'))
         .lte('date', format(to, 'yyyy-MM-dd'));
@@ -1128,9 +1128,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         
         // Calculate ad metrics
         adSpend = adData.reduce((sum, insight) => {
-          const spend = typeof insight.spent === 'string' 
-            ? parseFloat(insight.spent) 
-            : (insight.spent || 0);
+          const spend = typeof insight.spend === 'string' 
+            ? parseFloat(insight.spend) 
+            : (insight.spend || 0);
           return sum + spend;
         }, 0);
         
