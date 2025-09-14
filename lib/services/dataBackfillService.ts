@@ -281,7 +281,9 @@ export class DataBackfillService {
       console.log(`[DataBackfill] 📊 Fetching demographics for account ${adAccountId} from ${startDate} to ${endDate}`)
       
       // Make SINGLE API call for demographics (age+gender combined)
-      const demographicsUrl = `https://graph.facebook.com/v18.0/act_${adAccountId}/insights`
+      // Handle account ID format (remove 'act_' prefix if present, then add it back)
+      const cleanAccountId = adAccountId.replace(/^act_/, '')
+      const demographicsUrl = `https://graph.facebook.com/v18.0/act_${cleanAccountId}/insights`
       const params = new URLSearchParams({
         access_token: accessToken,
         time_range: JSON.stringify({ since: startDate, until: endDate }),
