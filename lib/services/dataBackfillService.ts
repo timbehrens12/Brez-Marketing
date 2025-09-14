@@ -227,28 +227,96 @@ export class DataBackfillService {
    * PUBLIC: Fetch Meta demographics and device performance data for historical analysis
    */
   public static async fetchMetaDemographicsAndDevice(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
-    const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
-    
-    console.log(`[DataBackfill] Fetching Meta demographics and device data for brand ${brandId} from ${dateRange.since} to ${dateRange.until}`)
+    console.log(`[DataBackfill] 🚀 LIGHTWEIGHT demographics fetch for brand ${brandId} from ${dateRange.since} to ${dateRange.until}`)
     
     try {
-      // Convert date range to Date objects
-      const startDate = new Date(dateRange.since)
-      const endDate = new Date(dateRange.until)
+      // Import supabase
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
       
-      // Call fetchMetaAdInsights which handles demographics and device performance
-      // Use skipDemographics: false to ensure demographics are included
-      const result = await fetchMetaAdInsights(brandId, startDate, endDate, false, false)
+      // Get platform connection
+      const { data: connection } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('platform', 'meta')
+        .eq('status', 'connected')
+        .single()
       
-      if (result.success) {
-        console.log(`[DataBackfill] ✅ Successfully synced demographics and device data for ${brandId}`)
-      } else {
-        console.error(`[DataBackfill] ❌ Failed to sync demographics and device data:`, result.error)
+      if (!connection) {
+        throw new Error('No active Meta connection found')
       }
       
-      return result
+      // Convert date range to proper format
+      const startDate = new Date(dateRange.since).toISOString().split('T')[0]
+      const endDate = new Date(dateRange.until).toISOString().split('T')[0]
+      
+      console.log(`[DataBackfill] 📊 Fetching demographics for account ${adAccountId} from ${startDate} to ${endDate}`)
+      
+      // Make SINGLE API call for demographics (age+gender combined)
+      const demographicsUrl = `https://graph.facebook.com/v18.0/act_${adAccountId}/insights`
+      const params = new URLSearchParams({
+        access_token: accessToken,
+        time_range: JSON.stringify({ since: startDate, until: endDate }),
+        time_increment: '1',
+        breakdowns: 'age,gender',
+        fields: 'impressions,clicks,spend,reach,cpm,cpc,ctr,account_id,account_name,date_start,date_stop'
+      })
+      
+      const response = await fetch(`${demographicsUrl}?${params}`)
+      const data = await response.json()
+      
+      if (data.error) {
+        throw new Error(`Meta API error: ${data.error.message}`)
+      }
+      
+      const demographicData = data.data || []
+      console.log(`[DataBackfill] 📊 Fetched ${demographicData.length} demographic records`)
+      
+      // Process and store demographic data
+      if (demographicData.length > 0) {
+        const demographicRecords = demographicData.map((item: any) => ({
+          brand_id: brandId,
+          connection_id: connection.id,
+          account_id: item.account_id,
+          account_name: item.account_name,
+          breakdown_type: 'age_gender',
+          breakdown_value: `${item.age}_${item.gender}`,
+          impressions: parseInt(item.impressions || '0'),
+          clicks: parseInt(item.clicks || '0'),
+          spend: parseFloat(item.spend || '0'),
+          reach: parseInt(item.reach || '0'),
+          cpm: parseFloat(item.cpm || '0'),
+          cpc: parseFloat(item.cpc || '0'),
+          ctr: parseFloat(item.ctr || '0'),
+          date_range_start: item.date_start,
+          date_range_end: item.date_stop,
+          updated_at: new Date().toISOString()
+        }))
+        
+        // Batch insert all records at once
+        const { error: insertError } = await supabase
+          .from('meta_demographics')
+          .upsert(demographicRecords)
+        
+        if (insertError) {
+          throw new Error(`Database insert error: ${insertError.message}`)
+        }
+        
+        console.log(`[DataBackfill] ✅ Stored ${demographicRecords.length} demographic records`)
+      }
+      
+      return { 
+        success: true, 
+        count: demographicData.length,
+        message: `Lightweight demographics sync completed: ${demographicData.length} records`
+      }
+      
     } catch (error) {
-      console.error(`[DataBackfill] Error in fetchMetaDemographicsAndDevice:`, error)
+      console.error(`[DataBackfill] ❌ Lightweight demographics error:`, error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   }
