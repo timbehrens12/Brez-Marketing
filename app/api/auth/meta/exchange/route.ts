@@ -145,53 +145,16 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        // Try to queue background jobs if Redis is available
-        try {
-          const { MetaQueueService } = await import('@/lib/services/metaQueueService')
-          
-          // Check Redis availability
-          const hasRedis = process.env.REDIS_HOST || process.env.REDIS_URL
-          if (!hasRedis) {
-            await supabase
-              .from('platform_connections')
-              .update({
-                sync_status: 'completed',
-                last_sync_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', connectionData.id)
-            return
-          }
-          
-          // Queue comprehensive historical sync job
-          await MetaQueueService.addJob('historical_campaigns', {
-            connectionId: connectionData.id,
-            brandId: state,
-            accessToken: tokenData.access_token,
-            accountId: accountId || 'unknown', // Will be resolved in worker
-            timeRange: {
-              since: '2024-09-12',  // 12 months back
-              until: '2025-09-12'   // Today
-            },
-            priority: 'high',
-            description: 'Complete 12-month sync: campaigns + insights + demographics',
-            jobType: 'historical_campaigns' as any,
-            includeEverything: true
+        // 🚨 EMERGENCY FIX: Disable automatic background sync to prevent rate limiting
+        // Mark connection as completed immediately - user must manually sync
+        await supabase
+          .from('platform_connections')
+          .update({
+            sync_status: 'completed',
+            last_sync_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           })
-          
-        } catch (queueError) {
-          console.error(`[Meta Exchange] Queue failed:`, queueError)
-          
-          // If queue fails, mark as completed so user can proceed
-          await supabase
-            .from('platform_connections')
-            .update({
-              sync_status: 'completed',
-              last_sync_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', connectionData.id)
-        }
+          .eq('id', connectionData.id)
         
       } catch (backgroundError) {
         console.error(`[Meta Exchange] Background sync failed:`, backgroundError)
