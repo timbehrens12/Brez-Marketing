@@ -355,6 +355,40 @@ export async function GET(request: NextRequest) {
         } else if (dailyStatsData && dailyStatsData.length > 0) {
              console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_ad_daily_insights.`);
             insightsForProcessing = dailyStatsData;
+            
+            // 🔥🔥🔥 CRITICAL FIX: Check if spent values are missing and trigger backfill
+            const nullSpentCount = dailyStatsData.filter(record => record.spent === null || record.spent === undefined).length;
+            if (nullSpentCount > 0) {
+              console.log(`🔥🔥🔥 [META API] WARNING: Found ${nullSpentCount} records with NULL spent values! Triggering backfill...`);
+              
+              // Try to backfill missing data
+              try {
+                const { error: backfillError } = await supabase.rpc('backfill_meta_daily_insights');
+                if (backfillError) {
+                  console.error(`🔥🔥🔥 [META API] Backfill failed:`, backfillError);
+                } else {
+                  console.log(`🔥🔥🔥 [META API] Backfill completed! Retrying query...`);
+                  
+                  // Retry the query after backfill
+                  const { data: freshData, error: freshError } = await supabase
+                    .from('meta_ad_daily_insights')
+                    .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc, ad_id, updated_at')
+                    .eq('brand_id', brandId)
+                    .gte('date', fromDate)
+                    .lte('date', toDate)
+                    .order('date', { ascending: true })
+                    .order('updated_at', { ascending: false })
+                    .limit(1000);
+                    
+                  if (!freshError && freshData) {
+                    console.log(`🔥🔥🔥 [META API] After backfill: ${freshData.length} records retrieved`);
+                    insightsForProcessing = freshData;
+                  }
+                }
+              } catch (backfillError) {
+                console.error(`🔥🔥🔥 [META API] Backfill exception:`, backfillError);
+              }
+            }
         } else {
           console.log(`[API /api/metrics/meta] No records found in meta_ad_daily_insights for the range.`);
           
