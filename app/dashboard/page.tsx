@@ -655,6 +655,29 @@ export default function DashboardPage() {
     }
   }, [dateRange])
 
+  // NUCLEAR FIX: Listen for dateRange requests from GlobalRefreshButton
+  useEffect(() => {
+    const handleDateRangeRequest = (event: any) => {
+      console.log('[Dashboard] 🔍 Received dateRange request, responding with current dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+      
+      window.dispatchEvent(new CustomEvent('daterange-response', {
+        detail: {
+          requestId: event.detail?.requestId,
+          dateRange: dateRange ? {
+            from: dateRange.from.toISOString(),
+            to: dateRange.to.toISOString()
+          } : undefined
+        }
+      }));
+    };
+
+    window.addEventListener('request-current-daterange', handleDateRangeRequest);
+    
+    return () => {
+      window.removeEventListener('request-current-daterange', handleDateRangeRequest);
+    };
+  }, [dateRange])
+
   // Listen for forced date range refresh events (triggered by refresh button)
   useEffect(() => {
     const handleForceDateRefresh = (event: any) => {

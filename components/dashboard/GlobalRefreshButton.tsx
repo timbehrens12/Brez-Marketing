@@ -103,8 +103,46 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       return
     }
 
-    // console.log(`[GlobalRefresh] Starting refresh for ${currentTab} tab with platforms:`, activePlatforms)
-    console.log('[GlobalRefresh] 🔍 Starting refresh with dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    // NUCLEAR FIX: Get fresh dateRange from localStorage or DOM instead of stale prop
+    let freshDateRange = dateRange;
+    
+    // Try to get the most recent dateRange from the date picker directly
+    try {
+      const datePickerInputs = document.querySelectorAll('[data-testid="date-range-picker"]');
+      // If that doesn't work, we'll use a different approach
+      console.log('[GlobalRefresh] 🔍 Prop dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+      
+      // Emit a special event to request the current dateRange from dashboard
+      window.dispatchEvent(new CustomEvent('request-current-daterange', { 
+        detail: { requestId: Date.now() }
+      }));
+      
+      // Wait a bit for the response
+      await new Promise(resolve => {
+        const handleDateRangeResponse = (event: any) => {
+          if (event.detail?.dateRange) {
+            freshDateRange = {
+              from: new Date(event.detail.dateRange.from),
+              to: new Date(event.detail.dateRange.to)
+            };
+            console.log('[GlobalRefresh] 🔍 Received fresh dateRange from dashboard:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
+          }
+          window.removeEventListener('daterange-response', handleDateRangeResponse);
+          resolve(true);
+        };
+        window.addEventListener('daterange-response', handleDateRangeResponse);
+        
+        // Timeout after 50ms if no response
+        setTimeout(() => {
+          window.removeEventListener('daterange-response', handleDateRangeResponse);
+          resolve(true);
+        }, 50);
+      });
+    } catch (error) {
+      console.log('[GlobalRefresh] ⚠️ Could not get fresh dateRange, using prop');
+    }
+
+    console.log('[GlobalRefresh] 🔍 Final dateRange for refresh:', freshDateRange ? `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}` : 'undefined');
     
     setIsRefreshing(true)
     setRefreshCooldown(true)
@@ -177,9 +215,9 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
               timestamp: Date.now(),
               refreshId,
               forceRefresh: true,
-              dateRange: dateRange ? {
-                from: dateRange.from.toISOString(),
-                to: dateRange.to.toISOString()
+              dateRange: freshDateRange ? {
+                from: freshDateRange.from.toISOString(),
+                to: freshDateRange.to.toISOString()
               } : undefined
             }
           }))
@@ -192,10 +230,10 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
                 timestamp: Date.now(), 
                 forceRefresh: true, 
                 source: 'global-refresh',
-                dateRange: dateRange ? {
-                  from: dateRange.from.toISOString(),
-                  to: dateRange.to.toISOString()
-                } : undefined
+              dateRange: freshDateRange ? {
+                from: freshDateRange.from.toISOString(),
+                to: freshDateRange.to.toISOString()
+              } : undefined
               }
             }))
           }
