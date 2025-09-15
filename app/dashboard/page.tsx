@@ -648,10 +648,19 @@ export default function DashboardPage() {
   // Force refresh counter to trigger widget re-renders without changing date range
   const [refreshCounter, setRefreshCounter] = useState(0)
   
-  // Debug: Track dateRange changes
+  // Debug: Track dateRange changes & set global variable
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
       console.log('[Dashboard] 🔍 dateRange changed to:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
+      
+      // FINAL FIX: Set global variable for synchronous access
+      if (typeof window !== 'undefined') {
+        (window as any)._currentDateRange = {
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString()
+        };
+        console.log('[Dashboard] 🔍 Updated global _currentDateRange variable');
+      }
     }
   }, [dateRange])
 
