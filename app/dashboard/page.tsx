@@ -164,10 +164,12 @@ export default function DashboardPage() {
     
     // Default to TODAY (not this year)
     const now = new Date()
-    return {
+    const initialRange = {
       from: startOfDay(now),
       to: endOfDay(now),
     }
+    console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
+    return initialRange
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
@@ -185,6 +187,8 @@ export default function DashboardPage() {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
     }
+    
+    console.log('[Dashboard] 🔍 handleDateRangeChange called - changing dateRange to:', range.from.toISOString().split('T')[0], 'to', range.to.toISOString().split('T')[0]);
     
     setIsDateRangeLoading(true)
     setDateRange(range)
@@ -643,6 +647,13 @@ export default function DashboardPage() {
 
   // Force refresh counter to trigger widget re-renders without changing date range
   const [refreshCounter, setRefreshCounter] = useState(0)
+  
+  // Debug: Track dateRange changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      console.log('[Dashboard] 🔍 dateRange changed to:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
+    }
+  }, [dateRange])
 
   // Listen for forced date range refresh events (triggered by refresh button)
   useEffect(() => {
