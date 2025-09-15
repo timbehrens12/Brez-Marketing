@@ -626,7 +626,11 @@ export function MetaTab2({
              forceRefresh: true,
              syncedRecords: currentResult.count || 0,
              source: 'MetaTab2Sync',
-             refreshId
+             refreshId,
+             dateRange: {
+               from: effectiveDateRange.from.toISOString(),
+               to: effectiveDateRange.to.toISOString()
+             }
            }
          }));
          

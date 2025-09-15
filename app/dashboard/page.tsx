@@ -715,13 +715,69 @@ export default function DashboardPage() {
     const handleMetaDataRefreshed = async (event: any) => {
       if (event.detail?.brandId === selectedBrandId) {
         console.log('[Dashboard] 🔍 Received metaDataRefreshed event, refreshing dashboard metrics');
+        console.log('[Dashboard] 🔍 Event dateRange:', event.detail?.dateRange);
         
-        // Refresh dashboard Meta metrics so GreetingWidget gets fresh data
-        try {
-          await fetchMetaMetrics(false, true);
-          console.log('[Dashboard] ✅ Dashboard metrics refreshed after Meta sync');
-        } catch (error) {
-          console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
+        // CRITICAL FIX: Use the dateRange from the event, not the current state
+        if (event.detail?.dateRange) {
+          const eventDateRange = event.detail.dateRange;
+          const startDateStr = eventDateRange.from.split('T')[0];
+          const endDateStr = eventDateRange.to.split('T')[0];
+          
+          console.log('[Dashboard] 🔍 Using event dateRange for metrics refresh:', startDateStr, 'to', endDateStr);
+          
+          try {
+            // Directly call the API with the correct dateRange
+            const params = new URLSearchParams({
+              brandId: selectedBrandId.toString(),
+              from: startDateStr,
+              to: endDateStr,
+              initial_load: 'false',
+              force_refresh: 'true',
+              bypass_cache: 'true',
+              t: new Date().getTime().toString()
+            });
+            
+            const metaResponse = await fetch(`/api/metrics/meta?${params.toString()}`);
+            
+            if (!metaResponse.ok) {
+              throw new Error(`Failed to fetch Meta metrics: ${metaResponse.status}`);
+            }
+            
+            const metaData = await metaResponse.json();
+            
+            // Update metrics with the fresh data
+            setMetrics(prev => ({
+              ...prev,
+              adSpend: metaData.adSpend ?? 0,
+              adSpendGrowth: metaData.adSpendGrowth ?? 0,
+              impressions: metaData.impressions ?? 0,
+              impressionGrowth: metaData.impressionGrowth ?? 0,
+              clicks: metaData.clicks ?? 0,
+              clickGrowth: metaData.clickGrowth ?? 0,
+              roas: metaData.roas ?? 0,
+              roasGrowth: metaData.roasGrowth ?? 0,
+              ctr: metaData.ctr ?? 0,
+              ctrGrowth: metaData.ctrGrowth ?? 0,
+              cpc: metaData.cpc ?? 0,
+              cpcGrowth: metaData.cpcGrowth ?? 0,
+              costPerResult: metaData.costPerResult ?? 0,
+              results: metaData.results ?? 0,
+              reach: metaData.reach ?? 0,
+              dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
+            }));
+            
+            console.log('[Dashboard] ✅ Dashboard metrics refreshed with event dateRange data');
+          } catch (error) {
+            console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
+          }
+        } else {
+          // Fallback to regular fetchMetaMetrics if no dateRange in event
+          try {
+            await fetchMetaMetrics(false, true);
+            console.log('[Dashboard] ✅ Dashboard metrics refreshed (fallback)');
+          } catch (error) {
+            console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
+          }
         }
       }
     };
