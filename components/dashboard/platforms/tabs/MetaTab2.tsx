@@ -410,7 +410,6 @@ export function MetaTab2({
   const fetchCampaigns = useCallback(async (forceRefresh = false, skipLoadingState = false) => {
     // 🚨 CRITICAL: Prevent multiple simultaneous requests
     if (fetchCampaignsInProgress.current) {
-      console.log('🚨 RACE CONDITION PREVENTED: fetchCampaigns already in progress, skipping');
       return;
     }
     if (!brandId || !metaConnection) {
@@ -462,7 +461,7 @@ export function MetaTab2({
       const cacheBuster = `t=${Date.now()}&dateRange=${localFromDate || 'none'}-${localToDate || 'none'}&refresh=${forceRefresh ? 'true' : 'false'}`;
       const finalUrl = url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
       
-      console.log('🚨 CACHE BUST: Final URL with cache busting:', finalUrl);
+      // Cache busting active for date range accuracy
       
       const response = await fetch(finalUrl, {
         cache: 'no-store',
@@ -478,17 +477,9 @@ export function MetaTab2({
       }
       
       const data = await response.json();
-      console.log('🚨 EMERGENCY DEBUG: API Response Data:', data.campaigns?.length || 0, 'campaigns');
       
       const testCampaign = data.campaigns?.find(c => c.campaign_name?.includes('TEST'));
       if (testCampaign) {
-        console.log('🚨 EMERGENCY DEBUG: TEST Campaign from API:', {
-          name: testCampaign.campaign_name,
-          spent: testCampaign.spent,
-          status: testCampaign.status
-        });
-        
-        console.log('🚨 EMERGENCY DEBUG: Forcing re-render with spent:', testCampaign.spent);
         // Force a state update to trigger re-render
         setTimeout(() => {
           setCampaigns([...data.campaigns || []]);
@@ -496,11 +487,6 @@ export function MetaTab2({
       }
       
       setCampaigns(data.campaigns || []);
-      
-      // Force debug the state after setting
-      setTimeout(() => {
-        console.log('🚨 EMERGENCY DEBUG: State after setCampaigns:', data.campaigns?.find(c => c.campaign_name?.includes('TEST'))?.spent);
-      }, 100);
 
       
     } catch (error) {

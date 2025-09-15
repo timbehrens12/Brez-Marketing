@@ -366,8 +366,18 @@ export async function GET(request: NextRequest) {
         conversions: (totals.conversions || 0) + (row.conversions || 0)
       }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
       
+      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Date range: ${normalizedFromDate} to ${normalizedToDate}`)
+      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Raw aggregated stats:`, aggregatedStats?.length || 0, 'rows')
       console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Aggregated totals for date range:`, dateRangeTotals)
       console.log(`[Meta Campaigns] 🚨 Will use this aggregated spend: $${dateRangeTotals.spend} to override limited campaign data`)
+      
+      // DEBUG: Show actual data being aggregated
+      if (aggregatedStats && aggregatedStats.length > 0) {
+        console.log(`[Meta Campaigns] 🚨 DEBUG - First 3 rows of aggregated data:`)
+        aggregatedStats.slice(0, 3).forEach((row, i) => {
+          console.log(`  Row ${i + 1}: date=${row.date}, spent=${row.spent}, impressions=${row.impressions}`)
+        })
+      }
       
       // Now get the empty structure for campaign daily stats (will be mostly empty due to limited data)
       let { data: dailyAdStats, error: statsError } = await supabase
