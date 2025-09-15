@@ -270,6 +270,15 @@ const CampaignWidget = ({
           status: testCampaign.status,
           timestamp: new Date().toISOString()
         });
+        
+        // 🚨 CRITICAL: Also log the exact value that will be displayed in table
+        console.log('🚨 CAMPAIGN WIDGET TABLE DEBUG: Value for table display:', {
+          rawSpent: testCampaign.spent,
+          spentType: typeof testCampaign.spent,
+          isNumber: !isNaN(testCampaign.spent),
+          parsedNumber: Number(testCampaign.spent),
+          formattedCurrency: testCampaign.spent ? `$${Number(testCampaign.spent).toFixed(2)}` : '$0.00'
+        });
       }
     }
   }, [campaigns]);
