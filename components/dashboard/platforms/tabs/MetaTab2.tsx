@@ -460,7 +460,23 @@ export function MetaTab2({
       }
       
       const data = await response.json();
+      console.log('🚨 EMERGENCY DEBUG: API Response Data:', data.campaigns?.length || 0, 'campaigns');
+      
+      const testCampaign = data.campaigns?.find(c => c.campaign_name?.includes('TEST'));
+      if (testCampaign) {
+        console.log('🚨 EMERGENCY DEBUG: TEST Campaign from API:', {
+          name: testCampaign.campaign_name,
+          spent: testCampaign.spent,
+          status: testCampaign.status
+        });
+      }
+      
       setCampaigns(data.campaigns || []);
+      
+      // Force debug the state after setting
+      setTimeout(() => {
+        console.log('🚨 EMERGENCY DEBUG: State after setCampaigns:', data.campaigns?.find(c => c.campaign_name?.includes('TEST'))?.spent);
+      }, 100);
 
       
     } catch (error) {
