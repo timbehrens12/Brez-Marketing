@@ -1426,12 +1426,14 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     window.addEventListener('force-shopify-refresh', handleRefresh);
     window.addEventListener('global-refresh-all', handleRefresh);
     window.addEventListener('refresh-all-widgets', handleRefresh);
+    window.addEventListener('metaDataRefreshed', handleRefresh); // 🔧 FIX: Listen to Meta sync completion
     
     return () => {
       cancelled = true;
       window.removeEventListener('force-shopify-refresh', handleRefresh);
       window.removeEventListener('global-refresh-all', handleRefresh);
       window.removeEventListener('refresh-all-widgets', handleRefresh);
+      window.removeEventListener('metaDataRefreshed', handleRefresh); // 🔧 FIX: Clean up Meta listener
     };
   }, [brandId, connections]);
   
