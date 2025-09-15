@@ -53,35 +53,34 @@ export function UnifiedDashboardHeader({
     <div className="sticky top-0 z-40 bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] backdrop-blur-xl border-b border-[#222] shadow-2xl">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-4">
         
-        {/* Main Row - Branding, Platform Selector & Actions */}
-        <div className="flex items-center justify-between">
-          {/* Left: Agency Logo & Name with Brand - Responsive spacing */}
-          <div className="flex items-center gap-3 ml-2 sm:ml-6 md:ml-12 min-w-0 flex-shrink">
+        {/* Main Row - Responsive layout that prevents smashing */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          {/* Top Row on Mobile: Agency Logo & Name */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             {agencyLogo && (
-              <div className="w-14 h-14 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center relative">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-[#2A2A2A] border border-[#333] rounded-xl flex items-center justify-center relative">
                 <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
                 <img 
                   src={agencyLogo} 
                   alt={`${agencyName} Logo`} 
-                  className="w-10 h-10 object-contain rounded"
+                  className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 object-contain rounded"
                 />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight truncate">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 min-w-0">
+                <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-white tracking-tight truncate">
                   {agencyName || "Dashboard"}
                 </h1>
                 {brandName && (
-                  <>
-                    <span className="text-white text-lg md:text-xl flex-shrink-0">•</span>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span className="hidden sm:inline text-white text-sm lg:text-lg xl:text-xl flex-shrink-0">•</span>
                     <span className="text-xs sm:text-sm text-gray-400 font-medium truncate">
                       {brandName}
                     </span>
-                  </>
+                  </div>
                 )}
               </div>
-
             </div>
           </div>
 
@@ -305,27 +304,29 @@ export function UnifiedDashboardHeader({
             </TooltipProvider>
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Refresh Button - always show for agency tab, require brand for others */}
-            {(activeTab === "agency" || (selectedBrandId && (activePlatforms.meta || activePlatforms.shopify))) && (
-              <GlobalRefreshButton 
-                brandId={selectedBrandId || ""} 
-                activePlatforms={activePlatforms}
-                currentTab={activeTab}
-                connections={connections}
-                dateRange={dateRange}
-              />
-            )}
-
-            {/* Date Range Picker - Responsive */}
-            <div className="hidden sm:block">
+          {/* Right: Actions - Responsive layout */}
+          <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-3 flex-shrink-0 mt-2 lg:mt-0">
+            {/* Date Range Picker - Show on mobile too but compact */}
+            <div className="flex-1 lg:flex-initial min-w-0">
               <DateRangePicker
                 dateRange={dateRange}
                 setDateRange={setDateRange}
                 disabled={isDateRangeLoading}
               />
             </div>
+            
+            {/* Refresh Button - always show for agency tab, require brand for others */}
+            {(activeTab === "agency" || (selectedBrandId && (activePlatforms.meta || activePlatforms.shopify))) && (
+              <div className="flex-shrink-0">
+                <GlobalRefreshButton 
+                  brandId={selectedBrandId || ""} 
+                  activePlatforms={activePlatforms}
+                  currentTab={activeTab}
+                  connections={connections}
+                  dateRange={dateRange}
+                />
+              </div>
+            )}
           </div>
         </div>
 

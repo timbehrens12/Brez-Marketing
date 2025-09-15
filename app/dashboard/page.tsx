@@ -49,6 +49,28 @@ import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { GridOverlay } from "@/components/GridOverlay"
 
+// ✅ FIXED: Global fetch lock declarations to prevent data doubling
+declare global {
+  interface Window {
+    _metaTimeouts?: ReturnType<typeof setTimeout>[];
+    _blockMetaApiCalls?: boolean;
+    _disableAutoMetaFetch?: boolean;
+    _activeFetchIds?: Set<number | string>;
+    _metaFetchLock?: boolean;
+    _lastManualRefresh?: number;
+    _lastMetaRefresh?: number;
+    _currentDateRange?: DateRange;
+  }
+}
+
+// Initialize global state for fetch coordination
+if (typeof window !== 'undefined') {
+  window._activeFetchIds = window._activeFetchIds || new Set();
+  window._metaFetchLock = window._metaFetchLock || false;
+  window._lastManualRefresh = window._lastManualRefresh || 0;
+  window._lastMetaRefresh = window._lastMetaRefresh || 0;
+}
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
@@ -153,11 +175,26 @@ export default function DashboardPage() {
   // console.log('[Dashboard] useState calls starting')
   // Initialize date range - check for saved refresh dateRange first
   const [dateRange, setDateRange] = useState(() => {
-    // CRITICAL FIX: Check if we have a saved dateRange from Meta refresh
+    // ✅ FIXED: Check for persisted date range to maintain selection across refreshes
     if (typeof window !== 'undefined') {
       try {
-        const savedDateRangeStr = localStorage.getItem('meta-refresh-daterange');
+        // Try new persistence key first
+        const savedDateRangeStr = localStorage.getItem('dashboard_date_range');
         if (savedDateRangeStr) {
+          const savedData = JSON.parse(savedDateRangeStr);
+          // Only use if saved within last 24 hours to prevent stale data
+          if (Date.now() - savedData.timestamp < 24 * 60 * 60 * 1000) {
+            console.log('[Dashboard] 🔄 Restoring persisted date range:', savedData);
+            return {
+              from: new Date(savedData.from),
+              to: new Date(savedData.to)
+            };
+          }
+        }
+        
+        // Fallback to old key for backwards compatibility
+        const legacySavedDateRangeStr = localStorage.getItem('meta-refresh-daterange');
+        if (legacySavedDateRangeStr) {
           const savedDateRange = JSON.parse(savedDateRangeStr);
           // Only use if it's recent (within last 10 seconds)
           if (savedDateRange.refreshTimestamp && Date.now() - savedDateRange.refreshTimestamp < 10000) {
@@ -200,7 +237,7 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with cooldown (NO persistence to always default to today)
+  // Create a controlled setDateRange with cooldown and persistence to maintain selected range
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
@@ -211,7 +248,21 @@ export default function DashboardPage() {
     setIsDateRangeLoading(true)
     setDateRange(range)
     
-    // NO localStorage persistence - always start fresh with TODAY default
+    // ✅ FIXED: Persist date range to maintain selection across refreshes
+    try {
+      localStorage.setItem('dashboard_date_range', JSON.stringify({
+        from: range.from.toISOString(),
+        to: range.to.toISOString(),
+        timestamp: Date.now()
+      }))
+      
+      // Also update global window variable for refresh button
+      if (typeof window !== 'undefined') {
+        (window as any)._currentDateRange = range
+      }
+    } catch (error) {
+      console.log('[Dashboard] Could not persist date range:', error)
+    }
     
     // Set a minimum cooldown period
     setTimeout(() => {
@@ -1161,12 +1212,27 @@ export default function DashboardPage() {
     };
   }, [selectedBrandId, dateRange, isInitialSetup, activePlatforms.meta, activePlatforms.shopify, checkForGaps, performBackfill, backfillStatus]);
 
-  // Update the fetchMetaMetrics function to remove blockers and always force refresh
+  // Update the fetchMetaMetrics function with fetch lock to prevent doubling
   const fetchMetaMetrics = useCallback(async (initialLoad: boolean = false, forceRefresh: boolean = true) => {
     // console.log(`[fetchMetaMetrics] Called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
-    // Remove the blocking condition - we always want to fetch fresh Meta data
     if (!selectedBrandId) return;
+    
+    // ✅ FIXED: Use global fetch lock to prevent data doubling
+    const fetchId = `dashboard-meta-${Date.now()}`;
+    
+    // Check if another fetch is already in progress
+    if (typeof window !== 'undefined' && window._metaFetchLock === true) {
+      console.log('[Dashboard] 🔒 Meta fetch already in progress, skipping to prevent doubling');
+      return;
+    }
+    
+    // Acquire lock
+    if (typeof window !== 'undefined') {
+      window._metaFetchLock = true;
+      window._activeFetchIds = window._activeFetchIds || new Set();
+      window._activeFetchIds.add(fetchId);
+    }
     
     try {
       let startDateStr, endDateStr;
@@ -1280,6 +1346,12 @@ export default function DashboardPage() {
     } catch (error) {
       // console.error('Error fetching Meta metrics:', error);
       return null;
+    } finally {
+      // ✅ FIXED: Always release lock to prevent blocking future fetches
+      if (typeof window !== 'undefined') {
+        window._metaFetchLock = false;
+        window._activeFetchIds?.delete(fetchId);
+      }
     }
   }, [selectedBrandId, dateRange, setMetrics])
 
@@ -2032,8 +2104,8 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Main dashboard content - Single container for all tabs */}
-              <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-4 px-4 sm:px-6 md:px-8 animate-in fade-in duration-300">
+      {/* Main dashboard content - Responsive container for all tabs */}
+              <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300">
         <GridOverlay />
         <div className="flex-grow pb-8 relative z-10">
           {/* Agency tab content - always render but hide during loading */}
