@@ -345,30 +345,9 @@ export async function GET(request: NextRequest) {
       // SOLUTION: Use aggregated data from meta_ad_daily_insights since meta_campaign_daily_stats only has 3 days
       console.log(`[Meta Campaigns] Getting aggregated spend from meta_ad_daily_insights for ${normalizedFromDate} to ${normalizedToDate}`)
       
-      // Get aggregated data from ad insights (the complete data source)
-      let { data: aggregatedStats, error: aggregatedError } = await supabase
-        .from('meta_ad_daily_insights')
-        .select('date, spent, impressions, clicks, reach, conversions')
-        .eq('brand_id', brandId)
-        .gte('date', normalizedFromDate)
-        .lte('date', normalizedToDate);
-      
-      if (aggregatedError) {
-        console.error('Error fetching aggregated insights:', aggregatedError)
-        return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
-      }
-      
-      // Calculate totals for the date range
-      const dateRangeTotals = aggregatedStats?.reduce((totals, row) => ({
-        spend: (totals.spend || 0) + (parseFloat(row.spent?.toString() || '0')),
-        impressions: (totals.impressions || 0) + (row.impressions || 0),
-        clicks: (totals.clicks || 0) + (row.clicks || 0),
-        reach: (totals.reach || 0) + (row.reach || 0),
-        conversions: (totals.conversions || 0) + (row.conversions || 0)
-      }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
-      
-      console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
-      console.log(`🔥🔥🔥 [CAMPAIGNS API] AGGREGATED TOTALS FROM meta_ad_daily_insights - Spend: $${dateRangeTotals.spend}, Impressions: ${dateRangeTotals.impressions}, Clicks: ${dateRangeTotals.clicks}, Reach: ${dateRangeTotals.reach}, Conversions: ${dateRangeTotals.conversions}`)
+      // 🔥🔥🔥 REMOVED: No longer using meta_ad_daily_insights for comparison since it has duplicates
+      // Campaign API should only use meta_campaign_daily_stats which has correct single records per date
+      console.log(`🔥🔥🔥 [CAMPAIGNS API] Using ONLY meta_campaign_daily_stats for accurate campaign data (no duplicates)`)
       
       // 🔥🔥🔥 FORCE FRESH DATA: Add timestamp to ensure no caching
       console.log(`🔥🔥🔥 [CAMPAIGNS API] Fetching FRESH data from meta_campaign_daily_stats at ${new Date().toISOString()}`)
@@ -888,34 +867,24 @@ export async function GET(request: NextRequest) {
         
         console.log(`[Meta Campaigns] FORCE OVERRIDE: Campaign ${campaign.campaign_name} has ${statsCount} days of data in meta_campaign_daily_stats`);
         
-        if (hasLimitedData && dateRangeTotals && dateRangeTotals.spend > 0) {
-          // FIXED: Don't divide spend - show actual individual campaign contribution
-          // Check if this campaign has any actual spend data, if so use it, otherwise use the aggregated total for the primary campaign
-          const campaignStats = statsByCampaign[campaign.campaign_id] || [];
-          const campaignActualSpend = campaignStats.reduce((sum, stat) => sum + parseFloat(stat.spend || 0), 0);
-          
-          // CRITICAL FIX: Always use the full aggregated spend for the primary campaign, not the limited daily stats
-          let finalSpend = campaignActualSpend;
-          if (campaign.status === 'ACTIVE') {
-            // Primary active campaign gets the FULL aggregated spend (not limited daily stats)
-            finalSpend = dateRangeTotals.spend;
-            // Primary active campaign gets the FULL aggregated spend
-          }
-          
-          return {
-            ...campaign,
-            spent: finalSpend,
-            impressions: finalSpend > 0 ? dateRangeTotals.impressions : 0,
-            clicks: finalSpend > 0 ? dateRangeTotals.clicks : 0,
-            reach: finalSpend > 0 ? dateRangeTotals.reach : 0,
-            conversions: finalSpend > 0 ? dateRangeTotals.conversions : 0,
-            has_data_in_range: finalSpend > 0,
-            recommendation: recommendationMap.get(campaign.campaign_id) || null
-          };
-        }
+        // 🔥🔥🔥 FIXED: Use only campaign daily stats data (no meta_ad_daily_insights duplicates)
+        const campaignStats = statsByCampaign[campaign.campaign_id] || [];
+        const campaignActualSpend = campaignStats.reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
+        const campaignActualImpressions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.impressions) || 0), 0);
+        const campaignActualClicks = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.clicks) || 0), 0);
+        const campaignActualReach = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.reach) || 0), 0);
+        const campaignActualConversions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.conversions) || 0), 0);
+        
+        console.log(`[Meta Campaigns] FIXED: Campaign ${campaign.campaign_name} using ONLY campaign stats - spend: $${campaignActualSpend}, impressions: ${campaignActualImpressions}`);
         
         return {
           ...campaign,
+          spent: campaignActualSpend,
+          impressions: campaignActualImpressions,
+          clicks: campaignActualClicks,
+          reach: campaignActualReach,
+          conversions: campaignActualConversions,
+          has_data_in_range: campaignActualSpend > 0,
           recommendation: recommendationMap.get(campaign.campaign_id) || null
         };
       });
