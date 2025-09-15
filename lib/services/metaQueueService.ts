@@ -33,7 +33,6 @@ export const metaQueue = new Queue('meta-sync', redisConfig)
 
 // Meta job types
 export enum MetaJobType {
-  META_SETUP = 'meta_setup',                      // Initial Meta account setup and sync queuing
   RECENT_SYNC = 'recent_sync',                    // Last 7 days for immediate UI
   HISTORICAL_CAMPAIGNS = 'historical_campaigns',  // All-time campaign data by chunks
   HISTORICAL_DEMOGRAPHICS = 'historical_demographics', // All-time demographic data by chunks
@@ -47,7 +46,7 @@ export interface MetaJobData {
   brandId: string
   connectionId: string
   accessToken: string
-  accountId?: string
+  accountId: string
   jobType: MetaJobType
   startDate?: string
   endDate?: string

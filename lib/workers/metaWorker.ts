@@ -17,7 +17,6 @@ export class MetaWorker {
     console.log('[Meta Worker] Initializing Meta worker...')
     
     // Process different Meta job types
-    metaQueue.process(MetaJobType.META_SETUP, 2, this.processMetaSetup.bind(this))
     metaQueue.process(MetaJobType.RECENT_SYNC, 3, this.processRecentSync.bind(this))
     metaQueue.process(MetaJobType.HISTORICAL_CAMPAIGNS, 2, this.processHistoricalCampaigns.bind(this))
     metaQueue.process(MetaJobType.HISTORICAL_DEMOGRAPHICS, 2, this.processHistoricalDemographics.bind(this))
@@ -488,225 +487,6 @@ export class MetaWorker {
   }
 
   /**
-   * Process meta setup job - discover account and queue syncs
-   */
-  static async processMetaSetup(job: Job<MetaJobData>): Promise<void> {
-    const { brandId, connectionId, accessToken, etlJobId } = job.data
-
-    console.log(`[Meta Worker] ⚙️ Processing Meta setup for brand ${brandId}`)
-
-    try {
-      // Update ETL job to in_progress
-      await this.updateEtlProgress(etlJobId, {
-        status: 'in_progress',
-        progress_pct: 10
-      })
-
-      // Step 1: Discover Meta account with improved retry logic
-      console.log(`[Meta Worker] 🔍 Discovering Meta account...`)
-
-      let accountId = ''
-      let accountData = null
-      const maxRetries = 3
-
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`[Meta Worker] 🔄 Fetching ad accounts (attempt ${attempt}/${maxRetries})...`)
-
-          const response = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}&fields=id,name,account_status`)
-          const data = await response.json()
-
-          console.log(`[Meta Worker] 📊 Response status: ${response.status}`)
-
-          // Check for rate limit error
-          if (data.error && data.error.code === 80004) {
-            console.log(`[Meta Worker] ⏱️ Rate limit hit on attempt ${attempt}. Error: ${data.error.message}`)
-
-            if (attempt < maxRetries) {
-              // Use shorter wait times to fit within Vercel's timeout
-              const waitTime = attempt * 2000 // 2s, 4s, 6s (much shorter than before)
-              console.log(`[Meta Worker] ⏳ Waiting ${waitTime/1000}s before retry...`)
-              await new Promise(resolve => setTimeout(resolve, waitTime))
-              continue
-            } else {
-              throw new Error(`Meta API rate limited after ${maxRetries} attempts: ${data.error.message}`)
-            }
-          }
-
-          // Check for other errors
-          if (data.error) {
-            throw new Error(`Meta API error: ${data.error.message}`)
-          }
-
-          // Success - extract account data
-          if (data.data && data.data.length > 0) {
-            accountId = data.data[0].id
-            accountData = data.data[0]
-            console.log(`[Meta Worker] ✅ Successfully got accountId: ${accountId}`)
-            break
-          } else {
-            console.log(`[Meta Worker] ⚠️ No ad accounts found in response`)
-            if (attempt < maxRetries) {
-              console.log(`[Meta Worker] 🔄 Retrying to get ad accounts...`)
-              await new Promise(resolve => setTimeout(resolve, 1000))
-              continue
-            } else {
-              throw new Error('No Meta ad accounts found. Make sure your Meta account has ad accounts and the correct permissions.')
-            }
-          }
-
-        } catch (fetchError) {
-          console.error(`[Meta Worker] Fetch error on attempt ${attempt}:`, fetchError)
-          if (attempt === maxRetries) {
-            throw fetchError
-          }
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-      }
-
-      // Update ETL job progress
-      await this.updateEtlProgress(etlJobId, { progress_pct: 30 })
-
-      // Step 2: Update connection with account metadata
-      console.log(`[Meta Worker] 💾 Updating connection with account metadata...`)
-
-      const supabase = createClient()
-      await supabase
-        .from('platform_connections')
-        .update({
-          metadata: {
-            accountId: accountId,
-            accountName: accountData?.name || 'Unknown',
-            accountStatus: accountData?.account_status || 'Unknown',
-            lastUpdated: new Date().toISOString()
-          },
-          sync_status: 'syncing',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', connectionId)
-
-      // Update ETL job progress
-      await this.updateEtlProgress(etlJobId, { progress_pct: 50 })
-
-      // Step 3: Check for existing data to avoid duplicates
-      console.log(`[Meta Worker] 📊 Checking for existing data...`)
-
-      const { data: recentData } = await supabase
-        .from('meta_ad_daily_insights')
-        .select('date')
-        .eq('brand_id', brandId)
-        .order('date', { ascending: false })
-        .limit(50)
-
-      const uniqueDates = new Set(recentData?.map(d => d.date) || [])
-      const hasSubstantialData = uniqueDates.size >= 30
-
-      console.log(`[Meta Worker] 📊 Found ${uniqueDates.size} days of existing data`)
-
-      if (hasSubstantialData) {
-        console.log(`[Meta Worker] ℹ️ Substantial data exists - marking as completed`)
-        await this.updateConnectionSyncStatus(connectionId, 'completed')
-        await this.updateEtlProgress(etlJobId, {
-          status: 'completed',
-          progress_pct: 100
-        })
-        return
-      }
-
-      // Update ETL job progress
-      await this.updateEtlProgress(etlJobId, { progress_pct: 70 })
-
-      // Step 4: Queue comprehensive sync jobs
-      console.log(`[Meta Worker] 📅 Queueing comprehensive sync jobs...`)
-
-      // Queue campaigns + insights (fast sync)
-      await MetaQueueService.addJob(MetaJobType.HISTORICAL_CAMPAIGNS, {
-        brandId,
-        connectionId,
-        accessToken,
-        accountId,
-        jobType: MetaJobType.HISTORICAL_CAMPAIGNS,
-        timeRange: {
-          since: '2024-09-12',  // 12 months back
-          until: new Date().toISOString().split('T')[0]
-        },
-        priority: 'high',
-        description: '12-month campaigns + insights sync',
-        includeEverything: false  // No demographics in main job to avoid timeout
-      })
-
-      // Queue demographics sync (monthly chunks)
-      console.log(`[Meta Worker] 📅 Setting up comprehensive demographics sync...`)
-
-      const monthlyChunks = []
-      const currentDate = new Date()
-
-      // Create 12 monthly chunks going back in time
-      for (let monthsBack = 0; monthsBack < 12; monthsBack++) {
-        const chunkEndDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - monthsBack, currentDate.getDate())
-        const chunkStartDate = new Date(chunkEndDate.getFullYear(), chunkEndDate.getMonth(), 1)
-
-        if (chunkStartDate <= currentDate) {
-          monthlyChunks.push({
-            startDate: chunkStartDate.toISOString().split('T')[0],
-            endDate: chunkEndDate.toISOString().split('T')[0],
-            monthName: chunkStartDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-          })
-        }
-      }
-
-      console.log(`[Meta Worker] 📊 Created ${monthlyChunks.length} monthly chunks for demographics`)
-
-      // Queue each monthly demographics chunk
-      for (let i = 0; i < monthlyChunks.length; i++) {
-        const chunk = monthlyChunks[i]
-
-        await MetaQueueService.addJob(MetaJobType.HISTORICAL_DEMOGRAPHICS, {
-          brandId,
-          connectionId,
-          accessToken,
-          accountId,
-          startDate: chunk.startDate,
-          endDate: chunk.endDate,
-          jobType: MetaJobType.HISTORICAL_DEMOGRAPHICS,
-          priority: 'medium',
-          description: `Demographics ${chunk.monthName}`,
-          metadata: {
-            chunkNumber: i + 1,
-            totalChunks: monthlyChunks.length,
-            monthName: chunk.monthName,
-            comprehensive: true
-          }
-        })
-      }
-
-      console.log(`[Meta Worker] ✅ Queued ${1 + monthlyChunks.length} sync jobs`)
-
-      // Update ETL job progress
-      await this.updateEtlProgress(etlJobId, {
-        progress_pct: 90,
-        status: 'completed'
-      })
-
-      console.log(`[Meta Worker] ✅ Meta setup completed for brand ${brandId}`)
-
-    } catch (error) {
-      console.error(`[Meta Worker] Meta setup failed for brand ${brandId}:`, error)
-
-      // Update ETL job status to failed
-      await this.updateEtlProgress(etlJobId, {
-        status: 'failed',
-        error_message: error.message
-      })
-
-      // Update connection sync status to failed
-      await this.updateConnectionSyncStatus(connectionId, 'failed')
-
-      throw error
-    }
-  }
-
-  /**
    * Process reconcile job - data validation and cleanup
    */
   static async processReconcile(job: Job<MetaJobData>): Promise<void> {
@@ -716,16 +496,16 @@ export class MetaWorker {
 
     try {
       const supabase = createClient()
-
+      
       // Remove duplicate records
       await supabase.rpc('remove_duplicate_meta_campaigns', { brand_id_param: brandId })
       await supabase.rpc('remove_duplicate_meta_daily_stats', { brand_id_param: brandId })
-
+      
       // Update calculated fields
       await supabase.rpc('recalculate_meta_metrics', { brand_id_param: brandId })
-
+      
       console.log(`[Meta Worker] ✅ Reconciliation completed for brand ${brandId}`)
-
+      
     } catch (error) {
       console.error(`[Meta Worker] Reconciliation failed for brand ${brandId}:`, error)
       throw error

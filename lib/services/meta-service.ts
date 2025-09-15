@@ -36,8 +36,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
 // Helper function to perform API call with retries and exponential backoff
-// ⚠️ CRITICAL: For serverless environments, use shorter initial backoff to avoid Vercel timeout
-async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initialBackoff = 2000) {
+async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initialBackoff = 5000) {
   let retries = 0;
   let backoff = initialBackoff;
 
