@@ -462,7 +462,7 @@ export async function GET(request: NextRequest) {
       const statsByCampaign: Record<string, any[]> = {};
       
       if (dailyAdStats) {
-        // ✅ FIXED: De-duplicate by campaign_id and date since meta_campaign_daily_stats is campaign-level
+        // ✅ FIXED: De-duplicate first, then populate statsByCampaign with clean data
         const deduplicatedStats = new Map<string, any>();
         
         dailyAdStats.forEach(stat => {
@@ -486,12 +486,12 @@ export async function GET(request: NextRequest) {
           }
         });
         
-        // Now group the deduplicated stats by campaign
+        // ✅ CRITICAL FIX: Populate statsByCampaign with ONLY deduplicated data
         deduplicatedStats.forEach(stat => {
           // Track which campaigns have data
           campaignIdsWithData.add(stat.campaign_id);
           
-          // Group by campaign
+          // Group by campaign using CLEAN deduplicated data
           if (!statsByCampaign[stat.campaign_id]) {
             statsByCampaign[stat.campaign_id] = [];
           }
@@ -499,6 +499,7 @@ export async function GET(request: NextRequest) {
         });
         
         console.log(`[Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
+        console.log(`[Meta Campaigns API] statsByCampaign now contains only deduplicated data`);
       }
 
       // Log campaign data summary
@@ -700,38 +701,31 @@ export async function GET(request: NextRequest) {
         const campaignDailyAggregatedInsights: any[] = [];
         
         if (campaignStats.length > 0) {
-          // ✅ FIXED: Simplified aggregation since meta_campaign_daily_stats is already campaign-level
+          // ✅ FIXED: Simple aggregation since campaignStats already contains deduplicated data
           const dailyAggregation: Record<string, any> = {};
           
+          // campaignStats now contains only deduplicated records, so we can safely aggregate
           campaignStats.forEach(stat => {
             const date = stat.date;
-            if (!dailyAggregation[date]) {
-              dailyAggregation[date] = {
-                date: date,
-                campaign_id: campaign.campaign_id,
-                spent: 0,
-                impressions: 0,
-                clicks: 0,
-                reach: 0,
-                conversions: 0,
-                purchaseValue: 0
-              };
-            }
-            
             const dailySpend = Number(stat.spend) || 0;
             const dailyImpressions = Number(stat.impressions) || 0;
             const dailyClicks = Number(stat.clicks) || 0;
             const dailyReach = Number(stat.reach) || 0;
             const dailyConversions = Number(stat.conversions) || 0;
             
-            // Aggregate for the specific day (should be 1-to-1 since we deduplicated)
-            dailyAggregation[date].spent += dailySpend;
-            dailyAggregation[date].impressions += dailyImpressions;
-            dailyAggregation[date].clicks += dailyClicks;
-            dailyAggregation[date].reach += dailyReach;
-            dailyAggregation[date].conversions += dailyConversions;
+            // Add to daily aggregation for response
+            dailyAggregation[date] = {
+              date: date,
+              campaign_id: campaign.campaign_id,
+              spent: dailySpend,
+              impressions: dailyImpressions,
+              clicks: dailyClicks,
+              reach: dailyReach,
+              conversions: dailyConversions,
+              purchaseValue: 0
+            };
             
-            // Aggregate for the total period
+            // Aggregate for campaign totals (no duplication since data is already clean)
             spend += dailySpend;
             impressions += dailyImpressions;
             clicks += dailyClicks;
