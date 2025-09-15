@@ -88,20 +88,60 @@ export async function POST(request: NextRequest) {
 
     // Get Meta account ID and do immediate sync
     try {
-      const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
-      const meData = await meResponse.json()
+      // 🔧 RETRY LOGIC: Handle Meta API rate limits with exponential backoff
+      let meData = null;
+      let accountId = '';
+      const maxRetries = 3;
       
-      // 🚨 EMERGENCY DEBUG: Log the response to see why accountId is empty
-      console.log(`[Meta Exchange] 🚨 DEBUG: meResponse status: ${meResponse.status}`)
-      console.log(`[Meta Exchange] 🚨 DEBUG: meData:`, JSON.stringify(meData, null, 2))
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`[Meta Exchange] 🔄 Fetching ad accounts (attempt ${attempt}/${maxRetries})...`);
+        
+        const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
+        meData = await meResponse.json()
+        
+        console.log(`[Meta Exchange] 📊 Response status: ${meResponse.status}`)
+        console.log(`[Meta Exchange] 📊 Response data:`, JSON.stringify(meData, null, 2))
+        
+        // Check for rate limit error
+        if (meData.error && meData.error.code === 80004) {
+          console.log(`[Meta Exchange] ⏱️ Rate limit hit on attempt ${attempt}. Error: ${meData.error.message}`);
+          
+          if (attempt < maxRetries) {
+            const waitTime = Math.pow(2, attempt) * 5000; // 10s, 20s, 40s
+            console.log(`[Meta Exchange] ⏳ Waiting ${waitTime/1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            console.error(`[Meta Exchange] 🚨 Rate limit persists after ${maxRetries} attempts`);
+            throw new Error(`Meta API rate limited. Please wait a few minutes and try reconnecting again. Error: ${meData.error.message}`);
+          }
+        }
+        
+        // Success - extract accountId
+        accountId = meData.data?.[0]?.id || '';
+        if (accountId) {
+          console.log(`[Meta Exchange] ✅ Successfully got accountId: ${accountId}`);
+          break;
+        } else {
+          console.log(`[Meta Exchange] ⚠️ No ad accounts found in response`);
+          if (attempt < maxRetries) {
+            console.log(`[Meta Exchange] 🔄 Retrying to get ad accounts...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+        }
+      }
       
-      const accountId = meData.data?.[0]?.id || ''
-      
-      // 🚨 CRITICAL VALIDATION: Don't proceed if accountId is empty
+      // 🚨 CRITICAL VALIDATION: Don't proceed if accountId is still empty
       if (!accountId) {
-        console.error(`[Meta Exchange] 🚨 CRITICAL: No accountId found in Meta API response!`)
-        console.error(`[Meta Exchange] 🚨 Response data:`, meData)
-        throw new Error(`Failed to get Meta ad account ID. Response: ${JSON.stringify(meData)}`)
+        console.error(`[Meta Exchange] 🚨 CRITICAL: No accountId found after ${maxRetries} attempts!`)
+        console.error(`[Meta Exchange] 🚨 Final response:`, meData)
+        
+        if (meData?.error) {
+          throw new Error(`Meta API error: ${meData.error.message}. Please wait a few minutes and try reconnecting.`);
+        } else {
+          throw new Error(`No Meta ad accounts found. Make sure your Meta account has ad accounts and the correct permissions.`);
+        }
       }
       
       console.log(`[Meta Exchange] ✅ Got accountId: ${accountId}`);

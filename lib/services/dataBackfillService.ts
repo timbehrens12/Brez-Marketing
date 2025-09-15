@@ -302,13 +302,6 @@ export class DataBackfillService {
    * PUBLIC: Fetch Meta daily insights for trend analysis
    */
   public static async fetchMetaDailyInsights(brandId: string, adAccountId: string, accessToken: string, dateRange: any) {
-    // 🚨 EMERGENCY DEBUG: Log all parameters to find the issue
-    console.log(`[DataBackfill] 🚨 EMERGENCY DEBUG - fetchMetaDailyInsights called with:`);
-    console.log(`[DataBackfill] 🚨 brandId: "${brandId}"`);
-    console.log(`[DataBackfill] 🚨 adAccountId: "${adAccountId}"`);
-    console.log(`[DataBackfill] 🚨 accessToken length: ${accessToken?.length || 'undefined'}`);
-    console.log(`[DataBackfill] 🚨 dateRange:`, dateRange);
-    
     // Validate adAccountId
     if (!adAccountId || adAccountId === 'undefined' || adAccountId === 'insights') {
       console.error(`[DataBackfill] 🚨 INVALID adAccountId: "${adAccountId}"`);
