@@ -639,19 +639,21 @@ function processMetaData(data: any[]): ProcessedMetaData {
   dataByDate.forEach((dayItems, dateStr) => {
     console.log(`Processing date ${dateStr} with ${dayItems.length} records`)
     
-    // ✅ FIXED: De-duplicate by ad_id to prevent double counting
+    // ✅ FIXED: De-duplicate by ad_id - for account_level_data, keep highest; for ad-level, ensure uniqueness
     // Group by ad_id first, then aggregate
     const uniqueAdData = new Map<string, any>()
     
     dayItems.forEach(item => {
       const adId = item.ad_id || 'unknown'
-      // For account-level data (ad_id = 'account_level_data'), only keep one record per date
+      // For account-level data (ad_id = 'account_level_data'), keep the one with highest spend
       if (adId === 'account_level_data') {
-        if (!uniqueAdData.has('account_aggregate')) {
-          uniqueAdData.set('account_aggregate', item)
+        const existingAccount = uniqueAdData.get('account_level_data')
+        if (!existingAccount || parseFloat(item.spent || '0') > parseFloat(existingAccount.spent || '0')) {
+          uniqueAdData.set('account_level_data', item)
         }
       } else {
-        // For ad-level data, keep the record with highest values (latest sync)
+        // For ad-level data, each ad_id should only appear once per date
+        // If we see the same ad_id twice, keep the one with higher values (latest sync)
         if (!uniqueAdData.has(adId) || 
             (parseFloat(item.spent || '0') > parseFloat(uniqueAdData.get(adId).spent || '0'))) {
           uniqueAdData.set(adId, item)
@@ -659,14 +661,31 @@ function processMetaData(data: any[]): ProcessedMetaData {
       }
     })
     
-    // Now aggregate only unique records
-    const uniqueItems = Array.from(uniqueAdData.values())
-    console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
+    // ✅ CRITICAL FIX: If we have BOTH account-level and ad-level data, use ONLY ad-level to avoid double counting
+    let uniqueItems = Array.from(uniqueAdData.values())
+    const hasAccountLevel = uniqueAdData.has('account_level_data')
+    const adLevelRecords = uniqueItems.filter(item => item.ad_id !== 'account_level_data')
+    
+    if (hasAccountLevel && adLevelRecords.length > 0) {
+      // We have both - use ONLY ad-level data to avoid double counting
+      console.log(`Date ${dateStr}: Found both account-level and ad-level data. Using ONLY ad-level data (${adLevelRecords.length} records) to avoid double counting`)
+      uniqueItems = adLevelRecords
+    } else {
+      console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
+    }
     
     const daySpend = uniqueItems.reduce((sum, d) => sum + (parseFloat(d.spent || d.spend) || 0), 0)
     const dayImpressions = uniqueItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
     const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
+    
+    // Debug: Log the aggregation details
+    if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
+      console.log(`Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
+      uniqueItems.forEach((item, idx) => {
+        console.log(`  Record ${idx + 1}: ad_id=${item.ad_id}, spent=$${parseFloat(item.spent || '0').toFixed(2)}`)
+      })
+    }
     
     // Calculate conversions from actions array (purchase or conversion actions)
     let dayConversions = 0
