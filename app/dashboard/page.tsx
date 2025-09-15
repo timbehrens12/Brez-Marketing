@@ -223,12 +223,11 @@ export default function DashboardPage() {
       }
     }
     
-    // Default to TODAY (not this year) - FIXED: Use same date for from/to
+    // ✅ FIXED: Default to TODAY preset format to match DateRangePicker
     const now = new Date()
-    const todayStart = startOfDay(now)
     const initialRange = {
-      from: todayStart,
-      to: todayStart, // 🔧 FIX: Use same date for single day query, not endOfDay which goes to tomorrow
+      from: startOfDay(now),
+      to: endOfDay(now), // Match the "Today" preset format
     }
     console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
     

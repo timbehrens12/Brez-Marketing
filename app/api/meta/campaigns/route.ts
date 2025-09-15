@@ -368,13 +368,14 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
       
-      // ✅ FIXED: Get campaign daily stats (meta_campaign_daily_stats doesn't have ad_id column)
+      // ✅ FIXED: Use same data source as main widgets (meta_ad_daily_insights) for consistency
       let { data: dailyAdStats, error: statsError } = await supabase
-        .from('meta_campaign_daily_stats')
-        .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
+        .from('meta_ad_daily_insights')
+        .select('campaign_id, date, spent, impressions, clicks, reach, conversions, ad_id')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
-        .lte('date', normalizedToDate);
+        .lte('date', normalizedToDate)
+        .not('campaign_id', 'is', null); // Only get records with campaign_id
       
       if (statsError) {
         console.error('Error fetching daily campaign stats:', statsError)
@@ -462,32 +463,12 @@ export async function GET(request: NextRequest) {
       const statsByCampaign: Record<string, any[]> = {};
       
       if (dailyAdStats) {
-        // ✅ FIXED: De-duplicate by campaign_id and date to prevent double counting
-        const deduplicatedStats = new Map<string, any>();
+        // ✅ FIXED: Use same de-duplication logic as main Meta API
+        // Group by campaign_id first, then by date, then by ad_id to prevent double counting
         
         dailyAdStats.forEach(stat => {
           if (!stat.campaign_id) return;
           
-          // Create unique key for each campaign-date combination
-          const uniqueKey = `${stat.campaign_id}-${stat.date}`;
-          
-          // Only keep the first occurrence of each unique combination, or the one with higher spend
-          if (!deduplicatedStats.has(uniqueKey)) {
-            deduplicatedStats.set(uniqueKey, stat);
-          } else {
-            // If we already have a record for this campaign-date, keep the one with higher spend
-            const existing = deduplicatedStats.get(uniqueKey);
-            const existingSpend = parseFloat(existing.spend || '0');
-            const currentSpend = parseFloat(stat.spend || '0');
-            
-            if (currentSpend > existingSpend) {
-              deduplicatedStats.set(uniqueKey, stat);
-            }
-          }
-        });
-        
-        // Now group the deduplicated stats by campaign
-        deduplicatedStats.forEach(stat => {
           // Track which campaigns have data
           campaignIdsWithData.add(stat.campaign_id);
           
@@ -498,7 +479,7 @@ export async function GET(request: NextRequest) {
           statsByCampaign[stat.campaign_id].push(stat);
         });
         
-        console.log(`[Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique records`);
+        console.log(`[Meta Campaigns API] Processed ${dailyAdStats.length} ad-level records for campaigns`);
       }
 
       // Log campaign data summary
@@ -700,47 +681,75 @@ export async function GET(request: NextRequest) {
         const campaignDailyAggregatedInsights: any[] = [];
         
         if (campaignStats.length > 0) {
-          // Aggregate daily stats for the campaign
+          // ✅ FIXED: Apply same de-duplication logic as main Meta API
+          // Group by date first to prevent double counting
+          const dataByDate = new Map<string, any[]>();
+          campaignStats.forEach(item => {
+            const dateStr = item.date;
+            if (!dataByDate.has(dateStr)) {
+              dataByDate.set(dateStr, []);
+            }
+            dataByDate.get(dateStr)!.push(item);
+          });
+          
           const dailyAggregation: Record<string, any> = {};
           
-          campaignStats.forEach(stat => {
-            const date = stat.date;
-            if (!dailyAggregation[date]) {
-              dailyAggregation[date] = {
-                date: date,
-                campaign_id: campaign.campaign_id,
-                spent: 0,
-                impressions: 0,
-                clicks: 0,
-                reach: 0,
-                conversions: 0,
-                purchaseValue: 0
-              };
-            }
+          // Process each unique date with de-duplication
+          dataByDate.forEach((dayItems, dateStr) => {
+            // De-duplicate by ad_id to prevent double counting
+            const uniqueAdData = new Map<string, any>();
             
-            const dailySpend = Number(stat.spend) || 0;
-            const dailyImpressions = Number(stat.impressions) || 0;
-            const dailyClicks = Number(stat.clicks) || 0;
-            const dailyReach = Number(stat.reach) || 0;
-            const dailyConversions = Number(stat.conversions) || 0;
-            // Calculate purchase value from purchase_count * estimated value (or use roas data)
-            const dailyPurchaseValue = Number(stat.purchase_count) || 0;
+            dayItems.forEach(item => {
+              const adId = item.ad_id || 'unknown';
+              // For account-level data (ad_id = 'account_level_data'), only keep one record per date
+              if (adId === 'account_level_data') {
+                if (!uniqueAdData.has('account_aggregate')) {
+                  uniqueAdData.set('account_aggregate', item);
+                }
+              } else {
+                // For ad-level data, keep the record with highest values (latest sync)
+                if (!uniqueAdData.has(adId) || 
+                    (parseFloat(item.spent || '0') > parseFloat(uniqueAdData.get(adId).spent || '0'))) {
+                  uniqueAdData.set(adId, item);
+                }
+              }
+            });
             
-            // Aggregate for the specific day
-            dailyAggregation[date].spent += dailySpend;
-            dailyAggregation[date].impressions += dailyImpressions;
-            dailyAggregation[date].clicks += dailyClicks;
-            dailyAggregation[date].reach += dailyReach;
-            dailyAggregation[date].conversions += dailyConversions;
-            dailyAggregation[date].purchaseValue += dailyPurchaseValue;
+            // Now aggregate only unique records for this date
+            const uniqueItems = Array.from(uniqueAdData.values());
             
-            // Aggregate for the total period
-            spend += dailySpend;
-            impressions += dailyImpressions;
-            clicks += dailyClicks;
-            calculatedReach += dailyReach;
-            conversions += dailyConversions;
-            purchaseValue += dailyPurchaseValue;
+            dailyAggregation[dateStr] = {
+              date: dateStr,
+              campaign_id: campaign.campaign_id,
+              spent: 0,
+              impressions: 0,
+              clicks: 0,
+              reach: 0,
+              conversions: 0,
+              purchaseValue: 0
+            };
+            
+            uniqueItems.forEach(stat => {
+              const dailySpend = Number(stat.spent || stat.spend) || 0;
+              const dailyImpressions = Number(stat.impressions) || 0;
+              const dailyClicks = Number(stat.clicks) || 0;
+              const dailyReach = Number(stat.reach) || 0;
+              const dailyConversions = Number(stat.conversions) || 0;
+              
+              // Aggregate for the specific day
+              dailyAggregation[dateStr].spent += dailySpend;
+              dailyAggregation[dateStr].impressions += dailyImpressions;
+              dailyAggregation[dateStr].clicks += dailyClicks;
+              dailyAggregation[dateStr].reach += dailyReach;
+              dailyAggregation[dateStr].conversions += dailyConversions;
+              
+              // Aggregate for the total period
+              spend += dailySpend;
+              impressions += dailyImpressions;
+              clicks += dailyClicks;
+              calculatedReach += dailyReach;
+              conversions += dailyConversions;
+            });
           });
           
           // Add derived metrics to daily aggregated insights
