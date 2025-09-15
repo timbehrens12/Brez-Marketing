@@ -280,98 +280,16 @@ export class DataBackfillService {
       
       console.log(`[DataBackfill] 📊 Fetching demographics for account ${adAccountId} from ${startDate} to ${endDate}`)
       
-            // Make THREE separate API calls for complete demographic coverage
-            // Handle account ID format (remove 'act_' prefix if present, then add it back)
-            const cleanAccountId = adAccountId.replace(/^act_/, '')
-            const baseUrl = `https://graph.facebook.com/v18.0/act_${cleanAccountId}/insights`
-            const baseParams = {
-              access_token: accessToken,
-              time_range: JSON.stringify({ since: startDate, until: endDate }),
-              time_increment: '1',
-              fields: 'impressions,clicks,spend,reach,cpm,cpc,ctr,account_id,account_name,date_start,date_stop'
-            }
-            
-            const breakdownConfigs = [
-              { breakdown: 'age,gender', type: 'age_gender' },
-              { breakdown: 'age', type: 'age' },
-              { breakdown: 'gender', type: 'gender' }
-            ]
-            
-            let allDemographicRecords: any[] = []
-            
-            for (const config of breakdownConfigs) {
-              console.log(`[DataBackfill] 📊 Fetching ${config.type} breakdown data...`)
-              
-              const params = new URLSearchParams({
-                ...baseParams,
-                breakdowns: config.breakdown
-              })
-              
-              const response = await fetch(`${baseUrl}?${params}`)
-              const data = await response.json()
-              
-              if (data.error) {
-                console.error(`[DataBackfill] Error fetching ${config.type}:`, data.error.message)
-                continue // Skip this breakdown but continue with others
-              }
-              
-              const demographicData = data.data || []
-              console.log(`[DataBackfill] 📊 Fetched ${demographicData.length} ${config.type} records`)
-              
-              // Process demographic data for this breakdown type
-              if (demographicData.length > 0) {
-                const records = demographicData.map((item: any) => {
-                  let breakdownValue = ''
-                  if (config.type === 'age_gender') {
-                    breakdownValue = `${item.age}_${item.gender}`
-                  } else if (config.type === 'age') {
-                    breakdownValue = item.age
-                  } else if (config.type === 'gender') {
-                    breakdownValue = item.gender
-                  }
-                  
-                  return {
-                    brand_id: brandId,
-                    connection_id: connection.id,
-                    account_id: item.account_id,
-                    account_name: item.account_name,
-                    breakdown_type: config.type,
-                    breakdown_value: breakdownValue,
-                    impressions: parseInt(item.impressions || '0'),
-                    clicks: parseInt(item.clicks || '0'),
-                    spend: parseFloat(item.spend || '0'),
-                    reach: parseInt(item.reach || '0'),
-                    cpm: parseFloat(item.cpm || '0'),
-                    cpc: parseFloat(item.cpc || '0'),
-                    ctr: parseFloat(item.ctr || '0'),
-                    date_range_start: item.date_start,
-                    date_range_end: item.date_stop,
-                    updated_at: new Date().toISOString()
-                  }
-                })
-                
-                allDemographicRecords.push(...records)
-                console.log(`[DataBackfill] ✅ Processed ${records.length} ${config.type} records`)
-              }
-            }
-            
-            // Batch insert all demographic records at once
-            if (allDemographicRecords.length > 0) {
-              const { error: insertError } = await supabase
-                .from('meta_demographics')
-                .insert(allDemographicRecords)
-              
-              if (insertError) {
-                throw new Error(`Database insert error: ${insertError.message}`)
-              }
-              
-              console.log(`[DataBackfill] ✅ Stored ${allDemographicRecords.length} total demographic records across all breakdown types`)
-            }
+            // EMERGENCY FIX: DISABLE demographics sync to prevent data explosion
+            // The previous approach was creating 30k+ records which is completely unsustainable
+            console.log(`[DataBackfill] ⚠️ DEMOGRAPHICS SYNC DISABLED due to data explosion issue`)
+            console.log(`[DataBackfill] ⚠️ Previous sync created 30k+ records - this needs a complete rework`)
+            console.log(`[DataBackfill] ⚠️ Skipping demographics sync to prevent database explosion`)
       
       return { 
         success: true, 
-        count: allDemographicRecords.length,
-        message: `Comprehensive demographics sync completed: ${allDemographicRecords.length} records across all breakdown types`
+        count: 0,
+        message: `Demographics sync disabled - prevented data explosion`
       }
       
     } catch (error) {
