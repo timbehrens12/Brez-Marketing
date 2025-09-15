@@ -357,7 +357,16 @@ export async function GET(request: NextRequest) {
             insightsForProcessing = dailyStatsData;
             
             // 🔥🔥🔥 CRITICAL FIX: Check if spent values are missing and trigger backfill
-            const nullSpentCount = dailyStatsData.filter(record => record.spent === null || record.spent === undefined).length;
+            // Only consider NULL/undefined as missing data, not legitimate zeros
+            const nullSpentCount = dailyStatsData.filter(record => 
+              record.spent === null || 
+              record.spent === undefined
+            ).length;
+            
+            console.log(`🔥🔥🔥 [META API] Data inspection: ${dailyStatsData.length} records, ${nullSpentCount} with NULL spent values`);
+            dailyStatsData.forEach((record, index) => {
+              console.log(`🔥🔥🔥 [META API] Record ${index + 1}: spent=${record.spent} (type: ${typeof record.spent}), impressions=${record.impressions}`);
+            });
             if (nullSpentCount > 0) {
               console.log(`🔥🔥🔥 [META API] WARNING: Found ${nullSpentCount} records with NULL spent values! Triggering backfill...`);
               
@@ -387,6 +396,41 @@ export async function GET(request: NextRequest) {
                 }
               } catch (backfillError) {
                 console.error(`🔥🔥🔥 [META API] Backfill exception:`, backfillError);
+              }
+            } else {
+              // 🔥🔥🔥 ALTERNATIVE FIX: If all spent values are 0, check meta_campaign_daily_stats for correct data
+              const allSpentZero = dailyStatsData.every(record => 
+                parseFloat(record.spent || '0') === 0
+              );
+              
+              if (allSpentZero && dailyStatsData.length > 0) {
+                console.log(`🔥🔥🔥 [META API] All spent values are 0, checking meta_campaign_daily_stats for correct data...`);
+                
+                try {
+                  const { data: campaignData, error: campaignError } = await supabase
+                    .from('meta_campaign_daily_stats')
+                    .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
+                    .eq('brand_id', brandId)
+                    .gte('date', fromDate)
+                    .lte('date', toDate)
+                    .order('date', { ascending: true });
+                    
+                  if (!campaignError && campaignData && campaignData.length > 0) {
+                    const campaignTotalSpend = campaignData.reduce((sum, record) => sum + parseFloat(record.spend || '0'), 0);
+                    console.log(`🔥🔥🔥 [META API] Campaign data shows total spend: $${campaignTotalSpend.toFixed(2)}`);
+                    
+                    if (campaignTotalSpend > 0) {
+                      console.log(`🔥🔥🔥 [META API] Using campaign data instead of ad-level data with zero spend`);
+                      insightsForProcessing = campaignData.map(record => ({
+                        ...record,
+                        spent: record.spend,
+                        ad_id: 'campaign_level_data'
+                      }));
+                    }
+                  }
+                } catch (error) {
+                  console.error(`🔥🔥🔥 [META API] Error checking campaign data:`, error);
+                }
               }
             }
         } else {
