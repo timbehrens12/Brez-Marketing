@@ -896,8 +896,8 @@ export function MetaTab2({
         <div className="w-full h-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent rounded-full"></div>
       </div>
 
-      {/* Primary KPI Cards - Improved responsive layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 mb-4">
+      {/* Primary KPI Cards - Stack on narrow screens, 2 cols on tablet, 3 cols on wide */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4 mb-4">
         {/* Ad Spend - Primary KPI */}
         <MetricCard 
           title="Ad Spend"
@@ -963,8 +963,8 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Secondary Metrics - Better responsive grid with appropriate breakpoints */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+      {/* Secondary Metrics - Stack properly on narrow screens */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 mb-4">
         {/* Impressions */}
         <MetricCard 
           title="Impressions"
@@ -1090,8 +1090,8 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Special Widgets - Responsive layout with better breakpoints */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4 mb-4">
+      {/* Special Widgets - Stack on mobile, expand gradually */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4 mb-4">
         {/* Results */}
         <MetricCard 
           title="Results"
