@@ -337,11 +337,11 @@ export async function GET(request: NextRequest) {
 
     // FIXED: Fetch data from meta_ad_daily_insights which has the historical data
          console.log(`[API /api/metrics/meta] Fetching from meta_ad_daily_insights for date range: ${fromDate} to ${toDate}`);
-        // 🔥🔥🔥 FORCE FRESH DATA: Enhanced query with better field selection
+        // 🔥🔥🔥 FORCE FRESH DATA: Enhanced query with correct column names
         console.log(`🔥🔥🔥 [META API] Fetching FRESH data from meta_ad_daily_insights at ${new Date().toISOString()}`)
         const { data: dailyStatsData, error: dailyStatsError } = await supabase
           .from('meta_ad_daily_insights')
-          .select('date, spent, spend, impressions, clicks, conversions, reach, ctr, cpc, ad_id, updated_at')
+          .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc, ad_id, updated_at')
           .eq('brand_id', brandId)
           .gte('date', fromDate)
           .lte('date', toDate)
@@ -649,26 +649,26 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     dayItems.forEach(item => {
       const adId = item.ad_id || 'unknown'
-      const spentValue = parseFloat(item.spent || item.spend || '0')
+      const spentValue = parseFloat(item.spent || '0') // Only use 'spent' column
       
-      // 🔥🔥🔥 CRITICAL FIX: Always use the HIGHEST spend value to get latest data
+      // 🔥🔥🔥 CRITICAL FIX: Always use the HIGHEST spent value to get latest data
       console.log(`🔥🔥🔥 [META API] Processing record: ad_id=${adId}, spent=${spentValue}, impressions=${item.impressions}`)
       
       // For account-level data (ad_id = 'account_level_data'), keep the one with highest spend
       if (adId === 'account_level_data') {
         const existingAccount = uniqueAdData.get('account_level_data')
-        if (!existingAccount || spentValue > parseFloat(existingAccount.spent || existingAccount.spend || '0')) {
-          console.log(`🔥🔥🔥 [META API] Using account-level record with spend $${spentValue}`)
+        if (!existingAccount || spentValue > parseFloat(existingAccount.spent || '0')) {
+          console.log(`🔥🔥🔥 [META API] Using account-level record with spent $${spentValue}`)
           uniqueAdData.set('account_level_data', item)
         }
       } else {
-        // For ad-level data or undefined ad_id, ALWAYS keep the record with HIGHEST spend value
+        // For ad-level data or undefined ad_id, ALWAYS keep the record with HIGHEST spent value
         if (!uniqueAdData.has(adId) || 
-            spentValue > parseFloat(uniqueAdData.get(adId).spent || uniqueAdData.get(adId).spend || '0')) {
-          console.log(`🔥🔥🔥 [META API] Using record for ad_id=${adId} with spend $${spentValue}`)
+            spentValue > parseFloat(uniqueAdData.get(adId).spent || '0')) {
+          console.log(`🔥🔥🔥 [META API] Using record for ad_id=${adId} with spent $${spentValue}`)
           uniqueAdData.set(adId, item)
         } else {
-          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spend $${spentValue} (existing is higher)`)
+          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spent $${spentValue} (existing is higher)`)
         }
       }
     })
@@ -686,7 +686,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
       console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
     }
     
-    const daySpend = uniqueItems.reduce((sum, d) => sum + (parseFloat(d.spent || d.spend) || 0), 0)
+    const daySpend = uniqueItems.reduce((sum, d) => sum + (parseFloat(d.spent) || 0), 0)
     const dayImpressions = uniqueItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
     const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
@@ -695,14 +695,13 @@ function processMetaData(data: any[]): ProcessedMetaData {
     if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
       console.log(`🔥🔥🔥 [META API] Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
       uniqueItems.forEach((item, idx) => {
-        console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${parseFloat(item.spent || item.spend || '0').toFixed(2)}, impressions=${item.impressions || 0}`)
+         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${parseFloat(item.spent || '0').toFixed(2)}, impressions=${item.impressions || 0}`)
       })
       
       // Extra debug for data source analysis
       console.log(`🔥🔥🔥 [META API] Raw dayItems for ${dateStr}:`, dayItems.map(item => ({
         ad_id: item.ad_id,
         spent: item.spent,
-        spend: item.spend,
         impressions: item.impressions,
         source: 'meta_ad_daily_insights'
       })))
