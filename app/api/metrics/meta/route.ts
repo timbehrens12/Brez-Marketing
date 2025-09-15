@@ -337,15 +337,17 @@ export async function GET(request: NextRequest) {
 
     // FIXED: Fetch data from meta_ad_daily_insights which has the historical data
          console.log(`[API /api/metrics/meta] Fetching from meta_ad_daily_insights for date range: ${fromDate} to ${toDate}`);
-        // ✅ FIXED: Add ad_id filter to prevent double counting of data
-        // Only get account-level data or use a subquery to get aggregated data per date
+        // 🔥🔥🔥 FORCE FRESH DATA: Enhanced query with better field selection
+        console.log(`🔥🔥🔥 [META API] Fetching FRESH data from meta_ad_daily_insights at ${new Date().toISOString()}`)
         const { data: dailyStatsData, error: dailyStatsError } = await supabase
           .from('meta_ad_daily_insights')
-          .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc, ad_id')
+          .select('date, spent, spend, impressions, clicks, conversions, reach, ctr, cpc, ad_id, updated_at')
           .eq('brand_id', brandId)
           .gte('date', fromDate)
           .lte('date', toDate)
-          .order('date', { ascending: true });
+          .order('date', { ascending: true })
+          .order('updated_at', { ascending: false }) // Get newest records first
+          .limit(1000); // Ensure no limits
 
         if (dailyStatsError) {
           console.error(`[API /api/metrics/meta] Error fetching from meta_ad_daily_insights:`, dailyStatsError);
@@ -647,18 +649,26 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     dayItems.forEach(item => {
       const adId = item.ad_id || 'unknown'
+      const spentValue = parseFloat(item.spent || item.spend || '0')
+      
+      // 🔥🔥🔥 CRITICAL FIX: Always use the HIGHEST spend value to get latest data
+      console.log(`🔥🔥🔥 [META API] Processing record: ad_id=${adId}, spent=${spentValue}, impressions=${item.impressions}`)
+      
       // For account-level data (ad_id = 'account_level_data'), keep the one with highest spend
       if (adId === 'account_level_data') {
         const existingAccount = uniqueAdData.get('account_level_data')
-        if (!existingAccount || parseFloat(item.spent || '0') > parseFloat(existingAccount.spent || '0')) {
+        if (!existingAccount || spentValue > parseFloat(existingAccount.spent || existingAccount.spend || '0')) {
+          console.log(`🔥🔥🔥 [META API] Using account-level record with spend $${spentValue}`)
           uniqueAdData.set('account_level_data', item)
         }
       } else {
-        // For ad-level data, each ad_id should only appear once per date
-        // If we see the same ad_id twice, keep the one with higher values (latest sync)
+        // For ad-level data or undefined ad_id, ALWAYS keep the record with HIGHEST spend value
         if (!uniqueAdData.has(adId) || 
-            (parseFloat(item.spent || '0') > parseFloat(uniqueAdData.get(adId).spent || '0'))) {
+            spentValue > parseFloat(uniqueAdData.get(adId).spent || uniqueAdData.get(adId).spend || '0')) {
+          console.log(`🔥🔥🔥 [META API] Using record for ad_id=${adId} with spend $${spentValue}`)
           uniqueAdData.set(adId, item)
+        } else {
+          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spend $${spentValue} (existing is higher)`)
         }
       }
     })
