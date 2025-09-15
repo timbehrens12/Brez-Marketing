@@ -223,15 +223,11 @@ export default function DashboardPage() {
       }
     }
     
-    // ✅ FIXED: Default to TODAY with proper date handling
+    // ✅ FIXED: Default to TODAY using EXACT same logic as DateRangePicker preset
     const now = new Date()
-    const todayStart = startOfDay(now)
-    const todayEnd = new Date(todayStart)
-    todayEnd.setHours(23, 59, 59, 999)
-    
     const initialRange = {
-      from: todayStart,
-      to: todayEnd, // Match the "Today" preset format
+      from: startOfDay(now),
+      to: endOfDay(now) // Use endOfDay() to exactly match DateRangePicker "Today" preset
     }
     console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
     

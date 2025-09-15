@@ -498,7 +498,17 @@ export async function GET(request: NextRequest) {
           statsByCampaign[stat.campaign_id].push(stat);
         });
         
-        console.log(`[Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
+        console.log(`🔥🔥🔥 [Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
+        
+        // DEBUG: Log sample data to understand discrepancies
+        const sampleData = Array.from(deduplicatedStats.values()).slice(0, 3);
+        console.log(`🔥🔥🔥 [Meta Campaigns API] Sample deduplicated data:`, sampleData.map(d => ({
+          campaign_id: d.campaign_id,
+          date: d.date,
+          spend: d.spend,
+          impressions: d.impressions,
+          clicks: d.clicks
+        })));
       }
 
       // Log campaign data summary
@@ -523,9 +533,14 @@ export async function GET(request: NextRequest) {
       let campaigns = await Promise.all(relevantCampaigns.map(async (campaign: any) => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
-        // Log campaign processing
+        // 🔥🔥🔥 DEBUG: Log campaign processing details
         if (campaignStats.length > 0) {
-          console.log(`[Meta Campaigns API] Campaign ${campaign.campaign_id}: ${campaignStats.length} daily stats`)
+          console.log(`🔥🔥🔥 [Meta Campaigns API] Campaign "${campaign.campaign_name}" (${campaign.campaign_id}): ${campaignStats.length} daily stats for dates: ${campaignStats.map(s => s.date).sort().join(', ')}`);
+          
+          if (campaign.campaign_name.includes('TEST')) {
+            const totalSpend = campaignStats.reduce((sum, s) => sum + parseFloat(s.spend || '0'), 0);
+            console.log(`🔥🔥🔥 [Meta Campaigns API] TEST Campaign total spend: $${totalSpend.toFixed(2)}`);
+          }
         }
         
         // Aggregate metrics from daily campaign stats

@@ -46,13 +46,14 @@ export async function GET(request: NextRequest) {
     let estimatedCompletion = null
 
     if (connection && !connectionError) {
-      console.log(`[Meta Sync Status] Connection found:`, {
-        id: connection.id || 'unknown',
-        status: connection.status,
-        sync_status: connection.sync_status,
-        created_at: connection.created_at,
-        updated_at: connection.updated_at
-      })
+    console.log(`🔥🔥🔥 [Meta Sync Status] Connection found:`, {
+      id: connection.id || 'unknown',
+      status: connection.status,
+      sync_status: connection.sync_status,
+      created_at: connection.created_at,
+      updated_at: connection.updated_at,
+      last_sync_at: connection.last_sync_at
+    })
 
       // Check if connection is active (has a valid status)
       console.log(`[Meta Sync Status] Evaluating connection status: ${connection.status}, sync_status: ${connection.sync_status}`)
@@ -78,13 +79,13 @@ export async function GET(request: NextRequest) {
         } else if (connection.sync_status === 'completed') {
           overallStatus = 'completed'
           progressPct = 100
-          console.log(`[Meta Sync Status] Status set to 'completed'`)
+          console.log(`🔥🔥🔥 [Meta Sync Status] Status set to 'completed' - sync_status is 'completed'`)
         } else if (connection.sync_status === 'failed') {
           overallStatus = 'failed'
-          console.log(`[Meta Sync Status] Status set to 'failed'`)
+          console.log(`🔥🔥🔥 [Meta Sync Status] Status set to 'failed'`)
         } else {
           // Connection exists but sync hasn't started yet - check if we have recent data
-          console.log(`[Meta Sync Status] Checking for recent data to determine status...`)
+          console.log(`🔥🔥🔥 [Meta Sync Status] sync_status is '${connection.sync_status}' - checking for recent data to determine status...`)
 
           // Check if we have recent Meta data (last 7 days) to determine if sync is actually complete
           const { data: recentData } = await supabase
