@@ -492,8 +492,10 @@ export function MetaTab2({
 
   // Sync Meta insights (main refresh function)
   const syncMetaInsights = async () => {
+    console.log('[MetaTab2] 🔄 syncMetaInsights called with dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    
     if (!brandId || !dateRange?.from || !dateRange?.to) {
-
+      console.log('[MetaTab2] ❌ syncMetaInsights aborted - missing brandId or dateRange');
       return;
     }
     
@@ -734,6 +736,7 @@ export function MetaTab2({
   // Listen for global refresh events
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
+      console.log('[MetaTab2] 🔍 handleGlobalRefresh called with event:', event.type, event.detail);
 
       if (event.detail?.brandId === brandId && metaConnection) {
         // Check if refresh event includes a specific dateRange
@@ -741,13 +744,17 @@ export function MetaTab2({
           console.log('[MetaTab2] Refresh event includes dateRange, ensuring sync uses current dateRange');
         }
         
+        console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefresh');
         syncMetaInsights();
       }
     };
 
     // Listen for dashboard meta resync completion to refresh data without syncing
     const handleDashboardMetaRefresh = (event: CustomEvent) => {
+      console.log('[MetaTab2] 🔍 handleDashboardMetaRefresh called with event:', event.type, event.detail);
+      
       if (event.detail?.brandId === brandId && metaConnection) {
+        console.log('[MetaTab2] 📊 Dashboard completed resync, fetching fresh data from database');
         // Dashboard completed resync, just fetch fresh data from database
         Promise.all([
           fetchMetaDataFromDatabase(),
@@ -761,10 +768,12 @@ export function MetaTab2({
     };
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
+      console.log('[MetaTab2] 🔍 handleGlobalRefreshAll called with event:', event.type, event.detail);
 
       if (event.detail?.brandId === brandId && metaConnection && 
           (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
 
+        console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefreshAll');
         syncMetaInsights();
       }
     };
