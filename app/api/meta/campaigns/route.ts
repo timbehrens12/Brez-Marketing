@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     // Set hasDateRange flag if both dates are valid
     hasDateRange = !!(startDate && endDate && isValid(startDate) && isValid(endDate))
 
-    console.log(`🔥🔥🔥 [CAMPAIGNS API] FORCING FRESH DATA - NO CACHE, NO STALE DATA ALLOWED`)
+    console.log(`[CAMPAIGNS API] Fetching fresh campaign data`)
     console.log(`[API] Received request for brand ${brandId}. Date range: ${from || 'N/A'} to ${to || 'N/A'}. Strict: ${strictDateRange}`)
     
     if (!brandId) {
@@ -345,12 +345,10 @@ export async function GET(request: NextRequest) {
       // SOLUTION: Use aggregated data from meta_ad_daily_insights since meta_campaign_daily_stats only has 3 days
       console.log(`[Meta Campaigns] Getting aggregated spend from meta_ad_daily_insights for ${normalizedFromDate} to ${normalizedToDate}`)
       
-      // 🔥🔥🔥 REMOVED: No longer using meta_ad_daily_insights for comparison since it has duplicates
-      // Campaign API should only use meta_campaign_daily_stats which has correct single records per date
-      console.log(`🔥🔥🔥 [CAMPAIGNS API] Using ONLY meta_campaign_daily_stats for accurate campaign data (no duplicates)`)
+      // Using only campaign daily stats for accurate data (no duplicates)
+      console.log(`[CAMPAIGNS API] Using meta_campaign_daily_stats for campaign data`)
       
-      // 🔥🔥🔥 FORCE FRESH DATA: Add timestamp to ensure no caching
-      console.log(`🔥🔥🔥 [CAMPAIGNS API] Fetching FRESH data from meta_campaign_daily_stats at ${new Date().toISOString()}`)
+      // Fetch fresh campaign daily stats
       let { data: dailyAdStats, error: statsError } = await supabase
         .from('meta_campaign_daily_stats')
         .select('campaign_id, date, spend, impressions, clicks, reach, conversions')
@@ -482,22 +480,7 @@ export async function GET(request: NextRequest) {
           statsByCampaign[stat.campaign_id].push(stat);
         });
         
-        console.log(`🔥🔥🔥 [Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
-        
-        // 🔥🔥🔥 DEBUG: Check for spend doubling patterns
-        const totalSpendBefore = dailyAdStats.reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
-        const totalSpendAfter = Array.from(deduplicatedStats.values()).reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
-        console.log(`🔥🔥🔥 [Meta Campaigns API] Spend totals - Before dedup: $${totalSpendBefore.toFixed(2)}, After dedup: $${totalSpendAfter.toFixed(2)}`);
-        
-        // DEBUG: Log sample data to understand discrepancies
-        const sampleData = Array.from(deduplicatedStats.values()).slice(0, 3);
-        console.log(`🔥🔥🔥 [Meta Campaigns API] Sample deduplicated data:`, sampleData.map(d => ({
-          campaign_id: d.campaign_id,
-          date: d.date,
-          spend: d.spend,
-          impressions: d.impressions,
-          clicks: d.clicks
-        })));
+        console.log(`[Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
       }
 
       // Log campaign data summary
@@ -762,9 +745,9 @@ export async function GET(request: NextRequest) {
         // Log successful metric aggregation
         console.log(`[Meta Campaigns API] Campaign ${campaign.campaign_id}: spend=$${spend}, impressions=${impressions}, clicks=${clicks}`);
         
-        // 🔥🔥🔥 DEBUG: Show individual campaign spend for doubling analysis
+        // Log campaign metrics
         if (spend > 0) {
-          console.log(`🔥🔥🔥 [Meta Campaigns API] Campaign ${campaign.campaign_id} (${campaign.campaign_name || 'Unknown'}) final spend: $${spend.toFixed(2)} from ${campaignStats.length} daily records`);
+          console.log(`[Meta Campaigns API] Campaign ${campaign.campaign_id} (${campaign.campaign_name || 'Unknown'}) spend: $${spend.toFixed(2)} from ${campaignStats.length} daily records`);
         }
         
         // Use calculated reach ONLY if a date range was specified, otherwise use the campaign's total reach
@@ -875,7 +858,7 @@ export async function GET(request: NextRequest) {
         const campaignActualReach = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.reach) || 0), 0);
         const campaignActualConversions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.conversions) || 0), 0);
         
-        console.log(`[Meta Campaigns] FIXED: Campaign ${campaign.campaign_name} using ONLY campaign stats - spend: $${campaignActualSpend}, impressions: ${campaignActualImpressions}`);
+        console.log(`[Meta Campaigns] Campaign ${campaign.campaign_name} metrics - spend: $${campaignActualSpend}, impressions: ${campaignActualImpressions}`);
         
         return {
           ...campaign,
@@ -1258,7 +1241,7 @@ export async function GET(request: NextRequest) {
       console.log(`>>> [API Campaigns] Has recommendation: ${!!testCampaignFinal.recommendation}`);
     }
 
-    // 🔥🔥🔥 DISCREPANCY ANALYSIS: Compare campaign totals with main API totals
+    // Calculate campaign totals for summary
     const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
       spend: totals.spend + (campaign.spent || 0),
       impressions: totals.impressions + (campaign.impressions || 0),
@@ -1267,8 +1250,8 @@ export async function GET(request: NextRequest) {
       conversions: totals.conversions + (campaign.conversions || 0)
     }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 });
     
-    console.log(`🔥🔥🔥 [CAMPAIGNS API] FINAL CAMPAIGN TOTALS - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}, Reach: ${campaignTotals.reach}, Conversions: ${campaignTotals.conversions}`)
-    console.log(`🔥🔥🔥 [CAMPAIGNS API] Source: meta_campaign_daily_stats aggregated across ${campaignsWithRecommendations.length} campaigns`)
+    console.log(`[CAMPAIGNS API] Campaign totals - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}`)
+    console.log(`[CAMPAIGNS API] Source: meta_campaign_daily_stats aggregated across ${campaignsWithRecommendations.length} campaigns`)
 
     return NextResponse.json({
       campaigns: campaignsWithRecommendations,

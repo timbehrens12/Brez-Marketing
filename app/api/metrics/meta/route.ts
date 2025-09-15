@@ -109,32 +109,16 @@ export async function GET(request: NextRequest) {
     const refresh = url.searchParams.get('refresh') === 'true' || forceRefresh === true
     const preset = url.searchParams.get('preset')
     
-    // 🔥🔥🔥 MAJOR DEBUG: Log all incoming parameters
-    console.log(`🔥🔥🔥 [META API] INCOMING REQUEST:`, {
-      brandId,
-      from,
-      to,
-      bypassCache,
-      forceLoad,
-      forceRefresh,
-      refresh,
-      debug,
-      preset,
-      allParams: Object.fromEntries(url.searchParams.entries())
-    });
+    console.log(`[META API] Request: brandId=${brandId}, from=${from}, to=${to}, refresh=${refresh}`);
     
     // Check for yesterday preset explicitly
     let isYesterdayPreset = preset === 'yesterday';
     
-    // 🔥🔥🔥 FORCE FRESH DATA - DISABLE ALL CACHING
+    // Generate cache key and disable caching for fresh data
     const currentDate = getCurrentDateString();
     const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}-${currentDate}`;
     
-    // 🔥🔥🔥 ALWAYS BYPASS CACHE TO GET FRESH DATA
-    const forceFresh = true;
-    
-    console.log(`🔥🔥🔥 [META API] FORCING FRESH DATA - NO CACHE ALLOWED`)
-    console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}, bypassCache: ${bypassCache}, forceRefresh: ${forceRefresh}, strictDateRange: ${strictDateRange}`)
+    console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}`)
     
     // Validate brandId
     if (!brandId) {
@@ -150,18 +134,8 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // 🔥🔥🔥 FORCE FRESH DATA - DISABLE ALL CACHING
-    console.log(`🔥🔥🔥 [META API] CACHE COMPLETELY DISABLED - FORCING FRESH DATA for ${cacheKey}`);
-    
-    // Clear any existing cache for this key
-    if (apiCache.has(cacheKey)) {
-      apiCache.delete(cacheKey);
-      console.log(`🔥🔥🔥 [META API] CLEARED EXISTING CACHE for ${cacheKey}`);
-    }
-    
-    // Clear the entire cache to be sure
+    // Clear cache for fresh data
     apiCache.clear();
-    console.log(`🔥🔥🔥 [META API] CLEARED ENTIRE CACHE - FRESH DATA GUARANTEED`);
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -622,37 +596,7 @@ export async function GET(request: NextRequest) {
         }
       };
       
-      // 🔥🔥🔥 MAJOR DEBUG: Log the actual data being returned
-    console.log(`🔥🔥🔥 [META API] RETURNING DATA:`, {
-      adSpend: response.adSpend,
-      impressions: response.impressions,
-      clicks: response.clicks,
-      conversions: response.conversions,
-      reach: response.reach, // ✅ ADDED: Include reach in debug output
-      roas: response.roas,
-      ctr: response.ctr,
-      cpc: response.cpc,
-      dailyDataCount: response.dailyData?.length || 0,
-      fromDate,
-      toDate,
-      cacheKey,
-      willBeCached: !bypassCache && !refresh,
-      dataSource: 'meta_ad_daily_insights'
-    });
-    
-    // 🔥🔥🔥 EXTRA DEBUG: Compare with campaign data source for discrepancy analysis
-    if (fromDate === toDate && fromDate === new Date().toISOString().split('T')[0]) {
-      console.log(`🔥🔥🔥 [META API] TODAY DATA COMPARISON - Main widgets: $${response.adSpend}, impressions: ${response.impressions}, reach: ${response.reach}`)
-    }
-    
-    // 🔥🔥🔥 DISCREPANCY ANALYSIS: Compare main API data with campaign data source
-    if (response.adSpend > 0) {
-      console.log(`🔥🔥🔥 [META API] MAIN API FINAL TOTALS - Spend: $${response.adSpend}, Impressions: ${response.impressions}, Clicks: ${response.clicks}, Reach: ${response.reach}, Conversions: ${response.conversions}`)
-      console.log(`🔥🔥🔥 [META API] Source: meta_ad_daily_insights aggregated across ${processedData.dailyData?.length || 0} days`)
-    }
-      
-      // 🔥🔥🔥 NEVER CACHE - ALWAYS FRESH DATA
-      console.log(`🔥🔥🔥 [META API] NOT CACHING RESPONSE - FRESH DATA ONLY`);
+      // Response ready - no caching for fresh data
       
       return NextResponse.json(response)
   } catch (error) {
@@ -735,16 +679,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     dayItems.forEach(item => {
       const adId = item.ad_id || 'unknown'
       
-      // 🔥🔥🔥 CRITICAL DEBUG: Check all possible spent field values
-      console.log(`🔥🔥🔥 [META API] RAW RECORD DEBUG: ad_id=${adId}`, {
-        spent_raw: item.spent,
-        spent_type: typeof item.spent,
-        spend_raw: item.spend,
-        spend_type: typeof item.spend,
-        impressions: item.impressions
-      });
-      
-      // Try multiple possible column names and parsing strategies
+      // Parse spent value from either spent or spend column
       let spentValue = 0;
       if (item.spent !== null && item.spent !== undefined && item.spent !== '') {
         spentValue = parseFloat(item.spent);
@@ -757,13 +692,10 @@ function processMetaData(data: any[]): ProcessedMetaData {
         spentValue = parseFloat(item.spent);
       }
       
-      console.log(`🔥🔥🔥 [META API] Processing record: ad_id=${adId}, spent=${spentValue} (parsed from ${item.spent}), impressions=${item.impressions}`)
-      
       // For account-level data (ad_id = 'account_level_data'), keep the one with highest spend
       if (adId === 'account_level_data') {
         const existingAccount = uniqueAdData.get('account_level_data')
         if (!existingAccount || spentValue > parseFloat(existingAccount.spent || '0')) {
-          console.log(`🔥🔥🔥 [META API] Using account-level record with spent $${spentValue}`)
           uniqueAdData.set('account_level_data', item)
         }
       } else {
@@ -772,12 +704,9 @@ function processMetaData(data: any[]): ProcessedMetaData {
         const existingSpent = existingRecord ? parseFloat(existingRecord.spent_value || existingRecord.spent || existingRecord.spend || '0') : 0
         
         if (!existingRecord || spentValue > existingSpent) {
-          console.log(`🔥🔥🔥 [META API] Using record for ad_id=${adId} with spent $${spentValue}`)
-          // 🔥🔥🔥 CRITICAL FIX: Store the parsed spent value for aggregation
+          // Store the parsed spent value for aggregation
           item.spent_value = spentValue
           uniqueAdData.set(adId, item)
-        } else {
-          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spent $${spentValue} (existing is higher: $${existingSpent})`)
         }
       }
     })
@@ -789,10 +718,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     if (hasAccountLevel && adLevelRecords.length > 0) {
       // We have both - use ONLY ad-level data to avoid double counting
-      console.log(`Date ${dateStr}: Found both account-level and ad-level data. Using ONLY ad-level data (${adLevelRecords.length} records) to avoid double counting`)
       uniqueItems = adLevelRecords
-    } else {
-      console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
     }
     
     const daySpend = uniqueItems.reduce((sum, d) => sum + (d.spent_value || parseFloat(d.spent) || parseFloat(d.spend) || 0), 0)
@@ -800,21 +726,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
     const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
     
-    // Debug: Log the aggregation details
-    if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
-      console.log(`🔥🔥🔥 [META API] Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
-      uniqueItems.forEach((item, idx) => {
-         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${(item.spent_value || parseFloat(item.spent) || parseFloat(item.spend) || 0).toFixed(2)}, impressions=${item.impressions || 0}, reach=${item.reach || 0}`)
-      })
-      
-      // Extra debug for data source analysis
-      console.log(`🔥🔥🔥 [META API] Raw dayItems for ${dateStr}:`, dayItems.map(item => ({
-        ad_id: item.ad_id,
-        spent: item.spent,
-        impressions: item.impressions,
-        source: 'meta_ad_daily_insights'
-      })))
-    }
+    // Calculate daily metrics
     
     // Calculate conversions from actions array (purchase or conversion actions)
     let dayConversions = 0
@@ -871,7 +783,10 @@ function processMetaData(data: any[]): ProcessedMetaData {
     totalConversions += dayConversions
     totalReach += dayReach
     
-    console.log(`Date ${dateStr}: spend=${daySpend}, impressions=${dayImpressions}, clicks=${dayClicks}, conversions=${dayConversions}, reach=${dayReach}`)
+    // Log basic aggregation info
+    if (daySpend > 0) {
+      console.log(`Date ${dateStr}: spend=${daySpend}, impressions=${dayImpressions}, clicks=${dayClicks}, conversions=${dayConversions}, reach=${dayReach}`)
+    }
   })
   
   // Sort daily data by date to maintain chronological order
@@ -910,8 +825,8 @@ function processMetaData(data: any[]): ProcessedMetaData {
   const cprGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'cost_per_conversion') : 0 // Use correct metric name
   const frequency = 0 // Cannot calculate frequency without correct totalReach
   
-  // Add debug info
-  console.log(`>>> [API Meta Metrics] Processed metrics (Reach removed): adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%`)
+  // Processed metrics summary
+  console.log(`[API Meta Metrics] Processed: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, reach=${totalReach}`)
   
   return {
     adSpend: totalSpend,

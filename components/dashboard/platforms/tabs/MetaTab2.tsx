@@ -1139,8 +1139,6 @@ export function MetaTab2({
           isLoading={isLoadingAllMetaWidgets}
           isSyncing={isSyncingCampaigns}
           dateRange={dateRange}
-          onRefresh={() => fetchCampaigns(true)}
-          onSync={syncCampaigns}
         />
       </div>
 
