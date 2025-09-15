@@ -258,6 +258,21 @@ const CampaignWidget = ({
   onSync, 
   onReachValuesCalculated
 }: CampaignWidgetProps): JSX.Element => {
+
+  // 🚨 CRITICAL DEBUG: Log what campaigns data the widget receives
+  React.useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      const testCampaign = campaigns.find(c => c.campaign_name?.includes('TEST'));
+      if (testCampaign) {
+        console.log('🚨 CAMPAIGN WIDGET DEBUG: Received TEST campaign data:', {
+          name: testCampaign.campaign_name,
+          spent: testCampaign.spent,
+          status: testCampaign.status,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }, [campaigns]);
   
   // *** DEBUG LOGGING START ***
   // Only log once per 10 renders to prevent log floods
