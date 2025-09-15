@@ -727,10 +727,30 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     dayItems.forEach(item => {
       const adId = item.ad_id || 'unknown'
-      const spentValue = parseFloat(item.spent || '0') // Only use 'spent' column
       
-      // 🔥🔥🔥 CRITICAL FIX: Always use the HIGHEST spent value to get latest data
-      console.log(`🔥🔥🔥 [META API] Processing record: ad_id=${adId}, spent=${spentValue}, impressions=${item.impressions}`)
+      // 🔥🔥🔥 CRITICAL DEBUG: Check all possible spent field values
+      console.log(`🔥🔥🔥 [META API] RAW RECORD DEBUG: ad_id=${adId}`, {
+        spent_raw: item.spent,
+        spent_type: typeof item.spent,
+        spend_raw: item.spend,
+        spend_type: typeof item.spend,
+        impressions: item.impressions
+      });
+      
+      // Try multiple possible column names and parsing strategies
+      let spentValue = 0;
+      if (item.spent !== null && item.spent !== undefined && item.spent !== '') {
+        spentValue = parseFloat(item.spent);
+      } else if (item.spend !== null && item.spend !== undefined && item.spend !== '') {
+        spentValue = parseFloat(item.spend);
+      }
+      
+      // If still 0, try parsing as string in case it's a string number
+      if (spentValue === 0 && typeof item.spent === 'string' && item.spent.trim() !== '') {
+        spentValue = parseFloat(item.spent);
+      }
+      
+      console.log(`🔥🔥🔥 [META API] Processing record: ad_id=${adId}, spent=${spentValue} (parsed from ${item.spent}), impressions=${item.impressions}`)
       
       // For account-level data (ad_id = 'account_level_data'), keep the one with highest spend
       if (adId === 'account_level_data') {
