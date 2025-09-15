@@ -1429,6 +1429,16 @@ const CampaignWidget = ({
         let aggregatedImpressions = 0;
         let aggregatedClicks = 0;
         let aggregatedConversions = 0;
+        
+        // 🚨 CRITICAL DEBUG: Log aggregation for TEST campaign
+        const isTestCampaign = campaign.campaign_name?.includes('TEST');
+        if (isTestCampaign) {
+          console.log('🚨 AGGREGATION DEBUG: Starting aggregation for TEST campaign:', {
+            campaignSpent: campaign.spent,
+            dailyInsightsCount: campaign.daily_insights.length,
+            dateRange: dateRange ? `${dateRange.from?.toISOString()} to ${dateRange.to?.toISOString()}` : 'no range'
+          });
+        }
         let aggregatedPurchaseValue = 0;
         let insightsInRange = 0;
 
@@ -1490,6 +1500,16 @@ const CampaignWidget = ({
         // });
 
         const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
+        
+        // 🚨 CRITICAL DEBUG: Log aggregation result for TEST campaign
+        if (isTestCampaign) {
+          console.log('🚨 AGGREGATION DEBUG: Final aggregation result for TEST campaign:', {
+            originalSpent: campaign.spent,
+            aggregatedSpent: aggregatedSpent,
+            insightsInRange: insightsInRange,
+            willOverride: true
+          });
+        }
         
         // Create a new campaign object with aggregated metrics
         return {
