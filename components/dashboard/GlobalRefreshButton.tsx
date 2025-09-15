@@ -120,23 +120,27 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       // Wait a bit for the response
       await new Promise(resolve => {
         const handleDateRangeResponse = (event: any) => {
+          console.log('[GlobalRefresh] 🔍 Received daterange-response event:', event.detail);
           if (event.detail?.dateRange) {
             freshDateRange = {
               from: new Date(event.detail.dateRange.from),
               to: new Date(event.detail.dateRange.to)
             };
-            console.log('[GlobalRefresh] 🔍 Received fresh dateRange from dashboard:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
+            console.log('[GlobalRefresh] 🔍 Successfully updated freshDateRange from dashboard:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
+          } else {
+            console.log('[GlobalRefresh] ⚠️ Received response but no dateRange in detail');
           }
           window.removeEventListener('daterange-response', handleDateRangeResponse);
           resolve(true);
         };
         window.addEventListener('daterange-response', handleDateRangeResponse);
         
-        // Timeout after 50ms if no response
+        // Timeout after 100ms if no response (increased timeout)
         setTimeout(() => {
+          console.log('[GlobalRefresh] ⚠️ Timeout waiting for dateRange response, using prop dateRange');
           window.removeEventListener('daterange-response', handleDateRangeResponse);
           resolve(true);
-        }, 50);
+        }, 100);
       });
     } catch (error) {
       console.log('[GlobalRefresh] ⚠️ Could not get fresh dateRange, using prop');

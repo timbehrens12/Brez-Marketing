@@ -660,15 +660,21 @@ export default function DashboardPage() {
     const handleDateRangeRequest = (event: any) => {
       console.log('[Dashboard] 🔍 Received dateRange request, responding with current dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
       
+      const responseDetail = {
+        requestId: event.detail?.requestId,
+        dateRange: dateRange ? {
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString()
+        } : undefined
+      };
+      
+      console.log('[Dashboard] 🔍 Dispatching daterange-response with detail:', responseDetail);
+      
       window.dispatchEvent(new CustomEvent('daterange-response', {
-        detail: {
-          requestId: event.detail?.requestId,
-          dateRange: dateRange ? {
-            from: dateRange.from.toISOString(),
-            to: dateRange.to.toISOString()
-          } : undefined
-        }
+        detail: responseDetail
       }));
+      
+      console.log('[Dashboard] 🔍 daterange-response event dispatched');
     };
 
     window.addEventListener('request-current-daterange', handleDateRangeRequest);
