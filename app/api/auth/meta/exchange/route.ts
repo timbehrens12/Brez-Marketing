@@ -145,16 +145,84 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        // 🚨 EMERGENCY FIX: Disable automatic background sync to prevent rate limiting
-        // Mark connection as completed immediately - user must manually sync
-        await supabase
-          .from('platform_connections')
-          .update({
-            sync_status: 'completed',
-            last_sync_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', connectionData.id)
+        // 🚀 RESTORED: Automatic full historical sync with rate limit protection
+        try {
+          // Update status to syncing
+          await supabase
+            .from('platform_connections')
+            .update({
+              sync_status: 'syncing',
+              last_sync_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', connectionData.id)
+
+          // Import DataBackfillService for direct sync (bypass queue to avoid rate limits)
+          const { DataBackfillService } = await import('@/lib/services/dataBackfillService')
+
+          // Get account ID for sync
+          let finalAccountId = accountId
+          if (!finalAccountId) {
+            try {
+              const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
+              const meData = await meResponse.json()
+              if (meData.data?.[0]) {
+                finalAccountId = meData.data[0].id
+              }
+            } catch (accountError) {
+              console.error(`[Meta Exchange] Failed to get account ID for full sync:`, accountError)
+            }
+          }
+
+          if (finalAccountId) {
+            // Set up full 12-month date range like before
+            const endDate = new Date()
+            const startDate = new Date()
+            startDate.setMonth(endDate.getMonth() - 12)
+            
+            const dateRange = {
+              since: startDate.toISOString().split('T')[0],
+              until: endDate.toISOString().split('T')[0]
+            }
+
+            // Do full historical sync directly (no queue, no rate limit conflicts)
+            await DataBackfillService.fetchMetaCampaigns(state, finalAccountId, tokenData.access_token, dateRange)
+            await DataBackfillService.fetchMetaDailyInsights(state, finalAccountId, tokenData.access_token, dateRange)
+
+            // Mark as completed
+            await supabase
+              .from('platform_connections')
+              .update({
+                sync_status: 'completed',
+                last_sync_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', connectionData.id)
+          } else {
+            // No account ID - mark as completed, user can manually sync
+            await supabase
+              .from('platform_connections')
+              .update({
+                sync_status: 'completed',
+                last_sync_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', connectionData.id)
+          }
+
+        } catch (syncError) {
+          console.error(`[Meta Exchange] Full sync failed:`, syncError)
+          
+          // Mark as completed even if sync fails - prevents stuck syncing status
+          await supabase
+            .from('platform_connections')
+            .update({
+              sync_status: 'completed',
+              last_sync_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', connectionData.id)
+        }
         
       } catch (backgroundError) {
         console.error(`[Meta Exchange] Background sync failed:`, backgroundError)
