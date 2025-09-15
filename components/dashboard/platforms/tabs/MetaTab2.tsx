@@ -480,19 +480,15 @@ export function MetaTab2({
           spent: testCampaign.spent,
           status: testCampaign.status
         });
-      }
-      
-      setCampaigns(data.campaigns || []);
-      
-      // 🚨 CRITICAL: Force component re-render by updating a state that triggers key change
-      const testCampaign = data.campaigns?.find(c => c.campaign_name?.includes('TEST'));
-      if (testCampaign) {
+        
         console.log('🚨 EMERGENCY DEBUG: Forcing re-render with spent:', testCampaign.spent);
         // Force a state update to trigger re-render
         setTimeout(() => {
           setCampaigns([...data.campaigns || []]);
         }, 50);
       }
+      
+      setCampaigns(data.campaigns || []);
       
       // Force debug the state after setting
       setTimeout(() => {
