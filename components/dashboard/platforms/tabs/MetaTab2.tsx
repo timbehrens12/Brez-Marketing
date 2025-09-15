@@ -129,6 +129,13 @@ export function MetaTab2({
   // Get Meta connection
   const metaConnection = connections?.find(c => c.platform_type === 'meta' && c.status === 'active');
   
+  // Debug: Track dateRange prop changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      console.log('[MetaTab2] 🔍 Received new dateRange prop:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
+    }
+  }, [dateRange]);
+  
   // Unified loading state for all Meta widgets
   const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(!!metaConnection);
   
@@ -491,10 +498,12 @@ export function MetaTab2({
   }, [brandId, metaConnection, dateRange, campaigns.length]);
 
   // Sync Meta insights (main refresh function)
-  const syncMetaInsights = async () => {
-    console.log('[MetaTab2] 🔄 syncMetaInsights called with dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+  const syncMetaInsights = async (forcedDateRange?: DateRange) => {
+    const effectiveDateRange = forcedDateRange || dateRange;
+    console.log('[MetaTab2] 🔄 syncMetaInsights called with dateRange:', effectiveDateRange ? `${effectiveDateRange.from.toISOString().split('T')[0]} to ${effectiveDateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    console.log('[MetaTab2] 🔍 Using', forcedDateRange ? 'forced' : 'prop', 'dateRange');
     
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
+    if (!brandId || !effectiveDateRange?.from || !effectiveDateRange?.to) {
       console.log('[MetaTab2] ❌ syncMetaInsights aborted - missing brandId or dateRange');
       return;
     }
@@ -523,8 +532,8 @@ export function MetaTab2({
     
     try {
       // Format dates in YYYY-MM-DD format
-      const startDate = dateRange.from.toISOString().split('T')[0];
-      const endDate = dateRange.to.toISOString().split('T')[0];
+      const startDate = effectiveDateRange.from.toISOString().split('T')[0];
+      const endDate = effectiveDateRange.to.toISOString().split('T')[0];
       
       // Step 1A: Sync fresh data from Meta API to database (CURRENT PERIOD)
 ;
@@ -552,7 +561,7 @@ export function MetaTab2({
 
       // Step 1B: Sync fresh PREVIOUS period data from Meta API to database  
 ;
-      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+      const { prevFrom, prevTo } = getPreviousPeriodDates(effectiveDateRange.from, effectiveDateRange.to);
       
       const previousResponse = await fetch('/api/meta/insights/sync', {
         method: 'POST',
@@ -740,12 +749,17 @@ export function MetaTab2({
 
       if (event.detail?.brandId === brandId && metaConnection) {
         // Check if refresh event includes a specific dateRange
+        let forcedDateRange: DateRange | undefined;
         if (event.detail?.dateRange) {
-          console.log('[MetaTab2] Refresh event includes dateRange, ensuring sync uses current dateRange');
+          console.log('[MetaTab2] Refresh event includes dateRange, using event dateRange instead of prop');
+          forcedDateRange = {
+            from: new Date(event.detail.dateRange.from),
+            to: new Date(event.detail.dateRange.to)
+          };
         }
         
         console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefresh');
-        syncMetaInsights();
+        syncMetaInsights(forcedDateRange);
       }
     };
 

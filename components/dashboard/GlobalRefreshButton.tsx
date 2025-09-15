@@ -166,32 +166,35 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         }
       } else {
         // For non-Shopify tabs, dispatch regular global refresh events
-        window.dispatchEvent(new CustomEvent('global-refresh-all', {
-          detail: {
-            brandId,
-            currentTab,
-            platforms: activePlatforms,
-            timestamp: Date.now(),
-            refreshId,
-            forceRefresh: true
-          }
-        }))
-
-        // Tab-specific events for targeted refreshes
-        if (currentTab === 'meta' && activePlatforms.meta) {
-          window.dispatchEvent(new CustomEvent('force-meta-refresh', {
-            detail: { 
-              brandId, 
-              timestamp: Date.now(), 
-              forceRefresh: true, 
-              source: 'global-refresh',
-              dateRange: dateRange ? {
-                from: dateRange.from.toISOString(),
-                to: dateRange.to.toISOString()
-              } : undefined
+        // Add a small delay to ensure React state has propagated to child components
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('global-refresh-all', {
+            detail: {
+              brandId,
+              currentTab,
+              platforms: activePlatforms,
+              timestamp: Date.now(),
+              refreshId,
+              forceRefresh: true
             }
           }))
-        }
+
+          // Tab-specific events for targeted refreshes
+          if (currentTab === 'meta' && activePlatforms.meta) {
+            window.dispatchEvent(new CustomEvent('force-meta-refresh', {
+              detail: { 
+                brandId, 
+                timestamp: Date.now(), 
+                forceRefresh: true, 
+                source: 'global-refresh',
+                dateRange: dateRange ? {
+                  from: dateRange.from.toISOString(),
+                  to: dateRange.to.toISOString()
+                } : undefined
+              }
+            }))
+          }
+        }, 100); // 100ms delay to ensure React state propagation
       }
 
       if (currentTab === 'site') {
