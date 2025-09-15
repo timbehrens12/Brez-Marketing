@@ -761,12 +761,16 @@ function processMetaData(data: any[]): ProcessedMetaData {
         }
       } else {
         // For ad-level data or undefined ad_id, ALWAYS keep the record with HIGHEST spent value
-        if (!uniqueAdData.has(adId) || 
-            spentValue > parseFloat(uniqueAdData.get(adId).spent || '0')) {
+        const existingRecord = uniqueAdData.get(adId)
+        const existingSpent = existingRecord ? parseFloat(existingRecord.spent_value || existingRecord.spent || existingRecord.spend || '0') : 0
+        
+        if (!existingRecord || spentValue > existingSpent) {
           console.log(`🔥🔥🔥 [META API] Using record for ad_id=${adId} with spent $${spentValue}`)
+          // 🔥🔥🔥 CRITICAL FIX: Store the parsed spent value for aggregation
+          item.spent_value = spentValue
           uniqueAdData.set(adId, item)
         } else {
-          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spent $${spentValue} (existing is higher)`)
+          console.log(`🔥🔥🔥 [META API] Skipping record for ad_id=${adId} with spent $${spentValue} (existing is higher: $${existingSpent})`)
         }
       }
     })
@@ -784,7 +788,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
       console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
     }
     
-    const daySpend = uniqueItems.reduce((sum, d) => sum + (parseFloat(d.spent) || 0), 0)
+    const daySpend = uniqueItems.reduce((sum, d) => sum + (d.spent_value || parseFloat(d.spent) || parseFloat(d.spend) || 0), 0)
     const dayImpressions = uniqueItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
     const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
@@ -793,7 +797,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
       console.log(`🔥🔥🔥 [META API] Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
       uniqueItems.forEach((item, idx) => {
-         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${parseFloat(item.spent || '0').toFixed(2)}, impressions=${item.impressions || 0}`)
+         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${(item.spent_value || parseFloat(item.spent) || parseFloat(item.spend) || 0).toFixed(2)}, impressions=${item.impressions || 0}`)
       })
       
       // Extra debug for data source analysis
