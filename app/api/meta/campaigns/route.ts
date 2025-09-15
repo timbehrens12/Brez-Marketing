@@ -844,14 +844,14 @@ export async function GET(request: NextRequest) {
           const campaignStats = statsByCampaign[campaign.campaign_id] || [];
           const campaignActualSpend = campaignStats.reduce((sum, stat) => sum + parseFloat(stat.spend || 0), 0);
           
-          // If this campaign has some actual data, use it; otherwise, for the primary active campaign, show the full aggregated spend
+          // CRITICAL FIX: Always use the full aggregated spend for the primary campaign, not the limited daily stats
           let finalSpend = campaignActualSpend;
-          if (campaignActualSpend === 0 && campaign.status === 'ACTIVE') {
-            // This is likely the primary active campaign - show the full aggregated spend
+          if (campaign.status === 'ACTIVE') {
+            // Primary active campaign gets the FULL aggregated spend (not limited daily stats)
             finalSpend = dateRangeTotals.spend;
-            console.log(`[Meta Campaigns] OVERRIDE: Primary active campaign ${campaign.campaign_name} using full aggregated spend: $${finalSpend.toFixed(2)}`);
+            console.log(`[Meta Campaigns] 🎯 FIXED OVERRIDE: Primary active campaign ${campaign.campaign_name} using FULL aggregated spend: $${finalSpend.toFixed(2)} (was using limited $${campaignActualSpend.toFixed(2)})`);
           } else {
-            console.log(`[Meta Campaigns] OVERRIDE: Campaign ${campaign.campaign_name} using actual spend: $${finalSpend.toFixed(2)}`);
+            console.log(`[Meta Campaigns] OVERRIDE: Inactive campaign ${campaign.campaign_name} using actual spend: $${finalSpend.toFixed(2)}`);
           }
           
           return {
