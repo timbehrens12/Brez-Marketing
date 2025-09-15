@@ -368,10 +368,10 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
       
-      // ✅ FIXED: Get campaign daily stats with ad_id to prevent duplication 
+      // ✅ FIXED: Get campaign daily stats (meta_campaign_daily_stats doesn't have ad_id column)
       let { data: dailyAdStats, error: statsError } = await supabase
         .from('meta_campaign_daily_stats')
-        .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count, ad_id')
+        .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
         .lte('date', normalizedToDate);
@@ -462,28 +462,40 @@ export async function GET(request: NextRequest) {
       const statsByCampaign: Record<string, any[]> = {};
       
       if (dailyAdStats) {
-        // ✅ FIXED: De-duplicate by campaign_id, date, and ad_id to prevent double counting
+        // ✅ FIXED: De-duplicate by campaign_id and date to prevent double counting
         const deduplicatedStats = new Map<string, any>();
         
         dailyAdStats.forEach(stat => {
           if (!stat.campaign_id) return;
           
-          // Create unique key for each campaign-date-ad combination
-          const uniqueKey = `${stat.campaign_id}-${stat.date}-${stat.ad_id || 'account_level'}`;
+          // Create unique key for each campaign-date combination
+          const uniqueKey = `${stat.campaign_id}-${stat.date}`;
           
-          // Only keep the first occurrence of each unique combination
+          // Only keep the first occurrence of each unique combination, or the one with higher spend
           if (!deduplicatedStats.has(uniqueKey)) {
             deduplicatedStats.set(uniqueKey, stat);
+          } else {
+            // If we already have a record for this campaign-date, keep the one with higher spend
+            const existing = deduplicatedStats.get(uniqueKey);
+            const existingSpend = parseFloat(existing.spend || '0');
+            const currentSpend = parseFloat(stat.spend || '0');
             
-            // Track which campaigns have data
-            campaignIdsWithData.add(stat.campaign_id);
-            
-            // Group by campaign
-            if (!statsByCampaign[stat.campaign_id]) {
-              statsByCampaign[stat.campaign_id] = [];
+            if (currentSpend > existingSpend) {
+              deduplicatedStats.set(uniqueKey, stat);
             }
-            statsByCampaign[stat.campaign_id].push(stat);
           }
+        });
+        
+        // Now group the deduplicated stats by campaign
+        deduplicatedStats.forEach(stat => {
+          // Track which campaigns have data
+          campaignIdsWithData.add(stat.campaign_id);
+          
+          // Group by campaign
+          if (!statsByCampaign[stat.campaign_id]) {
+            statsByCampaign[stat.campaign_id] = [];
+          }
+          statsByCampaign[stat.campaign_id].push(stat);
         });
         
         console.log(`[Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique records`);
