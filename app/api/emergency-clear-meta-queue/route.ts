@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
     
     // Also clean up job states aggressively
     await metaQueue.clean(0, 'active')
-    await metaQueue.clean(0, 'delayed')
+    await metaQueue.clean(0, 'delayed') 
     await metaQueue.clean(0, 'failed')
-    await metaQueue.clean(0, 'waiting')
+    await metaQueue.clean(0, 'completed')
     
     console.log(`[Emergency Clear] ✅ Removed ${removedCount} Meta jobs and cleaned all states`)
     
