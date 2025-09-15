@@ -484,6 +484,16 @@ export function MetaTab2({
       
       setCampaigns(data.campaigns || []);
       
+      // 🚨 CRITICAL: Force component re-render by updating a state that triggers key change
+      const testCampaign = data.campaigns?.find(c => c.campaign_name?.includes('TEST'));
+      if (testCampaign) {
+        console.log('🚨 EMERGENCY DEBUG: Forcing re-render with spent:', testCampaign.spent);
+        // Force a state update to trigger re-render
+        setTimeout(() => {
+          setCampaigns([...data.campaigns || []]);
+        }, 50);
+      }
+      
       // Force debug the state after setting
       setTimeout(() => {
         console.log('🚨 EMERGENCY DEBUG: State after setCampaigns:', data.campaigns?.find(c => c.campaign_name?.includes('TEST'))?.spent);
@@ -1086,6 +1096,7 @@ export function MetaTab2({
       {/* Campaign Performance Widget - Enhanced */}
       <div className="mt-6">
         <CampaignWidget 
+          key={`campaigns-${campaigns.length}-${campaigns.find(c => c.campaign_name?.includes('TEST'))?.spent || 0}`}
           brandId={brandId}
           campaigns={campaigns}
           isLoading={isLoadingAllMetaWidgets}
