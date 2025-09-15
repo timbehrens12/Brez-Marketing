@@ -259,29 +259,6 @@ const CampaignWidget = ({
   onReachValuesCalculated
 }: CampaignWidgetProps): JSX.Element => {
 
-  // 🚨 CRITICAL DEBUG: Log what campaigns data the widget receives
-  React.useEffect(() => {
-    if (campaigns && campaigns.length > 0) {
-      const testCampaign = campaigns.find(c => c.campaign_name?.includes('TEST'));
-      if (testCampaign) {
-        console.log('🚨 CAMPAIGN WIDGET DEBUG: Received TEST campaign data:', {
-          name: testCampaign.campaign_name,
-          spent: testCampaign.spent,
-          status: testCampaign.status,
-          timestamp: new Date().toISOString()
-        });
-        
-        // 🚨 CRITICAL: Also log the exact value that will be displayed in table
-        console.log('🚨 CAMPAIGN WIDGET TABLE DEBUG: Value for table display:', {
-          rawSpent: testCampaign.spent,
-          spentType: typeof testCampaign.spent,
-          isNumber: !isNaN(testCampaign.spent),
-          parsedNumber: Number(testCampaign.spent),
-          formattedCurrency: testCampaign.spent ? `$${Number(testCampaign.spent).toFixed(2)}` : '$0.00'
-        });
-      }
-    }
-  }, [campaigns]);
   
   // *** DEBUG LOGGING START ***
   // Only log once per 10 renders to prevent log floods
@@ -1430,15 +1407,6 @@ const CampaignWidget = ({
         let aggregatedClicks = 0;
         let aggregatedConversions = 0;
         
-        // 🚨 CRITICAL DEBUG: Log aggregation for TEST campaign
-        const isTestCampaign = campaign.campaign_name?.includes('TEST');
-        if (isTestCampaign) {
-          console.log('🚨 AGGREGATION DEBUG: Starting aggregation for TEST campaign:', {
-            campaignSpent: campaign.spent,
-            dailyInsightsCount: campaign.daily_insights.length,
-            dateRange: dateRange ? `${dateRange.from?.toISOString()} to ${dateRange.to?.toISOString()}` : 'no range'
-          });
-        }
         let aggregatedPurchaseValue = 0;
         let insightsInRange = 0;
 
@@ -1501,16 +1469,6 @@ const CampaignWidget = ({
 
         const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
         
-        // 🚨 CRITICAL DEBUG: Log aggregation result for TEST campaign
-        if (isTestCampaign) {
-          console.log('🚨 AGGREGATION DEBUG: Final aggregation result for TEST campaign:', {
-            originalSpent: campaign.spent,
-            aggregatedSpent: aggregatedSpent,
-            insightsInRange: insightsInRange,
-            willOverride: false, // ✅ FIXED: No longer overriding spent value
-            usingApiValue: true // ✅ Using API spent as source of truth
-          });
-        }
         
         // 🚨 CRITICAL FIX: Don't override spent - API provides correct aggregated value
         // The aggregation from daily_insights is incomplete and causes wrong display values

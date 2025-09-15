@@ -366,18 +366,7 @@ export async function GET(request: NextRequest) {
         conversions: (totals.conversions || 0) + (row.conversions || 0)
       }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
       
-      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Date range: ${normalizedFromDate} to ${normalizedToDate}`)
-      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Raw aggregated stats:`, aggregatedStats?.length || 0, 'rows')
-      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Aggregated totals for date range:`, dateRangeTotals)
-      console.log(`[Meta Campaigns] 🚨 Will use this aggregated spend: $${dateRangeTotals.spend} to override limited campaign data`)
-      
-      // DEBUG: Show actual data being aggregated
-      if (aggregatedStats && aggregatedStats.length > 0) {
-        console.log(`[Meta Campaigns] 🚨 DEBUG - First 3 rows of aggregated data:`)
-        aggregatedStats.slice(0, 3).forEach((row, i) => {
-          console.log(`  Row ${i + 1}: date=${row.date}, spent=${row.spent}, impressions=${row.impressions}`)
-        })
-      }
+      console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
       
       // Now get the empty structure for campaign daily stats (will be mostly empty due to limited data)
       let { data: dailyAdStats, error: statsError } = await supabase
@@ -859,9 +848,7 @@ export async function GET(request: NextRequest) {
           if (campaign.status === 'ACTIVE') {
             // Primary active campaign gets the FULL aggregated spend (not limited daily stats)
             finalSpend = dateRangeTotals.spend;
-            console.log(`[Meta Campaigns] 🎯 FIXED OVERRIDE: Primary active campaign ${campaign.campaign_name} using FULL aggregated spend: $${finalSpend.toFixed(2)} (was using limited $${campaignActualSpend.toFixed(2)})`);
-          } else {
-            console.log(`[Meta Campaigns] OVERRIDE: Inactive campaign ${campaign.campaign_name} using actual spend: $${finalSpend.toFixed(2)}`);
+            // Primary active campaign gets the FULL aggregated spend
           }
           
           return {
