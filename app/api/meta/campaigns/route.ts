@@ -835,20 +835,29 @@ export async function GET(request: NextRequest) {
         const hasLimitedData = !statsByCampaign[campaign.campaign_id] || statsByCampaign[campaign.campaign_id].length < 7;
         
         if (hasLimitedData && dateRangeTotals && dateRangeTotals.spend > 0) {
-          // Distribute the real spend proportionally among campaigns
-          const campaignCount = limitedCampaigns.length;
-          const proportionalSpend = dateRangeTotals.spend / campaignCount;
+          // FIXED: Don't divide spend - show actual individual campaign contribution
+          // Check if this campaign has any actual spend data, if so use it, otherwise use the aggregated total for the primary campaign
+          const campaignStats = statsByCampaign[campaign.campaign_id] || [];
+          const campaignActualSpend = campaignStats.reduce((sum, stat) => sum + parseFloat(stat.spend || 0), 0);
           
-          console.log(`[Meta Campaigns] OVERRIDE: Campaign ${campaign.campaign_name} limited data (${statsByCampaign[campaign.campaign_id]?.length || 0} days), using proportional spend: $${proportionalSpend.toFixed(2)} of total $${dateRangeTotals.spend.toFixed(2)}`);
+          // If this campaign has some actual data, use it; otherwise, for the primary active campaign, show the full aggregated spend
+          let finalSpend = campaignActualSpend;
+          if (campaignActualSpend === 0 && campaign.status === 'ACTIVE') {
+            // This is likely the primary active campaign - show the full aggregated spend
+            finalSpend = dateRangeTotals.spend;
+            console.log(`[Meta Campaigns] OVERRIDE: Primary active campaign ${campaign.campaign_name} using full aggregated spend: $${finalSpend.toFixed(2)}`);
+          } else {
+            console.log(`[Meta Campaigns] OVERRIDE: Campaign ${campaign.campaign_name} using actual spend: $${finalSpend.toFixed(2)}`);
+          }
           
           return {
             ...campaign,
-            spent: proportionalSpend,
-            impressions: Math.round(dateRangeTotals.impressions / campaignCount),
-            clicks: Math.round(dateRangeTotals.clicks / campaignCount),
-            reach: Math.round(dateRangeTotals.reach / campaignCount),
-            conversions: Math.round(dateRangeTotals.conversions / campaignCount),
-            has_data_in_range: true,
+            spent: finalSpend,
+            impressions: finalSpend > 0 ? dateRangeTotals.impressions : 0,
+            clicks: finalSpend > 0 ? dateRangeTotals.clicks : 0,
+            reach: finalSpend > 0 ? dateRangeTotals.reach : 0,
+            conversions: finalSpend > 0 ? dateRangeTotals.conversions : 0,
+            has_data_in_range: finalSpend > 0,
             recommendation: recommendationMap.get(campaign.campaign_id) || null
           };
         }
