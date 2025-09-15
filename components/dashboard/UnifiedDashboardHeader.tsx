@@ -314,6 +314,7 @@ export function UnifiedDashboardHeader({
                 activePlatforms={activePlatforms}
                 currentTab={activeTab}
                 connections={connections}
+                dateRange={dateRange}
               />
             )}
 

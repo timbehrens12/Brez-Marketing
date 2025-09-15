@@ -12,11 +12,12 @@ interface GlobalRefreshButtonProps {
   }
   currentTab?: string
   connections?: any[]
+  dateRange?: { from: Date; to: Date } // Add dateRange prop
 }
 
 const REFRESH_COOLDOWN = 10000 // 10 seconds cooldown
 
-export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'site', connections = [] }: GlobalRefreshButtonProps) {
+export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'site', connections = [], dateRange }: GlobalRefreshButtonProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshCooldown, setRefreshCooldown] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -179,7 +180,16 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
         // Tab-specific events for targeted refreshes
         if (currentTab === 'meta' && activePlatforms.meta) {
           window.dispatchEvent(new CustomEvent('force-meta-refresh', {
-            detail: { brandId, timestamp: Date.now(), forceRefresh: true, source: 'global-refresh' }
+            detail: { 
+              brandId, 
+              timestamp: Date.now(), 
+              forceRefresh: true, 
+              source: 'global-refresh',
+              dateRange: dateRange ? {
+                from: dateRange.from.toISOString(),
+                to: dateRange.to.toISOString()
+              } : undefined
+            }
           }))
         }
       }

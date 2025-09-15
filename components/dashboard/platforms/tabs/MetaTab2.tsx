@@ -736,7 +736,11 @@ export function MetaTab2({
     const handleGlobalRefresh = (event: CustomEvent) => {
 
       if (event.detail?.brandId === brandId && metaConnection) {
-
+        // Check if refresh event includes a specific dateRange
+        if (event.detail?.dateRange) {
+          console.log('[MetaTab2] Refresh event includes dateRange, ensuring sync uses current dateRange');
+        }
+        
         syncMetaInsights();
       }
     };
