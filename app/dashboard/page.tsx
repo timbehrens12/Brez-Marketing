@@ -151,14 +151,31 @@ export default function DashboardPage() {
   const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
   
   // console.log('[Dashboard] useState calls starting')
-  // Initialize date range to TODAY by default
+  // Initialize date range - check for saved refresh dateRange first
   const [dateRange, setDateRange] = useState(() => {
-    // Clear any existing localStorage to ensure fresh start
+    // CRITICAL FIX: Check if we have a saved dateRange from Meta refresh
     if (typeof window !== 'undefined') {
       try {
-        localStorage.removeItem('dashboard-date-range')
+        const savedDateRangeStr = localStorage.getItem('meta-refresh-daterange');
+        if (savedDateRangeStr) {
+          const savedDateRange = JSON.parse(savedDateRangeStr);
+          // Only use if it's recent (within last 10 seconds)
+          if (savedDateRange.refreshTimestamp && Date.now() - savedDateRange.refreshTimestamp < 10000) {
+            localStorage.removeItem('meta-refresh-daterange'); // Clean up
+            const restoredRange = {
+              from: startOfDay(new Date(savedDateRange.from)),
+              to: endOfDay(new Date(savedDateRange.to))
+            };
+            console.log('[Dashboard] 🔄 RESTORED dateRange from Meta refresh:', restoredRange.from.toISOString().split('T')[0], 'to', restoredRange.to.toISOString().split('T')[0]);
+            return restoredRange;
+          }
+        }
+        
+        // Clear any old saved ranges
+        localStorage.removeItem('dashboard-date-range');
+        localStorage.removeItem('meta-refresh-daterange');
       } catch (error) {
-        // console.error('Error clearing date range:', error)
+        // console.error('Error checking saved date range:', error)
       }
     }
     

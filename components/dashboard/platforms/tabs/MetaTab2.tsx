@@ -597,16 +597,26 @@ export function MetaTab2({
           fetchCampaigns(true, true)
         ]);
         
-        toast.success("Meta data refreshed! Reloading page...", { id: "meta-refresh-toast" });
+        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now();
         
-        // NUCLEAR OPTION: Force complete page refresh after sync
-        // This ensures ALL widgets get fresh data without event chain issues
-        console.log('[MetaTab2] 🚀 NUCLEAR REFRESH: Forcing page reload after Meta sync');
+        // CRITICAL: Force all components to use the correct dateRange
+        console.log('[MetaTab2] 🔄 Forcing dateRange update across all components');
         
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000); // 2 second delay to show success message
+        // Save the dateRange that was actually synced
+        if (effectiveDateRange?.from && effectiveDateRange?.to) {
+          const syncedDateRange = {
+            from: effectiveDateRange.from.toISOString(),
+            to: effectiveDateRange.to.toISOString()
+          };
+          
+          // Update global variable for immediate access
+          if (typeof window !== 'undefined') {
+            (window as any)._currentDateRange = syncedDateRange;
+            (window as any)._lastSyncedDateRange = syncedDateRange;
+            console.log('[MetaTab2] 💾 Updated global dateRange variables:', syncedDateRange);
+          }
+        }
         
         // Also dispatch event for any components that need it before reload
          window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
