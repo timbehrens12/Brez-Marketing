@@ -505,6 +505,11 @@ export async function GET(request: NextRequest) {
         
         console.log(`🔥🔥🔥 [Meta Campaigns API] De-duplicated ${dailyAdStats.length} records to ${deduplicatedStats.size} unique campaign-date records`);
         
+        // 🔥🔥🔥 DEBUG: Check for spend doubling patterns
+        const totalSpendBefore = dailyAdStats.reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
+        const totalSpendAfter = Array.from(deduplicatedStats.values()).reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
+        console.log(`🔥🔥🔥 [Meta Campaigns API] Spend totals - Before dedup: $${totalSpendBefore.toFixed(2)}, After dedup: $${totalSpendAfter.toFixed(2)}`);
+        
         // DEBUG: Log sample data to understand discrepancies
         const sampleData = Array.from(deduplicatedStats.values()).slice(0, 3);
         console.log(`🔥🔥🔥 [Meta Campaigns API] Sample deduplicated data:`, sampleData.map(d => ({
@@ -777,6 +782,11 @@ export async function GET(request: NextRequest) {
 
         // Log successful metric aggregation
         console.log(`[Meta Campaigns API] Campaign ${campaign.campaign_id}: spend=$${spend}, impressions=${impressions}, clicks=${clicks}`);
+        
+        // 🔥🔥🔥 DEBUG: Show individual campaign spend for doubling analysis
+        if (spend > 0) {
+          console.log(`🔥🔥🔥 [Meta Campaigns API] Campaign ${campaign.campaign_id} (${campaign.campaign_name || 'Unknown'}) final spend: $${spend.toFixed(2)} from ${campaignStats.length} daily records`);
+        }
         
         // Use calculated reach ONLY if a date range was specified, otherwise use the campaign's total reach
         const finalReach = hasDateRange ? calculatedReach : (Number(campaign.reach) || 0);

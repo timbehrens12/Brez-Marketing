@@ -1264,11 +1264,32 @@ export default function DashboardPage() {
         startDateStr = format(dateRange.from, 'yyyy-MM-dd');
         endDateStr = format(dateRange.to, 'yyyy-MM-dd');
       } else {
-        // Default date calculation remains the same
-        const now = new Date();
-        const thirtyDaysAgo = subDays(now, 30); // Use subDays for consistency
-        startDateStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
-        endDateStr = format(now, 'yyyy-MM-dd');
+        // 🔥🔥🔥 CRITICAL FIX: Try to get dateRange from global variable before defaulting
+        let fallbackDateRange = null;
+        
+        if (typeof window !== 'undefined' && (window as any)._currentDateRange) {
+          try {
+            const globalDateRange = (window as any)._currentDateRange;
+            fallbackDateRange = {
+              from: new Date(globalDateRange.from),
+              to: new Date(globalDateRange.to)
+            };
+            console.log(`🔥🔥🔥 [DASHBOARD] Using global dateRange fallback:`, fallbackDateRange.from.toISOString().split('T')[0], 'to', fallbackDateRange.to.toISOString().split('T')[0]);
+          } catch (error) {
+            console.log(`🔥🔥🔥 [DASHBOARD] Error parsing global dateRange, using default`);
+          }
+        }
+        
+        if (fallbackDateRange) {
+          startDateStr = format(fallbackDateRange.from, 'yyyy-MM-dd');
+          endDateStr = format(fallbackDateRange.to, 'yyyy-MM-dd');
+        } else {
+          // Only use default if no global dateRange available
+          console.log(`🔥🔥🔥 [DASHBOARD] No dateRange found - using TODAY as default`);
+          const now = new Date();
+          startDateStr = format(now, 'yyyy-MM-dd');
+          endDateStr = format(now, 'yyyy-MM-dd');
+        }
       }
       
       // Use consistent format with URLSearchParams
