@@ -597,10 +597,18 @@ export function MetaTab2({
           fetchCampaigns(true, true)
         ]);
         
-        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
+        toast.success("Meta data refreshed! Reloading page...", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now();
         
-                 // Dispatch event to notify other components
+        // NUCLEAR OPTION: Force complete page refresh after sync
+        // This ensures ALL widgets get fresh data without event chain issues
+        console.log('[MetaTab2] 🚀 NUCLEAR REFRESH: Forcing page reload after Meta sync');
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000); // 2 second delay to show success message
+        
+        // Also dispatch event for any components that need it before reload
          window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
            detail: { 
              brandId, 
