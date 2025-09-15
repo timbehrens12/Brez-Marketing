@@ -179,11 +179,12 @@ export default function DashboardPage() {
       }
     }
     
-    // Default to TODAY (not this year)
+    // Default to TODAY (not this year) - FIXED: Use same date for from/to
     const now = new Date()
+    const todayStart = startOfDay(now)
     const initialRange = {
-      from: startOfDay(now),
-      to: endOfDay(now),
+      from: todayStart,
+      to: todayStart, // 🔧 FIX: Use same date for single day query, not endOfDay which goes to tomorrow
     }
     console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
     return initialRange
