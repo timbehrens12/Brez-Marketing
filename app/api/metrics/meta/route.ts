@@ -336,9 +336,11 @@ export async function GET(request: NextRequest) {
 
     // FIXED: Fetch data from meta_ad_daily_insights which has the historical data
          console.log(`[API /api/metrics/meta] Fetching from meta_ad_daily_insights for date range: ${fromDate} to ${toDate}`);
+        // ✅ FIXED: Add ad_id filter to prevent double counting of data
+        // Only get account-level data or use a subquery to get aggregated data per date
         const { data: dailyStatsData, error: dailyStatsError } = await supabase
           .from('meta_ad_daily_insights')
-          .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc')
+          .select('date, spent, impressions, clicks, conversions, reach, ctr, cpc, ad_id')
           .eq('brand_id', brandId)
           .gte('date', fromDate)
           .lte('date', toDate)
@@ -637,14 +639,38 @@ function processMetaData(data: any[]): ProcessedMetaData {
   dataByDate.forEach((dayItems, dateStr) => {
     console.log(`Processing date ${dateStr} with ${dayItems.length} records`)
     
-    const daySpend = dayItems.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-    const dayImpressions = dayItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
-    const dayClicks = dayItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
-    const dayReach = dayItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
+    // ✅ FIXED: De-duplicate by ad_id to prevent double counting
+    // Group by ad_id first, then aggregate
+    const uniqueAdData = new Map<string, any>()
+    
+    dayItems.forEach(item => {
+      const adId = item.ad_id || 'unknown'
+      // For account-level data (ad_id = 'account_level_data'), only keep one record per date
+      if (adId === 'account_level_data') {
+        if (!uniqueAdData.has('account_aggregate')) {
+          uniqueAdData.set('account_aggregate', item)
+        }
+      } else {
+        // For ad-level data, keep the record with highest values (latest sync)
+        if (!uniqueAdData.has(adId) || 
+            (parseFloat(item.spent || '0') > parseFloat(uniqueAdData.get(adId).spent || '0'))) {
+          uniqueAdData.set(adId, item)
+        }
+      }
+    })
+    
+    // Now aggregate only unique records
+    const uniqueItems = Array.from(uniqueAdData.values())
+    console.log(`Date ${dateStr}: ${dayItems.length} total records reduced to ${uniqueItems.length} unique records`)
+    
+    const daySpend = uniqueItems.reduce((sum, d) => sum + (parseFloat(d.spent || d.spend) || 0), 0)
+    const dayImpressions = uniqueItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
+    const dayClicks = uniqueItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
+    const dayReach = uniqueItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
     
     // Calculate conversions from actions array (purchase or conversion actions)
     let dayConversions = 0
-    dayItems.forEach(d => {
+    uniqueItems.forEach(d => {
       if (d.actions && Array.isArray(d.actions)) {
         d.actions.forEach((action: any) => {
           if (
@@ -663,7 +689,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     // Calculate ROAS (if we have conversion value data)
     let dayRoas = 0
-    dayItems.forEach(d => {
+    uniqueItems.forEach(d => {
       if (d.action_values && Array.isArray(d.action_values)) {
         d.action_values.forEach((actionValue: any) => {
           if (

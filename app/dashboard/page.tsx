@@ -185,10 +185,17 @@ export default function DashboardPage() {
           // Only use if saved within last 24 hours to prevent stale data
           if (Date.now() - savedData.timestamp < 24 * 60 * 60 * 1000) {
             console.log('[Dashboard] 🔄 Restoring persisted date range:', savedData);
-            return {
+            const range = {
               from: new Date(savedData.from),
               to: new Date(savedData.to)
             };
+            
+            // ✅ FIXED: Also set the global date range variable on initialization
+            if (typeof window !== 'undefined') {
+              (window as any)._currentDateRange = range;
+            }
+            
+            return range;
           }
         }
         
@@ -224,6 +231,12 @@ export default function DashboardPage() {
       to: todayStart, // 🔧 FIX: Use same date for single day query, not endOfDay which goes to tomorrow
     }
     console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
+    
+    // ✅ FIXED: Set global date range for default case
+    if (typeof window !== 'undefined') {
+      (window as any)._currentDateRange = initialRange;
+    }
+    
     return initialRange
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
@@ -273,6 +286,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("agency")
   const [isEditMode, setIsEditMode] = useState(false)
+  
+  // ✅ FIXED: Keep global date range in sync with state
+  useEffect(() => {
+    if (dateRange && typeof window !== 'undefined') {
+      (window as any)._currentDateRange = dateRange;
+      console.log('[Dashboard] 📅 Updated global date range:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
+    }
+  }, [dateRange])
   
   // Add a state to track if we're in the initial setup phase
   const [isInitialSetup, setIsInitialSetup] = useState(true)

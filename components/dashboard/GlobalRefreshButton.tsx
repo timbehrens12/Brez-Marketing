@@ -103,23 +103,25 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       return
     }
 
-    // ✅ FIXED: Always use the current dateRange prop to respect selected date range
+    // FINAL FIX: Use synchronous global variable approach
     let freshDateRange = dateRange;
     
-    console.log('[GlobalRefresh] 🔍 Using dateRange prop:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    console.log('[GlobalRefresh] 🔍 Prop dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
     
-    // Only fall back to global variable if prop dateRange is missing
-    if (!freshDateRange && typeof window !== 'undefined' && (window as any)._currentDateRange) {
-      try {
+    // Try to get fresh dateRange from global window variable set by dashboard
+    try {
+      if (typeof window !== 'undefined' && (window as any)._currentDateRange) {
         const globalDateRange = (window as any)._currentDateRange;
         freshDateRange = {
           from: new Date(globalDateRange.from),
           to: new Date(globalDateRange.to)
         };
-        console.log('[GlobalRefresh] 🔍 Fallback to global dateRange:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
-      } catch (error) {
-        console.log('[GlobalRefresh] ⚠️ Error accessing global dateRange');
+        console.log('[GlobalRefresh] 🔍 Got fresh dateRange from global variable:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
+      } else {
+        console.log('[GlobalRefresh] ⚠️ No global dateRange found, using prop dateRange');
       }
+    } catch (error) {
+      console.log('[GlobalRefresh] ⚠️ Error accessing global dateRange, using prop dateRange');
     }
 
     console.log('[GlobalRefresh] 🔍 Final dateRange for refresh:', freshDateRange ? `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}` : 'undefined');
