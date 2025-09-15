@@ -1507,14 +1507,18 @@ const CampaignWidget = ({
             originalSpent: campaign.spent,
             aggregatedSpent: aggregatedSpent,
             insightsInRange: insightsInRange,
-            willOverride: true
+            willOverride: false, // ✅ FIXED: No longer overriding spent value
+            usingApiValue: true // ✅ Using API spent as source of truth
           });
         }
         
-        // Create a new campaign object with aggregated metrics
+        // 🚨 CRITICAL FIX: Don't override spent - API provides correct aggregated value
+        // The aggregation from daily_insights is incomplete and causes wrong display values
+        // Use API spent value as source of truth, only aggregate other metrics
         return {
           ...campaign,
-          spent: aggregatedSpent,
+          // spent: aggregatedSpent, // ❌ REMOVED: This was overriding correct API value
+          // Keep original campaign.spent from API
           impressions: aggregatedImpressions,
           clicks: aggregatedClicks,
           conversions: aggregatedConversions,
