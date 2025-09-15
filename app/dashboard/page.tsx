@@ -693,6 +693,29 @@ export default function DashboardPage() {
     };
   }, [dateRange])
 
+  // 🔧 FIX: Listen for metaDataRefreshed events and refresh dashboard metrics
+  useEffect(() => {
+    const handleMetaDataRefreshed = async (event: any) => {
+      if (event.detail?.brandId === selectedBrandId) {
+        console.log('[Dashboard] 🔍 Received metaDataRefreshed event, refreshing dashboard metrics');
+        
+        // Refresh dashboard Meta metrics so GreetingWidget gets fresh data
+        try {
+          await fetchMetaMetrics(false, true);
+          console.log('[Dashboard] ✅ Dashboard metrics refreshed after Meta sync');
+        } catch (error) {
+          console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
+        }
+      }
+    };
+
+    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed);
+    
+    return () => {
+      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed);
+    };
+  }, [selectedBrandId, fetchMetaMetrics])
+
   // Listen for forced date range refresh events (triggered by refresh button)
   useEffect(() => {
     const handleForceDateRefresh = (event: any) => {
