@@ -714,7 +714,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed);
     };
-  }, [selectedBrandId, fetchMetaMetrics])
+  }, [selectedBrandId]) // 🔧 REMOVED fetchMetaMetrics dependency to prevent circular re-renders
 
   // Listen for forced date range refresh events (triggered by refresh button)
   useEffect(() => {
