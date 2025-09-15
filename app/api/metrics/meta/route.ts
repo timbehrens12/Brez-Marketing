@@ -628,6 +628,7 @@ export async function GET(request: NextRequest) {
       impressions: response.impressions,
       clicks: response.clicks,
       conversions: response.conversions,
+      reach: response.reach, // ✅ ADDED: Include reach in debug output
       roas: response.roas,
       ctr: response.ctr,
       cpc: response.cpc,
@@ -641,7 +642,13 @@ export async function GET(request: NextRequest) {
     
     // 🔥🔥🔥 EXTRA DEBUG: Compare with campaign data source for discrepancy analysis
     if (fromDate === toDate && fromDate === new Date().toISOString().split('T')[0]) {
-      console.log(`🔥🔥🔥 [META API] TODAY DATA COMPARISON - Main widgets: $${response.adSpend}, impressions: ${response.impressions}`)
+      console.log(`🔥🔥🔥 [META API] TODAY DATA COMPARISON - Main widgets: $${response.adSpend}, impressions: ${response.impressions}, reach: ${response.reach}`)
+    }
+    
+    // 🔥🔥🔥 DISCREPANCY ANALYSIS: Compare main API data with campaign data source
+    if (response.adSpend > 0) {
+      console.log(`🔥🔥🔥 [META API] MAIN API FINAL TOTALS - Spend: $${response.adSpend}, Impressions: ${response.impressions}, Clicks: ${response.clicks}, Reach: ${response.reach}, Conversions: ${response.conversions}`)
+      console.log(`🔥🔥🔥 [META API] Source: meta_ad_daily_insights aggregated across ${processedData.dailyData?.length || 0} days`)
     }
       
       // 🔥🔥🔥 NEVER CACHE - ALWAYS FRESH DATA
@@ -797,7 +804,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
       console.log(`🔥🔥🔥 [META API] Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
       uniqueItems.forEach((item, idx) => {
-         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${(item.spent_value || parseFloat(item.spent) || parseFloat(item.spend) || 0).toFixed(2)}, impressions=${item.impressions || 0}`)
+         console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${(item.spent_value || parseFloat(item.spent) || parseFloat(item.spend) || 0).toFixed(2)}, impressions=${item.impressions || 0}, reach=${item.reach || 0}`)
       })
       
       // Extra debug for data source analysis
@@ -864,7 +871,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     totalConversions += dayConversions
     totalReach += dayReach
     
-    console.log(`Date ${dateStr}: spend=${daySpend}, impressions=${dayImpressions}, clicks=${dayClicks}, conversions=${dayConversions}`)
+    console.log(`Date ${dateStr}: spend=${daySpend}, impressions=${dayImpressions}, clicks=${dayClicks}, conversions=${dayConversions}, reach=${dayReach}`)
   })
   
   // Sort daily data by date to maintain chronological order
@@ -925,7 +932,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     roasGrowth, 
     frequency: 0, // Placeholder
     budget: totalSpend > 0 ? totalSpend / dailyData.length : 0, // Average daily budget
-    reach: 0, // Placeholder - needs correct implementation
+    reach: totalReach, // ✅ FIXED: Use the calculated totalReach
     dailyData
   }
 }

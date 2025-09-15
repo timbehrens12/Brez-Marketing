@@ -368,6 +368,7 @@ export async function GET(request: NextRequest) {
       }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
       
       console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
+      console.log(`🔥🔥🔥 [CAMPAIGNS API] AGGREGATED TOTALS FROM meta_ad_daily_insights - Spend: $${dateRangeTotals.spend}, Impressions: ${dateRangeTotals.impressions}, Clicks: ${dateRangeTotals.clicks}, Reach: ${dateRangeTotals.reach}, Conversions: ${dateRangeTotals.conversions}`)
       
       // 🔥🔥🔥 FORCE FRESH DATA: Add timestamp to ensure no caching
       console.log(`🔥🔥🔥 [CAMPAIGNS API] Fetching FRESH data from meta_campaign_daily_stats at ${new Date().toISOString()}`)
@@ -1277,6 +1278,18 @@ export async function GET(request: NextRequest) {
       console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaignFinal.campaign_name}`);
       console.log(`>>> [API Campaigns] Has recommendation: ${!!testCampaignFinal.recommendation}`);
     }
+
+    // 🔥🔥🔥 DISCREPANCY ANALYSIS: Compare campaign totals with main API totals
+    const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
+      spend: totals.spend + (campaign.spent || 0),
+      impressions: totals.impressions + (campaign.impressions || 0),
+      clicks: totals.clicks + (campaign.clicks || 0),
+      reach: totals.reach + (campaign.reach || 0),
+      conversions: totals.conversions + (campaign.conversions || 0)
+    }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 });
+    
+    console.log(`🔥🔥🔥 [CAMPAIGNS API] FINAL CAMPAIGN TOTALS - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}, Reach: ${campaignTotals.reach}, Conversions: ${campaignTotals.conversions}`)
+    console.log(`🔥🔥🔥 [CAMPAIGNS API] Source: meta_campaign_daily_stats aggregated across ${campaignsWithRecommendations.length} campaigns`)
 
     return NextResponse.json({
       campaigns: campaignsWithRecommendations,
