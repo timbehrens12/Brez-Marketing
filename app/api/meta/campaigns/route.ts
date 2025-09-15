@@ -366,7 +366,8 @@ export async function GET(request: NextRequest) {
         conversions: (totals.conversions || 0) + (row.conversions || 0)
       }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
       
-      console.log(`[Meta Campaigns] Aggregated totals for date range:`, dateRangeTotals)
+      console.log(`[Meta Campaigns] 🚨 CRITICAL DEBUG - Aggregated totals for date range:`, dateRangeTotals)
+      console.log(`[Meta Campaigns] 🚨 Will use this aggregated spend: $${dateRangeTotals.spend} to override limited campaign data`)
       
       // Now get the empty structure for campaign daily stats (will be mostly empty due to limited data)
       let { data: dailyAdStats, error: statsError } = await supabase
@@ -831,8 +832,11 @@ export async function GET(request: NextRequest) {
       
       // Add recommendation data to campaigns and OVERRIDE spend with aggregated data
       const campaignsWithRecommendations = limitedCampaigns.map(campaign => {
-        // If this campaign has limited daily stats data, use the proportional share of aggregated data
-        const hasLimitedData = !statsByCampaign[campaign.campaign_id] || statsByCampaign[campaign.campaign_id].length < 7;
+        // FORCE OVERRIDE: Always use aggregated data since meta_campaign_daily_stats is broken
+        const hasLimitedData = true; // Force override for ALL campaigns
+        const statsCount = statsByCampaign[campaign.campaign_id]?.length || 0;
+        
+        console.log(`[Meta Campaigns] FORCE OVERRIDE: Campaign ${campaign.campaign_name} has ${statsCount} days of data in meta_campaign_daily_stats`);
         
         if (hasLimitedData && dateRangeTotals && dateRangeTotals.spend > 0) {
           // FIXED: Don't divide spend - show actual individual campaign contribution
