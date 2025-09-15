@@ -403,8 +403,16 @@ export function MetaTab2({
     }
   }, [brandId, dateRange, metaConnection]);
 
+  // Add request deduplication to prevent race conditions
+  const fetchCampaignsInProgress = useRef(false);
+  
   // Fetch campaign data
   const fetchCampaigns = useCallback(async (forceRefresh = false, skipLoadingState = false) => {
+    // 🚨 CRITICAL: Prevent multiple simultaneous requests
+    if (fetchCampaignsInProgress.current) {
+      console.log('🚨 RACE CONDITION PREVENTED: fetchCampaigns already in progress, skipping');
+      return;
+    }
     if (!brandId || !metaConnection) {
 
       if (!skipLoadingState) {
@@ -412,6 +420,9 @@ export function MetaTab2({
       }
       return;
     }
+    
+    // 🚨 CRITICAL: Set flag to prevent race conditions
+    fetchCampaignsInProgress.current = true;
     
     if ((forceRefresh || campaigns.length === 0) && !skipLoadingState) { 
       setIsLoadingCampaigns(true);
@@ -482,6 +493,9 @@ export function MetaTab2({
     } catch (error) {
 
     } finally {
+      // 🚨 CRITICAL: Always clear the flag
+      fetchCampaignsInProgress.current = false;
+      
       if (!skipLoadingState) {
         setIsLoadingCampaigns(false);
       }
