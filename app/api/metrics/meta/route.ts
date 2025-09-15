@@ -126,11 +126,14 @@ export async function GET(request: NextRequest) {
     // Check for yesterday preset explicitly
     let isYesterdayPreset = preset === 'yesterday';
     
-    // Create a more intelligent cache key that includes the current date
+    // 🔥🔥🔥 FORCE FRESH DATA - DISABLE ALL CACHING
     const currentDate = getCurrentDateString();
     const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}-${currentDate}`;
     
-    // Add detailed logging to troubleshoot date filtering issues
+    // 🔥🔥🔥 ALWAYS BYPASS CACHE TO GET FRESH DATA
+    const forceFresh = true;
+    
+    console.log(`🔥🔥🔥 [META API] FORCING FRESH DATA - NO CACHE ALLOWED`)
     console.log(`Meta metrics request - brandId: ${brandId}, from: ${from}, to: ${to}, preset: ${preset}, bypassCache: ${bypassCache}, forceRefresh: ${forceRefresh}, strictDateRange: ${strictDateRange}`)
     
     // Validate brandId
@@ -147,20 +150,18 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // Check if this exact request is in our cache and not expired (unless bypass requested)
-    if (!bypassCache && !refresh) {
-      const cachedResponse = apiCache.get(cacheKey);
-      if (cachedResponse && isCacheValidForToday(cachedResponse)) {
-        console.log(`🔥🔥🔥 [META API] RETURNING CACHED DATA for ${cacheKey} (cached on ${cachedResponse.cacheDate})`);
-        return NextResponse.json(cachedResponse.data);
-      } else if (cachedResponse) {
-        // Cache expired or invalid, remove it
-          apiCache.delete(cacheKey);
-        console.log(`🔥🔥🔥 [META API] CACHE EXPIRED/INVALID for ${cacheKey}, will fetch fresh data`);
-      }
-    } else {
-      console.log(`🔥🔥🔥 [META API] BYPASSING CACHE for ${cacheKey} because bypassCache=${bypassCache}, refresh=${refresh}`);
+    // 🔥🔥🔥 FORCE FRESH DATA - DISABLE ALL CACHING
+    console.log(`🔥🔥🔥 [META API] CACHE COMPLETELY DISABLED - FORCING FRESH DATA for ${cacheKey}`);
+    
+    // Clear any existing cache for this key
+    if (apiCache.has(cacheKey)) {
+      apiCache.delete(cacheKey);
+      console.log(`🔥🔥🔥 [META API] CLEARED EXISTING CACHE for ${cacheKey}`);
     }
+    
+    // Clear the entire cache to be sure
+    apiCache.clear();
+    console.log(`🔥🔥🔥 [META API] CLEARED ENTIRE CACHE - FRESH DATA GUARANTEED`);
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -563,13 +564,8 @@ export async function GET(request: NextRequest) {
       console.log(`🔥🔥🔥 [META API] TODAY DATA COMPARISON - Main widgets: $${response.adSpend}, impressions: ${response.impressions}`)
     }
       
-      // Cache the response (unless bypass requested)
-      if (!bypassCache && !refresh) {
-        console.log(`🔥🔥🔥 [META API] CACHING RESPONSE for future requests with key: ${cacheKey}`);
-        apiCache.set(cacheKey, { timestamp: Date.now(), data: response, cacheDate: currentDate });
-      } else {
-        console.log(`🔥🔥🔥 [META API] NOT CACHING RESPONSE because bypassCache=${bypassCache}, refresh=${refresh}`);
-      }
+      // 🔥🔥🔥 NEVER CACHE - ALWAYS FRESH DATA
+      console.log(`🔥🔥🔥 [META API] NOT CACHING RESPONSE - FRESH DATA ONLY`);
       
       return NextResponse.json(response)
   } catch (error) {

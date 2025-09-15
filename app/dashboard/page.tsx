@@ -1241,8 +1241,11 @@ export default function DashboardPage() {
     // ✅ FIXED: Use global fetch lock to prevent data doubling
     const fetchId = `dashboard-meta-${Date.now()}`;
     
-    // Check if another fetch is already in progress
-    if (typeof window !== 'undefined' && window._metaFetchLock === true) {
+    // 🔥🔥🔥 ALWAYS FORCE FRESH DATA - BYPASS FETCH LOCK WHEN FORCING REFRESH
+    console.log(`🔥🔥🔥 [DASHBOARD] FORCING FRESH META DATA - forceRefresh=${forceRefresh}`);
+    
+    // Check if another fetch is already in progress (but bypass if forcing refresh)
+    if (typeof window !== 'undefined' && window._metaFetchLock === true && !forceRefresh) {
       console.log('[Dashboard] 🔒 Meta fetch already in progress, skipping to prevent doubling');
       return;
     }
@@ -1269,6 +1272,7 @@ export default function DashboardPage() {
       }
       
       // Use consistent format with URLSearchParams
+      // 🔥🔥🔥 FORCE FRESH DATA WITH MAXIMUM CACHE BUSTING
       const params = new URLSearchParams({
         brandId: selectedBrandId.toString(),
         from: startDateStr,
@@ -1276,10 +1280,15 @@ export default function DashboardPage() {
         initial_load: initialLoad.toString(),
         force_refresh: 'true', // Always force refresh
         bypass_cache: 'true',  // Always bypass cache
+        force_fresh: 'true', // Force fresh data
+        no_cache: 'true', // No cache allowed
+        refresh: 'true', // Force refresh
+        timestamp: Date.now().toString(), // Cache busting
+        random: Math.random().toString(), // Extra cache busting
         t: new Date().getTime().toString() // Always add cache buster
       });
         
-      // console.log(`Fetching Meta metrics with params:`, Object.fromEntries(params));
+      console.log(`🔥🔥🔥 [DASHBOARD] Fetching FRESH Meta metrics with params:`, Object.fromEntries(params));
       
       const metaResponse = await fetch(`/api/metrics/meta?${params.toString()}`);
       

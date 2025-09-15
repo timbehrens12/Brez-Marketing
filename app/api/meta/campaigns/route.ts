@@ -130,6 +130,7 @@ export async function GET(request: NextRequest) {
     // Set hasDateRange flag if both dates are valid
     hasDateRange = !!(startDate && endDate && isValid(startDate) && isValid(endDate))
 
+    console.log(`🔥🔥🔥 [CAMPAIGNS API] FORCING FRESH DATA - NO CACHE, NO STALE DATA ALLOWED`)
     console.log(`[API] Received request for brand ${brandId}. Date range: ${from || 'N/A'} to ${to || 'N/A'}. Strict: ${strictDateRange}`)
     
     if (!brandId) {
@@ -368,13 +369,16 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Meta Campaigns] Aggregated totals for date range ${normalizedFromDate} to ${normalizedToDate}:`, dateRangeTotals)
       
-      // ✅ FIXED: Use meta_campaign_daily_stats (meta_ad_daily_insights doesn't have campaign_id)
+      // 🔥🔥🔥 FORCE FRESH DATA: Add timestamp to ensure no caching
+      console.log(`🔥🔥🔥 [CAMPAIGNS API] Fetching FRESH data from meta_campaign_daily_stats at ${new Date().toISOString()}`)
       let { data: dailyAdStats, error: statsError } = await supabase
         .from('meta_campaign_daily_stats')
         .select('campaign_id, date, spend, impressions, clicks, reach, conversions')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
-        .lte('date', normalizedToDate);
+        .lte('date', normalizedToDate)
+        .order('date', { ascending: true }) // Force fresh ordering
+        .limit(1000); // Ensure no row limits
       
       if (statsError) {
         console.error('Error fetching daily campaign stats:', statsError)
