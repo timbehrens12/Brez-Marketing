@@ -53,8 +53,8 @@ export function UnifiedDashboardHeader({
     <div className="sticky top-0 z-40 bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] backdrop-blur-xl border-b border-[#222] shadow-2xl">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-4">
         
-        {/* Main Row - Better mobile spacing to prevent widget smashing */}
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 lg:gap-4">
+        {/* Main Row - Responsive layout that prevents smashing */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           {/* Top Row on Mobile: Agency Logo & Name */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             {agencyLogo && (
@@ -304,10 +304,10 @@ export function UnifiedDashboardHeader({
             </TooltipProvider>
           </div>
 
-          {/* Right: Actions - Better mobile spacing */}
-          <div className="flex items-center justify-between xl:justify-end gap-2 sm:gap-3 flex-shrink-0 mt-2 xl:mt-0">
-            {/* Date Range Picker - More space on mobile */}
-            <div className="flex-1 xl:flex-initial min-w-0 max-w-[280px] sm:max-w-none">
+          {/* Right: Actions - Responsive layout */}
+          <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-3 flex-shrink-0 mt-2 lg:mt-0">
+            {/* Date Range Picker - Show on mobile too but compact */}
+            <div className="flex-1 lg:flex-initial min-w-0">
               <DateRangePicker
                 dateRange={dateRange}
                 setDateRange={setDateRange}

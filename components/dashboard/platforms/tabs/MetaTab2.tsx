@@ -896,8 +896,8 @@ export function MetaTab2({
         <div className="w-full h-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent rounded-full"></div>
       </div>
 
-      {/* Primary KPI Cards - Better responsive collapse */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 [&>*]:h-full">
+      {/* Primary KPI Cards - Better responsive layout for minimized view */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4">
         {/* Ad Spend - Primary KPI */}
         <MetricCard 
           title="Ad Spend"
@@ -917,7 +917,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* ROAS - Primary KPI */}
@@ -939,7 +939,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* Purchase Value - Primary KPI */}
@@ -959,12 +959,12 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
       </div>
 
-      {/* Secondary Metrics - Better responsive collapse */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 [&>*]:h-full">
+      {/* Secondary Metrics - Even layout for minimized screens */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
         {/* Impressions */}
         <MetricCard 
           title="Impressions"
@@ -982,7 +982,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* Clicks */}
@@ -1002,7 +1002,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* Conversions */}
@@ -1022,7 +1022,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* CTR */}
@@ -1042,7 +1042,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* CPC */}
@@ -1064,7 +1064,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* Cost Per Result */}
@@ -1086,12 +1086,12 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
       </div>
 
-      {/* Special Widgets - Better responsive collapse */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 [&>*]:h-full">
+      {/* Special Widgets - Even spacing for all screen sizes */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 mb-4">
         {/* Results */}
         <MetricCard 
           title="Results"
@@ -1107,7 +1107,7 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+          className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
         />
 
         {/* Total Budget */}
@@ -1146,7 +1146,7 @@ export function MetaTab2({
 
       {/* Demographics and Device Performance */}
       <div className="mt-6">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <AudienceDemographicsWidget 
             key={`demographics-${refreshKey}`}
             connectionId={metaConnection?.id || ''} 

@@ -2125,7 +2125,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Main dashboard content - Better mobile padding */}
+      {/* Main dashboard content - Responsive container for all tabs */}
               <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300">
         <GridOverlay />
         <div className="flex-grow pb-8 relative z-10">

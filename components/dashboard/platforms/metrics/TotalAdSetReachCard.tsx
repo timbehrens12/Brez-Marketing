@@ -279,7 +279,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       infoTooltip="The estimated number of unique people who saw your ads at least once during the selected period."
       nullChangeText="N/A"
       nullChangeTooltip="No data for previous period"
-      className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px] h-full"
+      className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
     />
   )
 } 

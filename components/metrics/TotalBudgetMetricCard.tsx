@@ -170,7 +170,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       prefix="$"
       hideGraph={true}
       infoTooltip="Shows the total budget for all active Meta ad sets. This value automatically updates when campaigns or ad sets change."
-      className="h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200 min-h-[120px]"
+      className="h-full bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border-[#333] hover:border-[#444] transition-all duration-200"
       nullChangeText="N/A"
       nullChangeTooltip="No data for previous period"
     />
