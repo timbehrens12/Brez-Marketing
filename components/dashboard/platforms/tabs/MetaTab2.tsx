@@ -308,23 +308,33 @@ export function MetaTab2({
       if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
       if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
       
-      // Apply aggressive cache busting to ensure fresh data from database
-      params.append('bypass_cache', 'true');
-      params.append('force_load', 'true');
-      params.append('refresh', 'true');
-      params.append('force_fresh', 'true');
-      params.append('t', Date.now().toString());
+      // ✅ FIXED: Use controlled cache busting to prevent data doubling
+      // Only bypass cache for real-time data, not historical data
+      const isToday = dateRange.to && dateRange.to.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+      if (isToday) {
+        params.append('bypass_cache', 'true');
+        params.append('refresh', 'true');
+        params.append('t', Date.now().toString());
+      } else {
+        // For historical data, allow caching to prevent doubling
+        params.append('force_load', 'false');
+      }
       
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
       const prevParams = new URLSearchParams({ brandId: brandId });
       if (prevFrom) prevParams.append('from', prevFrom);
       if (prevTo) prevParams.append('to', prevTo);
       
-      prevParams.append('bypass_cache', 'true');
-      prevParams.append('force_load', 'true');
-      prevParams.append('refresh', 'true');
-      prevParams.append('force_fresh', 'true');
-      prevParams.append('t', Date.now().toString());
+      // ✅ FIXED: Apply same controlled cache busting for previous period
+      const isPrevToday = prevTo && prevTo === new Date().toISOString().split('T')[0];
+      if (isPrevToday) {
+        prevParams.append('bypass_cache', 'true');
+        prevParams.append('refresh', 'true');
+        prevParams.append('t', Date.now().toString());
+      } else {
+        // For historical previous period data, allow caching
+        prevParams.append('force_load', 'false');
+      }
       
       const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
         cache: 'no-store',
@@ -963,8 +973,8 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Secondary Metrics - Improved responsive grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-4">
+      {/* Secondary Metrics - Fixed responsive grid to prevent cramming */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 mb-4">
         {/* Impressions */}
         <MetricCard 
           title="Impressions"
@@ -1144,9 +1154,9 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Demographics and Device Performance */}
+      {/* Demographics and Device Performance - Better responsive layout */}
       <div className="mt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           <AudienceDemographicsWidget 
             key={`demographics-${refreshKey}`}
             connectionId={metaConnection?.id || ''} 
