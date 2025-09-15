@@ -458,11 +458,18 @@ export function MetaTab2({
       }
       
 
-      const response = await fetch(url, {
+      // 🚨 CRITICAL: Add aggressive cache busting for date range changes
+      const cacheBuster = `t=${Date.now()}&dateRange=${localFromDate || 'none'}-${localToDate || 'none'}&refresh=${forceRefresh ? 'true' : 'false'}`;
+      const finalUrl = url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+      
+      console.log('🚨 CACHE BUST: Final URL with cache busting:', finalUrl);
+      
+      const response = await fetch(finalUrl, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       
