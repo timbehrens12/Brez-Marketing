@@ -542,20 +542,26 @@ export async function GET(request: NextRequest) {
       };
       
       // 🔥🔥🔥 MAJOR DEBUG: Log the actual data being returned
-      console.log(`🔥🔥🔥 [META API] RETURNING DATA:`, {
-        adSpend: response.adSpend,
-        impressions: response.impressions,
-        clicks: response.clicks,
-        conversions: response.conversions,
-        roas: response.roas,
-        ctr: response.ctr,
-        cpc: response.cpc,
-        dailyDataCount: response.dailyData?.length || 0,
-        fromDate,
-        toDate,
-        cacheKey,
-        willBeCached: !bypassCache && !refresh
-      });
+    console.log(`🔥🔥🔥 [META API] RETURNING DATA:`, {
+      adSpend: response.adSpend,
+      impressions: response.impressions,
+      clicks: response.clicks,
+      conversions: response.conversions,
+      roas: response.roas,
+      ctr: response.ctr,
+      cpc: response.cpc,
+      dailyDataCount: response.dailyData?.length || 0,
+      fromDate,
+      toDate,
+      cacheKey,
+      willBeCached: !bypassCache && !refresh,
+      dataSource: 'meta_ad_daily_insights'
+    });
+    
+    // 🔥🔥🔥 EXTRA DEBUG: Compare with campaign data source for discrepancy analysis
+    if (fromDate === toDate && fromDate === new Date().toISOString().split('T')[0]) {
+      console.log(`🔥🔥🔥 [META API] TODAY DATA COMPARISON - Main widgets: $${response.adSpend}, impressions: ${response.impressions}`)
+    }
       
       // Cache the response (unless bypass requested)
       if (!bypassCache && !refresh) {
@@ -681,10 +687,19 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     // Debug: Log the aggregation details
     if (dateStr === new Date().toISOString().split('T')[0] || daySpend > 0) {
-      console.log(`Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
+      console.log(`🔥🔥🔥 [META API] Date ${dateStr} aggregation: ${uniqueItems.length} records totaling $${daySpend.toFixed(2)}`)
       uniqueItems.forEach((item, idx) => {
-        console.log(`  Record ${idx + 1}: ad_id=${item.ad_id}, spent=$${parseFloat(item.spent || '0').toFixed(2)}`)
+        console.log(`🔥🔥🔥 [META API]   Record ${idx + 1}: ad_id=${item.ad_id || 'undefined'}, spent=$${parseFloat(item.spent || item.spend || '0').toFixed(2)}, impressions=${item.impressions || 0}`)
       })
+      
+      // Extra debug for data source analysis
+      console.log(`🔥🔥🔥 [META API] Raw dayItems for ${dateStr}:`, dayItems.map(item => ({
+        ad_id: item.ad_id,
+        spent: item.spent,
+        spend: item.spend,
+        impressions: item.impressions,
+        source: 'meta_ad_daily_insights'
+      })))
     }
     
     // Calculate conversions from actions array (purchase or conversion actions)
