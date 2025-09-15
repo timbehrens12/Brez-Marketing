@@ -1213,15 +1213,9 @@ export default function DashboardPage() {
                 });
               }
               
-              // Also fetch the campaigns directly to ensure we have the latest data
-              try {
-                const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&refresh=true&t=${Date.now()}`);
-                if (campaignsResponse.ok) {
-                  // console.log("Campaigns refreshed successfully");
-                }
-              } catch (campaignError) {
-                // console.error("Error refreshing campaigns:", campaignError);
-              }
+              // 🚨 REMOVED: Dashboard should NOT call campaigns directly
+              // This was causing race conditions with MetaTab2's fetchCampaigns
+              // MetaTab2 handles its own campaign fetching via event listeners
               
               // Dispatch a custom event to notify Meta components about the resync
               window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 

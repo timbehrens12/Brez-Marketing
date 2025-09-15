@@ -909,15 +909,15 @@ const CampaignWidget = ({
       if (isMountedRef.current) {
         logger.debug(`[CampaignWidget] Refreshing campaigns data from API after status checks`);
         
-        // Build URL with date range if available to ensure reach values are calculated for current date range
-        let url = `/api/meta/campaigns?brandId=${brandId}`;
-        if (dateRange?.from && dateRange?.to) {
-          const fromDate = dateRange.from.toISOString().split('T')[0];
-          const toDate = dateRange.to.toISOString().split('T')[0];
-          url += `&from=${fromDate}&to=${toDate}`;
-        }
+        // 🚨 REMOVED: CampaignWidget should NOT call campaigns API directly
+        // This was causing race conditions with MetaTab2's fetchCampaigns
+        // Campaign data is passed as props from MetaTab2
+        logger.debug(`[CampaignWidget] 🚨 RACE CONDITION PREVENTED: Not calling campaigns API directly`);
         
-        mutate(url);
+        // Trigger parent refresh instead of direct API call
+        if (onRefresh) {
+          onRefresh();
+        }
       }
     }, (campaignsToProcess.length * (forceRefresh ? 600 : 1200)) + 1000); // Wait for all status checks plus a buffer
   }
@@ -1078,14 +1078,15 @@ const CampaignWidget = ({
       
       // console.log(`[CampaignWidget] Bulk refresh completed: ${data.message}`);
       
-      // Force refresh the campaigns data with date range if available to ensure reach values are calculated correctly
-      let url = `/api/meta/campaigns?brandId=${brandId}`;
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
+      // 🚨 REMOVED: CampaignWidget should NOT call campaigns API directly
+      // This was causing race conditions with MetaTab2's fetchCampaigns
+      // Campaign data is passed as props from MetaTab2
+      logger.debug(`[CampaignWidget] 🚨 RACE CONDITION PREVENTED: Not calling campaigns API directly in bulk refresh`);
+      
+      // Trigger parent refresh instead of direct API call
+      if (onRefresh) {
+        onRefresh();
       }
-      mutate(url);
       
       toast.success(`Updated ${data.refreshedCount} campaign statuses`, { id: toastId });
       
