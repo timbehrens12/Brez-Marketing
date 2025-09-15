@@ -787,8 +787,18 @@ export function MetaTab2({
       if (event.detail?.brandId === brandId && metaConnection && 
           (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
 
+        // Check if refresh event includes a specific dateRange
+        let forcedDateRange: DateRange | undefined;
+        if (event.detail?.dateRange) {
+          console.log('[MetaTab2] GlobalRefreshAll event includes dateRange, using event dateRange instead of prop');
+          forcedDateRange = {
+            from: new Date(event.detail.dateRange.from),
+            to: new Date(event.detail.dateRange.to)
+          };
+        }
+
         console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefreshAll');
-        syncMetaInsights();
+        syncMetaInsights(forcedDateRange);
       }
     };
 

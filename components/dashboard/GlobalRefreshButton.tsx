@@ -104,6 +104,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
     }
 
     // console.log(`[GlobalRefresh] Starting refresh for ${currentTab} tab with platforms:`, activePlatforms)
+    console.log('[GlobalRefresh] 🔍 Starting refresh with dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
     
     setIsRefreshing(true)
     setRefreshCooldown(true)
@@ -175,7 +176,11 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
               platforms: activePlatforms,
               timestamp: Date.now(),
               refreshId,
-              forceRefresh: true
+              forceRefresh: true,
+              dateRange: dateRange ? {
+                from: dateRange.from.toISOString(),
+                to: dateRange.to.toISOString()
+              } : undefined
             }
           }))
 
