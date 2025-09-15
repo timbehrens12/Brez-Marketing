@@ -279,9 +279,10 @@ export class MetaWorker {
         completed_at: new Date().toISOString()
       })
 
-      // DON'T update connection status here anymore - demographics chunks handle this
-      // The final demographics chunk will update the connection status to 'completed'
-      console.log(`[Meta Worker] ℹ️ Campaigns completed but demographics chunks still processing - keeping sync status as 'syncing'`)
+      // Since demographics sync is disabled, update connection status here
+      console.log(`[Meta Worker] 🎉 Historical campaigns completed - updating connection status to completed`)
+      await this.updateConnectionSyncStatus(connectionId, 'completed')
+      console.log(`[Meta Worker] ✅ Updated connection ${connectionId} sync status to completed`)
 
     } catch (error) {
       console.error(`[Meta Worker] Historical campaigns failed for chunk ${metadata?.chunkNumber}:`, error)
