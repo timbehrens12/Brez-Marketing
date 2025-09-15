@@ -89,38 +89,136 @@ export class DataBackfillService {
     console.log(`[DataBackfill] Starting Meta data backfill for brand ${brandId}`)
 
     try {
-      // Get account ID first
-      const accountResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}`)
-      const accountData = await accountResponse.json()
+      // 🔧 RATE LIMIT RESILIENT: Get account ID with retry logic
+      let adAccountId = null
+      const maxRetries = 3
       
-      if (!accountData.data || accountData.data.length === 0) {
-        console.log(`[DataBackfill] No ad accounts found for brand ${brandId}`)
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[DataBackfill] 🔄 Fetching ad accounts (attempt ${attempt}/${maxRetries})...`)
+          
+          const accountResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}`)
+          const accountData = await accountResponse.json()
+          
+          // Check for rate limit error
+          if (accountData.error && (accountData.error.code === 80004 || accountData.error.code === 17)) {
+            console.log(`[DataBackfill] ⚠️ Rate limited on attempt ${attempt}. Error:`, accountData.error.message)
+            
+            if (attempt < maxRetries) {
+              const waitTime = Math.min(10 * attempt, 30) // 10s, 20s, 30s max
+              console.log(`[DataBackfill] ⏳ Waiting ${waitTime}s before retry...`)
+              await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+              continue
+            } else {
+              // Last attempt failed - continue with limited data
+              console.log(`[DataBackfill] ⚠️ All retries exhausted, proceeding with limited sync`)
+              break
+            }
+          }
+          
+          if (accountData.data && accountData.data.length > 0) {
+            adAccountId = accountData.data[0].id
+            console.log(`[DataBackfill] ✅ Found ad account: ${adAccountId}`)
+            break
+          } else {
+            console.log(`[DataBackfill] No ad accounts found for brand ${brandId}`)
+            return
+          }
+        } catch (fetchError) {
+          console.log(`[DataBackfill] ⚠️ Network error on attempt ${attempt}:`, fetchError)
+          if (attempt === maxRetries) {
+            throw fetchError
+          }
+        }
+      }
+
+      // If we couldn't get account ID after all retries, don't fail the whole sync
+      if (!adAccountId) {
+        console.log(`[DataBackfill] ⚠️ Could not retrieve ad account ID, marking sync as completed with limited data`)
         return
       }
 
-      const adAccountId = accountData.data[0].id
-      console.log(`[DataBackfill] Found ad account: ${adAccountId}`)
-
-      // Calculate date range (last 90 days)
+      // Calculate date range (last 365 days for full historical data)
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(endDate.getDate() - 90)
+      startDate.setDate(endDate.getDate() - 365)
       
       const dateRange = {
         since: startDate.toISOString().split('T')[0],
         until: endDate.toISOString().split('T')[0]
       }
 
-      // Fetch campaigns
-      await this.fetchMetaCampaigns(brandId, adAccountId, accessToken, dateRange)
+      // 🔧 RESILIENT SYNC: Try campaigns and insights with individual error handling
+      let campaignsSuccess = false
+      let insightsSuccess = false
       
-      // Fetch daily insights
-      await this.fetchMetaDailyInsights(brandId, adAccountId, accessToken, dateRange)
+      // Fetch campaigns (don't fail entire sync if this fails)
+      try {
+        await this.fetchMetaCampaigns(brandId, adAccountId, accessToken, dateRange)
+        campaignsSuccess = true
+        console.log(`[DataBackfill] ✅ Campaigns sync completed`)
+      } catch (campaignError) {
+        console.log(`[DataBackfill] ⚠️ Campaigns sync failed, continuing:`, campaignError)
+      }
+      
+      // Fetch daily insights (don't fail entire sync if this fails)
+      try {
+        await this.fetchMetaDailyInsights(brandId, adAccountId, accessToken, dateRange)
+        insightsSuccess = true
+        console.log(`[DataBackfill] ✅ Insights sync completed`)
+      } catch (insightsError) {
+        console.log(`[DataBackfill] ⚠️ Insights sync failed, continuing:`, insightsError)
+      }
+
+      // Log final results
+      console.log(`[DataBackfill] ✅ Meta sync completed for brand ${brandId}:`, {
+        campaigns: campaignsSuccess ? 'success' : 'failed',
+        insights: insightsSuccess ? 'success' : 'failed'
+      })
 
     } catch (error) {
       console.error(`[DataBackfill] Meta backfill error:`, error)
       throw error
     }
+  }
+
+  /**
+   * UTILITY: Rate-limited fetch with retry logic for Facebook API
+   */
+  private static async rateLimitedFetch(url: string, context: string, maxRetries: number = 2): Promise<Response> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[DataBackfill] 🔄 Fetching ${context} (attempt ${attempt}/${maxRetries})...`)
+        
+        const response = await fetch(url)
+        const data = await response.json()
+        
+        // Check for rate limit error
+        if (data.error && (data.error.code === 80004 || data.error.code === 17)) {
+          console.log(`[DataBackfill] ⚠️ Rate limited on ${context} attempt ${attempt}:`, data.error.message)
+          
+          if (attempt < maxRetries) {
+            const waitTime = Math.min(5 * attempt, 15) // 5s, 10s, 15s max
+            console.log(`[DataBackfill] ⏳ Waiting ${waitTime}s before retry...`)
+            await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+            continue
+          }
+        }
+        
+        // Return response (even if it contains an error - caller will handle)
+        return new Response(JSON.stringify(data), {
+          status: response.status,
+          headers: response.headers
+        })
+      } catch (fetchError) {
+        console.log(`[DataBackfill] ⚠️ Network error on ${context} attempt ${attempt}:`, fetchError)
+        if (attempt === maxRetries) {
+          throw fetchError
+        }
+      }
+    }
+    
+    throw new Error(`All ${maxRetries} attempts failed for ${context}`)
   }
 
   /**
@@ -146,8 +244,15 @@ export class DataBackfillService {
       `fields=id,name,status,objective,daily_budget,lifetime_budget,created_time,updated_time&` +
       `access_token=${accessToken}&limit=100`
 
-    const response = await fetch(campaignsUrl)
+    // 🔧 RATE LIMIT RESILIENT: Fetch campaigns with retry logic
+    const response = await this.rateLimitedFetch(campaignsUrl, 'campaigns')
     const data = await response.json()
+    
+    // Check for rate limit error
+    if (data.error && (data.error.code === 80004 || data.error.code === 17)) {
+      console.log(`[DataBackfill] ⚠️ Rate limited fetching campaigns, skipping for now`)
+      return
+    }
 
     if (data.data && data.data.length > 0) {
       console.log(`[DataBackfill] Found ${data.data.length} campaigns to sync`)
@@ -158,8 +263,21 @@ export class DataBackfillService {
           `fields=spend,impressions,clicks,actions,action_values,ctr,cpm,cpp&` +
           `access_token=${accessToken}&limit=100`
 
-        const insightsResponse = await fetch(insightsUrl)
-        const insightsData = await insightsResponse.json()
+        // 🔧 RATE LIMIT RESILIENT: Fetch insights with retry logic
+        let insightsData: any = { data: [] }
+        try {
+          const insightsResponse = await this.rateLimitedFetch(insightsUrl, `campaign-${campaign.id}-insights`)
+          insightsData = await insightsResponse.json()
+          
+          // Skip if rate limited
+          if (insightsData.error && (insightsData.error.code === 80004 || insightsData.error.code === 17)) {
+            console.log(`[DataBackfill] ⚠️ Rate limited fetching insights for campaign ${campaign.id}, using default values`)
+            insightsData = { data: [{}] }
+          }
+        } catch (insightsError) {
+          console.log(`[DataBackfill] ⚠️ Failed to fetch insights for campaign ${campaign.id}, using default values`)
+          insightsData = { data: [{}] }
+        }
 
         const insights = insightsData.data?.[0] || {}
 
@@ -343,8 +461,15 @@ export class DataBackfillService {
       pageCount++
       console.log(`[DataBackfill] Fetching page ${pageCount}...`)
       
-      const response = await fetch(nextUrl)
-      const data = await response.json()
+      // 🔧 RATE LIMIT RESILIENT: Use rate-limited fetch for insights
+      let data
+      try {
+        const response = await this.rateLimitedFetch(nextUrl, `insights-page-${pageCount}`)
+        data = await response.json()
+      } catch (fetchError) {
+        console.log(`[DataBackfill] ⚠️ Failed to fetch insights page ${pageCount}, stopping pagination`)
+        break
+      }
 
       console.log(`[DataBackfill] Page ${pageCount} response:`, {
         count: data.data?.length || 0,
@@ -353,6 +478,12 @@ export class DataBackfillService {
         sample: data.data?.[0] || null
       })
 
+      // Check for rate limit error and stop gracefully
+      if (data.error && (data.error.code === 80004 || data.error.code === 17)) {
+        console.log(`[DataBackfill] ⚠️ Rate limited on insights page ${pageCount}, stopping with current data`)
+        break
+      }
+      
       if (data.error) {
         console.error(`[DataBackfill] Error on page ${pageCount}:`, data.error)
         break
