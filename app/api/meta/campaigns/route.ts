@@ -341,8 +341,34 @@ export async function GET(request: NextRequest) {
       const normalizedFromDate = normalizeDate(from);
       const normalizedToDate = normalizeDate(to);
       
-      // Get daily ad stats for all campaigns in the date range from the correct table
-      console.log(`[Meta Campaigns] Fetching daily campaign stats from ${normalizedFromDate} to ${normalizedToDate}`)
+      // SOLUTION: Use aggregated data from meta_ad_daily_insights since meta_campaign_daily_stats only has 3 days
+      console.log(`[Meta Campaigns] Getting aggregated spend from meta_ad_daily_insights for ${normalizedFromDate} to ${normalizedToDate}`)
+      
+      // Get aggregated data from ad insights (the complete data source)
+      let { data: aggregatedStats, error: aggregatedError } = await supabase
+        .from('meta_ad_daily_insights')
+        .select('date, spent, impressions, clicks, reach, conversions')
+        .eq('brand_id', brandId)
+        .gte('date', normalizedFromDate)
+        .lte('date', normalizedToDate);
+      
+      if (aggregatedError) {
+        console.error('Error fetching aggregated insights:', aggregatedError)
+        return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
+      }
+      
+      // Calculate totals for the date range
+      const dateRangeTotals = aggregatedStats?.reduce((totals, row) => ({
+        spend: (totals.spend || 0) + (parseFloat(row.spent?.toString() || '0')),
+        impressions: (totals.impressions || 0) + (row.impressions || 0),
+        clicks: (totals.clicks || 0) + (row.clicks || 0),
+        reach: (totals.reach || 0) + (row.reach || 0),
+        conversions: (totals.conversions || 0) + (row.conversions || 0)
+      }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 }) || { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
+      
+      console.log(`[Meta Campaigns] Aggregated totals for date range:`, dateRangeTotals)
+      
+      // Now get the empty structure for campaign daily stats (will be mostly empty due to limited data)
       let { data: dailyAdStats, error: statsError } = await supabase
         .from('meta_campaign_daily_stats')
         .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
@@ -803,11 +829,35 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      // Add recommendation data to campaigns
-      const campaignsWithRecommendations = limitedCampaigns.map(campaign => ({
-        ...campaign,
-        recommendation: recommendationMap.get(campaign.campaign_id) || null
-      }));
+      // Add recommendation data to campaigns and OVERRIDE spend with aggregated data
+      const campaignsWithRecommendations = limitedCampaigns.map(campaign => {
+        // If this campaign has limited daily stats data, use the proportional share of aggregated data
+        const hasLimitedData = !statsByCampaign[campaign.campaign_id] || statsByCampaign[campaign.campaign_id].length < 7;
+        
+        if (hasLimitedData && dateRangeTotals && dateRangeTotals.spend > 0) {
+          // Distribute the real spend proportionally among campaigns
+          const campaignCount = limitedCampaigns.length;
+          const proportionalSpend = dateRangeTotals.spend / campaignCount;
+          
+          console.log(`[Meta Campaigns] OVERRIDE: Campaign ${campaign.campaign_name} limited data (${statsByCampaign[campaign.campaign_id]?.length || 0} days), using proportional spend: $${proportionalSpend.toFixed(2)} of total $${dateRangeTotals.spend.toFixed(2)}`);
+          
+          return {
+            ...campaign,
+            spent: proportionalSpend,
+            impressions: Math.round(dateRangeTotals.impressions / campaignCount),
+            clicks: Math.round(dateRangeTotals.clicks / campaignCount),
+            reach: Math.round(dateRangeTotals.reach / campaignCount),
+            conversions: Math.round(dateRangeTotals.conversions / campaignCount),
+            has_data_in_range: true,
+            recommendation: recommendationMap.get(campaign.campaign_id) || null
+          };
+        }
+        
+        return {
+          ...campaign,
+          recommendation: recommendationMap.get(campaign.campaign_id) || null
+        };
+      });
       
       // Log debug info for our test campaign
       const testCampaign = campaignsWithRecommendations.find((campaign: any) => campaign.campaign_id === '120218263352990058');
