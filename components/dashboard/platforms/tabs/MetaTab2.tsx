@@ -897,7 +897,7 @@ export function MetaTab2({
       </div>
 
       {/* Primary KPI Cards - Conservative responsive grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 auto-rows-fr">
         {/* Ad Spend - Primary KPI */}
         <MetricCard 
           title="Ad Spend"
@@ -964,7 +964,7 @@ export function MetaTab2({
       </div>
 
       {/* Secondary Metrics - Conservative grid layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 auto-rows-fr">
         {/* Impressions */}
         <MetricCard 
           title="Impressions"
@@ -1091,7 +1091,7 @@ export function MetaTab2({
       </div>
 
       {/* Special Widgets - Conservative layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 auto-rows-fr">
         {/* Results */}
         <MetricCard 
           title="Results"

@@ -306,7 +306,7 @@ export function MetricCard({
 
   try {
     return (
-      <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]", className)}>
+      <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] flex flex-col", className)}>
         <CardHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -337,24 +337,10 @@ export function MetricCard({
             {refreshing && <Loader2 className="h-4 w-4 animate-spin text-white" />}
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-2">
-          {loading || refreshing ? (
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center h-8">
-                <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
-              </div>
-              {!hidePercentageChange && !hideChange && (
-                <div className="flex items-center mt-2">
-                  <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
-                </div>
-              )}
-              {showChart && !hideGraph && data.length > 0 && (
-                <div className="mt-4 h-20 bg-gray-800/30 rounded animate-pulse"></div>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="font-bold text-xl md:text-3xl text-white">
+        <CardContent className="px-4 pt-0 pb-4 h-full flex flex-col justify-between flex-grow">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-2xl font-bold text-white relative">
                 {formatSafeValue()}
               </div>
               
@@ -522,13 +508,13 @@ export function MetricCard({
                   />
                 </div>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   } catch (error) {
-    console.error("Error rendering MetricCard:", error);
+    console.error("Error rendering MetricCard:", { title, value, error });
     return (
       <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden", className)}>
         <CardHeader className="p-4">
