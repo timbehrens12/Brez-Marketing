@@ -90,7 +90,36 @@ export async function POST(request: NextRequest) {
     try {
       const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${tokenData.access_token}&fields=id,name,account_status`)
       const meData = await meResponse.json()
+      
+      // 🚨 EMERGENCY DEBUG: Log the response to see why accountId is empty
+      console.log(`[Meta Exchange] 🚨 DEBUG: meResponse status: ${meResponse.status}`)
+      console.log(`[Meta Exchange] 🚨 DEBUG: meData:`, JSON.stringify(meData, null, 2))
+      
       const accountId = meData.data?.[0]?.id || ''
+      
+      // 🚨 CRITICAL VALIDATION: Don't proceed if accountId is empty
+      if (!accountId) {
+        console.error(`[Meta Exchange] 🚨 CRITICAL: No accountId found in Meta API response!`)
+        console.error(`[Meta Exchange] 🚨 Response data:`, meData)
+        throw new Error(`Failed to get Meta ad account ID. Response: ${JSON.stringify(meData)}`)
+      }
+      
+      console.log(`[Meta Exchange] ✅ Got accountId: ${accountId}`);
+      
+      // Update connection record with accountId for debugging
+      await supabase
+        .from('platform_connections')
+        .update({
+          metadata: {
+            accountId: accountId,
+            accountName: meData.data?.[0]?.name || 'Unknown',
+            accountStatus: meData.data?.[0]?.account_status || 'Unknown',
+            lastUpdated: new Date().toISOString()
+          }
+        })
+        .eq('id', connectionData.id)
+      
+      console.log(`[Meta Exchange] 💾 Saved accountId to connection metadata: ${accountId}`)
 
       // Import Meta service and do IMMEDIATE 30-day sync + queue background for 12 months
       const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
