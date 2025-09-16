@@ -213,12 +213,16 @@ async function triggerJobProcessing(brandId: string) {
     console.log(`[Demographics Trigger] Using CRON_SECRET: ${cronSecret ? `${cronSecret.substring(0, 10)}...` : 'undefined'}`)
     
     // Call the dedicated process-jobs endpoint
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${cronSecret}`
+    }
+    
+    console.log(`[Demographics Trigger] Calling ${baseUrl}/api/meta/demographics/process-jobs with auth: ${headers.Authorization.substring(0, 20)}...`)
+    
     const response = await fetch(`${baseUrl}/api/meta/demographics/process-jobs`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cronSecret}`
-      },
+      headers,
       body: JSON.stringify({
         brandId: brandId,
         maxJobs: 5, // Reduced for better performance
