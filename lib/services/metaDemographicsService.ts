@@ -369,9 +369,16 @@ class MetaDemographicsService {
       // Mark trigger job as running
       await this.updateJobStatus(jobKey, 'running', { started_at: new Date().toISOString() })
 
-      // Create sync jobs efficiently (avoid timeouts)
+      // Create sync jobs efficiently with timeout protection
       console.log(`[Demographics Service] Creating sync jobs for brand ${job.brand_id}`)
-      const syncResult = await this.createSyncJobsForTrigger(job.brand_id)
+      
+      // Add timeout protection (max 30 seconds for trigger job)
+      const syncResult = await Promise.race([
+        this.createSyncJobsForTrigger(job.brand_id),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Trigger job timeout after 30 seconds')), 30000)
+        )
+      ]) as { success: boolean; jobsCreated: number; message: string }
       
       if (syncResult.success) {
         // Mark trigger job as completed

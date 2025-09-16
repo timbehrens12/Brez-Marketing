@@ -83,8 +83,28 @@ export async function POST(request: NextRequest) {
 
         const accountId = rawAccountId.replace('act_', '')
 
+        // Check if there's already a trigger job for this brand (avoid duplicates)
+        const { data: existingTrigger } = await supabase
+          .from('meta_demographics_jobs_ledger_v2')
+          .select('job_key, status')
+          .eq('brand_id', brandId)
+          .contains('breakdown_types', ['trigger_full_sync'])
+          .in('status', ['pending', 'running'])
+          .limit(1)
+        
+        if (existingTrigger && existingTrigger.length > 0) {
+          console.log(`[Demographics Sync] ⚠️ Trigger job already exists: ${existingTrigger[0].job_key} (status: ${existingTrigger[0].status})`)
+          return NextResponse.json({
+            success: true,
+            message: 'Trigger job already exists and is processing',
+            note: 'Existing sync job is already running. Check progress via /api/meta/demographics/status'
+          }, { status: 202 })
+        }
+        
         // Create a single lightweight job that will trigger the full sync in the background
         const jobKey = `meta_demographics_sync:${brandId}:${Date.now()}`
+        
+        console.log(`[Demographics Sync] ✅ Enqueuing trigger job ${jobKey} for brand ${brandId}`)
         
         const { error: queueError } = await supabase
           .from('meta_demographics_jobs_ledger_v2')
