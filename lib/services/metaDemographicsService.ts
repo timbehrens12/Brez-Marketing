@@ -382,9 +382,9 @@ class MetaDemographicsService {
       // Get connection details
       const { data: connection } = await this.supabase
         .from('platform_connections')
-        .select('id, connection_data')
+        .select('id, metadata')
         .eq('brand_id', brandId)
-        .eq('platform', 'meta')
+        .eq('platform_type', 'meta')
         .eq('status', 'active')
         .single()
 
@@ -392,8 +392,8 @@ class MetaDemographicsService {
         return { success: false, jobsCreated: 0, message: 'No active Meta connection found' }
       }
 
-      const connectionData = connection.connection_data as any
-      const accountId = connectionData?.account_id
+      const rawAccountId = connection.metadata?.account_id || connection.metadata?.ad_account_id
+      const accountId = rawAccountId?.replace('act_', '')
 
       if (!accountId) {
         return { success: false, jobsCreated: 0, message: 'No account ID found' }
