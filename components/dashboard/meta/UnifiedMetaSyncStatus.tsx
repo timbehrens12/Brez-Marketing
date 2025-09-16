@@ -95,9 +95,14 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       // Build unified status with real data
       const campaignProgress = getCampaignProgress(connectionData)
       
-      // Get demographics progress - show steady progression if sync starting but no data yet
-      let demographicsProgress = demographicsData.syncStatus?.progress_percentage || 0
-      if (demographicsProgress === 0 && connectionData.sync_status === 'in_progress') {
+      // Get demographics progress - calculate from actual job data
+      let demographicsProgress = 0
+      if (demographicsData.syncStatus?.days_completed && demographicsData.syncStatus?.total_days_target) {
+        demographicsProgress = Math.round((demographicsData.syncStatus.days_completed / demographicsData.syncStatus.total_days_target) * 100)
+      } else if (demographicsData.jobStats?.total > 0) {
+        // Fallback to job completion percentage
+        demographicsProgress = Math.round((demographicsData.jobStats.completed / demographicsData.jobStats.total) * 100)
+      } else if (connectionData.sync_status === 'in_progress') {
         // Show steady demographics progress when sync is active but no specific progress yet
         const now = Date.now()
         const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
