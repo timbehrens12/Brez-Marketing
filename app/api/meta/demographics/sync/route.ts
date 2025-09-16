@@ -210,6 +210,7 @@ async function triggerJobProcessing(brandId: string) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
     
     console.log(`[Demographics Trigger] Starting job processing for brand ${brandId} at ${baseUrl}`)
+    console.log(`[Demographics Trigger] Using CRON_SECRET: ${cronSecret ? `${cronSecret.substring(0, 10)}...` : 'undefined'}`)
     
     // Call the dedicated process-jobs endpoint
     const response = await fetch(`${baseUrl}/api/meta/demographics/process-jobs`, {

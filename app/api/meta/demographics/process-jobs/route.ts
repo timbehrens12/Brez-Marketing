@@ -15,7 +15,11 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET || 'your-cron-secret'
     
+    console.log(`[Demographics Processor] Auth header: ${authHeader ? `${authHeader.substring(0, 20)}...` : 'missing'}`)
+    console.log(`[Demographics Processor] Expected: Bearer ${cronSecret ? `${cronSecret.substring(0, 10)}...` : 'undefined'}`)
+    
     if (authHeader !== `Bearer ${cronSecret}`) {
+      console.log(`[Demographics Processor] Auth failed - header: "${authHeader}", expected: "Bearer ${cronSecret}"`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
