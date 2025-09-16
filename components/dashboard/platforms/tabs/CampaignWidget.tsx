@@ -2325,8 +2325,8 @@ const CampaignWidget = ({
                               <TooltipProvider delayDuration={100}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="ml-1 text-xs text-gray-500 cursor-help">
-                                      ( ? )
+                                    <span className="ml-1 text-xs text-gray-500 cursor-help select-none whitespace-nowrap">
+                                      ?
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-black border border-[#333] text-white text-xs max-w-xs">
@@ -2477,8 +2477,17 @@ const CampaignWidget = ({
                               </td>
                             );
                           })}
+                          <td className="p-3 text-center">
+                            <div className="flex justify-center">
+                              {expandedCampaign === campaign.campaign_id ? (
+                                <ChevronUp className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                              )}
+                            </div>
+                          </td>
                         </tr>
-                        
+
                         {/* Expanded Row Content */}
                         {expandedCampaign === campaign.campaign_id && (
                           <tr className="bg-[#111] border-b border-[#333]">
