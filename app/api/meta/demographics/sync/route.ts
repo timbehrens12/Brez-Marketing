@@ -207,9 +207,11 @@ export async function GET(request: NextRequest) {
 async function triggerJobProcessing(brandId: string) {
   try {
     const cronSecret = process.env.CRON_SECRET || 'your-cron-secret'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+    // Force the correct www domain to avoid redirects that strip headers
+    const baseUrl = 'https://www.brezmarketingdashboard.com'
     
     console.log(`[Demographics Trigger] Starting job processing for brand ${brandId} at ${baseUrl}`)
+    console.log(`[Demographics Trigger] NEXT_PUBLIC_APP_URL: ${process.env.NEXT_PUBLIC_APP_URL}`)
     console.log(`[Demographics Trigger] Using CRON_SECRET: ${cronSecret ? `${cronSecret.substring(0, 10)}...` : 'undefined'}`)
     
     // Call the dedicated process-jobs endpoint
