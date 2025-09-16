@@ -59,9 +59,8 @@ export async function POST(request: NextRequest) {
         const syncResult = await demographicsService.startComprehensiveSync(brandId)
         
         if (syncResult.success) {
-          // Start background processing
-          // Note: In production, this would be handled by a queue system like Bull/Agenda
-          processJobsInBackground(brandId)
+          // Trigger job processing via dedicated endpoint (asynchronously)
+          setImmediate(() => triggerJobProcessing(brandId))
           
           return NextResponse.json({
             success: true,
@@ -104,8 +103,8 @@ export async function POST(request: NextRequest) {
           })
           .eq('brand_id', brandId)
         
-        // Restart background processing
-        processJobsInBackground(brandId)
+        // Restart job processing asynchronously
+        setImmediate(() => triggerJobProcessing(brandId))
         
         return NextResponse.json({ success: true, message: 'Sync resumed' })
 
@@ -149,69 +148,44 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Background job processor
- * In production, this would be replaced with a proper queue system
+ * Trigger job processing via dedicated endpoint
+ * This is much simpler and avoids timeout issues
  */
-async function processJobsInBackground(brandId: string) {
+async function triggerJobProcessing(brandId: string) {
   try {
-    const supabase = getSupabaseClient()
-    const demographicsService = new MetaDemographicsService()
+    console.log(`[Demographics Trigger] Starting job processing for brand ${brandId}`)
     
-    // Get pending jobs for this brand, ordered by priority
-    const { data: jobs } = await supabase
-      .from('meta_demographics_jobs_ledger_v2')
-      .select('job_key, request_metadata')
-      .eq('brand_id', brandId)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
-      .limit(10) // Process 10 jobs at a time
+    const cronSecret = process.env.CRON_SECRET || 'your-cron-secret'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+    
+    // Call the dedicated process-jobs endpoint
+    const response = await fetch(`${baseUrl}/api/meta/demographics/process-jobs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cronSecret}`
+      },
+      body: JSON.stringify({
+        brandId: brandId,
+        maxJobs: 5, // Reduced for better performance
+        maxConcurrency: 1 // Reduced for stability
+      })
+    })
 
-    if (!jobs || jobs.length === 0) {
+    if (!response.ok) {
+      console.error(`[Demographics Trigger] Process jobs call failed: ${response.status} ${response.statusText}`)
       return
     }
 
-    // Process jobs with concurrency control
-    const concurrency = 2 // Process 2 jobs simultaneously
-    const chunks = []
-    for (let i = 0; i < jobs.length; i += concurrency) {
-      chunks.push(jobs.slice(i, i + concurrency))
+    const result = await response.json()
+    console.log(`[Demographics Trigger] Process jobs result:`, result)
+
+    // If there were jobs processed successfully, schedule another round
+    if (result.success && result.jobsProcessed > 0) {
+      setTimeout(() => triggerJobProcessing(brandId), 30000) // 30 seconds delay
     }
 
-    for (const chunk of chunks) {
-      await Promise.all(
-        chunk.map(job => 
-          demographicsService.processJob(job.job_key)
-            .catch(error => console.error(`Job ${job.job_key} failed:`, error))
-        )
-      )
-      
-      // Delay between chunks to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, 2000))
-    }
-
-    // Check if there are more jobs to process
-    const { data: remainingJobs } = await supabase
-      .from('meta_demographics_jobs_ledger_v2')
-      .select('job_key')
-      .eq('brand_id', brandId)
-      .eq('status', 'pending')
-      .limit(1)
-
-    if (remainingJobs && remainingJobs.length > 0) {
-      // Schedule next batch
-      setTimeout(() => processJobsInBackground(brandId), 5000)
-    } else {
-      // Mark sync as completed
-      await supabase
-        .from('meta_demographics_sync_status')
-        .update({
-          overall_status: 'completed',
-          completed_at: new Date().toISOString(),
-          current_phase: 'daily'
-        })
-        .eq('brand_id', brandId)
-    }
   } catch (error) {
-    console.error('Background job processing error:', error)
+    console.error(`[Demographics Trigger] Error triggering job processing for brand ${brandId}:`, error)
   }
 }
