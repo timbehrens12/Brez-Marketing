@@ -1,9 +1,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { UnifiedMetaSyncStatus } from "@/components/dashboard/meta/UnifiedMetaSyncStatus"
 
 interface MetaConnectButtonProps {
   onConnect: (data: any) => Promise<void>
@@ -14,6 +15,38 @@ interface MetaConnectButtonProps {
 
 export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnect }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
+  const [showSyncStatus, setShowSyncStatus] = useState(false)
+  const [syncInProgress, setSyncInProgress] = useState(false)
+
+  // Check for sync status when connected
+  useEffect(() => {
+    if (isConnected && brandId) {
+      checkSyncStatus()
+    }
+  }, [isConnected, brandId])
+
+  const checkSyncStatus = async () => {
+    try {
+      const response = await fetch(`/api/platforms/sync-status?brandId=${brandId}&platformType=meta`)
+      const data = await response.json()
+      
+      if (data.success) {
+        const isCurrentlySyncing = data.sync_status === 'in_progress' || data.sync_status === 'syncing'
+        setSyncInProgress(isCurrentlySyncing)
+        setShowSyncStatus(isCurrentlySyncing)
+      }
+    } catch (error) {
+      console.error('Error checking sync status:', error)
+    }
+  }
+
+  const handleSyncComplete = () => {
+    setSyncInProgress(false)
+    setShowSyncStatus(false)
+    toast.success("Sync Complete", {
+      description: "All Meta data has been successfully synced."
+    })
+  }
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -70,36 +103,47 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
   }
 
   return (
-    <div className="flex gap-2">
-      {isConnected ? (
-        <>
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        {isConnected ? (
+          <>
+            <Button 
+              variant="outline"
+              className="bg-transparent text-red-500 hover:bg-red-500/10"
+              onClick={handleDisconnect}
+              disabled={isConnecting || syncInProgress}
+            >
+              {syncInProgress ? 'Syncing...' : 'Disconnect'}
+            </Button>
+          </>
+        ) : (
           <Button 
-            variant="outline"
-            className="bg-transparent text-red-500 hover:bg-red-500/10"
-            onClick={handleDisconnect}
+            onClick={handleConnect}
             disabled={isConnecting}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            Disconnect
+            {isConnecting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                Connect Meta Ads
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
-        </>
-      ) : (
-        <Button 
-          onClick={handleConnect}
-          disabled={isConnecting}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isConnecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
-            </>
-          ) : (
-            <>
-              Connect Meta Ads
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
+        )}
+      </div>
+
+      {/* Unified Sync Status */}
+      {isConnected && (showSyncStatus || syncInProgress) && (
+        <UnifiedMetaSyncStatus
+          brandId={brandId}
+          isVisible={true}
+          onSyncComplete={handleSyncComplete}
+        />
       )}
     </div>
   )

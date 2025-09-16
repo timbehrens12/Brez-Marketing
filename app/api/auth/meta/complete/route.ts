@@ -47,6 +47,16 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', connectionData.id)
       
+      // Set connection to syncing status
+      await supabase
+        .from('platform_connections')
+        .update({ 
+          sync_status: 'in_progress',
+          last_sync: new Date().toISOString(),
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', connectionData.id)
+
       // Queue historical backfill (existing campaigns/ads data)
       await MetaQueueService.queueCompleteHistoricalSync(
         state,
@@ -61,7 +71,7 @@ export async function POST(request: NextRequest) {
       const demographicsResult = await demographicsService.startComprehensiveSync(state)
       
       if (demographicsResult.success) {
-        console.log(`[Meta Complete] Started demographics sync: ${demographicsResult.jobsCreated} jobs created`)
+        console.log(`[Meta Complete] Started unified sync: campaigns + demographics (${demographicsResult.jobsCreated} jobs)`)
       } else {
         console.error(`[Meta Complete] Demographics sync failed: ${demographicsResult.message}`)
       }
