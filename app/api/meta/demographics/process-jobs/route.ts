@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { brandId, maxJobs = 5, maxConcurrency = 1 } = body
+    const { brandId, maxJobs = 20, maxConcurrency = 5 } = body
 
     const supabase = getSupabaseClient()
     const demographicsService = new MetaDemographicsService()
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
       // Small delay between chunks to avoid overwhelming the system
       if (chunks.indexOf(chunk) < chunks.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
     }
 

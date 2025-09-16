@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     
     // Get the number of jobs to process
     const body = await request.json().catch(() => ({}))
-    const maxJobs = body.maxJobs || 1  // Process only 1 job per execution to avoid timeout
+    const maxJobs = body.maxJobs || 8  // Balanced for performance vs stability
     
     console.log(`[Public Worker] Processing up to ${maxJobs} jobs`)
     
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       .select('job_key, brand_id, request_metadata')
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
-      .limit(maxJobs)
+      .limit(Math.min(6, maxJobs)) // Process up to 6 demographics jobs per run
     
     const demographicsWaiting = demographicsJobs?.length || 0
     
@@ -54,31 +54,49 @@ export async function POST(request: NextRequest) {
     const allWaitingJobs = [...metaWaiting, ...shopifyWaiting]
     const totalActive = shopifyActive.length + metaActive.length
     
-    // First, process demographics jobs (highest priority)
+    // First, process demographics jobs (highest priority) - Process in parallel
     if (demographicsJobs && demographicsJobs.length > 0 && processedCount < maxJobs) {
       const MetaDemographicsService = (await import('@/lib/services/metaDemographicsService')).default
       const demographicsService = new MetaDemographicsService()
       
-      for (const demoJob of demographicsJobs.slice(0, maxJobs - processedCount)) {
-        try {
-          console.log(`[Public Worker] Processing demographics job ${demoJob.job_key}`)
-          
-          let result
-          if (demoJob.request_metadata?.trigger_full_sync) {
-            result = await demographicsService.processTriggerJob(demoJob.job_key)
+      const jobsToProcess = demographicsJobs.slice(0, Math.min(6, maxJobs - processedCount))
+      
+      // Process jobs in parallel with concurrency limit
+      const concurrency = 2
+      const chunks = []
+      for (let i = 0; i < jobsToProcess.length; i += concurrency) {
+        chunks.push(jobsToProcess.slice(i, i + concurrency))
+      }
+      
+      for (const chunk of chunks) {
+        const chunkResults = await Promise.allSettled(
+          chunk.map(async demoJob => {
+            console.log(`[Public Worker] Processing demographics job ${demoJob.job_key}`)
+            
+            let result
+            if (demoJob.request_metadata?.trigger_full_sync) {
+              result = await demographicsService.processTriggerJob(demoJob.job_key)
+            } else {
+              result = await demographicsService.processJob(demoJob.job_key)
+            }
+            
+            return { job: demoJob, result }
+          })
+        )
+        
+        for (const chunkResult of chunkResults) {
+          if (chunkResult.status === 'fulfilled') {
+            const { job, result } = chunkResult.value
+            if (result.success) {
+              results.push({ type: 'demographics', job: job.job_key, success: true, rowsProcessed: result.rowsProcessed })
+            } else {
+              results.push({ type: 'demographics', job: job.job_key, success: false, error: result.error })
+            }
           } else {
-            result = await demographicsService.processJob(demoJob.job_key)
-          }
-          
-          if (result.success) {
-            results.push({ type: 'demographics', job: demoJob.job_key, success: true, rowsProcessed: result.rowsProcessed })
-          } else {
-            results.push({ type: 'demographics', job: demoJob.job_key, success: false, error: result.error })
+            console.error(`[Public Worker] Demographics job failed:`, chunkResult.reason)
+            results.push({ type: 'demographics', job: 'unknown', success: false, error: chunkResult.reason })
           }
           processedCount++
-        } catch (error) {
-          console.error(`[Public Worker] Demographics job ${demoJob.job_key} failed:`, error)
-          results.push({ type: 'demographics', job: demoJob.job_key, success: false, error: error.message })
         }
       }
     }

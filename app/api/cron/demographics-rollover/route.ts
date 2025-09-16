@@ -49,11 +49,11 @@ export async function POST(request: NextRequest) {
         .select('job_key, brand_id')
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
-        .limit(50)
+        .limit(100)
 
       if (pendingJobs && pendingJobs.length > 0) {
         // Process jobs with concurrency control
-        const concurrency = 3
+        const concurrency = 5
         const chunks = []
         for (let i = 0; i < pendingJobs.length; i += concurrency) {
           chunks.push(pendingJobs.slice(i, i + concurrency))
@@ -68,9 +68,9 @@ export async function POST(request: NextRequest) {
             r.status === 'fulfilled' && r.value.success
           ).length
 
-          // Delay between chunks
+          // Small delay between chunks
           if (chunks.indexOf(chunk) < chunks.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            await new Promise(resolve => setTimeout(resolve, 200))
           }
         }
       }

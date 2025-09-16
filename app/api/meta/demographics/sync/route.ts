@@ -281,8 +281,8 @@ async function triggerJobProcessing(brandId: string) {
       headers,
       body: JSON.stringify({
         brandId: brandId,
-        maxJobs: 5, // Reduced for better performance
-        maxConcurrency: 1 // Reduced for stability
+        maxJobs: 20, // Increased for better performance
+        maxConcurrency: 5 // Increased for faster processing
       })
     })
 
