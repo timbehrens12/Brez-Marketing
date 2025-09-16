@@ -155,12 +155,13 @@ async function updateSyncProgress(brandId: string) {
     overallStatus = 'failed'
   }
 
-  // Update sync status
+  // Update sync status with correct total
   await supabase
     .from('meta_demographics_sync_status')
     .update({
       days_completed: completedJobs,
       days_failed: failedJobs,
+      total_days_target: totalJobs, // Fix: Update total to match actual job count
       overall_status: overallStatus,
       updated_at: new Date().toISOString(),
       ...(overallStatus === 'completed' && { completed_at: new Date().toISOString() })

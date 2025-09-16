@@ -165,6 +165,7 @@ async function updateSyncProgress(brandId: string) {
       .update({
         days_completed: completedJobs,
         days_failed: failedJobs,
+        total_days_target: totalJobs, // Fix: Update total to match actual job count
         overall_status: overallStatus,
         current_phase: currentPhase,
         total_rows_processed: completedJobs * 50, // Estimate
