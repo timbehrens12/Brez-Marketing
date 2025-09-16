@@ -32,20 +32,49 @@ export async function POST(request: NextRequest) {
 
     // Get Meta account ID and trigger backfill + demographics sync automatically
     try {
+      console.log(`[Meta Complete] Fetching account data with access token...`)
       const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${access_token}&fields=id,name,account_status`)
       const meData = await meResponse.json()
+      
+      console.log(`[Meta Complete] Meta API Response:`, meData)
+      
+      if (meData.error) {
+        console.error(`[Meta Complete] Meta API Error:`, meData.error)
+        throw new Error(`Meta API Error: ${meData.error.message}`)
+      }
+      
       const accountId = meData.data?.[0]?.id || ''
+      const accountName = meData.data?.[0]?.name || 'Unknown Account'
+      
+      console.log(`[Meta Complete] Account ID: ${accountId}, Name: ${accountName}`)
+      
+      if (!accountId) {
+        console.error(`[Meta Complete] No account ID found in response:`, meData)
+        throw new Error('No Meta ad account found')
+      }
       
       // Update connection with account metadata
-      await supabase
+      const metadataUpdate = {
+        metadata: {
+          ad_account_id: accountId,
+          account_name: accountName,
+          account_status: meData.data?.[0]?.account_status || 'unknown'
+        }
+      }
+      
+      console.log(`[Meta Complete] Updating metadata:`, metadataUpdate)
+      
+      const { error: metadataError } = await supabase
         .from('platform_connections')
-        .update({
-          metadata: {
-            ad_account_id: accountId,
-            account_name: meData.data?.[0]?.name || 'Unknown Account'
-          }
-        })
+        .update(metadataUpdate)
         .eq('id', connectionData.id)
+      
+      if (metadataError) {
+        console.error(`[Meta Complete] Metadata update error:`, metadataError)
+        throw metadataError
+      }
+      
+      console.log(`[Meta Complete] ✅ Metadata updated successfully for connection ${connectionData.id}`)
       
       // Set connection to syncing status
       await supabase
