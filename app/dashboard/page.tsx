@@ -167,61 +167,29 @@ export default function DashboardPage() {
   
   const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
   
-  // Initialize date range - check for saved refresh dateRange first
+  // Initialize date range - ALWAYS default to TODAY for fresh sessions
   const [dateRange, setDateRange] = useState(() => {
-    // ✅ FIXED: Check for persisted date range to maintain selection across refreshes
+    // Clear any persisted date ranges that might be sticking around
     if (typeof window !== 'undefined') {
       try {
-        // Try new persistence key first
-        const savedDateRangeStr = localStorage.getItem('dashboard_date_range');
-        if (savedDateRangeStr) {
-          const savedData = JSON.parse(savedDateRangeStr);
-          // Only use if saved within last 24 hours to prevent stale data
-          if (Date.now() - savedData.timestamp < 24 * 60 * 60 * 1000) {
-            const range = {
-              from: new Date(savedData.from),
-              to: new Date(savedData.to)
-            };
-            
-            // ✅ FIXED: Also set the global date range variable on initialization
-            if (typeof window !== 'undefined') {
-              (window as any)._currentDateRange = range;
-            }
-            
-            return range;
-          }
-        }
-        
-        // Fallback to old key for backwards compatibility
-        const legacySavedDateRangeStr = localStorage.getItem('meta-refresh-daterange');
-        if (legacySavedDateRangeStr) {
-          const savedDateRange = JSON.parse(savedDateRangeStr);
-          // Only use if it's recent (within last 10 seconds)
-          if (savedDateRange.refreshTimestamp && Date.now() - savedDateRange.refreshTimestamp < 10000) {
-            localStorage.removeItem('meta-refresh-daterange'); // Clean up
-            const restoredRange = {
-              from: startOfDay(new Date(savedDateRange.from)),
-              to: endOfDay(new Date(savedDateRange.to))
-            };
-            return restoredRange;
-          }
-        }
-        
-        // Clear any old saved ranges
+        // Clean up all date range persistence keys to ensure fresh start
+        localStorage.removeItem('dashboard_date_range');
         localStorage.removeItem('dashboard-date-range');
         localStorage.removeItem('meta-refresh-daterange');
+        localStorage.removeItem('meta-date-range'); // Remove the problematic one from CampaignWidget
       } catch (error) {
+        // Ignore localStorage errors
       }
     }
     
-    // ✅ FIXED: Default to TODAY using EXACT same logic as DateRangePicker preset
+    // ✅ ALWAYS default to TODAY when visiting the site
     const now = new Date()
     const initialRange = {
       from: startOfDay(now),
       to: endOfDay(now) // Use endOfDay() to exactly match DateRangePicker "Today" preset
     }
     
-    // ✅ FIXED: Set global date range for default case
+    // Set global date range for default case
     if (typeof window !== 'undefined') {
       (window as any)._currentDateRange = initialRange;
     }
@@ -239,7 +207,7 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with cooldown and persistence to maintain selected range
+  // Create a controlled setDateRange with cooldown - NO persistence to ensure fresh defaults
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
     if (!range || isDateRangeLoading) {
       return // Prevent changes during loading
@@ -249,19 +217,9 @@ export default function DashboardPage() {
     setIsDateRangeLoading(true)
     setDateRange(range)
     
-    // ✅ FIXED: Persist date range to maintain selection across refreshes
-    try {
-      localStorage.setItem('dashboard_date_range', JSON.stringify({
-        from: range.from.toISOString(),
-        to: range.to.toISOString(),
-        timestamp: Date.now()
-      }))
-      
-      // Also update global window variable for refresh button
-      if (typeof window !== 'undefined') {
-        (window as any)._currentDateRange = range
-      }
-    } catch (error) {
+    // Update global window variable for refresh button
+    if (typeof window !== 'undefined') {
+      (window as any)._currentDateRange = range
     }
     
     // Set a minimum cooldown period

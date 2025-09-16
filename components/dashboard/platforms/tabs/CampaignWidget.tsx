@@ -1247,15 +1247,6 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // Save the date range values to local storage to persist
-    try {
-      localStorage.setItem('meta-date-range', JSON.stringify({
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString()
-      }));
-    } catch (e) {
-    }
-    
     // When date range changes, refresh all data
     // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
     
