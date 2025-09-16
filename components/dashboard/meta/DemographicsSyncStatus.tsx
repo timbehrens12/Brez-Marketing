@@ -138,15 +138,26 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
   useEffect(() => {
     fetchSyncStatus()
     
-    // Poll for status updates every 30 seconds during active sync
+    // More aggressive polling during active sync
     const interval = setInterval(() => {
       if (syncStatus?.overall_status === 'in_progress') {
         fetchSyncStatus()
       }
-    }, 30000)
+    }, 10000) // Poll every 10 seconds instead of 30
 
     return () => clearInterval(interval)
-  }, [brandId])
+  }, [brandId, syncStatus?.overall_status]) // Include status in dependencies
+
+  // Additional fast polling when percentage is changing rapidly
+  useEffect(() => {
+    if (syncStatus?.overall_status === 'in_progress') {
+      const fastInterval = setInterval(() => {
+        fetchSyncStatus()
+      }, 5000) // Poll every 5 seconds during active sync
+      
+      return () => clearInterval(fastInterval)
+    }
+  }, [syncStatus?.overall_status, syncStatus?.progress_percentage])
 
   const getStatusIcon = () => {
     switch (syncStatus?.overall_status) {
@@ -186,12 +197,13 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
             {getStatusIcon()}
             Demographics Sync Status
           </CardTitle>
-          <Button
+            <Button
             variant="ghost"
             size="sm"
             onClick={fetchSyncStatus}
             disabled={isLoading}
             className="text-gray-400 hover:text-white"
+            title="Refresh sync status"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
@@ -214,7 +226,9 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Progress</span>
-                <span className="text-white">{syncStatus.progress_percentage}%</span>
+                <span className="text-white font-mono transition-all duration-300">
+                  {syncStatus.progress_percentage}%
+                </span>
               </div>
               <Progress 
                 value={syncStatus.progress_percentage} 
