@@ -540,7 +540,6 @@ export function AdComponent({
                   </th>
                 );
               })}
-              <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -692,28 +691,6 @@ export function AdComponent({
                   );
                 })}
                 
-                <td className="p-2 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
-                      onClick={() => {
-                        if (ad.preview_url) {
-                          window.open(ad.preview_url, '_blank');
-                        } else {
-                          toast.info("Preview not available", {
-                            description: "This ad doesn't have a preview URL"
-                          });
-                        }
-                      }}
-                      disabled={!ad.preview_url}
-                      title={ad.preview_url ? "View Ad Preview" : "Preview not available"}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </td>
               </tr>
             ))}
           </tbody>
