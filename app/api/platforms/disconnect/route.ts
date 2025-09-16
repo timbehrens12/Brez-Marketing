@@ -101,7 +101,7 @@ export async function POST(request: Request) {
         // Use brandId directly since we already have it from the request
         // This ensures we delete all Meta data for this brand regardless of connection state
           
-        // Delete all Meta-related data for this brand - ALL 34 TABLES (COMPREHENSIVE FIX)
+        // Delete all Meta-related data for this brand - ALL TABLES INCLUDING NEW DEMOGRAPHICS
         const metaTables = [
             // Core Meta tables
             'meta_ad_insights',
@@ -146,7 +146,16 @@ export async function POST(request: Request) {
             'meta_geographic_performance',
             'meta_interest_performance',
             'meta_placement_performance',
-            'meta_time_performance'
+            'meta_time_performance',
+            
+            // NEW DEMOGRAPHICS TABLES (added with comprehensive sync)
+            'meta_demographics_facts',
+            'meta_demographics_jobs_ledger_v2',
+            'meta_demographics_sync_status',
+            'meta_demographics_daily',
+            'meta_demographics_weekly', 
+            'meta_demographics_monthly',
+            'meta_demographics_rollups'
           ]
 
           for (const table of metaTables) {

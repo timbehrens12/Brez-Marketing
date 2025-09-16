@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       throw dbError || new Error('No connection data returned')
     }
 
-    // Get Meta account ID and trigger backfill + demographics sync
+    // Get Meta account ID and trigger backfill + demographics sync automatically
     try {
       const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${access_token}&fields=id,name,account_status`)
       const meData = await meResponse.json()
