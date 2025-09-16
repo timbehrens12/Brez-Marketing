@@ -303,6 +303,52 @@ class MetaDemographicsService {
   }
 
   /**
+   * Create sync jobs efficiently for trigger job (optimized version)
+   */
+  private async createSyncJobsForTrigger(brandId: string): Promise<{ success: boolean; jobsCreated: number; message: string }> {
+    try {
+      // Get connection details
+      const { data: connection } = await this.supabase
+        .from('platform_connections')
+        .select('id, connection_data')
+        .eq('brand_id', brandId)
+        .eq('platform', 'meta')
+        .eq('status', 'active')
+        .single()
+
+      if (!connection) {
+        return { success: false, jobsCreated: 0, message: 'No active Meta connection found' }
+      }
+
+      const connectionData = connection.connection_data as any
+      const accountId = connectionData?.account_id
+
+      if (!accountId) {
+        return { success: false, jobsCreated: 0, message: 'No account ID found' }
+      }
+
+      // Create jobs using the existing method but with batch optimization
+      const jobs = await this.createTieredSyncJobs(brandId, connection.id, accountId)
+      
+      // Use optimized batch upsert
+      const jobsCreated = await this.queueJobs(jobs)
+      
+      return {
+        success: true,
+        jobsCreated,
+        message: `Created ${jobsCreated} demographics sync jobs`
+      }
+    } catch (error) {
+      console.error('[Demographics Service] Error creating sync jobs for trigger:', error)
+      return {
+        success: false,
+        jobsCreated: 0,
+        message: error.message
+      }
+    }
+  }
+
+  /**
    * Process a trigger job that creates all the actual sync jobs
    */
   async processTriggerJob(jobKey: string): Promise<{ success: boolean; rowsProcessed: number; error?: string }> {
@@ -323,8 +369,9 @@ class MetaDemographicsService {
       // Mark trigger job as running
       await this.updateJobStatus(jobKey, 'running', { started_at: new Date().toISOString() })
 
-      // Run the full sync creation process
-      const syncResult = await this.startComprehensiveSync(job.brand_id)
+      // Create sync jobs efficiently (avoid timeouts)
+      console.log(`[Demographics Service] Creating sync jobs for brand ${job.brand_id}`)
+      const syncResult = await this.createSyncJobsForTrigger(job.brand_id)
       
       if (syncResult.success) {
         // Mark trigger job as completed
