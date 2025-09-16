@@ -75,14 +75,21 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       const connectionData = await connectionResponse.json()
       const demographicsData = await demographicsResponse.json()
 
-      // Build unified status
+      console.log('[UnifiedMetaSyncStatus] Connection data:', connectionData)
+      console.log('[UnifiedMetaSyncStatus] Demographics data:', demographicsData)
+
+      // Build unified status with real data
+      const campaignProgress = getCampaignProgress(connectionData)
+      const demographicsProgress = demographicsData.syncStatus?.progress_percentage || 0
+      const insightsProgress = getInsightsProgress(connectionData)
+
       const phases: SyncPhase[] = [
         {
           id: 'campaigns',
           name: 'Campaigns & Ads',
           icon: <BarChart3 className="h-4 w-4" />,
           status: getPhaseStatus(connectionData.sync_status, 'campaigns'),
-          progress: getPhaseProgress(connectionData.sync_status, 'campaigns'),
+          progress: campaignProgress,
           estimated_time: '2-5 minutes'
         },
         {
@@ -90,7 +97,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
           name: 'Demographics Data',
           icon: <Users className="h-4 w-4" />,
           status: getPhaseStatus(demographicsData.syncStatus?.overall_status, 'demographics'),
-          progress: demographicsData.syncStatus?.progress_percentage || 0,
+          progress: demographicsProgress,
           estimated_time: '5-15 minutes'
         },
         {
@@ -98,14 +105,14 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
           name: 'Historical Insights',
           icon: <Database className="h-4 w-4" />,
           status: getPhaseStatus(connectionData.sync_status, 'insights'),
-          progress: getPhaseProgress(connectionData.sync_status, 'insights'),
+          progress: insightsProgress,
           estimated_time: '3-8 minutes'
         }
       ]
 
-      const completedPhases = phases.filter(p => p.status === 'completed').length
-      const totalPhases = phases.length
-      const overallProgress = Math.round((completedPhases / totalPhases) * 100)
+      // Calculate overall progress as average of all phase progress
+      const totalProgress = phases.reduce((sum, phase) => sum + phase.progress, 0)
+      const overallProgress = Math.round(totalProgress / phases.length)
       
       const hasInProgressPhases = phases.some(p => p.status === 'in_progress')
       const hasFailedPhases = phases.some(p => p.status === 'failed')
@@ -141,6 +148,46 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
   }, [brandId, onSyncComplete])
 
   // Helper functions
+  const getCampaignProgress = (connectionData: any): number => {
+    if (!connectionData.success) return 0
+    
+    // Use API-calculated campaign progress if available
+    if (typeof connectionData.campaign_progress === 'number') {
+      return connectionData.campaign_progress
+    }
+    
+    // Fallback to connection sync status
+    switch (connectionData.sync_status) {
+      case 'completed':
+        return 100
+      case 'in_progress':
+      case 'syncing':
+        return 50 // Assume halfway through if no job data
+      default:
+        return 0
+    }
+  }
+
+  const getInsightsProgress = (connectionData: any): number => {
+    if (!connectionData.success) return 0
+    
+    // Use API-calculated insight progress if available
+    if (typeof connectionData.insight_progress === 'number') {
+      return connectionData.insight_progress
+    }
+    
+    // Fallback to connection sync status
+    switch (connectionData.sync_status) {
+      case 'completed':
+        return 100
+      case 'in_progress':
+      case 'syncing':
+        return 30 // Insights usually start after campaigns
+      default:
+        return 0
+    }
+  }
+
   const getPhaseStatus = (status: string, phase: string): SyncPhase['status'] => {
     if (!status) return 'pending'
     
@@ -222,13 +269,11 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     fetchSyncStatus()
     
     const interval = setInterval(() => {
-      if (syncStatus?.overall_status === 'in_progress') {
-        fetchSyncStatus()
-      }
-    }, 3000) // Poll every 3 seconds during active sync
+      fetchSyncStatus() // Always poll to catch status changes
+    }, 2000) // Poll every 2 seconds for real-time updates
     
     return () => clearInterval(interval)
-  }, [fetchSyncStatus, syncStatus?.overall_status])
+  }, [fetchSyncStatus])
 
   if (!isVisible || !syncStatus) {
     return null

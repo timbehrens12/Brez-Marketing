@@ -73,14 +73,14 @@ export async function GET(request: NextRequest) {
     let additionalData = {}
     
     if (platformType === 'meta') {
-      // Get Meta-specific sync status
+      // Get Meta-specific sync status with detailed job info
       const { data: metaJobs } = await supabase
         .from('etl_job')
-        .select('job_type, status, created_at, completed_at')
+        .select('job_type, status, created_at, completed_at, metadata')
         .eq('brand_id', brandId)
         .like('job_type', 'meta_%')
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(50)
 
       const { data: demographicsStatus } = await supabase
         .from('meta_demographics_sync_status')
@@ -88,10 +88,42 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .single()
 
+      // Calculate detailed progress for campaigns
+      const campaignJobs = metaJobs?.filter(job => 
+        job.job_type.includes('campaign') || 
+        job.job_type.includes('adset') || 
+        job.job_type.includes('ad_')
+      ) || []
+      
+      const completedCampaignJobs = campaignJobs.filter(job => job.status === 'completed').length
+      const totalCampaignJobs = campaignJobs.length
+      const campaignProgress = totalCampaignJobs > 0 ? Math.round((completedCampaignJobs / totalCampaignJobs) * 100) : 0
+
+      // Calculate insights progress
+      const insightJobs = metaJobs?.filter(job => 
+        job.job_type.includes('insight') || 
+        job.job_type.includes('daily') ||
+        job.job_type.includes('performance')
+      ) || []
+      
+      const completedInsightJobs = insightJobs.filter(job => job.status === 'completed').length
+      const totalInsightJobs = insightJobs.length
+      const insightProgress = totalInsightJobs > 0 ? Math.round((completedInsightJobs / totalInsightJobs) * 100) : 0
+
       additionalData = {
         recent_jobs: metaJobs || [],
         demographics_status: demographicsStatus,
-        connection_metadata: connection.metadata
+        connection_metadata: connection.metadata,
+        campaign_progress: campaignProgress,
+        insight_progress: insightProgress,
+        campaign_jobs: {
+          completed: completedCampaignJobs,
+          total: totalCampaignJobs
+        },
+        insight_jobs: {
+          completed: completedInsightJobs,
+          total: totalInsightJobs
+        }
       }
     }
 
