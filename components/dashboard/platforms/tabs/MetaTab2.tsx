@@ -1132,13 +1132,14 @@ export function MetaTab2({
 
       {/* Campaign Performance Widget - Enhanced */}
       <div className="mt-6">
-        <CampaignWidget 
+        <CampaignWidget
           key={`campaigns-${campaigns.length}-${campaigns.find(c => c.campaign_name?.includes('TEST'))?.spent || 0}`}
           brandId={brandId}
           campaigns={campaigns}
           isLoading={isLoadingAllMetaWidgets}
           isSyncing={isSyncingCampaigns}
           dateRange={dateRange}
+          onRefresh={() => fetchCampaigns(true)}
         />
       </div>
 

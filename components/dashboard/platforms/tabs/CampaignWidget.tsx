@@ -206,6 +206,7 @@ interface CampaignWidgetProps {
   isLoading: boolean
   isSyncing: boolean
   dateRange?: DateRange
+  onRefresh?: () => void
   onReachValuesCalculated?: (reachValues: {[key: string]: number | null}) => void
 }
 
@@ -246,12 +247,13 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
 };
 
 // Define the component as a React FC (Function Component) with JSX return
-const CampaignWidget = ({ 
-  brandId, 
-  campaigns, 
-  isLoading, 
-  isSyncing, 
-  dateRange, 
+const CampaignWidget = ({
+  brandId,
+  campaigns,
+  isLoading,
+  isSyncing,
+  dateRange,
+  onRefresh,
   onReachValuesCalculated
 }: CampaignWidgetProps): JSX.Element => {
 
