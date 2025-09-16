@@ -31,17 +31,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }
 
-    // Verify user has access to this brand
+    // Verify user has access to this brand (either as owner or through brand_access)
     const supabase = getSupabaseClient()
-    const { data: brandAccess } = await supabase
-      .from('brand_access')
-      .select('role')
-      .eq('brand_id', brandId)
-      .eq('user_id', userId)
+    
+    // First check if user owns the brand
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('user_id')
+      .eq('id', brandId)
       .single()
 
-    if (!brandAccess) {
-      return NextResponse.json({ error: 'Access denied to this brand' }, { status: 403 })
+    const isOwner = brand?.user_id === userId
+    
+    if (!isOwner) {
+      // If not owner, check brand_access table
+      const { data: brandAccess } = await supabase
+        .from('brand_access')
+        .select('role')
+        .eq('brand_id', brandId)
+        .eq('user_id', userId)
+        .eq('revoked_at', null)
+        .single()
+
+      if (!brandAccess) {
+        return NextResponse.json({ error: 'Access denied to this brand' }, { status: 403 })
+      }
     }
 
     const demographicsService = new MetaDemographicsService()

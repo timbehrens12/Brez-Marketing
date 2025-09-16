@@ -14,7 +14,15 @@ import Redis from 'ioredis'
 // Initialize Redis for caching
 let redis: Redis | null = null
 try {
-  redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379')
+  if (process.env.REDIS_URL) {
+    redis = new Redis(process.env.REDIS_URL)
+    redis.on('error', (error) => {
+      console.warn('Redis connection error, caching disabled:', error)
+      redis = null
+    })
+  } else {
+    console.log('No REDIS_URL provided, caching disabled')
+  }
 } catch (error) {
   console.error('Redis initialization failed in demographics data API:', error)
 }
@@ -40,17 +48,31 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Verify user has access to this brand
+    // Verify user has access to this brand (either as owner or through brand_access)
     const supabase = getSupabaseClient()
-    const { data: brandAccess } = await supabase
-      .from('brand_access')
-      .select('role')
-      .eq('brand_id', brandId)
-      .eq('user_id', userId)
+    
+    // First check if user owns the brand
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('user_id')
+      .eq('id', brandId)
       .single()
 
-    if (!brandAccess) {
-      return NextResponse.json({ error: 'Access denied to this brand' }, { status: 403 })
+    const isOwner = brand?.user_id === userId
+    
+    if (!isOwner) {
+      // If not owner, check brand_access table
+      const { data: brandAccess } = await supabase
+        .from('brand_access')
+        .select('role')
+        .eq('brand_id', brandId)
+        .eq('user_id', userId)
+        .eq('revoked_at', null)
+        .single()
+
+      if (!brandAccess) {
+        return NextResponse.json({ error: 'Access denied to this brand' }, { status: 403 })
+      }
     }
 
     // Check cache first (unless force refresh)

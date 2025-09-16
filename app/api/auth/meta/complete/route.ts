@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         .from('platform_connections')
         .update({
           metadata: {
-            account_id: accountId.replace('act_', ''),
+            ad_account_id: accountId,
             account_name: meData.data?.[0]?.name || 'Unknown Account'
           }
         })

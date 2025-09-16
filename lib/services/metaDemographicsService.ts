@@ -67,11 +67,21 @@ class MetaDemographicsService {
 
   private async initializeRedis() {
     try {
-      // Initialize Redis connection for caching and rate limiting
-      this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379')
-      await this.redis.ping()
+      if (process.env.REDIS_URL) {
+        // Initialize Redis connection for caching and rate limiting
+        this.redis = new Redis(process.env.REDIS_URL)
+        this.redis.on('error', (error) => {
+          console.warn('Redis connection error, continuing without cache:', error)
+          this.redis = null
+        })
+        await this.redis.ping()
+        console.log('✅ Redis connected successfully')
+      } else {
+        console.log('No REDIS_URL provided, continuing without cache')
+      }
     } catch (error) {
       console.error('Redis initialization failed:', error)
+      this.redis = null
       // Continue without Redis - degraded performance but functional
     }
   }
@@ -94,11 +104,21 @@ class MetaDemographicsService {
         return { success: false, message: 'No active Meta connection found', jobsCreated: 0 }
       }
 
+      // Get account ID from metadata (could be either format)
+      const rawAccountId = connection.metadata?.account_id || connection.metadata?.ad_account_id
+
+      if (!rawAccountId) {
+        return { success: false, message: 'No Meta account ID found in connection metadata', jobsCreated: 0 }
+      }
+
+      // Normalize account ID (remove act_ prefix if present)
+      const accountId = rawAccountId.replace('act_', '')
+
       // Initialize or update sync status
-      await this.initializeSyncStatus(brandId, connection.id, connection.metadata?.account_id)
+      await this.initializeSyncStatus(brandId, connection.id, accountId)
 
       // Create jobs following tiered strategy
-      const jobs = await this.createTieredSyncJobs(brandId, connection.id, connection.metadata?.account_id)
+      const jobs = await this.createTieredSyncJobs(brandId, connection.id, accountId)
       
       // Queue jobs for processing
       const jobsCreated = await this.queueJobs(jobs)
