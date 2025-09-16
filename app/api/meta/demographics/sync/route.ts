@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Demographics Sync] ✅ Enqueued trigger job ${jobKey} for brand ${brandId}`)
 
         // Trigger job processing asynchronously
-        setImmediate(() => triggerJobProcessing(brandId))
+        setImmediate(() => triggerContinuousJobProcessing(brandId))
         
         return NextResponse.json({
           success: true,
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
           .eq('brand_id', brandId)
         
         // Restart job processing asynchronously
-        setImmediate(() => triggerJobProcessing(brandId))
+        setImmediate(() => triggerContinuousJobProcessing(brandId))
         
         return NextResponse.json({ success: true, message: 'Sync resumed' })
 
@@ -201,6 +201,40 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * Trigger continuous job processing for all pending jobs
+ * Calls the process-jobs endpoint multiple times to handle large batches
+ */
+async function triggerContinuousJobProcessing(brandId: string) {
+  try {
+    console.log(`[Demographics Continuous] Starting continuous processing for brand ${brandId}`)
+    
+    let totalProcessed = 0
+    let iterations = 0
+    const maxIterations = 60 // Prevent infinite loops (60 * 5 jobs = 300 jobs max)
+    
+    while (iterations < maxIterations) {
+      iterations++
+      
+      const result = await triggerJobProcessing(brandId)
+      if (!result || result.jobsProcessed === 0) {
+        console.log(`[Demographics Continuous] No more jobs to process after ${totalProcessed} total jobs`)
+        break
+      }
+      
+      totalProcessed += result.jobsProcessed
+      console.log(`[Demographics Continuous] Iteration ${iterations}: processed ${result.jobsProcessed} jobs (total: ${totalProcessed})`)
+      
+      // Short delay between iterations
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    console.log(`[Demographics Continuous] Completed: ${totalProcessed} total jobs processed in ${iterations} iterations`)
+  } catch (error) {
+    console.error(`[Demographics Continuous] Error:`, error)
+  }
+}
+
+/**
  * Trigger job processing via dedicated endpoint
  * This is much simpler and avoids timeout issues
  */
@@ -234,21 +268,15 @@ async function triggerJobProcessing(brandId: string) {
 
     if (!response.ok) {
       console.error(`[Demographics Trigger] Process jobs call failed: ${response.status} ${response.statusText}`)
-      return
+      return { success: false, jobsProcessed: 0 }
     }
 
     const result = await response.json()
     console.log(`[Demographics Trigger] ✅ Process jobs result: ${result.jobsProcessed} jobs processed`)
-
-    // If there were jobs processed successfully, schedule another round
-    if (result.success && result.jobsProcessed > 0) {
-      console.log(`[Demographics Trigger] Scheduling next round in 30 seconds...`)
-      setTimeout(() => triggerJobProcessing(brandId), 30000) // 30 seconds delay
-    } else {
-      console.log(`[Demographics Trigger] No more jobs to process for brand ${brandId}`)
-    }
+    return { success: true, jobsProcessed: result.jobsProcessed || 0 }
 
   } catch (error) {
     console.error(`[Demographics Trigger] Error triggering job processing for brand ${brandId}:`, error)
+    return { success: false, jobsProcessed: 0 }
   }
 }
