@@ -21,6 +21,7 @@ interface DemographicData {
 
 interface AudienceDemographicsWidgetProps {
   connectionId: string
+  brandId: string
   dateRange?: DateRange
   className?: string
   loading?: boolean
@@ -36,7 +37,8 @@ const BREAKDOWN_TYPES = [
 const CHART_COLOR = '#9ca3af' // Single professional gray
 
 export function AudienceDemographicsWidget({ 
-  connectionId, 
+  connectionId,
+  brandId,
   dateRange,
   className = "",
   loading = false
@@ -46,28 +48,26 @@ export function AudienceDemographicsWidget({
   const [selectedBreakdown, setSelectedBreakdown] = useState('age_gender')
 
   const fetchData = async () => {
-    if (!connectionId) return
+    if (!brandId) return
     
     setIsLoading(true)
     setData([]) // Clear existing data to prevent flashing
     
     try {
       const params = new URLSearchParams({
-        connectionId,
-        breakdownType: selectedBreakdown
+        brandId,
+        breakdownType: selectedBreakdown,
+        level: 'campaign'
       })
 
       if (dateRange?.from && dateRange?.to) {
         const startDate = dateRange.from.toISOString().split('T')[0]
         const endDate = dateRange.to.toISOString().split('T')[0]
-        params.append('dateRangeStart', startDate)
-        params.append('dateRangeEnd', endDate)
-        // console.log(`[Demographics Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
-      } else {
-        // console.log(`[Demographics Widget] 🔥 No date range provided, fetching all data`)
+        params.append('dateFrom', startDate)
+        params.append('dateTo', endDate)
       }
 
-      const response = await fetch(`/api/meta/demographics?${params}`)
+      const response = await fetch(`/api/meta/demographics/data?${params}`)
       const result = await response.json()
 
       if (result.success) {
@@ -83,13 +83,12 @@ export function AudienceDemographicsWidget({
   }
 
   useEffect(() => {
-    // console.log(`[Demographics Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
     fetchData()
-  }, [connectionId, selectedBreakdown, dateRange])
+  }, [brandId, selectedBreakdown, dateRange])
 
   // Listen for refresh events
   useEffect(() => {
-    if (!connectionId) return
+    if (!brandId) return
 
     const handleRefresh = () => {
       fetchData()

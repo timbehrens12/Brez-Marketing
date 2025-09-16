@@ -30,19 +30,41 @@ export async function POST(request: NextRequest) {
       throw dbError || new Error('No connection data returned')
     }
 
-    // Get Meta account ID and trigger backfill
+    // Get Meta account ID and trigger backfill + demographics sync
     try {
       const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${access_token}&fields=id,name,account_status`)
       const meData = await meResponse.json()
       const accountId = meData.data?.[0]?.id || ''
       
-      // Queue historical backfill
+      // Update connection with account metadata
+      await supabase
+        .from('platform_connections')
+        .update({
+          metadata: {
+            account_id: accountId.replace('act_', ''),
+            account_name: meData.data?.[0]?.name || 'Unknown Account'
+          }
+        })
+        .eq('id', connectionData.id)
+      
+      // Queue historical backfill (existing campaigns/ads data)
       await MetaQueueService.queueCompleteHistoricalSync(
         state,
         connectionData.id,
         access_token,
         accountId
       )
+      
+      // NEW: Start comprehensive demographics sync
+      const { default: MetaDemographicsService } = await import('@/lib/services/metaDemographicsService')
+      const demographicsService = new MetaDemographicsService()
+      const demographicsResult = await demographicsService.startComprehensiveSync(state)
+      
+      if (demographicsResult.success) {
+        console.log(`[Meta Complete] Started demographics sync: ${demographicsResult.jobsCreated} jobs created`)
+      } else {
+        console.error(`[Meta Complete] Demographics sync failed: ${demographicsResult.message}`)
+      }
       
       console.log(`[Meta Complete] Queued historical backfill for brand ${state}`)
     } catch (error) {

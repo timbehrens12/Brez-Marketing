@@ -14,6 +14,7 @@ import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/To
 import { CampaignWidget } from '@/components/dashboard/platforms/tabs/CampaignWidget'
 import { AudienceDemographicsWidget } from '@/components/dashboard/meta/AudienceDemographicsWidget'
 import { DevicePerformanceWidget } from '@/components/dashboard/meta/DevicePerformanceWidget'
+import { DemographicsSyncStatus } from '@/components/dashboard/meta/DemographicsSyncStatus'
 import { PlatformConnection } from '@/types/platformConnection'
 
 // Define interfaces
@@ -1129,17 +1130,27 @@ export function MetaTab2({
         />
       </div>
 
+      {/* Demographics Sync Status */}
+      <div className="mt-6">
+        <DemographicsSyncStatus 
+          brandId={brandId}
+          className="mb-6"
+        />
+      </div>
+
       {/* Demographics and Device Performance */}
       <div className="mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <AudienceDemographicsWidget 
             key={`demographics-${refreshKey}`}
-            connectionId={metaConnection?.id || ''} 
+            connectionId={metaConnection?.id || ''}
+            brandId={brandId}
             dateRange={dateRange}
           />
           <DevicePerformanceWidget 
             key={`device-${refreshKey}`}
-            connectionId={metaConnection?.id || ''} 
+            connectionId={metaConnection?.id || ''}
+            brandId={brandId}
             dateRange={dateRange}
           />
         </div>

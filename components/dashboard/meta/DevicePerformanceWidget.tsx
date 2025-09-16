@@ -21,6 +21,7 @@ interface DeviceData {
 
 interface DevicePerformanceWidgetProps {
   connectionId: string
+  brandId: string
   dateRange?: DateRange
   className?: string
   loading?: boolean
@@ -32,7 +33,8 @@ const BREAKDOWN_TYPES = [
 ]
 
 export function DevicePerformanceWidget({ 
-  connectionId, 
+  connectionId,
+  brandId,
   dateRange,
   className = "",
   loading = false
@@ -42,28 +44,29 @@ export function DevicePerformanceWidget({
   const [selectedBreakdown, setSelectedBreakdown] = useState('device')
 
   const fetchData = async () => {
-    if (!connectionId) return
+    if (!brandId) return
     
     setIsLoading(true)
     setData([]) // Clear existing data to prevent flashing
     
     try {
       const params = new URLSearchParams({
-        connectionId,
-        breakdownType: selectedBreakdown
+        brandId,
+        breakdownType: selectedBreakdown === 'device' ? 'device_platform' : 'placement',
+        level: 'campaign'
       })
 
       if (dateRange?.from && dateRange?.to) {
         const startDate = dateRange.from.toISOString().split('T')[0]
         const endDate = dateRange.to.toISOString().split('T')[0]
-        params.append('dateRangeStart', startDate)
-        params.append('dateRangeEnd', endDate)
+        params.append('dateFrom', startDate)
+        params.append('dateTo', endDate)
         // console.log(`[Device Performance Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
       } else {
         // console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
       }
 
-      const response = await fetch(`/api/meta/device-performance?${params}`)
+      const response = await fetch(`/api/meta/demographics/data?${params}`)
       const result = await response.json()
 
       if (result.success) {

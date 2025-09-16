@@ -36,12 +36,16 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
     if (confirm("Are you sure you want to disconnect Meta Ads? This will remove all access.")) {
       setIsConnecting(true)
       try {
-        // Make a call to disconnect Meta
-        const response = await fetch(`/api/brands/${brandId}/meta/disconnect`, {
+        // Make a call to disconnect Meta using the correct endpoint
+        const response = await fetch(`/api/platforms/disconnect`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            brandId: brandId,
+            platformType: 'meta'
+          })
         })
 
         if (!response.ok) {
