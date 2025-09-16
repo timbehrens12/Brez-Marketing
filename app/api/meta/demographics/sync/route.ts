@@ -59,15 +59,16 @@ export async function POST(request: NextRequest) {
         const syncResult = await demographicsService.startComprehensiveSync(brandId)
         
         if (syncResult.success) {
-          // Trigger job processing via dedicated endpoint (asynchronously)
-          setImmediate(() => triggerJobProcessing(brandId))
+          // Return immediately - don't trigger any background processing from here
+          // Background processing should be handled separately by cron jobs or manual triggers
+          console.log(`[Demographics Sync] Created ${syncResult.jobsCreated} jobs for brand ${brandId}`)
           
           return NextResponse.json({
             success: true,
             message: syncResult.message,
             jobsCreated: syncResult.jobsCreated,
             estimatedDuration: '2-4 hours',
-            note: 'Sync is running in the background. Check progress via /api/meta/demographics/status'
+            note: 'Jobs created successfully. Use /api/meta/demographics/process-jobs to start processing.'
           })
         } else {
           return NextResponse.json({
@@ -103,8 +104,8 @@ export async function POST(request: NextRequest) {
           })
           .eq('brand_id', brandId)
         
-        // Restart job processing asynchronously
-        setImmediate(() => triggerJobProcessing(brandId))
+        // Don't automatically restart processing - let user manually trigger via process-jobs endpoint
+        console.log(`[Demographics Sync] Sync resumed for brand ${brandId}. Use /api/meta/demographics/process-jobs to process jobs.`)
         
         return NextResponse.json({ success: true, message: 'Sync resumed' })
 
@@ -147,45 +148,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Trigger job processing via dedicated endpoint
- * This is much simpler and avoids timeout issues
- */
-async function triggerJobProcessing(brandId: string) {
-  try {
-    console.log(`[Demographics Trigger] Starting job processing for brand ${brandId}`)
-    
-    const cronSecret = process.env.CRON_SECRET || 'your-cron-secret'
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
-    
-    // Call the dedicated process-jobs endpoint
-    const response = await fetch(`${baseUrl}/api/meta/demographics/process-jobs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cronSecret}`
-      },
-      body: JSON.stringify({
-        brandId: brandId,
-        maxJobs: 5, // Reduced for better performance
-        maxConcurrency: 1 // Reduced for stability
-      })
-    })
-
-    if (!response.ok) {
-      console.error(`[Demographics Trigger] Process jobs call failed: ${response.status} ${response.statusText}`)
-      return
-    }
-
-    const result = await response.json()
-    console.log(`[Demographics Trigger] Process jobs result:`, result)
-
-    // If there were jobs processed successfully, schedule another round
-    if (result.success && result.jobsProcessed > 0) {
-      setTimeout(() => triggerJobProcessing(brandId), 30000) // 30 seconds delay
-    }
-
-  } catch (error) {
-    console.error(`[Demographics Trigger] Error triggering job processing for brand ${brandId}:`, error)
-  }
-}
