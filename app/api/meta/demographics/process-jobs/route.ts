@@ -148,8 +148,9 @@ async function updateSyncProgress(brandId: string) {
   const progressPercentage = totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0
 
   // Determine overall status
+  const finishedJobs = completedJobs + failedJobs
   let overallStatus = 'in_progress'
-  if (completedJobs === totalJobs) {
+  if (finishedJobs === totalJobs) {
     overallStatus = 'completed'
   } else if (failedJobs > totalJobs * 0.5) {
     overallStatus = 'failed'

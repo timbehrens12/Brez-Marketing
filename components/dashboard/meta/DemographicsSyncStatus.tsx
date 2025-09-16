@@ -41,9 +41,16 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
       const result = await response.json()
 
       if (result.success && result.syncStatus) {
+        // Calculate progress: for completed status, show 100%. Otherwise show actual progress.
+        const finishedJobs = (result.syncStatus.days_completed || 0) + (result.syncStatus.days_failed || 0)
+        const totalJobs = result.syncStatus.total_days_target || 1
+        const progressPercentage = result.syncStatus.overall_status === 'completed' 
+          ? 100 
+          : Math.round((finishedJobs / totalJobs) * 100)
+        
         setSyncStatus({
           overall_status: result.syncStatus.overall_status,
-          progress_percentage: Math.round((result.syncStatus.days_completed / result.syncStatus.total_days_target) * 100),
+          progress_percentage: progressPercentage,
           days_completed: result.syncStatus.days_completed,
           total_days_target: result.syncStatus.total_days_target,
           current_phase: result.syncStatus.current_phase,
@@ -235,9 +242,18 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
                 className="h-2 bg-[#333]"
               />
               <div className="flex justify-between text-xs text-gray-500">
-                <span>{syncStatus.days_completed} of {syncStatus.total_days_target} days</span>
-                {syncStatus.estimated_completion && (
+                <span>
+                  {syncStatus.days_completed} completed
+                  {syncStatus.overall_status === 'completed' && syncStatus.total_days_target && 
+                   syncStatus.days_completed < syncStatus.total_days_target && 
+                   ` (${syncStatus.total_days_target - syncStatus.days_completed} failed)`}
+                  {syncStatus.overall_status !== 'completed' && ` of ${syncStatus.total_days_target} jobs`}
+                </span>
+                {syncStatus.estimated_completion && syncStatus.overall_status !== 'completed' && (
                   <span>ETA: {new Date(syncStatus.estimated_completion).toLocaleDateString()}</span>
+                )}
+                {syncStatus.overall_status === 'completed' && (
+                  <span className="text-green-400">✓ Complete</span>
                 )}
               </div>
             </div>

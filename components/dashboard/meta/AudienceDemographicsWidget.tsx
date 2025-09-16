@@ -257,8 +257,18 @@ export function AudienceDemographicsWidget({
         ) : (
           <div className="text-center py-8">
             <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400">No demographic data available</p>
-            <p className="text-sm text-gray-500">Data will appear after your Meta ads have demographic insights</p>
+            <p className="text-gray-400 mb-2">No demographic data available</p>
+            <div className="text-sm text-gray-500 max-w-md mx-auto space-y-1">
+              <p>Demographics are only available when campaigns have:</p>
+              <div className="text-xs text-gray-600 mt-2 space-y-1">
+                <p>• Sufficient impressions and engagement</p>
+                <p>• Recent campaign activity (last 60-90 days)</p>
+                <p>• Active campaigns during the selected date range</p>
+              </div>
+              <p className="text-xs text-blue-400 mt-3">
+                Try selecting a recent date range (last 30 days)
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

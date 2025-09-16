@@ -147,10 +147,11 @@ async function updateSyncProgress(brandId: string) {
     const runningJobs = jobStats.filter(j => j.status === 'running').length
     
     // Determine overall status
+    const finishedJobs = completedJobs + failedJobs
     let overallStatus = 'in_progress'
     let currentPhase = 'historical'
     
-    if (completedJobs === totalJobs) {
+    if (finishedJobs === totalJobs) {
       overallStatus = 'completed'
       currentPhase = 'daily'
     } else if (failedJobs > totalJobs * 0.5) {
