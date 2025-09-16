@@ -77,11 +77,30 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
 
       console.log('[UnifiedMetaSyncStatus] Connection data:', connectionData)
       console.log('[UnifiedMetaSyncStatus] Demographics data:', demographicsData)
+      console.log('[UnifiedMetaSyncStatus] Campaign progress calc:', {
+        campaign_progress: connectionData.campaign_progress,
+        recent_jobs: connectionData.recent_jobs?.length,
+        sync_status: connectionData.sync_status
+      })
 
       // Build unified status with real data
       const campaignProgress = getCampaignProgress(connectionData)
-      const demographicsProgress = demographicsData.syncStatus?.progress_percentage || 0
+      
+      // Get demographics progress - show animation if sync starting but no data yet
+      let demographicsProgress = demographicsData.syncStatus?.progress_percentage || 0
+      if (demographicsProgress === 0 && connectionData.sync_status === 'in_progress') {
+        // Animate demographics progress when sync is active but no specific progress yet
+        const now = Date.now()
+        demographicsProgress = Math.min(30, Math.floor((now / 2000) % 25) + 5) // 5-30% slow animation
+      }
+      
       const insightsProgress = getInsightsProgress(connectionData)
+
+      console.log('[UnifiedMetaSyncStatus] Calculated progress:', {
+        campaignProgress,
+        demographicsProgress,
+        insightsProgress
+      })
 
       const phases: SyncPhase[] = [
         {
@@ -152,17 +171,22 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     if (!connectionData.success) return 0
     
     // Use API-calculated campaign progress if available
-    if (typeof connectionData.campaign_progress === 'number') {
+    if (typeof connectionData.campaign_progress === 'number' && connectionData.campaign_progress > 0) {
       return connectionData.campaign_progress
+    }
+    
+    // If sync is in progress but no jobs yet, show animated progress
+    if (connectionData.sync_status === 'in_progress' || connectionData.sync_status === 'syncing') {
+      // Simulate early progress (jobs being queued/starting)
+      const now = Date.now()
+      const animatedProgress = Math.min(85, Math.floor((now / 1000) % 60) + 15) // 15-85% animation
+      return animatedProgress
     }
     
     // Fallback to connection sync status
     switch (connectionData.sync_status) {
       case 'completed':
         return 100
-      case 'in_progress':
-      case 'syncing':
-        return 50 // Assume halfway through if no job data
       default:
         return 0
     }
@@ -172,17 +196,22 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     if (!connectionData.success) return 0
     
     // Use API-calculated insight progress if available
-    if (typeof connectionData.insight_progress === 'number') {
+    if (typeof connectionData.insight_progress === 'number' && connectionData.insight_progress > 0) {
       return connectionData.insight_progress
+    }
+    
+    // If sync is in progress but no jobs yet, show animated progress (behind campaigns)
+    if (connectionData.sync_status === 'in_progress' || connectionData.sync_status === 'syncing') {
+      // Simulate slower progress for insights (start after campaigns)
+      const now = Date.now()
+      const animatedProgress = Math.min(75, Math.floor((now / 1500) % 50) + 10) // 10-75% animation, slower
+      return animatedProgress
     }
     
     // Fallback to connection sync status
     switch (connectionData.sync_status) {
       case 'completed':
         return 100
-      case 'in_progress':
-      case 'syncing':
-        return 30 // Insights usually start after campaigns
       default:
         return 0
     }
