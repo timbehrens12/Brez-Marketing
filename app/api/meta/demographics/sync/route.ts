@@ -55,27 +55,79 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'start_full_sync':
-        // Start comprehensive 12-month sync
-        const syncResult = await demographicsService.startComprehensiveSync(brandId)
+        console.log(`[Demographics Sync] Starting enqueue-only sync for brand ${brandId}`)
         
-        if (syncResult.success) {
-          // Return immediately - don't trigger any background processing from here
-          // Background processing should be handled separately by cron jobs or manual triggers
-          console.log(`[Demographics Sync] Created ${syncResult.jobsCreated} jobs for brand ${brandId}`)
-          
-          return NextResponse.json({
-            success: true,
-            message: syncResult.message,
-            jobsCreated: syncResult.jobsCreated,
-            estimatedDuration: '2-4 hours',
-            note: 'Jobs created successfully. Use /api/meta/demographics/process-jobs to start processing.'
-          })
-        } else {
+        // Quick validation - get connection info only
+        const { data: connection } = await supabase
+          .from('platform_connections')
+          .select('id, metadata')
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'meta')
+          .eq('status', 'active')
+          .single()
+
+        if (!connection) {
           return NextResponse.json({
             success: false,
-            error: syncResult.message
+            error: 'No active Meta connection found'
+          }, { status: 404 })
+        }
+
+        const rawAccountId = connection.metadata?.account_id || connection.metadata?.ad_account_id
+        if (!rawAccountId) {
+          return NextResponse.json({
+            success: false,
+            error: 'No Meta account ID found in connection metadata'
+          }, { status: 400 })
+        }
+
+        const accountId = rawAccountId.replace('act_', '')
+
+        // Create a single lightweight job that will trigger the full sync in the background
+        const jobKey = `meta_demographics_sync:${brandId}:${Date.now()}`
+        
+        const { error: queueError } = await supabase
+          .from('meta_demographics_jobs_ledger_v2')
+          .insert({
+            brand_id: brandId,
+            connection_id: connection.id,
+            account_id: accountId,
+            job_key: jobKey,
+            breakdown_types: ['trigger_full_sync'], // Special marker
+            level: 'trigger',
+            date_from: new Date().toISOString().split('T')[0],
+            date_to: new Date().toISOString().split('T')[0],
+            granularity: 'daily',
+            status: 'pending',
+            retry_count: 0,
+            request_metadata: {
+              priority: 0,
+              created_by: 'enqueue_sync_api',
+              trigger_full_sync: true
+            }
+          })
+
+        if (queueError) {
+          console.error('[Demographics Sync] Queue error:', queueError)
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to queue sync job'
           }, { status: 500 })
         }
+
+        console.log(`[Demographics Sync] ✅ Enqueued trigger job ${jobKey} for brand ${brandId}`)
+
+        // Trigger job processing asynchronously
+        setImmediate(() => triggerJobProcessing(brandId))
+        
+        return NextResponse.json({
+          success: true,
+          queued: true,
+          message: 'Demographics sync has been queued successfully',
+          jobKey: jobKey,
+          estimatedDuration: '2-4 hours',
+          note: 'Sync is running in the background. Check progress via /api/meta/demographics/status'
+        }, { status: 202 })
 
       case 'get_progress':
         // Get current sync progress
@@ -104,8 +156,8 @@ export async function POST(request: NextRequest) {
           })
           .eq('brand_id', brandId)
         
-        // Don't automatically restart processing - let user manually trigger via process-jobs endpoint
-        console.log(`[Demographics Sync] Sync resumed for brand ${brandId}. Use /api/meta/demographics/process-jobs to process jobs.`)
+        // Restart job processing asynchronously
+        setImmediate(() => triggerJobProcessing(brandId))
         
         return NextResponse.json({ success: true, message: 'Sync resumed' })
 
@@ -148,3 +200,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Trigger job processing via dedicated endpoint
+ * This is much simpler and avoids timeout issues
+ */
+async function triggerJobProcessing(brandId: string) {
+  try {
+    const cronSecret = process.env.CRON_SECRET || 'your-cron-secret'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brezmarketingdashboard.com'
+    
+    console.log(`[Demographics Trigger] Starting job processing for brand ${brandId} at ${baseUrl}`)
+    
+    // Call the dedicated process-jobs endpoint
+    const response = await fetch(`${baseUrl}/api/meta/demographics/process-jobs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cronSecret}`
+      },
+      body: JSON.stringify({
+        brandId: brandId,
+        maxJobs: 5, // Reduced for better performance
+        maxConcurrency: 1 // Reduced for stability
+      })
+    })
+
+    if (!response.ok) {
+      console.error(`[Demographics Trigger] Process jobs call failed: ${response.status} ${response.statusText}`)
+      return
+    }
+
+    const result = await response.json()
+    console.log(`[Demographics Trigger] ✅ Process jobs result: ${result.jobsProcessed} jobs processed`)
+
+    // If there were jobs processed successfully, schedule another round
+    if (result.success && result.jobsProcessed > 0) {
+      console.log(`[Demographics Trigger] Scheduling next round in 30 seconds...`)
+      setTimeout(() => triggerJobProcessing(brandId), 30000) // 30 seconds delay
+    } else {
+      console.log(`[Demographics Trigger] No more jobs to process for brand ${brandId}`)
+    }
+
+  } catch (error) {
+    console.error(`[Demographics Trigger] Error triggering job processing for brand ${brandId}:`, error)
+  }
+}

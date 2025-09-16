@@ -135,36 +135,6 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
     }
   }
 
-  const processJobs = async () => {
-    setIsProcessing(true)
-    try {
-      const response = await fetch('/api/meta/demographics/trigger-processing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brandId, maxJobs: 5 })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        toast.success('Job processing triggered!', {
-          description: `${result.jobsProcessed || 0} jobs processed. ${result.successfulJobs || 0} successful, ${result.failedJobs || 0} failed.`
-        })
-        await fetchSyncStatus()
-      } else {
-        toast.error('Failed to process jobs', {
-          description: result.error || 'Unknown error'
-        })
-      }
-    } catch (error) {
-      toast.error('Error processing jobs', {
-        description: error.message
-      })
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   useEffect(() => {
     fetchSyncStatus()
     
@@ -309,18 +279,6 @@ export function DemographicsSyncStatus({ brandId, className = "" }: Demographics
                   Restart Sync
                 </Button>
               )}
-              
-              {/* Process Jobs Button - always available for testing */}
-              <Button
-                onClick={processJobs}
-                disabled={isProcessing}
-                size="sm"
-                variant="outline"
-                className="border-green-600 text-green-500 hover:bg-green-600/10"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Process Jobs
-              </Button>
             </div>
           </>
         ) : (

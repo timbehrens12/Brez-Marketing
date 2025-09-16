@@ -232,57 +232,54 @@ class MetaDemographicsService {
   }
 
   /**
-   * Queue jobs for processing with deduplication
+   * Queue jobs for processing with batch operations for speed
    */
   private async queueJobs(jobs: DemographicsJob[]): Promise<number> {
-    let jobsCreated = 0
-
-    for (const job of jobs) {
-      try {
-        // Check if job already exists
-        const { data: existingJob } = await this.supabase
-          .from('meta_demographics_jobs_ledger_v2')
-          .select('id, status')
-          .eq('job_key', job.jobKey)
-          .single()
-
-        if (existingJob && existingJob.status !== 'failed') {
-          continue // Skip if job exists and hasn't failed
+    console.log(`[Demographics Service] Batch creating ${jobs.length} jobs`)
+    
+    try {
+      // Prepare batch insert data
+      const jobRecords = jobs.map(job => ({
+        brand_id: job.brandId,
+        connection_id: job.connectionId,
+        account_id: job.accountId,
+        job_key: job.jobKey,
+        breakdown_types: job.breakdownTypes,
+        level: job.level,
+        date_from: job.dateFrom,
+        date_to: job.dateTo,
+        granularity: job.granularity,
+        status: 'pending',
+        retry_count: 0,
+        request_metadata: {
+          priority: job.priority,
+          created_by: 'comprehensive_sync',
+          breakdown_configs: this.breakdownConfigs.filter(c => job.breakdownTypes.includes(c.type))
         }
+      }))
 
-        // Insert or update job
-        const { error } = await this.supabase
-          .from('meta_demographics_jobs_ledger_v2')
-          .upsert({
-            brand_id: job.brandId,
-            connection_id: job.connectionId,
-            account_id: job.accountId,
-            job_key: job.jobKey,
-            breakdown_types: job.breakdownTypes,
-            level: job.level,
-            date_from: job.dateFrom,
-            date_to: job.dateTo,
-            granularity: job.granularity,
-            status: 'pending',
-            retry_count: 0,
-            request_metadata: {
-              priority: job.priority,
-              created_by: 'comprehensive_sync',
-              breakdown_configs: this.breakdownConfigs.filter(c => job.breakdownTypes.includes(c.type))
-            }
-          }, {
-            onConflict: 'job_key'
-          })
+      // Use batch upsert with ON CONFLICT job_key DO UPDATE
+      const { data, error } = await this.supabase
+        .from('meta_demographics_jobs_ledger_v2')
+        .upsert(jobRecords, {
+          onConflict: 'job_key',
+          ignoreDuplicates: false // Update existing jobs
+        })
+        .select('job_key')
 
-        if (!error) {
-          jobsCreated++
-        }
-      } catch (error) {
-        console.error(`Error queuing job ${job.jobKey}:`, error)
+      if (error) {
+        console.error('[Demographics Service] Batch queue error:', error)
+        return 0
       }
-    }
 
-    return jobsCreated
+      const jobsCreated = data?.length || 0
+      console.log(`[Demographics Service] ✅ Batch created ${jobsCreated} jobs`)
+      return jobsCreated
+
+    } catch (error) {
+      console.error('[Demographics Service] Queue jobs error:', error)
+      return 0
+    }
   }
 
   /**
@@ -303,6 +300,63 @@ class MetaDemographicsService {
       }, {
         onConflict: 'brand_id,account_id'
       })
+  }
+
+  /**
+   * Process a trigger job that creates all the actual sync jobs
+   */
+  async processTriggerJob(jobKey: string): Promise<{ success: boolean; rowsProcessed: number; error?: string }> {
+    try {
+      console.log(`[Demographics Service] Processing trigger job ${jobKey}`)
+      
+      // Get job details
+      const { data: job, error: jobError } = await this.supabase
+        .from('meta_demographics_jobs_ledger_v2')
+        .select('*')
+        .eq('job_key', jobKey)
+        .single()
+
+      if (jobError || !job) {
+        return { success: false, rowsProcessed: 0, error: 'Trigger job not found' }
+      }
+
+      // Mark trigger job as running
+      await this.updateJobStatus(jobKey, 'running', { started_at: new Date().toISOString() })
+
+      // Run the full sync creation process
+      const syncResult = await this.startComprehensiveSync(job.brand_id)
+      
+      if (syncResult.success) {
+        // Mark trigger job as completed
+        await this.updateJobStatus(jobKey, 'completed', {
+          completed_at: new Date().toISOString(),
+          rows_processed: 0,
+          rows_inserted: 0,
+          rows_updated: 0,
+          api_calls_made: 0,
+          jobs_created: syncResult.jobsCreated
+        })
+        
+        console.log(`[Demographics Service] ✅ Trigger job ${jobKey} completed - created ${syncResult.jobsCreated} sync jobs`)
+        return { success: true, rowsProcessed: syncResult.jobsCreated, error: undefined }
+      } else {
+        // Mark trigger job as failed
+        await this.updateJobStatus(jobKey, 'failed', {
+          failed_at: new Date().toISOString(),
+          error_message: syncResult.message
+        })
+        
+        return { success: false, rowsProcessed: 0, error: syncResult.message }
+      }
+
+    } catch (error) {
+      console.error(`[Demographics Service] Trigger job ${jobKey} failed:`, error)
+      await this.updateJobStatus(jobKey, 'failed', {
+        failed_at: new Date().toISOString(),
+        error_message: error.message
+      })
+      return { success: false, rowsProcessed: 0, error: error.message }
+    }
   }
 
   /**

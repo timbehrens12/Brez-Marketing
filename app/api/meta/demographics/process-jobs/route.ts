@@ -66,7 +66,15 @@ export async function POST(request: NextRequest) {
 
     for (const chunk of chunks) {
       const chunkResults = await Promise.allSettled(
-        chunk.map(job => demographicsService.processJob(job.job_key))
+        chunk.map(async job => {
+          // Check if this is a trigger job that needs to create the actual sync jobs
+          if (job.request_metadata?.trigger_full_sync) {
+            console.log(`[Demographics Processor] Processing trigger job ${job.job_key}`)
+            return await demographicsService.processTriggerJob(job.job_key)
+          } else {
+            return await demographicsService.processJob(job.job_key)
+          }
+        })
       )
 
       for (const result of chunkResults) {
