@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
             account_id: accountId,
             job_key: jobKey,
             breakdown_types: ['trigger_full_sync'], // Special marker
-            level: 'trigger',
+            level: 'campaign', // Use valid level value
             date_from: new Date().toISOString().split('T')[0],
             date_to: new Date().toISOString().split('T')[0],
             granularity: 'daily',
