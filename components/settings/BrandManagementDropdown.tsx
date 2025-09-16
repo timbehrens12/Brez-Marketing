@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Edit2, Trash2, ChevronDown, ChevronUp, Save, X, Camera, Info, AlertTriangle, CheckCircle, Shield, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { UnifiedMetaSyncStatus } from "@/components/dashboard/meta/UnifiedMetaSyncStatus"
 
 const FLAT_NICHES = [
   "Fashion & Apparel",
@@ -760,6 +761,17 @@ export function BrandManagementDropdown({
                     )}
                   </div>
                 </div>
+
+                {/* Meta Sync Status - Only show if connected */}
+                {metaConnection && (
+                  <div className="border-t border-[#333] p-3">
+                    <UnifiedMetaSyncStatus
+                      brandId={brand.id}
+                      connectionId={metaConnection.id}
+                      isVisible={true}
+                    />
+                  </div>
+                )}
 
                 {/* Meta Integration Information */}
                 <div className="border-t border-[#333] p-3">
