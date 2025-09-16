@@ -14,8 +14,9 @@ import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/To
 import { CampaignWidget } from '@/components/dashboard/platforms/tabs/CampaignWidget'
 import { AudienceDemographicsWidget } from '@/components/dashboard/meta/AudienceDemographicsWidget'
 import { DevicePerformanceWidget } from '@/components/dashboard/meta/DevicePerformanceWidget'
-import { DemographicsSyncStatus } from '@/components/dashboard/meta/DemographicsSyncStatus'
 import { PlatformConnection } from '@/types/platformConnection'
+import { MetaConnectButton } from '@/components/dashboard/platforms/MetaConnectButton'
+import { UnifiedMetaSyncStatus } from '@/components/dashboard/meta/UnifiedMetaSyncStatus'
 
 // Define interfaces
 interface DailyDataItem {
@@ -871,6 +872,11 @@ export function MetaTab2({
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
             Connect your Meta Ads account to view performance metrics and manage campaigns.
           </p>
+          <MetaConnectButton
+            isConnected={false}
+            brandId={brandId}
+            onConnect={async () => {}}
+          />
         </CardContent>
       </Card>
     );
@@ -878,6 +884,32 @@ export function MetaTab2({
 
   return (
     <div className="space-y-4 px-2 sm:px-4 md:px-0">
+      {/* Meta Connection Management */}
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-2">
+          <Image 
+            src="https://i.imgur.com/6hyyRrs.png"
+            alt="Meta"
+            width={24}
+            height={24}
+            className="opacity-80"
+          />
+          <span className="text-green-400 text-sm">Connected</span>
+        </div>
+        <MetaConnectButton
+          isConnected={true}
+          brandId={brandId}
+          onConnect={async () => {}}
+        />
+      </div>
+
+      {/* Unified Meta Sync Status */}
+      <UnifiedMetaSyncStatus
+        brandId={brandId}
+        connectionId={metaConnection.id}
+        isVisible={true}
+      />
+
       {/* Subtle Page Indicator */}
       <div className="mb-4">
         <div className="w-full h-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent rounded-full"></div>
@@ -1130,13 +1162,6 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Demographics Sync Status */}
-      <div className="mt-6">
-        <DemographicsSyncStatus 
-          brandId={brandId}
-          className="mb-6"
-        />
-      </div>
 
       {/* Demographics and Device Performance */}
       <div className="mt-6">

@@ -33,7 +33,7 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
       if (data.success) {
         const isCurrentlySyncing = data.sync_status === 'in_progress' || data.sync_status === 'syncing'
         setSyncInProgress(isCurrentlySyncing)
-        setShowSyncStatus(isCurrentlySyncing)
+        setShowSyncStatus(isCurrentlySyncing) // Show only when actually syncing
       }
     } catch (error) {
       console.error('Error checking sync status:', error)
