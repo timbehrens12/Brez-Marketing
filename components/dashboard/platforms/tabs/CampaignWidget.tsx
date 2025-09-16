@@ -77,18 +77,17 @@ const DEBUG_LOGGING = false; // Disabled for production
 // Logger for controlled output
 const logger = {
   debug: (...args: any[]) => {
-    if (DEBUG_LOGGING) {
-      console.log(...args);
-    }
+    // Debug logging disabled for production
   },
   info: (...args: any[]) => {
-    // Only log info messages if debug is enabled
-    if (DEBUG_LOGGING) {
-    console.log(...args);
-    }
+    // Info logging disabled for production
   },
-  warn: console.warn,
-  error: console.error
+  warn: (...args: any[]) => {
+    // Warning logging disabled for production
+  },
+  error: (...args: any[]) => {
+    // Error logging disabled for production
+  }
 };
 
 // Throttle mechanism to prevent too many operations
@@ -336,9 +335,7 @@ const CampaignWidget = ({
   const logOnce = useCallback((key: string, message: string, data?: any) => {
     if (!loggedMessages.current.has(key)) {
       if (data) {
-        console.log(message, data);
       } else {
-        console.log(message);
       }
       loggedMessages.current.add(key);
     }
@@ -400,7 +397,6 @@ const CampaignWidget = ({
         try {
           controller.abort();
         } catch (e) {
-          console.error("Error aborting request:", e);
         }
       });
       pendingRequestsRef.current = [];
@@ -932,7 +928,6 @@ const CampaignWidget = ({
         return JSON.parse(savedPrefs);
       }
     } catch (error) {
-      console.error("Error loading user preferences:", error);
     }
     
     return DEFAULT_PREFERENCES;
@@ -945,7 +940,6 @@ const CampaignWidget = ({
     try {
       localStorage.setItem(`campaign-widget-prefs-${brandId}`, JSON.stringify(prefs));
     } catch (error) {
-      console.error("Error saving user preferences:", error);
     }
   }, [brandId]);
   
@@ -1113,7 +1107,6 @@ const CampaignWidget = ({
       
       return true;
     } catch (error) {
-      console.error('[CampaignWidget] Error during bulk refresh:', error);
       toast.error("Failed to refresh campaign statuses", { id: toastId });
       return false;
     } finally {
@@ -1261,7 +1254,6 @@ const CampaignWidget = ({
         to: dateRange.to.toISOString()
       }));
     } catch (e) {
-      console.error('Error saving date range:', e);
     }
     
     // When date range changes, refresh all data

@@ -157,22 +157,16 @@ const MAX_LOADING_TIME = 30000; // 30 seconds maximum loading time
 export default function DashboardPage() {
 
   
-  // Log each hook call to identify which one causes the error
-  // console.log('[Dashboard] Calling useAuth')
   const { userId, isLoaded } = useAuth()
   
-  // console.log('[Dashboard] Calling useBrandContext')
   const { brands, selectedBrandId, setSelectedBrandId, isLoading: brandsLoading } = useBrandContext()
   
 
   
-  // console.log('[Dashboard] Calling useAgency')
   const { agencySettings } = useAgency()
   
-  // console.log('[Dashboard] Calling useDataBackfill')
   const { status: backfillStatus, checkForGaps, performBackfill, resetStatus } = useDataBackfill()
   
-  // console.log('[Dashboard] useState calls starting')
   // Initialize date range - check for saved refresh dateRange first
   const [dateRange, setDateRange] = useState(() => {
     // ✅ FIXED: Check for persisted date range to maintain selection across refreshes
@@ -184,7 +178,6 @@ export default function DashboardPage() {
           const savedData = JSON.parse(savedDateRangeStr);
           // Only use if saved within last 24 hours to prevent stale data
           if (Date.now() - savedData.timestamp < 24 * 60 * 60 * 1000) {
-            console.log('[Dashboard] 🔄 Restoring persisted date range:', savedData);
             const range = {
               from: new Date(savedData.from),
               to: new Date(savedData.to)
@@ -210,7 +203,6 @@ export default function DashboardPage() {
               from: startOfDay(new Date(savedDateRange.from)),
               to: endOfDay(new Date(savedDateRange.to))
             };
-            console.log('[Dashboard] 🔄 RESTORED dateRange from Meta refresh:', restoredRange.from.toISOString().split('T')[0], 'to', restoredRange.to.toISOString().split('T')[0]);
             return restoredRange;
           }
         }
@@ -219,7 +211,6 @@ export default function DashboardPage() {
         localStorage.removeItem('dashboard-date-range');
         localStorage.removeItem('meta-refresh-daterange');
       } catch (error) {
-        // console.error('Error checking saved date range:', error)
       }
     }
     
@@ -229,7 +220,6 @@ export default function DashboardPage() {
       from: startOfDay(now),
       to: endOfDay(now) // Use endOfDay() to exactly match DateRangePicker "Today" preset
     }
-    console.log('[Dashboard] 🔍 Initial dateRange set to:', initialRange.from.toISOString().split('T')[0], 'to', initialRange.to.toISOString().split('T')[0]);
     
     // ✅ FIXED: Set global date range for default case
     if (typeof window !== 'undefined') {
@@ -255,7 +245,6 @@ export default function DashboardPage() {
       return // Prevent changes during loading
     }
     
-    console.log('[Dashboard] 🔍 handleDateRangeChange called - changing dateRange to:', range.from.toISOString().split('T')[0], 'to', range.to.toISOString().split('T')[0]);
     
     setIsDateRangeLoading(true)
     setDateRange(range)
@@ -273,7 +262,6 @@ export default function DashboardPage() {
         (window as any)._currentDateRange = range
       }
     } catch (error) {
-      console.log('[Dashboard] Could not persist date range:', error)
     }
     
     // Set a minimum cooldown period
@@ -290,7 +278,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (dateRange && typeof window !== 'undefined') {
       (window as any)._currentDateRange = dateRange;
-      console.log('[Dashboard] 📅 Updated global date range:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
     }
   }, [dateRange])
   
@@ -350,19 +337,10 @@ export default function DashboardPage() {
     }
   }, [isActionCenterLoading, isAgencyWidgetsLoading, hasInitiallyLoaded, activeTab])
   
-  // console.log('[Dashboard] Calling useMetrics')
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
-  
-  // console.log('[Dashboard] Calling usePathname')
   const pathname = usePathname()
-
-  // console.log('[Dashboard] Calling useBrandStore')
   const { selectedBrandId: brandStoreSelectedBrandId } = useBrandStore()
-  
-  // console.log('[Dashboard] Calling useConnectionStore')
   const { connections: connectionStoreConnections } = useConnectionStore()
-  
-  // console.log('[Dashboard] All hooks initialized successfully')
 
   // Remove useSupabase hook since we're using the singleton client
 
@@ -404,7 +382,6 @@ export default function DashboardPage() {
     // Add a small delay to ensure all contexts are properly initialized
     const initTimer = setTimeout(() => {
       if (initialLoadFlag.current && selectedBrandId) {
-        // console.log('[Dashboard] Initial load delayed initialization complete');
         initialLoadFlag.current = false;
       }
       
@@ -511,7 +488,6 @@ export default function DashboardPage() {
       if (!selectedBrandId || cancelled) return
 
       try {
-        // console.log('🔗 Loading platform connections for brand:', selectedBrandId)
         // Load connections for the selected brand regardless of who owns it
         const { data: connections, error } = await getSupabaseClient()
           .from('platform_connections')
@@ -522,7 +498,6 @@ export default function DashboardPage() {
         if (error) throw error
 
         if (!cancelled) {
-          // console.log('✅ Platform connections loaded:', connections)
           
           // Batch state updates using startTransition for non-urgent updates
           startTransition(() => {
@@ -538,7 +513,6 @@ export default function DashboardPage() {
 
       } catch (error) {
         if (!cancelled) {
-          // console.error('❌ Error loading connections:', error)
         }
       }
     }
@@ -605,7 +579,6 @@ export default function DashboardPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          // console.error('❌ Error in handleBrandSelected:', error);
           // Set a fallback state to prevent infinite loading
           setInitialDataLoad(false);
           initialLoadStarted.current = false;
@@ -613,12 +586,10 @@ export default function DashboardPage() {
       }
     }
 
-    // console.log('🎧 Adding brandSelected event listener')
     window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
     
     return () => {
       cancelled = true;
-      // console.log('🎧 Removing brandSelected event listener')
       window.removeEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
     }
   }, [setSelectedStore, isInitialSetup])
@@ -648,7 +619,6 @@ export default function DashboardPage() {
       
       // If we've crossed into a new day
       if (lastKnownDate !== currentDateStr) {
-        // console.log(`[Dashboard] 🌅 NEW DAY DETECTED! Last known: ${lastKnownDate}, Current: ${currentDateStr}`);
         
         // Update the stored date
         localStorage.setItem(lastKnownDateKey, currentDateStr);
@@ -660,8 +630,6 @@ export default function DashboardPage() {
           
           // If we're viewing yesterday's data and it's now a new day, we need to handle this
           if (selectedFromStr === lastKnownDate && selectedToStr === lastKnownDate) {
-            // console.log(`[Dashboard] 📅 Tab was left on yesterday (${lastKnownDate}), now it's ${currentDateStr}`);
-            // console.log(`[Dashboard] 🔄 Performing new day transition with proper data backfill`);
             
             // Dispatch a custom event to notify all components about the new day transition
             window.dispatchEvent(new CustomEvent('newDayDetected', { 
@@ -685,7 +653,6 @@ export default function DashboardPage() {
             window._disableAutoMetaFetch = false;
             
             // Force a complete data refresh for both yesterday and today
-            // console.log(`[Dashboard] 💪 Forcing complete data refresh for date transition`);
             if (!cancelled) {
               setIsRefreshingData(true);
               
@@ -740,7 +707,6 @@ export default function DashboardPage() {
   // Debug: Track dateRange changes & set global variable
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      console.log('[Dashboard] 🔍 dateRange changed to:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
       
       // FINAL FIX: Set global variable for synchronous access
       if (typeof window !== 'undefined') {
@@ -748,7 +714,6 @@ export default function DashboardPage() {
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString()
         };
-        console.log('[Dashboard] 🔍 Updated global _currentDateRange variable');
       }
     }
   }, [dateRange])
@@ -756,7 +721,6 @@ export default function DashboardPage() {
   // NUCLEAR FIX: Listen for dateRange requests from GlobalRefreshButton
   useEffect(() => {
     const handleDateRangeRequest = (event: any) => {
-      console.log('[Dashboard] 🔍 Received dateRange request, responding with current dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
       
       const responseDetail = {
         requestId: event.detail?.requestId,
@@ -766,13 +730,11 @@ export default function DashboardPage() {
         } : undefined
       };
       
-      console.log('[Dashboard] 🔍 Dispatching daterange-response with detail:', responseDetail);
       
       window.dispatchEvent(new CustomEvent('daterange-response', {
         detail: responseDetail
       }));
       
-      console.log('[Dashboard] 🔍 daterange-response event dispatched');
     };
 
     window.addEventListener('request-current-daterange', handleDateRangeRequest);
@@ -786,8 +748,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleMetaDataRefreshed = async (event: any) => {
       if (event.detail?.brandId === selectedBrandId) {
-        console.log('[Dashboard] 🔍 Received metaDataRefreshed event, refreshing dashboard metrics');
-        console.log('[Dashboard] 🔍 Event dateRange:', event.detail?.dateRange);
         
         // CRITICAL FIX: Use the dateRange from the event, not the current state
         if (event.detail?.dateRange) {
@@ -795,7 +755,6 @@ export default function DashboardPage() {
           const startDateStr = eventDateRange.from.split('T')[0];
           const endDateStr = eventDateRange.to.split('T')[0];
           
-          console.log('[Dashboard] 🔍 Using event dateRange for metrics refresh:', startDateStr, 'to', endDateStr);
           
           try {
             // Directly call the API with the correct dateRange
@@ -837,18 +796,14 @@ export default function DashboardPage() {
               reach: metaData.reach ?? 0,
               dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
             }));
-            
-            console.log('[Dashboard] ✅ Dashboard metrics refreshed with event dateRange data');
+
           } catch (error) {
-            console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
           }
         } else {
           // Fallback to regular fetchMetaMetrics if no dateRange in event
           try {
             await fetchMetaMetrics(false, true);
-            console.log('[Dashboard] ✅ Dashboard metrics refreshed (fallback)');
           } catch (error) {
-            console.error('[Dashboard] ❌ Error refreshing dashboard metrics:', error);
           }
         }
       }
@@ -907,7 +862,6 @@ export default function DashboardPage() {
       
       if (shopifyConnection && !cancelled) {
         try {
-          // console.log('Fetching Shopify data for connection:', shopifyConnection.id)
           const { data: orders, error: ordersError } = await getSupabaseClient()
             .from('shopify_orders')
             .select('*')
@@ -916,7 +870,6 @@ export default function DashboardPage() {
             .order('created_at', { ascending: false })
 
           if (ordersError) {
-            // console.error('Error loading Shopify orders:', ordersError)
             return
           }
 
@@ -940,7 +893,6 @@ export default function DashboardPage() {
           })
         } catch (error) {
           if (!cancelled) {
-            // console.error('Error loading Shopify data:', error)
           }
         }
       }
@@ -996,7 +948,6 @@ export default function DashboardPage() {
     // Format dates immediately to avoid timezone issues later
     const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
     const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
-    // console.log(`[Dashboard Unified Data Loading] Triggered with formatted dates: ${fromDateStr} to ${toDateStr}`);
 
     let cancelled = false;
     let timeoutId: NodeJS.Timeout | null = null;
@@ -1015,7 +966,6 @@ export default function DashboardPage() {
       // Set up a timeout to prevent infinite loading
       timeoutId = setTimeout(() => {
         if (isMounted.current && !cancelled) {
-          // console.error('Loading timeout reached');
           setIsLoading(false);
           setInitialDataLoad(false);
           initialLoadStarted.current = false;
@@ -1030,7 +980,6 @@ export default function DashboardPage() {
       try {
         // 🔥 ENHANCED DATA REFRESH: Check for gaps AND stale historical data
         if (selectedBrandId) {
-          // console.log('[Dashboard] Starting comprehensive data validation and refresh...');
           
           try {
             // 🔥 FIX: Use server-side API endpoint instead of direct client-side import
@@ -1058,23 +1007,15 @@ export default function DashboardPage() {
               if (refreshResult.staleDataRefreshed > 0) messages.push(`${refreshResult.staleDataRefreshed} stale days fixed`);
               if (refreshResult.totalGapsFilled > 0) messages.push(`${refreshResult.totalGapsFilled} missing days filled`);
               
-              // console.log(`[Dashboard] ✅ Complete refresh done: ${messages.join(', ')}`);
               
               // If we fixed stale data, show a helpful message
               if (refreshResult.staleDataRefreshed > 0) {
-                // console.log(`[Dashboard] 🎯 Fixed ${refreshResult.staleDataRefreshed} days with stale data (like the Wednesday $0.43 → $0.90 issue)`);
               }
             } else {
-              // console.warn(`[Dashboard] ⚠️ Complete data refresh had issues:`, refreshResult.error);
             }
           } catch (error) {
-            // console.warn('[Dashboard] ⚠️ Error during enhanced data refresh:', error);
-            
-            // Fallback to old system
-            // console.log('[Dashboard] Falling back to standard gap detection...');
             await checkForGaps(selectedBrandId);
             if (backfillStatus.hasGaps && backfillStatus.totalMissingDays >= 1) {
-              // console.log(`[Dashboard] Backfilling ${backfillStatus.totalMissingDays} missing days...`);
               await performBackfill(selectedBrandId);
             }
           }
@@ -1097,7 +1038,6 @@ export default function DashboardPage() {
         params.set('bypass_cache', 'true');
         params.set('reason', 'always-fresh-after-recent-data-refresh');
         
-        // console.log(`[Dashboard] Loading metrics with params:`, Object.fromEntries(params));
         
         const response = await fetch(`/api/metrics?${params.toString()}`);
         
@@ -1193,7 +1133,6 @@ export default function DashboardPage() {
         }
         
       } catch (error) {
-        // console.error('Error loading metrics:', error);
         if (isMounted.current && !cancelled) {
           // Initialize with empty metrics to prevent undefined errors
           setMetrics(defaultMetrics);
@@ -1234,7 +1173,6 @@ export default function DashboardPage() {
 
   // Update the fetchMetaMetrics function with fetch lock to prevent doubling
   const fetchMetaMetrics = useCallback(async (initialLoad: boolean = false, forceRefresh: boolean = true) => {
-    // console.log(`[fetchMetaMetrics] Called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
     if (!selectedBrandId) return;
     
@@ -1242,11 +1180,9 @@ export default function DashboardPage() {
     const fetchId = `dashboard-meta-${Date.now()}`;
     
     // 🔥🔥🔥 ALWAYS FORCE FRESH DATA - BYPASS FETCH LOCK WHEN FORCING REFRESH
-    console.log(`🔥🔥🔥 [DASHBOARD] FORCING FRESH META DATA - forceRefresh=${forceRefresh}`);
     
     // Check if another fetch is already in progress (but bypass if forcing refresh)
     if (typeof window !== 'undefined' && window._metaFetchLock === true && !forceRefresh) {
-      console.log('[Dashboard] 🔒 Meta fetch already in progress, skipping to prevent doubling');
       return;
     }
     
@@ -1274,9 +1210,7 @@ export default function DashboardPage() {
               from: new Date(globalDateRange.from),
               to: new Date(globalDateRange.to)
             };
-            console.log(`🔥🔥🔥 [DASHBOARD] Using global dateRange fallback:`, fallbackDateRange.from.toISOString().split('T')[0], 'to', fallbackDateRange.to.toISOString().split('T')[0]);
           } catch (error) {
-            console.log(`🔥🔥🔥 [DASHBOARD] Error parsing global dateRange, using default`);
           }
         }
         
@@ -1285,7 +1219,6 @@ export default function DashboardPage() {
           endDateStr = format(fallbackDateRange.to, 'yyyy-MM-dd');
         } else {
           // Only use default if no global dateRange available
-          console.log(`🔥🔥🔥 [DASHBOARD] No dateRange found - using TODAY as default`);
           const now = new Date();
           startDateStr = format(now, 'yyyy-MM-dd');
           endDateStr = format(now, 'yyyy-MM-dd');
@@ -1309,7 +1242,6 @@ export default function DashboardPage() {
         t: new Date().getTime().toString() // Always add cache buster
       });
         
-      console.log(`🔥🔥🔥 [DASHBOARD] Fetching FRESH Meta metrics with params:`, Object.fromEntries(params));
       
       const metaResponse = await fetch(`/api/metrics/meta?${params.toString()}`);
       
@@ -1320,30 +1252,9 @@ export default function DashboardPage() {
       const metaData = await metaResponse.json();
       
       // Log the raw data received from the API to debug doubling
-      // console.log('>>> [fetchMetaMetrics] Received Meta metrics:', {
-      //   adSpend: metaData?.adSpend,
-      //   adSpendGrowth: metaData?.adSpendGrowth,
-      //   impressions: metaData?.impressions,
-      //   impressionGrowth: metaData?.impressionGrowth,
-      //   clicks: metaData?.clicks,
-      //   clickGrowth: metaData?.clickGrowth,
-      //   roas: metaData?.roas,
-      //   roasGrowth: metaData?.roasGrowth
-      // });
       
-      // console.log('Received Meta metrics:', {
-      //   adSpend: metaData.adSpend,
-      //   roas: metaData.roas,
-      //   impressions: metaData.impressions,
-      //   clicks: metaData.clicks
-      // });
       
       // FIX: Only update Meta-specific metrics to prevent duplication, preserve other metrics
-      // console.log('>>> [fetchMetaMetrics] Previous metrics before update:', {
-      //   adSpendGrowth: (prev: any) => prev.adSpendGrowth,
-      //   impressionGrowth: (prev: any) => prev.impressionGrowth,
-      //   roasGrowth: (prev: any) => prev.roasGrowth
-      // });
       
       setMetrics(prev => {
         const newMetrics = {
@@ -1370,11 +1281,6 @@ export default function DashboardPage() {
           dailyData: metaData.dailyData && metaData.dailyData.length > 0 ? metaData.dailyData : prev.dailyData,
         };
         
-        // console.log('>>> [fetchMetaMetrics] New metrics being applied:', {
-        //   adSpendGrowth: newMetrics.adSpendGrowth,
-        //   impressionGrowth: newMetrics.impressionGrowth,
-        //   roasGrowth: newMetrics.roasGrowth
-        // });
         
         return newMetrics;
       });
@@ -1394,7 +1300,6 @@ export default function DashboardPage() {
       
       return metaData;
     } catch (error) {
-      // console.error('Error fetching Meta metrics:', error);
       return null;
     } finally {
       // ✅ FIXED: Always release lock to prevent blocking future fetches
@@ -1424,12 +1329,10 @@ export default function DashboardPage() {
       // ** Use format() for dates to avoid timezone issues **
       const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
       const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
-      // console.log(`[fetchAllData] Using formatted dates: ${fromDateStr} to ${toDateStr}`); 
 
       // Always perform a full Meta resync on every fetch to ensure data accuracy
       if (activePlatforms.meta) {
         try {
-          // console.log('[Dashboard] Performing complete Meta data resync');
           
           // Show toast to inform user that a full resync is happening
           if (!initialDataLoad) {
@@ -1460,7 +1363,6 @@ export default function DashboardPage() {
             
             if (!resyncResponse.ok) {
               const errorData = await resyncResponse.json();
-              // console.error('Failed to perform full Meta resync:', errorData);
               
               if (!initialDataLoad) {
                 toast({
@@ -1471,7 +1373,6 @@ export default function DashboardPage() {
               }
             } else {
               const resyncData = await resyncResponse.json();
-              // console.log(`Meta resync completed successfully. Found ${resyncData.count || 0} records.`);
               
               if (!initialDataLoad && resyncData.count > 0) {
                 toast({
@@ -1491,13 +1392,11 @@ export default function DashboardPage() {
               }));
             }
           } catch (resyncError) {
-            // console.error('Error during Meta resync:', resyncError);
           }
           
           // Wait a moment for the resync to complete
           await new Promise(resolve => setTimeout(resolve, 3000)); // Increase timeout to ensure sync completes
         } catch (error) {
-          // console.error('Error fetching Meta metrics during refresh:', error);
         }
       }
 
@@ -1527,7 +1426,6 @@ export default function DashboardPage() {
           })
           
           if (!syncOrdersResponse.ok) {
-            // console.error('Failed to sync orders data:', await syncOrdersResponse.text())
           } else {
             // Wait for the sync to complete
             await new Promise(resolve => setTimeout(resolve, 3000))
@@ -1569,13 +1467,10 @@ export default function DashboardPage() {
                 })
               });
               
-              // console.log(`[Dashboard] Shopify comparison period synced: ${prevFrom} to ${prevTo}`);
             } catch (compError) {
-              // console.warn('Shopify comparison sync failed:', compError);
             }
           }
         } catch (error) {
-          // console.error('Error syncing orders data:', error)
         }
         
         // Now fetch the metrics with the updated data
@@ -1591,7 +1486,6 @@ export default function DashboardPage() {
           nocache: 'true'
         });
         
-        // console.log(`[fetchAllData] Fetching Shopify metrics with params:`, Object.fromEntries(params));
         
         const response = await fetch(`/api/metrics?${params.toString()}`)
         
@@ -1641,7 +1535,6 @@ export default function DashboardPage() {
           })
           
           if (!syncResponse.ok) {
-            // console.error('Failed to sync inventory data:', await syncResponse.text())
           } else {
             // Wait a moment for the sync to complete
             await new Promise(resolve => setTimeout(resolve, 3000))
@@ -1652,7 +1545,6 @@ export default function DashboardPage() {
             }))
           }
         } catch (error) {
-          // console.error('Error syncing inventory data:', error)
         }
       }
       
@@ -1662,7 +1554,6 @@ export default function DashboardPage() {
       // Meta resync already ensures fresh data is in the database
       // MetaTab components will fetch this data independently via their own useEffect hooks
       // No need for dashboard to also fetch Meta metrics since it would be redundant
-      // console.log('>>> [fetchAllData] Meta resync completed - MetaTab components will handle their own data fetching');
       
       // Dispatch event to let MetaTab components know fresh data is available
       window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
@@ -1679,7 +1570,6 @@ export default function DashboardPage() {
       }));
       
     } catch (error) {
-      // console.error('Error refreshing data:', error)
     } finally {
       // Always set initialDataLoad to false after the first load completes, regardless of success or failure
       if (initialDataLoad) {
@@ -1710,7 +1600,6 @@ export default function DashboardPage() {
       const response = await fetch(`/api/meta/data-check?brandId=${selectedBrandId}&date=${yesterdayStr}`);
       
       if (!response.ok) {
-        // console.error(`[Dashboard] Failed to check Meta data gaps: ${response.status}`);
         return;
       }
       
@@ -1757,7 +1646,6 @@ export default function DashboardPage() {
         });
       }
     } catch (error) {
-      // console.error("[Dashboard] Error checking for Meta data gaps:", error);
     }
   }, [selectedBrandId, activePlatforms.meta]);
   
@@ -1791,7 +1679,6 @@ export default function DashboardPage() {
     const handleShopifyRefresh = (event: any) => {
       if (cancelled) return;
       
-      // console.log('[Dashboard] Received force-shopify-refresh event, refreshing Shopify data');
       
       // Only proceed if we have a selected brand
       if (!selectedBrandId || cancelled) return;
@@ -1853,12 +1740,10 @@ export default function DashboardPage() {
           params.append('to', toDate);
           
           // Log what dates we're actually using
-          // console.log(`[Dashboard] Fetching Shopify metrics with date range: ${fromDate} to ${toDate}`);
           
           // Add cache buster for refresh
           params.append('t', new Date().getTime().toString());
 
-          // console.log('[Dashboard] Explicitly refreshing Shopify metrics with params:', Object.fromEntries(params));
           
           const response = await fetch(`/api/metrics?${params.toString()}`);
           
@@ -1867,7 +1752,6 @@ export default function DashboardPage() {
           }
           
           const data = await response.json();
-          // console.log('[Dashboard] Refreshed Shopify metrics:', data);
           
           // FIX: Update only Shopify metrics to prevent duplication
           if (!cancelled) {
@@ -1901,7 +1785,6 @@ export default function DashboardPage() {
 
         } catch (error) {
           if (!cancelled) {
-            // console.error('[Dashboard] Error refreshing Shopify metrics:', error);
           }
         } finally {
           if (!cancelled) {
@@ -1974,22 +1857,18 @@ export default function DashboardPage() {
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
-    // console.log(`[Dashboard] Tab changed from ${activeTab} to ${tab} - triggering targeted refresh`);
     
     // Prevent tab change for disconnected platforms
     if (tab === 'meta' && !activePlatforms.meta) {
-      // console.log(`[Dashboard] Blocked Meta tab change - platform not connected`)
       return
     }
     
     if (tab === 'shopify' && !activePlatforms.shopify) {
-      // console.log(`[Dashboard] Blocked Shopify tab change - platform not connected`)
       return
     }
     
     // Prevent tab change for coming soon platforms
     if (tab === 'tiktok' || tab === 'google') {
-      // console.log(`[Dashboard] Blocked ${tab} tab change - coming soon`)
       return
     }
     
@@ -1999,12 +1878,10 @@ export default function DashboardPage() {
     if (tab === 'meta') {
       // Set flag to indicate tab switch is in progress
       window._metaTabSwitchInProgress = true;
-      // console.log(`[Dashboard] Set _metaTabSwitchInProgress = true for Meta tab switch`);
       
       // Clear existing fetch locks to allow new refresh
       window._metaFetchLock = false;
       window._activeFetchIds?.clear();
-      // console.log(`[Dashboard] Cleared fetch locks for Meta tab switch`);
     }
     
     // Dispatch targeted event for the specific tab
@@ -2013,12 +1890,10 @@ export default function DashboardPage() {
       window.dispatchEvent(new CustomEvent('meta-tab-activated', {
         detail: { brandId: selectedBrandId, timestamp: Date.now() }
       }));
-      // console.log(`[Dashboard] Dispatched meta-tab-activated event`);
       
       // Clear the tab switch flag after a delay to allow the event to be processed
       setTimeout(() => {
         window._metaTabSwitchInProgress = false;
-        // console.log(`[Dashboard] Cleared _metaTabSwitchInProgress flag after Meta tab activation`);
       }, 2000); // Wait 2 seconds for the sync to complete
       
     } else if (tab === 'shopify') {
@@ -2026,7 +1901,6 @@ export default function DashboardPage() {
       window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
         detail: { brandId: selectedBrandId, timestamp: Date.now() }
       }));
-      // console.log(`[Dashboard] Dispatched shopify-tab-activated event`);
       
     }
   };

@@ -132,7 +132,6 @@ export function MetaTab2({
   // Debug: Track dateRange prop changes
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      console.log('[MetaTab2] 🔍 Received new dateRange prop:', dateRange.from.toISOString().split('T')[0], 'to', dateRange.to.toISOString().split('T')[0]);
     }
   }, [dateRange]);
   
@@ -500,11 +499,8 @@ export function MetaTab2({
   // Sync Meta insights (main refresh function)
   const syncMetaInsights = async (forcedDateRange?: DateRange) => {
     const effectiveDateRange = forcedDateRange || dateRange;
-    console.log('[MetaTab2] 🔄 syncMetaInsights called with dateRange:', effectiveDateRange ? `${effectiveDateRange.from.toISOString().split('T')[0]} to ${effectiveDateRange.to.toISOString().split('T')[0]}` : 'undefined');
-    console.log('[MetaTab2] 🔍 Using', forcedDateRange ? 'forced' : 'prop', 'dateRange');
     
     if (!brandId || !effectiveDateRange?.from || !effectiveDateRange?.to) {
-      console.log('[MetaTab2] ❌ syncMetaInsights aborted - missing brandId or dateRange');
       return;
     }
     
@@ -601,7 +597,6 @@ export function MetaTab2({
         window._lastMetaRefresh = Date.now();
         
         // CRITICAL: Force all components to use the correct dateRange
-        console.log('[MetaTab2] 🔄 Forcing dateRange update across all components');
         
         // Save the dateRange that was actually synced
         if (effectiveDateRange?.from && effectiveDateRange?.to) {
@@ -614,7 +609,6 @@ export function MetaTab2({
           if (typeof window !== 'undefined') {
             (window as any)._currentDateRange = syncedDateRange;
             (window as any)._lastSyncedDateRange = syncedDateRange;
-            console.log('[MetaTab2] 💾 Updated global dateRange variables:', syncedDateRange);
           }
         }
         
@@ -767,30 +761,25 @@ export function MetaTab2({
   // Listen for global refresh events
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log('[MetaTab2] 🔍 handleGlobalRefresh called with event:', event.type, event.detail);
 
       if (event.detail?.brandId === brandId && metaConnection) {
         // Check if refresh event includes a specific dateRange
         let forcedDateRange: DateRange | undefined;
         if (event.detail?.dateRange) {
-          console.log('[MetaTab2] Refresh event includes dateRange, using event dateRange instead of prop');
           forcedDateRange = {
             from: new Date(event.detail.dateRange.from),
             to: new Date(event.detail.dateRange.to)
           };
         }
         
-        console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefresh');
         syncMetaInsights(forcedDateRange);
       }
     };
 
     // Listen for dashboard meta resync completion to refresh data without syncing
     const handleDashboardMetaRefresh = (event: CustomEvent) => {
-      console.log('[MetaTab2] 🔍 handleDashboardMetaRefresh called with event:', event.type, event.detail);
       
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log('[MetaTab2] 📊 Dashboard completed resync, fetching fresh data from database');
         // Dashboard completed resync, just fetch fresh data from database
         Promise.all([
           fetchMetaDataFromDatabase(),
@@ -804,7 +793,6 @@ export function MetaTab2({
     };
 
     const handleGlobalRefreshAll = (event: CustomEvent) => {
-      console.log('[MetaTab2] 🔍 handleGlobalRefreshAll called with event:', event.type, event.detail);
 
       if (event.detail?.brandId === brandId && metaConnection && 
           (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
@@ -812,14 +800,12 @@ export function MetaTab2({
         // Check if refresh event includes a specific dateRange
         let forcedDateRange: DateRange | undefined;
         if (event.detail?.dateRange) {
-          console.log('[MetaTab2] GlobalRefreshAll event includes dateRange, using event dateRange instead of prop');
           forcedDateRange = {
             from: new Date(event.detail.dateRange.from),
             to: new Date(event.detail.dateRange.to)
           };
         }
 
-        console.log('[MetaTab2] 🔄 Calling syncMetaInsights from handleGlobalRefreshAll');
         syncMetaInsights(forcedDateRange);
       }
     };

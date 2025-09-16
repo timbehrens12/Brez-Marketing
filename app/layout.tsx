@@ -388,86 +388,7 @@ export default function RootLayout({
                 return fetchPromise
               }
 
-              // Override console methods with safety check to prevent duplicate declarations
-              if (!window._consoleOverrideApplied) {
-                // Store original console methods
-                const originalLog = console.log
-                const originalWarn = console.warn
-                
-                // Override console.log to suppress various unwanted messages
-                console.log = function(...args) {
-                  if (args.some(arg =>
-                    typeof arg === 'string' && (
-                      // Network request logs
-                      arg.includes('409 (Conflict)') ||
-                      arg.includes('disconnect-platform 409') ||
-                      arg.includes('POST https://') && arg.includes('409') ||
-                      // Browser extension logs
-                      arg.includes('content-script.js') ||
-                      arg.includes('AdUnit') ||
-                      arg.includes('Document already loaded') ||
-                      arg.includes('Attempting to initialize') ||
-                      arg.includes('initialized successfully')
-                    )
-                  )) {
-                    return // Suppress these logs
-                  }
-                  originalLog.apply(console, args)
-                }
 
-                // Override console.warn to suppress GoTrueClient warnings
-                console.warn = function(...args) {
-                  if (args.some(arg =>
-                    typeof arg === 'string' && (
-                      arg.includes('Multiple GoTrueClient instances detected') ||
-                      arg.includes('Failed to parse URL from /pipeline') ||
-                      arg.includes('Redis client was initialized without url or token')
-                    )
-                  )) {
-                    return // Suppress these warnings
-                  }
-                  originalWarn.apply(console, args)
-                }
-                
-                // Mark as applied to prevent duplicate overrides
-                window._consoleOverrideApplied = true
-              }
-
-              // Also suppress specific error messages (inside same safety check)
-              if (!window._consoleErrorOverrideApplied) {
-                const originalError = console.error
-                console.error = function(...args) {
-                if (args.some(arg =>
-                  typeof arg === 'string' && (
-                    arg.includes('400 Bad Request') ||
-                    arg.includes('409 (Conflict)') ||
-                    arg.includes('disconnect-platform 409') ||
-                    arg.includes('outreach_message_usage') ||
-                    // Filter out extension listener timeout errors
-                    arg.includes('listener indicated an asynchronous response') ||
-                    arg.includes('message channel closed before a response') ||
-                    arg.includes('asynchronous response by returning true') ||
-                    arg.includes('message channel closed') ||
-                    // Filter out specific Supabase query errors we're debugging
-                    arg.includes('user_id=eq.') ||
-                    arg.includes('Bad Request') ||
-                    // Filter out browser extension errors
-                    arg.includes('content-script.js') ||
-                    arg.includes('AdUnit') ||
-                    arg.includes('Document already loaded') ||
-                    // Filter out React hydration errors
-                    arg.includes('Minified React error #418') ||
-                    arg.includes('Text content does not match') ||
-                    arg.includes('Hydration failed') ||
-                    arg.includes('There was an error while hydrating')
-                  )
-                )) {
-                  return // Suppress these errors
-                }
-                originalError.apply(console, args)
-                }
-                window._consoleErrorOverrideApplied = true
-              }
 
               // Add global error handler for uncaught errors including React hydration
               window.addEventListener('error', function(event) {
@@ -506,7 +427,6 @@ export default function RootLayout({
                     'AdBlock', 'AdGuard', 'uBlock', 'Ghostery', 'Privacy Badger',
                     'AdUnit', 'AdBlock Plus', 'Fair AdBlocker'
                   ]
-                  console.log('Extension detection: Check browser extension manager for:', knownAdExtensions.join(', '))
                 }
                 return extensions
               }
