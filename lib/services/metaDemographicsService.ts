@@ -87,7 +87,7 @@ class MetaDemographicsService {
   }
 
   /**
-   * Main entry point: Start comprehensive 12-month sync for a brand
+   * Main entry point: Start comprehensive sync for a brand (discovers actual account date range)
    */
   async startComprehensiveSync(brandId: string): Promise<{ success: boolean; message: string; jobsCreated: number }> {
     try {
@@ -125,7 +125,7 @@ class MetaDemographicsService {
 
       return { 
         success: true, 
-        message: `Created ${jobsCreated} sync jobs for 12-month demographics data`, 
+        message: `Created ${jobsCreated} sync jobs for comprehensive demographics data (account history)`, 
         jobsCreated 
       }
     } catch (error) {
@@ -135,11 +135,61 @@ class MetaDemographicsService {
   }
 
   /**
+   * Discover the actual account start date from existing campaign data
+   */
+  private async discoverAccountStartDate(brandId: string): Promise<Date> {
+    const tables = [
+      'meta_ad_daily_insights',
+      'meta_adset_daily_insights', 
+      'meta_campaign_daily_insights',
+      'meta_campaign_daily_stats'
+    ]
+    
+    let earliestDate: Date | null = null
+    
+    for (const table of tables) {
+      try {
+        const { data } = await this.supabase
+          .from(table)
+          .select('date')
+          .eq('brand_id', brandId)
+          .order('date', { ascending: true })
+          .limit(1)
+        
+        if (data && data.length > 0) {
+          const tableEarliest = new Date(data[0].date)
+          if (!earliestDate || tableEarliest < earliestDate) {
+            earliestDate = tableEarliest
+          }
+        }
+      } catch (error) {
+        console.log(`Could not query ${table} for start date discovery`)
+      }
+    }
+    
+    // Fallback to 12 months ago if no data found
+    if (!earliestDate) {
+      earliestDate = new Date()
+      earliestDate.setFullYear(earliestDate.getFullYear() - 1)
+    }
+    
+    console.log(`[Demographics Service] Discovered account start date: ${earliestDate.toISOString().split('T')[0]}`)
+    return earliestDate
+  }
+
+  /**
    * Create tiered sync jobs following ChatGPT's granularity policy
+   * Now uses actual account start date instead of hardcoded 12 months
    */
   private async createTieredSyncJobs(brandId: string, connectionId: string, accountId: string): Promise<DemographicsJob[]> {
     const jobs: DemographicsJob[] = []
     const today = new Date()
+    
+    // Discover actual account start date
+    const accountStartDate = await this.discoverAccountStartDate(brandId)
+    const daysSinceStart = Math.ceil((today.getTime() - accountStartDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    console.log(`[Demographics Service] Account active for ${daysSinceStart} days (since ${accountStartDate.toISOString().split('T')[0]})`)
     
     // Phase 1: Recent data (0-35 days) - Daily granularity
     for (let i = 0; i <= 35; i++) {
@@ -166,12 +216,23 @@ class MetaDemographicsService {
       }
     }
 
-    // Phase 2: Medium-term data (36-180 days) - Weekly granularity
-    for (let week = 6; week <= 26; week++) { // Start from week 6 (after daily data)
+    // Phase 2: Medium-term data (36-180 days or to account start) - Weekly granularity
+    const maxWeeksBack = Math.min(26, Math.ceil(daysSinceStart / 7)) // Limit to account age
+    const startingWeek = Math.max(6, 6) // Start from week 6 (after daily data)
+    
+    for (let week = startingWeek; week <= maxWeeksBack; week++) {
       const weekStart = new Date(today)
       weekStart.setDate(weekStart.getDate() - (week * 7))
       const weekEnd = new Date(weekStart)
       weekEnd.setDate(weekEnd.getDate() + 6)
+      
+      // Don't go before account start date
+      if (weekEnd < accountStartDate) continue
+      
+      // Adjust start date if it goes before account start
+      if (weekStart < accountStartDate) {
+        weekStart.setTime(accountStartDate.getTime())
+      }
       
       const startStr = weekStart.toISOString().split('T')[0]
       const endStr = weekEnd.toISOString().split('T')[0]
@@ -194,10 +255,21 @@ class MetaDemographicsService {
       }
     }
 
-    // Phase 3: Historical data (181-365 days) - Monthly granularity
-    for (let month = 6; month <= 12; month++) {
+    // Phase 3: Historical data - Monthly granularity (go back to account start or max 24 months)
+    const maxMonthsBack = Math.min(24, Math.ceil(daysSinceStart / 30)) // Limit to 24 months or account age
+    const startingMonth = Math.max(6, Math.ceil((daysSinceStart - 180) / 30)) // Start after weekly data ends
+    
+    for (let month = startingMonth; month <= maxMonthsBack; month++) {
       const monthStart = new Date(today.getFullYear(), today.getMonth() - month, 1)
       const monthEnd = new Date(today.getFullYear(), today.getMonth() - month + 1, 0)
+      
+      // Don't go before account start date
+      if (monthEnd < accountStartDate) continue
+      
+      // Adjust start date if it goes before account start
+      if (monthStart < accountStartDate) {
+        monthStart.setTime(accountStartDate.getTime())
+      }
       
       const startStr = monthStart.toISOString().split('T')[0]
       const endStr = monthEnd.toISOString().split('T')[0]
