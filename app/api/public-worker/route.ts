@@ -27,6 +27,19 @@ export async function POST(request: NextRequest) {
     let processedCount = 0
     const results = []
     
+    // Also check for new demographics jobs in the dedicated table
+    const { getSupabaseClient } = await import('@/lib/supabase/client')
+    const supabase = getSupabaseClient()
+    
+    const { data: demographicsJobs, error: demoError } = await supabase
+      .from('meta_demographics_jobs_ledger_v2')
+      .select('job_key, brand_id, request_metadata')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(maxJobs)
+    
+    const demographicsWaiting = demographicsJobs?.length || 0
+    
     // Get waiting jobs from both queues
     const shopifyWaiting = await shopifyQueue.getWaiting()
     const shopifyActive = await shopifyQueue.getActive()
@@ -35,13 +48,43 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Public Worker] Shopify: ${shopifyWaiting.length} waiting, ${shopifyActive.length} active`)
     console.log(`[Public Worker] Meta: ${metaWaiting.length} waiting, ${metaActive.length} active`)
+    console.log(`[Public Worker] Demographics: ${demographicsWaiting} waiting`)
     
-    // Combine jobs (prioritize Meta since it's been stuck)
+    // Combine jobs (prioritize Demographics > Meta > Shopify)
     const allWaitingJobs = [...metaWaiting, ...shopifyWaiting]
     const totalActive = shopifyActive.length + metaActive.length
     
-    // Process waiting jobs
-    for (let i = 0; i < Math.min(allWaitingJobs.length, maxJobs); i++) {
+    // First, process demographics jobs (highest priority)
+    if (demographicsJobs && demographicsJobs.length > 0 && processedCount < maxJobs) {
+      const MetaDemographicsService = (await import('@/lib/services/metaDemographicsService')).default
+      const demographicsService = new MetaDemographicsService()
+      
+      for (const demoJob of demographicsJobs.slice(0, maxJobs - processedCount)) {
+        try {
+          console.log(`[Public Worker] Processing demographics job ${demoJob.job_key}`)
+          
+          let result
+          if (demoJob.request_metadata?.trigger_full_sync) {
+            result = await demographicsService.processTriggerJob(demoJob.job_key)
+          } else {
+            result = await demographicsService.processJob(demoJob.job_key)
+          }
+          
+          if (result.success) {
+            results.push({ type: 'demographics', job: demoJob.job_key, success: true, rowsProcessed: result.rowsProcessed })
+          } else {
+            results.push({ type: 'demographics', job: demoJob.job_key, success: false, error: result.error })
+          }
+          processedCount++
+        } catch (error) {
+          console.error(`[Public Worker] Demographics job ${demoJob.job_key} failed:`, error)
+          results.push({ type: 'demographics', job: demoJob.job_key, success: false, error: error.message })
+        }
+      }
+    }
+    
+    // Then process other jobs if we haven't reached maxJobs
+    for (let i = 0; i < Math.min(allWaitingJobs.length, maxJobs - processedCount); i++) {
       const job = allWaitingJobs[i]
       
       try {
@@ -131,7 +174,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       processed: processedCount,
-      waiting: allWaitingJobs.length - processedCount,
+      waiting: allWaitingJobs.length - processedCount + Math.max(0, demographicsWaiting - processedCount),
       active: totalActive,
       shopify: {
         waiting: shopifyWaiting.length,
@@ -140,6 +183,10 @@ export async function POST(request: NextRequest) {
       meta: {
         waiting: metaWaiting.length,
         active: metaActive.length
+      },
+      demographics: {
+        waiting: Math.max(0, demographicsWaiting - processedCount),
+        processed: results.filter(r => r.type === 'demographics' && r.success).length
       },
       results
     })
