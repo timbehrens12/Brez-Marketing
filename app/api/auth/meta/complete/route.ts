@@ -94,15 +94,40 @@ export async function POST(request: NextRequest) {
         accountId
       )
       
-      // NEW: Start comprehensive demographics sync
-      const { default: MetaDemographicsService } = await import('@/lib/services/metaDemographicsService')
-      const demographicsService = new MetaDemographicsService()
-      const demographicsResult = await demographicsService.startComprehensiveSync(state)
+      // NEW: Start SIMPLE working demographics sync (replaces broken comprehensive sync)
+      console.log(`[Meta Complete] 🚀 Starting SIMPLE demographics sync (using old working method)...`)
       
-      if (demographicsResult.success) {
-        console.log(`[Meta Complete] Started unified sync: campaigns + demographics (${demographicsResult.jobsCreated} jobs)`)
-      } else {
-        console.error(`[Meta Complete] Demographics sync failed: ${demographicsResult.message}`)
+      try {
+        // Import the working Meta service (same as the old working sync)
+        const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
+        
+        // Use a conservative 3-day range to ensure it works
+        const endDate = new Date()
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - 3)
+        
+        console.log(`[Meta Complete] 📊 Syncing demographics for last 3 days: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+        
+        // Call the real Meta service with timeout protection (same as old working method)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Demographics sync timeout after 30 seconds')), 30000)
+        )
+        
+        const demographicsResult = await Promise.race([
+          fetchMetaAdInsights(state, startDate, endDate, false),
+          timeoutPromise
+        ]) as any
+        
+        if (demographicsResult.success) {
+          console.log(`[Meta Complete] ✅ SIMPLE demographics sync successful!`)
+          console.log(`[Meta Complete] Demographics result:`, demographicsResult)
+        } else {
+          console.error(`[Meta Complete] ❌ Simple demographics sync failed:`, demographicsResult.error)
+        }
+        
+      } catch (demographicsError) {
+        console.error('[Meta Complete] Simple demographics sync error:', demographicsError)
+        // Don't fail the OAuth flow if demographics fails
       }
       
       console.log(`[Meta Complete] Queued historical backfill for brand ${state}`)

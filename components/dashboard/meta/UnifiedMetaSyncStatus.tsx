@@ -97,7 +97,11 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       // Get demographics progress - calculate from actual job data
       let demographicsProgress = 0
-      if (demographicsData.syncStatus?.days_completed && demographicsData.syncStatus?.total_days_target) {
+      
+      // PRIORITY: If sync status is completed, show 100%
+      if (demographicsData.syncStatus?.overall_status === 'completed') {
+        demographicsProgress = 100
+      } else if (demographicsData.syncStatus?.days_completed && demographicsData.syncStatus?.total_days_target) {
         demographicsProgress = Math.round((demographicsData.syncStatus.days_completed / demographicsData.syncStatus.total_days_target) * 100)
       } else if (demographicsData.jobStats?.total > 0) {
         // Fallback to job completion percentage
