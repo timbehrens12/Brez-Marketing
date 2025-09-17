@@ -101,16 +101,16 @@ export async function POST(request: NextRequest) {
         // Import the working Meta service (same as the old working sync)
         const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
         
-        // Use a conservative 3-day range to ensure it works
+        // Use 12-month range for complete historical coverage like other syncs
         const endDate = new Date()
         const startDate = new Date()
-        startDate.setDate(startDate.getDate() - 3)
+        startDate.setFullYear(startDate.getFullYear() - 1)
         
-        console.log(`[Meta Complete] 📊 Syncing demographics for last 3 days: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+        console.log(`[Meta Complete] 📊 Syncing demographics for last 12 months: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
         
-        // Call the real Meta service with timeout protection (same as old working method)
+        // Call the real Meta service with timeout protection (increased for 12-month sync)
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Demographics sync timeout after 30 seconds')), 30000)
+          setTimeout(() => reject(new Error('Demographics sync timeout after 5 minutes')), 300000)
         )
         
         const demographicsResult = await Promise.race([
