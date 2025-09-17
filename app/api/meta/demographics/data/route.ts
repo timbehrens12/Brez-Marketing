@@ -42,10 +42,25 @@ export async function GET(request: NextRequest) {
     const level = searchParams.get('level') || 'campaign'
     const forceRefresh = searchParams.get('forceRefresh') === 'true'
 
-    if (!brandId || !dateFrom || !dateTo) {
+    if (!brandId) {
       return NextResponse.json({ 
-        error: 'Missing required parameters: brandId, dateFrom, dateTo' 
+        error: 'Missing required parameter: brandId' 
       }, { status: 400 })
+    }
+
+    // If no date range provided, use a default range (last 12 months)
+    let finalDateFrom = dateFrom
+    let finalDateTo = dateTo
+    
+    if (!finalDateFrom || !finalDateTo) {
+      const today = new Date()
+      const yearAgo = new Date()
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+      
+      finalDateFrom = yearAgo.toISOString().split('T')[0]
+      finalDateTo = today.toISOString().split('T')[0]
+      
+      console.log(`[Demographics API] No date range provided, using default: ${finalDateFrom} to ${finalDateTo}`)
     }
 
     // Verify user has access to this brand (either as owner or through brand_access)
@@ -76,7 +91,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check cache first (unless force refresh)
-    const cacheKey = `demog:v2:${brandId}:${dateFrom}:${dateTo}:${breakdownType}:${level}`
+    const cacheKey = `demog:v2:${brandId}:${finalDateFrom}:${finalDateTo}:${breakdownType}:${level}`
     
     if (!forceRefresh && redis) {
       try {
@@ -88,7 +103,7 @@ export async function GET(request: NextRequest) {
             data,
             cached: true,
             breakdown_type: breakdownType,
-            date_range: { from: dateFrom, to: dateTo }
+            date_range: { from: finalDateFrom, to: finalDateTo }
           })
         }
       } catch (cacheError) {
@@ -113,8 +128,8 @@ export async function GET(request: NextRequest) {
         .select('*')
         .eq('brand_id', brandId)
         .eq('breakdown_type', dbBreakdownType)
-        .gte('date_range_start', dateFrom)
-        .lte('date_range_end', dateTo)
+        .gte('date_range_start', finalDateFrom)
+        .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
       
       data = result.data
@@ -126,8 +141,8 @@ export async function GET(request: NextRequest) {
         .select('*')
         .eq('brand_id', brandId)
         .eq('breakdown_type', breakdownType)
-        .gte('date_range_start', dateFrom)
-        .lte('date_range_end', dateTo)
+        .gte('date_range_start', finalDateFrom)
+        .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
       
       data = result.data
@@ -174,7 +189,7 @@ export async function GET(request: NextRequest) {
       data: formattedData,
       cached: false,
       breakdown_type: breakdownType,
-      date_range: { from: dateFrom, to: dateTo },
+      date_range: { from: finalDateFrom, to: finalDateTo },
       total_records: data.length
     })
 
