@@ -29,9 +29,6 @@ interface AudienceDemographicsWidgetProps {
 
 const BREAKDOWN_TYPES = [
   { value: 'age_gender', label: 'Age + Gender' },
-  { value: 'placement', label: 'Ad Placement' },
-  { value: 'device_platform', label: 'Device Type' },
-  { value: 'region', label: 'Geographic Region' },
   { value: 'age', label: 'Age Groups' },
   { value: 'gender', label: 'Gender' }
 ]
@@ -48,7 +45,7 @@ export function AudienceDemographicsWidget({
 }: AudienceDemographicsWidgetProps) {
   const [data, setData] = useState<DemographicData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBreakdown, setSelectedBreakdown] = useState('placement')
+  const [selectedBreakdown, setSelectedBreakdown] = useState('age_gender')
 
   const fetchData = async () => {
     if (!brandId) return
@@ -59,7 +56,7 @@ export function AudienceDemographicsWidget({
     try {
       const params = new URLSearchParams({
         brandId,
-        breakdownType: selectedBreakdown,
+        breakdown: selectedBreakdown,
         level: 'campaign'
       })
 

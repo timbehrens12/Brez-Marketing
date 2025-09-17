@@ -28,8 +28,8 @@ interface DevicePerformanceWidgetProps {
 }
 
 const BREAKDOWN_TYPES = [
-  { value: 'device', label: 'Device Types' },
-  { value: 'platform', label: 'Platforms' }
+  { value: 'device_platform', label: 'Device Types' },
+  { value: 'placement', label: 'Platforms' }
 ]
 
 export function DevicePerformanceWidget({ 
@@ -41,7 +41,7 @@ export function DevicePerformanceWidget({
 }: DevicePerformanceWidgetProps) {
   const [data, setData] = useState<DeviceData[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBreakdown, setSelectedBreakdown] = useState('device')
+  const [selectedBreakdown, setSelectedBreakdown] = useState('device_platform')
 
   const fetchData = async () => {
     if (!brandId) return
@@ -52,7 +52,7 @@ export function DevicePerformanceWidget({
     try {
       const params = new URLSearchParams({
         brandId,
-        breakdownType: selectedBreakdown === 'device' ? 'device_platform' : 'placement',
+        breakdown: selectedBreakdown,
         level: 'campaign'
       })
 
