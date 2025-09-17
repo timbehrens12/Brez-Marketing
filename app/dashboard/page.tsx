@@ -182,11 +182,13 @@ export default function DashboardPage() {
       }
     }
     
-    // ✅ ALWAYS default to TODAY when visiting the site
+    // ✅ ALWAYS default to LAST 30 DAYS when visiting the site (better for Meta demographics)
     const now = new Date()
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     const initialRange = {
-      from: startOfDay(now),
-      to: endOfDay(now) // Use endOfDay() to exactly match DateRangePicker "Today" preset
+      from: startOfDay(thirtyDaysAgo),
+      to: endOfDay(now)
     }
     
     // Set global date range for default case

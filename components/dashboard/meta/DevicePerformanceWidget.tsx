@@ -61,9 +61,9 @@ export function DevicePerformanceWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
-        // console.log(`[Device Performance Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
+        console.log(`[Device Performance] 📅 Using date range: ${startDate} to ${endDate}`)
       } else {
-        // console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
+        console.log(`[Device Performance] ⚠️ No date range provided, API will use 12-month default`)
       }
 
       const response = await fetch(`/api/meta/demographics/data?${params}`)
@@ -204,7 +204,7 @@ export function DevicePerformanceWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2 pb-6">
+      <CardContent className="p-4 pt-2 pb-8">
         {isLoading ? (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-4">

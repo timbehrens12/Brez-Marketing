@@ -65,6 +65,9 @@ export function AudienceDemographicsWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
+        console.log(`[Audience Demographics] 📅 Using date range: ${startDate} to ${endDate}`)
+      } else {
+        console.log(`[Audience Demographics] ⚠️ No date range provided, API will use 12-month default`)
       }
 
       const response = await fetch(`/api/meta/demographics/data?${params}`)
@@ -218,7 +221,7 @@ export function AudienceDemographicsWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2 pb-6">
+      <CardContent className="p-4 pt-2 pb-8">
         {isLoading ? (
           <div className="space-y-3">
             <div className="h-4 bg-gray-800 rounded animate-pulse" />
@@ -276,10 +279,10 @@ export function AudienceDemographicsWidget({
             </div>
 
             {/* Clean Data Table */}
-            <div className="space-y-2 pb-4">
-              <div className="text-xs font-medium text-gray-400 mb-2">Performance Breakdown</div>
+            <div className="space-y-2 pb-6">
+              <div className="text-xs font-medium text-gray-400 mb-3">Performance Breakdown</div>
               {data.slice(0, 8).map((item) => (
-                <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">
+                <div key={item.breakdown_value} className="flex items-center justify-between py-3 px-3 bg-[#0f0f0f]/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-gray-400" />
                     <span className="text-sm text-gray-300 font-medium">{formatBreakdownValue(item.breakdown_value)}</span>
