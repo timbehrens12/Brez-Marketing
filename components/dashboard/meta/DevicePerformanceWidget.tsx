@@ -204,7 +204,7 @@ export function DevicePerformanceWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
+      <CardContent className="p-4 pt-2 pb-6">
         {isLoading ? (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-4">

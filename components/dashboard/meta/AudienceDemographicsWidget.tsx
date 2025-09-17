@@ -147,7 +147,7 @@ export function AudienceDemographicsWidget({
       return value.charAt(0).toUpperCase() + value.slice(1)
     }
     if (selectedBreakdown === 'device_platform') {
-      return value.charAt(0).toUpperCase() + value.slice(1)
+      return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
     if (selectedBreakdown === 'region') {
       return value.toUpperCase()
@@ -218,7 +218,7 @@ export function AudienceDemographicsWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
+      <CardContent className="p-4 pt-2 pb-6">
         {isLoading ? (
           <div className="space-y-3">
             <div className="h-4 bg-gray-800 rounded animate-pulse" />
@@ -276,7 +276,7 @@ export function AudienceDemographicsWidget({
             </div>
 
             {/* Clean Data Table */}
-            <div className="space-y-2">
+            <div className="space-y-2 pb-4">
               <div className="text-xs font-medium text-gray-400 mb-2">Performance Breakdown</div>
               {data.slice(0, 8).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">
