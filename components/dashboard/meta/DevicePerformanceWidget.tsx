@@ -61,9 +61,9 @@ export function DevicePerformanceWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
-        console.log(`[Device Performance] 📅 Using date range: ${startDate} to ${endDate}`)
+        // console.log(`[Device Performance Widget] 🔥 Using date range: ${startDate} to ${endDate}`)
       } else {
-        console.log(`[Device Performance] ⚠️ No date range provided, API will use 12-month default`)
+        // console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
       }
 
       const response = await fetch(`/api/meta/demographics/data?${params}`)
@@ -82,9 +82,22 @@ export function DevicePerformanceWidget({
   }
 
   useEffect(() => {
-    // console.log(`[Device Performance Widget] 🔥 useEffect triggered - connectionId: ${connectionId}, breakdown: ${selectedBreakdown}, dateRange:`, dateRange)
-    fetchData()
-  }, [connectionId, selectedBreakdown, dateRange])
+    // Always fetch data when component mounts or key props change
+    // Add a small delay to ensure API is ready
+    const timer = setTimeout(() => {
+      fetchData()
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [brandId, selectedBreakdown, dateRange])
+
+  // Also fetch on mount if we have brandId
+  useEffect(() => {
+    if (brandId && !data.length && !isLoading) {
+      console.log('[DevicePerformance] Initial mount fetch')
+      fetchData()
+    }
+  }, [brandId])
 
   // Listen for refresh events
   useEffect(() => {
