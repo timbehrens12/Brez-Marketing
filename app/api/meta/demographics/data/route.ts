@@ -101,14 +101,21 @@ export async function GET(request: NextRequest) {
     let error = null
     
     // Device/platform data is in meta_device_performance table
-    if (['device_platform', 'placement', 'publisher_platform'].includes(breakdownType)) {
+    if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
+      // Map frontend breakdown types to database breakdown types
+      const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
+                             : breakdownType === 'placement' ? 'platform'
+                             : breakdownType === 'publisher_platform' ? 'platform'
+                             : breakdownType // 'device' and 'platform' map directly
+      
       const result = await supabase
         .from('meta_device_performance')
         .select('*')
         .eq('brand_id', brandId)
+        .eq('breakdown_type', dbBreakdownType)
         .gte('date_range_start', dateFrom)
         .lte('date_range_end', dateTo)
-        .order('device_platform')
+        .order('breakdown_value')
       
       data = result.data
       error = result.error
@@ -135,42 +142,21 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Process and format data for frontend (convert old table format to new format)
-    const convertedData = data?.map(item => {
-      // Handle device_platform data (from meta_device_performance table)
-      if (['device_platform', 'placement', 'publisher_platform'].includes(breakdownType)) {
-        return {
-          breakdown_key: item.device_platform || item.placement || item.publisher_platform,
-          breakdown_value: item.device_platform || item.placement || item.publisher_platform,
-          date_value: item.date_range_start,
-          impressions: item.impressions,
-          clicks: item.clicks,
-          spend: item.spend,
-          reach: item.reach,
-          conversions: item.conversions || 0,
-          ctr: item.ctr,
-          cpc: item.cpc,
-          cpm: item.cpm,
-          cost_per_conversion: 0
-        }
-      } else {
-        // Handle age/gender data (from meta_demographics table)
-        return {
-          breakdown_key: item.breakdown_value,
-          breakdown_value: item.breakdown_value,
-          date_value: item.date_range_start,
-          impressions: item.impressions,
-          clicks: item.clicks,
-          spend: item.spend,
-          reach: item.reach,
-          conversions: item.conversions || 0,
-          ctr: item.ctr,
-          cpc: item.cpc,
-          cpm: item.cpm,
-          cost_per_conversion: 0
-        }
-      }
-    }) || []
+    // Process and format data for frontend (both tables use breakdown_value)
+    const convertedData = data?.map(item => ({
+      breakdown_key: item.breakdown_value,
+      breakdown_value: item.breakdown_value,
+      date_value: item.date_range_start,
+      impressions: item.impressions,
+      clicks: item.clicks,
+      spend: item.spend,
+      reach: item.reach,
+      conversions: item.conversions || 0,
+      ctr: item.ctr,
+      cpc: item.cpc,
+      cpm: item.cpm,
+      cost_per_conversion: 0
+    })) || []
     
     const formattedData = formatDataForWidget(convertedData, breakdownType)
 
