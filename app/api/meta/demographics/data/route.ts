@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
-    const breakdownType = searchParams.get('breakdownType') || 'age_gender'
+    const breakdownType = searchParams.get('breakdown') || searchParams.get('breakdownType') || 'age_gender'
     const level = searchParams.get('level') || 'campaign'
     const forceRefresh = searchParams.get('forceRefresh') === 'true'
 
@@ -96,18 +96,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get data from service
-    const demographicsService = new MetaDemographicsService()
-    const data = await demographicsService.getDemographicsForWidget(
-      brandId,
-      dateFrom,
-      dateTo,
-      breakdownType,
-      level
-    )
+    // Get data from the correct table (meta_demographics from manual sync)
+    const { data: data, error } = await supabase
+      .from('meta_demographics')
+      .select('*')
+      .eq('brand_id', brandId)
+      .eq('breakdown_type', breakdownType)
+      .gte('date_range_start', dateFrom)
+      .lte('date_range_end', dateTo)
+      .order('breakdown_value')
+    
+    if (error) {
+      console.error('Error fetching demographics data:', error)
+      return NextResponse.json({ 
+        error: 'Failed to fetch demographics data',
+        details: error.message 
+      }, { status: 500 })
+    }
 
-    // Process and format data for frontend
-    const formattedData = formatDataForWidget(data, breakdownType)
+    // Process and format data for frontend (convert old table format to new format)
+    const convertedData = data?.map(item => ({
+      breakdown_key: item.breakdown_value,
+      breakdown_value: item.breakdown_value,
+      date_value: item.date_range_start,
+      impressions: item.impressions,
+      clicks: item.clicks,
+      spend: item.spend,
+      reach: item.reach,
+      conversions: item.conversions || 0,
+      ctr: item.ctr,
+      cpc: item.cpc,
+      cpm: item.cpm,
+      cost_per_conversion: 0
+    })) || []
+    
+    const formattedData = formatDataForWidget(convertedData, breakdownType)
 
     // Cache the result for 5 minutes
     if (redis) {
