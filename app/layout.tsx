@@ -23,14 +23,15 @@ declare global {
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Brez Dashboard",
-  description: "E-commerce analytics dashboard",
+  title: "Brez Marketing Dashboard",
+  description: "Professional brand scaling infrastructure - All-in-one AI-powered toolkit for freelancers and brand scalers",
   other: {
     'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com https://js.stripe.com https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.openai.com https://clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com wss://*.supabase.co https://graph.facebook.com https://*.facebook.com; frame-src 'self' https://js.stripe.com https://js.clerk.dev https://*.clerk.dev https://clerk.brezmarketingdashboard.com; object-src 'none'; base-uri 'self'; form-action 'self';"
   },
+  manifest: "/brand/site.webmanifest",
   icons: {
     icon: "/brand/favicon.ico",
-    shortcut: "/brand/favicon.ico",
+    shortcut: "/brand/favicon.ico", 
     apple: "/brand/apple-touch-icon.png",
     other: [
       {
@@ -47,8 +48,14 @@ export const metadata: Metadata = {
       {
         rel: "icon",
         type: "image/png",
-        sizes: "96x96",
-        url: "/brand/favicon-96x96.png",
+        sizes: "192x192",
+        url: "/brand/web-app-manifest-192x192.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "512x512",
+        url: "/brand/web-app-manifest-512x512.png",
       },
     ],
   }
