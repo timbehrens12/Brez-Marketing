@@ -9,6 +9,7 @@ export default authMiddleware({
     "/api/webhooks(.*)",
     "/privacy",
     "/terms",
+    "/data-security",
     // REMOVED "/dashboard" - this should require authentication!
     "/sign-in(.*)",
     "/login(.*)",
@@ -68,7 +69,7 @@ export default authMiddleware({
     const protectedRoutes = [
       '/dashboard', '/settings', '/analytics', '/customers', '/orders', '/onboarding',
       '/action-center', '/ad-creative-studio', '/ai-dashboard', '/ai-marketing-consultant',
-      '/brand-report', '/critical-brands', '/data-security', '/debug-shopify-sync', 
+      '/brand-report', '/critical-brands', '/debug-shopify-sync', 
       '/debug-supabase', '/lead-generator', '/marketing-assistant', '/meta-test',
       '/outreach-tool', '/setup-jwt', '/share-brands', '/shopify'
     ]
