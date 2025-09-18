@@ -297,50 +297,49 @@ export default function HomePage() {
                 title={<span>EVERYTHING IN ONE PLACE</span>}
                 sub="Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard."
               />
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              <div className="space-y-16 mb-16">
                 {[
                   { 
                     icon: Zap, 
                     title: "All-In-One Platform", 
                     desc: "Replace Zapier, HubSpot, Canva, Triple Whale, Hyros, Google Analytics, and 8+ other tools with one login.",
-                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics"]
+                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics", "Google Ads", "Facebook Ads"]
                   },
                   { 
                     icon: Palette, 
                     title: "Fully White-Labelable", 
                     desc: "Rebrand everything as your own software. Your logo, your colors, your branding - clients never see our name.",
-                    tags: ["White-Label", "Custom Branding", "Your Logo"]
+                    tags: ["White-Label", "Custom Branding", "Your Logo", "Your Colors", "Your Domain", "Client Portal"]
                   },
                   { 
                     icon: Shield, 
                     title: "Own Your Business", 
                     desc: "No dependencies on external tools. Everything runs under your brand with enterprise-grade reliability.",
-                    tags: ["Enterprise", "Reliable", "Independent"]
+                    tags: ["Enterprise", "Reliable", "Independent", "99.9% Uptime", "No Dependencies", "Full Control"]
                   },
                 ].map((feature, i) => (
-                  <div
-                    key={i}
-                    className="relative group rounded-2xl p-8 text-center border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))] hover:border-white/25 transition-all"
-                  >
-                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(400px_200px_at_50%_-20%,rgba(255,42,42,.15),transparent)]" />
-                    <div className="relative">
-                      <div className="inline-block p-4 rounded-lg mb-6 border border-white/15 bg-black/40">
-                        <feature.icon className="w-8 h-8 text-white/70" />
+                  <div key={i} className="text-center">
+                    {/* Header with Icon and Title */}
+                    <div className="flex items-center justify-center gap-4 mb-6">
+                      <div className="p-3 rounded-xl bg-gradient-to-r from-[var(--brand-red)]/20 to-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 shadow-[0_0_20px_rgba(255,42,42,0.2)]">
+                        <feature.icon className="w-7 h-7 text-[var(--brand-red)]" />
                       </div>
-                      <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                      <p className="text-white/70 font-mono mb-4">{feature.desc}</p>
-                      
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {feature.tags.map((tag, tagIndex) => (
-                          <span
-                            key={tagIndex}
-                            className="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-black/80 to-black/60 border border-white/30 rounded-lg text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_2px_12px_rgba(255,42,42,0.2)] transition-all"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      <h3 className="text-3xl font-black text-white">{feature.title}</h3>
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-white/70 text-lg max-w-4xl mx-auto leading-relaxed mb-8 font-mono">{feature.desc}</p>
+                    
+                    {/* Tags Cloud */}
+                    <div className="flex flex-wrap gap-3 justify-center max-w-5xl mx-auto">
+                      {feature.tags.map((tag, tagIndex) => (
+                        <span
+                          key={tagIndex}
+                          className="px-6 py-3 text-sm font-bold bg-gradient-to-r from-black/90 via-black/95 to-black/90 border border-white/25 rounded-full text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_4px_20px_rgba(255,42,42,0.3)] hover:scale-105 transition-all duration-300 cursor-default backdrop-blur-sm hover:bg-gradient-to-r hover:from-[var(--brand-red)]/10 hover:via-black/95 hover:to-[var(--brand-red)]/10"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 ))}
