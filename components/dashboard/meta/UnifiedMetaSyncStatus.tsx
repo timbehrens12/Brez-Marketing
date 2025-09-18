@@ -100,28 +100,26 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       // Check if we have demographics data (simple approach)
       if (demographicsData.success && demographicsData.data && demographicsData.data.length > 0) {
-        // We have demographics data - show completed
+        // We have demographics data - assume completed
         demographicsProgress = 100
+      } else if (connectionData.sync_status === 'in_progress') {
+        // Sync is active but no demographics data yet - show progress
+        const now = Date.now()
+        const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
+        demographicsProgress = Math.min(95, 10 + Math.floor(elapsedSeconds / 2)) // Gradual increase
       } else {
-        // No demographics data yet
+        // No sync active and no data - show 0%
         demographicsProgress = 0
       }
       
       const insightsProgress = getInsightsProgress(connectionData)
 
-      // Check if sync is truly completed - if we have demographics data and other data, mark as completed
-      const isReallyCompleted = demographicsProgress === 100 && campaignProgress > 0 && insightsProgress > 0
-      
-      if (isReallyCompleted && connectionData.sync_status === 'in_progress') {
-        // Force sync status to completed since we have all the data
-        console.log('[UnifiedMetaSyncStatus] ✅ Sync has all data - forcing completed status')
-        setSyncStatus(prev => ({ 
-          ...prev, 
-          overall_status: 'completed',
-          sync_status: 'completed',
-          last_updated: new Date().toISOString()
-        }))
-        return // Exit early to prevent showing in-progress UI
+      const hasDemographicsData = demographicsData.success && demographicsData.data && demographicsData.data.length > 0
+      let demographicsPhaseStatus: SyncPhase['status'] = 'pending'
+      if (hasDemographicsData) {
+        demographicsPhaseStatus = 'completed'
+      } else if (connectionData.sync_status === 'in_progress') {
+        demographicsPhaseStatus = 'in_progress'
       }
 
       // Show calculated progress during active sync
@@ -147,7 +145,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
           id: 'demographics',
           name: 'Demographics Data',
           icon: <Users className="h-4 w-4" />,
-          status: getPhaseStatus(demographicsData.syncStatus?.overall_status, 'demographics'),
+          status: demographicsPhaseStatus,
           progress: demographicsProgress,
           estimated_time: '5-15 minutes'
         },
@@ -347,8 +345,21 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     fetchSyncStatus()
   }, [brandId, connectionId]) // Only refetch when brand/connection changes
 
-  // DISABLED: No automatic polling - sync should complete and stay completed
-  // Only manual refresh if absolutely needed
+  // Smart polling - only poll when sync is actually in progress
+  useEffect(() => {
+    if (!syncStatus) return
+
+    const isActiveSync = syncStatus.overall_status === 'in_progress' || 
+                         syncStatus.sync_status === 'in_progress'
+    
+    if (isActiveSync) {
+      const interval = setInterval(() => {
+        fetchSyncStatus()
+      }, 5000) // Poll every 5 seconds during active sync only
+      
+      return () => clearInterval(interval)
+    }
+  }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
 
   if (!isVisible || !syncStatus) {
     return null

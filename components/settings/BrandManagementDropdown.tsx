@@ -720,6 +720,7 @@ export function BrandManagementDropdown({
                             )}
                           </Tooltip>
                         </TooltipProvider>
+                        
                       </>
                     ) : (
                       <>

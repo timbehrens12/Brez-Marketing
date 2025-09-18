@@ -233,9 +233,21 @@ export async function POST(request: NextRequest) {
       }
       
       console.log(`[Meta Complete] Queued historical backfill for brand ${state}`)
+      
+      // FINAL STEP: Mark the connection sync as fully completed
+      await supabase
+        .from('platform_connections')
+        .update({ 
+          sync_status: 'completed',
+          last_sync: new Date().toISOString(),
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', connectionData.id)
+        
     } catch (error) {
       console.error('[Meta Complete] Backfill queue failed:', error)
-      // Don't fail the response, just log the error
+      // Re-throw the error to ensure the client knows the process failed
+      throw new Error(`Failed to queue backfill jobs: ${error.message}`)
     }
 
     return NextResponse.json({ success: true, redirect: '/settings?tab=brand-management&success=true&backfill=started' })
