@@ -10,10 +10,15 @@ export function CustomSignOutButton() {
   const router = useRouter()
 
   const handleSignOut = async () => {
-    await signOut(() => {
-      // Immediately redirect to sign-in page after sign out
-      router.push("/sign-in")
-    })
+    try {
+      await signOut()
+      // Force immediate redirect after sign out
+      window.location.href = "/sign-in"
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Still redirect even if there's an error
+      window.location.href = "/sign-in"
+    }
   }
 
   return (
