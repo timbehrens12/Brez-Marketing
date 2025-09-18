@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         .eq('id', connectionData.id)
 
       // Queue historical backfill (existing campaigns/ads data)
-      await MetaQueueService.queueCompleteHistoricalSync(
+      await MetaQueueService.addHistoricalBackfillJobs(
         state,
         connectionData.id,
         access_token,
