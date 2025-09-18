@@ -67,6 +67,16 @@ export default function HomePage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [activePreview, setActivePreview] = useState('analytics')
 
+  const scrollToPricing = () => {
+    const pricingSection = document.getElementById('pricing')
+    if (pricingSection) {
+      pricingSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
   const dashboardPreviews = [
     { id: 'analytics', title: 'Analytics', icon: BarChart3 },
     { id: 'leads', title: 'Lead Gen', icon: Search },
@@ -136,11 +146,12 @@ export default function HomePage() {
                   The complete AI-powered toolkit for freelance brand scalers. Real-time analytics, automated lead generation, and professional tools to scale brands to 7+ figures.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
-                  <Link href="/login">
-                    <Button className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base">
-                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    onClick={scrollToPricing}
+                    className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                  >
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                   <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 backdrop-blur px-6 py-6">
                     <Play className="mr-2 h-5 w-5" /> Watch Demo
                   </Button>
@@ -394,7 +405,7 @@ export default function HomePage() {
           </section>
 
           {/* Pricing */}
-          <section className="py-20 sm:py-28 relative">
+          <section id="pricing" className="py-20 sm:py-28 relative">
             <div className="absolute inset-x-0 -top-6 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <SectionHeader
