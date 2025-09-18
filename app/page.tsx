@@ -297,49 +297,99 @@ export default function HomePage() {
                 title={<span>EVERYTHING IN ONE PLACE</span>}
                 sub="Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard."
               />
-              <div className="space-y-16 mb-16">
+              <div className="grid lg:grid-cols-3 gap-8 mb-16">
                 {[
                   { 
                     icon: Zap, 
-                    title: "All-In-One Platform", 
+                    title: "ALL-IN-ONE PLATFORM", 
                     desc: "Replace Zapier, HubSpot, Canva, Triple Whale, Hyros, Google Analytics, and 8+ other tools with one login.",
-                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics", "Google Ads", "Facebook Ads"]
+                    bullets: [
+                      "Unified dashboard for all marketing channels",
+                      "Replace 8+ expensive monthly subscriptions",
+                      "No more context switching between tools"
+                    ],
+                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics"]
                   },
                   { 
                     icon: Palette, 
-                    title: "Fully White-Labelable", 
+                    title: "FULLY WHITE-LABELABLE", 
                     desc: "Rebrand everything as your own software. Your logo, your colors, your branding - clients never see our name.",
-                    tags: ["White-Label", "Custom Branding", "Your Logo", "Your Colors", "Your Domain", "Client Portal"]
+                    bullets: [
+                      "Your logo, colors, and branding everywhere",
+                      "Clients never see our name or brand",
+                      "Complete rebrand capabilities included"
+                    ],
+                    tags: ["White-Label", "Custom Branding", "Your Logo"]
                   },
                   { 
                     icon: Shield, 
-                    title: "Own Your Business", 
+                    title: "OWN YOUR BUSINESS", 
                     desc: "No dependencies on external tools. Everything runs under your brand with enterprise-grade reliability.",
-                    tags: ["Enterprise", "Reliable", "Independent", "99.9% Uptime", "No Dependencies", "Full Control"]
+                    bullets: [
+                      "No dependency on external tools or services",
+                      "Enterprise-grade reliability and uptime",
+                      "Full control over your business operations"
+                    ],
+                    tags: ["Enterprise", "Reliable", "Independent"]
                   },
                 ].map((feature, i) => (
-                  <div key={i} className="text-center">
-                    {/* Header with Icon and Title */}
-                    <div className="flex items-center justify-center gap-4 mb-6">
-                      <div className="p-3 rounded-xl bg-gradient-to-r from-[var(--brand-red)]/20 to-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 shadow-[0_0_20px_rgba(255,42,42,0.2)]">
-                        <feature.icon className="w-7 h-7 text-[var(--brand-red)]" />
+                  <div key={i} className="relative">
+                    {/* Hanging Tag */}
+                    <div className="relative mb-8">
+                      {/* String/Chain */}
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-6 bg-gradient-to-b from-yellow-600 to-yellow-800"></div>
+                      
+                      {/* Metal Ring */}
+                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 border-2 border-yellow-600 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-700 shadow-[0_2px_4px_rgba(0,0,0,0.3)]"></div>
+                      
+                      {/* Tag Shape */}
+                      <div className="relative mt-8 mx-auto max-w-sm">
+                        <div 
+                          className="bg-gradient-to-br from-gray-100 to-gray-300 text-black p-6 pb-8 shadow-[0_8px_16px_rgba(0,0,0,0.3)] transform perspective-1000 rotate-y-2"
+                          style={{
+                            clipPath: 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%)'
+                          }}
+                        >
+                          {/* Hole in top right */}
+                          <div className="absolute top-3 right-3 w-2 h-2 bg-black/20 rounded-full"></div>
+                          
+                          <h3 className="text-lg font-black mb-3 text-center leading-tight">
+                            {feature.title}
+                          </h3>
+                          
+                          <div className="border-b border-black/20 mb-4"></div>
+                          
+                          {feature.bullets.map((bullet, bulletIndex) => (
+                            <div key={bulletIndex} className="flex items-start mb-2">
+                              <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              <span className="text-xs font-medium leading-relaxed">{bullet}</span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Tag Shadow */}
+                        <div 
+                          className="absolute inset-0 bg-black/10 transform translate-x-1 translate-y-1 -z-10"
+                          style={{
+                            clipPath: 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%)'
+                          }}
+                        ></div>
                       </div>
-                      <h3 className="text-3xl font-black text-white">{feature.title}</h3>
                     </div>
                     
-                    {/* Description */}
-                    <p className="text-white/70 text-lg max-w-4xl mx-auto leading-relaxed mb-8 font-mono">{feature.desc}</p>
-                    
-                    {/* Tags Cloud */}
-                    <div className="flex flex-wrap gap-3 justify-center max-w-5xl mx-auto">
-                      {feature.tags.map((tag, tagIndex) => (
-                        <span
-                          key={tagIndex}
-                          className="px-6 py-3 text-sm font-bold bg-gradient-to-r from-black/90 via-black/95 to-black/90 border border-white/25 rounded-full text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_4px_20px_rgba(255,42,42,0.3)] hover:scale-105 transition-all duration-300 cursor-default backdrop-blur-sm hover:bg-gradient-to-r hover:from-[var(--brand-red)]/10 hover:via-black/95 hover:to-[var(--brand-red)]/10"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    {/* Description and Tags below */}
+                    <div className="text-center">
+                      <p className="text-white/70 text-sm mb-4 font-mono">{feature.desc}</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {feature.tags.map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            className="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-black/80 to-black/60 border border-white/30 rounded-lg text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_2px_12px_rgba(255,42,42,0.2)] transition-all"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
