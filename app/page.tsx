@@ -101,47 +101,47 @@ export default function HomePage() {
           <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.12),transparent_60%)]" />
         </div>
 
-        <div className="relative z-10" style={{ ['--brand-red' as any]: BRAND_RED }}>
+        <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Top scrolling banner */}
-          <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
-            <div className="flex animate-scroll-banner whitespace-nowrap py-2">
-              <div className="flex items-center gap-8 px-8">
-                <div className="flex items-center gap-3">
+          <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden relative">
+            <div className="flex animate-scroll-banner whitespace-nowrap py-2 min-w-max">
+              <div className="flex items-center gap-6 px-6 shrink-0">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     Launch Special: 30% off for first week users. Limited time only.
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     All-in-one platform replacing 8+ expensive marketing tools
                   </span>
                 </div>
               </div>
               {/* Duplicate for seamless loop */}
-              <div className="flex items-center gap-8 px-8">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-6 px-6 shrink-0">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     Launch Special: 30% off for first week users. Limited time only.
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  <span className="text-xs text-white/80 tracking-wide font-extrabold">
                     All-in-one platform replacing 8+ expensive marketing tools
                   </span>
                 </div>
@@ -498,7 +498,7 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-start mt-8 overflow-hidden">
                 {[
                   {
                     name: "DTC Owner",
