@@ -53,14 +53,14 @@ export function AudienceDemographicsWidget({
       return
     }
     
-    console.log('[AudienceDemographics] Starting fetch with:', {
-      brandId,
-      selectedBreakdown,
-      dateRange: dateRange ? {
-        from: dateRange.from?.toISOString(),
-        to: dateRange.to?.toISOString()
-      } : null
-    })
+      // console.log('[AudienceDemographics] Starting fetch with:', {
+      //   brandId,
+      //   selectedBreakdown,
+      //   dateRange: dateRange ? {
+      //     from: dateRange.from?.toISOString(),
+      //     to: dateRange.to?.toISOString()
+      //   } : null
+      // })
     
     setIsLoading(true)
     setData([]) // Clear existing data to prevent flashing
@@ -77,22 +77,22 @@ export function AudienceDemographicsWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
-        console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
+        // console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
       } else {
-        console.log('[AudienceDemographics] No date range, API will use 12-month default')
+        // console.log('[AudienceDemographics] No date range, API will use 12-month default')
       }
 
       const url = `/api/meta/demographics/data?${params}`
-      console.log('[AudienceDemographics] Fetching from:', url)
+      // console.log('[AudienceDemographics] Fetching from:', url)
 
       const response = await fetch(url)
       const result = await response.json()
 
-      console.log('[AudienceDemographics] API response:', result)
+      // console.log('[AudienceDemographics] API response:', result)
 
       if (result.success) {
         setData(result.data || [])
-        console.log('[AudienceDemographics] Data set:', result.data?.length || 0, 'items')
+        // console.log('[AudienceDemographics] Data set:', result.data?.length || 0, 'items')
       } else {
         console.error('[AudienceDemographics] Error fetching demographic data:', result.error)
       }
