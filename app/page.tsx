@@ -482,13 +482,13 @@ export default function HomePage() {
                     whiteLabel: false
                   },
                   {
-                    name: "Brand Scaler",
+                    name: "Beginner",
                     description: "Growing brands & small agencies",
                     price: 137,
                     popular: true,
                     icon: Rocket,
                     coreFeatures: [
-                      "Up to 3 Brand Connections",
+                      "1 Brand Connection",
                       "Meta + Google Ads Analytics",
                       "Shopify + E-commerce Integration",
                       "25 AI Assistant Chats/day",
@@ -605,7 +605,7 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col h-full">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
                           <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
@@ -621,18 +621,9 @@ export default function HomePage() {
                           <span className="text-white/40 text-sm ml-1">/mo</span>
                         </div>
                       </div>
-                      <Link href="/login">
-                        <Button className={`w-full mb-4 h-10 text-sm font-bold ${
-                          plan.popular 
-                            ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
-                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
-                        }`}>
-                          Get Started
-                        </Button>
-                      </Link>
-                    </div>
-
-                    <div className="px-6 pb-6 flex-1">
+                      
+                      {/* Features section - flex-grow to push button to bottom */}
+                      <div className="flex-1">
                       <div className="mb-4">
                         <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included</h4>
                         <div className="space-y-2">
@@ -652,7 +643,7 @@ export default function HomePage() {
 
                       {plan.advancedFeatures.length > 0 && (
                         <div className="mb-3">
-                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide">⚡ Growth</h4>
+                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">⚡</span> Growth</h4>
                           <div className="space-y-1">
                             {plan.advancedFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
@@ -671,7 +662,7 @@ export default function HomePage() {
 
                       {plan.teamFeatures.length > 0 && (
                         <div className="mb-3">
-                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide">👥 Team</h4>
+                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">👥</span> Team</h4>
                           <div className="space-y-1">
                             {plan.teamFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
@@ -743,6 +734,20 @@ export default function HomePage() {
                           </div>
                         </div>
                       )}
+                      </div>
+                      
+                      {/* Button aligned at bottom */}
+                      <div className="mt-auto pt-4">
+                        <Link href="/login">
+                          <Button className={`w-full h-10 text-sm font-bold ${
+                            plan.popular 
+                              ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
+                              : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
+                          }`}>
+                            Get Started
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}
