@@ -48,7 +48,19 @@ export function AudienceDemographicsWidget({
   const [selectedBreakdown, setSelectedBreakdown] = useState('age_gender')
 
   const fetchData = async () => {
-    if (!brandId) return
+    if (!brandId) {
+      console.log('[AudienceDemographics] No brandId provided, skipping fetch')
+      return
+    }
+    
+    console.log('[AudienceDemographics] Starting fetch with:', {
+      brandId,
+      selectedBreakdown,
+      dateRange: dateRange ? {
+        from: dateRange.from?.toISOString(),
+        to: dateRange.to?.toISOString()
+      } : null
+    })
     
     setIsLoading(true)
     setData([]) // Clear existing data to prevent flashing
@@ -65,18 +77,27 @@ export function AudienceDemographicsWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
+        console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
+      } else {
+        console.log('[AudienceDemographics] No date range, API will use 12-month default')
       }
 
-      const response = await fetch(`/api/meta/demographics/data?${params}`)
+      const url = `/api/meta/demographics/data?${params}`
+      console.log('[AudienceDemographics] Fetching from:', url)
+
+      const response = await fetch(url)
       const result = await response.json()
+
+      console.log('[AudienceDemographics] API response:', result)
 
       if (result.success) {
         setData(result.data || [])
+        console.log('[AudienceDemographics] Data set:', result.data?.length || 0, 'items')
       } else {
-        console.error('Error fetching demographic data:', result.error)
+        console.error('[AudienceDemographics] Error fetching demographic data:', result.error)
       }
     } catch (error) {
-      console.error('Error fetching demographic data:', error)
+      console.error('[AudienceDemographics] Error fetching demographic data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -200,7 +221,7 @@ export function AudienceDemographicsWidget({
   }
 
   return (
-    <Card className={`bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl overflow-hidden transition-all duration-300 hover:border-[#444] ${className}`}>
+    <Card className={`bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl transition-all duration-300 hover:border-[#444] ${className}`}>
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -232,7 +253,7 @@ export function AudienceDemographicsWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2 pb-8">
+      <CardContent className="p-4 pt-2 pb-12">
         {isLoading ? (
           <div className="space-y-3">
             <div className="h-4 bg-gray-800 rounded animate-pulse" />
@@ -290,7 +311,7 @@ export function AudienceDemographicsWidget({
             </div>
 
             {/* Clean Data Table */}
-            <div className="space-y-2 pb-8">
+            <div className="space-y-2 pb-12">
               <div className="text-xs font-medium text-gray-400 mb-2">Performance Breakdown</div>
               {data.slice(0, 8).map((item) => (
                 <div key={item.breakdown_value} className="flex items-center justify-between py-2 px-3 bg-[#0f0f0f]/30 rounded-lg">

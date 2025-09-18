@@ -185,7 +185,7 @@ export function DevicePerformanceWidget({
   }
 
   return (
-    <Card className={`bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl overflow-hidden transition-all duration-300 hover:border-[#444] ${className}`}>
+    <Card className={`bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl transition-all duration-300 hover:border-[#444] ${className}`}>
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export function DevicePerformanceWidget({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2 pb-8">
+      <CardContent className="p-4 pt-2 pb-12">
         {isLoading ? (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-4">

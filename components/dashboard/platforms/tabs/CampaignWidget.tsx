@@ -1359,14 +1359,14 @@ const CampaignWidget = ({
   const filteredCampaigns = useMemo(() => {
     const processedCampaigns = localCampaigns.map(campaign => {
       // DEBUG LOG campaign details to diagnose zero values
-      // console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
-      //   name: campaign.campaign_name,
-      //   spent: campaign.spent, 
-      //   impressions: campaign.impressions,
-      //   clicks: campaign.clicks,
-      //   hasDailyInsights: campaign.daily_insights?.length > 0,
-      //   insightsCount: campaign.daily_insights?.length || 0
-      // });
+      console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
+        name: campaign.campaign_name,
+        spent: campaign.spent, 
+        impressions: campaign.impressions,
+        clicks: campaign.clicks,
+        hasDailyInsights: campaign.daily_insights?.length > 0,
+        insightsCount: campaign.daily_insights?.length || 0
+      });
       
       // ALWAYS try to aggregate metrics from daily_insights when they exist
       // This ensures we use the most detailed data available
@@ -1376,12 +1376,12 @@ const CampaignWidget = ({
         // console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
         
         // Log current date range
-        // console.log(`[CW DEBUG RANGE] Current dateRange:`, {
-        //   from: dateRange?.from?.toISOString(),
-        //   to: dateRange?.to?.toISOString(),
-        //   fromLocal: dateRange?.from?.toString(),
-        //   toLocal: dateRange?.to?.toString()
-        // });
+        console.log(`[CW DEBUG RANGE] Current dateRange:`, {
+          from: dateRange?.from?.toISOString(),
+          to: dateRange?.to?.toISOString(),
+          fromLocal: dateRange?.from?.toString(),
+          toLocal: dateRange?.to?.toString()
+        });
         
         let aggregatedSpent = 0;
         let aggregatedImpressions = 0;
