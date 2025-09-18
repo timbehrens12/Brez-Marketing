@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, X, ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, Target, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail } from "lucide-react"
+import { Check, X, ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, TrendingDown, Target, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -464,17 +464,17 @@ export default function HomePage() {
               <div className="grid lg:grid-cols-4 gap-8 items-start">
                 {[
                   {
-                    name: "Solo Brand",
+                    name: "DTC Owner",
                     description: "Perfect for single brand owners",
-                    price: 147,
+                    price: 67,
                     popular: false,
                     icon: Users,
                     coreFeatures: [
                       "1 Brand Connection",
                       "Meta Ads Analytics",
                       "Shopify Integration",
-                      "10 AI Assistant Chats/day",
-                      "25 Creative Generations/month",
+                      "5 AI Assistant Chats/day",
+                      "10 Creative Generations/month",
                       "Basic Reporting"
                     ],
                     advancedFeatures: [],
@@ -482,71 +482,71 @@ export default function HomePage() {
                     whiteLabel: false
                   },
                   {
-                    name: "Multi-Brand",
-                    description: "Scale across multiple brands",
-                    price: 347,
+                    name: "Brand Scaler",
+                    description: "Growing brands & small agencies",
+                    price: 197,
                     popular: true,
                     icon: Rocket,
                     coreFeatures: [
-                      "Up to 10 Brand Connections",
-                      "Meta Ads Analytics",
-                      "Shopify Integration",
+                      "Up to 3 Brand Connections",
+                      "Meta + Google Ads Analytics",
+                      "Shopify + E-commerce Integration",
                       "25 AI Assistant Chats/day",
-                      "100 Creative Generations/month",
+                      "50 Creative Generations/month",
                       "Advanced Reporting"
                     ],
                     advancedFeatures: [
-                      "500 Lead Generations/month",
-                      "1,000 Outreach Emails/month",
-                      "Campaign Optimization",
-                      "API Access"
+                      "200 Lead Generations/month",
+                      "500 Outreach Emails/month",
+                      "Campaign Optimization AI",
+                      "Basic API Access"
                     ],
                     teamFeatures: [],
-                    whiteLabel: false
+                    whiteLabel: true
                   },
                   {
-                    name: "Agency",
-                    description: "For agencies serving clients",
-                    price: 647,
+                    name: "Multi-Brand Agency",
+                    description: "2-10 brands under management",
+                    price: 497,
                     popular: false,
                     icon: Zap,
                     coreFeatures: [
-                      "Up to 25 Brand Connections",
-                      "Meta Ads Analytics",
-                      "Shopify Integration",
-                      "50 AI Assistant Chats/day",
-                      "250 Creative Generations/month",
-                      "Advanced Reporting"
+                      "Up to 10 Brand Connections",
+                      "Full Platform Access",
+                      "All Integrations Included",
+                      "100 AI Assistant Chats/day",
+                      "200 Creative Generations/month",
+                      "Premium Analytics & Reports"
                     ],
                     advancedFeatures: [
-                      "2,500 Lead Generations/month",
-                      "5,000 Outreach Emails/month",
-                      "Campaign Optimization",
+                      "1,000 Lead Generations/month",
+                      "2,500 Outreach Emails/month",
+                      "Advanced Campaign AI",
                       "Priority API Access"
                     ],
                     teamFeatures: [
-                      "Team Collaboration (5 users)",
+                      "Team Collaboration (10 users)",
                       "Client Portal Access",
                       "Role-Based Permissions"
                     ],
                     whiteLabel: true
                   },
                   {
-                    name: "Enterprise",
-                    description: "Large-scale operations",
-                    price: 997,
+                    name: "Enterprise Agency",
+                    description: "11-25+ brands, full-scale operations",
+                    price: 1497,
                     popular: false,
                     icon: Award,
                     coreFeatures: [
-                      "Unlimited Brand Connections",
-                      "Meta Ads Analytics",
-                      "Shopify Integration",
+                      "Up to 25 Brand Connections",
+                      "Enterprise Platform Access",
+                      "All Integrations + Custom",
                       "Unlimited AI Assistant Chats",
                       "500 Creative Generations/month",
-                      "Advanced Reporting & Analytics"
+                      "Custom Reports & Analytics"
                     ],
                     advancedFeatures: [
-                      "10,000 Lead Generations/month",
+                      "5,000 Lead Generations/month",
                       "25,000 Outreach Emails/month",
                       "Campaign Optimization",
                       "Enterprise API Access"
@@ -719,6 +719,101 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Cost Comparison */}
+              <div className="mt-20 pt-16 border-t border-white/10">
+                <div className="text-center mb-12">
+                  <TagBadge tone="red" className="mb-4">COST BREAKDOWN</TagBadge>
+                  <h3 className="text-3xl font-black mb-4">Replace $2,847/month in Tool Costs</h3>
+                  <p className="text-white/70 text-lg max-w-3xl mx-auto">
+                    Here's what you'd pay for these tools separately vs. our all-in-one platform
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                  {/* Individual Tool Costs */}
+                  <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8">
+                    <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
+                    <div className="space-y-3">
+                      {[
+                        { tool: "HubSpot Professional", cost: 800 },
+                        { tool: "Zapier Professional", cost: 49 },
+                        { tool: "Triple Whale Pro", cost: 299 },
+                        { tool: "Hyros", cost: 499 },
+                        { tool: "Canva Teams", cost: 30 },
+                        { tool: "Google Analytics 360", cost: 150 },
+                        { tool: "Shopify Plus Apps", cost: 200 },
+                        { tool: "Outreach.io", cost: 390 },
+                        { tool: "Lead Generation Tool", cost: 197 },
+                        { tool: "Creative AI Tool", cost: 97 },
+                        { tool: "Campaign Manager", cost: 136 }
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm">
+                          <span className="text-white/80">{item.tool}</span>
+                          <span className="text-white font-mono">${item.cost}/mo</span>
+                        </div>
+                      ))}
+                      <div className="pt-4 mt-4 border-t border-red-500/30">
+                        <div className="flex justify-between items-center font-bold text-lg">
+                          <span className="text-red-300">TOTAL MONTHLY COST</span>
+                          <span className="text-red-300 text-2xl">${[800,49,299,499,30,150,200,390,197,97,136].reduce((a,b) => a+b, 0)}/mo</span>
+                        </div>
+                        <div className="text-center mt-2 text-red-200 text-sm">
+                          = ${[800,49,299,499,30,150,200,390,197,97,136].reduce((a,b) => a+b, 0) * 12}/year
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Our Platform Cost */}
+                  <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8">
+                    <h4 className="text-xl font-bold mb-6 text-center text-green-300">Brez Marketing Platform</h4>
+                    <div className="text-center mb-8">
+                      <div className="text-6xl font-black text-green-300 mb-2">$67</div>
+                      <div className="text-green-200 text-lg">Starting Price</div>
+                      <div className="text-white/60 text-sm mt-2">Scale to $1,497 as you grow</div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-green-300 mb-1">95%</div>
+                          <div className="text-green-200 text-sm">Cost Savings</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center text-green-200">
+                          <Check className="w-4 h-4 mr-2" />
+                          <span>All tools in one platform</span>
+                        </div>
+                        <div className="flex items-center text-green-200">
+                          <Check className="w-4 h-4 mr-2" />
+                          <span>No integration headaches</span>
+                        </div>
+                        <div className="flex items-center text-green-200">
+                          <Check className="w-4 h-4 mr-2" />
+                          <span>Single monthly payment</span>
+                        </div>
+                        <div className="flex items-center text-green-200">
+                          <Check className="w-4 h-4 mr-2" />
+                          <span>Scale as you grow</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center mt-12">
+                  <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4">
+                    <TrendingDown className="w-6 h-6 text-green-400" />
+                    <div>
+                      <div className="text-green-300 font-bold text-lg">Save $2,780+ per month</div>
+                      <div className="text-green-200 text-sm">That's $33,360+ per year in tool costs alone</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
