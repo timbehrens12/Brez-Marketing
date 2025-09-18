@@ -82,15 +82,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       const connectionData = await connectionResponse.json()
       const demographicsData = await demographicsResponse.json()
 
-      // Debug logging (can be removed later)
-      if (connectionData.sync_status === 'in_progress') {
-        console.log('[UnifiedMetaSyncStatus] Sync active, API data:', {
-          sync_status: connectionData.sync_status,
-          campaign_progress: connectionData.campaign_progress,
-          recent_jobs_count: connectionData.recent_jobs?.length,
-          demographics_progress: demographicsData.syncStatus?.progress_percentage
-        })
-      }
+      // Debug logging removed to prevent console spam
 
       // Build unified status with real data
       const campaignProgress = getCampaignProgress(connectionData)
@@ -115,15 +107,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       const insightsProgress = getInsightsProgress(connectionData)
 
-      // Show calculated progress during active sync
-      if (connectionData.sync_status === 'in_progress') {
-        console.log('[UnifiedMetaSyncStatus] Progress update:', {
-          campaignProgress,
-          demographicsProgress,
-          insightsProgress,
-          overall: Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
-        })
-      }
+      // Progress calculation complete
 
       const phases: SyncPhase[] = [
         {
@@ -240,10 +224,10 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     
     // If sync is in progress but no jobs yet, show steadily increasing progress (behind campaigns)
     if (connectionData.sync_status === 'in_progress' || connectionData.sync_status === 'syncing') {
-      // Show steady progress from 10% to 75% over time, slower than campaigns
+      // Show steady progress from 10% to 100% over time, slower than campaigns
       const now = Date.now()
       const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
-      const animatedProgress = Math.min(75, 10 + Math.floor(elapsedSeconds / 3)) // Increase by 0.33% every second (slower)
+      const animatedProgress = Math.min(95, 10 + Math.floor(elapsedSeconds / 3)) // Increase by 0.33% every second to 95%
       
       return animatedProgress
     }
