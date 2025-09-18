@@ -81,62 +81,6 @@ export async function GET(req: NextRequest) {
           // TODO: Re-enable after rate limits reset (24-48 hours)
           console.log(`[Total Meta Budget] TEMP: Skipping Meta API adset fetch due to rate limits - using database fallback`);
           throw new Error('Temporary skip Meta API due to rate limits');
-              
-              if (adSetsResponse.ok) {
-                const adSetsData = await adSetsResponse.json();
-                console.log(`[Total Meta Budget] Ad sets response for campaign ${campaign.campaign_id}:`, adSetsData);
-                
-                if (adSetsData.data) {
-                  adSetsData.data.forEach((adSet: any) => {
-                    console.log(`[Total Meta Budget] Processing ad set ${adSet.id} (${adSet.name}): status=${adSet.status}, daily_budget=${adSet.daily_budget}, lifetime_budget=${adSet.lifetime_budget}`);
-                    
-                    // Only count ACTIVE ad sets, or all if activeOnly is false
-                    if (!activeOnly || adSet.status === 'ACTIVE') {
-                      activeAdSetCount++;
-                      
-                      // Ad sets have either daily_budget or lifetime_budget
-                      if (adSet.daily_budget) {
-                        const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents to dollars
-                        totalDailyBudget += dailyBudget;
-                        console.log(`[Total Meta Budget] Added daily budget: $${dailyBudget} (total now: $${totalDailyBudget})`);
-                      }
-                      
-                      if (adSet.lifetime_budget) {
-                        const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents to dollars
-                        totalLifetimeBudget += lifetimeBudget;
-                        console.log(`[Total Meta Budget] Added lifetime budget: $${lifetimeBudget} (total now: $${totalLifetimeBudget})`);
-                      }
-                    } else {
-                      console.log(`[Total Meta Budget] Skipping ad set ${adSet.id} due to status: ${adSet.status}`);
-                    }
-                  });
-                }
-              } else {
-                console.error(`[Total Meta Budget] Failed to fetch ad sets for campaign ${campaign.campaign_id}:`, adSetsResponse.status, adSetsResponse.statusText);
-              }
-            } catch (error) {
-              console.error(`[Total Meta Budget] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
-            }
-          }
-          
-          const totalBudget = totalDailyBudget + totalLifetimeBudget;
-          console.log(`[Total Meta Budget] Meta API result - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalBudget}, Active Ad Sets: ${activeAdSetCount}`);
-          
-          const result = {
-            success: true,
-            totalDailyBudget,
-            totalLifetimeBudget,
-            totalBudget,
-            adSetCount: activeAdSetCount,
-            dailyBudgetAdSetCount: totalDailyBudget > 0 ? activeAdSetCount : 0,
-            lifetimeBudgetAdSetCount: totalLifetimeBudget > 0 ? activeAdSetCount : 0,
-            timestamp: new Date().toISOString(),
-            refreshMethod: 'meta-api'
-          };
-          
-          console.log('[Total Meta Budget] Final Meta API result:', JSON.stringify(result, null, 2));
-          
-          return NextResponse.json(result, { status: 200 });
         }
       } catch (error) {
         console.error('[Total Meta Budget] Error fetching from Meta API, falling back to database:', error);
