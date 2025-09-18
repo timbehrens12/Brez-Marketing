@@ -390,7 +390,10 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
             <Badge className={`text-xs px-2 py-0.5 ${getStatusBadgeColor()}`}>
               {syncStatus.overall_status.replace('_', ' ').toUpperCase()}
             </Badge>
-            <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
+            <span 
+              className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded cursor-help border border-gray-600/30" 
+              title="Meta API limits data access to the last 12 months. Older data is not available through their API."
+            >
               Last 12 months
             </span>
           </div>
