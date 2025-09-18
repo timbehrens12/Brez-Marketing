@@ -77,13 +77,10 @@ export async function GET(req: NextRequest) {
           let totalLifetimeBudget = 0;
           let activeAdSetCount = 0;
           
-          // Fetch ad sets for each campaign from Meta API
-          for (const campaign of campaigns) {
-            try {
-              const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget,budget_remaining&access_token=${connectionData.access_token}`;
-              console.log(`[Total Meta Budget] Fetching ad sets for campaign ${campaign.campaign_id}`);
-              
-              const adSetsResponse = await fetch(adSetsUrl);
+          // TEMPORARY: Skip Meta API adset fetching due to campaign-level rate limits
+          // TODO: Re-enable after rate limits reset (24-48 hours)
+          console.log(`[Total Meta Budget] TEMP: Skipping Meta API adset fetch due to rate limits - using database fallback`);
+          throw new Error('Temporary skip Meta API due to rate limits');
               
               if (adSetsResponse.ok) {
                 const adSetsData = await adSetsResponse.json();
