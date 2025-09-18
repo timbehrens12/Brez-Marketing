@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Footer } from './Footer'
 
 export function ConditionalFooter() {
   const [isLoadingPage, setIsLoadingPage] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     // Check if the current page is showing a loading screen
@@ -67,8 +69,8 @@ export function ConditionalFooter() {
     return () => observer.disconnect()
   }, [])
 
-  // Hide footer on loading pages
-  if (isLoadingPage) {
+  // Hide footer on loading pages or landing page
+  if (isLoadingPage || pathname === '/') {
     return null
   }
 
