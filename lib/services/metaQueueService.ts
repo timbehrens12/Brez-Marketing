@@ -104,23 +104,9 @@ export class MetaQueueService {
         throw new Error('Redis not configured - cannot queue background jobs')
       }
 
-      // Create ETL job first to track progress
+      // TEMPORARILY SKIP ETL job creation due to database schema issues
       let etlJobId: number | undefined
-      try {
-        const entity = data.entity || jobType.replace('historical_', '').replace('_', '-')
-        etlJobId = await this.createEtlJob(
-          data.brandId,
-          entity,
-          jobType,
-          data.startDate && data.endDate ? {
-            start: data.startDate,
-            end: data.endDate
-          } : undefined
-        )
-        console.log(`[Meta Queue] Created ETL job ${etlJobId} for ${jobType}`)
-      } catch (etlError) {
-        console.warn(`[Meta Queue] Failed to create ETL job for ${jobType}, proceeding without tracking:`, etlError)
-      }
+      console.log(`[Meta Queue] Skipping ETL job creation for ${jobType} due to schema issues`)
 
       // Add ETL job ID to job data for tracking
       const jobDataWithEtl = {
