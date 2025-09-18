@@ -471,11 +471,13 @@ export default function HomePage() {
                     icon: Users,
                     coreFeatures: [
                       "1 Brand Connection",
-                      "Meta Ads Analytics",
-                      "Shopify Integration",
-                      "5 AI Assistant Chats/day",
-                      "10 Creative Generations/month",
-                      "Basic Reporting"
+                      "Meta Ads Analytics & Dashboard",
+                      "Shopify Integration & Orders Sync",
+                      "5 AI Marketing Assistant Chats/day",
+                      "10 AI Creative Generations/month",
+                      "Basic Performance Reports",
+                      "Customer Geography Analytics",
+                      "Order Tracking & Management"
                     ],
                     advancedFeatures: [],
                     teamFeatures: [],
@@ -491,14 +493,18 @@ export default function HomePage() {
                       "1 Brand Connection",
                       "Meta + Google Ads Analytics",
                       "Shopify + E-commerce Integration",
-                      "10 AI Assistant Chats/day",
-                      "25 Creative Generations/month",
-                      "Advanced Reporting"
+                      "10 AI Marketing Assistant Chats/day",
+                      "25 AI Creative Generations/month",
+                      "Advanced Performance Reports",
+                      "Customer Demographics Analysis",
+                      "Order & Revenue Tracking"
                     ],
                     advancedFeatures: [
                       "100 Lead Generations/month",
                       "250 Outreach Emails/month",
-                      "Campaign Optimization AI",
+                      "AI Campaign Optimization",
+                      "Ad Creative Studio (Copy Competitor Ads)",
+                      "Contract Generation AI",
                       "Basic API Access"
                     ],
                     teamFeatures: [],
@@ -513,15 +519,20 @@ export default function HomePage() {
                     coreFeatures: [
                       "Up to 5 Brand Connections",
                       "Full Platform Access",
-                      "All Integrations Included",
-                      "25 AI Assistant Chats/day",
-                      "75 Creative Generations/month",
-                      "Advanced Analytics & Reports"
+                      "Meta + Google + Facebook Ads Analytics",
+                      "25 AI Marketing Assistant Chats/day",
+                      "75 AI Creative Generations/month",
+                      "Advanced Analytics & Custom Reports",
+                      "Multi-Brand Dashboard View",
+                      "Customer Journey Tracking"
                     ],
                     advancedFeatures: [
                       "300 Lead Generations/month",
                       "750 Outreach Emails/month",
-                      "Advanced Campaign AI",
+                      "Advanced Campaign Optimization AI",
+                      "Ad Creative Studio (Copy + Custom AI Ads)",
+                      "Contract & Proposal Generation",
+                      "Campaign Performance Predictions",
                       "Priority API Access"
                     ],
                     teamFeatures: [
@@ -539,16 +550,22 @@ export default function HomePage() {
                     icon: Zap,
                     coreFeatures: [
                       "Up to 15 Brand Connections",
-                      "Full Platform Access",
-                      "All Integrations Included",
-                      "50 AI Assistant Chats/day",
-                      "150 Creative Generations/month",
-                      "Premium Analytics & Reports"
+                      "Enterprise Platform Access",
+                      "All Ad Platform Integrations",
+                      "50 AI Marketing Assistant Chats/day",
+                      "150 AI Creative Generations/month",
+                      "Premium Analytics & White-Label Reports",
+                      "Cross-Brand Performance Insights",
+                      "Automated Campaign Management"
                     ],
                     advancedFeatures: [
                       "750 Lead Generations/month",
                       "2,000 Outreach Emails/month",
-                      "Advanced Campaign AI",
+                      "AI Campaign Optimization Engine",
+                      "Advanced Ad Creative Studio",
+                      "Custom Contract Templates",
+                      "Competitor Ad Intelligence",
+                      "Product-Based Creative AI",
                       "Priority API Access"
                     ],
                     teamFeatures: [
@@ -566,17 +583,23 @@ export default function HomePage() {
                     icon: Target,
                     coreFeatures: [
                       "Up to 20 Brand Connections",
-                      "Full Platform Access",
-                      "All Integrations Included",
-                      "75 AI Assistant Chats/day",
-                      "250 Creative Generations/month",
-                      "Premium Analytics & Reports"
+                      "Full Enterprise Platform Access",
+                      "All Marketing Platform Integrations",
+                      "75 AI Marketing Assistant Chats/day",
+                      "250 AI Creative Generations/month",
+                      "Enterprise Analytics & Reports",
+                      "Multi-Brand Campaign Orchestration",
+                      "Advanced Customer Segmentation"
                     ],
                     advancedFeatures: [
                       "1,250 Lead Generations/month",
                       "3,500 Outreach Emails/month",
-                      "Advanced Campaign AI",
-                      "Priority API Access"
+                      "Enterprise Campaign AI Engine",
+                      "Professional Ad Creative Studio",
+                      "Advanced Contract Generation",
+                      "AI-Powered Creative Testing",
+                      "Custom Brand Creative Templates",
+                      "White-Glove API Support"
                     ],
                     teamFeatures: [
                       "Team Collaboration (20 users)",
@@ -594,16 +617,23 @@ export default function HomePage() {
                     coreFeatures: [
                       "Up to 25 Brand Connections",
                       "Enterprise Platform Access",
-                      "All Integrations + Custom",
-                      "Unlimited AI Assistant Chats",
-                      "500 Creative Generations/month",
-                      "Custom Reports & Analytics"
+                      "All Integrations + Custom Connectors",
+                      "Unlimited AI Marketing Assistant",
+                      "500 AI Creative Generations/month",
+                      "Custom White-Label Reports",
+                      "Enterprise-Grade Security",
+                      "24/7 Priority Support"
                     ],
                     advancedFeatures: [
                       "2,500 Lead Generations/month",
                       "7,500 Outreach Emails/month",
-                      "Enterprise Campaign AI",
-                      "White-Glove API Support"
+                      "Enterprise AI Campaign Engine",
+                      "Full Ad Creative Studio Suite",
+                      "Enterprise Contract Generation",
+                      "Advanced Competitor Intelligence",
+                      "Custom AI Creative Training",
+                      "Product Catalog Creative AI",
+                      "White-Glove Implementation"
                     ],
                     teamFeatures: [
                       "Unlimited Team Members",
