@@ -409,7 +409,7 @@ export default function HomePage() {
               <SectionHeader
                 eyebrow="Pricing"
                 title="CHOOSE YOUR PLAN"
-                sub="Simple, transparent pricing that scales with your business. More features unlock as you grow."
+                sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
               <div className="grid lg:grid-cols-4 gap-8 items-start">
@@ -529,24 +529,26 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <div className="p-8 pb-6">
-                      <div className="mb-6">
-                        <div className={`inline-flex p-3 rounded-xl ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30' : 'bg-white/5 border border-white/10'}`}>
-                          <plan.icon className={`w-8 h-8 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`p-2 rounded-lg ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30' : 'bg-white/5 border border-white/10'}`}>
+                          <plan.icon className={`w-6 h-6 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                          <p className="text-white/60 text-xs">{plan.description}</p>
                         </div>
                       </div>
-                      <h3 className="text-2xl font-bold mb-2 text-white">{plan.name}</h3>
-                      <p className="text-white/60 text-sm mb-6 font-mono">{plan.description}</p>
-                      <div className="mb-8">
+                      <div className="mb-6">
                         <div className="flex items-baseline">
-                          <span className="text-5xl font-black text-white">${plan.price}</span>
-                          <span className="text-white/40 text-lg ml-2">/month</span>
+                          <span className="text-4xl font-black text-white">${plan.price}</span>
+                          <span className="text-white/40 text-sm ml-1">/mo</span>
                         </div>
                       </div>
                       <Link href="/login">
-                        <Button className={`w-full mb-6 h-12 text-base font-bold ${
+                        <Button className={`w-full mb-4 h-10 text-sm font-bold ${
                           plan.popular 
-                            ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_6px_0_rgba(0,0,0,.4)] hover:shadow-[0_4px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
+                            ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
                             : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
                         }`}>
                           Get Started
@@ -554,64 +556,67 @@ export default function HomePage() {
                       </Link>
                     </div>
 
-                    <div className="px-8 pb-8 flex-1">
-                      <div className="mb-6">
-                        <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">✓ Core Features</h4>
-                        <div className="space-y-3">
-                          {plan.coreFeatures.map((feature: string, i: number) => (
-                            <div key={i} className="flex items-start">
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40' : 'bg-white/10 border border-white/20'}`}>
-                                <Check className={`w-3 h-3 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
-                              </div>
-                              <span className="text-white/80 text-sm">{feature}</span>
+                    <div className="px-6 pb-6 flex-1">
+                      <div className="mb-4">
+                        <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included</h4>
+                        <div className="space-y-2">
+                          {plan.coreFeatures.slice(0, 4).map((feature: string, i: number) => (
+                            <div key={i} className="flex items-center">
+                              <Check className={`w-3 h-3 mr-2 flex-shrink-0 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                              <span className="text-white/75 text-xs">{feature}</span>
                             </div>
                           ))}
+                          {plan.coreFeatures.length > 4 && (
+                            <div className="text-white/50 text-xs">
+                              +{plan.coreFeatures.length - 4} more features
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {plan.advancedFeatures.length > 0 && (
-                        <div className="mb-6">
-                          <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">⚡ Growth Tools</h4>
-                          <div className="space-y-3">
-                            {plan.advancedFeatures.map((feature: string, i: number) => (
-                              <div key={i} className="flex items-start">
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-blue-500/20 border border-blue-500/40' : 'bg-white/10 border border-white/20'}`}>
-                                  <Check className={`w-3 h-3 ${plan.popular ? 'text-blue-400' : 'text-white/70'}`} />
-                                </div>
-                                <span className="text-white/80 text-sm">{feature}</span>
+                        <div className="mb-3">
+                          <h4 className="text-blue-400 font-semibold text-xs mb-2 uppercase tracking-wide">⚡ Growth</h4>
+                          <div className="space-y-1">
+                            {plan.advancedFeatures.slice(0, 2).map((feature: string, i: number) => (
+                              <div key={i} className="flex items-center">
+                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-blue-400" />
+                                <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
+                            {plan.advancedFeatures.length > 2 && (
+                              <div className="text-white/50 text-xs">
+                                +{plan.advancedFeatures.length - 2} more tools
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {plan.teamFeatures.length > 0 && (
-                        <div className="mb-6">
-                          <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">👥 Team & Enterprise</h4>
-                          <div className="space-y-3">
-                            {plan.teamFeatures.map((feature: string, i: number) => (
-                              <div key={i} className="flex items-start">
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-purple-500/20 border border-purple-500/40' : 'bg-white/10 border border-white/20'}`}>
-                                  <Check className={`w-3 h-3 ${plan.popular ? 'text-purple-400' : 'text-white/70'}`} />
-                                </div>
-                                <span className="text-white/80 text-sm">{feature}</span>
+                        <div className="mb-3">
+                          <h4 className="text-purple-400 font-semibold text-xs mb-2 uppercase tracking-wide">👥 Team</h4>
+                          <div className="space-y-1">
+                            {plan.teamFeatures.slice(0, 2).map((feature: string, i: number) => (
+                              <div key={i} className="flex items-center">
+                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-purple-400" />
+                                <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
+                            {plan.teamFeatures.length > 2 && (
+                              <div className="text-white/50 text-xs">
+                                +{plan.teamFeatures.length - 2} more features
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {plan.whiteLabel && (
-                        <div className="border border-[var(--brand-red)]/30 bg-[var(--brand-red)]/10 rounded-xl p-4">
-                          <h4 className="text-white/90 font-bold text-sm mb-3 uppercase tracking-wide">🏷️ White Label</h4>
-                          <div className="flex items-start">
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40">
-                              <Check className="w-3 h-3 text-[var(--brand-red)]" />
-                            </div>
-                            <div>
-                              <span className="text-white text-sm font-semibold block">Complete white-label rebrand capabilities</span>
-                              <p className="text-white/70 text-xs mt-1">Sell as your own proprietary software</p>
-                            </div>
+                        <div className="border border-[var(--brand-red)]/30 bg-[var(--brand-red)]/10 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <Check className="w-3 h-3 mr-2 text-[var(--brand-red)]" />
+                            <span className="text-white text-xs font-semibold">Full White-Label Rights</span>
                           </div>
                         </div>
                       )}
