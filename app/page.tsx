@@ -115,7 +115,7 @@ export default function HomePage() {
           {/* Header */}
           <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-                <img src="https://i.imgur.com/5a6dQWO.png" alt="Brez Marketing" className="h-10 w-auto" />
+                <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
               <div className="flex items-center gap-3">
                 <Link href="/dashboard">
                   <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
@@ -971,7 +971,7 @@ export default function HomePage() {
           {/* Footer */}
           <footer className="py-12 border-t border-white/10 bg-black/40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <img src="https://i.imgur.com/5a6dQWO.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
+              <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto mx-auto mb-6" />
               <p className="text-white/55 text-sm font-mono">
                 © {new Date().getFullYear()} Brez Marketing. All rights reserved. <br />
                 Trusted by brand scalers worldwide • Cancel anytime

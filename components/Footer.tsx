@@ -77,7 +77,7 @@ function FooterContentComponent() {
         <div className="flex items-center gap-2">
           <div className="text-white">
             <img 
-              src="https://i.imgur.com/5a6dQWO.png" 
+              src="https://i.imgur.com/j4AQPxj.png" 
               alt="[bm] dashboard" 
               className="h-8 w-auto"
             />
