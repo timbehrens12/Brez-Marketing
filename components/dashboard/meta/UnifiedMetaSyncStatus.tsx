@@ -102,6 +102,9 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       if (demographicsData.success && demographicsData.data && demographicsData.data.length > 0) {
         // We have demographics data - assume completed
         demographicsProgress = 100
+      } else if (connectionData.sync_status === 'completed') {
+        // Sync is marked as completed - assume demographics are done
+        demographicsProgress = 100
       } else if (connectionData.sync_status === 'in_progress') {
         // Sync is active but no demographics data yet - show progress
         const now = Date.now()
@@ -116,7 +119,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
 
       const hasDemographicsData = demographicsData.success && demographicsData.data && demographicsData.data.length > 0
       let demographicsPhaseStatus: SyncPhase['status'] = 'pending'
-      if (hasDemographicsData) {
+      if (hasDemographicsData || connectionData.sync_status === 'completed') {
         demographicsPhaseStatus = 'completed'
       } else if (connectionData.sync_status === 'in_progress') {
         demographicsPhaseStatus = 'in_progress'
