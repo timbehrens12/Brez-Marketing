@@ -348,22 +348,31 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     fetchSyncStatus()
   }, [brandId, connectionId]) // Only refetch when brand/connection changes
 
-  // TEMPORARILY DISABLED POLLING TO STOP API SPAM
-  // Smart polling - only poll when sync is actually in progress
-  // useEffect(() => {
-  //   if (!syncStatus) return
+  // Smart polling - only poll when sync is actually in progress and not at 100%
+  useEffect(() => {
+    if (!syncStatus) return
 
-  //   const isActiveSync = syncStatus.overall_status === 'in_progress' || 
-  //                        syncStatus.sync_status === 'in_progress'
+    // Calculate current overall progress
+    const campaignProgress = getCampaignProgress(syncStatus)
+    const insightsProgress = getInsightsProgress(syncStatus)
+    const demographicsProgress = (syncStatus.demographics_has_data || syncStatus.sync_status === 'completed') ? 100 : 0
+    const overallProgress = Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
+
+    // Only poll if sync is active AND we're not at 100% yet
+    const isActiveSync = (syncStatus.sync_status === 'in_progress' || syncStatus.sync_status === 'syncing') && overallProgress < 100
     
-  //   if (isActiveSync) {
-  //     const interval = setInterval(() => {
-  //       fetchSyncStatus()
-  //     }, 5000) // Poll every 5 seconds during active sync only
+    if (isActiveSync) {
+      console.log(`[UnifiedMetaSyncStatus] Starting polling - overall progress: ${overallProgress}%`)
+      const interval = setInterval(() => {
+        fetchSyncStatus()
+      }, 3000) // Poll every 3 seconds during active sync only
       
-  //     return () => clearInterval(interval)
-  //   }
-  // }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
+      return () => {
+        console.log('[UnifiedMetaSyncStatus] Stopping polling')
+        clearInterval(interval)
+      }
+    }
+  }, [syncStatus?.sync_status, syncStatus?.demographics_has_data, brandId])
 
   if (!isVisible || !syncStatus) {
     return null
