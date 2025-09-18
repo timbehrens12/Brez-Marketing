@@ -312,6 +312,7 @@ export function MetaTab2({
       params.append('force_load', 'true');
       params.append('refresh', 'true');
       params.append('force_fresh', 'true');
+      params.append('force_refresh', 'true'); // Added this critical flag
       params.append('t', Date.now().toString());
       
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
@@ -323,6 +324,7 @@ export function MetaTab2({
       prevParams.append('force_load', 'true');
       prevParams.append('refresh', 'true');
       prevParams.append('force_fresh', 'true');
+      prevParams.append('force_refresh', 'true'); // Added this critical flag
       prevParams.append('t', Date.now().toString());
       
       const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
