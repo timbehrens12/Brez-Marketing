@@ -461,7 +461,7 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
+              <div className="grid lg:grid-cols-6 gap-4 items-start mt-8">
                 {[
                   {
                     name: "DTC Owner",
@@ -484,20 +484,20 @@ export default function HomePage() {
                   {
                     name: "Beginner",
                     description: "Growing brands & small agencies",
-                    price: 137,
+                    price: 97,
                     popular: true,
                     icon: Rocket,
                     coreFeatures: [
                       "1 Brand Connection",
                       "Meta + Google Ads Analytics",
                       "Shopify + E-commerce Integration",
-                      "25 AI Assistant Chats/day",
-                      "50 Creative Generations/month",
+                      "10 AI Assistant Chats/day",
+                      "25 Creative Generations/month",
                       "Advanced Reporting"
                     ],
                     advancedFeatures: [
-                      "200 Lead Generations/month",
-                      "500 Outreach Emails/month",
+                      "100 Lead Generations/month",
+                      "250 Outreach Emails/month",
                       "Campaign Optimization AI",
                       "Basic API Access"
                     ],
@@ -505,22 +505,22 @@ export default function HomePage() {
                     whiteLabel: true
                   },
                   {
-                    name: "Growing Agency",
+                    name: "Growing",
                     description: "Up to 5 brands under management",
-                    price: 297,
+                    price: 397,
                     popular: false,
                     icon: TrendingUp,
                     coreFeatures: [
                       "Up to 5 Brand Connections",
                       "Full Platform Access",
                       "All Integrations Included",
-                      "50 AI Assistant Chats/day",
-                      "100 Creative Generations/month",
+                      "25 AI Assistant Chats/day",
+                      "75 Creative Generations/month",
                       "Advanced Analytics & Reports"
                     ],
                     advancedFeatures: [
-                      "500 Lead Generations/month",
-                      "1,500 Outreach Emails/month",
+                      "300 Lead Generations/month",
+                      "750 Outreach Emails/month",
                       "Advanced Campaign AI",
                       "Priority API Access"
                     ],
@@ -532,22 +532,22 @@ export default function HomePage() {
                     whiteLabel: true
                   },
                   {
-                    name: "Multi-Brand Agency",
+                    name: "Multi-Brand",
                     description: "Up to 15 brands under management",
-                    price: 597,
+                    price: 697,
                     popular: false,
                     icon: Zap,
                     coreFeatures: [
                       "Up to 15 Brand Connections",
                       "Full Platform Access",
                       "All Integrations Included",
-                      "100 AI Assistant Chats/day",
-                      "250 Creative Generations/month",
+                      "50 AI Assistant Chats/day",
+                      "150 Creative Generations/month",
                       "Premium Analytics & Reports"
                     ],
                     advancedFeatures: [
-                      "1,500 Lead Generations/month",
-                      "4,000 Outreach Emails/month",
+                      "750 Lead Generations/month",
+                      "2,000 Outreach Emails/month",
                       "Advanced Campaign AI",
                       "Priority API Access"
                     ],
@@ -559,9 +559,36 @@ export default function HomePage() {
                     whiteLabel: true
                   },
                   {
-                    name: "Enterprise Agency",
+                    name: "Multi-Brand Pro",
+                    description: "Up to 20 brands under management",
+                    price: 997,
+                    popular: false,
+                    icon: Target,
+                    coreFeatures: [
+                      "Up to 20 Brand Connections",
+                      "Full Platform Access",
+                      "All Integrations Included",
+                      "75 AI Assistant Chats/day",
+                      "250 Creative Generations/month",
+                      "Premium Analytics & Reports"
+                    ],
+                    advancedFeatures: [
+                      "1,250 Lead Generations/month",
+                      "3,500 Outreach Emails/month",
+                      "Advanced Campaign AI",
+                      "Priority API Access"
+                    ],
+                    teamFeatures: [
+                      "Team Collaboration (20 users)",
+                      "Advanced Client Portals",
+                      "Custom Role Permissions"
+                    ],
+                    whiteLabel: true
+                  },
+                  {
+                    name: "Enterprise",
                     description: "Up to 25 brands, full-scale operations",
-                    price: 1497,
+                    price: 1997,
                     popular: false,
                     icon: Award,
                     coreFeatures: [
@@ -573,8 +600,8 @@ export default function HomePage() {
                       "Custom Reports & Analytics"
                     ],
                     advancedFeatures: [
-                      "5,000 Lead Generations/month",
-                      "15,000 Outreach Emails/month",
+                      "2,500 Lead Generations/month",
+                      "7,500 Outreach Emails/month",
                       "Enterprise Campaign AI",
                       "White-Glove API Support"
                     ],
@@ -625,17 +652,12 @@ export default function HomePage() {
                       <div className="mb-4">
                         <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included</h4>
                         <div className="space-y-2">
-                          {plan.coreFeatures.slice(0, 4).map((feature: string, i: number) => (
+                          {plan.coreFeatures.map((feature: string, i: number) => (
                             <div key={i} className="flex items-center">
                               <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                               <span className="text-white/75 text-xs">{feature}</span>
                             </div>
                           ))}
-                          {plan.coreFeatures.length > 4 && (
-                            <div className="text-white/50 text-xs">
-                              +{plan.coreFeatures.length - 4} more features
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -643,17 +665,12 @@ export default function HomePage() {
                         <div className="mb-3">
                           <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">⚡</span> Growth</h4>
                           <div className="space-y-1">
-                            {plan.advancedFeatures.slice(0, 2).map((feature: string, i: number) => (
+                            {plan.advancedFeatures.map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
                                 <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                                 <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
-                            {plan.advancedFeatures.length > 2 && (
-                              <div className="text-white/50 text-xs">
-                                +{plan.advancedFeatures.length - 2} more tools
-                              </div>
-                            )}
                           </div>
                         </div>
                       )}
@@ -662,17 +679,12 @@ export default function HomePage() {
                         <div className="mb-3">
                           <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">👥</span> Team</h4>
                           <div className="space-y-1">
-                            {plan.teamFeatures.slice(0, 2).map((feature: string, i: number) => (
+                            {plan.teamFeatures.map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
                                 <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                                 <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
-                            {plan.teamFeatures.length > 2 && (
-                              <div className="text-white/50 text-xs">
-                                +{plan.teamFeatures.length - 2} more features
-                              </div>
-                            )}
                           </div>
                         </div>
                       )}
