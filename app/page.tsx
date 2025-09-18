@@ -97,7 +97,7 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-3">
               <TagBadge tone="red" className="hidden sm:inline-flex">Limited</TagBadge>
               <p className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                Builders get priority onboarding. <span className="text-white/60">Enroll today.</span>
+                Existing Scale 2.0 users get 20% off lifetime. <span className="text-white/60">Limited time offer.</span>
               </p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function HomePage() {
           {/* Header */}
           <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-              <img src="https://i.imgur.com/PZCtbwG.png" alt="Brez Marketing" className="h-10 w-auto" />
+              <img src="https://i.imgur.com/WX8h7Xc.png" alt="Scale 2.0" className="h-10 w-auto" />
               <div className="flex items-center gap-3">
                 <Link href="/dashboard">
                   <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
@@ -293,14 +293,14 @@ export default function HomePage() {
                   { 
                     icon: Zap, 
                     title: "All-In-One Platform", 
-                    desc: "Replace Zapier, HubSpot, Canva, Google Analytics, and 8+ other tools with one login.",
-                    tags: ["Zapier", "HubSpot", "Canva", "Analytics"]
+                    desc: "Replace Zapier, HubSpot, Canva, TripleWhale, Hyros, Google Analytics, and 8+ other tools with one login.",
+                    tags: ["Zapier", "HubSpot", "TripleWhale", "Hyros", "Canva", "Analytics"]
                   },
                   { 
                     icon: Palette, 
                     title: "Fully White-Labelable", 
-                    desc: "Rebrand everything as your own software. Your logo, your colors, your domain - clients never see our name.",
-                    tags: ["White-Label", "Custom Branding", "Your Domain"]
+                    desc: "Rebrand everything as your own software. Your logo, your colors, your branding - clients never see our name.",
+                    tags: ["White-Label", "Custom Branding", "Your Logo"]
                   },
                   { 
                     icon: Shield, 
@@ -326,7 +326,7 @@ export default function HomePage() {
                         {feature.tags.map((tag, tagIndex) => (
                           <span
                             key={tagIndex}
-                            className="px-3 py-1 text-xs font-bold bg-black/60 border border-white/20 rounded-full text-white/80 hover:border-[var(--brand-red)]/50 transition-colors"
+                            className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-black/80 to-black/60 border border-white/30 rounded-lg text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_2px_12px_rgba(255,42,42,0.2)] transition-all"
                           >
                             {tag}
                           </span>
