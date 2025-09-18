@@ -580,8 +580,8 @@ export default function HomePage() {
 
                     <div className="p-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className={`p-2 rounded-lg ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30' : 'bg-white/5 border border-white/10'}`}>
-                          <plan.icon className={`w-6 h-6 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                        <div className="p-2 rounded-lg bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30">
+                          <plan.icon className="w-6 h-6 text-[var(--brand-red)]" />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-white">{plan.name}</h3>
@@ -611,7 +611,7 @@ export default function HomePage() {
                         <div className="space-y-2">
                           {plan.coreFeatures.slice(0, 4).map((feature: string, i: number) => (
                             <div key={i} className="flex items-center">
-                              <Check className={`w-3 h-3 mr-2 flex-shrink-0 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                              <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                               <span className="text-white/75 text-xs">{feature}</span>
                             </div>
                           ))}
@@ -629,7 +629,7 @@ export default function HomePage() {
                           <div className="space-y-1">
                             {plan.advancedFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
-                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-blue-400" />
+                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                                 <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
@@ -648,7 +648,7 @@ export default function HomePage() {
                           <div className="space-y-1">
                             {plan.teamFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
-                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-purple-400" />
+                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
                                 <span className="text-white/75 text-xs">{feature}</span>
                               </div>
                             ))}
