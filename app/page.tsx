@@ -146,6 +146,27 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
+              {/* Third duplicate for extra seamless loop */}
+              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="red">Limited</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    30% off launch special
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="white">Scale 2.0</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Scale 2.0 members: 20% off
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="dark">New</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Replaces 8+ marketing tools
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -994,8 +1015,8 @@ export default function HomePage() {
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
 
-        @keyframes scroll-banner { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .animate-scroll-banner { animation: scroll-banner 30s linear infinite; }
+        @keyframes scroll-banner { from { transform: translateX(0); } to { transform: translateX(-33.33%); } }
+        .animate-scroll-banner { animation: scroll-banner 20s linear infinite; }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
         .animate-bar-grow { transform-origin: bottom; animation: bar-grow 1.6s ease-in-out infinite; }
