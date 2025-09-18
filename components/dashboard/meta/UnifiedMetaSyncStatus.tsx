@@ -76,38 +76,53 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       // Fetch both platform connection sync status and demographics sync status
       const [connectionResponse, demographicsResponse] = await Promise.all([
         fetch(`/api/platforms/sync-status?brandId=${brandId}&platformType=meta`),
-        fetch(`/api/test/demographics-sync?brandId=${brandId}`)
+        fetch(`/api/meta/demographics/data?brandId=${brandId}&breakdown=age_gender&limit=1`)
       ])
 
       const connectionData = await connectionResponse.json()
       const demographicsData = await demographicsResponse.json()
 
-      // Debug logging removed to prevent console spam
+      // Debug logging (can be removed later)
+      if (connectionData.sync_status === 'in_progress') {
+        console.log('[UnifiedMetaSyncStatus] Sync active, API data:', {
+          sync_status: connectionData.sync_status,
+          campaign_progress: connectionData.campaign_progress,
+          recent_jobs_count: connectionData.recent_jobs?.length,
+          demographics_has_data: demographicsData.success && demographicsData.data?.length > 0
+        })
+      }
 
       // Build unified status with real data
       const campaignProgress = getCampaignProgress(connectionData)
       
-      // Get demographics progress - calculate from actual job data
+      // Get demographics progress - check if we have demographics data in the simple table
       let demographicsProgress = 0
       
-      // PRIORITY: If sync status is completed, show 100%
-      if (demographicsData.syncStatus?.overall_status === 'completed') {
+      // Check if we have demographics data (simple approach)
+      if (demographicsData.success && demographicsData.data && demographicsData.data.length > 0) {
+        // We have demographics data - assume completed
         demographicsProgress = 100
-      } else if (demographicsData.syncStatus?.days_completed && demographicsData.syncStatus?.total_days_target) {
-        demographicsProgress = Math.round((demographicsData.syncStatus.days_completed / demographicsData.syncStatus.total_days_target) * 100)
-      } else if (demographicsData.jobStats?.total > 0) {
-        // Fallback to job completion percentage
-        demographicsProgress = Math.round((demographicsData.jobStats.completed / demographicsData.jobStats.total) * 100)
       } else if (connectionData.sync_status === 'in_progress') {
-        // Show steady demographics progress when sync is active but no specific progress yet
+        // Sync is active but no demographics data yet - show progress
         const now = Date.now()
         const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
-        demographicsProgress = Math.min(30, 5 + Math.floor(elapsedSeconds / 4)) // Increase by 0.25% every second (slowest)
+        demographicsProgress = Math.min(95, 10 + Math.floor(elapsedSeconds / 2)) // Gradual increase
+      } else {
+        // No sync active and no data - show 0%
+        demographicsProgress = 0
       }
       
       const insightsProgress = getInsightsProgress(connectionData)
 
-      // Progress calculation complete
+      // Show calculated progress during active sync
+      if (connectionData.sync_status === 'in_progress') {
+        console.log('[UnifiedMetaSyncStatus] Progress update:', {
+          campaignProgress,
+          demographicsProgress,
+          insightsProgress,
+          overall: Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
+        })
+      }
 
       const phases: SyncPhase[] = [
         {
@@ -224,10 +239,10 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     
     // If sync is in progress but no jobs yet, show steadily increasing progress (behind campaigns)
     if (connectionData.sync_status === 'in_progress' || connectionData.sync_status === 'syncing') {
-      // Show steady progress from 10% to 100% over time, slower than campaigns
+      // Show steady progress from 10% to 75% over time, slower than campaigns
       const now = Date.now()
       const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
-      const animatedProgress = Math.min(95, 10 + Math.floor(elapsedSeconds / 3)) // Increase by 0.33% every second to 95%
+      const animatedProgress = Math.min(75, 10 + Math.floor(elapsedSeconds / 3)) // Increase by 0.33% every second (slower)
       
       return animatedProgress
     }
@@ -317,16 +332,26 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     }
   }
 
-  // Polling for updates during sync
+  // Initial fetch and smart polling only when sync is active
   useEffect(() => {
     fetchSyncStatus()
+  }, [brandId, connectionId]) // Only refetch when brand/connection changes
+
+  // Smart polling - only poll when sync is actually in progress
+  useEffect(() => {
+    if (!syncStatus) return
+
+    const isActiveSync = syncStatus.overall_status === 'in_progress' || 
+                         syncStatus.sync_status === 'in_progress'
     
-    const interval = setInterval(() => {
-      fetchSyncStatus() // Always poll to catch status changes
-    }, 2000) // Poll every 2 seconds for real-time updates
-    
-    return () => clearInterval(interval)
-  }, [fetchSyncStatus])
+    if (isActiveSync) {
+      const interval = setInterval(() => {
+        fetchSyncStatus()
+      }, 5000) // Poll every 5 seconds during active sync only
+      
+      return () => clearInterval(interval)
+    }
+  }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
 
   if (!isVisible || !syncStatus) {
     return null
