@@ -461,7 +461,7 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-5 gap-6 items-start">
+              <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
                 {[
                   {
                     name: "DTC Owner",
@@ -596,12 +596,10 @@ export default function HomePage() {
                     }`}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <div className="relative">
-                          <span className="px-4 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-lg shadow-[0_4px_0_rgba(0,0,0,.6)]">
-                            Most Popular
-                          </span>
-                        </div>
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                        <span className="px-3 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-md shadow-lg whitespace-nowrap">
+                          Most Popular
+                        </span>
                       </div>
                     )}
 
