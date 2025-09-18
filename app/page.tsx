@@ -96,16 +96,16 @@ export default function HomePage() {
           <div className="w-full bg-black/70 border-b border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-3">
               <TagBadge tone="red" className="hidden sm:inline-flex">Limited</TagBadge>
-              <p className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                Existing Scale 2.0 users get 20% off lifetime. <span className="text-white/60">Limited time offer.</span>
-              </p>
+                <p className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                  Launch Special: 30% off for first week users. <span className="text-white/60">Limited time only.</span>
+                </p>
             </div>
           </div>
 
           {/* Header */}
           <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-              <img src="https://i.imgur.com/WX8h7Xc.png" alt="Scale 2.0" className="h-10 w-auto" />
+                <img src="https://i.imgur.com/5a6dQWO.png" alt="Brez Marketing" className="h-10 w-auto" />
               <div className="flex items-center gap-3">
                 <Link href="/dashboard">
                   <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
@@ -293,8 +293,8 @@ export default function HomePage() {
                   { 
                     icon: Zap, 
                     title: "All-In-One Platform", 
-                    desc: "Replace Zapier, HubSpot, Canva, TripleWhale, Hyros, Google Analytics, and 8+ other tools with one login.",
-                    tags: ["Zapier", "HubSpot", "TripleWhale", "Hyros", "Canva", "Analytics"]
+                    desc: "Replace Zapier, HubSpot, Canva, Triple Whale, Hyros, Google Analytics, and 8+ other tools with one login.",
+                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics"]
                   },
                   { 
                     icon: Palette, 
@@ -326,7 +326,7 @@ export default function HomePage() {
                         {feature.tags.map((tag, tagIndex) => (
                           <span
                             key={tagIndex}
-                            className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-black/80 to-black/60 border border-white/30 rounded-lg text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_2px_12px_rgba(255,42,42,0.2)] transition-all"
+                            className="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-black/80 to-black/60 border border-white/30 rounded-lg text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:border-[var(--brand-red)]/60 hover:shadow-[0_2px_12px_rgba(255,42,42,0.2)] transition-all"
                           >
                             {tag}
                           </span>
