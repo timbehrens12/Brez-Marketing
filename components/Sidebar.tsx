@@ -470,7 +470,7 @@ export function Sidebar({ className }: SidebarProps) {
                 variant="ghost"
                 size="sm"
                 className="flex-1 ml-2 justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A] transition-opacity duration-200"
-                onClick={() => signOut(() => router.push("/dashboard"))}
+                onClick={() => signOut(() => router.push("/sign-in"))}
               >
                 <LogOut className="mr-2 h-5 w-5" />
                 Sign Out

@@ -11,8 +11,8 @@ export function CustomSignOutButton() {
 
   const handleSignOut = async () => {
     await signOut(() => {
-      // Redirect to the dashboard page which will show our custom sign-in overlay
-      router.push("/dashboard")
+      // Immediately redirect to sign-in page after sign out
+      router.push("/sign-in")
     })
   }
 

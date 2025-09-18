@@ -76,7 +76,7 @@ export default authMiddleware({
     const isProtectedRoute = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))
     
     if (isProtectedRoute && !auth.userId) {
-      console.warn(`🚨 SECURITY: Unauthorized access attempt to ${req.nextUrl.pathname}`)
+      console.warn(`🚨 SECURITY: Unauthorized access attempt to ${req.nextUrl.pathname} - redirecting to sign-in`)
       return NextResponse.redirect(new URL('/sign-in', req.url))
     }
 
