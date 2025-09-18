@@ -84,12 +84,12 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
 
       // Debug logging (can be removed later)
       if (connectionData.sync_status === 'in_progress') {
-        console.log('[UnifiedMetaSyncStatus] Sync active, API data:', {
-          sync_status: connectionData.sync_status,
-          campaign_progress: connectionData.campaign_progress,
-          recent_jobs_count: connectionData.recent_jobs?.length,
-          demographics_has_data: demographicsData.success && demographicsData.data?.length > 0
-        })
+        // console.log('[UnifiedMetaSyncStatus] Sync active, API data:', {
+        //   sync_status: connectionData.sync_status,
+        //   campaign_progress: connectionData.campaign_progress,
+        //   recent_jobs_count: connectionData.recent_jobs?.length,
+        //   demographics_has_data: demographicsData.success && demographicsData.data?.length > 0
+        // })
       }
 
       // Build unified status with real data
@@ -127,12 +127,12 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
 
       // Show calculated progress during active sync
       if (connectionData.sync_status === 'in_progress') {
-        console.log('[UnifiedMetaSyncStatus] Progress update:', {
-          campaignProgress,
-          demographicsProgress,
-          insightsProgress,
-          overall: Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
-        })
+        // console.log('[UnifiedMetaSyncStatus] Progress update:', {
+        //   campaignProgress,
+        //   demographicsProgress,
+        //   insightsProgress,
+        //   overall: Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
+        // })
       }
 
       const phases: SyncPhase[] = [
@@ -348,21 +348,22 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     fetchSyncStatus()
   }, [brandId, connectionId]) // Only refetch when brand/connection changes
 
+  // TEMPORARILY DISABLED POLLING TO STOP API SPAM
   // Smart polling - only poll when sync is actually in progress
-  useEffect(() => {
-    if (!syncStatus) return
+  // useEffect(() => {
+  //   if (!syncStatus) return
 
-    const isActiveSync = syncStatus.overall_status === 'in_progress' || 
-                         syncStatus.sync_status === 'in_progress'
+  //   const isActiveSync = syncStatus.overall_status === 'in_progress' || 
+  //                        syncStatus.sync_status === 'in_progress'
     
-    if (isActiveSync) {
-      const interval = setInterval(() => {
-        fetchSyncStatus()
-      }, 5000) // Poll every 5 seconds during active sync only
+  //   if (isActiveSync) {
+  //     const interval = setInterval(() => {
+  //       fetchSyncStatus()
+  //     }, 5000) // Poll every 5 seconds during active sync only
       
-      return () => clearInterval(interval)
-    }
-  }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
+  //     return () => clearInterval(interval)
+  //   }
+  // }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
 
   if (!isVisible || !syncStatus) {
     return null
