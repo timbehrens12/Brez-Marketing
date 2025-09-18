@@ -82,15 +82,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       const connectionData = await connectionResponse.json()
       const demographicsData = await demographicsResponse.json()
 
-      // Debug logging (can be removed later)
-      if (connectionData.sync_status === 'in_progress') {
-        // console.log('[UnifiedMetaSyncStatus] Sync active, API data:', {
-        //   sync_status: connectionData.sync_status,
-        //   campaign_progress: connectionData.campaign_progress,
-        //   recent_jobs_count: connectionData.recent_jobs?.length,
-        //   demographics_has_data: demographicsData.success && demographicsData.data?.length > 0
-        // })
-      }
+      // Debug logging removed to prevent console spam
 
       // Build unified status with real data
       const campaignProgress = getCampaignProgress(connectionData)
@@ -125,15 +117,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
         demographicsPhaseStatus = 'in_progress'
       }
 
-      // Show calculated progress during active sync
-      if (connectionData.sync_status === 'in_progress') {
-        // console.log('[UnifiedMetaSyncStatus] Progress update:', {
-        //   campaignProgress,
-        //   demographicsProgress,
-        //   insightsProgress,
-        //   overall: Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
-        // })
-      }
+      // Progress calculation completed
 
       const phases: SyncPhase[] = [
         {
@@ -348,31 +332,38 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     fetchSyncStatus()
   }, [brandId, connectionId]) // Only refetch when brand/connection changes
 
-  // Smart polling - only poll when sync is actually in progress and not at 100%
+  // Smart polling - only poll when sync is actually in progress
   useEffect(() => {
     if (!syncStatus) return
 
-    // Calculate current overall progress
+    // Only poll if sync status indicates active sync AND not all phases are complete
+    const isActiveSync = syncStatus.sync_status === 'in_progress' || 
+                         syncStatus.overall_status === 'in_progress'
+    
+    // Check if any progress is less than 100%
     const campaignProgress = getCampaignProgress(syncStatus)
     const insightsProgress = getInsightsProgress(syncStatus)
-    const demographicsProgress = (syncStatus.demographics_has_data || syncStatus.sync_status === 'completed') ? 100 : 0
-    const overallProgress = Math.round((campaignProgress + demographicsProgress + insightsProgress) / 3)
-
-    // Only poll if sync is active AND we're not at 100% yet
-    const isActiveSync = (syncStatus.sync_status === 'in_progress' || syncStatus.sync_status === 'syncing') && overallProgress < 100
+    // For demographics, check if we have data or if sync is in progress
+    const hasDemographicsData = syncStatus.demographics_has_data
+    const demographicsProgress = hasDemographicsData ? 100 : (isActiveSync ? 50 : 0)
     
-    if (isActiveSync) {
-      console.log(`[UnifiedMetaSyncStatus] Starting polling - overall progress: ${overallProgress}%`)
+    const anyProgressIncomplete = campaignProgress < 100 || insightsProgress < 100 || demographicsProgress < 100
+    
+    if (isActiveSync && anyProgressIncomplete) {
+      console.log(`🔄 Starting smart polling - Campaign: ${campaignProgress}%, Insights: ${insightsProgress}%, Demographics: ${demographicsProgress}%`)
+      
       const interval = setInterval(() => {
         fetchSyncStatus()
       }, 3000) // Poll every 3 seconds during active sync only
       
       return () => {
-        console.log('[UnifiedMetaSyncStatus] Stopping polling')
+        console.log('🛑 Stopping smart polling')
         clearInterval(interval)
       }
+    } else {
+      console.log('✅ Sync complete or not active - no polling needed')
     }
-  }, [syncStatus?.sync_status, syncStatus?.demographics_has_data, brandId])
+  }, [syncStatus?.overall_status, syncStatus?.sync_status, syncStatus?.campaign_progress, syncStatus?.insight_progress, syncStatus?.demographics_has_data, brandId])
 
   if (!isVisible || !syncStatus) {
     return null
