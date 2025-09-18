@@ -100,7 +100,7 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       // Check if we have demographics data (simple approach)
       if (demographicsData.success && demographicsData.data && demographicsData.data.length > 0) {
-        // We have demographics data - force completed
+        // We have demographics data - show completed
         demographicsProgress = 100
       } else {
         // No demographics data yet
@@ -109,14 +109,19 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       const insightsProgress = getInsightsProgress(connectionData)
 
-      // FORCE COMPLETION: If we have demographics data, force sync to show as completed
-      if (demographicsProgress === 100) {
-        setSyncStatus({
+      // Check if sync is truly completed - if we have demographics data and other data, mark as completed
+      const isReallyCompleted = demographicsProgress === 100 && campaignProgress > 0 && insightsProgress > 0
+      
+      if (isReallyCompleted && connectionData.sync_status === 'in_progress') {
+        // Force sync status to completed since we have all the data
+        console.log('[UnifiedMetaSyncStatus] ✅ Sync has all data - forcing completed status')
+        setSyncStatus(prev => ({ 
+          ...prev, 
           overall_status: 'completed',
           sync_status: 'completed',
           last_updated: new Date().toISOString()
-        })
-        return // Exit early to prevent showing sync UI when we have data
+        }))
+        return // Exit early to prevent showing in-progress UI
       }
 
       // Show calculated progress during active sync
@@ -337,14 +342,13 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     }
   }
 
-  // Initial fetch only - NO POLLING to stop the spam
+  // Initial fetch and smart polling only when sync is active
   useEffect(() => {
-    if (!brandId) return
     fetchSyncStatus()
-  }, [brandId, connectionId])
+  }, [brandId, connectionId]) // Only refetch when brand/connection changes
 
-  // DISABLED: No automatic polling to prevent infinite API spam
-  // User can manually refresh if needed
+  // DISABLED: No automatic polling - sync should complete and stay completed
+  // Only manual refresh if absolutely needed
 
   if (!isVisible || !syncStatus) {
     return null
