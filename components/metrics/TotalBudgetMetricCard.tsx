@@ -18,6 +18,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   const [adSetCount, setAdSetCount] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const hasInitialLoadRef = useRef(false)
+  const fetchInProgressRef = useRef(false) // Prevent multiple simultaneous fetches
 
   // Helper function to format time ago for last updated timestamp
   const formatTimeAgo = (date: Date): string => {
@@ -34,6 +35,14 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
 
   const fetchTotalBudget = useCallback(async (forceRefresh = false) => {
     if (!brandId) return
+    
+    // Prevent multiple simultaneous fetches
+    if (fetchInProgressRef.current) {
+      // console.log("[TotalMetaBudget] Fetch already in progress, skipping duplicate call");
+      return
+    }
+    
+    fetchInProgressRef.current = true
     
     try {
       // Set refreshing state if force refresh
@@ -84,6 +93,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       setIsLoading(false)
       }
       setIsRefreshing(false)
+      fetchInProgressRef.current = false // Reset flag
     }
   }, [brandId, unifiedLoading])
   

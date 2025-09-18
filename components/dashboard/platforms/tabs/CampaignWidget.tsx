@@ -420,6 +420,14 @@ const CampaignWidget = ({
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false): Promise<void> => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
+    // Check if a fetch is already in progress for this campaign
+    const controllerKey = `fetchAdSets_${campaignId}`;
+    const existingController = abortControllers.current.get(controllerKey);
+    if (existingController && !existingController.signal.aborted) {
+      // console.log(`[CampaignWidget] AdSets fetch for ${campaignId} already in progress, skipping duplicate call`);
+      return;
+    }
+    
     // Log detailed debugging info about the date range
     // console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
     if (!dateRange || !dateRange.from || !dateRange.to) {
@@ -454,7 +462,7 @@ const CampaignWidget = ({
     
     setIsLoadingAdSets(true);
     
-    const controller = createAbortController();
+    const controller = createAbortController(controllerKey);
     logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
     
     // Add throttling specific to ad set fetching for a campaign
@@ -981,10 +989,17 @@ const CampaignWidget = ({
   const fetchCurrentBudgets = useCallback(async (forceRefresh = false) => {
     if (!brandId || !isMountedRef.current) return;
     
+    // Check if a fetch is already in progress using the abort controller map
+    const existingController = abortControllers.current.get('fetchCurrentBudgets');
+    if (existingController && !existingController.signal.aborted) {
+      // console.log("[CampaignWidget] Budget fetch already in progress, skipping duplicate call");
+      return;
+    }
+    
     setIsLoadingBudgets(true);
     logger.debug("[CampaignWidget] Fetching current budget data, force refresh:", forceRefresh);
     
-    const controller = createAbortController();
+    const controller = createAbortController('fetchCurrentBudgets');
     
     try {
       const response = await fetch(
