@@ -21,6 +21,22 @@ export default function SignInPage() {
           afterSignInUrl="/dashboard"
           routing="path"
           path="/sign-in"
+          appearance={{
+            elements: {
+              rootBox: "w-full",
+              card: "bg-transparent shadow-none border-0 w-full",
+              headerTitle: "hidden",
+              headerSubtitle: "hidden",
+              main: "w-full",
+              form: "w-full",
+              formField: "w-full",
+              formFieldInput: "w-full",
+              formButtonPrimary: "w-full bg-white hover:bg-gray-100 text-black font-medium",
+              socialButtonsBlockButton: "w-full bg-[#444] border-[#555] text-white hover:bg-[#555]",
+              footerActionLink: "text-blue-400 hover:text-blue-300",
+              logoBox: "hidden"
+            }
+          }}
         />
       </div>
     </div>
