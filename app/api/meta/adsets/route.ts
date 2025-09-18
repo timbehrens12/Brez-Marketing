@@ -397,16 +397,36 @@ export async function GET(req: NextRequest) {
           );
         }
         
+        // Check if it's a rate limiting error
+        const errorMessage = (error as Error).message;
+        if (errorMessage.includes('User request limit reached') || 
+            errorMessage.includes('rate limit') ||
+            errorMessage.includes('Too many calls')) {
+          return NextResponse.json(
+            {
+              success: false,
+              isRateLimited: true,
+              error: 'Meta API rate limit reached: User request limit reached',
+              warning: 'Meta API rate limit reached',
+              message: 'Too many API calls to Meta. Please try again in a few minutes.',
+              retryAfter: 300, // 5 minutes
+              timestamp: new Date().toISOString(),
+              adSets: []
+            },
+            { status: 200 }
+          );
+        }
+
         // Return the exception
-      return NextResponse.json(
-        {
-            success: false,
-            error: `Exception when fetching ad sets: ${(error as Error).message}`,
-            timestamp: new Date().toISOString(),
-            adSets: []
-          },
-          { status: 200 } // Still return 200 to avoid client-side errors
-        );
+        return NextResponse.json(
+          {
+              success: false,
+              error: `Exception when fetching ad sets: ${errorMessage}`,
+              timestamp: new Date().toISOString(),
+              adSets: []
+            },
+            { status: 200 } // Still return 200 to avoid client-side errors
+          );
       }
     }
     

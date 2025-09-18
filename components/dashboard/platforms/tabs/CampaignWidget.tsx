@@ -616,8 +616,16 @@ const CampaignWidget = ({
                 duration: 8000
               });
             } else {
-              toast.info("No ad sets found for this campaign");
-              logger.debug(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+              // Check if it's a rate limiting issue
+              if (data.isRateLimited) {
+                toast.error("Meta API rate limit reached. Please wait a few minutes before trying again.", {
+                  duration: 5000
+                });
+                logger.warn(`[CampaignWidget] Meta API rate limited for campaign ${campaignId}`);
+              } else {
+                toast.info("No ad sets found for this campaign");
+                logger.debug(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+              }
             }
           }
           
@@ -2692,9 +2700,9 @@ const CampaignWidget = ({
                                   </div>
                                 ) : (
                                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                                    <h3 className="text-lg font-medium mb-1 text-white">No ad sets found</h3>
+                                    <h3 className="text-lg font-medium mb-1 text-white">Ad sets unavailable</h3>
                                     <p className="text-sm text-gray-400 max-w-sm mb-4">
-                                      This campaign doesn't have any ad sets or they couldn't be loaded.
+                                      Ad sets couldn't be loaded. This might be due to Meta API rate limiting. Please wait a few minutes and try refreshing.
                                     </p>
                                   </div>
                                 )}
