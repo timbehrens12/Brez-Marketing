@@ -390,6 +390,9 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
             <Badge className={`text-xs px-2 py-0.5 ${getStatusBadgeColor()}`}>
               {syncStatus.overall_status.replace('_', ' ').toUpperCase()}
             </Badge>
+            <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
+              Last 12 months
+            </span>
           </div>
           {isLoading && <RefreshCw className="h-4 w-4 text-gray-400 animate-spin" />}
         </div>
