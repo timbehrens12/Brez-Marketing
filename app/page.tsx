@@ -105,44 +105,44 @@ export default function HomePage() {
           {/* Top scrolling banner */}
           <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
             <div className="flex animate-scroll-banner whitespace-nowrap py-2">
-              <div className="flex items-center gap-8 px-8 flex-shrink-0">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    Launch Special: 30% off for first week users. Limited time only.
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    30% off launch special
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Scale 2.0 members: 20% off
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    All-in-one platform replacing 8+ expensive marketing tools
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Replaces 8+ marketing tools
                   </span>
                 </div>
               </div>
               {/* Duplicate for seamless loop */}
-              <div className="flex items-center gap-8 px-8 flex-shrink-0">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    Launch Special: 30% off for first week users. Limited time only.
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    30% off launch special
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Scale 2.0 members: 20% off
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                    All-in-one platform replacing 8+ expensive marketing tools
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Replaces 8+ marketing tools
                   </span>
                 </div>
               </div>
