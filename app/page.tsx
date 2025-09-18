@@ -102,13 +102,50 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10" style={{ ['--brand-red' as any]: BRAND_RED }}>
-          {/* Top urgency strip */}
-          <div className="w-full bg-black/70 border-b border-white/10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-3">
-              <TagBadge tone="red" className="hidden sm:inline-flex">Limited</TagBadge>
-                <p className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
-                  Launch Special: 30% off for first week users. <span className="text-white/60">Limited time only.</span>
-                </p>
+          {/* Top scrolling banner */}
+          <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
+            <div className="flex animate-scroll-banner whitespace-nowrap py-2">
+              <div className="flex items-center gap-8 px-8">
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="red">Limited</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    Launch Special: 30% off for first week users. Limited time only.
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="white">Scale 2.0</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="dark">New</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    All-in-one platform replacing 8+ expensive marketing tools
+                  </span>
+                </div>
+              </div>
+              {/* Duplicate for seamless loop */}
+              <div className="flex items-center gap-8 px-8">
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="red">Limited</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    Launch Special: 30% off for first week users. Limited time only.
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="white">Scale 2.0</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    Existing Scale 2.0 members receive 20% off Scale 2.0 dashboard!
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TagBadge tone="dark">New</TagBadge>
+                  <span className="text-xs md:text-sm text-white/80 tracking-wide font-extrabold">
+                    All-in-one platform replacing 8+ expensive marketing tools
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -461,7 +498,7 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-6 gap-4 items-start mt-8">
+              <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
                 {[
                   {
                     name: "DTC Owner",
@@ -576,42 +613,9 @@ export default function HomePage() {
                     whiteLabel: true
                   },
                   {
-                    name: "Multi-Brand Pro",
-                    description: "Up to 20 brands under management",
-                    price: 997,
-                    popular: false,
-                    icon: Target,
-                    coreFeatures: [
-                      "Up to 20 Brand Connections",
-                      "Full Enterprise Platform Access",
-                      "All Marketing Platform Integrations",
-                      "75 AI Marketing Assistant Chats/day",
-                      "250 AI Creative Generations/month",
-                      "Enterprise Analytics & Reports",
-                      "Multi-Brand Campaign Orchestration",
-                      "Advanced Customer Segmentation"
-                    ],
-                    advancedFeatures: [
-                      "1,250 Lead Generations/month",
-                      "3,500 Outreach Emails/month",
-                      "Enterprise Campaign AI Engine",
-                      "Professional Ad Creative Studio",
-                      "Advanced Contract Generation",
-                      "AI-Powered Creative Testing",
-                      "Custom Brand Creative Templates",
-                      "White-Glove API Support"
-                    ],
-                    teamFeatures: [
-                      "Team Collaboration (20 users)",
-                      "Advanced Client Portals",
-                      "Custom Role Permissions"
-                    ],
-                    whiteLabel: true
-                  },
-                  {
                     name: "Enterprise",
                     description: "Up to 25 brands, full-scale operations",
-                    price: 1997,
+                    price: 1337,
                     popular: false,
                     icon: Award,
                     coreFeatures: [
@@ -824,17 +828,17 @@ export default function HomePage() {
                     <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
                     <div className="space-y-3">
                       {[
-                        { tool: "HubSpot Professional", cost: 800 },
+                        { tool: "HubSpot Marketing Hub Pro", cost: 800 },
                         { tool: "Zapier Professional", cost: 49 },
-                        { tool: "Triple Whale Pro", cost: 299 },
-                        { tool: "Hyros", cost: 499 },
-                        { tool: "Canva Teams", cost: 30 },
-                        { tool: "Google Analytics 360", cost: 150 },
-                        { tool: "Shopify Plus Apps", cost: 200 },
+                        { tool: "Triple Whale", cost: 299 },
+                        { tool: "Hyros Attribution", cost: 499 },
+                        { tool: "Canva for Teams", cost: 30 },
+                        { tool: "Jasper AI (Creative Writing)", cost: 59 },
+                        { tool: "Apollo.io (Lead Generation)", cost: 147 },
                         { tool: "Outreach.io", cost: 390 },
-                        { tool: "Lead Generation Tool", cost: 197 },
-                        { tool: "Creative AI Tool", cost: 97 },
-                        { tool: "Campaign Manager", cost: 136 }
+                        { tool: "Klaviyo (Email Marketing)", cost: 150 },
+                        { tool: "AdEspresso (Campaign Management)", cost: 49 },
+                        { tool: "Typeform (Lead Forms)", cost: 35 }
                       ].map((item, i) => (
                         <div key={i} className="flex justify-between items-center text-sm">
                           <span className="text-white/80">{item.tool}</span>
@@ -951,11 +955,12 @@ export default function HomePage() {
                 Join the growing community of brand scalers who have transformed their businesses with our platform. Start scaling today and see the difference professional tools make.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
-                <Link href="/login">
-                  <Button className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base">
-                    Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={scrollToPricing}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
+                >
+                  Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
                 <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 backdrop-blur px-6 py-6">
                   <MessageSquare className="mr-2 h-5 w-5" /> Talk to Sales
                 </Button>
@@ -988,6 +993,9 @@ export default function HomePage() {
         /* anims (kept, just tuned) */
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
+
+        @keyframes scroll-banner { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .animate-scroll-banner { animation: scroll-banner 30s linear infinite; }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
         .animate-bar-grow { transform-origin: bottom; animation: bar-grow 1.6s ease-in-out infinite; }
