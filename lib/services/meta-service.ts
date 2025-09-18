@@ -1324,10 +1324,14 @@ export async function fetchMetaAdSets(
     // Fetch ad sets from Meta API
     const adAccountId = campaign.account_id;
     
-    // TEMPORARY: Skip adset fetching due to campaign-level rate limits
-    // TODO: Re-enable after rate limits reset (24-48 hours)
-    console.log(`[Meta Service] TEMP: Skipping adset fetch for campaign ${campaignId} due to rate limits`)
-    const adSetsResponse = { ok: false, status: 429, json: () => ({ error: { error_subcode: 2446079 } }) };
+    // TEST: Try one single adset API call to see if the issue persists
+    console.log(`[Meta Service] TESTING: Attempting single adset fetch for campaign ${campaignId}`)
+    const adSetsResponse = await fetchWithRetry(
+      `https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status&limit=1&access_token=${metaConnection.access_token}`,
+      {},
+      1, // Only 1 retry
+      10000 // 10 second backoff
+    );
     
     if (adSetsResponse.error) {
       const errorData = adSetsResponse.error;
