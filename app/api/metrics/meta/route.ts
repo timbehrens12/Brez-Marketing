@@ -168,9 +168,7 @@ export async function GET(request: NextRequest) {
     // Use local date to properly handle timezone boundaries
     const today = new Date()
     const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    const isRequestingToday = to === localToday || fromDate === localToday || toDate === localToday
-    
-    console.log(`[META API] Today check: localToday=${localToday}, fromDate=${fromDate}, toDate=${toDate}, isRequestingToday=${isRequestingToday}`);
+    const isRequestingToday = to === localToday
     
           if (isRequestingToday) {
         console.log(`[META API] Requesting data for today (${localToday}) - checking for midnight boundary issues`)
@@ -465,10 +463,10 @@ export async function GET(request: NextRequest) {
         isFetchingToday,
         refresh,
         forceLoad,
-        shouldTriggerSync: isFetchingToday && (refresh || forceLoad || forceRefresh)
+        shouldTriggerSync: isFetchingToday && (refresh || forceLoad)
       });
       
-      if (isFetchingToday && (refresh || forceLoad || forceRefresh)) {
+      if (isFetchingToday && (refresh || forceLoad)) {
         console.log(`🔥🔥🔥 [META API] TRIGGERING LIVE SYNC for today's data (brand: ${brandId})`);
         try {
           const syncResult = await fetchMetaAdInsights(brandId, new Date(todayStr), new Date(todayStr));
@@ -505,7 +503,7 @@ export async function GET(request: NextRequest) {
           console.error(`🔥🔥🔥 [META API] Exception during data sync:`, syncError);
             }
       } else {
-        console.log(`🔥🔥🔥 [META API] SKIPPING LIVE SYNC because isFetchingToday=${isFetchingToday}, refresh=${refresh}, forceLoad=${forceLoad}, forceRefresh=${forceRefresh}`);
+        console.log(`🔥🔥🔥 [META API] SKIPPING LIVE SYNC because isFetchingToday=${isFetchingToday}, refresh=${refresh}, forceLoad=${forceLoad}`);
       }
     }
 
@@ -579,26 +577,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[API /api/metrics/meta] Processing ${formattedInsights.length} records for period ${fromDate} to ${toDate}`);
-    
-    // Log sample data for debugging
-    if (formattedInsights.length > 0) {
-      console.log(`🔥🔥🔥 [META API] Sample processed record:`, {
-        date: formattedInsights[0].date,
-        spend: formattedInsights[0].spend,
-        impressions: formattedInsights[0].impressions,
-        clicks: formattedInsights[0].clicks
-      });
-    }
-    
     const processedData = processMetaData(formattedInsights);
-    
-    console.log(`🔥🔥🔥 [META API] Final processed totals:`, {
-      adSpend: processedData.adSpend,
-      impressions: processedData.impressions,
-      clicks: processedData.clicks,
-      reach: processedData.reach,
-      dailyDataCount: processedData.dailyData?.length || 0
-    });
       
       // Add date range info to help client validate
       const response = {

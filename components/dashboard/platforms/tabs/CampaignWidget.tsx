@@ -1372,6 +1372,7 @@ const CampaignWidget = ({
       //   spent: campaign.spent, 
       //   impressions: campaign.impressions,
       //   clicks: campaign.clicks,
+      //   reach: campaign.reach,
       //   hasDailyInsights: campaign.daily_insights?.length > 0,
       //   insightsCount: campaign.daily_insights?.length || 0
       // });
@@ -1453,23 +1454,24 @@ const CampaignWidget = ({
         //   impressions: aggregatedImpressions,
         //   clicks: aggregatedClicks,
         //   conversions: aggregatedConversions,
-        //   purchaseValue: aggregatedPurchaseValue
+        //   purchaseValue: aggregatedPurchaseValue,
+        //   originalSpent: campaign.spent,
+        //   originalReach: campaign.reach
         // });
 
         const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
         
         
-        // 🚨 CRITICAL FIX: Don't override spent - API provides correct aggregated value
-        // The aggregation from daily_insights is incomplete and causes wrong display values
-        // Use API spent value as source of truth, only aggregate other metrics
+        // 🔧 FIXED: For date-filtered views, use aggregated data consistently
+        // If no insights in range, all metrics should be 0 to avoid showing stale data
         return {
           ...campaign,
-          // spent: aggregatedSpent, // ❌ REMOVED: This was overriding correct API value
-          // Keep original campaign.spent from API
+          spent: insightsInRange > 0 ? aggregatedSpent : 0,
           impressions: aggregatedImpressions,
           clicks: aggregatedClicks,
           conversions: aggregatedConversions,
-          roas: calculatedRoas > 0 ? calculatedRoas : campaign.roas || 0,
+          reach: insightsInRange > 0 ? campaign.reach : 0, // Only show reach if we have data in range
+          roas: calculatedRoas > 0 ? calculatedRoas : 0,
           ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) : 0,
           cpc: aggregatedClicks > 0 ? aggregatedSpent / aggregatedClicks : 0,
           cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
