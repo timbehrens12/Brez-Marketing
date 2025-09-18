@@ -9,7 +9,7 @@ export default authMiddleware({
     "/api/webhooks(.*)",
     "/privacy",
     "/terms",
-    "/dashboard",
+    // REMOVED "/dashboard" - this should require authentication!
     "/sign-in(.*)",
     "/login(.*)",
     "/sign-up(.*)",
@@ -64,6 +64,21 @@ export default authMiddleware({
     }
   },
   afterAuth: (auth, req) => {
+    // 🔒 SECURITY: Block access to protected dashboard routes when not authenticated
+    const protectedRoutes = [
+      '/dashboard', '/settings', '/analytics', '/customers', '/orders', '/onboarding',
+      '/action-center', '/ad-creative-studio', '/ai-dashboard', '/ai-marketing-consultant',
+      '/brand-report', '/critical-brands', '/data-security', '/debug-shopify-sync', 
+      '/debug-supabase', '/lead-generator', '/marketing-assistant', '/meta-test',
+      '/outreach-tool', '/setup-jwt', '/share-brands', '/shopify'
+    ]
+    const isProtectedRoute = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))
+    
+    if (isProtectedRoute && !auth.userId) {
+      console.warn(`🚨 SECURITY: Unauthorized access attempt to ${req.nextUrl.pathname}`)
+      return NextResponse.redirect(new URL('/sign-in', req.url))
+    }
+
     // 🔒 SECURITY: Enhanced logging for security monitoring
     if (req.nextUrl.pathname.startsWith('/api/')) {
       const logEntry = {
