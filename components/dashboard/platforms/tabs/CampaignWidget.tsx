@@ -420,13 +420,13 @@ const CampaignWidget = ({
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false): Promise<void> => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
-    // Check if a fetch is already in progress for this campaign
-    const controllerKey = `fetchAdSets_${campaignId}`;
-    const existingController = abortControllers.current.get(controllerKey);
-    if (existingController && !existingController.signal.aborted) {
+    // Check if a fetch is already in progress for this campaign by using a simple flag
+    const fetchKey = `fetchAdSets_${campaignId}`;
+    if ((window as any)[fetchKey]) {
       // console.log(`[CampaignWidget] AdSets fetch for ${campaignId} already in progress, skipping duplicate call`);
       return;
     }
+    (window as any)[fetchKey] = true;
     
     // Log detailed debugging info about the date range
     // console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
@@ -462,7 +462,7 @@ const CampaignWidget = ({
     
     setIsLoadingAdSets(true);
     
-    const controller = createAbortController(controllerKey);
+    const controller = createAbortController();
     logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
     
     // Add throttling specific to ad set fetching for a campaign
@@ -698,6 +698,8 @@ const CampaignWidget = ({
         // Set loading false immediately
         setIsLoadingAdSets(false);
       }
+      // Clear the fetch flag
+      delete (window as any)[fetchKey];
       
       // Clean up abort controller
       removeAbortController(controller);
@@ -989,17 +991,18 @@ const CampaignWidget = ({
   const fetchCurrentBudgets = useCallback(async (forceRefresh = false) => {
     if (!brandId || !isMountedRef.current) return;
     
-    // Check if a fetch is already in progress using the abort controller map
-    const existingController = abortControllers.current.get('fetchCurrentBudgets');
-    if (existingController && !existingController.signal.aborted) {
+    // Check if a fetch is already in progress using a simple flag
+    const fetchKey = 'fetchCurrentBudgets';
+    if ((window as any)[fetchKey]) {
       // console.log("[CampaignWidget] Budget fetch already in progress, skipping duplicate call");
       return;
     }
+    (window as any)[fetchKey] = true;
     
     setIsLoadingBudgets(true);
     logger.debug("[CampaignWidget] Fetching current budget data, force refresh:", forceRefresh);
     
-    const controller = createAbortController('fetchCurrentBudgets');
+    const controller = createAbortController();
     
     try {
       const response = await fetch(
@@ -1057,6 +1060,8 @@ const CampaignWidget = ({
       if (isMountedRef.current) {
         setIsLoadingBudgets(false);
       }
+      // Clear the fetch flag
+      delete (window as any)[fetchKey];
     }
   }, [brandId, createAbortController, removeAbortController]);
   
