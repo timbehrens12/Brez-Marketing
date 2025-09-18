@@ -16,9 +16,24 @@ export default function SignInPage() {
           />
           <p className="text-gray-400">Sign in to access your dashboard</p>
         </div>
-        <SignIn 
-          afterSignInUrl="/dashboard"
-        />
+        
+        {/* DEBUG: Let's see what's happening */}
+        <div className="mb-4 p-4 bg-red-900/20 border border-red-500 rounded text-red-300 text-sm">
+          <p>Debug: Clerk SignIn component should appear below this box</p>
+        </div>
+        
+        <div className="border border-yellow-500 p-4 rounded">
+          <SignIn 
+            afterSignInUrl="/dashboard"
+            routing="path"
+            path="/sign-in"
+          />
+        </div>
+        
+        <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500 rounded text-blue-300 text-sm">
+          <p>Debug: Clerk SignIn component should appear above this box</p>
+          <p>If you only see these debug boxes, the SignIn component isn't rendering</p>
+        </div>
       </div>
     </div>
   )
