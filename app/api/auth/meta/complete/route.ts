@@ -13,21 +13,53 @@ export async function POST(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    const { data: connectionData, error: dbError } = await supabase
+    // FIXED: Use separate insert/update to preserve existing metadata
+    let connectionData;
+    const { data: existingConnection } = await supabase
       .from('platform_connections')
-      .upsert({
-        brand_id: state,
-        platform_type: 'meta',
-        access_token: access_token,
-        status: 'active',
-        user_id: userId,
-        sync_status: 'in_progress'
-      })
-      .select('id')
+      .select('id, metadata')
+      .eq('brand_id', state)
+      .eq('platform_type', 'meta')
       .single()
 
-    if (dbError || !connectionData) {
-      throw dbError || new Error('No connection data returned')
+    if (existingConnection) {
+      // Update existing connection, preserving metadata
+      const { data: updatedConnection, error: updateError } = await supabase
+        .from('platform_connections')
+        .update({
+          access_token: access_token,
+          status: 'active',
+          user_id: userId,
+          sync_status: 'in_progress',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingConnection.id)
+        .select('id')
+        .single()
+      
+      if (updateError) throw updateError
+      connectionData = updatedConnection
+    } else {
+      // Create new connection
+      const { data: newConnection, error: insertError } = await supabase
+        .from('platform_connections')
+        .insert({
+          brand_id: state,
+          platform_type: 'meta',
+          access_token: access_token,
+          status: 'active',
+          user_id: userId,
+          sync_status: 'in_progress'
+        })
+        .select('id')
+        .single()
+      
+      if (insertError) throw insertError
+      connectionData = newConnection
+    }
+
+    if (!connectionData) {
+      throw new Error('No connection data returned')
     }
 
     // Get Meta account ID and trigger backfill + demographics sync automatically
@@ -99,20 +131,35 @@ export async function POST(request: NextRequest) {
       
       try {
         // FIRST: Create/reset the sync status record to prevent 63% stuck issue
+        console.log(`[Meta Complete] Creating demographics sync status for account ${accountId}...`)
+        
+        // Remove any existing sync status first
         await supabase
           .from('meta_demographics_sync_status')
-          .upsert({
+          .delete()
+          .eq('brand_id', state)
+        
+        // Create new sync status record with all required fields
+        const { error: syncStatusError } = await supabase
+          .from('meta_demographics_sync_status')
+          .insert({
             brand_id: state,
+            connection_id: connectionData.id,
+            account_id: accountId.replace('act_', ''), // Remove act_ prefix
             overall_status: 'in_progress',
-            progress_percentage: 0,
             days_completed: 0,
             total_days_target: 365,
-            current_date_range_start: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            current_date_range_end: new Date().toISOString().split('T')[0],
+            current_phase: 'historical',
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
         
-        console.log(`[Meta Complete] ✅ Demographics sync status initialized`)
+        if (syncStatusError) {
+          console.error(`[Meta Complete] Failed to create sync status:`, syncStatusError)
+          throw syncStatusError
+        }
+        
+        console.log(`[Meta Complete] ✅ Demographics sync status initialized for account ${accountId}`)
         
         // Import the working Meta service (same as the old working sync)
         const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
@@ -143,8 +190,8 @@ export async function POST(request: NextRequest) {
             .from('meta_demographics_sync_status')
             .update({
               overall_status: 'completed',
-              progress_percentage: 100,
               days_completed: 365,
+              completed_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('brand_id', state)
@@ -157,6 +204,8 @@ export async function POST(request: NextRequest) {
             .from('meta_demographics_sync_status')
             .update({
               overall_status: 'failed',
+              last_error_message: demographicsResult.error || 'Demographics sync failed',
+              last_error_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('brand_id', state)
@@ -171,6 +220,8 @@ export async function POST(request: NextRequest) {
             .from('meta_demographics_sync_status')
             .update({
               overall_status: 'failed',
+              last_error_message: demographicsError.message || 'Demographics sync exception',
+              last_error_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('brand_id', state)
