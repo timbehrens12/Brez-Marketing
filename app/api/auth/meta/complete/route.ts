@@ -94,10 +94,26 @@ export async function POST(request: NextRequest) {
         accountId
       )
       
-      // NEW: Start SIMPLE working demographics sync (replaces broken comprehensive sync)
+      // NEW: Start SIMPLE working demographics sync + ensure sync status is created
       console.log(`[Meta Complete] 🚀 Starting SIMPLE demographics sync (using old working method)...`)
       
       try {
+        // FIRST: Create/reset the sync status record to prevent 63% stuck issue
+        await supabase
+          .from('meta_demographics_sync_status')
+          .upsert({
+            brand_id: state,
+            overall_status: 'in_progress',
+            progress_percentage: 0,
+            days_completed: 0,
+            total_days_target: 365,
+            current_date_range_start: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            current_date_range_end: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString()
+          })
+        
+        console.log(`[Meta Complete] ✅ Demographics sync status initialized`)
+        
         // Import the working Meta service (same as the old working sync)
         const { fetchMetaAdInsights } = await import('@/lib/services/meta-service')
         
@@ -121,12 +137,47 @@ export async function POST(request: NextRequest) {
         if (demographicsResult.success) {
           console.log(`[Meta Complete] ✅ SIMPLE demographics sync successful!`)
           console.log(`[Meta Complete] Demographics result:`, demographicsResult)
+          
+          // Update sync status to completed
+          await supabase
+            .from('meta_demographics_sync_status')
+            .update({
+              overall_status: 'completed',
+              progress_percentage: 100,
+              days_completed: 365,
+              updated_at: new Date().toISOString()
+            })
+            .eq('brand_id', state)
+            
         } else {
           console.error(`[Meta Complete] ❌ Simple demographics sync failed:`, demographicsResult.error)
+          
+          // Update sync status to failed
+          await supabase
+            .from('meta_demographics_sync_status')
+            .update({
+              overall_status: 'failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('brand_id', state)
         }
         
       } catch (demographicsError) {
         console.error('[Meta Complete] Simple demographics sync error:', demographicsError)
+        
+        // Update sync status to failed
+        try {
+          await supabase
+            .from('meta_demographics_sync_status')
+            .update({
+              overall_status: 'failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('brand_id', state)
+        } catch (statusError) {
+          console.error('[Meta Complete] Failed to update sync status:', statusError)
+        }
+        
         // Don't fail the OAuth flow if demographics fails
       }
       
