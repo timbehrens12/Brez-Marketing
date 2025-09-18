@@ -100,19 +100,24 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
       
       // Check if we have demographics data (simple approach)
       if (demographicsData.success && demographicsData.data && demographicsData.data.length > 0) {
-        // We have demographics data - assume completed
+        // We have demographics data - force completed
         demographicsProgress = 100
-      } else if (connectionData.sync_status === 'in_progress') {
-        // Sync is active but no demographics data yet - show progress
-        const now = Date.now()
-        const elapsedSeconds = Math.floor((now - (window._syncStartTime || now)) / 1000)
-        demographicsProgress = Math.min(95, 10 + Math.floor(elapsedSeconds / 2)) // Gradual increase
       } else {
-        // No sync active and no data - show 0%
+        // No demographics data yet
         demographicsProgress = 0
       }
       
       const insightsProgress = getInsightsProgress(connectionData)
+
+      // FORCE COMPLETION: If we have demographics data, force sync to show as completed
+      if (demographicsProgress === 100) {
+        setSyncStatus({
+          overall_status: 'completed',
+          sync_status: 'completed',
+          last_updated: new Date().toISOString()
+        })
+        return // Exit early to prevent showing sync UI when we have data
+      }
 
       // Show calculated progress during active sync
       if (connectionData.sync_status === 'in_progress') {
@@ -332,26 +337,14 @@ export function UnifiedMetaSyncStatus({ brandId, connectionId, isVisible, onSync
     }
   }
 
-  // Initial fetch and smart polling only when sync is active
+  // Initial fetch only - NO POLLING to stop the spam
   useEffect(() => {
+    if (!brandId) return
     fetchSyncStatus()
-  }, [brandId, connectionId]) // Only refetch when brand/connection changes
+  }, [brandId, connectionId])
 
-  // Smart polling - only poll when sync is actually in progress
-  useEffect(() => {
-    if (!syncStatus) return
-
-    const isActiveSync = syncStatus.overall_status === 'in_progress' || 
-                         syncStatus.sync_status === 'in_progress'
-    
-    if (isActiveSync) {
-      const interval = setInterval(() => {
-        fetchSyncStatus()
-      }, 5000) // Poll every 5 seconds during active sync only
-      
-      return () => clearInterval(interval)
-    }
-  }, [syncStatus?.overall_status, syncStatus?.sync_status, brandId])
+  // DISABLED: No automatic polling to prevent infinite API spam
+  // User can manually refresh if needed
 
   if (!isVisible || !syncStatus) {
     return null
