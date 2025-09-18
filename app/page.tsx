@@ -461,7 +461,7 @@ export default function HomePage() {
                 sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
-              <div className="grid lg:grid-cols-4 gap-8 items-start">
+              <div className="grid lg:grid-cols-5 gap-6 items-start">
                 {[
                   {
                     name: "DTC Owner",
@@ -484,7 +484,7 @@ export default function HomePage() {
                   {
                     name: "Brand Scaler",
                     description: "Growing brands & small agencies",
-                    price: 197,
+                    price: 137,
                     popular: true,
                     icon: Rocket,
                     coreFeatures: [
@@ -505,35 +505,62 @@ export default function HomePage() {
                     whiteLabel: true
                   },
                   {
-                    name: "Multi-Brand Agency",
-                    description: "2-10 brands under management",
-                    price: 497,
+                    name: "Growing Agency",
+                    description: "Up to 5 brands under management",
+                    price: 297,
                     popular: false,
-                    icon: Zap,
+                    icon: TrendingUp,
                     coreFeatures: [
-                      "Up to 10 Brand Connections",
+                      "Up to 5 Brand Connections",
                       "Full Platform Access",
                       "All Integrations Included",
-                      "100 AI Assistant Chats/day",
-                      "200 Creative Generations/month",
-                      "Premium Analytics & Reports"
+                      "50 AI Assistant Chats/day",
+                      "100 Creative Generations/month",
+                      "Advanced Analytics & Reports"
                     ],
                     advancedFeatures: [
-                      "1,000 Lead Generations/month",
-                      "2,500 Outreach Emails/month",
+                      "500 Lead Generations/month",
+                      "1,500 Outreach Emails/month",
                       "Advanced Campaign AI",
                       "Priority API Access"
                     ],
                     teamFeatures: [
-                      "Team Collaboration (10 users)",
+                      "Team Collaboration (5 users)",
                       "Client Portal Access",
-                      "Role-Based Permissions"
+                      "Basic Role Permissions"
+                    ],
+                    whiteLabel: true
+                  },
+                  {
+                    name: "Multi-Brand Agency",
+                    description: "Up to 15 brands under management",
+                    price: 597,
+                    popular: false,
+                    icon: Zap,
+                    coreFeatures: [
+                      "Up to 15 Brand Connections",
+                      "Full Platform Access",
+                      "All Integrations Included",
+                      "100 AI Assistant Chats/day",
+                      "250 Creative Generations/month",
+                      "Premium Analytics & Reports"
+                    ],
+                    advancedFeatures: [
+                      "1,500 Lead Generations/month",
+                      "4,000 Outreach Emails/month",
+                      "Advanced Campaign AI",
+                      "Priority API Access"
+                    ],
+                    teamFeatures: [
+                      "Team Collaboration (15 users)",
+                      "Client Portal Access",
+                      "Advanced Role Permissions"
                     ],
                     whiteLabel: true
                   },
                   {
                     name: "Enterprise Agency",
-                    description: "11-25+ brands, full-scale operations",
+                    description: "Up to 25 brands, full-scale operations",
                     price: 1497,
                     popular: false,
                     icon: Award,
@@ -547,15 +574,15 @@ export default function HomePage() {
                     ],
                     advancedFeatures: [
                       "5,000 Lead Generations/month",
-                      "25,000 Outreach Emails/month",
-                      "Campaign Optimization",
-                      "Enterprise API Access"
+                      "15,000 Outreach Emails/month",
+                      "Enterprise Campaign AI",
+                      "White-Glove API Support"
                     ],
                     teamFeatures: [
                       "Unlimited Team Members",
-                      "Client Portal Access",
-                      "Role-Based Permissions",
-                      "Custom Integrations"
+                      "Advanced Client Portals",
+                      "Custom Role Permissions",
+                      "Dedicated Account Manager"
                     ],
                     whiteLabel: true
                   }
@@ -625,7 +652,7 @@ export default function HomePage() {
 
                       {plan.advancedFeatures.length > 0 && (
                         <div className="mb-3">
-                          <h4 className="text-blue-400 font-semibold text-xs mb-2 uppercase tracking-wide">⚡ Growth</h4>
+                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide">⚡ Growth</h4>
                           <div className="space-y-1">
                             {plan.advancedFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
@@ -644,7 +671,7 @@ export default function HomePage() {
 
                       {plan.teamFeatures.length > 0 && (
                         <div className="mb-3">
-                          <h4 className="text-purple-400 font-semibold text-xs mb-2 uppercase tracking-wide">👥 Team</h4>
+                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide">👥 Team</h4>
                           <div className="space-y-1">
                             {plan.teamFeatures.slice(0, 2).map((feature: string, i: number) => (
                               <div key={i} className="flex items-center">
@@ -719,6 +746,21 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Contact Sales */}
+              <div className="mt-16 text-center">
+                <div className="bg-gradient-to-br from-[var(--brand-red)]/10 via-[var(--brand-red)]/5 to-transparent border border-[var(--brand-red)]/20 rounded-2xl p-8 max-w-md mx-auto">
+                  <h3 className="text-2xl font-bold mb-4 text-white">Need More Than 25 Brands?</h3>
+                  <p className="text-white/70 mb-6">
+                    Custom enterprise solutions for large-scale operations with unlimited brands and dedicated support.
+                  </p>
+                  <Link href="/join-agency">
+                    <Button className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold px-8 py-3 shadow-[0_4px_0_rgba(0,0,0,.4)] hover:shadow-[0_2px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all">
+                      Contact Sales
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
               {/* Cost Comparison */}
