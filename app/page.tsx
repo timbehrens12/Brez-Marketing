@@ -290,9 +290,24 @@ export default function HomePage() {
               />
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
                 {[
-                  { icon: Zap, title: "All-In-One Platform", desc: "Replace Zapier, HubSpot, Canva, Google Analytics, and 8+ other tools with one login." },
-                  { icon: Palette, title: "Fully White-Labelable", desc: "Rebrand everything as your own software. Your logo, your colors, your domain - clients never see our name." },
-                  { icon: Shield, title: "Own Your Business", desc: "No dependencies on external tools. Everything runs under your brand with enterprise-grade reliability." },
+                  { 
+                    icon: Zap, 
+                    title: "All-In-One Platform", 
+                    desc: "Replace Zapier, HubSpot, Canva, Google Analytics, and 8+ other tools with one login.",
+                    tags: ["Zapier", "HubSpot", "Canva", "Analytics"]
+                  },
+                  { 
+                    icon: Palette, 
+                    title: "Fully White-Labelable", 
+                    desc: "Rebrand everything as your own software. Your logo, your colors, your domain - clients never see our name.",
+                    tags: ["White-Label", "Custom Branding", "Your Domain"]
+                  },
+                  { 
+                    icon: Shield, 
+                    title: "Own Your Business", 
+                    desc: "No dependencies on external tools. Everything runs under your brand with enterprise-grade reliability.",
+                    tags: ["Enterprise", "Reliable", "Independent"]
+                  },
                 ].map((feature, i) => (
                   <div
                     key={i}
@@ -304,7 +319,19 @@ export default function HomePage() {
                         <feature.icon className="w-8 h-8 text-white/70" />
                       </div>
                       <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                      <p className="text-white/70 font-mono">{feature.desc}</p>
+                      <p className="text-white/70 font-mono mb-4">{feature.desc}</p>
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {feature.tags.map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            className="px-3 py-1 text-xs font-bold bg-black/60 border border-white/20 rounded-full text-white/80 hover:border-[var(--brand-red)]/50 transition-colors"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -477,37 +504,57 @@ export default function HomePage() {
                 ].map((plan, index) => (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 group ${
-                      plan.popular ? 'border-white/35 bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03))] scale-[1.03] shadow-[0_30px_120px_rgba(255,42,42,.2)]' : 'border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015))] hover:border-white/25'
+                    className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
+                      plan.popular 
+                        ? 'bg-gradient-to-br from-black/90 via-black/95 to-black/90 border-2 border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
+                        : 'bg-gradient-to-br from-black/70 via-black/80 to-black/70 border border-white/15 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,.1)]'
                     }`}
                   >
-                    {plan.popular && <Ribbon>Most Popular</Ribbon>}
-
-                    <div className="p-6 pb-4">
-                      <div className="mb-4">
-                        <plan.icon className="w-12 h-12 text-white/70" />
+                    {plan.popular && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <div className="relative">
+                          <span className="px-4 py-1 text-xs font-black uppercase bg-[var(--brand-red)] text-black rounded-lg shadow-[0_4px_0_rgba(0,0,0,.6)]">
+                            Most Popular
+                          </span>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                      <p className="text-white/70 text-sm mb-4 font-mono">{plan.description}</p>
+                    )}
+
+                    <div className="p-8 pb-6">
                       <div className="mb-6">
-                        <span className="text-4xl font-extrabold">${plan.price}</span>
-                        <span className="text-white/50 text-lg">/month</span>
+                        <div className={`inline-flex p-3 rounded-xl ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30' : 'bg-white/5 border border-white/10'}`}>
+                          <plan.icon className={`w-8 h-8 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2 text-white">{plan.name}</h3>
+                      <p className="text-white/60 text-sm mb-6 font-mono">{plan.description}</p>
+                      <div className="mb-8">
+                        <div className="flex items-baseline">
+                          <span className="text-5xl font-black text-white">${plan.price}</span>
+                          <span className="text-white/40 text-lg ml-2">/month</span>
+                        </div>
                       </div>
                       <Link href="/login">
-                        <Button className={`w-full mb-6 ${plan.popular ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_10px_0_rgba(0,0,0,.6)]' : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'}`}>
+                        <Button className={`w-full mb-6 h-12 text-base font-bold ${
+                          plan.popular 
+                            ? 'bg-[var(--brand-red)] text-black hover:brightness-110 shadow-[0_6px_0_rgba(0,0,0,.4)] hover:shadow-[0_4px_0_rgba(0,0,0,.4)] hover:translate-y-[2px] transition-all' 
+                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
+                        }`}>
                           Get Started
                         </Button>
                       </Link>
                     </div>
 
-                    <div className="px-6 pb-6 flex-1">
+                    <div className="px-8 pb-8 flex-1">
                       <div className="mb-6">
-                        <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Core Features</h4>
-                        <div className="space-y-2">
+                        <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">✓ Core Features</h4>
+                        <div className="space-y-3">
                           {plan.coreFeatures.map((feature: string, i: number) => (
                             <div key={i} className="flex items-start">
-                              <Check className="w-4 h-4 text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                              <span className="text-white/80 text-sm font-mono">{feature}</span>
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40' : 'bg-white/10 border border-white/20'}`}>
+                                <Check className={`w-3 h-3 ${plan.popular ? 'text-[var(--brand-red)]' : 'text-white/70'}`} />
+                              </div>
+                              <span className="text-white/80 text-sm">{feature}</span>
                             </div>
                           ))}
                         </div>
@@ -515,12 +562,14 @@ export default function HomePage() {
 
                       {plan.advancedFeatures.length > 0 && (
                         <div className="mb-6">
-                          <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Growth Tools</h4>
-                          <div className="space-y-2">
+                          <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">⚡ Growth Tools</h4>
+                          <div className="space-y-3">
                             {plan.advancedFeatures.map((feature: string, i: number) => (
                               <div key={i} className="flex items-start">
-                                <Check className="w-4 h-4 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-                                <span className="text-white/80 text-sm font-mono">{feature}</span>
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-blue-500/20 border border-blue-500/40' : 'bg-white/10 border border-white/20'}`}>
+                                  <Check className={`w-3 h-3 ${plan.popular ? 'text-blue-400' : 'text-white/70'}`} />
+                                </div>
+                                <span className="text-white/80 text-sm">{feature}</span>
                               </div>
                             ))}
                           </div>
@@ -529,12 +578,14 @@ export default function HomePage() {
 
                       {plan.teamFeatures.length > 0 && (
                         <div className="mb-6">
-                          <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Team & Clients</h4>
-                          <div className="space-y-2">
+                          <h4 className="text-white/90 font-bold text-sm mb-4 uppercase tracking-wide">👥 Team & Enterprise</h4>
+                          <div className="space-y-3">
                             {plan.teamFeatures.map((feature: string, i: number) => (
                               <div key={i} className="flex items-start">
-                                <Check className="w-4 h-4 text-purple-400 mr-3 mt-0.5 flex-shrink-0" />
-                                <span className="text-white/80 text-sm font-mono">{feature}</span>
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${plan.popular ? 'bg-purple-500/20 border border-purple-500/40' : 'bg-white/10 border border-white/20'}`}>
+                                  <Check className={`w-3 h-3 ${plan.popular ? 'text-purple-400' : 'text-white/70'}`} />
+                                </div>
+                                <span className="text-white/80 text-sm">{feature}</span>
                               </div>
                             ))}
                           </div>
@@ -542,12 +593,17 @@ export default function HomePage() {
                       )}
 
                       {plan.whiteLabel && (
-                        <div className="border border-amber-500/30 bg-amber-500/10 rounded-lg p-3">
+                        <div className="border border-[var(--brand-red)]/30 bg-[var(--brand-red)]/10 rounded-xl p-4">
+                          <h4 className="text-white/90 font-bold text-sm mb-3 uppercase tracking-wide">🏷️ White Label</h4>
                           <div className="flex items-start">
-                            <Check className="w-4 h-4 text-amber-400 mr-2 mt-0.5 flex-shrink-0" />
-                            <span className="text-amber-200 text-sm font-semibold">Full White-Label Rights</span>
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/40">
+                              <Check className="w-3 h-3 text-[var(--brand-red)]" />
+                            </div>
+                            <div>
+                              <span className="text-white text-sm font-semibold block">Complete white-label rebrand capabilities</span>
+                              <p className="text-white/70 text-xs mt-1">Sell as your own proprietary software</p>
+                            </div>
                           </div>
-                          <p className="text-amber-200/80 text-xs mt-1 ml-6 font-mono">Rebrand as your own software</p>
                         </div>
                       )}
 
