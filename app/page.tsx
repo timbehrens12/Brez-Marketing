@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, X, ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, Target, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Play, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail } from "lucide-react"
+import { Check, X, ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, Target, Rocket, Brain, Palette, Send, FileText, Settings, Globe, MessageSquare, ChevronDown, ChevronUp, Award, Clock, DollarSign, Activity, Search, PieChart, Bot, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -122,11 +122,12 @@ export default function HomePage() {
                     Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/login">
-                  <Button className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_8px_0_rgba(0,0,0,.5)]">
-                    Get Started
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={scrollToPricing}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_8px_0_rgba(0,0,0,.5)]"
+                >
+                  Get Started
+                </Button>
               </div>
             </div>
           </header>
@@ -151,9 +152,6 @@ export default function HomePage() {
                     className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
                   >
                     Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 backdrop-blur px-6 py-6">
-                    <Play className="mr-2 h-5 w-5" /> Watch Demo
                   </Button>
                 </div>
                 {/* trust row */}
@@ -714,7 +712,7 @@ export default function HomePage() {
                 <span className="text-transparent bg-clip-text bg-[linear-gradient(90deg,#fff,rgba(255,255,255,.5))]">LIKE A PRO?</span>
               </h2>
               <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10 font-mono">
-                Join the growing community of brand scalers who have transformed their businesses with our platform. Start your free trial today and see the difference professional tools make.
+                Join the growing community of brand scalers who have transformed their businesses with our platform. Start scaling today and see the difference professional tools make.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
                 <Link href="/login">
