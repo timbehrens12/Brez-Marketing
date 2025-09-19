@@ -2628,7 +2628,7 @@ export default function BrandReportPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">
-                  {mounted ? `${greeting}, ${userFirstName}! 👋` : "Loading..."}
+                  {mounted ? `${greeting}, ${userFirstName}!` : "Loading..."}
                 </h1>
                 <p className="text-lg text-gray-300">
                   Brand Performance Reports
@@ -2943,8 +2943,8 @@ export default function BrandReportPage() {
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
                   <BarChart4 className="h-12 w-12 text-gray-400" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-[#FF2A2A] to-[#E02424] rounded-full flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-white" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-full flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
               <div className="text-center space-y-4">
