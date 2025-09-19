@@ -4308,7 +4308,7 @@ AVOID REPETITIVE PATTERNS:
 
           {/* Right Column - Pro Tips */}
           <div>
-            <div className="bg-gradient-to-br from-[#FF2A2A]/10 to-[#E02424]/10 border border-[#FF2A2A]/30 rounded-lg p-4 h-[300px]">
+            <div className="border-2 border-dashed border-[#333] rounded-xl p-4 h-[300px] hover:border-[#555] transition-colors">
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-[#FF2A2A] mt-0.5 flex-shrink-0" />
                 <div>

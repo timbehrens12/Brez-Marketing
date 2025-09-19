@@ -39,7 +39,7 @@ import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 
 // Removed useSupabase import since we're using the singleton client
-import { Info, LayoutGrid, Loader2, BarChart3, Settings } from "lucide-react"
+import { Info, LayoutGrid, Loader2, BarChart3, Settings, Check } from "lucide-react"
 import { GlobalRefreshButton } from "@/components/dashboard/GlobalRefreshButton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
@@ -1937,23 +1937,33 @@ export default function DashboardPage() {
               {/* Loading phases checklist - synced to progression percentages */}
               <div className="text-left space-y-2 text-sm text-gray-400">
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 20 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 20 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}>
+                    {loadingProgress >= 20 && <Check className="w-2.5 h-2.5 text-white" />}
+                  </div>
                   <span>Loading workspace data</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}>
+                    {loadingProgress >= 40 && <Check className="w-2.5 h-2.5 text-white" />}
+                  </div>
                   <span>Generating action items</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}>
+                    {loadingProgress >= 60 && <Check className="w-2.5 h-2.5 text-white" />}
+                  </div>
                   <span>Analyzing brand performance</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}>
+                    {loadingProgress >= 80 && <Check className="w-2.5 h-2.5 text-white" />}
+                  </div>
                   <span>Processing automation tools</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 90 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 90 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 90 ? 'bg-white/60' : 'bg-white/20'}`}>
+                    {loadingProgress >= 95 && <Check className="w-2.5 h-2.5 text-white" />}
+                  </div>
                   <span>Preparing dashboard</span>
                 </div>
               </div>
