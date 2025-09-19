@@ -4288,8 +4288,8 @@ AVOID REPETITIVE PATTERNS:
                   <p className="text-gray-400 text-xs">Supports JPG, PNG, WebP • Single or multiple images</p>
                 </div>
                 <label htmlFor="upload-input" className="cursor-pointer">
-                  <div                 className="bg-[#FF2A2A] hover:bg-[#E02424] 
-                                px-6 py-2 rounded-lg text-black font-bold transition-all duration-200 
+                  <div                 className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] 
+                                px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 
                                 hover:scale-105 hover:shadow-xl">
                     Select Images
                   </div>
@@ -4310,9 +4310,9 @@ AVOID REPETITIVE PATTERNS:
           <div>
             <div className="border-2 border-dashed border-[#333] rounded-xl p-4 h-[300px] hover:border-[#555] transition-colors">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-[#FF2A2A] mt-0.5 flex-shrink-0" />
+                <Info className="w-5 h-5 text-gray-300 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-[#FF2A2A] font-semibold mb-2">How It Works & Capabilities</h4>
+                  <h4 className="text-gray-300 font-semibold mb-2">How It Works & Capabilities</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
                       <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI optimizes automatically</li>
                       <li>• <strong>Single or multiple products</strong> - Upload one product for individual ads, or multiple products for collections and comparison layouts</li>

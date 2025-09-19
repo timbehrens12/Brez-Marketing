@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAgency } from '@/contexts/AgencyContext'
 import { useAuth } from '@clerk/nextjs'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Brain, ArrowLeft, Bot, Sparkles } from 'lucide-react'
+import { Brain, ArrowLeft, Bot, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -109,23 +109,33 @@ export default function AIDashboardPage() {
           {/* Loading phases checklist */}
           <div className="text-left space-y-2 text-sm text-gray-400">
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 20 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 20 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 20 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 40 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
               <span>Loading agency data</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 40 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 40 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 40 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 60 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
               <span>Analyzing AI capabilities</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 60 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 60 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 60 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 80 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
               <span>Preparing dashboard insights</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 80 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 80 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 80 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 95 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
               <span>Configuring AI tools</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}>
+                {loadingProgress >= 100 && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
               <span>Finalizing setup</span>
             </div>
           </div>

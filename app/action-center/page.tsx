@@ -1666,27 +1666,27 @@ export default function ActionCenterPage() {
           {/* Loading phases checklist */}
           <div className="text-left space-y-2 text-sm text-gray-400">
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 30 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Connecting to your accounts</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 50 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Analyzing your outreach campaigns</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 70 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Checking brand performance</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 85 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Preparing marketing tools</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 85 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 85 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Updating notifications</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-4 h-4 rounded-full transition-colors duration-300 flex items-center justify-center ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Finalizing your dashboard</span>
             </div>
           </div>
