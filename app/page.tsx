@@ -106,9 +106,9 @@ export default function HomePage() {
           <div className="w-full bg-black/70 border-b border-white/10">
             <div className="flex justify-center py-2">
               <div className="flex items-center gap-2">
-                <TagBadge tone="white">Scale 2.0</TagBadge>
+                <TagBadge tone="red">LIMITED TIME OFFER</TagBadge>
                 <span className="text-sm text-white/80 tracking-wide font-bold">
-                  Existing Scale 2.0 members receive 25% off
+                  Join the waitlist and get early access
                 </span>
               </div>
             </div>
@@ -140,27 +140,34 @@ export default function HomePage() {
             <div className="absolute -bottom-6 left-0 right-0 h-12 bg-[linear-gradient(135deg,transparent_0%,transparent_49%,rgba(255,255,255,.06)_50%,transparent_51%)] opacity-40 pointer-events-none" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
-                <TagBadge tone="white" className="mb-5">Professional Brand Scaling Infrastructure</TagBadge>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-6 font-oswald">
-                  SCALING BRANDS<br />
-                  <span className="text-transparent bg-clip-text bg-[linear-gradient(90deg,#fff,rgba(255,255,255,.5))]">HAS NEVER BEEN EASIER</span>
+                <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER</TagBadge>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
+                  INTRODUCING THE <span className="text-[var(--brand-red)]">SCALE 2.0</span> SYSTEM<br />
+                  THAT HAS HELPED <span className="relative inline-block">
+                    <span className="text-white">DOZENS</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-1 bg-[var(--brand-red)]"></div>
+                  </span> SIGN PAYING<br />
+                  <span className="relative inline-block">
+                    <span className="text-[var(--brand-red)] font-black">FREELANCE BRANDSCALING</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-1 bg-[var(--brand-red)]"></div>
+                  </span> <span className="text-white font-black">CLIENTS</span>
                 </h1>
                 <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
-                  The complete AI-powered toolkit for freelance brand scalers. Real-time analytics, automated lead generation, and professional tools to scale brands to 7+ figures.
+                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Lead generation, client management, and automated reporting - everything you need to build a profitable freelance agency.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Button 
                     onClick={scrollToPricing}
                     className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_10px_0_rgba(0,0,0,.6)] px-6 py-6 text-base"
                   >
-                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                    SIGN YOUR FIRST CLIENT <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
                 {/* trust row */}
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-xs justify-center lg:justify-start">
-                  <TagBadge tone="dark">SOC 2 Ready</TagBadge>
-                  <TagBadge tone="dark">99.9% Uptime</TagBadge>
-                  <TagBadge tone="dark">Cancel Anytime</TagBadge>
+                  <TagBadge tone="dark">✓ Real Lead Gen</TagBadge>
+                  <TagBadge tone="dark">✓ Client CRM</TagBadge>
+                  <TagBadge tone="dark">✓ Automated Reports</TagBadge>
                 </div>
               </div>
 
