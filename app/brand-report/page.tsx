@@ -2793,7 +2793,7 @@ export default function BrandReportPage() {
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-gray-300">Time Period</label>
                 <Select value={selectedPeriod} onValueChange={handlePeriodSelect}>
-                  <SelectTrigger className="w-[200px] bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] rounded-xl h-11 transition-colors">
+                  <SelectTrigger className="w-[240px] bg-[#2A2A2A] border-[#444] text-white hover:bg-[#333] rounded-xl h-11 transition-colors">
                     <SelectValue placeholder="Period" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#2A2A2A] border-[#444] text-white rounded-xl">
@@ -2856,7 +2856,7 @@ export default function BrandReportPage() {
                     variant="outline" 
                     size="lg"
                     className={cn(
-                      "bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-gray-300 text-black font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-11",
+                      "bg-[#FF2A2A] hover:bg-[#E02424] text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-11",
                       (!selectedBrandId || isLoadingReport || !availability.available) && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={handleManualRefresh}
@@ -2943,7 +2943,7 @@ export default function BrandReportPage() {
                 <div className="w-24 h-24 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center border border-white/10">
                   <BarChart4 className="h-12 w-12 text-gray-400" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-[#FF2A2A] to-[#E02424] rounded-full flex items-center justify-center">
                   <Zap className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -2965,15 +2965,15 @@ export default function BrandReportPage() {
                 {selectedBrandId && (
                   <div className="flex items-center justify-center gap-4 mt-6">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full"></div>
                       <span>AI-Powered Analysis</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full"></div>
                       <span>Multi-Platform Data</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-[#FF2A2A] rounded-full"></div>
                       <span>Actionable Insights</span>
                     </div>
                   </div>
