@@ -326,7 +326,7 @@ export function Sidebar({ className }: SidebarProps) {
                 
                 {/* Agency name and brand icons column */}
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <h3 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                  <h3 className="text-xs font-semibold text-white leading-tight break-words overflow-hidden max-w-[160px]">
                     {agencyLoading ? (
                       <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
                     ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
@@ -405,8 +405,8 @@ export function Sidebar({ className }: SidebarProps) {
                         {showExpanded && (
                           <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
                             <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium truncate">{item.name}</p>
-                              <div className="flex items-center gap-2">
+                              <p className="text-xs font-medium leading-tight break-words overflow-hidden max-w-[140px]">{item.name}</p>
+                              <div className="flex items-center gap-2 flex-shrink-0">
                               {isComingSoon && (
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
                                   Soon
@@ -414,7 +414,7 @@ export function Sidebar({ className }: SidebarProps) {
                               )}
                               </div>
                             </div>
-                            <p className="text-xs text-gray-500 truncate">{item.description}</p>
+                            <p className="text-[10px] text-gray-500 leading-tight break-words overflow-hidden max-w-[140px] mt-0.5">{item.description}</p>
                           </div>
                         )}
                       </div>

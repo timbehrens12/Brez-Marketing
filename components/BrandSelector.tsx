@@ -353,9 +353,9 @@ export default function BrandSelector({ onSelect, selectedBrandId, className, is
                           <div className="flex items-center gap-3 w-full min-w-0">
                             {renderBrandAvatar(brand, 'md')}
                             <div className="flex flex-col items-start min-w-0 flex-1">
-                              <span className="truncate font-medium max-w-full">{brand.name}</span>
+                              <span className="text-sm font-medium leading-tight break-words overflow-hidden max-w-[120px]">{brand.name}</span>
                               {brand.niche && (
-                                <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                                <span className="text-[10px] text-gray-400 leading-tight break-words overflow-hidden max-w-[120px] mt-0.5">{brand.niche}</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -403,9 +403,9 @@ export default function BrandSelector({ onSelect, selectedBrandId, className, is
                           <div className="flex items-center gap-3 w-full min-w-0">
                             {renderBrandAvatar(brand, 'md')}
                             <div className="flex flex-col items-start min-w-0 flex-1">
-                              <span className="truncate font-medium max-w-full">{brand.name}</span>
+                              <span className="text-sm font-medium leading-tight break-words overflow-hidden max-w-[120px]">{brand.name}</span>
                               {brand.niche && (
-                                <span className="text-xs text-gray-400 truncate max-w-full">{brand.niche}</span>
+                                <span className="text-[10px] text-gray-400 leading-tight break-words overflow-hidden max-w-[120px] mt-0.5">{brand.niche}</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
