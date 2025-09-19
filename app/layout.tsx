@@ -503,17 +503,29 @@ export default function RootLayout({
                   {/* Main central blob */}
                   <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.12),transparent_60%)]" />
                   
-                  {/* Top right corner blob */}
-                  <div className="absolute right-[-10%] top-[-10%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.06),transparent_70%)]" />
+                  {/* Top right corner blob - extended further out */}
+                  <div className="absolute right-[-20%] top-[-20%] w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_65%)]" />
                   
-                  {/* Bottom left corner blob */}
-                  <div className="absolute left-[-15%] bottom-[-15%] w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_65%)]" />
+                  {/* Top left corner blob */}
+                  <div className="absolute left-[-25%] top-[-25%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.06),transparent_70%)]" />
                   
-                  {/* Mid right accent blob */}
-                  <div className="absolute right-[-5%] top-[40%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.04),transparent_75%)]" />
+                  {/* Bottom right corner blob */}
+                  <div className="absolute right-[-20%] bottom-[-20%] w-[900px] h-[900px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.07),transparent_65%)]" />
                   
-                  {/* Mid left accent blob */}
-                  <div className="absolute left-[-8%] top-[20%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.05),transparent_70%)]" />
+                  {/* Bottom left corner blob - extended further out */}
+                  <div className="absolute left-[-25%] bottom-[-25%] w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_65%)]" />
+                  
+                  {/* Mid right edge blob */}
+                  <div className="absolute right-[-15%] top-[40%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.04),transparent_75%)]" />
+                  
+                  {/* Mid left edge blob */}
+                  <div className="absolute left-[-18%] top-[30%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.05),transparent_70%)]" />
+                  
+                  {/* Top center edge accent */}
+                  <div className="absolute left-[30%] top-[-15%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.03),transparent_80%)]" />
+                  
+                  {/* Bottom center edge accent */}
+                  <div className="absolute right-[25%] bottom-[-15%] w-[450px] h-[450px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.04),transparent_75%)]" />
                 </div>
                 
                 <ConditionalSidebar />
