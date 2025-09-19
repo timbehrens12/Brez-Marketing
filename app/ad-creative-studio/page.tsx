@@ -5125,7 +5125,7 @@ AVOID REPETITIVE PATTERNS:
         <div className="flex flex-col items-center justify-center space-y-6 h-[580px]">
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full border-4 border-[#333]"></div>
-             <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-gray-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
             <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               <ImageIcon className="w-6 h-6 text-gray-400 animate-pulse" />
             </div>

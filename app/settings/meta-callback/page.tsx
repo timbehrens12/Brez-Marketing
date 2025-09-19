@@ -166,7 +166,7 @@ export default function MetaCallback() {
               
               <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <span className="text-sm text-gray-300">Exchanging access token</span>
-                <div className="w-4 h-4 border-2 border-[#FF2A2A] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
               
               <div className="flex items-center justify-between p-3 bg-white/[0.02] rounded-lg">
