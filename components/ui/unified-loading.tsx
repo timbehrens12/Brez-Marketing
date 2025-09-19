@@ -169,7 +169,7 @@ export function UnifiedLoading({
   return (
     <div className={cn("flex flex-col items-center justify-center py-8", className)}>
       {showLogo && renderLogo()}
-      <Loader2 className={cn("animate-spin text-white mb-4", sizeClasses[size])} />
+      <Loader2 className={cn("animate-spin text-[#FF2A2A] mb-4", sizeClasses[size])} />
       {message && (
         <p className={cn("text-white text-center mb-2 font-medium", messageTextClasses[size])}>
           {message}

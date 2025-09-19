@@ -358,13 +358,13 @@ export function Sidebar({ className }: SidebarProps) {
         
         {/* Brand Selector - smooth transition */}
         <div className={cn(
-          "mb-4 transition-all duration-500 ease-in-out",
+          "mb-4 transition-all duration-300 ease-in-out",
           showExpanded ? "px-6 opacity-100 max-h-20" : "px-0 opacity-0 max-h-0"
         )}>
           <div className={cn(
-            "transition-all duration-500 ease-in-out",
-            showExpanded ? "animate-in fade-in slide-in-from-top-2" : "overflow-hidden",
-          )} style={{ animationDelay: showExpanded ? '200ms' : '0ms', animationFillMode: 'forwards' }}>
+            "transition-all duration-300 ease-in-out",
+            !showExpanded && "overflow-hidden"
+          )}>
             <BrandSelector 
               onSelect={handleBrandSelect}
               selectedBrandId={selectedBrandId}
@@ -403,9 +403,9 @@ export function Sidebar({ className }: SidebarProps) {
                         <item.icon className="h-6 w-6 flex-shrink-0" />
 
                         {showExpanded && (
-                          <div className="flex-1 min-w-0 ml-3 transition-all duration-300 ease-in-out opacity-0 animate-in fade-in slide-in-from-left-2" style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
+                          <div className="flex-1 min-w-0 ml-3 transition-all duration-300 ease-out">
                             <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium leading-tight break-words overflow-hidden max-w-[140px]">{item.name}</p>
+                              <p className="text-xs font-medium leading-tight break-words overflow-hidden max-w-[140px] transition-all duration-300">{item.name}</p>
                               <div className="flex items-center gap-2 flex-shrink-0">
                               {isComingSoon && (
                                   <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
@@ -414,7 +414,7 @@ export function Sidebar({ className }: SidebarProps) {
                               )}
                               </div>
                             </div>
-                            <p className="text-[10px] text-gray-500 leading-tight break-words overflow-hidden max-w-[140px] mt-0.5">{item.description}</p>
+                            <p className="text-[10px] text-gray-500 leading-tight break-words overflow-hidden max-w-[140px] mt-0.5 transition-all duration-300">{item.description}</p>
                           </div>
                         )}
                       </div>

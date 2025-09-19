@@ -48,7 +48,6 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { GridOverlay } from "@/components/GridOverlay"
-import { RedBlobBackground } from "@/components/ui/red-blob-background"
 
 // ✅ FIXED: Global fetch lock declarations to prevent data doubling
 declare global {
@@ -1989,7 +1988,6 @@ export default function DashboardPage() {
 
       {/* Main dashboard content - Responsive container for all tabs */}
               <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300">
-        <RedBlobBackground />
         <GridOverlay />
         <div className="flex-grow pb-8 relative z-10">
           {/* Agency tab content - always render but hide during loading */}

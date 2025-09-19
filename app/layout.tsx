@@ -497,9 +497,14 @@ export default function RootLayout({
             }}
           >
             <AuthenticatedProviders>
-              <div className="flex min-h-screen">
+              <div className="flex min-h-screen relative">
+                {/* Red background blob for all pages */}
+                <div className="pointer-events-none fixed inset-0 z-0">
+                  <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_60%)]" />
+                </div>
+                
                 <ConditionalSidebar />
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col relative z-10">
                   <ConditionalLayout>
                     <div className="flex-1">
                       {children}

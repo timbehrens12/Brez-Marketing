@@ -2211,7 +2211,7 @@ export default function LeadGeneratorPage() {
                 className={`w-full ${
                   (usageData?.remaining ?? 0) <= 0 
                                     ? 'bg-[#1A1A1A] text-gray-400 cursor-not-allowed border border-[#2A2A2A]'
-                : 'bg-[#FF2A2A] hover:bg-[#e02424] text-white border border-[#FF2A2A] hover:border-[#e02424] shadow-[0_0_20px_rgba(255,42,42,0.3)]'
+                : 'bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white border border-[#333] hover:border-[#444]'
                 }`}
               >
                 {businessType === 'ecommerce' ? (

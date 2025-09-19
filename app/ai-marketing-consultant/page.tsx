@@ -72,7 +72,7 @@ export default function AIMarketingConsultantPage() {
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               {agencySettings.agency_logo_url && (
                 <img 
