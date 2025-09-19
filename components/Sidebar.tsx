@@ -251,9 +251,7 @@ export function Sidebar({ className }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
-          background: `linear-gradient(135deg, #1A1A1A 0%, #1A1A1A 30%, rgba(255,42,42,0.08) 50%, #1A1A1A 70%, #1A1A1A 100%),
-                       radial-gradient(circle at 20% 20%, rgba(255,42,42,0.06) 0%, transparent 50%),
-                       radial-gradient(circle at 80% 80%, rgba(255,42,42,0.04) 0%, transparent 50%)`
+          background: `rgba(255,42,42,0.15)`
         }}
       >
         {/* Pin Button - only show when expanded */}
