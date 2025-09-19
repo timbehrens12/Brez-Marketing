@@ -5540,9 +5540,9 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* Example Creative Upload Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[75%] flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A]/20 to-[#E02424]/20 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-white" />
-                    </div>
+                  <div className="w-8 h-8 bg-gradient-to-r from-white/5 to-white/10 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-white" />
+                  </div>
                   Example Creative
                 </h3>
                 
@@ -5711,8 +5711,8 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* AI Instructions Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-full flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A]/20 to-[#E02424]/20 rounded-lg flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">🤖</span>
+                  <div className="w-8 h-8 bg-gradient-to-r from-white/5 to-white/10 rounded-lg flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
                   AI Creative Instructions
                 </h3>
