@@ -435,6 +435,102 @@ export default function HomePage() {
             </div>
           </section>
 
+          {/* Cost Comparison */}
+          <section className="py-20 sm:py-28">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <TagBadge tone="red" className="mb-4">COST BREAKDOWN</TagBadge>
+                <h3 className="text-3xl font-black mb-4">Replace $2,847/month in Tool Costs</h3>
+                <p className="text-white/70 text-lg max-w-3xl mx-auto">
+                  Here's what you'd pay for these tools separately vs. our all-in-one platform
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                {/* Individual Tool Costs */}
+                <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8">
+                  <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
+                  <div className="space-y-3">
+                    {[
+                      { tool: "HubSpot Marketing Hub Pro", cost: 800 },
+                      { tool: "Zapier Professional", cost: 49 },
+                      { tool: "Triple Whale", cost: 299 },
+                      { tool: "Hyros Attribution", cost: 499 },
+                      { tool: "Canva for Teams", cost: 30 },
+                      { tool: "Jasper AI (Creative Writing)", cost: 59 },
+                      { tool: "Apollo.io (Lead Generation)", cost: 147 },
+                      { tool: "Outreach.io", cost: 390 },
+                      { tool: "Klaviyo (Email Marketing)", cost: 150 },
+                      { tool: "AdEspresso (Campaign Management)", cost: 49 },
+                      { tool: "Typeform (Lead Forms)", cost: 35 }
+                    ].map((item, i) => (
+                      <div key={i} className="flex justify-between items-center text-sm">
+                        <span className="text-white/80">{item.tool}</span>
+                        <span className="text-white font-mono">${item.cost}/mo</span>
+                      </div>
+                    ))}
+                    <div className="pt-4 mt-4 border-t border-red-500/30">
+                      <div className="flex justify-between items-center font-bold text-lg">
+                        <span className="text-red-300">TOTAL MONTHLY COST</span>
+                        <span className="text-red-300 text-2xl">$2847/mo</span>
+                      </div>
+                      <div className="text-center mt-2 text-red-200 text-sm">
+                        = $34164/year
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Our Platform Cost */}
+                <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8">
+                  <h4 className="text-xl font-bold mb-6 text-center text-green-300">Brez Marketing Platform</h4>
+                  <div className="text-center mb-8">
+                    <div className="text-6xl font-black text-green-300 mb-2">$67</div>
+                    <div className="text-green-200 text-lg">Starting Price</div>
+                    <div className="text-white/60 text-sm mt-2">Scale to $1,497 as you grow</div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-300 mb-1">95%</div>
+                        <div className="text-green-200 text-sm">Cost Savings</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-green-200">
+                        <Check className="w-4 h-4 mr-2" />
+                        <span>All tools in one platform</span>
+                      </div>
+                      <div className="flex items-center text-green-200">
+                        <Check className="w-4 h-4 mr-2" />
+                        <span>No integration headaches</span>
+                      </div>
+                      <div className="flex items-center text-green-200">
+                        <Check className="w-4 h-4 mr-2" />
+                        <span>Single monthly payment</span>
+                      </div>
+                      <div className="flex items-center text-green-200">
+                        <Check className="w-4 h-4 mr-2" />
+                        <span>Scale as you grow</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center mt-12">
+                <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4">
+                  <TrendingDown className="w-6 h-6 text-green-400" />
+                  <div>
+                    <div className="text-green-300 font-bold text-lg">Save $2,780+ per month</div>
+                    <div className="text-green-200 text-sm">That's $33,360+ per year in tool costs alone</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Bento / Features */}
           <section className="py-20 sm:py-28">
@@ -806,100 +902,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Cost Comparison */}
-              <div className="mt-20 pt-16 border-t border-white/10">
-                <div className="text-center mb-12">
-                  <TagBadge tone="red" className="mb-4">COST BREAKDOWN</TagBadge>
-                  <h3 className="text-3xl font-black mb-4">Replace $2,847/month in Tool Costs</h3>
-                  <p className="text-white/70 text-lg max-w-3xl mx-auto">
-                    Here's what you'd pay for these tools separately vs. our all-in-one platform
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-                  {/* Individual Tool Costs */}
-                  <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 border border-red-500/30 rounded-2xl p-8">
-                    <h4 className="text-xl font-bold mb-6 text-center text-red-300">Traditional Tool Stack</h4>
-                    <div className="space-y-3">
-                      {[
-                        { tool: "HubSpot Marketing Hub Pro", cost: 800 },
-                        { tool: "Zapier Professional", cost: 49 },
-                        { tool: "Triple Whale", cost: 299 },
-                        { tool: "Hyros Attribution", cost: 499 },
-                        { tool: "Canva for Teams", cost: 30 },
-                        { tool: "Jasper AI (Creative Writing)", cost: 59 },
-                        { tool: "Apollo.io (Lead Generation)", cost: 147 },
-                        { tool: "Outreach.io", cost: 390 },
-                        { tool: "Klaviyo (Email Marketing)", cost: 150 },
-                        { tool: "AdEspresso (Campaign Management)", cost: 49 },
-                        { tool: "Typeform (Lead Forms)", cost: 35 }
-                      ].map((item, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                          <span className="text-white/80">{item.tool}</span>
-                          <span className="text-white font-mono">${item.cost}/mo</span>
-                        </div>
-                      ))}
-                      <div className="pt-4 mt-4 border-t border-red-500/30">
-                        <div className="flex justify-between items-center font-bold text-lg">
-                          <span className="text-red-300">TOTAL MONTHLY COST</span>
-                          <span className="text-red-300 text-2xl">$2847/mo</span>
-                        </div>
-                        <div className="text-center mt-2 text-red-200 text-sm">
-                          = $34164/year
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Our Platform Cost */}
-                  <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 border border-green-500/30 rounded-2xl p-8">
-                    <h4 className="text-xl font-bold mb-6 text-center text-green-300">Brez Marketing Platform</h4>
-                    <div className="text-center mb-8">
-                      <div className="text-6xl font-black text-green-300 mb-2">$67</div>
-                      <div className="text-green-200 text-lg">Starting Price</div>
-                      <div className="text-white/60 text-sm mt-2">Scale to $1,497 as you grow</div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold text-green-300 mb-1">95%</div>
-                          <div className="text-green-200 text-sm">Cost Savings</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center text-green-200">
-                          <Check className="w-4 h-4 mr-2" />
-                          <span>All tools in one platform</span>
-                        </div>
-                        <div className="flex items-center text-green-200">
-                          <Check className="w-4 h-4 mr-2" />
-                          <span>No integration headaches</span>
-                        </div>
-                        <div className="flex items-center text-green-200">
-                          <Check className="w-4 h-4 mr-2" />
-                          <span>Single monthly payment</span>
-                        </div>
-                        <div className="flex items-center text-green-200">
-                          <Check className="w-4 h-4 mr-2" />
-                          <span>Scale as you grow</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center mt-12">
-                  <div className="inline-flex items-center gap-4 bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500/30 rounded-full px-8 py-4">
-                    <TrendingDown className="w-6 h-6 text-green-400" />
-                    <div>
-                      <div className="text-green-300 font-bold text-lg">Save $2,780+ per month</div>
-                      <div className="text-green-200 text-sm">That's $33,360+ per year in tool costs alone</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </section>
 
