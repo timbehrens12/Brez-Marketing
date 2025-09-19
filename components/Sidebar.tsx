@@ -402,21 +402,24 @@ export function Sidebar({ className }: SidebarProps) {
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
                         <item.icon className="h-6 w-6 flex-shrink-0" />
 
-                        {showExpanded && (
-                          <div className="flex-1 min-w-0 ml-3 transition-opacity duration-200">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium leading-tight overflow-hidden text-ellipsis max-w-[140px]">{item.name}</p>
+                        <div className={cn(
+                          "overflow-hidden transition-all duration-300 ease-out",
+                          showExpanded ? "w-40 opacity-100" : "w-0 opacity-0"
+                        )}>
+                          <div className="ml-3 w-40">
+                            <div className="flex items-center justify-between h-5">
+                              <p className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</p>
                               <div className="flex items-center gap-2 flex-shrink-0">
                               {isComingSoon && (
-                                  <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
+                                  <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
                                   Soon
                                 </span>
                               )}
                               </div>
                             </div>
-                            <p className="text-[10px] text-gray-500 leading-tight overflow-hidden text-ellipsis max-w-[140px] mt-0.5">{item.description}</p>
+                            <p className="text-[10px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis h-4 leading-4">{item.description}</p>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                 </Link>
