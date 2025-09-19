@@ -1945,15 +1945,15 @@ export default function LeadGeneratorPage() {
                 // Coming Soon Message for eCommerce
                 <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-8">
                   <div className="text-center">
-                    <div className="bg-orange-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                      <Sparkles className="h-10 w-10 text-orange-400" />
+                    <div className="bg-[#FF2A2A]/20 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                      <Sparkles className="h-10 w-10 text-[#FF2A2A]" />
                     </div>
-                    <h3 className="text-xl font-semibold text-orange-400 mb-3">eCommerce Lead Generation</h3>
+                    <h3 className="text-xl font-semibold text-[#FF2A2A] mb-3">eCommerce Lead Generation</h3>
                     <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
                       We're perfecting our eCommerce lead discovery system with advanced Shopify detection, 
                       social media analytics, and revenue estimation features.
                     </p>
-                    <Badge className="bg-orange-500/20 text-orange-400 px-4 py-2">Coming Soon</Badge>
+                    <Badge className="bg-[#FF2A2A]/20 text-[#FF2A2A] px-4 py-2">Coming Soon</Badge>
                   </div>
                 </div>
               ) : (

@@ -3045,7 +3045,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'all'
-                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3070,7 +3070,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'contacted'
-                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3096,7 +3096,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'qualified'
-                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3147,7 +3147,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             size="sm"
                             className={`h-8 text-xs ${
                               tempFilters.minScore === score
-                                ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                                ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
                           >
@@ -3972,7 +3972,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                           }}
                                           size="sm"
                                           variant="outline"
-                                          className="h-6 text-[10px] px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white break-words text-left leading-tight w-full max-w-full"
+                                          className="h-6 text-[10px] px-2 bg-[#FF2A2A] border-[#FF2A2A] text-white hover:bg-[#E02424] hover:border-[#E02424] break-words text-left leading-tight w-full max-w-full"
                                         >
                                           <span className="block truncate">{todo.action}</span>
                                         </Button>
@@ -4447,7 +4447,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'retainer' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'retainer'
-                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
@@ -4458,7 +4458,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'revenue_share' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'revenue_share'
-                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
@@ -4469,7 +4469,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'per_lead' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'per_lead'
-                              ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >

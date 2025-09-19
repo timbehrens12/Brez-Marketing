@@ -324,20 +324,22 @@ export function Sidebar({ className }: SidebarProps) {
                   )}
                 </div>
                 
-                {/* Agency name and brand icons column */}
-                <div className="flex-1 min-w-0 flex flex-col">
-                  <h3 className="text-xs font-semibold text-white leading-tight break-words overflow-hidden max-w-[160px]">
-                    {agencyLoading ? (
-                      <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
-                    ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
-                      agencySettings.agency_name
-                    ) : (
-                      "Agency"
-                    )}
-                  </h3>
+                {/* Agency name and brand icons column - Fixed height container */}
+                <div className="flex-1 min-w-0 flex flex-col h-10 justify-center overflow-hidden">
+                  <div className="h-4 overflow-hidden">
+                    <h3 className="text-xs font-semibold text-white leading-tight whitespace-nowrap">
+                      {agencyLoading ? (
+                        <div className="h-4 bg-[#444] rounded animate-pulse w-24"></div>
+                      ) : agencySettings.agency_name && agencySettings.agency_name.trim() !== 'Brez Marketing Assistant' ? (
+                        agencySettings.agency_name
+                      ) : (
+                        "Agency"
+                      )}
+                    </h3>
+                  </div>
                   
-                  {/* Brand icons directly under agency name */}
-                  <div className="mt-0.5">
+                  {/* Brand icons directly under agency name - Fixed height */}
+                  <div className="h-4 mt-1 overflow-hidden">
                     <OverlaidBrandLogos 
                       agencySettings={agencySettings}
                       agencyLoading={agencyLoading}
