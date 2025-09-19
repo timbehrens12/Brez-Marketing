@@ -5,7 +5,7 @@ import { GridOverlay } from "@/components/GridOverlay"
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A] relative">
+    <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B] relative">
       <GridOverlay />
       <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333] relative z-10">
         <div className="mb-8 text-center">

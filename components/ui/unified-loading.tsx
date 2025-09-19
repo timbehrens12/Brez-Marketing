@@ -122,7 +122,7 @@ export function UnifiedLoading({
   if (variant === "fullscreen" || variant === "page") {
     return (
       <div className={cn(
-        "min-h-screen flex items-center justify-center bg-[#0A0A0A]",
+        "min-h-screen flex items-center justify-center bg-[#0B0B0B]",
         className
       )}>
         <div className="text-center">

@@ -2815,7 +2815,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
   }
 
   return (
-    <div className="h-screen bg-[#0A0A0A] text-white overflow-hidden animate-in fade-in duration-300 relative">
+    <div className="h-screen bg-[#0B0B0B] text-white overflow-hidden animate-in fade-in duration-300 relative">
       <GridOverlay />
       <div className="h-full flex flex-col p-4 gap-4 overflow-y-auto relative z-10">
 

@@ -2513,7 +2513,7 @@ export default function BrandReportPage() {
   // Show loading state with enhanced progress display
   if (isLoadingPage) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8">
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -2561,7 +2561,7 @@ export default function BrandReportPage() {
   // Show no brand selected state - return directly without wrapper to match loading state
   if (!selectedBrandId) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8">
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -2613,7 +2613,7 @@ export default function BrandReportPage() {
   }
 
     return (
-    <div className="w-full min-h-screen bg-[#0A0A0A] animate-in fade-in duration-300 relative">
+    <div className="w-full min-h-screen bg-[#0B0B0B] animate-in fade-in duration-300 relative">
       <GridOverlay />
       <div className="relative z-10 flex flex-col min-h-screen">
       <div className="flex-1 p-4 pb-6">

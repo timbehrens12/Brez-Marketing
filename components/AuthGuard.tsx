@@ -24,7 +24,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   // Show loading state while Clerk is initializing
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
         <div className="text-white">Loading...</div>
       </div>
     )
@@ -33,7 +33,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   // Show fallback or redirect if not signed in
   if (!isSignedIn) {
     return fallback || (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
         <div className="text-white">Redirecting to sign-in...</div>
       </div>
     )

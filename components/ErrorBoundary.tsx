@@ -83,9 +83,9 @@ export class DashboardErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full min-h-screen bg-[#0A0A0A] flex items-center justify-center relative overflow-hidden">
+        <div className="w-full min-h-screen bg-[#0B0B0B] flex items-center justify-center relative overflow-hidden">
           {/* Background pattern - same as all other pages */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0B0B] via-[#111] to-[#0B0B0B]"></div>
           <div className="absolute inset-0 opacity-5">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',

@@ -1880,7 +1880,7 @@ export default function DashboardPage() {
     <>
       {/* Show action center loading overlay when agency tab is loading - covers main content area only, respects sidebar - only on initial load */}
       {activeTab === "agency" && showLoadingOverlay && (
-        <div className="fixed top-0 bottom-0 right-0 bg-[#0A0A0A] z-40 transition-all duration-300 ease-in-out"
+        <div className="fixed top-0 bottom-0 right-0 bg-[#0B0B0B] z-40 transition-all duration-300 ease-in-out"
              style={{
                left: `${sidebarWidth}px`, // Dynamic positioning based on actual sidebar width
              }}>

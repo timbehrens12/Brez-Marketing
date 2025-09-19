@@ -1087,7 +1087,7 @@ export default function MarketingAssistantPage() {
   // Show loading state with enhanced progress display
   if (isDataLoading) {
     return (
-      <div className="w-full min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
+      <div className="w-full min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden py-8 animate-in fade-in duration-300">
         {/* Background pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
         <div className="absolute inset-0 opacity-5">
@@ -1177,7 +1177,7 @@ export default function MarketingAssistantPage() {
   // Show no brand selected state - return directly without wrapper to match loading state
   if (!selectedBrandId) {
   return (
-      <div className="w-full h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
+      <div className="w-full h-screen bg-[#0B0B0B] flex flex-col items-center justify-center relative overflow-hidden" style={{ paddingBottom: '15vh' }}>
           {/* Background pattern */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]"></div>
           <div className="absolute inset-0 opacity-5">
