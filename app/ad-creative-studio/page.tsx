@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings, Wrench, Bot, Copy, User, PaintBucket, Globe } from 'lucide-react'
+import { Upload, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings, Wrench, Bot, Copy, User, PaintBucket, Globe, Lightbulb, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -5368,7 +5368,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Custom Prompt Widget - Expanded */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[380px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A]/20 to-[#E02424]/20 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-white/5 to-white/10 rounded-lg flex items-center justify-center">
                   <Settings className="w-4 h-4 text-white" />
                 </div>
                 Custom Prompt
@@ -5395,8 +5395,8 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
             {/* Pro Tips Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A]/20 to-[#E02424]/20 rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-bold text-white">💡</span>
+                <div className="w-8 h-8 bg-gradient-to-r from-white/5 to-white/10 rounded-lg flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-white" />
                 </div>
                 Pro Tips
               </h3>
@@ -6300,7 +6300,9 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
         <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded flex items-center justify-center text-xs font-bold text-[#FF2A2A]">⚠</div>
+              <div className="w-6 h-6 bg-gradient-to-br from-white/5 to-white/10 rounded flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-[#FF2A2A]" />
+              </div>
               Fix Generation Issues
             </h3>
             <Button

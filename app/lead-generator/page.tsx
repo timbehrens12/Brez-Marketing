@@ -2932,7 +2932,7 @@ export default function LeadGeneratorPage() {
                     <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed opacity-60" disabled>
                       <Globe className="h-4 w-4 mr-1" />
                       <span className="text-xs">eCommerce</span>
-                      <Badge className="ml-1 bg-orange-500/20 text-orange-400 text-[10px] px-1 py-0">Soon</Badge>
+                      <Badge className="ml-1 bg-[#FF2A2A]/20 text-[#FF2A2A] text-[10px] px-1 py-0">Soon</Badge>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
