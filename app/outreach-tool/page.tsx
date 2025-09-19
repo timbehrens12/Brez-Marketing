@@ -3045,7 +3045,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'all'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3057,7 +3057,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'pending'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3070,7 +3070,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'contacted'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3083,7 +3083,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'responded'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3096,7 +3096,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'qualified'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3109,7 +3109,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'signed'
-                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                          ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3147,7 +3147,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                             size="sm"
                             className={`h-8 text-xs ${
                               tempFilters.minScore === score
-                                ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                                ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                                 : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                             }`}
                           >
@@ -4447,7 +4447,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'retainer' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'retainer'
-                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                              ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
@@ -4458,7 +4458,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'revenue_share' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'revenue_share'
-                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                              ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
@@ -4469,7 +4469,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                           variant={contractData.pricingModel === 'per_lead' ? 'default' : 'outline'}
                           className={`h-12 text-xs ${
                             contractData.pricingModel === 'per_lead'
-                              ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
+                              ? 'bg-[#FF2A2A] text-black border-[#FF2A2A] hover:bg-[#E02424]'
                               : 'bg-[#1A1A1A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                           }`}
                         >
