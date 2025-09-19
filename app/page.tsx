@@ -325,20 +325,20 @@ export default function HomePage() {
               <SectionHeader
                 eyebrow="Everything in one place"
                 title={<span>EVERYTHING IN ONE PLACE</span>}
-                sub="Stop juggling 12 different tools. Our all-in-one platform replaces your entire marketing stack with one unified dashboard."
+                sub="Stop juggling dozens of browser tabs for all the brands you manage or own. Connect multiple platforms to one unified dashboard and manage everything from a single login."
               />
               <div className="grid lg:grid-cols-3 gap-8 mb-16">
                 {[
                   { 
                     icon: Zap, 
-                    title: "ALL-IN-ONE PLATFORM", 
-                    desc: "Replace Zapier, HubSpot, Canva, Triple Whale, Hyros, Google Analytics, and 8+ other tools with one login.",
+                    title: "MULTI-PLATFORM DASHBOARD", 
+                    desc: "Connect Shopify, Meta Ads, Google Ads (coming soon), TikTok Ads (coming soon), and more to one unified dashboard. No more juggling tons of tabs for all the brands you manage.",
                     bullets: [
-                      "Unified dashboard for all marketing channels",
-                      "Replace 8+ expensive monthly subscriptions",
-                      "No more context switching between tools"
+                      "Connect multiple platforms to one dashboard",
+                      "Manage all brands from a single interface", 
+                      "No more browser tab chaos or platform switching"
                     ],
-                    tags: ["Zapier", "HubSpot", "Triple Whale", "Hyros", "Canva", "Analytics"]
+                    tags: ["Shopify", "Meta Ads", "Google Ads", "TikTok", "Unified", "Multi-Brand"]
                   },
                   { 
                     icon: Palette, 
