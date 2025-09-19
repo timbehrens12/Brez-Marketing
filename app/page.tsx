@@ -142,15 +142,12 @@ export default function HomePage() {
               <div className="text-center lg:text-left">
                 <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER</TagBadge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
-                  INTRODUCING THE <span className="text-[var(--brand-red)]">SCALE 2.0</span> SYSTEM<br />
-                  THAT HAS HELPED <span className="relative inline-block">
-                    <span className="text-white">DOZENS</span>
-                    <div className="absolute -bottom-1 left-0 right-0 h-1 bg-[var(--brand-red)]"></div>
-                  </span> SIGN PAYING<br />
-                  <span className="relative inline-block">
+                  THE <span className="text-[var(--brand-red)]">SCALE 2.0</span> SYSTEM<br />
+                  FOR SIGNING <span className="relative inline-block">
                     <span className="text-[var(--brand-red)] font-black">FREELANCE BRANDSCALING</span>
                     <div className="absolute -bottom-1 left-0 right-0 h-1 bg-[var(--brand-red)]"></div>
-                  </span> <span className="text-white font-black">CLIENTS</span>
+                  </span><br />
+                  <span className="text-white font-black">CLIENTS</span>
                 </h1>
                 <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
                   The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Lead generation, client management, and automated reporting - everything you need to build a profitable freelance agency.
