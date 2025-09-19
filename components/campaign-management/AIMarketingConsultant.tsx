@@ -56,7 +56,7 @@ interface PromptSuggestion {
   icon: React.ReactNode
   title: string
   prompt: string
-  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'reports' | 'leadgen' | 'outreach' | 'seasonal' | 'email-sms' | 'focus' | 'analysis'
+  category: 'performance' | 'optimization' | 'creative' | 'audience' | 'budget' | 'troubleshooting' | 'leadgen' | 'outreach' | 'seasonal' | 'email-sms' | 'focus' | 'analysis'
 }
 
 
@@ -509,7 +509,7 @@ export default function AIMarketingConsultant(
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'system',
-      content: `👋 Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant.
+      content: `Hi ${user?.firstName || 'there'}! I'm your AI Marketing Consultant.
 
 I can help with literally anything marketing-related for your brand - performance analysis, scaling strategies, creative optimization, budget allocation, competitive analysis, and more. Choose a question below or type your own!`,
       timestamp: new Date()
@@ -549,8 +549,8 @@ I can help with literally anything marketing-related for your brand - performanc
             id: 'welcome-refresh',
             type: 'system',
             content: selectedBrandId
-              ? `🔄 Data updated! I'm now analyzing your latest campaign performance for ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'}. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`
-              : `🔄 Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`,
+              ? `Data updated! I'm now analyzing your latest campaign performance for ${brands.find(b => b.id === selectedBrandId)?.name || 'this brand'}. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`
+              : `Data updated! I'm now analyzing your latest agency performance. I can provide fresh insights based on your most recent data. Ask me anything about your current performance!`,
             timestamp: new Date()
           }
           
@@ -986,7 +986,6 @@ I can help with literally anything marketing-related for your brand - performanc
     { id: 'creative', label: 'Creative', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'creative').length },
     { id: 'audience', label: 'Audience', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'audience').length },
     { id: 'budget', label: 'Budget', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'budget').length },
-    { id: 'reports', label: 'Reports', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'reports').length },
     { id: 'leadgen', label: 'Lead Gen', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'leadgen').length },
     { id: 'outreach', label: 'Outreach', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'outreach').length },
     { id: 'seasonal', label: 'Seasonal', count: PROMPT_SUGGESTIONS.filter(p => p.category === 'seasonal').length },
@@ -1290,7 +1289,7 @@ I can help with literally anything marketing-related for your brand - performanc
               <Button
                 onClick={() => handleCustomInput(inputMessage)}
                 disabled={isLoading || isLimitReached || !inputMessage.trim()}
-                className="px-4 py-3 bg-gradient-to-r from-white/10 to-gray-200/20 hover:from-white/20 hover:to-gray-200/30 text-white rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 shadow-lg flex items-center justify-center"
+                className="px-4 py-3 bg-[#FF2A2A] hover:bg-[#E02424] text-black rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center"
               >
                 <ArrowUp className="w-4 h-4" />
               </Button>
