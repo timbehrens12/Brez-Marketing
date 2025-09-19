@@ -102,70 +102,14 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
-          {/* Top scrolling banner */}
-          <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
-            <div className="flex animate-scroll-banner whitespace-nowrap py-2">
-              <div className="flex items-center gap-6 px-6 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    30% off launch special
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Scale 2.0 members: 20% off
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Replaces 8+ marketing tools
-                  </span>
-                </div>
-              </div>
-              {/* Duplicate for seamless loop */}
-              <div className="flex items-center gap-6 px-6 flex-shrink-0 ml-8">
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    30% off launch special
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Scale 2.0 members: 20% off
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Replaces 8+ marketing tools
-                  </span>
-                </div>
-              </div>
-              {/* Third duplicate to ensure smooth infinite loop */}
-              <div className="flex items-center gap-6 px-6 flex-shrink-0 ml-8">
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="red">Limited</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    30% off launch special
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="white">Scale 2.0</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Scale 2.0 members: 20% off
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TagBadge tone="dark">New</TagBadge>
-                  <span className="text-xs text-white/80 tracking-wide font-bold">
-                    Replaces 8+ marketing tools
-                  </span>
-                </div>
+          {/* Top banner */}
+          <div className="w-full bg-black/70 border-b border-white/10">
+            <div className="flex justify-center py-2">
+              <div className="flex items-center gap-2">
+                <TagBadge tone="white">Scale 2.0</TagBadge>
+                <span className="text-sm text-white/80 tracking-wide font-bold">
+                  Existing Scale 2.0 members receive 25% off
+                </span>
               </div>
             </div>
           </div>
@@ -1015,8 +959,6 @@ export default function HomePage() {
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
 
-        @keyframes scroll-banner { from { transform: translateX(0%); } to { transform: translateX(-33.33%); } }
-        .animate-scroll-banner { animation: scroll-banner 15s linear infinite; }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
         .animate-bar-grow { transform-origin: bottom; animation: bar-grow 1.6s ease-in-out infinite; }
