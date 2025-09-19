@@ -1896,10 +1896,10 @@ export default function DashboardPage() {
             
             <div className="relative z-10 text-center max-w-lg mx-auto px-6">
               {/* Main loading icon */}
-              <div className="w-20 h-20 mx-auto mb-8 relative">
+              <div className="w-20 h-20 mx-auto mb-8 relative dashboard-accent-red rounded-full p-1">
                 <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
-                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-4 border-t-red-400 animate-spin"></div>
+                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center border border-red-500/20">
                   {agencySettings.agency_logo_url && (
                     <img 
                       src={agencySettings.agency_logo_url} 
@@ -1987,8 +1987,10 @@ export default function DashboardPage() {
       )}
 
       {/* Main dashboard content - Responsive container for all tabs */}
-              <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300">
+              <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300 dashboard-radial-glow dashboard-grid-overlay">
         <GridOverlay />
+        {/* Subtle radial glow */}
+        <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_60%)] pointer-events-none" />
         <div className="flex-grow pb-8 relative z-10">
           {/* Agency tab content - always render but hide during loading */}
           {activeTab === "agency" && (
