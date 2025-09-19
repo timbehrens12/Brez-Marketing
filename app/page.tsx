@@ -108,7 +108,7 @@ export default function HomePage() {
               <div className="flex items-center gap-2">
                 <TagBadge tone="red">LIMITED TIME OFFER</TagBadge>
                 <span className="text-sm text-white/80 tracking-wide font-bold">
-                  Join the waitlist and get early access
+                  Existing Scale 2.0 users get 25% off
                 </span>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
               <div className="text-center lg:text-left">
                 <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER</TagBadge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
-                  THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1em] mx-2" /><br />
+                  THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1.1em] mx-2" /><br />
                   FOR SIGNING <span className="relative inline-block">
                     <span className="text-white font-black relative z-10">FREELANCE</span>
                     <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
@@ -153,7 +153,7 @@ export default function HomePage() {
                   <span className="text-white font-black">CLIENTS</span>
                 </h1>
                 <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
-                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Lead generation, client management, and automated reporting - everything you need to build a profitable freelance agency.
+                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Real lead generation, Meta ads analytics, creative generation, AI chatbot, client CRM, automated reporting, and more - everything you need to build a profitable freelance agency.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Button 
@@ -165,9 +165,9 @@ export default function HomePage() {
                 </div>
                 {/* trust row */}
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-xs justify-center lg:justify-start">
-                  <TagBadge tone="dark">✓ Real Lead Gen</TagBadge>
-                  <TagBadge tone="dark">✓ Client CRM</TagBadge>
-                  <TagBadge tone="dark">✓ Automated Reports</TagBadge>
+                  <TagBadge tone="dark">SOC Compliant</TagBadge>
+                  <TagBadge tone="dark">Cancel Anytime</TagBadge>
+                  <TagBadge tone="dark">30-Day Guarantee</TagBadge>
                 </div>
               </div>
 
