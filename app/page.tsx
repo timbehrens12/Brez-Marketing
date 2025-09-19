@@ -993,8 +993,8 @@ export default function HomePage() {
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
 
-        @keyframes scroll-banner { from { transform: translateX(0); } to { transform: translateX(-25%); } }
-        .animate-scroll-banner { animation: scroll-banner 15s linear infinite; }
+        @keyframes scroll-banner { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .animate-scroll-banner { animation: scroll-banner 20s linear infinite; }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
         .animate-bar-grow { transform-origin: bottom; animation: bar-grow 1.6s ease-in-out infinite; }
