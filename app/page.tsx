@@ -105,7 +105,7 @@ export default function HomePage() {
           {/* Top scrolling banner */}
           <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
             <div className="flex animate-scroll-banner whitespace-nowrap py-2">
-              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+              <div className="flex items-center gap-6 px-6 flex-shrink-0 min-w-max">
                 <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
                   <span className="text-xs text-white/80 tracking-wide font-bold">
@@ -126,7 +126,7 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Duplicate 1 */}
-              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+              <div className="flex items-center gap-6 px-6 flex-shrink-0 min-w-max">
                 <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
                   <span className="text-xs text-white/80 tracking-wide font-bold">
@@ -147,7 +147,7 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Duplicate 2 */}
-              <div className="flex items-center gap-6 px-6 flex-shrink-0">
+              <div className="flex items-center gap-6 px-6 flex-shrink-0 min-w-max">
                 <div className="flex items-center gap-2">
                   <TagBadge tone="red">Limited</TagBadge>
                   <span className="text-xs text-white/80 tracking-wide font-bold">
