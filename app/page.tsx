@@ -153,7 +153,7 @@ export default function HomePage() {
                   <span className="text-white font-black">CLIENTS</span>
                 </h1>
                 <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
-                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Real lead generation, Meta ads analytics, creative generation, AI chatbot, client CRM, automated reporting, and more - everything you need to build a profitable freelance agency.
+                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Real lead generation, Shopify connection, Meta ads analytics, creative generation, AI chatbot, client CRM, automated reporting, and more - everything you need to build a profitable freelance agency.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Button 
@@ -346,13 +346,13 @@ export default function HomePage() {
                   { 
                     icon: Palette, 
                     title: "FULLY WHITE-LABELABLE", 
-                    desc: "Rebrand everything as your own software. Your logo, your colors, your branding - clients never see our name.",
+                    desc: "Add your agency name and logo to the platform. Clients see your brand signature, not ours.",
                     bullets: [
-                      "Your logo, colors, and branding everywhere",
-                      "Clients never see our name or brand",
-                      "Complete rebrand capabilities included"
+                      "Your agency name and logo everywhere",
+                      "Custom brand signature on all reports", 
+                      "Clients never see our name or brand"
                     ],
-                    tags: ["White-Label", "Custom Branding", "Your Logo"]
+                    tags: ["Agency Name", "Your Logo", "Brand Signature"]
                   },
                   { 
                     icon: Shield, 
@@ -605,11 +605,13 @@ export default function HomePage() {
                       "Shopify Integration & Orders Sync",
                       "5 AI Marketing Assistant Chats/day",
                       "10 AI Creative Generations/month",
-                      "Basic Performance Reports",
-                      "Customer Geography Analytics",
-                      "Order Tracking & Management"
+                      "Basic Performance Reports"
                     ],
-                    advancedFeatures: [],
+                    advancedFeatures: [
+                      "No Lead Generation Access",
+                      "No Outreach CRM Access",
+                      "Limited API Usage"
+                    ],
                     teamFeatures: [],
                     whiteLabel: false
                   },
@@ -625,9 +627,7 @@ export default function HomePage() {
                       "Shopify + E-commerce Integration",
                       "10 AI Marketing Assistant Chats/day",
                       "25 AI Creative Generations/month",
-                      "Advanced Performance Reports",
-                      "Customer Demographics Analysis",
-                      "Order & Revenue Tracking"
+                      "Advanced Performance Reports"
                     ],
                     advancedFeatures: [
                       "100 Lead Generations/month",
@@ -652,9 +652,7 @@ export default function HomePage() {
                       "Meta + Google + Facebook Ads Analytics",
                       "25 AI Marketing Assistant Chats/day",
                       "75 AI Creative Generations/month",
-                      "Advanced Analytics & Custom Reports",
-                      "Multi-Brand Dashboard View",
-                      "Customer Journey Tracking"
+                      "Advanced Analytics & Custom Reports"
                     ],
                     advancedFeatures: [
                       "300 Lead Generations/month",
@@ -665,11 +663,7 @@ export default function HomePage() {
                       "Campaign Performance Predictions",
                       "Priority API Access"
                     ],
-                    teamFeatures: [
-                      "Team Collaboration (5 users)",
-                      "Client Portal Access",
-                      "Basic Role Permissions"
-                    ],
+                    teamFeatures: [],
                     whiteLabel: true
                   },
                   {
@@ -745,8 +739,8 @@ export default function HomePage() {
                     key={plan.name}
                     className={`relative flex flex-col h-full rounded-2xl transition-all duration-300 group ${
                       plan.popular 
-                        ? 'bg-gradient-to-br from-black/90 via-black/95 to-black/90 border-2 border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
-                        : 'bg-gradient-to-br from-black/70 via-black/80 to-black/70 border border-white/15 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,.1)]'
+                        ? 'bg-gradient-to-br from-red-900/40 via-black/90 to-red-900/40 border-2 border-[var(--brand-red)]/60 scale-[1.02] shadow-[0_0_40px_rgba(255,42,42,.3),inset_0_1px_0_rgba(255,42,42,.2)]' 
+                        : 'bg-gradient-to-br from-red-900/20 via-black/80 to-red-900/20 border border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(255,42,42,.1)]'
                     }`}
                   >
                     {plan.popular && (
