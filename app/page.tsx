@@ -141,10 +141,8 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
               <div className="text-center lg:text-left">
                 <TagBadge tone="red" className="mb-5">LIMITED TIME OFFER</TagBadge>
-                <div className="mb-4">
-                  <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="h-16 md:h-20 lg:h-24 mx-auto lg:mx-0" />
-                </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
+                  THE <img src="/brand/new-logo.png" alt="Scale 2.0 Dashboard" className="inline h-[1em] mx-2" /><br />
                   FOR SIGNING <span className="relative inline-block">
                     <span className="text-white font-black relative z-10">FREELANCE</span>
                     <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
