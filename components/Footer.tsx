@@ -69,8 +69,8 @@ function FooterContentComponent() {
   }
   
   return (
-    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto ${
-      sidebarExpanded ? 'p-4' : 'px-4 py-3'
+    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#2A2A2A] px-6 transition-all duration-300 mt-auto ${
+      sidebarExpanded ? 'py-4' : 'py-2'
     }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
