@@ -402,21 +402,22 @@ export function Sidebar({ className }: SidebarProps) {
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
                         <item.icon className="h-6 w-6 flex-shrink-0" />
 
-                        {showExpanded && (
-                          <div className="flex-1 min-w-0 ml-3 transition-all duration-300 ease-out">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium leading-tight break-words overflow-hidden max-w-[140px] transition-all duration-300">{item.name}</p>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                              {isComingSoon && (
-                                  <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
-                                  Soon
-                                </span>
-                              )}
-                              </div>
+                        <div className={cn(
+                          "flex-1 min-w-0 ml-3 transition-all duration-300 ease-out overflow-hidden",
+                          showExpanded ? "opacity-100 max-w-[160px]" : "opacity-0 max-w-0"
+                        )}>
+                          <div className="flex items-center justify-between h-6">
+                            <p className="text-xs font-medium leading-6 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</p>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                            {isComingSoon && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
+                                Soon
+                              </span>
+                            )}
                             </div>
-                            <p className="text-[10px] text-gray-500 leading-tight break-words overflow-hidden max-w-[140px] mt-0.5 transition-all duration-300">{item.description}</p>
                           </div>
-                        )}
+                          <p className="text-[10px] text-gray-500 leading-4 whitespace-nowrap overflow-hidden text-ellipsis h-4">{item.description}</p>
+                        </div>
                       </div>
                     </div>
                 </Link>

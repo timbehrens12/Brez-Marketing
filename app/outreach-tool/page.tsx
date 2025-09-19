@@ -1031,7 +1031,7 @@ export default function OutreachToolPage() {
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               {agencySettings.agency_logo_url && (
                 <img 
@@ -7123,7 +7123,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       }
                     }}
                     disabled={validateContractData().length > 0}
-                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#FF2A2A] hover:bg-[#E02424] text-black font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Contract

@@ -310,7 +310,7 @@ export default function BrandSharingDialog({ brand, trigger }: BrandSharingDialo
               <Button 
                 onClick={createShareLink}
                 disabled={creating}
-                className="w-full bg-white hover:bg-gray-100 text-black font-medium"
+                className="w-full bg-[#FF2A2A] hover:bg-[#E02424] text-black font-bold"
               >
                 {creating ? (
                   <>

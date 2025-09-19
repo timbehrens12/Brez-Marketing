@@ -4159,7 +4159,7 @@ AVOID REPETITIVE PATTERNS:
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               {agencySettings?.agency_logo_url && (
                 <img 
@@ -5086,7 +5086,7 @@ AVOID REPETITIVE PATTERNS:
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
-                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
+                    : 'bg-[#FF2A2A] hover:bg-[#E02424] text-black hover:text-black border-[#FF2A2A] hover:border-[#E02424] hover:scale-105 font-bold'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
                             >
