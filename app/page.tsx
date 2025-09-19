@@ -203,40 +203,49 @@ export default function HomePage() {
                         <rect x="10" y="40" width="10" height="15" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.35)" }} />
                         <rect x="25" y="25" width="10" height="30" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.45)", animationDelay: '0.15s' }} />
                         <rect x="40" y="35" width="10" height="20" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.55)", animationDelay: '0.3s' }} />
-                        <rect x="55" y="20" width="10" height="35" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.7)", animationDelay: '0.45s' }} />
+                        <rect x="55" y="20" width="10" height="35" fill={BRAND_RED} className="animate-bar-grow" style={{ animationDelay: '0.45s' }} />
                         <rect x="70" y="30" width="10" height="25" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.55)", animationDelay: '0.6s' }} />
                         <rect x="85" y="15" width="10" height="40" fill="currentColor" className="animate-bar-grow" style={{ color: "rgba(255,255,255,.45)", animationDelay: '0.75s' }} />
+                        {/* Red accent line */}
+                        <line x1="5" y1="58" x2="95" y2="58" stroke={BRAND_RED} strokeWidth="1" opacity="0.6" />
                       </svg>
                     )}
                     {activePreview === 'teams' && (
                       <svg viewBox="0 0 100 60" className="w-full h-full opacity-80">
-                        <circle cx="50" cy="30" r="8" fill="rgba(255,255,255,.6)" />
+                        <circle cx="50" cy="30" r="8" fill={BRAND_RED} />
                         <circle cx="20" cy="15" r="5" fill="rgba(255,255,255,.3)" />
                         <circle cx="80" cy="15" r="5" fill="rgba(255,255,255,.3)" />
                         <circle cx="20" cy="45" r="5" fill="rgba(255,255,255,.3)" />
                         <circle cx="80" cy="45" r="5" fill="rgba(255,255,255,.3)" />
                         <line x1="20" y1="15" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" />
-                        <line x1="80" y1="15" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" style={{ animationDelay: '0.5s' }} />
+                        <line x1="80" y1="15" x2="50" y2="30" stroke={BRAND_RED} strokeWidth="1.5" className="animate-draw-line-short" style={{ animationDelay: '0.5s' }} />
                         <line x1="20" y1="45" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" style={{ animationDelay: '1s' }} />
-                        <line x1="80" y1="45" x2="50" y2="30" stroke="rgba(255,255,255,.5)" strokeWidth="1" className="animate-draw-line-short" style={{ animationDelay: '1.5s' }} />
+                        <line x1="80" y1="45" x2="50" y2="30" stroke={BRAND_RED} strokeWidth="1.5" className="animate-draw-line-short" style={{ animationDelay: '1.5s' }} />
                       </svg>
                     )}
                     {activePreview === 'leads' && (
                       <svg viewBox="0 0 100 60" className="w-full h-full opacity-80">
                         <g className="animate-magnify">
-                          <circle cx="40" cy="25" r="12" stroke="rgba(255,255,255,.7)" strokeWidth="2" fill="none" />
-                          <line x1="48" y1="33" x2="55" y2="40" stroke="rgba(255,255,255,.7)" strokeWidth="2" />
+                          <circle cx="40" cy="25" r="12" stroke={BRAND_RED} strokeWidth="2" fill="none" />
+                          <line x1="48" y1="33" x2="55" y2="40" stroke={BRAND_RED} strokeWidth="2" />
                         </g>
                         <rect x="20" y="10" width="60" height="40" fill="rgba(255,255,255,.06)" rx="2" />
                         <line x1="25" y1="20" x2="75" y2="20" stroke="rgba(255,255,255,.35)" strokeWidth="2" />
-                        <line x1="25" y1="30" x2="65" y2="30" stroke="rgba(255,255,255,.35)" strokeWidth="2" />
+                        <line x1="25" y1="30" x2="65" y2="30" stroke={BRAND_RED} strokeWidth="2" opacity="0.6" />
                         <line x1="25" y1="40" x2="70" y2="40" stroke="rgba(255,255,255,.35)" strokeWidth="2" />
+                        {/* Red lead indicator dots */}
+                        <circle cx="75" cy="20" r="1.5" fill={BRAND_RED} className="animate-ping" />
+                        <circle cx="65" cy="30" r="1.5" fill={BRAND_RED} className="animate-ping" style={{ animationDelay: '0.3s' }} />
                       </svg>
                     )}
                     {activePreview === 'creatives' && (
                       <div className="w-full h-full grid grid-cols-3 grid-rows-2 gap-2">
                         {Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i} className="bg-white/15 rounded animate-fade-in" style={{ animationDelay: `${i * 0.08}s` }} />
+                          <div 
+                            key={i} 
+                            className={`${i === 2 || i === 4 ? 'bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30' : 'bg-white/15'} rounded animate-fade-in`} 
+                            style={{ animationDelay: `${i * 0.08}s` }} 
+                          />
                         ))}
                       </div>
                     )}
@@ -246,10 +255,20 @@ export default function HomePage() {
                         <g clipPath="url(#clipReport)">
                           <g className="animate-scroll-report">
                             {[10,20,25,30,40,45,50,60,65,70].map((y, i) => (
-                              <rect key={i} x="15" y={y} width={i === 0 ? 40 : i % 3 === 0 ? 60 : 70} height={i === 0 ? 4 : 2} fill="rgba(255,255,255,.5)" />
+                              <rect 
+                                key={i} 
+                                x="15" 
+                                y={y} 
+                                width={i === 0 ? 40 : i % 3 === 0 ? 60 : 70} 
+                                height={i === 0 ? 4 : 2} 
+                                fill={i === 0 || i === 3 ? BRAND_RED : "rgba(255,255,255,.5)"} 
+                                opacity={i === 0 || i === 3 ? "0.8" : "1"}
+                              />
                             ))}
                           </g>
                         </g>
+                        {/* Red report indicator */}
+                        <circle cx="85" cy="10" r="2" fill={BRAND_RED} className="animate-pulse" />
                         <defs>
                           <clipPath id="clipReport">
                             <rect x="10" y="5" width="80" height="50" />
@@ -262,11 +281,13 @@ export default function HomePage() {
                         <div className="w-3/4 bg-white/15 rounded-lg p-2 animate-fade-in opacity-0" style={{ animationDelay: '0.3s' }}>
                           <div className="w-full h-2 bg-white/30 rounded" />
                         </div>
-                        <div className="w-3/4 bg-white/30 rounded-lg p-2 self-end flex items-center gap-1 animate-fade-in opacity-0" style={{ animationDelay: '1.2s' }}>
+                        <div className="w-3/4 bg-gradient-to-r from-red-500/20 to-red-600/10 border border-red-500/30 rounded-lg p-2 self-end flex items-center gap-1 animate-fade-in opacity-0" style={{ animationDelay: '1.2s' }}>
                           <div className="w-2 h-2 bg-white rounded-full animate-typing" />
                           <div className="w-2 h-2 bg-white rounded-full animate-typing" style={{ animationDelay: '0.2s' }} />
                           <div className="w-2 h-2 bg-white rounded-full animate-typing" style={{ animationDelay: '0.4s' }} />
                         </div>
+                        {/* Red chat indicator */}
+                        <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                       </div>
                     )}
                     {activePreview === 'assistant' && (
@@ -284,8 +305,11 @@ export default function HomePage() {
                       <svg viewBox="0 0 100 60" className="w-full h-full opacity-90">
                         <g className="animate-send-mail">
                           <path d="M 10 20 L 10 50 L 90 50 L 90 20" stroke="rgba(255,255,255,.8)" strokeWidth="2" fill="rgba(255,255,255,.06)" />
-                          <path d="M 10 20 L 50 35 L 90 20" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="2" />
+                          <path d="M 10 20 L 50 35 L 90 20" fill="none" stroke={BRAND_RED} strokeWidth="2" />
                         </g>
+                        {/* Red sent indicator */}
+                        <circle cx="85" cy="15" r="2" fill={BRAND_RED} className="animate-ping" />
+                        <circle cx="75" cy="12" r="1.5" fill={BRAND_RED} className="animate-ping" style={{ animationDelay: '0.3s' }} />
                       </svg>
                     )}
                   </div>
