@@ -1,6 +1,6 @@
 import "@/styles/globals.css"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { JetBrains_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 // import { Toaster } from "@/components/ui/toaster"
 // import { Toaster as SonnerToaster } from "@/components/ui/sonner"
@@ -20,7 +20,7 @@ declare global {
   }
 }
 
-const inter = Inter({ subsets: ["latin"] })
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Brez Marketing Dashboard",
@@ -441,7 +441,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", inter.className)}>
+      <body className={cn("min-h-screen bg-[#0B0B0B] font-sans antialiased text-white", jetbrainsMono.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
