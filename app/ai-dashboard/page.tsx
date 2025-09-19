@@ -109,23 +109,23 @@ export default function AIDashboardPage() {
           {/* Loading phases checklist */}
           <div className="text-left space-y-2 text-sm text-gray-400">
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 20 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-green-400' : loadingProgress >= 20 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 20 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Loading agency data</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 40 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-green-400' : loadingProgress >= 40 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 40 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Analyzing AI capabilities</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 60 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-green-400' : loadingProgress >= 60 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 60 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Preparing dashboard insights</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 80 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 80 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 80 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Configuring AI tools</span>
             </div>
             <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 95 ? 'text-gray-300' : ''}`}>
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-green-400' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 100 ? 'bg-[#FF2A2A]' : loadingProgress >= 95 ? 'bg-white/60' : 'bg-white/20'}`}></div>
               <span>Finalizing setup</span>
             </div>
           </div>

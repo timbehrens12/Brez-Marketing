@@ -2830,7 +2830,7 @@ export default function LeadGeneratorPage() {
                               <TableCell>
                                 <div className="text-sm text-gray-400">
                                   {(lead as any).shopify_detected ? (
-                                    <span className="text-green-400">Shopify</span>
+                                    <span className="text-[#FF2A2A]">Shopify</span>
                                   ) : (
                                     <span className="text-gray-500">Custom</span>
                                   )}
@@ -3340,7 +3340,7 @@ export default function LeadGeneratorPage() {
                       <div>• Research social media presence for personalization (+8-16 points)</div>
                     )}
                     {selectedScoreBreakdown.scoreData.total >= 80 && (
-                      <div className="text-green-400">
+                      <div className="text-[#FF2A2A]">
                         • This is a high-quality lead ready for immediate outreach!
                       </div>
                     )}

@@ -1937,23 +1937,23 @@ export default function DashboardPage() {
               {/* Loading phases checklist - synced to progression percentages */}
               <div className="text-left space-y-2 text-sm text-gray-400">
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 10 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 20 ? 'bg-green-400' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 20 ? 'bg-[#FF2A2A]' : loadingProgress >= 10 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                   <span>Loading workspace data</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 30 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-green-400' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 40 ? 'bg-[#FF2A2A]' : loadingProgress >= 30 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                   <span>Generating action items</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 50 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-green-400' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 60 ? 'bg-[#FF2A2A]' : loadingProgress >= 50 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                   <span>Analyzing brand performance</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 70 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-green-400' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 80 ? 'bg-[#FF2A2A]' : loadingProgress >= 70 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                   <span>Processing automation tools</span>
                 </div>
                 <div className={`flex items-center gap-3 transition-colors duration-300 ${loadingProgress >= 90 ? 'text-gray-300' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-green-400' : loadingProgress >= 90 ? 'bg-white/60' : 'bg-white/20'}`}></div>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${loadingProgress >= 95 ? 'bg-[#FF2A2A]' : loadingProgress >= 90 ? 'bg-white/60' : 'bg-white/20'}`}></div>
                   <span>Preparing dashboard</span>
                 </div>
               </div>

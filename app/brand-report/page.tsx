@@ -2777,7 +2777,7 @@ export default function BrandReportPage() {
             
             {selectedReport && (
               <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-[#FF2A2A] rounded-full animate-pulse"></div>
                 <span className="text-gray-400">
                   Generated on: {format(new Date(selectedReport.createdAt), 'MMM d, h:mm a')}
                 </span>
