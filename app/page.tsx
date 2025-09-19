@@ -104,30 +104,47 @@ export default function HomePage() {
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Top scrolling banner */}
           <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
-            <div className="flex animate-scroll-banner whitespace-nowrap py-2">
-              {/* Content repeated multiple times for seamless loop */}
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-6 px-6 flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <TagBadge tone="red">Limited</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      30% off launch special
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TagBadge tone="white">Scale 2.0</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Scale 2.0 members: 20% off
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TagBadge tone="dark">New</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Replaces 8+ marketing tools
-                    </span>
-                  </div>
+            <div className="flex animate-scroll-banner whitespace-nowrap py-2" style={{width: 'fit-content'}}>
+              <div className="flex items-center gap-4 px-4 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="red">Limited</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    30% off launch special
+                  </span>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="white">Scale 2.0</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Scale 2.0 members: 20% off
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="dark">New</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Replaces 8+ marketing tools
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 px-4 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="red">Limited</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    30% off launch special
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="white">Scale 2.0</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Scale 2.0 members: 20% off
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TagBadge tone="dark">New</TagBadge>
+                  <span className="text-xs text-white/80 tracking-wide font-bold">
+                    Replaces 8+ marketing tools
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
