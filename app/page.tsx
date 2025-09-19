@@ -104,48 +104,48 @@ export default function HomePage() {
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Top scrolling banner */}
           <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
-            <div className="marquee">
-              <div className="marquee-content">
-                <span className="flex items-center gap-6 px-6">
+            <div className="scroll-banner">
+              <div className="scroll-track">
+                <div className="banner-item">
                   <div className="flex items-center gap-2">
                     <TagBadge tone="red">Limited</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       30% off launch special
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-6">
                     <TagBadge tone="white">Scale 2.0</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       Scale 2.0 members: 20% off
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-6">
                     <TagBadge tone="dark">New</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       Replaces 8+ marketing tools
                     </span>
                   </div>
-                </span>
-                <span className="flex items-center gap-6 px-6">
+                </div>
+                <div className="banner-item">
                   <div className="flex items-center gap-2">
                     <TagBadge tone="red">Limited</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       30% off launch special
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-6">
                     <TagBadge tone="white">Scale 2.0</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       Scale 2.0 members: 20% off
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-6">
                     <TagBadge tone="dark">New</TagBadge>
                     <span className="text-xs text-white/80 tracking-wide font-bold">
                       Replaces 8+ marketing tools
                     </span>
                   </div>
-                </span>
+                </div>
               </div>
             </div>
           </div>
@@ -995,23 +995,28 @@ export default function HomePage() {
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
 
-         /* Marquee banner styles */
-         .marquee {
-           display: flex;
+         /* Scroll banner styles */
+         .scroll-banner {
            overflow: hidden;
-           user-select: none;
            padding: 8px 0;
-         }
-         
-         .marquee-content {
-           display: flex;
-           animation: marquee 20s linear infinite;
            white-space: nowrap;
          }
          
-         @keyframes marquee {
+         .scroll-track {
+           display: inline-flex;
+           animation: scroll-left 15s linear infinite;
+         }
+         
+         .banner-item {
+           display: flex;
+           align-items: center;
+           min-width: 100vw;
+           justify-content: center;
+         }
+         
+         @keyframes scroll-left {
            0% { transform: translateX(0); }
-           100% { transform: translateX(-50%); }
+           100% { transform: translateX(-100%); }
          }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
