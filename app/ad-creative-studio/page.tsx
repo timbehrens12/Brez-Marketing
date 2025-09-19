@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Sparkles, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
+import { Upload, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -4281,15 +4281,15 @@ AVOID REPETITIVE PATTERNS:
             >
               <div className="flex flex-col items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10">
-                  <Upload className="w-6 h-6 text-gray-400" />
+                  <Upload className="w-6 h-6 text-[#FF2A2A]" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">Drop images here or click to upload</h3>
                   <p className="text-gray-400 text-xs">Supports JPG, PNG, WebP • Single or multiple images</p>
                 </div>
                 <label htmlFor="upload-input" className="cursor-pointer">
-                  <div className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] 
-                                px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 
+                  <div                 className="bg-[#FF2A2A] hover:bg-[#E02424] 
+                                px-6 py-2 rounded-lg text-black font-bold transition-all duration-200 
                                 hover:scale-105 hover:shadow-xl">
                     Select Images
                   </div>
@@ -4308,11 +4308,11 @@ AVOID REPETITIVE PATTERNS:
 
           {/* Right Column - Pro Tips */}
           <div>
-            <div className="bg-gradient-to-br from-orange-500/10 to-amber-600/10 border border-orange-500/30 rounded-lg p-4 h-[300px]">
+            <div className="bg-gradient-to-br from-[#FF2A2A]/10 to-[#E02424]/10 border border-[#FF2A2A]/30 rounded-lg p-4 h-[300px]">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+                <Info className="w-5 h-5 text-[#FF2A2A] mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-orange-400 font-semibold mb-2">✨ How It Works & Capabilities</h4>
+                  <h4 className="text-[#FF2A2A] font-semibold mb-2">How It Works & Capabilities</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
                       <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI will optimize automatically</li>
                       <li>• <strong>Upload multiple products</strong> - Create collections, brand drops, or comparison ads with professional grid layouts</li>
@@ -4492,8 +4492,8 @@ AVOID REPETITIVE PATTERNS:
                 <h3 className="text-lg font-bold text-white">{type.name}</h3>
               </div>
               {/* Fixed height container for description alignment */}
-              <div className="h-16 flex items-center justify-center">
-              <p className="text-gray-400 text-sm leading-relaxed">{type.description}</p>
+              <div className="h-20 flex items-center justify-center px-2">
+              <p className="text-gray-400 text-xs leading-relaxed text-center">{type.description}</p>
               </div>
             </div>
           </div>
@@ -4652,7 +4652,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Text Overlays - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">T</span>
                   </div>
                   Text Overlays
@@ -4786,7 +4786,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Model Gender Widget - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-lg font-semibold text-white mb-3 text-center flex items-center justify-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">👤</span>
                 </div>
                 Model Gender *
@@ -4821,7 +4821,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Custom Instructions - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">+</span>
                 </div>
                 Custom Instructions
@@ -4892,7 +4892,7 @@ AVOID REPETITIVE PATTERNS:
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-red-400">Library full</span>
                     ) : (
-                      <span className="text-gray-500">Click to generate</span>
+                      <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
                   </span>
                 </div>
@@ -4909,7 +4909,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Text Overlays - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[240px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></span>
+                <span className="w-2 h-2 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-full"></span>
                 Text Overlays
               </h3>
               
@@ -5041,7 +5041,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Custom Instructions - Full width */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 h-[240px] hover:border-[#444]/80 transition-all duration-200">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full"></span>
+                <span className="w-2 h-2 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-full"></span>
                 Custom Instructions
               </h3>
               <textarea
@@ -5104,7 +5104,7 @@ AVOID REPETITIVE PATTERNS:
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-red-400">Library full</span>
                     ) : (
-                      <span className="text-gray-500">Click to generate</span>
+                      <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
                   </span>
                 </div>
@@ -5127,7 +5127,7 @@ AVOID REPETITIVE PATTERNS:
             <div className="absolute inset-0 rounded-full border-4 border-[#333]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-gray-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
             <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-gray-400 animate-pulse" />
+              <ImageIcon className="w-6 h-6 text-gray-400 animate-pulse" />
             </div>
           </div>
           <div className="text-center space-y-2">
@@ -5368,7 +5368,7 @@ AVOID REPETITIVE PATTERNS:
             {/* Custom Prompt Widget - Expanded */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[380px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                   <Settings className="w-4 h-4 text-white" />
                 </div>
                 Custom Prompt
@@ -5395,7 +5395,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
             {/* Pro Tips Widget */}
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[160px]">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-white">💡</span>
                 </div>
                 Pro Tips
@@ -5470,7 +5470,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     ) : customTemplatePrompt.trim().length < 20 ? (
                       <span className="text-gray-500">Enter prompt</span>
                     ) : (
-                      <span className="text-gray-500">Click to generate</span>
+                      <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
                   </span>
                 </div>
@@ -5540,7 +5540,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* Example Creative Upload Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[75%] flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                                      <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                       <ImageIcon className="w-4 h-4 text-white" />
                     </div>
                   Example Creative
@@ -5601,7 +5601,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* Additional Instructions Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-[25%] flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                                      <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                       <span className="text-sm font-bold text-white">+</span>
                     </div>
                   Additional Instructions (Optional)
@@ -5668,7 +5668,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     ) : !exampleCreativeImage ? (
                       <span className="text-gray-500">Upload example</span>
                     ) : (
-                      <span className="text-gray-500">Click to generate</span>
+                      <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
                   </span>
                 </div>
@@ -5711,7 +5711,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
               {/* AI Instructions Widget */}
               <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#171717] rounded-xl border border-[#333]/60 shadow-lg backdrop-blur-sm p-4 hover:border-[#444]/80 transition-all duration-200 h-full flex flex-col">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-white">🤖</span>
                   </div>
                   AI Creative Instructions
@@ -5794,7 +5794,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
                       <span className="text-red-400">Library full</span>
                     ) : (
-                      <span className="text-white">Click to generate</span>
+                      <span className="text-white text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
                   </span>
                 </div>
@@ -6103,12 +6103,12 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                               isActive
                                 ? 'bg-gray-400 border-gray-300 shadow-lg shadow-gray-400/30'
                                 : isCompleted
-                                  ? 'bg-green-600 border-green-500'
+                                  ? 'bg-[#FF2A2A] border-[#FF2A2A]'
                                   : 'bg-[#333] border-[#555]'
                             }`}
                           />
                           <span className={`text-xs font-medium transition-colors ${
-                            isActive ? 'text-gray-300' : isCompleted ? 'text-green-400' : 'text-gray-500'
+                            isActive ? 'text-gray-300' : isCompleted ? 'text-[#FF2A2A]' : 'text-gray-500'
                           }`}>
                             {step.title}
                           </span>
