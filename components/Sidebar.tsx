@@ -389,16 +389,16 @@ export function Sidebar({ className }: SidebarProps) {
                   className={cn(
                     "relative flex items-center rounded-lg transition-all duration-200 group",
                     isActive
-                    ? "bg-[#FF2A2A] text-black" 
+                    ? "bg-[#2A2A2A] text-white" 
                     : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
                     isComingSoon && "cursor-not-allowed opacity-60",
                     showExpanded ? "px-3 py-3" : "p-3 justify-center"
                   )}
                   onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
                 >
-                    {/* Add the white indicator lip for active items */}
+                    {/* Add the red indicator lip for active items */}
                     {isActive && (
-                      <div className="absolute left-0 inset-y-2 w-1 bg-white rounded-full"></div>
+                      <div className="absolute left-0 inset-y-2 w-1 bg-[#FF2A2A] rounded-full"></div>
                     )}
                     <div className="flex items-center w-full">
                         <div className={cn("flex items-center relative", showExpanded ? "w-full" : "justify-center w-full")}>
@@ -419,7 +419,7 @@ export function Sidebar({ className }: SidebarProps) {
                               )}
                               </div>
                             </div>
-                            <p className={cn("text-[10px] whitespace-nowrap overflow-hidden text-ellipsis h-4 leading-4", isActive ? "text-black/70" : "text-gray-500")}>{item.description}</p>
+                            <p className="text-[10px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis h-4 leading-4">{item.description}</p>
                           </div>
                         </div>
                       </div>
