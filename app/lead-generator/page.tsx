@@ -1800,7 +1800,7 @@ export default function LeadGeneratorPage() {
           {/* Main loading icon */}
           <div className="w-20 h-20 mx-auto mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
               {agencySettings.agency_logo_url && (
                 <img 
@@ -2211,7 +2211,7 @@ export default function LeadGeneratorPage() {
                 className={`w-full ${
                   (usageData?.remaining ?? 0) <= 0 
                                     ? 'bg-[#1A1A1A] text-gray-400 cursor-not-allowed border border-[#2A2A2A]'
-                : 'bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white border border-[#333] hover:border-[#444]'
+                : 'bg-[#FF2A2A] hover:bg-[#e02424] text-white border border-[#FF2A2A] hover:border-[#e02424] shadow-[0_0_20px_rgba(255,42,42,0.3)]'
                 }`}
               >
                 {businessType === 'ecommerce' ? (

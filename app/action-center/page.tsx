@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { UnifiedLoading, pageLoadingConfig } from '@/components/ui/unified-loading'
 import { useAgency } from '@/contexts/AgencyContext'
 import { GridOverlay } from '@/components/GridOverlay'
+import { RedBlobBackground } from '@/components/ui/red-blob-background'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -1703,6 +1704,7 @@ export default function ActionCenterPage() {
   return (
     <TooltipProvider>
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-4 pb-6 animate-in fade-in duration-300 relative">
+      <RedBlobBackground />
       <GridOverlay />
       <div className="max-w-[1400px] mx-auto space-y-6 relative z-10">
         {/* Enhanced Header */}

@@ -48,6 +48,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { UnifiedLoading, getPageLoadingConfig } from "@/components/ui/unified-loading"
 import { GridOverlay } from "@/components/GridOverlay"
+import { RedBlobBackground } from "@/components/ui/red-blob-background"
 
 // ✅ FIXED: Global fetch lock declarations to prevent data doubling
 declare global {
@@ -1898,7 +1899,7 @@ export default function DashboardPage() {
               {/* Main loading icon */}
               <div className="w-20 h-20 mx-auto mb-8 relative">
                 <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-[#FF2A2A] animate-spin"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-white/60 animate-spin"></div>
                 <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
                   {agencySettings.agency_logo_url && (
                     <img 
@@ -1988,6 +1989,7 @@ export default function DashboardPage() {
 
       {/* Main dashboard content - Responsive container for all tabs */}
               <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen relative pt-2 sm:pt-4 px-2 sm:px-4 md:px-6 lg:px-8 animate-in fade-in duration-300">
+        <RedBlobBackground />
         <GridOverlay />
         <div className="flex-grow pb-8 relative z-10">
           {/* Agency tab content - always render but hide during loading */}

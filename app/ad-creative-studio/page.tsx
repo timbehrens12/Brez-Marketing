@@ -5086,7 +5086,7 @@ AVOID REPETITIVE PATTERNS:
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
                     ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
-                    : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
+                    : 'bg-[#FF2A2A] hover:bg-[#e02424] text-white border-[#FF2A2A] hover:border-[#e02424] hover:scale-105 shadow-[0_0_20px_rgba(255,42,42,0.3)]'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
                             >
