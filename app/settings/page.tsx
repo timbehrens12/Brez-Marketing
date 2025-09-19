@@ -1680,7 +1680,7 @@ export default function SettingsPage() {
                           <p className="font-medium">{item.label}</p>
                           <p className={cn(
                             "text-xs leading-tight",
-                            isActive && !isLocked ? "text-gray-600" : "text-gray-500"
+                            isActive && !isLocked ? "text-black" : "text-gray-500"
                           )}>
                             {item.description}
                           </p>
