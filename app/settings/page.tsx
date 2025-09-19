@@ -1669,7 +1669,7 @@ export default function SettingsPage() {
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 relative",
                           isActive && !isLocked
-                            ? "bg-gradient-to-r from-white to-gray-200 text-black shadow-lg" 
+                            ? "bg-[#FF2A2A] text-black shadow-lg" 
                             : isLocked
                             ? "text-gray-500 cursor-not-allowed opacity-60"
                             : "text-gray-300 hover:bg-white/10 hover:text-white"
