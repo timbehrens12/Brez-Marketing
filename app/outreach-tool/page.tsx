@@ -3057,7 +3057,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'pending'
-                          ? 'bg-[#1A1A1A] text-white border-[#2A2A2A] hover:bg-[#2A2A2A]'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3083,7 +3083,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'responded'
-                          ? 'bg-[#1A1A1A] text-white border-[#2A2A2A] hover:bg-[#2A2A2A]'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3109,7 +3109,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                       size="sm"
                       className={`h-8 text-xs ${
                         filters.statusFilter === 'signed'
-                          ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-900'
+                          ? 'bg-[#FF2A2A] text-white border-[#FF2A2A] hover:bg-[#E02424]'
                           : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
                       }`}
                     >
@@ -3972,7 +3972,7 @@ Pricing Model: ${contractData.pricingModel === 'revenue_share' ? 'Revenue Share'
                                           }}
                                           size="sm"
                                           variant="outline"
-                                          className="h-6 text-[10px] px-2 bg-[#FF2A2A] border-[#FF2A2A] text-white hover:bg-[#E02424] hover:border-[#E02424] break-words text-left leading-tight w-full max-w-full"
+                                          className="h-6 text-[10px] px-2 bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white break-words text-left leading-tight w-full max-w-full"
                                         >
                                           <span className="block truncate">{todo.action}</span>
                                         </Button>

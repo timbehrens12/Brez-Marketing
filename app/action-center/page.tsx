@@ -1657,7 +1657,7 @@ export default function ActionCenterPage() {
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-[#FF2A2A] to-[#E02424] rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-gradient-to-r from-white/60 to-white/80 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${loadingProgress}%` }}
               ></div>
             </div>
