@@ -498,9 +498,22 @@ export default function RootLayout({
           >
             <AuthenticatedProviders>
               <div className="flex min-h-screen relative">
-                {/* Red background blob for all pages */}
+                {/* Red background blobs for all pages */}
                 <div className="pointer-events-none fixed inset-0 z-0">
-                  <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_60%)]" />
+                  {/* Main central blob */}
+                  <div className="absolute left-1/2 top-[-20%] -translate-x-1/2 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.12),transparent_60%)]" />
+                  
+                  {/* Top right corner blob */}
+                  <div className="absolute right-[-10%] top-[-10%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.06),transparent_70%)]" />
+                  
+                  {/* Bottom left corner blob */}
+                  <div className="absolute left-[-15%] bottom-[-15%] w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.08),transparent_65%)]" />
+                  
+                  {/* Mid right accent blob */}
+                  <div className="absolute right-[-5%] top-[40%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.04),transparent_75%)]" />
+                  
+                  {/* Mid left accent blob */}
+                  <div className="absolute left-[-8%] top-[20%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,42,42,.05),transparent_70%)]" />
                 </div>
                 
                 <ConditionalSidebar />
