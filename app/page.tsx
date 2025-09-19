@@ -104,48 +104,12 @@ export default function HomePage() {
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Top scrolling banner */}
           <div className="w-full bg-black/70 border-b border-white/10 overflow-hidden">
-            <div className="scroll-banner">
-              <div className="scroll-track">
-                <div className="banner-item">
-                  <div className="flex items-center gap-2">
-                    <TagBadge tone="red">Limited</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      30% off launch special
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6">
-                    <TagBadge tone="white">Scale 2.0</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Scale 2.0 members: 20% off
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6">
-                    <TagBadge tone="dark">New</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Replaces 8+ marketing tools
-                    </span>
-                  </div>
-                </div>
-                <div className="banner-item">
-                  <div className="flex items-center gap-2">
-                    <TagBadge tone="red">Limited</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      30% off launch special
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6">
-                    <TagBadge tone="white">Scale 2.0</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Scale 2.0 members: 20% off
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6">
-                    <TagBadge tone="dark">New</TagBadge>
-                    <span className="text-xs text-white/80 tracking-wide font-bold">
-                      Replaces 8+ marketing tools
-                    </span>
-                  </div>
-                </div>
+            <div className="ticker-wrap">
+              <div className="ticker">
+                <div className="ticker__item">30% off launch special • Scale 2.0 members: 20% off • Replaces 8+ marketing tools • </div>
+                <div className="ticker__item">30% off launch special • Scale 2.0 members: 20% off • Replaces 8+ marketing tools • </div>
+                <div className="ticker__item">30% off launch special • Scale 2.0 members: 20% off • Replaces 8+ marketing tools • </div>
+                <div className="ticker__item">30% off launch special • Scale 2.0 members: 20% off • Replaces 8+ marketing tools • </div>
               </div>
             </div>
           </div>
@@ -995,28 +959,35 @@ export default function HomePage() {
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in .5s ease-out forwards; animation-delay: var(--animation-delay, 0s); }
 
-         /* Scroll banner styles */
-         .scroll-banner {
+         /* Ticker banner styles - ACTUALLY WORKS */
+         .ticker-wrap {
+           position: relative;
            overflow: hidden;
-           padding: 8px 0;
+           height: 40px;
+           background: transparent;
+         }
+         
+         .ticker {
+           display: flex;
+           width: 400%;
+           animation: ticker 30s linear infinite;
+         }
+         
+         .ticker__item {
+           width: 25%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           padding: 0 20px;
+           font-size: 12px;
+           font-weight: bold;
+           color: rgba(255, 255, 255, 0.8);
            white-space: nowrap;
          }
          
-         .scroll-track {
-           display: inline-flex;
-           animation: scroll-left 15s linear infinite;
-         }
-         
-         .banner-item {
-           display: flex;
-           align-items: center;
-           min-width: 100vw;
-           justify-content: center;
-         }
-         
-         @keyframes scroll-left {
+         @keyframes ticker {
            0% { transform: translateX(0); }
-           100% { transform: translateX(-100%); }
+           100% { transform: translateX(-25%); }
          }
 
         @keyframes bar-grow { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
