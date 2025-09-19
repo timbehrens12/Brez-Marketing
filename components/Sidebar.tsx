@@ -251,7 +251,7 @@ export function Sidebar({ className }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
-          background: `rgba(255,42,42,0.15)`
+          background: `rgba(128,128,128,0.15)`
         }}
       >
         {/* Pin Button - only show when expanded */}
@@ -392,7 +392,7 @@ export function Sidebar({ className }: SidebarProps) {
                   className={cn(
                     "relative flex items-center rounded-lg transition-all duration-200 group",
                     isActive
-                    ? "bg-[#2A2A2A] text-white" 
+                    ? "bg-[#2A2A2A] text-white shadow-[0_0_20px_rgba(255,42,42,0.4),inset_0_0_20px_rgba(255,42,42,0.1)]" 
                     : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
                     isComingSoon && "cursor-not-allowed opacity-60",
                     showExpanded ? "px-3 py-3" : "p-3 justify-center"
