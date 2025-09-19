@@ -4281,15 +4281,15 @@ AVOID REPETITIVE PATTERNS:
             >
               <div className="flex flex-col items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10">
-                  <Upload className="w-6 h-6 text-[#FF2A2A]" />
+                  <Upload className="w-6 h-6 text-gray-400" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">Drop images here or click to upload</h3>
                   <p className="text-gray-400 text-xs">Supports JPG, PNG, WebP • Single or multiple images</p>
                 </div>
                 <label htmlFor="upload-input" className="cursor-pointer">
-                  <div                 className="bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] hover:from-[#333] hover:to-[#222] 
-                                px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 
+                  <div                 className="bg-[#FF2A2A] hover:bg-[#E02424] 
+                                px-6 py-2 rounded-lg text-black font-bold transition-all duration-200 
                                 hover:scale-105 hover:shadow-xl">
                     Select Images
                   </div>
