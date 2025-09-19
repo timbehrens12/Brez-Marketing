@@ -4308,19 +4308,21 @@ AVOID REPETITIVE PATTERNS:
 
           {/* Right Column - Pro Tips */}
           <div>
-            <div className="border-2 border-dashed border-[#333] rounded-xl p-4 h-[300px] hover:border-[#555] transition-colors">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-gray-300 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-gray-300 font-semibold mb-2">How It Works & Capabilities</h4>
-                                      <ul className="text-xs text-gray-300 space-y-1.5">
-                      <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI optimizes automatically</li>
-                      <li>• <strong>Single or multiple products</strong> - Upload one product for individual ads, or multiple products for collections and comparison layouts</li>
-                      <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
-                      <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects in your uploads</li>
-                      <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
-                      <li>• <strong>Use natural photos</strong> - Avoid heavy filters or editing for most accurate AI reproduction</li>
-                  </ul>
+            <div className="border-2 border-dashed border-[#333] rounded-xl p-3 h-[300px] hover:border-[#555] transition-colors overflow-hidden">
+              <div className="flex items-start gap-3 h-full">
+                <Info className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <h4 className="text-gray-300 font-semibold mb-2 text-sm">How It Works & Capabilities</h4>
+                  <div className="overflow-y-auto max-h-[250px] pr-2">
+                    <ul className="text-xs text-gray-300 space-y-1.5 leading-relaxed">
+                      <li className="break-words">• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI optimizes automatically</li>
+                      <li className="break-words">• <strong>Single or multiple products</strong> - Upload one product for individual ads, or multiple products for collections and comparison layouts</li>
+                      <li className="break-words">• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
+                      <li className="break-words">• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects in your uploads</li>
+                      <li className="break-words">• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
+                      <li className="break-words">• <strong>Use natural photos</strong> - Avoid heavy filters or editing for most accurate AI reproduction</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5719,24 +5721,23 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 
                 <div className="flex-1 flex flex-col">
                   {/* AI Description */}
-                  <div className="bg-gradient-to-r from-gray-600/10 to-gray-500/10 border border-gray-500/20 rounded-lg p-4 mb-4">
-                    <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                      <span>🎯</span>
+                  <div className="bg-gradient-to-r from-gray-600/10 to-gray-500/10 border border-gray-500/20 rounded-lg p-3 mb-4 overflow-hidden">
+                    <h4 className="text-white font-medium mb-2 text-sm">
                       How Auto AI Works
                     </h4>
-                    <ul className="text-gray-300 text-sm space-y-2">
+                    <ul className="text-gray-300 text-xs space-y-1.5 leading-relaxed">
                       <li>• AI analyzes your product details, colors, and category</li>
                       <li>• Identifies the best creative style and background for your niche</li>
                       <li>• Optimizes composition, lighting, and messaging for maximum conversions</li>
-                      <li>• Creates multiple variations focused on sales performance</li>
+                      <li>• Generates optimized ad creative for your product</li>
                     </ul>
                   </div>
 
                   {/* AI Limitation Warning - Ultra Compact */}
                   <div className="bg-gradient-to-r from-amber-600/10 to-orange-500/10 border border-amber-500/20 rounded px-3 py-1 mb-2">
-                    <div className="text-amber-200 text-xs flex items-center gap-1">
-                      <span>⚠️</span>
-                      <span>Use clear, unobstructed product images and templates - avoid models posing or busy backgrounds for best AI results</span>
+                    <div className="text-amber-200 text-xs flex items-start gap-2 leading-relaxed">
+                      <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <span className="break-words">Use clear, unobstructed product images and templates - avoid models posing or busy backgrounds for best AI results</span>
                     </div>
                   </div>
 
