@@ -95,34 +95,34 @@ function FooterContentComponent() {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 lg:gap-4">
+        <div className="flex items-center justify-center lg:justify-end gap-1 lg:gap-2 xl:gap-3 overflow-hidden">
           {/* Direct Feedback Button */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleFeedback}
-            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs lg:text-sm whitespace-nowrap"
+            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs px-2 py-1 h-7 flex-shrink-0"
           >
-            <MessageSquare className="w-4 h-4 mr-2" />
+            <MessageSquare className="w-3 h-3 mr-1" />
             Feedback
           </Button>
           
           {/* Legal links */}
           <Link 
             href="/terms" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex-shrink-0"
           >
             Terms of Service
           </Link>
           <Link 
             href="/privacy" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex-shrink-0"
           >
             Privacy Policy
           </Link>
           <Link 
             href="/data-security" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex-shrink-0"
           >
             Data Security
           </Link>
@@ -130,19 +130,19 @@ function FooterContentComponent() {
             href="https://www.instagram.com/brezmarketing/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 flex-shrink-0"
           >
-            <Instagram className="w-3 h-3 lg:w-4 lg:h-4" />
-            <span className="hidden md:inline">Instagram</span>
+            <Instagram className="w-3 h-3" />
+            <span className="hidden xl:inline">Instagram</span>
           </a>
           <a 
             href="https://brezmarketing.net" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 flex-shrink-0"
           >
-            <ExternalLink className="w-3 h-3 lg:w-4 lg:h-4" />
-            <span className="hidden md:inline">Website</span>
+            <ExternalLink className="w-3 h-3" />
+            <span className="hidden xl:inline">Website</span>
           </a>
         </div>
         
