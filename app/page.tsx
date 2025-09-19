@@ -144,8 +144,11 @@ export default function HomePage() {
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-6 font-oswald leading-tight">
                   THE <span className="text-[var(--brand-red)]">SCALE 2.0</span> SYSTEM<br />
                   FOR SIGNING <span className="relative inline-block">
-                    <span className="text-[var(--brand-red)] font-black">FREELANCE BRANDSCALING</span>
-                    <div className="absolute -bottom-1 left-0 right-0 h-1 bg-[var(--brand-red)]"></div>
+                    <span className="text-white font-black relative z-10">FREELANCE</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                  </span> <span className="relative inline-block">
+                    <span className="text-white font-black relative z-10">BRANDSCALING</span>
+                    <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
                   </span><br />
                   <span className="text-white font-black">CLIENTS</span>
                 </h1>
