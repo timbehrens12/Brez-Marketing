@@ -73,8 +73,8 @@ function FooterContentComponent() {
       sidebarExpanded ? 'pt-4 pb-4' : 'pt-[14px] pb-[14px]'
     }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <div className="text-white">
             <img 
               src="https://i.imgur.com/j4AQPxj.png" 
@@ -82,7 +82,7 @@ function FooterContentComponent() {
               className="h-8 w-auto"
             />
           </div>
-          <span className="text-sm text-zinc-400">
+          <span className="text-sm text-zinc-400 whitespace-nowrap">
             © {currentYear} Brez Marketing. All rights reserved.
           </span>
         </div>
@@ -95,7 +95,7 @@ function FooterContentComponent() {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 lg:gap-4">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 lg:gap-4 min-w-0">
           {/* Direct Feedback Button */}
           <Button 
             variant="outline" 
@@ -110,19 +110,19 @@ function FooterContentComponent() {
           {/* Legal links */}
           <Link 
             href="/terms" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
             Terms of Service
           </Link>
           <Link 
             href="/privacy" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
             Privacy Policy
           </Link>
           <Link 
             href="/data-security" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
             Data Security
           </Link>
@@ -130,7 +130,7 @@ function FooterContentComponent() {
             href="https://www.instagram.com/brezmarketing/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
           >
             <Instagram className="w-3 h-3 lg:w-4 lg:h-4" />
             <span className="hidden md:inline">Instagram</span>
@@ -139,7 +139,7 @@ function FooterContentComponent() {
             href="https://brezmarketing.net" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
+            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
           >
             <ExternalLink className="w-3 h-3 lg:w-4 lg:h-4" />
             <span className="hidden md:inline">Website</span>

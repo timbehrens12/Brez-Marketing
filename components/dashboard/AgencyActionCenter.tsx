@@ -1238,7 +1238,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'high': return <Badge className="text-xs dashboard-badge-red">High</Badge>
+      case 'high': return <Badge className="text-xs bg-red-600 text-white">High</Badge>
       case 'medium': return <Badge className="text-xs bg-orange-600 text-white">Medium</Badge>
       case 'low': return <Badge className="text-xs bg-gray-600 text-white">Low</Badge>
       default: return <Badge variant="outline" className="text-xs">Normal</Badge>
@@ -1966,7 +1966,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     return (
       <div className={cn(
         sizeClasses,
-        "flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444] dashboard-accent-red"
+        "flex items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-white font-medium text-xs border border-[#444]"
       )}>
         {brand.name.charAt(0).toUpperCase()}
       </div>
@@ -2761,7 +2761,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     <div className="min-h-screen p-4 pb-6">
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Enhanced Header */}
-        <div className="dashboard-card p-6">
+        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] rounded-xl border border-[#333] p-6 shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-white/5 to-white/10 rounded-xl 
@@ -2891,7 +2891,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         {/* Brand Health Overview Widget */}
         <div>
           <Card className={cn(
-            "dashboard-card transition-all duration-300",
+            "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl transition-all duration-300",
             (isRefreshing || isWidgetLoading.brandHealth) && "opacity-50 grayscale pointer-events-none"
           )}>
             <CardHeader className="pb-4">
@@ -2955,7 +2955,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   {brandHealthData.map((brand) => (
                     <div
                       key={brand.id}
-                      className="dashboard-card p-4 transition-all hover:shadow-md"
+                      className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
                     >
                       {/* Brand Header */}
                       <div className="flex items-center justify-between mb-3">
@@ -3490,7 +3490,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                   : isMaxedOut
                                     ? getButtonText(tool) === 'Connect Brand First'
                                       ? "bg-gray-700/80 hover:bg-gray-700 text-white border border-gray-600" // Gray button for "Connect Brand First"
-                                      : "dashboard-button-red text-white" // Red button for "Weekly Limit Reached"
+                                      : "bg-red-600/80 hover:bg-red-600 text-white" // Red button for "Weekly Limit Reached"
                                     : "bg-[#2A2A2A] hover:bg-[#333] text-white"
                               )}
                             >

@@ -50,7 +50,7 @@ export function UnifiedDashboardHeader({
 
 
   return (
-    <div className="sticky top-0 z-40 bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] backdrop-blur-xl border-b border-[#222] shadow-2xl dashboard-radial-glow">
+    <div className="sticky top-0 z-40 bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] backdrop-blur-xl border-b border-[#222] shadow-2xl">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-4">
         
         {/* Main Row - Responsive layout that prevents smashing */}
@@ -96,8 +96,8 @@ export function UnifiedDashboardHeader({
                           value="agency"
                           className={cn(
                             "relative group rounded-xl w-16 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden",
-                            activeTab === "agency"
-                              ? "bg-gray-600/30 text-white shadow-md dashboard-accent-red"
+                            activeTab === "agency" 
+                              ? "bg-gray-600/30 text-white shadow-md" 
                               : "hover:bg-gray-700/30 hover:text-gray-200"
                           )}
                         >
@@ -129,9 +129,9 @@ export function UnifiedDashboardHeader({
                           value="shopify"
                           className={cn(
                             "relative group rounded-xl w-20 h-12 text-gray-400 transition-all duration-200 ease-out overflow-hidden",
-                            activeTab === "shopify"
-                              ? "bg-gray-600/30 text-white shadow-md dashboard-accent-red"
-                              : activePlatforms.shopify
+                            activeTab === "shopify" 
+                              ? "bg-gray-600/30 text-white shadow-md" 
+                              : activePlatforms.shopify 
                                 ? "hover:bg-gray-700/30 hover:text-gray-200"
                                 : "",
                             !activePlatforms.shopify && "opacity-50 cursor-not-allowed"
@@ -183,9 +183,9 @@ export function UnifiedDashboardHeader({
                           value="meta"
                           className={cn(
                             "relative group rounded-xl w-20 h-12 text-gray-400 transition-all duration-200 ease-out overflow-hidden",
-                            activeTab === "meta"
-                              ? "bg-gray-600/30 text-white shadow-md dashboard-accent-red"
-                              : activePlatforms.meta
+                            activeTab === "meta" 
+                              ? "bg-gray-600/30 text-white shadow-md" 
+                              : activePlatforms.meta 
                                 ? "hover:bg-gray-700/30 hover:text-gray-200"
                                 : "",
                             !activePlatforms.meta && "opacity-50 cursor-not-allowed"
