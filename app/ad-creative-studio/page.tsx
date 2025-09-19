@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GridOverlay } from '@/components/GridOverlay'
-import { Upload, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings } from 'lucide-react'
+import { Upload, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Info, Plus, Trash2, Download, X, Building2, FlaskConical, Palette, RotateCcw, Crop, Ban, Settings, Wrench, Bot, Copy, User, PaintBucket, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from '@clerk/nextjs'
@@ -243,21 +243,21 @@ const CREATIVE_TYPES: CreativeType[] = [
     id: 'custom-template',
     name: 'Custom Template',
     description: 'Create your own completely custom template with full prompt control',
-    icon: '⚙️',
+    icon: Wrench,
     subcategories: ['custom-template']
   },
   {
     id: 'auto',
     name: 'Auto Creative Generator',
     description: 'AI analyzes your product and automatically creates optimized ad creatives for maximum sales',
-    icon: '🤖',
+    icon: Bot,
     subcategories: ['auto-generation']
   },
   {
     id: 'copy',
     name: 'Copy Creative Style',
     description: 'Upload an example creative and recreate it using your product',
-    icon: '✍️',
+    icon: Copy,
     subcategories: ['copy-generation']
   }
 ]
@@ -268,21 +268,21 @@ const CLOTHING_SUB_TYPES = [
     id: 'clothing-models',
     name: 'Models',
     description: 'Show your clothing on professional models in various settings',
-    icon: '👤',
+    icon: User,
     subcategories: CLOTHING_SUBCATEGORIES.models
   },
   {
     id: 'clothing-backgrounds',
     name: 'Backgrounds',
     description: 'Display clothing on clean, professional backgrounds',
-    icon: '🎨',
+    icon: PaintBucket,
     subcategories: CLOTHING_SUBCATEGORIES.backgrounds
   },
   {
     id: 'clothing-environments',
     name: 'Environments',
     description: 'Showcase clothing in creative environmental settings',
-    icon: '🌍',
+    icon: Globe,
     subcategories: CLOTHING_SUBCATEGORIES.environments
   }
 ]
