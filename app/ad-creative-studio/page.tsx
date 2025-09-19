@@ -4315,7 +4315,6 @@ AVOID REPETITIVE PATTERNS:
                   <h4 className="text-gray-300 font-semibold mb-2 text-sm">How It Works & Capabilities</h4>
                   <div className="overflow-y-auto max-h-[250px] pr-2">
                     <ul className="text-xs text-gray-300 space-y-1.5 leading-relaxed">
-                      <li className="break-words">• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI optimizes automatically</li>
                       <li className="break-words">• <strong>Single or multiple products</strong> - Upload one product for individual ads, or multiple products for collections and comparison layouts</li>
                       <li className="break-words">• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
                       <li className="break-words">• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects in your uploads</li>
