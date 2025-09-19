@@ -435,95 +435,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Cost Breakdown */}
-          <section className="py-20 sm:py-28 relative">
-            <div className="absolute inset-x-0 -top-6 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <SectionHeader
-                eyebrow="Cost Savings"
-                title={<><span className="text-[var(--brand-red)]">COST BREAKDOWN</span><br />Replace $2,847/month in Tool Costs</>}
-                sub="Here's what you'd pay for these tools separately vs. our all-in-one platform"
-              />
-
-              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                {/* Separate Tools Column */}
-                <div className="rounded-2xl border border-red-500/30 p-8 bg-[linear-gradient(180deg,rgba(255,42,42,.08),rgba(255,42,42,.02))]">
-                  <h3 className="text-2xl font-bold mb-6 text-center">
-                    <span className="text-red-400">Separate Tools</span>
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      { tool: "Meta Ads Manager Pro", price: 299 },
-                      { tool: "Shopify Analytics Plus", price: 179 },
-                      { tool: "ChatGPT Plus + API", price: 420 },
-                      { tool: "Lead Generation Tool", price: 497 },
-                      { tool: "Creative Studio Pro", price: 297 },
-                      { tool: "Email Marketing Platform", price: 229 },
-                      { tool: "Report Generation Tool", price: 149 },
-                      { tool: "Campaign Optimization", price: 399 },
-                      { tool: "Team Collaboration", price: 189 },
-                      { tool: "API & Integrations", price: 189 }
-                    ].map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-white/10">
-                        <span className="text-white/90 font-mono text-sm">{item.tool}</span>
-                        <span className="text-red-400 font-bold">${item.price}/mo</span>
-                      </div>
-                    ))}
-                    <div className="pt-4 border-t-2 border-red-500/50">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold text-white">Total Monthly Cost:</span>
-                        <span className="text-2xl font-black text-red-400">$2,847/mo</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Our Platform Column */}
-                <div className="rounded-2xl border border-[var(--brand-red)]/50 p-8 bg-[linear-gradient(180deg,rgba(255,42,42,.12),rgba(255,42,42,.04))] relative">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <TagBadge tone="red">BEST VALUE</TagBadge>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-6 text-center mt-2">
-                    <span className="text-[var(--brand-red)]">Scale 2.0 Platform</span>
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="text-center py-8">
-                      <div className="text-6xl font-black text-[var(--brand-red)] mb-2">$97</div>
-                      <div className="text-white/70 font-mono">per month</div>
-                      <div className="text-white/50 text-sm font-mono mt-2">Everything included</div>
-                    </div>
-                    <div className="space-y-2">
-                      {[
-                        "✓ All 10+ tools included",
-                        "✓ White-label ready",
-                        "✓ Unlimited brands",
-                        "✓ Team collaboration",
-                        "✓ API access",
-                        "✓ Priority support",
-                        "✓ Regular updates",
-                        "✓ No setup fees"
-                      ].map((feature, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <span className="text-[var(--brand-red)] font-bold">✓</span>
-                          <span className="text-white/90 font-mono text-sm">{feature.replace('✓ ', '')}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="pt-6 border-t-2 border-[var(--brand-red)]/50">
-                      <div className="text-center">
-                        <div className="text-3xl font-black text-green-400 mb-2">
-                          SAVE $2,750/mo
-                        </div>
-                        <div className="text-white/70 font-mono text-sm">
-                          That's $33,000 saved per year
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
 
           {/* Bento / Features */}
           <section className="py-20 sm:py-28">
@@ -931,10 +842,10 @@ export default function HomePage() {
                       <div className="pt-4 mt-4 border-t border-red-500/30">
                         <div className="flex justify-between items-center font-bold text-lg">
                           <span className="text-red-300">TOTAL MONTHLY COST</span>
-                          <span className="text-red-300 text-2xl">${[800,49,299,499,30,150,200,390,197,97,136].reduce((a,b) => a+b, 0)}/mo</span>
+                          <span className="text-red-300 text-2xl">$2847/mo</span>
                         </div>
                         <div className="text-center mt-2 text-red-200 text-sm">
-                          = ${[800,49,299,499,30,150,200,390,197,97,136].reduce((a,b) => a+b, 0) * 12}/year
+                          = $34164/year
                         </div>
                       </div>
                     </div>
