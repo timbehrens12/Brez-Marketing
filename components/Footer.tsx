@@ -69,86 +69,86 @@ function FooterContentComponent() {
   }
   
   return (
-    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-6 transition-all duration-300 mt-auto ${
-      sidebarExpanded ? 'pt-4 pb-4' : 'pt-[14px] pb-[14px]'
+    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#333] px-4 lg:px-6 transition-all duration-300 mt-auto ${
+      sidebarExpanded ? 'py-3' : 'py-2.5'
     }`}>
-      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="text-white">
-            <img 
-              src="https://i.imgur.com/j4AQPxj.png" 
-              alt="[bm] dashboard" 
-              className="h-8 w-auto"
-            />
+      <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-2 lg:gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
+            <div className="text-white">
+              <img 
+                src="https://i.imgur.com/j4AQPxj.png" 
+                alt="[bm] dashboard" 
+                className="h-6 lg:h-8 w-auto"
+              />
+            </div>
+            <span className="text-xs lg:text-sm text-zinc-400 whitespace-nowrap">
+              © {currentYear} Brez Marketing
+            </span>
           </div>
-          <span className="text-sm text-zinc-400 whitespace-nowrap">
-            © {currentYear} Brez Marketing. All rights reserved.
-          </span>
-        </div>
-        
+          
           {/* Version indicator */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+          <div className="hidden sm:flex items-center">
+            <span className="text-xs text-zinc-500 px-2 py-0.5 bg-[#2A2A2A] rounded border border-[#444]">
               {versionString}
             </span>
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 lg:gap-4 min-w-0">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-1.5 lg:gap-3">
           {/* Direct Feedback Button */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleFeedback}
-            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs lg:text-sm"
+            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs px-2 py-1 h-auto"
           >
-            <MessageSquare className="w-4 h-4 mr-2" />
+            <MessageSquare className="w-3 h-3 mr-1.5" />
             Feedback
           </Button>
           
-          {/* Legal links */}
+          {/* Legal links - more compact */}
           <Link 
             href="/terms" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
-            Terms of Service
+            Terms
           </Link>
           <Link 
             href="/privacy" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
-            Privacy Policy
+            Privacy
           </Link>
           <Link 
             href="/data-security" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors whitespace-nowrap"
           >
-            Data Security
+            Security
           </Link>
           <a 
             href="https://www.instagram.com/brezmarketing/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
           >
-            <Instagram className="w-3 h-3 lg:w-4 lg:h-4" />
-            <span className="hidden md:inline">Instagram</span>
+            <Instagram className="w-3 h-3" />
+            <span className="hidden lg:inline">IG</span>
           </a>
           <a 
             href="https://brezmarketing.net" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs lg:text-sm text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 whitespace-nowrap"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1"
           >
-            <ExternalLink className="w-3 h-3 lg:w-4 lg:h-4" />
-            <span className="hidden md:inline">Website</span>
+            <ExternalLink className="w-3 h-3" />
+            <span className="hidden lg:inline">Site</span>
           </a>
         </div>
         
         {/* Version indicator for mobile */}
-        <div className="sm:hidden flex items-center justify-center w-full">
-          <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
+        <div className="sm:hidden flex items-center justify-center w-full mt-1">
+          <span className="text-xs text-zinc-500 px-2 py-0.5 bg-[#2A2A2A] rounded border border-[#444]">
             {versionString}
           </span>
         </div>
