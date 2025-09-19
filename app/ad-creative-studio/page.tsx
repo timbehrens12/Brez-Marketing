@@ -4314,12 +4314,12 @@ AVOID REPETITIVE PATTERNS:
                 <div>
                   <h4 className="text-[#FF2A2A] font-semibold mb-2">How It Works & Capabilities</h4>
                                       <ul className="text-xs text-gray-300 space-y-1.5">
-                      <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI will optimize automatically</li>
-                      <li>• <strong>Upload multiple products</strong> - Create collections, brand drops, or comparison ads with professional grid layouts</li>
+                      <li>• <strong>Any aspect ratio supported</strong> - Upload square, landscape, or portrait images - AI optimizes automatically</li>
+                      <li>• <strong>Single or multiple products</strong> - Upload one product for individual ads, or multiple products for collections and comparison layouts</li>
                       <li>• <strong>Higher quality images = better results</strong> - Use high-resolution photos for best AI generation</li>
-                      <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects</li>
-                    <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
-                    <li>• <strong>Avoid heavy filters</strong> - Use natural, unedited photos for most accurate reproduction</li>
+                      <li>• <strong>Product-only photos work best</strong> - Avoid distracting backgrounds or other objects in your uploads</li>
+                      <li>• <strong>Good lighting is key</strong> - Well-lit, clear photos generate more accurate results</li>
+                      <li>• <strong>Use natural photos</strong> - Avoid heavy filters or editing for most accurate AI reproduction</li>
                   </ul>
                 </div>
               </div>
@@ -4814,7 +4814,7 @@ AVOID REPETITIVE PATTERNS:
                 </div>
               </div>
               {!selectedGender && (
-                <p className="text-xs text-red-400 mt-2 text-center">* Required for generation</p>
+                <p className="text-xs text-[#FF2A2A] mt-2 text-center">* Required for generation</p>
               )}
             </div>
 
@@ -4873,7 +4873,7 @@ AVOID REPETITIVE PATTERNS:
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
-                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
@@ -4881,16 +4881,16 @@ AVOID REPETITIVE PATTERNS:
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
                 ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
-                  <Ban className="w-8 h-8 text-red-400" />
+                  <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
-                      <span className="text-red-400">Limit reached</span>
+                      <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
-                      <span className="text-red-400">Library full</span>
+                      <span className="text-[#FF2A2A]">Library full</span>
                     ) : (
                       <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
@@ -5085,7 +5085,7 @@ AVOID REPETITIVE PATTERNS:
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
-                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : 'bg-[#FF2A2A] hover:bg-[#E02424] text-black hover:text-black border-[#FF2A2A] hover:border-[#E02424] hover:scale-105 font-bold'
                 }`}
                 disabled={isGenerating || usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT}
@@ -5093,16 +5093,16 @@ AVOID REPETITIVE PATTERNS:
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
                 ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
-                  <Ban className="w-8 h-8 text-red-400" />
+                  <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[9px] text-center leading-none truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
-                      <span className="text-red-400">Limit reached</span>
+                      <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
-                      <span className="text-red-400">Library full</span>
+                      <span className="text-[#FF2A2A]">Library full</span>
                     ) : (
                       <span className="text-gray-500 text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
@@ -5318,7 +5318,7 @@ AVOID REPETITIVE PATTERNS:
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-[#333] hover:border-red-500 text-gray-300 hover:text-red-400"
+                      className="border-[#333] hover:border-[#FF2A2A] text-gray-300 hover:text-[#FF2A2A]"
                       onClick={() => handleDeleteCreative(creative.id)}
                       disabled={deletingCreativeId === creative.id}
                     >
@@ -5447,7 +5447,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
-                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : customTemplatePrompt.trim().length < 20
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
@@ -5457,16 +5457,16 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
                 ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
-                  <Ban className="w-8 h-8 text-red-400" />
+                  <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
-                      <span className="text-red-400">Limit reached</span>
+                      <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
-                      <span className="text-red-400">Library full</span>
+                      <span className="text-[#FF2A2A]">Library full</span>
                     ) : customTemplatePrompt.trim().length < 20 ? (
                       <span className="text-gray-500">Enter prompt</span>
                     ) : (
@@ -5645,7 +5645,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 }}
                 className={`px-4 py-6 font-semibold rounded-lg transition-all flex flex-col items-center justify-center w-full h-full relative border ${
                   usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT
-                    ? 'bg-red-900/30 border-red-600/50 text-red-400 cursor-not-allowed'
+                    ? 'bg-[#FF2A2A]/10 border-[#FF2A2A]/30 text-[#FF2A2A] cursor-not-allowed'
                     : !exampleCreativeImage
                     ? 'bg-gray-600/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
                     : 'bg-[#333] hover:bg-[#3a3a3a] text-gray-400 hover:text-white border-[#444] hover:border-[#555] hover:scale-105'
@@ -5655,16 +5655,16 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
                 ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
-                  <Ban className="w-8 h-8 text-red-400" />
+                  <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
-                      <span className="text-red-400">Limit reached</span>
+                      <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
-                      <span className="text-red-400">Library full</span>
+                      <span className="text-[#FF2A2A]">Library full</span>
                     ) : !exampleCreativeImage ? (
                       <span className="text-gray-500">Upload example</span>
                     ) : (
@@ -5747,7 +5747,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                       {autoPromptAdditions.trim() && (
                         <button
                           onClick={() => setAutoPromptAdditions('')}
-                          className="text-xs text-red-400 hover:text-red-300 underline transition-colors"
+                          className="text-xs text-[#FF2A2A] hover:text-[#FF2A2A]/80 underline transition-colors"
                         >
                           Clear Instructions
                         </button>
@@ -5783,16 +5783,16 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
                 {isGenerating ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
                 ) : usageData.current >= WEEKLY_LIMIT || generatedCreatives.length >= STORAGE_LIMIT ? (
-                  <Ban className="w-8 h-8 text-red-400" />
+                  <Ban className="w-8 h-8 text-[#FF2A2A]" />
                 ) : (
                   <ChevronRight className="w-8 h-8" />
                 )}
                 <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center px-1">
                   <span className="text-[8px] text-center leading-tight truncate max-w-full">
                     {usageData.current >= WEEKLY_LIMIT ? (
-                      <span className="text-red-400">Limit reached</span>
+                      <span className="text-[#FF2A2A]">Limit reached</span>
                     ) : generatedCreatives.length >= STORAGE_LIMIT ? (
-                      <span className="text-red-400">Library full</span>
+                      <span className="text-[#FF2A2A]">Library full</span>
                     ) : (
                       <span className="text-white text-xs leading-tight text-center">Click to<br />generate</span>
                     )}
@@ -6300,7 +6300,7 @@ Be as descriptive as possible - the AI will follow your instructions exactly!"
         <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded flex items-center justify-center text-xs font-bold text-red-400">⚠</div>
+              <div className="w-6 h-6 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded flex items-center justify-center text-xs font-bold text-[#FF2A2A]">⚠</div>
               Fix Generation Issues
             </h3>
             <Button
