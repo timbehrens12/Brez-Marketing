@@ -153,7 +153,7 @@ export default function HomePage() {
                   <span className="text-white font-black">CLIENTS</span>
                 </h1>
                 <p className="text-lg md:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
-                  The complete AI-powered dashboard to find, sign, and deliver results for your first brandscaling clients. Real lead generation, Shopify connection, Meta ads analytics, creative generation, AI chatbot, client CRM, automated reporting, and more - everything you need to build a profitable freelance agency.
+                  The complete AI-powered dashboard to find, sign, and deliver results for your first freelance brandscaling clients.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Button 
