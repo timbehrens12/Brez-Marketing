@@ -74,19 +74,19 @@ function FooterContentComponent() {
     }`}>
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="text-white">
-            <img 
-              src="https://i.imgur.com/j4AQPxj.png" 
-              alt="[bm] dashboard" 
-              className="h-8 w-auto"
-            />
+          <div className="flex items-center gap-2">
+            <div className="text-white">
+              <img 
+                src="https://i.imgur.com/j4AQPxj.png" 
+                alt="[bm] dashboard" 
+                className="h-8 w-auto"
+              />
+            </div>
+            <span className="text-sm text-zinc-400 whitespace-nowrap">
+              © {currentYear} Brez Marketing. All rights reserved.
+            </span>
           </div>
-          <span className="text-sm text-zinc-400 whitespace-nowrap">
-            © {currentYear} Brez Marketing. All rights reserved.
-          </span>
-        </div>
-        
+          
           {/* Version indicator */}
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-xs text-zinc-500 px-2 py-1 bg-[#2A2A2A] rounded border border-[#444]">
@@ -101,7 +101,7 @@ function FooterContentComponent() {
             variant="outline" 
             size="sm"
             onClick={handleFeedback}
-            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs lg:text-sm"
+            className="bg-[#2A2A2A] border-[#444] text-zinc-300 hover:bg-[#333] hover:text-white text-xs lg:text-sm whitespace-nowrap"
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Feedback
