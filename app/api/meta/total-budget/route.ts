@@ -78,9 +78,27 @@ export async function GET(req: NextRequest) {
           let totalLifetimeBudget = 0;
           let activeAdSetCount = 0;
           
-          // Use rate limiter to safely fetch adsets from Meta API
-          const accountId = connectionData[0].metadata?.account_id || 'unknown';
-          console.log(`[Total Meta Budget] Fetching adsets from Meta API for account ${accountId}`);
+          // Get account ID from metadata or extract from a test call
+          let accountId = 'unknown';
+          try {
+            if (connectionData[0].metadata && connectionData[0].metadata.account_id) {
+              accountId = connectionData[0].metadata.account_id;
+            } else {
+              // If no metadata, try to get account ID from a simple me call
+              console.log('[Total Meta Budget] No account ID in metadata, fetching from Meta API...');
+              const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connectionData[0].access_token}&fields=id&limit=1`);
+              if (meResponse.ok) {
+                const meData = await meResponse.json();
+                if (meData.data?.[0]?.id) {
+                  accountId = meData.data[0].id.replace('act_', ''); // Remove act_ prefix if present
+                }
+              }
+            }
+          } catch (error) {
+            console.log('[Total Meta Budget] Could not determine account ID, using fallback');
+          }
+          
+          console.log(`[Total Meta Budget] Using account ID: ${accountId}`);
           
           const adSetsResponse = await withMetaRateLimit(
             accountId,

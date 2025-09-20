@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { withMetaRateLimit } from './meta-rate-limiter'
 
 /**
  * Fetches Meta ad insights for a specific brand within a date range
@@ -1324,37 +1325,34 @@ export async function fetchMetaAdSets(
     // Fetch ad sets from Meta API
     const adAccountId = campaign.account_id;
     
-    // TEST: Try one single adset API call to see if the issue persists
-    console.log(`[Meta Service] TESTING: Attempting single adset fetch for campaign ${campaignId}`)
-    const adSetsResponse = await fetchWithRetry(
-      `https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status&limit=1&access_token=${metaConnection.access_token}`,
-      {},
-      1, // Only 1 retry
-      10000 // 10 second backoff
-    );
+    // Use centralized rate limiter for ad sets API call
+    console.log(`[Meta Service] Fetching ad sets for campaign ${campaignId} using rate limiter`)
     
-    if (adSetsResponse.error) {
-      const errorData = adSetsResponse.error;
-      console.error('[Meta Service] Failed to fetch ad sets:', errorData);
-
-      // Specific Meta API rate limit errors
-      if (
-        errorData.code === 4 || 
-        errorData.code === 17 || 
-        errorData.code === 32 ||
-        (errorData.type === 'OAuthException' && errorData.code === 613) ||
-        (errorData.type === 'OAuthException' && errorData.is_transient) ||
-        errorData.message?.toLowerCase().includes('rate') ||
-        errorData.error_subcode === 2446079 ||
-        errorData.error_user_title === "Ad Account Has Too Many API Calls"
-      ) {
-        return { 
-          success: false, 
-          error: 'Meta API rate limit reached: ' + (errorData.message || 'Too many requests')
-        };
-      }
+    let adSetsResponse;
+    try {
+      adSetsResponse = await withMetaRateLimit(
+        adAccountId,
+        async () => {
+          const response = await fetch(`https://graph.facebook.com/v18.0/${campaignId}/adsets?fields=id,name,status&access_token=${metaConnection.access_token}`);
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw errorData;
+          }
+          
+          return await response.json();
+        },
+        1, // High priority for adsets
+        `adsets-${campaignId}`
+      );
       
-      return { success: false, error: 'Failed to fetch ad sets from Meta API', details: errorData };
+      console.log(`[Meta Service] Successfully fetched ad sets for campaign ${campaignId}`);
+    } catch (error: any) {
+      console.error('[Meta Service] Failed to fetch ad sets:', error);
+      return { 
+        success: false, 
+        error: 'Meta API rate limit reached: ' + (error.message || 'Too many requests')
+      };
     }
     
     const adSetsData = adSetsResponse; // Rename for clarity, it's already parsed data
@@ -1417,24 +1415,24 @@ export async function fetchMetaAdSets(
           // --- Fetch Total Reach for the period --- 
           let totalReachForPeriod = 0;
           try {
-            // RESTORED reach query (using 12-month limitation)
-            const totalReachResponse = await fetchWithRetry(
-              `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=reach&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`,
-              {},
-              2, // Max 2 retries
-              2000 // Initial 2 second backoff
+            // Use rate limiter for reach query
+            const totalReachResponse = await withMetaRateLimit(
+              adAccountId,
+              async () => {
+                const response = await fetch(`https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=reach&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`);
+                
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw errorData;
+                }
+                
+                return await response.json();
+              },
+              -1, // Lower priority for insights
+              `reach-${adSet.id}`
             );
             
-            if (totalReachResponse.error) {
-              const errorData = totalReachResponse.error;
-              // Check if we hit rate limits
-              if (errorData.message?.includes('rate') || errorData.message?.includes('too many')) {
-                console.warn('[Meta Service] Rate limited during reach fetch, stopping batch processing');
-                rateLimited = true;
-                return null;
-              }
-              console.warn(`[Meta Service] Failed to fetch total reach for AdSet ${adSet.id}:`, errorData);
-            } else if (totalReachResponse.data && totalReachResponse.data.length > 0 && totalReachResponse.data[0].reach) {
+            if (totalReachResponse.data && totalReachResponse.data.length > 0 && totalReachResponse.data[0].reach) {
               totalReachForPeriod = parseInt(totalReachResponse.data[0].reach, 10);
               console.log(`[Meta Service] Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
             } else {
