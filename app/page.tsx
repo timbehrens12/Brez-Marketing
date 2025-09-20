@@ -313,7 +313,7 @@ export default function HomePage() {
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                  <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
              </div>
-              <div className="absolute right-34 sm:right-38 lg:right-43 top-1/2 -translate-y-1/2 flex items-center gap-3">
+              <div className="absolute right-32 sm:right-37 lg:right-41 top-1/2 -translate-y-1/2 flex items-center gap-3">
                <Link href="/dashboard">
                  <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
