@@ -10,9 +10,174 @@ import { useState } from "react"
 
 const BRAND_RED = "#FF2A2A"
 
-// CACHE BUST: v2.0.1 - Force new deployment to clear cached broken JS
+// Plan Recommendation Quiz Component
+function PlanRecommendationQuiz() {
+  const [showResult, setShowResult] = useState(false)
+  const [selectedSituation, setSelectedSituation] = useState<string>("")
 
-// COMPONENT TEMPORARILY REMOVED DUE TO CACHING ISSUES
+  const handleAnswer = (value: string) => {
+    setSelectedSituation(value)
+    setShowResult(true)
+  }
+
+  const getRecommendation = () => {
+    // Map directly to pricing tiers based on brand count
+    switch (selectedSituation) {
+      case "single-brand":
+        return {
+          plan: "DTC Owner",
+          reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
+          price: "$67/mo",
+          features: ["1 Brand", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
+        }
+      
+      case "aspiring-freelancer":
+        return {
+          plan: "Beginner",
+          reason: "Includes lead generation and outreach tools to help you land your first freelance brandscaling clients.",
+          price: "$97/mo",
+          features: ["1 Brand", "100 leads/month", "250 outreach emails", "Client management tools"]
+        }
+      
+      case "few-clients":
+        return {
+          plan: "Growing",
+          reason: "Perfect for managing multiple freelance brandscaling clients efficiently.",
+          price: "$397/mo",
+          features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Higher AI usage limits"]
+        }
+      
+      case "established-agency":
+        return {
+          plan: "Multi-Brand",
+          reason: "Built for agencies managing multiple clients with team collaboration features.",
+          price: "$697/mo",
+          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Maximum AI usage limits"]
+        }
+      
+      case "enterprise":
+        return {
+          plan: "Enterprise",
+          reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
+          price: "$1,337/mo",
+          features: ["Up to 25 brands", "Unlimited AI chatbot", "Priority email support", "Advanced usage analytics"]
+        }
+      
+      default:
+        return {
+          plan: "Beginner",
+          reason: "A great starting point with all essential features for freelance brandscaling.",
+          price: "$97/mo",
+          features: ["1 Brand", "Lead generation", "Client management", "White-label reports"]
+        }
+    }
+  }
+
+  const resetQuiz = () => {
+    setSelectedSituation("")
+    setShowResult(false)
+  }
+
+  if (showResult) {
+    const recommendation = getRecommendation()
+    return (
+      <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8 text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Target className="w-8 h-8 text-[var(--brand-red)]" />
+          </div>
+          <h3 className="text-2xl font-bold mb-2">We recommend the <span className="text-[var(--brand-red)]">{recommendation.plan}</span> plan</h3>
+          <p className="text-white/70 mb-4">{recommendation.reason}</p>
+          <div className="text-3xl font-black text-[var(--brand-red)] mb-6">{recommendation.price}</div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          {recommendation.features.map((feature, index) => (
+            <div key={index} className="flex items-center text-left">
+              <Check className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+              <span className="text-white/80">{feature}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex gap-4 justify-center">
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
+          >
+            Get {recommendation.plan} <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10"
+          >
+            See All Tiers
+          </Button>
+          <Button 
+            onClick={resetQuiz}
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10"
+          >
+            Retake Quiz
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8">
+      {/* Question */}
+      <h3 className="text-xl font-bold text-white mb-6">How many brands do you currently manage?</h3>
+
+      {/* Options */}
+      <div className="space-y-3">
+        <button
+          onClick={() => handleAnswer("single-brand")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">1 brand (my own business)</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("aspiring-freelancer")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">0 clients (want to start freelance brandscaling)</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("few-clients")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">2-5 freelance brandscaling clients</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("established-agency")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">6-15 freelance brandscaling clients</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("enterprise")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">16+ freelance brandscaling clients</span>
+        </button>
+      </div>
+
+      {/* Skip Quiz Option */}
+      <div className="mt-6 text-center">
+        <Button 
+          onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+          variant="outline"
+          className="border-white/30 text-white hover:bg-white/10"
+        >
+          See All Tiers Instead
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 function TagBadge({
   children,
@@ -611,17 +776,7 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* <PlanRecommendationQuiz /> */}
-              <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8 text-center">
-                <h3 className="text-xl font-bold text-white mb-4">Choose Your Plan</h3>
-                <p className="text-white/70 mb-6">Select the perfect plan for your business needs below.</p>
-                <Button 
-                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
-                >
-                  View Pricing Plans <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+              <PlanRecommendationQuiz />
             </div>
           </section>
 
