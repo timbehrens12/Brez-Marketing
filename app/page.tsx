@@ -10,6 +10,200 @@ import { useState } from "react"
 
 const BRAND_RED = "#FF2A2A"
 
+// Plan Recommendation Quiz Component
+function PlanRecommendationQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [answers, setAnswers] = useState<string[]>([])
+  const [showResult, setShowResult] = useState(false)
+
+  const questions = [
+    {
+      question: "What best describes your current situation?",
+      options: [
+        { text: "I own a single brand/business", value: "single-brand" },
+        { text: "I want to start freelance brand scaling but have no clients yet", value: "aspiring-freelancer" },
+        { text: "I have 1-3 clients already", value: "few-clients" },
+        { text: "I manage 4+ brands/clients", value: "established-agency" },
+        { text: "I run a large agency (10+ brands)", value: "enterprise" }
+      ]
+    },
+    {
+      question: "What's your primary goal?",
+      options: [
+        { text: "Track my own business performance", value: "own-business" },
+        { text: "Get my first freelance client", value: "first-client" },
+        { text: "Scale my existing clients", value: "scale-existing" },
+        { text: "Streamline agency operations", value: "streamline-agency" }
+      ]
+    },
+    {
+      question: "How important is lead generation to you?",
+      options: [
+        { text: "Not needed - I have my own business", value: "no-leads" },
+        { text: "Critical - I need to find clients", value: "need-leads" },
+        { text: "Helpful for growth", value: "growth-leads" }
+      ]
+    }
+  ]
+
+  const handleAnswer = (value: string) => {
+    const newAnswers = [...answers, value]
+    setAnswers(newAnswers)
+    
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+    } else {
+      setShowResult(true)
+    }
+  }
+
+  const getRecommendation = () => {
+    const [situation, goal, leads] = answers
+    
+    // Single brand owner
+    if (situation === "single-brand" || goal === "own-business") {
+      return {
+        plan: "DTC Owner",
+        reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
+        price: "$67/mo",
+        features: ["Track your brand's performance", "Shopify & Meta integration", "Basic AI assistance"]
+      }
+    }
+    
+    // Aspiring freelancer or first client
+    if (situation === "aspiring-freelancer" || goal === "first-client" || leads === "need-leads") {
+      return {
+        plan: "Beginner",
+        reason: "Includes lead generation and outreach tools to help you land your first clients.",
+        price: "$97/mo",
+        features: ["100 leads/month", "250 outreach emails", "Client management tools", "White-label reports"]
+      }
+    }
+    
+    // Few clients
+    if (situation === "few-clients" || goal === "scale-existing") {
+      return {
+        plan: "Growing",
+        reason: "Perfect for managing multiple brands with advanced features and higher API limits.",
+        price: "$397/mo",
+        features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
+      }
+    }
+    
+    // Established agency
+    if (situation === "established-agency") {
+      return {
+        plan: "Multi-Brand",
+        reason: "Built for agencies managing multiple clients with team collaboration features.",
+        price: "$697/mo",
+        features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+      }
+    }
+    
+    // Enterprise
+    if (situation === "enterprise") {
+      return {
+        plan: "Enterprise",
+        reason: "Full-scale operations with unlimited features and dedicated support.",
+        price: "$1,337/mo",
+        features: ["Up to 25 brands", "Unlimited AI", "Enterprise support", "Custom integrations"]
+      }
+    }
+    
+    // Default fallback
+    return {
+      plan: "Beginner",
+      reason: "A great starting point with all essential features for growing your business.",
+      price: "$97/mo",
+      features: ["Lead generation", "Client management", "White-label reports", "AI assistance"]
+    }
+  }
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0)
+    setAnswers([])
+    setShowResult(false)
+  }
+
+  if (showResult) {
+    const recommendation = getRecommendation()
+    return (
+      <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8 text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-[var(--brand-red)]/20 border border-[var(--brand-red)]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Target className="w-8 h-8 text-[var(--brand-red)]" />
+          </div>
+          <h3 className="text-2xl font-bold mb-2">We recommend the <span className="text-[var(--brand-red)]">{recommendation.plan}</span> plan</h3>
+          <p className="text-white/70 mb-4">{recommendation.reason}</p>
+          <div className="text-3xl font-black text-[var(--brand-red)] mb-6">{recommendation.price}</div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          {recommendation.features.map((feature, index) => (
+            <div key={index} className="flex items-center text-left">
+              <Check className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+              <span className="text-white/80">{feature}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex gap-4 justify-center">
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
+          >
+            View Plans <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={resetQuiz}
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10"
+          >
+            Retake Quiz
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const question = questions[currentQuestion]
+  const progress = ((currentQuestion + 1) / questions.length) * 100
+
+  return (
+    <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8">
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="flex justify-between text-sm text-white/60 mb-2">
+          <span>Question {currentQuestion + 1} of {questions.length}</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <div className="w-full bg-white/10 rounded-full h-2">
+          <div 
+            className="bg-[var(--brand-red)] h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Question */}
+      <h3 className="text-xl font-bold text-white mb-6">{question.question}</h3>
+
+      {/* Options */}
+      <div className="space-y-3">
+        {question.options.map((option, index) => (
+          <button
+            key={index}
+            onClick={() => handleAnswer(option.value)}
+            className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+          >
+            <span className="text-white group-hover:text-white">{option.text}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function TagBadge({
   children,
   tone = "red",
@@ -578,6 +772,22 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* Plan Recommendation Quiz */}
+          <section className="py-16 sm:py-20 relative">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-black mb-4 font-oswald">
+                  FIND YOUR <span className="text-[var(--brand-red)]">PERFECT PLAN</span>
+                </h2>
+                <p className="text-white/70 text-lg">
+                  Answer a few quick questions and we'll recommend the best plan for your situation
+                </p>
+              </div>
+
+              <PlanRecommendationQuiz />
             </div>
           </section>
 
