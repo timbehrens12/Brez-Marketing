@@ -1052,10 +1052,11 @@ export default function HomePage() {
                   { q: "What platforms do you actually support right now?", a: "Currently: Meta Ads (full integration) and Shopify (full integration). Google Ads integration is in development and will be available in Q2 2024." },
                   { q: "How does the AI consultant actually work?", a: "It's our custom AI built specifically for marketing. It analyzes your actual campaign performance, provides specific recommendations, and can even write ad copy or suggest budget optimizations." },
                   { q: "Can I cancel anytime?", a: "Yes, absolutely. One-click cancellation from your dashboard. No long-term contracts, no cancellation fees, no hassle." },
-                  { q: "What's your data retention policy?", a: "Brand Owner: 90 days. Brand Scaler & above: Unlimited. All data is securely encrypted and backed up multiple times." },
-                  { q: "Do you offer white-label reporting?", a: "Yes, starting with the Brand Scaler plan. You can customize branding, add your logo, and present reports as your own work." },
-                  { q: "How secure is my data?", a: "SOC 2 Type II compliant, GDPR compliant, bank-level encryption. We don't sell or share your data. 99.9% uptime with enterprise-grade infrastructure." },
-                  { q: "Can I integrate with other tools?", a: "Yes, we offer API access starting with Agency Pro plan. Webhooks, custom integrations, and Zapier support are available for Enterprise clients." }
+                  { q: "What's your data retention policy?", a: "When you disconnect an account or cancel your subscription, your data is immediately deleted from our systems. We don't store your data after disconnection." },
+                  { q: "Do you offer white-label reporting?", a: "Yes, starting with the Beginner plan. You can customize branding, add your logo, and present reports as your own work." },
+                  { q: "How secure is my data?", a: "We use industry-standard encryption and secure hosting. We don't sell or share your data with anyone. Your information is only used to provide the platform services you've subscribed to." },
+                  { q: "Can I integrate with other tools?", a: "Currently, we don't offer API access or third-party integrations. We're focused on building the best all-in-one platform experience." },
+                  { q: "How does lead generation work and is my data safe?", a: "Our lead generation finds authentic, organic businesses that match your criteria. We don't store or sell any lead data - you get fresh leads each time and we immediately delete them from our systems after delivery." }
                 ].map((faq, i) => (
                   <div key={i} className="bg-[linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01))] border border-white/12 rounded-xl overflow-hidden">
                     <button onClick={() => setExpandedFaq(expandedFaq === i ? null : i)} className="w-full text-left p-6 flex justify-between items-center hover:bg-white/[.06] transition-colors">
