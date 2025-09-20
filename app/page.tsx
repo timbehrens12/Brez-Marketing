@@ -805,143 +805,62 @@ export default function HomePage() {
                 {[
                   {
                     name: "DTC Owner",
-                    description: "Perfect for single brand owners",
+                    description: "Single brand owners",
                     price: 67,
                     popular: false,
                     icon: Users,
-                    coreFeatures: [
-                      "1 Brand Connection",
-                      "Meta Ads Analytics & Dashboard",
-                      "Shopify Integration & Orders Sync",
-                      "5 AI Marketing Assistant Chats/day",
-                      "10 AI Creative Generations/month",
-                      "Basic Performance Reports"
-                    ],
-                    advancedFeatures: [
-                      "No Lead Generation Access",
-                      "No Outreach CRM Access",
-                      "Limited API Usage"
-                    ],
-                    teamFeatures: [],
+                    brands: "1 Brand",
+                    leads: "No Lead Gen",
+                    ai: "5 AI Chats/day",
+                    highlight: "Analytics Only",
                     whiteLabel: false
                   },
                   {
-                    name: "Beginner",
-                    description: "Growing brands & small agencies",
+                    name: "Beginner", 
+                    description: "First freelance clients",
                     price: 97,
                     popular: true,
                     icon: Rocket,
-                    coreFeatures: [
-                      "1 Brand Connection",
-                      "Meta + Google Ads Analytics",
-                      "Shopify + E-commerce Integration",
-                      "10 AI Marketing Assistant Chats/day",
-                      "25 AI Creative Generations/month",
-                      "Advanced Performance Reports"
-                    ],
-                    advancedFeatures: [
-                      "100 Lead Generations/month",
-                      "250 Outreach Emails/month",
-                      "AI Campaign Optimization",
-                      "Ad Creative Studio (Copy Competitor Ads)",
-                      "Contract Generation AI",
-                      "Basic API Access"
-                    ],
-                    teamFeatures: [],
+                    brands: "1 Brand",
+                    leads: "100 Leads/month",
+                    ai: "10 AI Chats/day",
+                    highlight: "Lead Gen + CRM",
                     whiteLabel: true
                   },
                   {
                     name: "Growing",
-                    description: "Up to 5 brands under management",
+                    description: "Multiple clients",
                     price: 397,
                     popular: false,
                     icon: TrendingUp,
-                    coreFeatures: [
-                      "Up to 5 Brand Connections",
-                      "Full Platform Access",
-                      "Meta + Google + Facebook Ads Analytics",
-                      "25 AI Marketing Assistant Chats/day",
-                      "75 AI Creative Generations/month",
-                      "Advanced Analytics & Custom Reports"
-                    ],
-                    advancedFeatures: [
-                      "300 Lead Generations/month",
-                      "750 Outreach Emails/month",
-                      "Advanced Campaign Optimization AI",
-                      "Ad Creative Studio (Copy + Custom AI Ads)",
-                      "Contract & Proposal Generation",
-                      "Campaign Performance Predictions",
-                      "Priority API Access"
-                    ],
-                    teamFeatures: [],
+                    brands: "5 Brands",
+                    leads: "300 Leads/month", 
+                    ai: "25 AI Chats/day",
+                    highlight: "Multi-Brand",
                     whiteLabel: true
                   },
                   {
                     name: "Multi-Brand",
-                    description: "Up to 15 brands under management",
+                    description: "Agencies with teams",
                     price: 697,
                     popular: false,
                     icon: Zap,
-                    coreFeatures: [
-                      "Up to 15 Brand Connections",
-                      "Enterprise Platform Access",
-                      "All Ad Platform Integrations",
-                      "50 AI Marketing Assistant Chats/day",
-                      "150 AI Creative Generations/month",
-                      "Premium Analytics & White-Label Reports",
-                      "Cross-Brand Performance Insights",
-                      "Automated Campaign Management"
-                    ],
-                    advancedFeatures: [
-                      "750 Lead Generations/month",
-                      "2,000 Outreach Emails/month",
-                      "AI Campaign Optimization Engine",
-                      "Advanced Ad Creative Studio",
-                      "Custom Contract Templates",
-                      "Competitor Ad Intelligence",
-                      "Product-Based Creative AI",
-                      "Priority API Access"
-                    ],
-                    teamFeatures: [
-                      "Team Collaboration (15 users)",
-                      "Client Portal Access",
-                      "Advanced Role Permissions"
-                    ],
+                    brands: "15 Brands",
+                    leads: "750 Leads/month",
+                    ai: "50 AI Chats/day", 
+                    highlight: "Team Collaboration",
                     whiteLabel: true
                   },
                   {
                     name: "Enterprise",
-                    description: "Up to 25 brands, full-scale operations",
+                    description: "Large agencies",
                     price: 1337,
                     popular: false,
                     icon: Award,
-                    coreFeatures: [
-                      "Up to 25 Brand Connections",
-                      "Enterprise Platform Access",
-                      "All Integrations + Custom Connectors",
-                      "Unlimited AI Marketing Assistant",
-                      "500 AI Creative Generations/month",
-                      "Custom White-Label Reports",
-                      "Enterprise-Grade Security",
-                      "24/7 Priority Support"
-                    ],
-                    advancedFeatures: [
-                      "2,500 Lead Generations/month",
-                      "7,500 Outreach Emails/month",
-                      "Enterprise AI Campaign Engine",
-                      "Full Ad Creative Studio Suite",
-                      "Enterprise Contract Generation",
-                      "Advanced Competitor Intelligence",
-                      "Custom AI Creative Training",
-                      "Product Catalog Creative AI",
-                      "White-Glove Implementation"
-                    ],
-                    teamFeatures: [
-                      "Unlimited Team Members",
-                      "Advanced Client Portals",
-                      "Custom Role Permissions",
-                      "Dedicated Account Manager"
-                    ],
+                    brands: "25 Brands",
+                    leads: "2,500 Leads/month",
+                    ai: "Unlimited AI",
+                    highlight: "Enterprise Support",
                     whiteLabel: true
                   }
                 ].map((plan, index) => (
@@ -978,103 +897,45 @@ export default function HomePage() {
                         </div>
                       </div>
                       
-                      {/* Features section - flex-grow to push button to bottom */}
-                      <div className="flex-1">
-                      <div className="mb-4">
-                        <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included</h4>
-                        <div className="space-y-2">
-                          {plan.coreFeatures.map((feature: string, i: number) => (
-                            <div key={i} className="flex items-center">
-                              <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
-                              <span className="text-white/75 text-xs">{feature}</span>
+                      {/* Key Features - Clean and Simple */}
+                      <div className="flex-1 mb-6">
+                        <div className="space-y-4">
+                          {/* Brands */}
+                          <div className="flex justify-between items-center py-2 border-b border-white/10">
+                            <span className="text-white/70 text-sm">Brands</span>
+                            <span className="text-white font-semibold text-sm">{plan.brands}</span>
+                          </div>
+                          
+                          {/* Lead Generation */}
+                          <div className="flex justify-between items-center py-2 border-b border-white/10">
+                            <span className="text-white/70 text-sm">Lead Generation</span>
+                            <span className={`font-semibold text-sm ${plan.leads === "No Lead Gen" ? "text-white/50" : "text-white"}`}>
+                              {plan.leads}
+                            </span>
+                          </div>
+                          
+                          {/* AI Assistant */}
+                          <div className="flex justify-between items-center py-2 border-b border-white/10">
+                            <span className="text-white/70 text-sm">AI Assistant</span>
+                            <span className="text-white font-semibold text-sm">{plan.ai}</span>
+                          </div>
+                          
+                          {/* Key Highlight */}
+                          <div className="bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-lg p-3 mt-4">
+                            <div className="text-center">
+                              <span className="text-[var(--brand-red)] font-bold text-sm">{plan.highlight}</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {plan.advancedFeatures.length > 0 && (
-                        <div className="mb-3">
-                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">⚡</span> Growth</h4>
-                          <div className="space-y-1">
-                            {plan.advancedFeatures.map((feature: string, i: number) => (
-                              <div key={i} className="flex items-center">
-                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
-                                <span className="text-white/75 text-xs">{feature}</span>
-                              </div>
-                            ))}
                           </div>
+                          
+                          {/* White Label Badge */}
+                          {plan.whiteLabel && (
+                            <div className="text-center">
+                              <span className="bg-white/10 text-white/80 px-3 py-1 rounded-full text-xs font-medium">
+                                White-Label Ready
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-
-                      {plan.teamFeatures.length > 0 && (
-                        <div className="mb-3">
-                          <h4 className="text-white/90 font-semibold text-xs mb-2 uppercase tracking-wide"><span className="text-white">👥</span> Team</h4>
-                          <div className="space-y-1">
-                            {plan.teamFeatures.map((feature: string, i: number) => (
-                              <div key={i} className="flex items-center">
-                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
-                                <span className="text-white/75 text-xs">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {plan.whiteLabel && (
-                        <div className="border border-[var(--brand-red)]/30 bg-[var(--brand-red)]/10 rounded-lg p-3">
-                          <div className="flex items-center">
-                            <Check className="w-3 h-3 mr-2 text-[var(--brand-red)]" />
-                            <span className="text-white text-xs font-semibold">Full White-Label Rights</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {index < 3 && (
-                        <div className="mt-6 pt-4 border-t border-white/10">
-                          <div className="space-y-2">
-                            {index === 0 && (
-                              <>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">Lead Generation</span>
-                                </div>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">Team Features</span>
-                                </div>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">White-Label Rights</span>
-                                </div>
-                              </>
-                            )}
-                            {index === 1 && (
-                              <>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">Team Collaboration</span>
-                                </div>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">White-Label Rights</span>
-                                </div>
-                              </>
-                            )}
-                            {index === 2 && (
-                              <>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">Unlimited Team Members</span>
-                                </div>
-                                <div className="flex items-start opacity-60">
-                                  <X className="w-4 h-4 text-white/40 mr-3 mt-0.5 flex-shrink-0" />
-                                  <span className="text-white/55 text-sm font-mono">Custom Integrations</span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
                       </div>
                       
                       {/* Button aligned at bottom */}
