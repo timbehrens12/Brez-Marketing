@@ -233,19 +233,21 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Sort brand health data
   const sortedBrandHealthData = useMemo(() => {
-    if (!brandHealthData) return []
+    if (!brandHealthData || !Array.isArray(brandHealthData)) return []
     
     return [...brandHealthData].sort((a, b) => {
       switch (brandHealthSort) {
         case 'status':
           const statusOrder = { 'critical': 0, 'warning': 1, 'info': 2, 'healthy': 3 }
-          return statusOrder[a.status] - statusOrder[b.status]
+          const aOrder = statusOrder[a?.status] ?? 999
+          const bOrder = statusOrder[b?.status] ?? 999
+          return aOrder - bOrder
         case 'roas':
-          return (b.roas || 0) - (a.roas || 0) // Highest ROAS first
+          return (b?.roas || 0) - (a?.roas || 0) // Highest ROAS first
         case 'spend':
-          return (b.spend || 0) - (a.spend || 0) // Highest spend first
+          return (b?.spend || 0) - (a?.spend || 0) // Highest spend first
         case 'name':
-          return a.name.localeCompare(b.name)
+          return (a?.name || '').localeCompare(b?.name || '')
         default:
           return 0
       }
@@ -2931,7 +2933,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                       <span className="text-xs text-gray-400">Loading health data...</span>
                     </div>
                   )}
-                  {!isLoadingBrandHealth && brandHealthData.length > 0 && (
+                  {!isLoadingBrandHealth && brandHealthData && Array.isArray(brandHealthData) && brandHealthData.length > 0 && (
                     <>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -3021,7 +3023,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   <h3 className="font-medium text-white mb-2">Loading Brand Health Data</h3>
                   <p className="text-[#9ca3af] text-sm">Analyzing performance across all connected platforms...</p>
                 </div>
-              ) : brandHealthData.length === 0 ? (
+              ) : !brandHealthData || !Array.isArray(brandHealthData) || brandHealthData.length === 0 ? (
                 <div className="text-center py-12">
                   <SyncingBrandsDisplay brands={brands || []} />
                 </div>
