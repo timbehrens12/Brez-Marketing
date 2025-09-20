@@ -372,7 +372,7 @@ export function MetricCard({
                       <div className="flex items-center">
                         <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
                           displayNA
-                            ? "text-blue-500 bg-blue-500/10" // Style for N/A or new activity
+                            ? "text-black bg-[#FF2A2A]" // Style for N/A or new activity
                             : percentChange.isZero 
                               ? "text-gray-500 bg-gray-500/10" 
                               : percentChange.isPositive 
