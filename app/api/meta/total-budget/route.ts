@@ -257,6 +257,38 @@ export async function GET(req: NextRequest) {
           totalLifetimeBudget += budget;
         }
       });
+      
+      // If all ad sets have $0 budget, try to get budget from campaign level
+      if (totalDailyBudget === 0 && totalLifetimeBudget === 0) {
+        console.log('[Total Meta Budget] No ad set budgets found, checking campaign budgets...');
+        
+        try {
+          const { data: campaignBudgets, error: campaignError } = await supabase
+            .from('meta_campaigns')
+            .select('budget, budget_type')
+            .eq('brand_id', brandId)
+            .eq('status', 'ACTIVE')
+            .not('budget', 'is', null)
+            .gt('budget', 0);
+          
+          if (!campaignError && campaignBudgets && campaignBudgets.length > 0) {
+            console.log(`[Total Meta Budget] Found ${campaignBudgets.length} campaigns with budgets`);
+            
+            campaignBudgets.forEach((campaign: any) => {
+              const budget = parseFloat(campaign.budget) || 0;
+              console.log(`[Total Meta Budget] Campaign budget: $${budget}, type: ${campaign.budget_type}`);
+              
+              if (campaign.budget_type === 'daily') {
+                totalDailyBudget += budget;
+              } else if (campaign.budget_type === 'lifetime') {
+                totalLifetimeBudget += budget;
+              }
+            });
+          }
+        } catch (campaignBudgetError) {
+          console.error('[Total Meta Budget] Error fetching campaign budgets:', campaignBudgetError);
+        }
+      }
     }
     
     console.log(`[Total Meta Budget] Calculated budgets - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalDailyBudget + totalLifetimeBudget}, Count: ${adSets?.length || 0}`);
