@@ -78,6 +78,12 @@ export async function GET(req: NextRequest) {
           let totalLifetimeBudget = 0;
           let activeAdSetCount = 0;
           
+          // First, validate we have an access token
+          const accessToken = connectionData[0].access_token;
+          if (!accessToken) {
+            throw new Error('No access token found for Meta connection');
+          }
+          
           // Get account ID from metadata or extract from a test call
           let accountId = 'unknown';
           try {
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
             } else {
               // If no metadata, try to get account ID from a simple me call
               console.log('[Total Meta Budget] No account ID in metadata, fetching from Meta API...');
-              const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connectionData[0].access_token}&fields=id&limit=1`);
+              const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}&fields=id&limit=1`);
               if (meResponse.ok) {
                 const meData = await meResponse.json();
                 if (meData.data?.[0]?.id) {
@@ -99,11 +105,6 @@ export async function GET(req: NextRequest) {
           }
           
           console.log(`[Total Meta Budget] Using account ID: ${accountId}`);
-          
-          const accessToken = connectionData[0].access_token;
-          if (!accessToken) {
-            throw new Error('No access token found for Meta connection');
-          }
           
           const adSetsResponse = await withMetaRateLimit(
             accountId,

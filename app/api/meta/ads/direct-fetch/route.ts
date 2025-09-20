@@ -84,9 +84,18 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Get account ID from connection or metadata
+    let accountId = connection.account_id;
+    if (!accountId && connection.metadata?.account_id) {
+      accountId = connection.metadata.account_id;
+    }
+    if (!accountId) {
+      accountId = 'unknown'; // Fallback for rate limiter
+    }
+    
     // Check for rate limiting (using account ID to rate limit per account)
-    if (isRateLimited(connection.account_id)) {
-      console.log(`[Meta Ads Direct] Rate limited for account ${connection.account_id}`);
+    if (isRateLimited(accountId)) {
+      console.log(`[Meta Ads Direct] Rate limited for account ${accountId}`);
       
       // Check if we have cached ads for this ad set
       const { data: cachedAds } = await supabase
@@ -114,11 +123,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Log this request for rate limiting
-    logRequest(connection.account_id);
+    logRequest(accountId);
     
     // Use rate limiter to safely fetch ads from Meta API
     const adsData = await withMetaRateLimit(
-      connection.account_id,
+      accountId,
       async () => {
         const adsResponse = await fetch(
           `https://graph.facebook.com/v18.0/${data.adsetId}/ads?` +
@@ -188,7 +197,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Meta Ads Direct] Fetching insights for ad ${ad.id} with date range:`, timeRange);
         
         const insightsData = await withMetaRateLimit(
-          connection.account_id,
+          accountId,
           async () => {
             const insightsParams = new URLSearchParams({
               fields: 'spend,impressions,clicks,reach,ctr,cpc,actions',
