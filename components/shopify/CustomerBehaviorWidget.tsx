@@ -131,7 +131,7 @@ export function CustomerBehaviorWidget({
             <Users className="h-4 w-4" />
             Customer Behavior Analytics
           </CardTitle>
-          <RefreshCcw className="h-4 w-4 animate-spin text-muted-foreground" />
+          <RefreshCcw className="h-4 w-4 animate-spin text-white" />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

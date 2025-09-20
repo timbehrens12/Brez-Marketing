@@ -165,10 +165,10 @@ export function AbandonedCartWidget({
           <div className="animate-pulse space-y-4">
             <div className="grid grid-cols-3 gap-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 bg-gray-800 rounded"></div>
+                <div key={i} className="h-16 bg-[#2A2A2A] rounded"></div>
               ))}
             </div>
-            <div className="h-32 bg-gray-800 rounded"></div>
+            <div className="h-32 bg-[#2A2A2A] rounded"></div>
           </div>
         </CardContent>
       </Card>

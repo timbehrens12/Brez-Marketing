@@ -133,7 +133,7 @@ export function SyncStatusWidget({
         return <AlertCircle className="h-4 w-4 text-red-500" />
       case 'bulk_importing':
       case 'in_progress':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+        return <RefreshCw className="h-4 w-4 text-white animate-spin" />
       default:
         return <Clock className="h-4 w-4 text-yellow-500" />
     }

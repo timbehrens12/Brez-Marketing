@@ -92,7 +92,7 @@ export function SyncProgressWidget({ brandId, onSyncComplete }: SyncProgressWidg
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'running':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+        return <RefreshCw className="h-4 w-4 text-white animate-spin" />
       case 'failed':
         return <AlertCircle className="h-4 w-4 text-red-500" />
       case 'queued':
@@ -122,7 +122,7 @@ export function SyncProgressWidget({ brandId, onSyncComplete }: SyncProgressWidg
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 z-50 bg-white dark:bg-gray-800 shadow-lg border">
+    <Card className="fixed bottom-4 right-4 w-96 z-50 bg-white dark:bg-[#2A2A2A] shadow-lg border">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <RefreshCw className="h-4 w-4" />

@@ -132,7 +132,7 @@ export function ShopifyTab({
 
 
   if (!connection) return <div>No Shopify connection found</div>
-  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading metrics...</div>
+  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-white mr-2" /> Loading metrics...</div>
 
   // Helper function to convert Date to ISO date string
   const toLocalISODateString = (date: Date): string => {

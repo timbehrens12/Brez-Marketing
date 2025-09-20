@@ -148,10 +148,10 @@ export function RepeatCustomersWidget({
           <div className="animate-pulse space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-16 bg-gray-800 rounded"></div>
+                <div key={i} className="h-16 bg-[#2A2A2A] rounded"></div>
               ))}
             </div>
-            <div className="h-48 bg-gray-800 rounded"></div>
+            <div className="h-48 bg-[#2A2A2A] rounded"></div>
           </div>
         </CardContent>
       </Card>
