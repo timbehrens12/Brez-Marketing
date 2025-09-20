@@ -3500,9 +3500,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="h-full flex flex-col">
                     {/* 3x2 grid for all tools */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 auto-rows-fr">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools

@@ -74,7 +74,7 @@ function FooterContentComponent() {
         sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
       }`}
       style={{
-        background: `rgba(128,128,128,0.25)`
+        background: `rgba(128,128,128,0.15)`
       }}
     >
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
