@@ -405,7 +405,7 @@ export function MetricCard({
                               <TooltipContent 
                                 side="top" 
                                 align="center"
-                                className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
                               >
                                 <div className="space-y-1">
                                   <p className="font-medium">{previousPeriodLabel}</p>
@@ -428,7 +428,7 @@ export function MetricCard({
                                 <TooltipContent 
                                   side="top" 
                                   align="center"
-                                  className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                  className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
                                 >
                                   <p className="font-medium">{nullChangeTooltip}</p>
                                 </TooltipContent>
@@ -458,7 +458,7 @@ export function MetricCard({
                             <TooltipContent 
                               side="top" 
                               align="center"
-                              className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                              className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
                             >
                               <p>{nullChangeTooltip}</p>
                             </TooltipContent>
@@ -481,7 +481,7 @@ export function MetricCard({
                             <TooltipContent 
                               side="top" 
                               align="center"
-                              className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                              className="z-50 bg-black border border-[#444] text-xs p-2 max-w-[220px]"
                             >
                               <div className="space-y-1">
                                 <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
