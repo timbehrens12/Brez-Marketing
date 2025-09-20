@@ -227,30 +227,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
   // Brand health read state
   const [readBrandReports, setReadBrandReports] = useState<{[key: string]: boolean}>({})
-  
-  // Brand Health sorting
-  const [brandHealthSort, setBrandHealthSort] = useState<'status' | 'roas' | 'spend' | 'name'>('status')
-
-  // Sort brand health data
-  const sortedBrandHealthData = useMemo(() => {
-    if (!brandHealthData) return []
-    
-    return [...brandHealthData].sort((a, b) => {
-      switch (brandHealthSort) {
-        case 'status':
-          const statusOrder = { 'critical': 0, 'warning': 1, 'info': 2, 'healthy': 3 }
-          return statusOrder[a.status] - statusOrder[b.status]
-        case 'roas':
-          return (b.roas || 0) - (a.roas || 0) // Highest ROAS first
-        case 'spend':
-          return (b.spend || 0) - (a.spend || 0) // Highest spend first
-        case 'name':
-          return a.name.localeCompare(b.name)
-        default:
-          return 0
-      }
-    })
-  }, [brandHealthData, brandHealthSort])
 
   // Brand report availability tracking
   const [brandReportAvailability, setBrandReportAvailability] = useState<{
@@ -2933,57 +2909,6 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   )}
                   {!isLoadingBrandHealth && brandHealthData.length > 0 && (
                     <>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md px-2"
-                          >
-                            <Filter className="h-3 w-3 mr-1" />
-                            Sort: {brandHealthSort === 'status' ? 'Priority' : brandHealthSort === 'roas' ? 'ROAS' : brandHealthSort === 'spend' ? 'Spend' : 'Name'}
-                            <ChevronDown className="h-3 w-3 ml-1" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
-                          <DropdownMenuItem
-                            onClick={() => setBrandHealthSort('status')}
-                            className={cn(
-                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                              brandHealthSort === 'status' && "bg-[#2A2A2A] text-white"
-                            )}
-                          >
-                            Priority (Critical first)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setBrandHealthSort('roas')}
-                            className={cn(
-                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                              brandHealthSort === 'roas' && "bg-[#2A2A2A] text-white"
-                            )}
-                          >
-                            ROAS (Highest first)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setBrandHealthSort('spend')}
-                            className={cn(
-                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                              brandHealthSort === 'spend' && "bg-[#2A2A2A] text-white"
-                            )}
-                          >
-                            Spend (Highest first)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setBrandHealthSort('name')}
-                            className={cn(
-                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
-                              brandHealthSort === 'name' && "bg-[#2A2A2A] text-white"
-                            )}
-                          >
-                            Name (A-Z)
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -3026,9 +2951,8 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   <SyncingBrandsDisplay brands={brands || []} />
                 </div>
               ) : (
-                <div className="max-h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sortedBrandHealthData.map((brand) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {brandHealthData.map((brand) => (
                     <div
                       key={brand.id}
                       className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
@@ -3279,8 +3203,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                         </div>
                       )}
                     </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               )}
             </CardContent>
