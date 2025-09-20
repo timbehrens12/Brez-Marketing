@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { format, parseISO, differenceInDays, addDays, subDays, isValid } from 'date-fns'
 import { withMetaRateLimit } from '@/lib/services/meta-rate-limiter'
+import { metaSyncValidator } from '@/lib/services/meta-sync-validator'
 
 export const dynamic = 'force-dynamic'
 
@@ -144,6 +145,17 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     )
+
+    // AUTO-SYNC VALIDATION: Check for stale campaigns and fix automatically (non-blocking)
+    try {
+      const syncResult = await metaSyncValidator.checkAndAutoSync(brandId)
+      if (syncResult.syncTriggered) {
+        console.log(`[Meta Campaigns] Auto-sync completed: ${syncResult.message}`)
+      }
+    } catch (syncError) {
+      console.warn('[Meta Campaigns] Auto-sync warning (non-blocking):', syncError)
+      // Don't fail the request if sync validation fails
+    }
 
     // If date range parameters are provided, use date-filtered approach
     if (from && to) {

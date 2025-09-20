@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs';
 import { withMetaRateLimit } from '@/lib/services/meta-rate-limiter';
+import { metaSyncValidator } from '@/lib/services/meta-sync-validator';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,18 @@ export async function GET(req: NextRequest) {
         
         if (!connectionData?.access_token) {
           throw new Error('No Meta access token found');
+        }
+
+        // AUTO-SYNC VALIDATION: Check for stale data and fix automatically
+        console.log('[Total Meta Budget] Running auto-sync validation...');
+        try {
+          const syncResult = await metaSyncValidator.checkAndAutoSync(brandId);
+          if (syncResult.syncTriggered) {
+            console.log(`[Total Meta Budget] Auto-sync completed: ${syncResult.message}`);
+          }
+        } catch (syncError) {
+          console.warn('[Total Meta Budget] Auto-sync warning (non-blocking):', syncError);
+          // Don't fail the request if sync validation fails - it's non-critical
         }
         
         // Get active campaigns only
