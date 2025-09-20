@@ -100,11 +100,16 @@ export async function GET(req: NextRequest) {
           
           console.log(`[Total Meta Budget] Using account ID: ${accountId}`);
           
+          const accessToken = connectionData[0].access_token;
+          if (!accessToken) {
+            throw new Error('No access token found for Meta connection');
+          }
+          
           const adSetsResponse = await withMetaRateLimit(
             accountId,
             async () => {
               const response = await fetch(
-                `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${connectionData[0].access_token}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
+                `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${accessToken}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
                 { method: 'GET' }
               );
               

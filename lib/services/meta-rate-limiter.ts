@@ -25,8 +25,8 @@ class MetaRateLimiter {
   
   // Rate limit settings per ad account
   private readonly MAX_REQUESTS_PER_HOUR = 200; // Conservative limit
-  private readonly MIN_REQUEST_INTERVAL = 100; // 100ms between requests
-  private readonly RATE_LIMIT_RESET_TIME = 60 * 60 * 1000; // 1 hour
+  private readonly MIN_REQUEST_INTERVAL = 500; // 500ms between requests (slower)
+  private readonly RATE_LIMIT_RESET_TIME = 5 * 60 * 1000; // 5 minutes (much more reasonable)
   
   /**
    * Add a Meta API request to the queue
@@ -35,7 +35,8 @@ class MetaRateLimiter {
     accountId: string,
     request: () => Promise<T>,
     priority: number = 0,
-    requestId?: string
+    requestId?: string,
+    timeoutMs: number = 10000 // 10 second timeout by default
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       const queuedRequest: QueuedRequest = {
@@ -46,6 +47,30 @@ class MetaRateLimiter {
         reject,
         retryCount: 0,
         priority
+      };
+      
+      // Set a timeout to prevent hanging requests
+      const timeoutId = setTimeout(() => {
+        // Remove from queue if still waiting
+        const index = this.queue.findIndex(req => req.id === queuedRequest.id);
+        if (index !== -1) {
+          this.queue.splice(index, 1);
+          reject(new Error(`Request ${queuedRequest.id} timed out after ${timeoutMs}ms`));
+        }
+      }, timeoutMs);
+      
+      // Wrap resolve and reject to clear timeout
+      const originalResolve = queuedRequest.resolve;
+      const originalReject = queuedRequest.reject;
+      
+      queuedRequest.resolve = (value: any) => {
+        clearTimeout(timeoutId);
+        originalResolve(value);
+      };
+      
+      queuedRequest.reject = (error: any) => {
+        clearTimeout(timeoutId);
+        originalReject(error);
       };
       
       // Insert into queue based on priority
@@ -258,7 +283,8 @@ export async function withMetaRateLimit<T>(
   accountId: string,
   request: () => Promise<T>,
   priority: number = 0,
-  requestId?: string
+  requestId?: string,
+  timeoutMs: number = 10000 // 10 second default timeout
 ): Promise<T> {
-  return metaRateLimiter.executeRequest(accountId, request, priority, requestId);
+  return metaRateLimiter.executeRequest(accountId, request, priority, requestId, timeoutMs);
 }
