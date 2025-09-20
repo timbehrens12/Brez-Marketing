@@ -776,7 +776,17 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <PlanRecommendationQuiz />
+              {/* <PlanRecommendationQuiz /> */}
+              <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8 text-center">
+                <h3 className="text-xl font-bold text-white mb-4">Choose Your Plan</h3>
+                <p className="text-white/70 mb-6">Select the perfect plan for your business needs below.</p>
+                <Button 
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
+                >
+                  View Pricing Plans <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </section>
 
