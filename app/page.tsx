@@ -44,7 +44,7 @@ function PlanRecommendationQuiz() {
           plan: "Growing",
           reason: "Perfect for managing multiple freelance brandscaling clients efficiently.",
           price: "$397/mo",
-          features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
+          features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Higher AI usage limits"]
         }
       
       case "established-agency":
@@ -52,7 +52,7 @@ function PlanRecommendationQuiz() {
           plan: "Multi-Brand",
           reason: "Built for agencies managing multiple clients with team collaboration features.",
           price: "$697/mo",
-          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Maximum AI usage limits"]
         }
       
       case "enterprise":
@@ -60,7 +60,7 @@ function PlanRecommendationQuiz() {
           plan: "Enterprise",
           reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
           price: "$1,337/mo",
-          features: ["Up to 25 brands", "Unlimited AI", "Enterprise support", "Custom integrations"]
+          features: ["Up to 25 brands", "Unlimited AI chatbot", "Priority email support", "Advanced usage analytics"]
         }
       
       default:
@@ -851,9 +851,9 @@ export default function HomePage() {
                     features: [
                       "Everything in Beginner",
                       "Multi-Brand Management",
-                      "Advanced Analytics",
-                      "Campaign Performance Predictions",
-                      "Priority API Access"
+                      "Higher AI Usage Limits",
+                      "More Lead Generation Quotas",
+                      "Extended Creative Generation"
                     ],
                     limitations: [],
                     whiteLabel: true
@@ -872,9 +872,9 @@ export default function HomePage() {
                     features: [
                       "Everything in Growing",
                       "Team Collaboration (15 users)",
-                      "Client Portal Access",
-                      "Advanced Role Permissions",
-                      "Competitor Ad Intelligence"
+                      "Even Higher AI Usage Limits",
+                      "Maximum Lead Generation Quotas",
+                      "Premium Creative Generation"
                     ],
                     limitations: [],
                     whiteLabel: true
@@ -893,10 +893,10 @@ export default function HomePage() {
                     features: [
                       "Everything in Multi-Brand",
                       "Unlimited Team Members",
-                      "Custom Integrations",
-                      "24/7 Priority Support",
-                      "Dedicated Account Manager",
-                      "White-Glove Implementation"
+                      "Unlimited AI Chatbot Usage",
+                      "Maximum Creative Generation",
+                      "Priority Email Support",
+                      "Advanced Usage Analytics"
                     ],
                     limitations: [],
                     whiteLabel: true
