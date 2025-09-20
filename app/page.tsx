@@ -16,40 +16,91 @@ function PlanRecommendationQuiz() {
   const [answers, setAnswers] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
 
-  const questions = [
-    {
-      question: "What best describes your current situation?",
-      options: [
-        { text: "I own a single brand/business", value: "single-brand" },
-        { text: "I want to start freelance brand scaling but have no clients yet", value: "aspiring-freelancer" },
-        { text: "I have 1-3 clients already", value: "few-clients" },
-        { text: "I manage 4+ brands/clients", value: "established-agency" },
-        { text: "I run a large agency (10+ brands)", value: "enterprise" }
-      ]
-    },
-    {
-      question: "What's your primary goal?",
-      options: [
-        { text: "Track my own business performance", value: "own-business" },
-        { text: "Get my first freelance client", value: "first-client" },
-        { text: "Scale my existing clients", value: "scale-existing" },
-        { text: "Streamline agency operations", value: "streamline-agency" }
-      ]
-    },
-    {
-      question: "How important is lead generation to you?",
-      options: [
-        { text: "Not needed - I have my own business", value: "no-leads" },
-        { text: "Critical - I need to find clients", value: "need-leads" },
-        { text: "Helpful for growth", value: "growth-leads" }
-      ]
+  const getQuestions = () => {
+    const [situation] = answers
+    
+    const baseQuestions = [
+      {
+        question: "What best describes your current situation?",
+        options: [
+          { text: "I own a single brand/business", value: "single-brand" },
+          { text: "I want to start freelance brand scaling but have no clients yet", value: "aspiring-freelancer" },
+          { text: "I have 1-3 freelance brandscaling clients already", value: "few-clients" },
+          { text: "I manage 4+ brands/clients", value: "established-agency" },
+          { text: "I run a large agency (10+ brands)", value: "enterprise" }
+        ]
+      }
+    ]
+
+    // Dynamic second question based on first answer
+    if (situation === "single-brand") {
+      baseQuestions.push({
+        question: "What's your primary goal?",
+        options: [
+          { text: "Track my own business performance", value: "own-business" },
+          { text: "Start offering freelance brandscaling services", value: "start-freelancing" },
+          { text: "Optimize my current marketing efforts", value: "optimize-business" }
+        ]
+      })
+    } else if (situation === "aspiring-freelancer") {
+      baseQuestions.push({
+        question: "What's your biggest challenge?",
+        options: [
+          { text: "Finding potential clients to reach out to", value: "need-leads" },
+          { text: "Creating professional reports for prospects", value: "need-reports" },
+          { text: "Understanding what services to offer", value: "need-guidance" }
+        ]
+      })
+    } else if (situation === "few-clients" || situation === "established-agency" || situation === "enterprise") {
+      baseQuestions.push({
+        question: "What's your primary goal?",
+        options: [
+          { text: "Scale my existing freelance brandscaling clients", value: "scale-existing" },
+          { text: "Find more freelance brandscaling clients", value: "grow-client-base" },
+          { text: "Streamline agency operations", value: "streamline-agency" },
+          { text: "Improve client retention and results", value: "improve-results" }
+        ]
+      })
     }
-  ]
+
+    // Dynamic third question based on situation
+    if (situation !== "single-brand") {
+      if (situation === "aspiring-freelancer") {
+        baseQuestions.push({
+          question: "How important is lead generation to you?",
+          options: [
+            { text: "Critical - I need to find freelance brandscaling clients", value: "need-leads" },
+            { text: "Helpful - I have some leads but want more", value: "growth-leads" }
+          ]
+        })
+      } else {
+        baseQuestions.push({
+          question: "How important are advanced features to you?",
+          options: [
+            { text: "Essential - I need team collaboration and advanced analytics", value: "need-advanced" },
+            { text: "Helpful - Basic features work but more would be nice", value: "want-advanced" },
+            { text: "Not needed - I prefer simple and cost-effective", value: "keep-simple" }
+          ]
+        })
+      }
+    } else {
+      baseQuestions.push({
+        question: "How important is lead generation to you?",
+        options: [
+          { text: "Not needed - I focus on my own business", value: "no-leads" },
+          { text: "Interested - I might want to freelance in the future", value: "future-freelance" }
+        ]
+      })
+    }
+
+    return baseQuestions
+  }
 
   const handleAnswer = (value: string) => {
     const newAnswers = [...answers, value]
     setAnswers(newAnswers)
     
+    const questions = getQuestions()
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
     } else {
@@ -58,45 +109,74 @@ function PlanRecommendationQuiz() {
   }
 
   const getRecommendation = () => {
-    const [situation, goal, leads] = answers
+    const [situation, goal, preference] = answers
     
-    // Single brand owner
-    if (situation === "single-brand" || goal === "own-business") {
+    // Single brand owner - wants to track own business
+    if (situation === "single-brand" && (goal === "own-business" || goal === "optimize-business")) {
       return {
         plan: "DTC Owner",
         reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
         price: "$67/mo",
-        features: ["Track your brand's performance", "Shopify & Meta integration", "Basic AI assistance"]
+        features: ["Track your brand's performance", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
       }
     }
     
-    // Aspiring freelancer or first client
-    if (situation === "aspiring-freelancer" || goal === "first-client" || leads === "need-leads") {
+    // Single brand owner - wants to start freelancing
+    if (situation === "single-brand" && goal === "start-freelancing") {
       return {
         plan: "Beginner",
-        reason: "Includes lead generation and outreach tools to help you land your first clients.",
+        reason: "Great transition from business owner to freelancer with lead generation and client tools.",
         price: "$97/mo",
         features: ["100 leads/month", "250 outreach emails", "Client management tools", "White-label reports"]
       }
     }
     
-    // Few clients
-    if (situation === "few-clients" || goal === "scale-existing") {
+    // Aspiring freelancer
+    if (situation === "aspiring-freelancer") {
+      return {
+        plan: "Beginner",
+        reason: "Includes everything you need to land your first freelance brandscaling clients.",
+        price: "$97/mo",
+        features: ["100 leads/month", "250 outreach emails", "Professional client reports", "AI marketing assistant"]
+      }
+    }
+    
+    // Few clients - wants to keep it simple
+    if (situation === "few-clients" && preference === "keep-simple") {
       return {
         plan: "Growing",
-        reason: "Perfect for managing multiple brands with advanced features and higher API limits.",
+        reason: "Manage your current clients efficiently without overwhelming complexity.",
         price: "$397/mo",
         features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
       }
     }
     
-    // Established agency
-    if (situation === "established-agency") {
+    // Few clients - wants advanced features or to scale
+    if (situation === "few-clients" && (preference === "need-advanced" || preference === "want-advanced" || goal === "scale-existing")) {
       return {
         plan: "Multi-Brand",
-        reason: "Built for agencies managing multiple clients with team collaboration features.",
+        reason: "Scale your freelance brandscaling business with team features and higher limits.",
         price: "$697/mo",
         features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+      }
+    }
+    
+    // Established agency
+    if (situation === "established-agency") {
+      if (preference === "need-advanced" || goal === "streamline-agency") {
+        return {
+          plan: "Multi-Brand",
+          reason: "Built for agencies managing multiple freelance brandscaling clients with team collaboration.",
+          price: "$697/mo",
+          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+        }
+      } else {
+        return {
+          plan: "Growing",
+          reason: "Efficient client management for your established agency operations.",
+          price: "$397/mo",
+          features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
+        }
       }
     }
     
@@ -104,7 +184,7 @@ function PlanRecommendationQuiz() {
     if (situation === "enterprise") {
       return {
         plan: "Enterprise",
-        reason: "Full-scale operations with unlimited features and dedicated support.",
+        reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
         price: "$1,337/mo",
         features: ["Up to 25 brands", "Unlimited AI", "Enterprise support", "Custom integrations"]
       }
@@ -113,7 +193,7 @@ function PlanRecommendationQuiz() {
     // Default fallback
     return {
       plan: "Beginner",
-      reason: "A great starting point with all essential features for growing your business.",
+      reason: "A great starting point with all essential features for freelance brandscaling.",
       price: "$97/mo",
       features: ["Lead generation", "Client management", "White-label reports", "AI assistance"]
     }
@@ -166,6 +246,7 @@ function PlanRecommendationQuiz() {
     )
   }
 
+  const questions = getQuestions()
   const question = questions[currentQuestion]
   const progress = ((currentQuestion + 1) / questions.length) * 100
 
