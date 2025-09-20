@@ -69,9 +69,14 @@ function FooterContentComponent() {
   }
   
   return (
-    <footer className={`w-full bg-[#1A1A1A]/80 backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto ${
-      sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
-    }`}>
+    <footer 
+      className={`w-full backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto ${
+        sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
+      }`}
+      style={{
+        background: `rgba(128,128,128,0.15)`
+      }}
+    >
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
