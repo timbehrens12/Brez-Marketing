@@ -12,196 +12,69 @@ const BRAND_RED = "#FF2A2A"
 
 // Plan Recommendation Quiz Component
 function PlanRecommendationQuiz() {
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
-
-  const getQuestions = () => {
-    const [situation] = answers
-    
-    const baseQuestions = [
-      {
-        question: "What best describes your current situation?",
-        options: [
-          { text: "I own a single brand/business", value: "single-brand" },
-          { text: "I want to start freelance brand scaling but have no clients yet", value: "aspiring-freelancer" },
-          { text: "I have 1-3 freelance brandscaling clients already", value: "few-clients" },
-          { text: "I manage 4+ brands/clients", value: "established-agency" },
-          { text: "I run a large agency (10+ brands)", value: "enterprise" }
-        ]
-      }
-    ]
-
-    // Dynamic second question based on first answer
-    if (situation === "single-brand") {
-      baseQuestions.push({
-        question: "What's your primary goal?",
-        options: [
-          { text: "Track my own business performance", value: "own-business" },
-          { text: "Start offering freelance brandscaling services", value: "start-freelancing" },
-          { text: "Optimize my current marketing efforts", value: "optimize-business" }
-        ]
-      })
-    } else if (situation === "aspiring-freelancer") {
-      baseQuestions.push({
-        question: "What's your biggest challenge?",
-        options: [
-          { text: "Finding potential clients to reach out to", value: "need-leads" },
-          { text: "Creating professional reports for prospects", value: "need-reports" },
-          { text: "Understanding what services to offer", value: "need-guidance" }
-        ]
-      })
-    } else if (situation === "few-clients" || situation === "established-agency" || situation === "enterprise") {
-      baseQuestions.push({
-        question: "What's your primary goal?",
-        options: [
-          { text: "Scale my existing freelance brandscaling clients", value: "scale-existing" },
-          { text: "Find more freelance brandscaling clients", value: "grow-client-base" },
-          { text: "Streamline agency operations", value: "streamline-agency" },
-          { text: "Improve client retention and results", value: "improve-results" }
-        ]
-      })
-    }
-
-    // Dynamic third question based on situation
-    if (situation !== "single-brand") {
-      if (situation === "aspiring-freelancer") {
-        baseQuestions.push({
-          question: "How important is lead generation to you?",
-          options: [
-            { text: "Critical - I need to find freelance brandscaling clients", value: "need-leads" },
-            { text: "Helpful - I have some leads but want more", value: "growth-leads" }
-          ]
-        })
-      } else {
-        baseQuestions.push({
-          question: "How important are advanced features to you?",
-          options: [
-            { text: "Essential - I need team collaboration and advanced analytics", value: "need-advanced" },
-            { text: "Helpful - Basic features work but more would be nice", value: "want-advanced" },
-            { text: "Not needed - I prefer simple and cost-effective", value: "keep-simple" }
-          ]
-        })
-      }
-    } else {
-      baseQuestions.push({
-        question: "How important is lead generation to you?",
-        options: [
-          { text: "Not needed - I focus on my own business", value: "no-leads" },
-          { text: "Interested - I might want to freelance in the future", value: "future-freelance" }
-        ]
-      })
-    }
-
-    return baseQuestions
-  }
+  const [selectedSituation, setSelectedSituation] = useState<string>("")
 
   const handleAnswer = (value: string) => {
-    const newAnswers = [...answers, value]
-    setAnswers(newAnswers)
-    
-    const questions = getQuestions()
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-    } else {
-      setShowResult(true)
-    }
+    setSelectedSituation(value)
+    setShowResult(true)
   }
 
   const getRecommendation = () => {
-    const [situation, goal, preference] = answers
-    
-    // Single brand owner - wants to track own business
-    if (situation === "single-brand" && (goal === "own-business" || goal === "optimize-business")) {
-      return {
-        plan: "DTC Owner",
-        reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
-        price: "$67/mo",
-        features: ["Track your brand's performance", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
-      }
-    }
-    
-    // Single brand owner - wants to start freelancing
-    if (situation === "single-brand" && goal === "start-freelancing") {
-      return {
-        plan: "Beginner",
-        reason: "Great transition from business owner to freelancer with lead generation and client tools.",
-        price: "$97/mo",
-        features: ["100 leads/month", "250 outreach emails", "Client management tools", "White-label reports"]
-      }
-    }
-    
-    // Aspiring freelancer
-    if (situation === "aspiring-freelancer") {
-      return {
-        plan: "Beginner",
-        reason: "Includes everything you need to land your first freelance brandscaling clients.",
-        price: "$97/mo",
-        features: ["100 leads/month", "250 outreach emails", "Professional client reports", "AI marketing assistant"]
-      }
-    }
-    
-    // Few clients - wants to keep it simple
-    if (situation === "few-clients" && preference === "keep-simple") {
-      return {
-        plan: "Growing",
-        reason: "Manage your current clients efficiently without overwhelming complexity.",
-        price: "$397/mo",
-        features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
-      }
-    }
-    
-    // Few clients - wants advanced features or to scale
-    if (situation === "few-clients" && (preference === "need-advanced" || preference === "want-advanced" || goal === "scale-existing")) {
-      return {
-        plan: "Multi-Brand",
-        reason: "Scale your freelance brandscaling business with team features and higher limits.",
-        price: "$697/mo",
-        features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
-      }
-    }
-    
-    // Established agency
-    if (situation === "established-agency") {
-      if (preference === "need-advanced" || goal === "streamline-agency") {
+    // Map directly to pricing tiers based on brand count
+    switch (selectedSituation) {
+      case "single-brand":
         return {
-          plan: "Multi-Brand",
-          reason: "Built for agencies managing multiple freelance brandscaling clients with team collaboration.",
-          price: "$697/mo",
-          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+          plan: "DTC Owner",
+          reason: "Perfect for tracking your own business performance with essential analytics and reporting.",
+          price: "$67/mo",
+          features: ["1 Brand", "Shopify & Meta integration", "Basic AI assistance", "Marketing analytics"]
         }
-      } else {
+      
+      case "aspiring-freelancer":
+        return {
+          plan: "Beginner",
+          reason: "Includes lead generation and outreach tools to help you land your first freelance brandscaling clients.",
+          price: "$97/mo",
+          features: ["1 Brand", "100 leads/month", "250 outreach emails", "Client management tools"]
+        }
+      
+      case "few-clients":
         return {
           plan: "Growing",
-          reason: "Efficient client management for your established agency operations.",
+          reason: "Perfect for managing multiple freelance brandscaling clients efficiently.",
           price: "$397/mo",
           features: ["Up to 5 brands", "300 leads/month", "750 outreach emails", "Advanced analytics"]
         }
-      }
-    }
-    
-    // Enterprise
-    if (situation === "enterprise") {
-      return {
-        plan: "Enterprise",
-        reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
-        price: "$1,337/mo",
-        features: ["Up to 25 brands", "Unlimited AI", "Enterprise support", "Custom integrations"]
-      }
-    }
-    
-    // Default fallback
-    return {
-      plan: "Beginner",
-      reason: "A great starting point with all essential features for freelance brandscaling.",
-      price: "$97/mo",
-      features: ["Lead generation", "Client management", "White-label reports", "AI assistance"]
+      
+      case "established-agency":
+        return {
+          plan: "Multi-Brand",
+          reason: "Built for agencies managing multiple clients with team collaboration features.",
+          price: "$697/mo",
+          features: ["Up to 15 brands", "Team collaboration", "750 leads/month", "Premium analytics"]
+        }
+      
+      case "enterprise":
+        return {
+          plan: "Enterprise",
+          reason: "Full-scale operations for large agencies with unlimited features and dedicated support.",
+          price: "$1,337/mo",
+          features: ["Up to 25 brands", "Unlimited AI", "Enterprise support", "Custom integrations"]
+        }
+      
+      default:
+        return {
+          plan: "Beginner",
+          reason: "A great starting point with all essential features for freelance brandscaling.",
+          price: "$97/mo",
+          features: ["1 Brand", "Lead generation", "Client management", "White-label reports"]
+        }
     }
   }
 
   const resetQuiz = () => {
-    setCurrentQuestion(0)
-    setAnswers([])
+    setSelectedSituation("")
     setShowResult(false)
   }
 
@@ -232,7 +105,14 @@ function PlanRecommendationQuiz() {
             onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
             className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold"
           >
-            View Plans <ArrowRight className="ml-2 h-4 w-4" />
+            Get {recommendation.plan} <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10"
+          >
+            See All Tiers
           </Button>
           <Button 
             onClick={resetQuiz}
@@ -246,40 +126,54 @@ function PlanRecommendationQuiz() {
     )
   }
 
-  const questions = getQuestions()
-  const question = questions[currentQuestion]
-  const progress = ((currentQuestion + 1) / questions.length) * 100
-
   return (
     <div className="bg-gradient-to-br from-black/60 to-black/80 border border-white/15 rounded-2xl p-8">
-      {/* Progress Bar */}
-      <div className="mb-6">
-        <div className="flex justify-between text-sm text-white/60 mb-2">
-          <span>Question {currentQuestion + 1} of {questions.length}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className="w-full bg-white/10 rounded-full h-2">
-          <div 
-            className="bg-[var(--brand-red)] h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
       {/* Question */}
-      <h3 className="text-xl font-bold text-white mb-6">{question.question}</h3>
+      <h3 className="text-xl font-bold text-white mb-6">How many brands do you currently manage?</h3>
 
       {/* Options */}
       <div className="space-y-3">
-        {question.options.map((option, index) => (
-          <button
-            key={index}
-            onClick={() => handleAnswer(option.value)}
-            className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
-          >
-            <span className="text-white group-hover:text-white">{option.text}</span>
-          </button>
-        ))}
+        <button
+          onClick={() => handleAnswer("single-brand")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">1 brand (my own business)</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("aspiring-freelancer")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">0 clients (want to start freelance brandscaling)</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("few-clients")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">2-5 freelance brandscaling clients</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("established-agency")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">6-15 freelance brandscaling clients</span>
+        </button>
+        <button
+          onClick={() => handleAnswer("enterprise")}
+          className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[var(--brand-red)]/50 rounded-lg transition-all duration-200 group"
+        >
+          <span className="text-white group-hover:text-white">16+ freelance brandscaling clients</span>
+        </button>
+      </div>
+
+      {/* Skip Quiz Option */}
+      <div className="mt-6 text-center">
+        <Button 
+          onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+          variant="outline"
+          className="border-white/30 text-white hover:bg-white/10"
+        >
+          See All Tiers Instead
+        </Button>
       </div>
     </div>
   )
