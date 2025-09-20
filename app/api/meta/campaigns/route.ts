@@ -536,48 +536,39 @@ export async function GET(request: NextRequest) {
             // Get Meta connection details
             const { data: connectionData, error: connectionError } = await supabase
               .from('platform_connections')
-              .select('access_token')
+              .select('access_token, metadata')
               .eq('brand_id', brandId)
               .eq('platform_type', 'meta')
               .single();
               
             if (!connectionError && connectionData) {
+              // Get account ID for rate limiter
+              let accountId = 'unknown';
+              if (connectionData.metadata?.account_id) {
+                accountId = connectionData.metadata.account_id;
+              }
               try {
-                // Try multiple API versions in case the campaign is from an older version
-                const apiVersions = ['v18.0', 'v19.0', 'v20.0', 'v21.0'];
-                let adSetsResponse: Response | null = null;
-                let adSetsData: any = null;
-                let apiVersionUsed = '';
-
-                for (const version of apiVersions) {
-                  try {
-                    const adSetsUrl = `https://graph.facebook.com/${version}/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}&_=${Date.now()}`;
-                    const response = await fetch(adSetsUrl, {
-                      cache: 'no-store',
-                      headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                      }
-                    });
-
-                    if (response.ok) {
-                      adSetsResponse = response;
-                      adSetsData = await response.json();
-                      apiVersionUsed = version;
-                      console.log(`[Meta Campaigns] Successfully fetched ad sets for campaign ${campaign.campaign_id} using ${version}`);
-                      break;
-                    } else if (response.status === 400) {
-                      console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} not found in ${version}, trying next version...`);
-                    } else {
-                      console.log(`[Meta Campaigns] Unexpected ${response.status} error for campaign ${campaign.campaign_id} in ${version}`);
+                // Use rate limiter to fetch ad sets from Meta API
+                console.log(`[Meta Campaigns] Using rate limiter to fetch ad sets for campaign ${campaign.campaign_id}`);
+                
+                const adSetsData = await withMetaRateLimit(
+                  accountId,
+                  async () => {
+                    const response = await fetch(`https://graph.facebook.com/v18.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`);
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      throw errorData;
                     }
-                  } catch (versionError) {
-                    console.log(`[Meta Campaigns] Error with ${version} for campaign ${campaign.campaign_id}:`, versionError);
-                  }
-                }
+                    
+                    return await response.json();
+                  },
+                  1, // High priority for campaign data
+                  `campaign-adsets-${campaign.campaign_id}`
+                );
 
-                if (adSetsResponse && adSetsResponse.ok && adSetsData) {
-                  console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id} (API ${apiVersionUsed}):`, JSON.stringify(adSetsData, null, 2));
+                if (adSetsData && adSetsData.data) {
+                  console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                   
                   if (adSetsData.data) {
                     // Log all ad sets before filtering
@@ -641,7 +632,7 @@ export async function GET(request: NextRequest) {
                     }
                   }
                 } else {
-                  console.error(`[Meta Campaigns] Failed to fetch ad sets for campaign ${campaign.campaign_id} after trying all API versions (${apiVersions.join(', ')}):`, adSetsResponse ? `${adSetsResponse.status} ${adSetsResponse.statusText}` : 'No response received');
+                  console.log(`[Meta Campaigns] No ad sets data returned for campaign ${campaign.campaign_id}`);
                 }
               } catch (adSetError) {
                 console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, adSetError);
