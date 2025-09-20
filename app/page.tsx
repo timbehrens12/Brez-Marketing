@@ -286,9 +286,9 @@ export default function HomePage() {
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10 relative">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto -ml-6" />
+                  <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto -ml-4" />
              </div>
-              <div className="absolute right-20 sm:right-24 lg:right-28 top-1/2 -translate-y-1/2 flex items-center gap-3">
+              <div className="absolute right-28 sm:right-32 lg:right-36 top-1/2 -translate-y-1/2 flex items-center gap-3">
                <Link href="/dashboard">
                  <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
