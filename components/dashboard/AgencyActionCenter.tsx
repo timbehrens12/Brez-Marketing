@@ -37,6 +37,7 @@ import {
   FileText,
   Target,
   Paintbrush,
+  ArrowUpDown,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -283,6 +284,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
   // Brand Health data state
   const [brandHealthData, setBrandHealthData] = useState<any[]>([])
   const [isLoadingBrandHealth, setIsLoadingBrandHealth] = useState(true)
+  const [brandHealthSort, setBrandHealthSort] = useState<'critical' | 'roas-low' | 'spend-high' | 'alphabetical'>('critical')
   
   // Track overall loading state and notify parent
   useEffect(() => {
@@ -1923,6 +1925,35 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
     toast.success('Report marked as read', { duration: 2000 })
   }
 
+  // Sort brand health data
+  const sortedBrandHealthData = useMemo(() => {
+    const sorted = [...brandHealthData]
+    
+    switch (brandHealthSort) {
+      case 'critical':
+        return sorted.sort((a, b) => {
+          const statusOrder = { 'critical': 0, 'warning': 1, 'info': 2, 'healthy': 3 }
+          return statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder]
+        })
+      case 'roas-low':
+        return sorted.sort((a, b) => {
+          const roasA = a.enhancedROAS || a.roas || 0
+          const roasB = b.enhancedROAS || b.roas || 0
+          return roasA - roasB
+        })
+      case 'spend-high':
+        return sorted.sort((a, b) => {
+          const spendA = a.adSpend || a.spend || 0
+          const spendB = b.adSpend || b.spend || 0
+          return spendB - spendA
+        })
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name))
+      default:
+        return sorted
+    }
+  }, [brandHealthData, brandHealthSort])
+
   const markAllBrandsAsRead = () => {
     const unreadCount = brandHealthData.filter(brand => !readBrandReports[brand.id]).length
     
@@ -2891,10 +2922,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         {/* Brand Health Overview Widget */}
         <div>
           <Card className={cn(
-            "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl transition-all duration-300",
+            "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl transition-all duration-300 h-[500px] flex flex-col",
             (isRefreshing || isWidgetLoading.brandHealth) && "opacity-50 grayscale pointer-events-none"
           )}>
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-gray-400" />
@@ -2909,6 +2940,60 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                   )}
                   {!isLoadingBrandHealth && brandHealthData.length > 0 && (
                     <>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs text-gray-400 hover:text-white hover:bg-[#333] rounded-md px-2"
+                          >
+                            <ArrowUpDown className="h-3 w-3 mr-1" />
+                            {brandHealthSort === 'critical' && 'Critical First'}
+                            {brandHealthSort === 'roas-low' && 'Low ROAS First'}
+                            {brandHealthSort === 'spend-high' && 'High Spend First'}
+                            {brandHealthSort === 'alphabetical' && 'A-Z'}
+                            <ChevronDown className="h-3 w-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-[#1a1a1a] border border-[#333]">
+                          <DropdownMenuItem
+                            onClick={() => setBrandHealthSort('critical')}
+                            className={cn(
+                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                              brandHealthSort === 'critical' && "bg-[#2A2A2A] text-white"
+                            )}
+                          >
+                            Critical First
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setBrandHealthSort('roas-low')}
+                            className={cn(
+                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                              brandHealthSort === 'roas-low' && "bg-[#2A2A2A] text-white"
+                            )}
+                          >
+                            Low ROAS First
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setBrandHealthSort('spend-high')}
+                            className={cn(
+                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                              brandHealthSort === 'spend-high' && "bg-[#2A2A2A] text-white"
+                            )}
+                          >
+                            High Spend First
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setBrandHealthSort('alphabetical')}
+                            className={cn(
+                              "text-[#9ca3af] hover:bg-[#333] hover:text-white cursor-pointer",
+                              brandHealthSort === 'alphabetical' && "bg-[#2A2A2A] text-white"
+                            )}
+                          >
+                            Alphabetical
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2939,7 +3024,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 </span>
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-auto">
               {isLoadingBrandHealth || isWidgetLoading.brandHealth ? (
                 <div className="text-center py-12">
                   <BarChart3 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -2952,7 +3037,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {brandHealthData.map((brand) => (
+                  {sortedBrandHealthData.map((brand) => (
                     <div
                       key={brand.id}
                       className="rounded-lg border border-[#333] bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] p-4 transition-all hover:shadow-md"
