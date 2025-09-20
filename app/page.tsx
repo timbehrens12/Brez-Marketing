@@ -310,8 +310,8 @@ export default function HomePage() {
 
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
-             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative flex items-center">
-                 <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
+             <div className="max-w-7xl mx-auto relative">
+                 <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto ml-4 sm:ml-6 lg:ml-8" />
                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3 pr-4 sm:pr-6 lg:pr-8">
                  <Link href="/dashboard">
                    <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
