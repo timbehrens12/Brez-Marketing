@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs';
+import { withMetaRateLimit } from '@/lib/services/meta-rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,10 +78,55 @@ export async function GET(req: NextRequest) {
           let totalLifetimeBudget = 0;
           let activeAdSetCount = 0;
           
-          // TEMPORARY: Skip Meta API adset fetching due to campaign-level rate limits
-          // TODO: Re-enable after rate limits reset (24-48 hours)
-          console.log(`[Total Meta Budget] TEMP: Skipping Meta API adset fetch due to rate limits - using database fallback`);
-          throw new Error('Temporary skip Meta API due to rate limits');
+          // Use rate limiter to safely fetch adsets from Meta API
+          const accountId = connectionData[0].metadata?.account_id || 'unknown';
+          console.log(`[Total Meta Budget] Fetching adsets from Meta API for account ${accountId}`);
+          
+          const adSetsResponse = await withMetaRateLimit(
+            accountId,
+            async () => {
+              const response = await fetch(
+                `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${connectionData[0].access_token}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
+                { method: 'GET' }
+              );
+              
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw errorData;
+              }
+              
+              return await response.json();
+            },
+            1, // High priority for budget data
+            `total-budget-${brandId}`
+          );
+          
+          if (adSetsResponse?.data) {
+            console.log(`[Total Meta Budget] Successfully fetched ${adSetsResponse.data.length} adsets from Meta API`);
+            
+            for (const adset of adSetsResponse.data) {
+              if (activeOnly && adset.status !== 'ACTIVE') continue;
+              
+              activeAdSetCount++;
+              
+              if (adset.daily_budget) {
+                totalDailyBudget += parseFloat(adset.daily_budget) / 100; // Convert from cents
+              }
+              
+              if (adset.lifetime_budget) {
+                totalLifetimeBudget += parseFloat(adset.lifetime_budget) / 100; // Convert from cents
+              }
+            }
+            
+            console.log(`[Total Meta Budget] Calculated totals - Daily: $${totalDailyBudget.toFixed(2)}, Lifetime: $${totalLifetimeBudget.toFixed(2)}, Active AdSets: ${activeAdSetCount}`);
+            
+            return NextResponse.json({
+              totalDailyBudget: parseFloat(totalDailyBudget.toFixed(2)),
+              totalLifetimeBudget: parseFloat(totalLifetimeBudget.toFixed(2)),
+              activeAdSetCount,
+              source: 'meta_api'
+            });
+          }
         }
       } catch (error) {
         console.error('[Total Meta Budget] Error fetching from Meta API, falling back to database:', error);

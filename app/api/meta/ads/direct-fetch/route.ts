@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { withMetaRateLimit } from '@/lib/services/meta-rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,52 +116,27 @@ export async function POST(request: NextRequest) {
     // Log this request for rate limiting
     logRequest(connection.account_id);
     
-    // Simple direct fetch of ads from Meta
-    const adsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${data.adsetId}/ads?` +
-      `fields=id,name,status,effective_status,preview_url,creative{id,thumbnail_url,image_url,title,body,link_url,call_to_action_type}&` +
-      `limit=50&` +
-      `access_token=${connection.access_token}`
-    );
-    
-    if (!adsResponse.ok) {
-      const errorText = await adsResponse.text();
-      console.error(`[Meta Ads Direct] API error: ${errorText}`);
-      
-      // Check if this is a rate limit error
-      if (errorText.includes('User request limit reached')) {
-        // Try to get cached ads
-        const { data: cachedAds } = await supabase
-          .from('meta_ads')
-          .select('*')
-          .eq('adset_id', data.adsetId)
-          .eq('brand_id', data.brandId);
-          
-        if (cachedAds && cachedAds.length > 0) {
-          console.log(`[Meta Ads Direct] Returning ${cachedAds.length} cached ads due to Meta rate limiting`);
-          return NextResponse.json({
-            success: true,
-            source: 'cached_due_to_rate_limit',
-            message: 'Using cached data due to Meta API rate limits',
-            ads: cachedAds
-          });
+    // Use rate limiter to safely fetch ads from Meta API
+    const adsData = await withMetaRateLimit(
+      connection.account_id,
+      async () => {
+        const adsResponse = await fetch(
+          `https://graph.facebook.com/v18.0/${data.adsetId}/ads?` +
+          `fields=id,name,status,effective_status,preview_url,creative{id,thumbnail_url,image_url,title,body,link_url,call_to_action_type}&` +
+          `limit=50&` +
+          `access_token=${connection.access_token}`
+        );
+        
+        if (!adsResponse.ok) {
+          const errorData = await adsResponse.json();
+          throw errorData;
         }
         
-        return NextResponse.json({
-          warning: 'Meta API rate limit reached',
-          message: 'Please try again in a few minutes',
-          success: true, // Return success with empty array to avoid error
-          ads: []
-        }, { status: 200 });
-      }
-      
-      return NextResponse.json(
-        { error: 'Failed to fetch ads from Meta', details: errorText },
-        { status: 500 }
-      );
-    }
-    
-    const adsData = await adsResponse.json();
+        return await adsResponse.json();
+      },
+      0, // Normal priority
+      `ads-direct-fetch-${data.adsetId}`
+    );
     console.log(`[Meta Ads Direct] Found ${adsData.data?.length || 0} ads`);
     
     if (!adsData.data || adsData.data.length === 0) {
@@ -209,21 +185,34 @@ export async function POST(request: NextRequest) {
       };
       
             try {
-        const insightsParams = new URLSearchParams({
-          fields: 'spend,impressions,clicks,reach,ctr,cpc,actions',
-          time_range: JSON.stringify(timeRange),
-          access_token: connection.access_token,
-        });
-        
         console.log(`[Meta Ads Direct] Fetching insights for ad ${ad.id} with date range:`, timeRange);
-        const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${ad.id}/insights?${insightsParams.toString()}`
+        
+        const insightsData = await withMetaRateLimit(
+          connection.account_id,
+          async () => {
+            const insightsParams = new URLSearchParams({
+              fields: 'spend,impressions,clicks,reach,ctr,cpc,actions',
+              time_range: JSON.stringify(timeRange),
+              access_token: connection.access_token,
+            });
+            
+            const insightsResponse = await fetch(
+              `https://graph.facebook.com/v18.0/${ad.id}/insights?${insightsParams.toString()}`
+            );
+            
+            if (!insightsResponse.ok) {
+              const errorData = await insightsResponse.json();
+              throw errorData;
+            }
+            
+            return await insightsResponse.json();
+          },
+          -1, // Lower priority than main API calls
+          `insights-${ad.id}`
         );
         
-        if (insightsResponse.ok) {
-          const insightsData = await insightsResponse.json();
-          if (insightsData.data && insightsData.data.length > 0) {
-            const insights = insightsData.data[0];
+        if (insightsData.data && insightsData.data.length > 0) {
+          const insights = insightsData.data[0];
             adInsights.spent = parseFloat(insights.spend || '0');
             adInsights.impressions = parseInt(insights.impressions || '0', 10);
             adInsights.clicks = parseInt(insights.clicks || '0', 10);
@@ -244,13 +233,8 @@ export async function POST(request: NextRequest) {
             
             console.log(`[Meta Ads Direct] Insights SUCCESS for ad ${ad.id}: Spend=${adInsights.spent}, Clicks=${adInsights.clicks}, Impr=${adInsights.impressions}`);
             
-          } else {
-            console.log(`[Meta Ads Direct] No insights data found for ad ${ad.id} in the specified time range, showing zeros`);
-          }
         } else {
-          const errorText = await insightsResponse.text();
-          console.error(`[Meta Ads Direct] Failed to fetch insights for ad ${ad.id}: ${insightsResponse.status} - ${errorText}`);
-          // Keep default zeroed metrics if insights fail
+          console.log(`[Meta Ads Direct] No insights data found for ad ${ad.id} in the specified time range, showing zeros`);
         }
          
         } catch (insightsError: any) {

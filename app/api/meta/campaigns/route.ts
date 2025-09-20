@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { format, parseISO, differenceInDays, addDays, subDays, isValid } from 'date-fns'
+import { withMetaRateLimit } from '@/lib/services/meta-rate-limiter'
 
 export const dynamic = 'force-dynamic'
 
