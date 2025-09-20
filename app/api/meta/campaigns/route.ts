@@ -536,47 +536,64 @@ export async function GET(request: NextRequest) {
             // Get Meta connection details
             const { data: connectionData, error: connectionError } = await supabase
               .from('platform_connections')
-              .select('access_token')
+              .select('access_token, metadata')
               .eq('brand_id', brandId)
               .eq('platform_type', 'meta')
               .single();
               
             if (!connectionError && connectionData) {
               try {
-                // Try multiple API versions in case the campaign is from an older version
-                const apiVersions = ['v18.0', 'v19.0', 'v20.0', 'v21.0'];
-                let adSetsResponse: Response | null = null;
+                // Get account ID for rate limiter
+                let accountId = 'unknown';
+                if (connectionData.metadata?.account_id) {
+                  accountId = connectionData.metadata.account_id;
+                }
+                
+                console.log(`[Meta Campaigns] Using account ID: ${accountId} for campaign ${campaign.campaign_id}`);
+                
+                // Use rate limiter to fetch ad sets with multiple API version fallback
                 let adSetsData: any = null;
                 let apiVersionUsed = '';
+                
+                adSetsData = await withMetaRateLimit(
+                  accountId,
+                  async () => {
+                    const apiVersions = ['v18.0', 'v19.0', 'v20.0', 'v21.0'];
+                    
+                    for (const version of apiVersions) {
+                      try {
+                        const adSetsUrl = `https://graph.facebook.com/${version}/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}&_=${Date.now()}`;
+                        const response = await fetch(adSetsUrl, {
+                          cache: 'no-store',
+                          headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                          }
+                        });
 
-                for (const version of apiVersions) {
-                  try {
-                    const adSetsUrl = `https://graph.facebook.com/${version}/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}&_=${Date.now()}`;
-                    const response = await fetch(adSetsUrl, {
-                      cache: 'no-store',
-                      headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
+                        if (response.ok) {
+                          const data = await response.json();
+                          apiVersionUsed = version;
+                          console.log(`[Meta Campaigns] Successfully fetched ad sets for campaign ${campaign.campaign_id} using ${version}`);
+                          return data;
+                        } else if (response.status === 400) {
+                          console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} not found in ${version}, trying next version...`);
+                          continue;
+                        } else {
+                          console.log(`[Meta Campaigns] Unexpected ${response.status} error for campaign ${campaign.campaign_id} in ${version}`);
+                        }
+                      } catch (versionError) {
+                        console.log(`[Meta Campaigns] Error with ${version} for campaign ${campaign.campaign_id}:`, versionError);
                       }
-                    });
-
-                    if (response.ok) {
-                      adSetsResponse = response;
-                      adSetsData = await response.json();
-                      apiVersionUsed = version;
-                      console.log(`[Meta Campaigns] Successfully fetched ad sets for campaign ${campaign.campaign_id} using ${version}`);
-                      break;
-                    } else if (response.status === 400) {
-                      console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} not found in ${version}, trying next version...`);
-                    } else {
-                      console.log(`[Meta Campaigns] Unexpected ${response.status} error for campaign ${campaign.campaign_id} in ${version}`);
                     }
-                  } catch (versionError) {
-                    console.log(`[Meta Campaigns] Error with ${version} for campaign ${campaign.campaign_id}:`, versionError);
-                  }
-                }
+                    throw new Error('No response received from any API version');
+                  },
+                  1, // High priority for campaign data
+                  `campaign-adsets-${campaign.campaign_id}`,
+                  15000 // 15 second timeout
+                );
 
-                if (adSetsResponse && adSetsResponse.ok && adSetsData) {
+                if (adSetsData) {
                   console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id} (API ${apiVersionUsed}):`, JSON.stringify(adSetsData, null, 2));
                   
                   if (adSetsData.data) {
@@ -641,7 +658,7 @@ export async function GET(request: NextRequest) {
                     }
                   }
                 } else {
-                  console.error(`[Meta Campaigns] Failed to fetch ad sets for campaign ${campaign.campaign_id} after trying all API versions (${apiVersions.join(', ')}):`, adSetsResponse ? `${adSetsResponse.status} ${adSetsResponse.statusText}` : 'No response received');
+                  console.error(`[Meta Campaigns] Failed to fetch ad sets for campaign ${campaign.campaign_id} after trying all API versions: No response received`);
                 }
               } catch (adSetError) {
                 console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, adSetError);
