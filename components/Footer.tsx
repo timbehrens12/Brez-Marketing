@@ -74,7 +74,7 @@ function FooterContentComponent() {
         sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
       }`}
       style={{
-        background: `rgba(128,128,128,0.12)`,
+        background: `rgba(128,128,128,0.15)`,
         backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
             <defs>
