@@ -3301,7 +3301,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           {/* Reusable Tools Widget */}
           <div className="md:col-span-3">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[680px] flex flex-col transition-all duration-300",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
             )}>
               <CardHeader className="pb-4 flex-shrink-0">
@@ -3457,7 +3457,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                     <Badge 
                                       key={index} 
                                       variant="outline" 
-                                      className="text-xs px-2 py-0.5 text-[#9ca3af] border-[#333]"
+                                      className="text-xs px-2 py-0.5 bg-[#FF2A2A] text-black border-[#FF2A2A] font-medium"
                                     >
                                       {feature}
                                     </Badge>
