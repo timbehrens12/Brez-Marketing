@@ -310,7 +310,7 @@ export default function HomePage() {
 
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
-             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
                  <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
                <div className="flex items-center gap-3 ml-auto">
                  <Link href="/dashboard">
@@ -521,7 +521,14 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <SectionHeader
                 eyebrow="Everything in one place"
-                title={<span>EVERYTHING IN ONE PLACE</span>}
+                title={
+                  <span>
+                    <span className="relative inline-block">
+                      <span className="text-white font-black relative z-10">EVERYTHING</span>
+                      <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                    </span> IN ONE PLACE
+                  </span>
+                }
                 sub="Stop juggling dozens of browser tabs for all the brands you manage or own. Connect multiple platforms to one unified dashboard and manage everything from a single login."
               />
               <div className="grid lg:grid-cols-3 gap-8 mb-16">
@@ -734,7 +741,14 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <SectionHeader
                 eyebrow="Features"
-                title="EVERY FEATURE YOU NEED"
+                title={
+                  <span>
+                    <span className="relative inline-block">
+                      <span className="text-white font-black relative z-10">EVERY</span>
+                      <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                    </span> FEATURE YOU NEED
+                  </span>
+                }
                 sub="No hype, no exaggeration. Here's exactly what our platform includes."
               />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -1089,7 +1103,10 @@ export default function HomePage() {
             <div className="absolute inset-x-0 -top-6 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 font-oswald">
-                READY TO SCALE<br />
+                READY TO <span className="relative inline-block">
+                  <span className="text-white font-black relative z-10">SCALE</span>
+                  <div className="absolute -bottom-1 left-0 right-0 h-2 bg-[var(--brand-red)] -z-10"></div>
+                </span><br />
                 <span className="text-transparent bg-clip-text bg-[linear-gradient(90deg,#fff,rgba(255,255,255,.5))]">LIKE A PRO?</span>
               </h2>
               <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10 font-mono">
