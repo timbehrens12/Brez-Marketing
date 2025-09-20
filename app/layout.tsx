@@ -425,6 +425,32 @@ export default function RootLayout({
                 }
               })
 
+              // Suppress console warnings about multiple GoTrueClient instances
+              const originalConsoleWarn = console.warn
+              console.warn = function(...args) {
+                const message = args.join(' ')
+                if (message.includes('Multiple GoTrueClient instances detected') ||
+                    message.includes('content-script.js') ||
+                    message.includes('AdUnit') ||
+                    message.includes('Document already loaded')) {
+                  return // Suppress these warnings
+                }
+                return originalConsoleWarn.apply(console, args)
+              }
+              
+              // Suppress console errors from browser extensions
+              const originalConsoleError = console.error
+              console.error = function(...args) {
+                const message = args.join(' ')
+                if (message.includes('listener indicated an asynchronous response') ||
+                    message.includes('message channel closed') ||
+                    message.includes('content-script.js') ||
+                    message.includes('AdUnit')) {
+                  return // Suppress these errors
+                }
+                return originalConsoleError.apply(console, args)
+              }
+
               // Helper function to detect problematic extensions (for debugging)
               window.detectExtensions = function() {
                 const extensions = []

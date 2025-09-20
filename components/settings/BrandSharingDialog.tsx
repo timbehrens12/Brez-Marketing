@@ -382,7 +382,7 @@ export default function BrandSharingDialog({ brand, trigger }: BrandSharingDialo
                               onClick={() => copyShareLink(link.token)}
                               size="sm"
                               variant="outline"
-                              className="border-[#333] bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white"
+                              className="border-[#FF2A2A] bg-[#FF2A2A] text-black hover:bg-[#E02424] hover:text-black"
                             >
                               <Copy className="w-4 h-4" />
                             </Button>

@@ -143,6 +143,15 @@ export function debugClientInstances() {
   // console.log(`📦 Current token hash: ${currentTokenHash ? 'Set' : 'None'}`)
 }
 
-// Legacy exports for backward compatibility
-export const supabase = getStandardSupabaseClient()
+// Legacy exports for backward compatibility - lazy initialization to prevent multiple instances
+export const supabase = (() => {
+  let instance: SupabaseClient | null = null
+  return () => {
+    if (!instance) {
+      instance = getStandardSupabaseClient()
+    }
+    return instance
+  }
+})()
+
 export { getStandardSupabaseClient as createClient } 
