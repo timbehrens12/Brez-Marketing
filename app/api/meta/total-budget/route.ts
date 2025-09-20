@@ -243,14 +243,6 @@ export async function GET(req: NextRequest) {
     
       adSets = allAdSetsData;
       console.log(`[Total Meta Budget] Found ${adSets?.length || 0} total ad sets`);
-      
-      // DEBUG: Check database ad set budget fields
-      if (adSets && adSets.length > 0) {
-        console.log('[Total Meta Budget] DEBUG - Database ad set budget fields:');
-        adSets.forEach(adSet => {
-          console.log(`  ${adSet.adset_name}: status=${adSet.status}, budget=${adSet.budget}, budget_type=${adSet.budget_type}`);
-        });
-      }
     }
     
     // Calculate budgets from database data

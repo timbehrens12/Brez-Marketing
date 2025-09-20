@@ -576,11 +576,16 @@ export async function GET(request: NextRequest) {
                           apiVersionUsed = version;
                           console.log(`[Meta Campaigns] Successfully fetched ad sets for campaign ${campaign.campaign_id} using ${version}`);
                           return data;
-                        } else if (response.status === 400) {
-                          console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} not found in ${version}, trying next version...`);
-                          continue;
                         } else {
-                          console.log(`[Meta Campaigns] Unexpected ${response.status} error for campaign ${campaign.campaign_id} in ${version}`);
+                          // Log the full error response for debugging
+                          const errorText = await response.text();
+                          console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} ${version} error ${response.status}: ${errorText}`);
+                          if (response.status === 400) {
+                            console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} not found in ${version}, trying next version...`);
+                            continue;
+                          } else {
+                            console.log(`[Meta Campaigns] Unexpected ${response.status} error for campaign ${campaign.campaign_id} in ${version}`);
+                          }
                         }
                       } catch (versionError) {
                         console.log(`[Meta Campaigns] Error with ${version} for campaign ${campaign.campaign_id}:`, versionError);

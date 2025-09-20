@@ -107,11 +107,10 @@ class MetaRateLimiter {
           const waitTime = state.rateLimitResetTime - Date.now();
           
           if (waitTime > 0) {
-            console.log(`[MetaRateLimiter] Account ${request.accountId} is rate limited, waiting ${Math.round(waitTime / 1000)}s`);
+            console.log(`[MetaRateLimiter] Account ${request.accountId} is rate limited, failing fast instead of waiting ${Math.round(waitTime / 1000)}s`);
             
-            // Put request back in queue and wait
-            this.queue.unshift(request);
-            await this.delay(Math.min(waitTime, 30000)); // Wait max 30 seconds at a time
+            // Fail fast when rate limited - let the caller use database fallback
+            request.reject(new Error(`Account ${request.accountId} is rate limited. Wait ${Math.round(waitTime / 1000)}s before retrying.`));
             continue;
           } else {
             // Reset rate limit state
