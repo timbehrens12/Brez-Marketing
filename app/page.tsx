@@ -72,6 +72,7 @@ function PlanRecommendationQuiz() {
         }
     }
   }
+  }
 
   const resetQuiz = () => {
     setSelectedSituation("")
