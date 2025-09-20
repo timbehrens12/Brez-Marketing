@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
           let activeAdSetCount = 0;
           
           // First, validate we have an access token
-          const accessToken = connectionData.access_token;
+          const accessToken = connectionData[0].access_token;
           if (!accessToken) {
             throw new Error('No access token found for Meta connection');
           }
@@ -87,8 +87,8 @@ export async function GET(req: NextRequest) {
           // Get account ID from metadata or extract from a test call
           let accountId = 'unknown';
           try {
-            if (connectionData.metadata && connectionData.metadata.account_id) {
-              accountId = connectionData.metadata.account_id;
+            if (connectionData[0].metadata && connectionData[0].metadata.account_id) {
+              accountId = connectionData[0].metadata.account_id;
             } else {
               // If no metadata, try to get account ID from a simple me call
               console.log('[Total Meta Budget] No account ID in metadata, fetching from Meta API...');
@@ -122,7 +122,8 @@ export async function GET(req: NextRequest) {
               return await response.json();
             },
             1, // High priority for budget data
-            `total-budget-${brandId}`
+            `total-budget-${brandId}`,
+            15000 // 15 second timeout for budget data
           );
           
           if (adSetsResponse?.data) {
@@ -207,6 +208,21 @@ export async function GET(req: NextRequest) {
         adSets = activeAdSetsData;
         console.log(`[Total Meta Budget] Found ${adSets?.length || 0} active ad sets in active campaigns`);
         console.log('[Total Meta Budget] Active ad sets:', adSets?.map(a => `${a.adset_name} (${a.status})`));
+        
+        // DEBUG: Check what statuses and budget data we actually have
+        const { data: debugAdSets, error: debugError } = await supabase
+          .from('meta_adsets')
+          .select('adset_id, adset_name, status, budget, budget_type, daily_budget, lifetime_budget')
+          .eq('brand_id', brandId)
+          .in('campaign_id', campaignIds)
+          .limit(5);
+        
+        if (!debugError && debugAdSets) {
+          console.log('[Total Meta Budget] DEBUG - Sample ad sets with all budget fields:');
+          debugAdSets.forEach(adSet => {
+            console.log(`  ${adSet.adset_name}: status=${adSet.status}, budget=${adSet.budget}, budget_type=${adSet.budget_type}, daily_budget=${adSet.daily_budget}, lifetime_budget=${adSet.lifetime_budget}`);
+          });
+        }
       } else {
         adSets = [];
       }
