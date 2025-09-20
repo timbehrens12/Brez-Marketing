@@ -812,7 +812,7 @@ export default function HomePage() {
               <SectionHeader
                 eyebrow="Pricing"
                 title="CHOOSE YOUR PLAN"
-                sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
+                sub="Low barrier to entry - start cheap and only upgrade as you grow. Pay for what you need, scale when you're ready."
               />
 
               <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
