@@ -141,7 +141,7 @@ function FooterContentComponent() {
             <span className="hidden xl:inline">Instagram</span>
           </a>
           <a 
-            href="https://brezmarketing.net" 
+            href="https://brezmarketingdashboard.com" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors flex items-center gap-1 flex-shrink-0"
