@@ -70,11 +70,23 @@ function FooterContentComponent() {
   
   return (
     <footer 
-      className={`w-full backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto ${
+      className={`w-full backdrop-blur-sm border-t border-[#2A2A2A] transition-all duration-300 mt-auto relative ${
         sidebarExpanded ? 'px-4 py-[18px]' : 'p-4'
       }`}
       style={{
-        background: `rgba(128,128,128,0.12)`
+        background: `rgba(128,128,128,0.12)`,
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        `)}")`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '40px 40px'
       }}
     >
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
