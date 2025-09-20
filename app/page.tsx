@@ -311,7 +311,7 @@ export default function HomePage() {
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-                 <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
+               <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
                <div className="flex items-center gap-3">
                  <Link href="/dashboard">
                    <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
@@ -812,7 +812,7 @@ export default function HomePage() {
               <SectionHeader
                 eyebrow="Pricing"
                 title="CHOOSE YOUR PLAN"
-                sub="Low barrier to entry - start cheap and only upgrade as you grow. Pay for what you need, scale when you're ready."
+                sub="Low barrier to entry - start cheap and only upgrade as you grow and make more money. Pay for what you need, scale when you're ready."
               />
 
               <div className="grid lg:grid-cols-5 gap-6 items-start mt-8">
