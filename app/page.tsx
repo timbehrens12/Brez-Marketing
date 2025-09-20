@@ -298,42 +298,35 @@ export default function HomePage() {
         <div className="relative z-10 overflow-x-hidden" style={{ ['--brand-red' as any]: BRAND_RED }}>
           {/* Top banner */}
           <div className="w-full bg-black/70 border-b border-white/10">
-            <div className="flex justify-center py-3">
-              <div className="flex items-center gap-3">
-                <TagBadge tone="red">LIMITED TIME</TagBadge>
-                <span className="text-sm text-white/90 tracking-wide font-semibold">
-                  Scale 2.0 users get 25% off
+            <div className="flex justify-center py-2">
+              <div className="flex items-center gap-2">
+                <TagBadge tone="red">LIMITED TIME OFFER</TagBadge>
+                <span className="text-sm text-white/80 tracking-wide font-bold">
+                  Existing Scale 2.0 users get 25% off
                 </span>
               </div>
             </div>
           </div>
 
           {/* Header */}
-          <header className="py-4 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <div className="flex items-center">
-                  <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-8 w-auto" />
-                </div>
-                
-                {/* Navigation Buttons */}
-                <div className="flex items-center gap-3">
-                  <Link href="/dashboard">
-                    <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white text-sm px-4 py-2">
-                      Dashboard <ArrowRight className="ml-1 h-3 w-3" />
-                    </Button>
-                  </Link>
-                  <Button 
-                    onClick={scrollToPricing}
-                    className="bg-[var(--brand-red)] text-black hover:brightness-110 font-bold shadow-[0_4px_0_rgba(0,0,0,.5)] text-sm px-4 py-2"
-                  >
-                    Get Started
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </header>
+           <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
+             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+               <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
+               <div className="flex items-center gap-3 ml-auto">
+                 <Link href="/dashboard">
+                   <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
+                     Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                   </Button>
+                 </Link>
+                 <Button 
+                   onClick={scrollToPricing}
+                   className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_8px_0_rgba(0,0,0,.5)]"
+                 >
+                   Get Started
+                 </Button>
+               </div>
+             </div>
+           </header>
 
           {/* Hero */}
           <section className="py-20 sm:py-28 relative">
