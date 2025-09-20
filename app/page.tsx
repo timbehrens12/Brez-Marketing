@@ -809,10 +809,21 @@ export default function HomePage() {
                     price: 67,
                     popular: false,
                     icon: Users,
-                    brands: "1 Brand",
-                    leads: "No Lead Gen",
-                    ai: "5 AI Chats/day",
-                    highlight: "Analytics Only",
+                    brands: 1,
+                    leadGen: 0,
+                    outreach: 0,
+                    aiChats: 5,
+                    creativeGen: 10,
+                    features: [
+                      "Brand Analytics & Reports",
+                      "AI Marketing Chatbot", 
+                      "Campaign Optimization",
+                      "Shopify Integration",
+                      "Meta Ads Analytics",
+                      "Creative Generation",
+                      "Basic Performance Reports"
+                    ],
+                    limitations: ["No Lead Generation", "No Outreach CRM"],
                     whiteLabel: false
                   },
                   {
@@ -821,10 +832,20 @@ export default function HomePage() {
                     price: 97,
                     popular: true,
                     icon: Rocket,
-                    brands: "1 Brand",
-                    leads: "100 Leads/month",
-                    ai: "10 AI Chats/day",
-                    highlight: "Lead Gen + CRM",
+                    brands: 1,
+                    leadGen: 100,
+                    outreach: 250,
+                    aiChats: 10,
+                    creativeGen: 25,
+                    features: [
+                      "Everything in DTC Owner",
+                      "Lead Generation",
+                      "Outreach CRM",
+                      "White-Label Reports",
+                      "Contract Generation AI",
+                      "Ad Creative Studio"
+                    ],
+                    limitations: [],
                     whiteLabel: true
                   },
                   {
@@ -833,10 +854,19 @@ export default function HomePage() {
                     price: 397,
                     popular: false,
                     icon: TrendingUp,
-                    brands: "5 Brands",
-                    leads: "300 Leads/month", 
-                    ai: "25 AI Chats/day",
-                    highlight: "Multi-Brand",
+                    brands: 5,
+                    leadGen: 300,
+                    outreach: 750,
+                    aiChats: 25,
+                    creativeGen: 75,
+                    features: [
+                      "Everything in Beginner",
+                      "Multi-Brand Management",
+                      "Advanced Analytics",
+                      "Campaign Performance Predictions",
+                      "Priority API Access"
+                    ],
+                    limitations: [],
                     whiteLabel: true
                   },
                   {
@@ -845,10 +875,19 @@ export default function HomePage() {
                     price: 697,
                     popular: false,
                     icon: Zap,
-                    brands: "15 Brands",
-                    leads: "750 Leads/month",
-                    ai: "50 AI Chats/day", 
-                    highlight: "Team Collaboration",
+                    brands: 15,
+                    leadGen: 750,
+                    outreach: 2000,
+                    aiChats: 50,
+                    creativeGen: 150,
+                    features: [
+                      "Everything in Growing",
+                      "Team Collaboration (15 users)",
+                      "Client Portal Access",
+                      "Advanced Role Permissions",
+                      "Competitor Ad Intelligence"
+                    ],
+                    limitations: [],
                     whiteLabel: true
                   },
                   {
@@ -857,10 +896,20 @@ export default function HomePage() {
                     price: 1337,
                     popular: false,
                     icon: Award,
-                    brands: "25 Brands",
-                    leads: "2,500 Leads/month",
-                    ai: "Unlimited AI",
-                    highlight: "Enterprise Support",
+                    brands: 25,
+                    leadGen: 2500,
+                    outreach: 7500,
+                    aiChats: "Unlimited",
+                    creativeGen: 500,
+                    features: [
+                      "Everything in Multi-Brand",
+                      "Unlimited Team Members",
+                      "Custom Integrations",
+                      "24/7 Priority Support",
+                      "Dedicated Account Manager",
+                      "White-Glove Implementation"
+                    ],
+                    limitations: [],
                     whiteLabel: true
                   }
                 ].map((plan, index) => (
@@ -897,45 +946,73 @@ export default function HomePage() {
                         </div>
                       </div>
                       
-                      {/* Key Features - Clean and Simple */}
-                      <div className="flex-1 mb-6">
-                        <div className="space-y-4">
-                          {/* Brands */}
-                          <div className="flex justify-between items-center py-2 border-b border-white/10">
-                            <span className="text-white/70 text-sm">Brands</span>
-                            <span className="text-white font-semibold text-sm">{plan.brands}</span>
-                          </div>
-                          
-                          {/* Lead Generation */}
-                          <div className="flex justify-between items-center py-2 border-b border-white/10">
-                            <span className="text-white/70 text-sm">Lead Generation</span>
-                            <span className={`font-semibold text-sm ${plan.leads === "No Lead Gen" ? "text-white/50" : "text-white"}`}>
-                              {plan.leads}
-                            </span>
-                          </div>
-                          
-                          {/* AI Assistant */}
-                          <div className="flex justify-between items-center py-2 border-b border-white/10">
-                            <span className="text-white/70 text-sm">AI Assistant</span>
-                            <span className="text-white font-semibold text-sm">{plan.ai}</span>
-                          </div>
-                          
-                          {/* Key Highlight */}
-                          <div className="bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 rounded-lg p-3 mt-4">
-                            <div className="text-center">
-                              <span className="text-[var(--brand-red)] font-bold text-sm">{plan.highlight}</span>
+                      {/* Usage Limits */}
+                      <div className="flex-1">
+                        <div className="mb-6">
+                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">Usage Limits</h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">Brands</span>
+                              <span className="text-white font-semibold text-xs">{plan.brands}</span>
                             </div>
-                          </div>
-                          
-                          {/* White Label Badge */}
-                          {plan.whiteLabel && (
-                            <div className="text-center">
-                              <span className="bg-white/10 text-white/80 px-3 py-1 rounded-full text-xs font-medium">
-                                White-Label Ready
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">Lead Generation</span>
+                              <span className={`font-semibold text-xs ${plan.leadGen === 0 ? "text-white/50" : "text-white"}`}>
+                                {plan.leadGen === 0 ? "None" : `${plan.leadGen}/month`}
                               </span>
                             </div>
-                          )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">Outreach Emails</span>
+                              <span className={`font-semibold text-xs ${plan.outreach === 0 ? "text-white/50" : "text-white"}`}>
+                                {plan.outreach === 0 ? "None" : `${plan.outreach}/month`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">AI Chatbot</span>
+                              <span className="text-white font-semibold text-xs">{plan.aiChats}/day</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-white/70 text-xs">Creative Generation</span>
+                              <span className="text-white font-semibold text-xs">{plan.creativeGen}/month</span>
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Features */}
+                        <div className="mb-4">
+                          <h4 className="text-white/90 font-semibold text-xs mb-3 uppercase tracking-wide">✓ Included Features</h4>
+                          <div className="space-y-1">
+                            {plan.features.map((feature: string, i: number) => (
+                              <div key={i} className="flex items-center">
+                                <Check className="w-3 h-3 mr-2 flex-shrink-0 text-[var(--brand-red)]" />
+                                <span className="text-white/75 text-xs">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Limitations */}
+                        {plan.limitations.length > 0 && (
+                          <div className="mb-4">
+                            <div className="space-y-1">
+                              {plan.limitations.map((limitation: string, i: number) => (
+                                <div key={i} className="flex items-center">
+                                  <X className="w-3 h-3 mr-2 flex-shrink-0 text-white/40" />
+                                  <span className="text-white/50 text-xs">{limitation}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* White Label Badge */}
+                        {plan.whiteLabel && (
+                          <div className="text-center mb-4">
+                            <span className="bg-[var(--brand-red)]/10 border border-[var(--brand-red)]/30 text-[var(--brand-red)] px-3 py-1 rounded-full text-xs font-medium">
+                              White-Label Ready
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Button aligned at bottom */}
