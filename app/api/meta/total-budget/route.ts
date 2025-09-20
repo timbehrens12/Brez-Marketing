@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
           let activeAdSetCount = 0;
           
           // First, validate we have an access token
-          const accessToken = connectionData[0].access_token;
+          const accessToken = connectionData.access_token;
           if (!accessToken) {
             throw new Error('No access token found for Meta connection');
           }
@@ -87,8 +87,8 @@ export async function GET(req: NextRequest) {
           // Get account ID from metadata or extract from a test call
           let accountId = 'unknown';
           try {
-            if (connectionData[0].metadata && connectionData[0].metadata.account_id) {
-              accountId = connectionData[0].metadata.account_id;
+            if (connectionData.metadata && connectionData.metadata.account_id) {
+              accountId = connectionData.metadata.account_id;
             } else {
               // If no metadata, try to get account ID from a simple me call
               console.log('[Total Meta Budget] No account ID in metadata, fetching from Meta API...');
