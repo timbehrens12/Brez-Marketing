@@ -310,15 +310,15 @@ export default function HomePage() {
 
           {/* Header */}
            <header className="py-6 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
-             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-               <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
-               <div className="flex items-center gap-3">
+             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                 <img src="https://i.imgur.com/j4AQPxj.png" alt="Brez Marketing" className="h-10 w-auto" />
+               <div className="absolute right-4 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 flex items-center gap-3">
                  <Link href="/dashboard">
                    <Button className="bg-transparent border border-white/20 hover:bg-white/10 text-white">
                      Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                    </Button>
                  </Link>
-                 <Button 
+                 <Button
                    onClick={scrollToPricing}
                    className="bg-[var(--brand-red)] text-black hover:brightness-110 font-black shadow-[0_8px_0_rgba(0,0,0,.5)]"
                  >
