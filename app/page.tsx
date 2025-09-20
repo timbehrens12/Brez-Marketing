@@ -772,7 +772,7 @@ export default function HomePage() {
                   FIND YOUR <span className="text-[var(--brand-red)]">PERFECT PLAN</span>
                 </h2>
                 <p className="text-white/70 text-lg">
-                  Answer a few quick questions and we'll recommend the best plan for your situation
+                  Answer one quick question and we'll recommend the best plan for your situation
                 </p>
               </div>
 
