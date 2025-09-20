@@ -3211,12 +3211,12 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
           
           {/* Outreach Tasks Widget */}
           <div className="md:col-span-1">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[680px] flex flex-col transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
               isWidgetLoading.quickActions && "opacity-50 grayscale pointer-events-none"
             )}>
               <CardHeader className="pb-3 flex-shrink-0">
@@ -3301,10 +3301,10 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
           {/* Reusable Tools Widget */}
           <div className="md:col-span-3">
             <Card className={cn(
-              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[680px] flex flex-col transition-all duration-300",
+              "bg-gradient-to-br from-[#1a1a1a] via-[#1f1f1f] to-[#161616] border border-[#333] shadow-xl h-[722px] flex flex-col transition-all duration-300",
               isWidgetLoading.reusableTools && "opacity-50 grayscale pointer-events-none"
             )}>
-              <CardHeader className="pb-4 flex-shrink-0">
+              <CardHeader className="pb-2 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-5 w-5 text-gray-400" />
@@ -3328,7 +3328,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                 </CardDescription>
                 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {/* Brand Filter */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -3407,7 +3407,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
 
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
+              <CardContent className="flex-1">
                 {isWidgetLoading.reusableTools ? (
                   <div className="text-center py-12">
                     <Settings className="h-16 w-16 text-gray-600 mx-auto mb-4" />
@@ -3415,9 +3415,9 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                     <p className="text-[#9ca3af] text-sm">Preparing automation tools and features...</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* 3x2 grid for all tools */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {filteredTools.map((tool) => {
                         const IconComponent = tool.icon
                         // NEVER disable "Open Tool" buttons - only disable "Coming Soon" tools
@@ -3430,14 +3430,14 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                           <div
                             key={tool.id}
                             className={cn(
-                              "rounded-lg border p-4 transition-all hover:shadow-md flex flex-col h-full",
+                              "rounded-lg border p-3 transition-all hover:shadow-md flex flex-col h-full",
                               getCategoryColor(tool.category),
                               isDisabled && "opacity-60",
                               // Remove red border for maxed out tools - only button should be red
                               false
                             )}
                           >
-                            <div className="flex items-start gap-3 mb-3">
+                            <div className="flex items-start gap-3 mb-2">
                               <div className="mt-0.5">
                                 <IconComponent className="h-5 w-5" />
                               </div>
@@ -3452,7 +3452,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                                 <p className="text-[#9ca3af] text-xs leading-relaxed mb-2">
                                   {tool.description}
                                 </p>
-                                <div className="flex flex-wrap gap-1 mb-3">
+                                <div className="flex flex-wrap gap-1 mb-2">
                                   {tool.features.slice(0, 3).map((feature, index) => (
                                     <Badge 
                                       key={index} 
@@ -3484,7 +3484,7 @@ export function AgencyActionCenter({ dateRange, onLoadingStateChange }: AgencyAc
                               }}
                               disabled={isDisabled}
                               className={cn(
-                                "w-full text-xs h-8 mt-auto",
+                                "w-full text-xs h-7 mt-auto",
                                 isDisabled
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                                   : isMaxedOut
