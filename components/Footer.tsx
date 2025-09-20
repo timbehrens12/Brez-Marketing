@@ -86,7 +86,8 @@ function FooterContentComponent() {
           </svg>
         `)}")`,
         backgroundRepeat: 'repeat',
-        backgroundSize: '40px 40px'
+        backgroundSize: '40px 40px',
+        backgroundAttachment: 'fixed'
       }}
     >
       <div className="max-w-screen-xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
