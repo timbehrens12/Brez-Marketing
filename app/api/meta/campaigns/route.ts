@@ -839,7 +839,7 @@ export async function GET(request: NextRequest) {
       }));
       
       // BULK REACH CALCULATION: Fix reach values for all campaigns at once
-      if (hasDateRange && fromDate && toDate) {
+      if (hasDateRange && from && to) {
         console.log('[Meta Campaigns] Calculating accurate reach values for all campaigns...');
         
         // Get all ad sets for all campaigns in one query
@@ -858,8 +858,8 @@ export async function GET(request: NextRequest) {
             .from('meta_adset_daily_insights')
             .select('adset_id, reach')
             .in('adset_id', adSetIds)
-            .gte('date', fromDate)
-            .lte('date', toDate);
+            .gte('date', from)
+            .lte('date', to);
           
           if (!insightsError && allInsights) {
             // Group insights by campaign
