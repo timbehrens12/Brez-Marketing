@@ -69,8 +69,15 @@ export function ConditionalFooter() {
     return () => observer.disconnect()
   }, [])
 
-  // Hide footer on loading pages or landing page
-  if (isLoadingPage || pathname === '/') {
+  // Hide footer only on landing page and full-screen loading pages
+  // Don't hide on dashboard pages that have widget loading states
+  const isDashboardPage = pathname.startsWith('/dashboard') || 
+                          pathname.startsWith('/analytics') || 
+                          pathname.startsWith('/action-center') ||
+                          pathname.startsWith('/shopify') ||
+                          pathname.startsWith('/settings')
+  
+  if (pathname === '/' || (isLoadingPage && !isDashboardPage)) {
     return null
   }
 

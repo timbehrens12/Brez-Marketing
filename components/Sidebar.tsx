@@ -169,12 +169,15 @@ export function Sidebar({ className }: SidebarProps) {
     return (
       <aside 
         className={cn(
-          "bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden transition-all duration-300 z-50",
+          "border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden transition-all duration-300 z-50",
           showExpanded ? "w-64" : "w-20",
           className
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        style={{
+          background: `rgba(128,128,128,0.15)`
+        }}
       >
         {/* Logo Section */}
                  <div className="p-4 flex items-center justify-center">
