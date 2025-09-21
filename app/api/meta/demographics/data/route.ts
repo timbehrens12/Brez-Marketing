@@ -192,76 +192,8 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // If no data found for the requested date range, try to get a reasonable fallback
-    if (!data || data.length === 0) {
-      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}, trying to get reasonable fallback`)
-
-      // Calculate how many days the user requested
-      const requestedDays = Math.ceil((new Date(finalDateTo).getTime() - new Date(finalDateFrom).getTime()) / (1000 * 60 * 60 * 24)) + 1
-
-      // Try to find the most recent N days of available data
-      let fallbackResult
-      if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-        const dbBreakdownType = breakdownType === 'device_platform' ? 'device'
-                               : breakdownType === 'placement' ? 'platform'
-                               : breakdownType === 'publisher_platform' ? 'platform'
-                               : breakdownType
-
-        // First try to get exactly the number of days requested from most recent data
-        fallbackResult = await supabase
-          .from('meta_device_performance')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', dbBreakdownType)
-          .order('date_range_start', { ascending: false })
-          .limit(requestedDays * 10) // Get more records to ensure we have enough unique dates
-
-        // If no data found, try to get any recent data
-        if (!fallbackResult.data || fallbackResult.data.length === 0) {
-          fallbackResult = await supabase
-            .from('meta_device_performance')
-            .select('*')
-            .eq('brand_id', brandId)
-            .eq('breakdown_type', dbBreakdownType)
-            .order('date_range_start', { ascending: false })
-            .limit(100)
-        }
-      } else {
-        // First try to get exactly the number of days requested from most recent data
-        fallbackResult = await supabase
-          .from('meta_demographics')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', breakdownType)
-          .order('date_range_start', { ascending: false })
-          .limit(requestedDays * 10) // Get more records to ensure we have enough unique dates
-
-        // If no data found, try to get any recent data
-        if (!fallbackResult.data || fallbackResult.data.length === 0) {
-          fallbackResult = await supabase
-            .from('meta_demographics')
-            .select('*')
-            .eq('brand_id', brandId)
-            .eq('breakdown_type', breakdownType)
-            .order('date_range_start', { ascending: false })
-            .limit(100)
-        }
-      }
-
-      if (fallbackResult.data && fallbackResult.data.length > 0) {
-        // Filter to get the most recent N unique dates
-        const uniqueDates = [...new Set(fallbackResult.data.map(item => item.date_range_start))]
-          .sort()
-          .reverse()
-          .slice(0, requestedDays)
-
-        // Filter data to only include records from the target dates
-        data = fallbackResult.data.filter(item => uniqueDates.includes(item.date_range_start))
-
-        console.log(`[Demographics API] Using fallback data: ${data.length} records from ${uniqueDates.length} most recent available days`)
-        console.log(`[Demographics API] Fallback date range: ${uniqueDates[uniqueDates.length-1]} to ${uniqueDates[0]}`)
-      }
-    }
+    // ✅ FIX: No more fallback logic - show empty results for selected date ranges
+    // This ensures users see data for their selected date range only
 
     // Process and format data for frontend (both tables use breakdown_value)
     const convertedData = data?.map(item => ({
