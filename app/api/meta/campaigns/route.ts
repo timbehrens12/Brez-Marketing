@@ -1008,33 +1008,13 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      // Add recommendation data to campaigns and OVERRIDE spend with aggregated data
+      // Add recommendation data to campaigns (bulk calculation values already applied)
       const campaignsWithRecommendations = limitedCampaigns.map(campaign => {
-        // FORCE OVERRIDE: Always use aggregated data since meta_campaign_daily_stats is broken
-        const hasLimitedData = true; // Force override for ALL campaigns
-        const statsCount = statsByCampaign[campaign.campaign_id]?.length || 0;
-        
-        console.log(`[Meta Campaigns] FORCE OVERRIDE: Campaign ${campaign.campaign_name} has ${statsCount} days of data in meta_campaign_daily_stats`);
-        
-        // 🔥🔥🔥 FIXED: Use only campaign daily stats data (no meta_ad_daily_insights duplicates)
-        const campaignStats = statsByCampaign[campaign.campaign_id] || [];
-        const campaignActualSpend = campaignStats.reduce((sum, stat) => sum + (parseFloat(stat.spend) || 0), 0);
-        const campaignActualImpressions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.impressions) || 0), 0);
-        const campaignActualClicks = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.clicks) || 0), 0);
-        const campaignActualReach = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.reach) || 0), 0);
-        const campaignActualConversions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.conversions) || 0), 0);
-        
-        console.log(`[Meta Campaigns] Campaign ${campaign.campaign_name} metrics - spend: $${campaignActualSpend}, impressions: ${campaignActualImpressions}`);
-        console.log(`[Meta Campaigns] BEFORE FINAL RETURN - Campaign ${campaign.campaign_name}: spent=${campaign.spent}, impressions=${campaign.impressions}, clicks=${campaign.clicks}, reach=${campaign.reach}`);
+        console.log(`[Meta Campaigns] Final campaign ${campaign.campaign_name}: spent=${campaign.spent}, impressions=${campaign.impressions}, clicks=${campaign.clicks}, reach=${campaign.reach}, conversions=${campaign.conversions}`);
         
         return {
           ...campaign,
-          spent: campaign.spent, // PRESERVE CORRECTED SPENT from bulk calculation
-          impressions: campaign.impressions, // PRESERVE CORRECTED IMPRESSIONS from bulk calculation
-          clicks: campaign.clicks, // PRESERVE CORRECTED CLICKS from bulk calculation
-          reach: campaign.reach, // PRESERVE CORRECTED REACH from bulk calculation
-          conversions: campaign.conversions, // PRESERVE CORRECTED CONVERSIONS from bulk calculation
-          has_data_in_range: (campaign.spent || 0) > 0, // Use corrected spend for data check
+          has_data_in_range: (campaign.spent || 0) > 0,
           recommendation: recommendationMap.get(campaign.campaign_id) || null
         };
       });
