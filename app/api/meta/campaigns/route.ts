@@ -857,84 +857,84 @@ export async function GET(request: NextRequest) {
           const adSetIds = allAdSets.map(as => as.adset_id);
           const { data: allInsights, error: insightsError } = await supabase
             .from('meta_adset_daily_insights')
-            .select('adset_id, reach')
+            .select('adset_id, reach, impressions, clicks, conversions, spent')
             .in('adset_id', adSetIds)
             .gte('date', from)
             .lte('date', to);
           
-          if (!insightsError && allInsights) {
-            // Group insights by campaign and calculate ALL metrics (not just reach)
-            const metricsByCampaign: Record<string, {
-              reach: number;
-              impressions: number;
-              clicks: number;
-              conversions: number;
-              spent: number;
-            }> = {};
-            
-            allAdSets.forEach(adSet => {
-              const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
+            if (!insightsError && allInsights) {
+              // Group insights by campaign and calculate ALL metrics (not just reach)
+              const metricsByCampaign: Record<string, {
+                reach: number;
+                impressions: number;
+                clicks: number;
+                conversions: number;
+                spent: number;
+              }> = {};
               
-              // Calculate all metrics from ad set insights
-              const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
-              const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
-              const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
-              const adSetConversions = adSetInsights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
-              const adSetSpent = adSetInsights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
+              allAdSets.forEach(adSet => {
+                const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
+                
+                // Calculate all metrics from ad set insights
+                const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
+                const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
+                const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
+                const adSetConversions = adSetInsights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+                const adSetSpent = adSetInsights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
+                
+                if (!metricsByCampaign[adSet.campaign_id]) {
+                  metricsByCampaign[adSet.campaign_id] = {
+                    reach: 0,
+                    impressions: 0,
+                    clicks: 0,
+                    conversions: 0,
+                    spent: 0
+                  };
+                }
+                
+                // Aggregate all metrics for the campaign
+                metricsByCampaign[adSet.campaign_id].reach += adSetReach;
+                metricsByCampaign[adSet.campaign_id].impressions += adSetImpressions;
+                metricsByCampaign[adSet.campaign_id].clicks += adSetClicks;
+                metricsByCampaign[adSet.campaign_id].conversions += adSetConversions;
+                metricsByCampaign[adSet.campaign_id].spent += adSetSpent;
+              });
               
-              if (!metricsByCampaign[adSet.campaign_id]) {
-                metricsByCampaign[adSet.campaign_id] = {
-                  reach: 0,
-                  impressions: 0,
-                  clicks: 0,
-                  conversions: 0,
-                  spent: 0
-                };
-              }
+              // Update campaign with ALL corrected metrics from ad set insights
+              console.log(`[Meta Campaigns] Metrics before bulk update:`, campaigns.map(c => ({
+                id: c.campaign_id, 
+                reach: c.reach, 
+                impressions: c.impressions, 
+                clicks: c.clicks, 
+                conversions: c.conversions, 
+                spent: c.spent
+              })));
+              console.log(`[Meta Campaigns] Calculated metrics by campaign:`, metricsByCampaign);
               
-              // Aggregate all metrics for the campaign
-              metricsByCampaign[adSet.campaign_id].reach += adSetReach;
-              metricsByCampaign[adSet.campaign_id].impressions += adSetImpressions;
-              metricsByCampaign[adSet.campaign_id].clicks += adSetClicks;
-              metricsByCampaign[adSet.campaign_id].conversions += adSetConversions;
-              metricsByCampaign[adSet.campaign_id].spent += adSetSpent;
-            });
-            
-            // Update campaign with ALL corrected metrics from ad set insights
-            console.log(`[Meta Campaigns] Metrics before bulk update:`, campaigns.map(c => ({
-              id: c.campaign_id, 
-              reach: c.reach, 
-              impressions: c.impressions, 
-              clicks: c.clicks, 
-              conversions: c.conversions, 
-              spent: c.spent
-            })));
-            console.log(`[Meta Campaigns] Calculated metrics by campaign:`, metricsByCampaign);
-            
-            campaigns = campaigns.map(campaign => {
-              const correctedMetrics = metricsByCampaign[campaign.campaign_id];
-              if (correctedMetrics) {
-                return {
-                  ...campaign,
-                  reach: correctedMetrics.reach,
-                  impressions: correctedMetrics.impressions,
-                  clicks: correctedMetrics.clicks,
-                  conversions: correctedMetrics.conversions,
-                  spent: correctedMetrics.spent
-                };
-              }
-              return campaign;
-            });
-            
-            console.log(`[Meta Campaigns] Metrics after bulk update:`, campaigns.map(c => ({
-              id: c.campaign_id, 
-              reach: c.reach, 
-              impressions: c.impressions, 
-              clicks: c.clicks, 
-              conversions: c.conversions, 
-              spent: c.spent
-            })));
-            console.log(`[Meta Campaigns] Updated ALL metrics for ${Object.keys(metricsByCampaign).length} campaigns`);
+              campaigns = campaigns.map(campaign => {
+                const correctedMetrics = metricsByCampaign[campaign.campaign_id];
+                if (correctedMetrics) {
+                  return {
+                    ...campaign,
+                    reach: correctedMetrics.reach,
+                    impressions: correctedMetrics.impressions,
+                    clicks: correctedMetrics.clicks,
+                    conversions: correctedMetrics.conversions,
+                    spent: correctedMetrics.spent
+                  };
+                }
+                return campaign;
+              });
+              
+              console.log(`[Meta Campaigns] Metrics after bulk update:`, campaigns.map(c => ({
+                id: c.campaign_id, 
+                reach: c.reach, 
+                impressions: c.impressions, 
+                clicks: c.clicks, 
+                conversions: c.conversions, 
+                spent: c.spent
+              })));
+              console.log(`[Meta Campaigns] Updated ALL metrics for ${Object.keys(metricsByCampaign).length} campaigns`);
           }
         }
       }
