@@ -862,6 +862,12 @@ export async function GET(request: NextRequest) {
             .gte('date', from)
             .lte('date', to);
           
+          console.log(`[Meta Campaigns] Ad set insights query: adSetIds=${adSetIds.length}, from=${from}, to=${to}`);
+          console.log(`[Meta Campaigns] Ad set insights result: error=${!!insightsError}, data=${allInsights?.length || 0} records`);
+          if (allInsights && allInsights.length > 0) {
+            console.log(`[Meta Campaigns] Sample insight:`, allInsights[0]);
+          }
+          
             if (!insightsError && allInsights) {
               // Group insights by campaign and calculate ALL metrics (not just reach)
               const metricsByCampaign: Record<string, {
@@ -898,6 +904,9 @@ export async function GET(request: NextRequest) {
                 metricsByCampaign[adSet.campaign_id].clicks += adSetClicks;
                 metricsByCampaign[adSet.campaign_id].conversions += adSetConversions;
                 metricsByCampaign[adSet.campaign_id].spent += adSetSpent;
+                
+                // Debug log for each ad set
+                console.log(`[Meta Campaigns] Ad set ${adSet.adset_id} (campaign ${adSet.campaign_id}): reach=${adSetReach}, impressions=${adSetImpressions}, clicks=${adSetClicks}, conversions=${adSetConversions}, spent=${adSetSpent} from ${adSetInsights.length} insights`);
               });
               
               // Update campaign with ALL corrected metrics from ad set insights
