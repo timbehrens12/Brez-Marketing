@@ -798,13 +798,12 @@ export async function GET(request: NextRequest) {
           console.log(`[Meta Campaigns API] Campaign ${campaign.campaign_id} (${campaign.campaign_name || 'Unknown'}) spend: $${spend.toFixed(2)} from ${campaignStats.length} daily records`);
         }
         
-        // For reach calculation, use ad set aggregation instead of summing daily reach
-        // Daily reach should NOT be summed as reach is unique people reached
+        // For reach calculation, we'll calculate this after fetching all ad set data
+        // to avoid making individual database calls for each campaign
         let finalReach = 0;
         if (hasDateRange) {
-          // Get accurate reach from ad sets for this date range
-          const accurateReach = await getAccurateReachFromAdSets(supabase, brandId, campaign.campaign_id, fromDate, toDate);
-          finalReach = accurateReach !== null ? accurateReach : 0;
+          // Will be calculated below after getting all ad set insights
+          finalReach = calculatedReach; // Temporary fallback to prevent infinite loading
         } else {
           // Without date range, use the campaign's total reach
           finalReach = Number(campaign.reach) || 0;
@@ -838,6 +837,54 @@ export async function GET(request: NextRequest) {
           daily_insights: campaignDailyAggregatedInsights.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         };
       }));
+      
+      // BULK REACH CALCULATION: Fix reach values for all campaigns at once
+      if (hasDateRange && fromDate && toDate) {
+        console.log('[Meta Campaigns] Calculating accurate reach values for all campaigns...');
+        
+        // Get all ad sets for all campaigns in one query
+        const campaignIds = campaigns.map(c => c.campaign_id);
+        const { data: allAdSets, error: adSetsError } = await supabase
+          .from('meta_adsets')
+          .select('adset_id, campaign_id')
+          .eq('brand_id', brandId)
+          .in('campaign_id', campaignIds)
+          .eq('status', 'ACTIVE');
+        
+        if (!adSetsError && allAdSets && allAdSets.length > 0) {
+          // Get all ad set insights in one query
+          const adSetIds = allAdSets.map(as => as.adset_id);
+          const { data: allInsights, error: insightsError } = await supabase
+            .from('meta_adset_daily_insights')
+            .select('adset_id, reach')
+            .in('adset_id', adSetIds)
+            .gte('date', fromDate)
+            .lte('date', toDate);
+          
+          if (!insightsError && allInsights) {
+            // Group insights by campaign
+            const reachByCampaign: Record<string, number> = {};
+            
+            allAdSets.forEach(adSet => {
+              const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
+              const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
+              
+              if (!reachByCampaign[adSet.campaign_id]) {
+                reachByCampaign[adSet.campaign_id] = 0;
+              }
+              reachByCampaign[adSet.campaign_id] += adSetReach;
+            });
+            
+            // Update campaign reach values
+            campaigns = campaigns.map(campaign => ({
+              ...campaign,
+              reach: reachByCampaign[campaign.campaign_id] || campaign.reach
+            }));
+            
+            console.log(`[Meta Campaigns] Updated reach values for ${Object.keys(reachByCampaign).length} campaigns`);
+          }
+        }
+      }
       
       // Sort campaigns based on the specified metric
       const sortedCampaigns = [...campaigns].sort((a, b) => {
