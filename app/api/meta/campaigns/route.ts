@@ -863,30 +863,78 @@ export async function GET(request: NextRequest) {
             .lte('date', to);
           
           if (!insightsError && allInsights) {
-            // Group insights by campaign
-            const reachByCampaign: Record<string, number> = {};
+            // Group insights by campaign and calculate ALL metrics (not just reach)
+            const metricsByCampaign: Record<string, {
+              reach: number;
+              impressions: number;
+              clicks: number;
+              conversions: number;
+              spent: number;
+            }> = {};
             
             allAdSets.forEach(adSet => {
               const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
-              const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
               
-              if (!reachByCampaign[adSet.campaign_id]) {
-                reachByCampaign[adSet.campaign_id] = 0;
+              // Calculate all metrics from ad set insights
+              const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
+              const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
+              const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
+              const adSetConversions = adSetInsights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+              const adSetSpent = adSetInsights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
+              
+              if (!metricsByCampaign[adSet.campaign_id]) {
+                metricsByCampaign[adSet.campaign_id] = {
+                  reach: 0,
+                  impressions: 0,
+                  clicks: 0,
+                  conversions: 0,
+                  spent: 0
+                };
               }
-              reachByCampaign[adSet.campaign_id] += adSetReach;
+              
+              // Aggregate all metrics for the campaign
+              metricsByCampaign[adSet.campaign_id].reach += adSetReach;
+              metricsByCampaign[adSet.campaign_id].impressions += adSetImpressions;
+              metricsByCampaign[adSet.campaign_id].clicks += adSetClicks;
+              metricsByCampaign[adSet.campaign_id].conversions += adSetConversions;
+              metricsByCampaign[adSet.campaign_id].spent += adSetSpent;
             });
             
-            // Update campaign reach values
-            console.log(`[Meta Campaigns] Reach values before bulk update:`, campaigns.map(c => ({id: c.campaign_id, reach: c.reach})));
-            console.log(`[Meta Campaigns] Calculated reach by campaign:`, reachByCampaign);
+            // Update campaign with ALL corrected metrics from ad set insights
+            console.log(`[Meta Campaigns] Metrics before bulk update:`, campaigns.map(c => ({
+              id: c.campaign_id, 
+              reach: c.reach, 
+              impressions: c.impressions, 
+              clicks: c.clicks, 
+              conversions: c.conversions, 
+              spent: c.spent
+            })));
+            console.log(`[Meta Campaigns] Calculated metrics by campaign:`, metricsByCampaign);
             
-            campaigns = campaigns.map(campaign => ({
-              ...campaign,
-              reach: reachByCampaign[campaign.campaign_id] || campaign.reach
-            }));
+            campaigns = campaigns.map(campaign => {
+              const correctedMetrics = metricsByCampaign[campaign.campaign_id];
+              if (correctedMetrics) {
+                return {
+                  ...campaign,
+                  reach: correctedMetrics.reach,
+                  impressions: correctedMetrics.impressions,
+                  clicks: correctedMetrics.clicks,
+                  conversions: correctedMetrics.conversions,
+                  spent: correctedMetrics.spent
+                };
+              }
+              return campaign;
+            });
             
-            console.log(`[Meta Campaigns] Reach values after bulk update:`, campaigns.map(c => ({id: c.campaign_id, reach: c.reach})));
-            console.log(`[Meta Campaigns] Updated reach values for ${Object.keys(reachByCampaign).length} campaigns`);
+            console.log(`[Meta Campaigns] Metrics after bulk update:`, campaigns.map(c => ({
+              id: c.campaign_id, 
+              reach: c.reach, 
+              impressions: c.impressions, 
+              clicks: c.clicks, 
+              conversions: c.conversions, 
+              spent: c.spent
+            })));
+            console.log(`[Meta Campaigns] Updated ALL metrics for ${Object.keys(metricsByCampaign).length} campaigns`);
           }
         }
       }
@@ -971,12 +1019,12 @@ export async function GET(request: NextRequest) {
         
         return {
           ...campaign,
-          spent: campaignActualSpend,
-          impressions: campaignActualImpressions,
-          clicks: campaignActualClicks,
+          spent: campaign.spent, // PRESERVE CORRECTED SPENT from bulk calculation
+          impressions: campaign.impressions, // PRESERVE CORRECTED IMPRESSIONS from bulk calculation
+          clicks: campaign.clicks, // PRESERVE CORRECTED CLICKS from bulk calculation
           reach: campaign.reach, // PRESERVE CORRECTED REACH from bulk calculation
-          conversions: campaignActualConversions,
-          has_data_in_range: campaignActualSpend > 0,
+          conversions: campaign.conversions, // PRESERVE CORRECTED CONVERSIONS from bulk calculation
+          has_data_in_range: (campaign.spent || 0) > 0, // Use corrected spend for data check
           recommendation: recommendationMap.get(campaign.campaign_id) || null
         };
       });
