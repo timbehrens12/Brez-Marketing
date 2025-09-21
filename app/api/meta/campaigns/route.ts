@@ -839,6 +839,7 @@ export async function GET(request: NextRequest) {
       }));
       
       // BULK REACH CALCULATION: Fix reach values for all campaigns at once
+      console.log(`[Meta Campaigns] Bulk reach calculation check: hasDateRange=${hasDateRange}, from=${from}, to=${to}`);
       if (hasDateRange && from && to) {
         console.log('[Meta Campaigns] Calculating accurate reach values for all campaigns...');
         

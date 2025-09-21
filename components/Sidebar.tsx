@@ -176,7 +176,20 @@ export function Sidebar({ className }: SidebarProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
-          background: `rgba(128,128,128,0.15)`
+          background: `rgba(128,128,128,0.15)`,
+          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          `)}")`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '40px 40px',
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Logo Section */}
@@ -247,14 +260,27 @@ export function Sidebar({ className }: SidebarProps) {
     <TooltipProvider delayDuration={300}>
       <aside 
         className={cn(
-          "bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out relative z-50",
+          "border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out relative z-50",
           showExpanded ? "w-64" : "w-20",
           className
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
-          background: `rgba(128,128,128,0.15)`
+          background: `rgba(128,128,128,0.15)`,
+          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          `)}")`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '40px 40px',
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Pin Button - only show when expanded */}
