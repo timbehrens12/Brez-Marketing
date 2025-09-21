@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * Specialized API endpoint for fetching Reach data directly
- * This endpoint is optimized for speed and simplicity, fetching only
- * what's needed for the Reach widget
+ * This endpoint uses the same ad set aggregation logic as campaigns
+ * to ensure consistent reach calculation across all widgets
  */
 export async function GET(request: NextRequest) {
   try {
@@ -50,122 +50,72 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // UPDATED: Query meta_ad_daily_insights for reach data
-    // This table has deduplicated reach values that are more accurate 
-    const { data: campaignStats, error: statsError } = await supabase
-      .from('meta_ad_daily_insights')
-      .select('date, reach')
+    // Get reach data from ad sets using the same logic as campaigns
+    // This ensures consistent reach calculation across all widgets
+    const { data: adSets, error: adSetsError } = await supabase
+      .from('meta_adsets')
+      .select('adset_id')
       .eq('brand_id', brandId)
-      .gte('date', from)
-      .lte('date', to)
+      .eq('status', 'ACTIVE')
     
-    if (statsError) {
-      console.log(`Error retrieving campaign stats: ${JSON.stringify(statsError)}`)
-      
-      // Fallback to meta_ad_insights if campaign stats are not available
-      const { data: insights, error } = await supabase
-        .from('meta_ad_insights')
-        .select('date, reach')
-        .eq('brand_id', brandId)
-      .gte('date', from)
-      .lte('date', to)
-    
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
+    if (adSetsError || !adSets || adSets.length === 0) {
+      console.log(`No active ad sets found for brand ${brandId}`)
+      return NextResponse.json({ value: 0 })
     }
     
-    // If no data, return zeros
+    // Get ad set IDs
+    const adSetIds = adSets.map((adSet: any) => adSet.adset_id);
+    
+    // Get insights for these ad sets in the date range
+    const { data: insights, error: insightsError } = await supabase
+      .from('meta_adset_daily_insights')
+      .select('*')
+      .in('adset_id', adSetIds)
+      .gte('date', from)
+      .lte('date', to)
+    
+    if (insightsError) {
+      console.log(`Error retrieving ad set insights: ${JSON.stringify(insightsError)}`)
+      return NextResponse.json({ value: 0 })
+    }
+    
     if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
-      return NextResponse.json({ 
-        value: 0,
-        _meta: {
-          from,
-          to,
-            records: 0,
-            source: 'fallback_insights'
-        }
-      })
+      console.log(`No ad set insights found for date range ${from} to ${to}`)
+      return NextResponse.json({ value: 0 })
     }
     
-    // CRITICAL FIX: Reach should NOT be summed (avoid double-counting)
-    // For multi-day periods, use the maximum single-day reach
-    let maxReach = 0
-    let recordsWithReach = 0
-    
-    insights.forEach(insight => {
-      const reachValue = parseInt(insight.reach);
-      if (!isNaN(reachValue) && reachValue >= 0) {
-        maxReach = Math.max(maxReach, reachValue);
-        recordsWithReach++;
+    // Group insights by ad set and calculate reach for each ad set
+    const insightsByAdSet: Record<string, any[]> = {};
+    insights.forEach((insight: any) => {
+      if (!insightsByAdSet[insight.adset_id]) {
+        insightsByAdSet[insight.adset_id] = [];
       }
-    })
+      insightsByAdSet[insight.adset_id].push(insight);
+    });
     
-      // Return the result with fallback source indication
-      const result = {
-        value: maxReach,
-        _meta: {
-          from,
-          to,
-          records: insights.length,
-          recordsWithReach,
-          source: 'fallback_insights',
-          dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
-        }
-      }
-      
-      console.log(`REACH API (FALLBACK): Returning max reach = ${result.value}, based on ${insights.length} records (using max instead of sum)`)
-      
-      return NextResponse.json(result)
-    }
+    // Calculate total reach as sum of ad set reaches (not daily reaches)
+    let totalReach = 0;
+    adSets.forEach((adSet: any) => {
+      const adSetInsights = insightsByAdSet[adSet.adset_id] || [];
+      const adSetReach = adSetInsights.reduce((sum: number, insight: any) => sum + Number(insight.reach || 0), 0);
+      totalReach += adSetReach;
+    });
     
-    // If no campaign stats data, return zeros
-    if (!campaignStats || campaignStats.length === 0) {
-      console.log(`No campaign stats found for period ${from} to ${to}`)
-      return NextResponse.json({ 
-        value: 0,
-        _meta: {
-          from,
-          to,
-          records: 0,
-          source: 'campaign_stats'
-        }
-      })
-    }
+    console.log(`REACH API: Calculated reach = ${totalReach} from ${adSets.length} ad sets with ${insights.length} insight records`)
     
-    // CRITICAL FIX: Reach should NOT be summed (avoid double-counting)
-    // For multi-day periods, use the maximum single-day reach as it represents
-    // the highest unique reach achieved on any given day
-    let maxReach = 0
-    let recordsWithReach = 0
-    
-    campaignStats.forEach(stat => {
-      const reachValue = parseInt(stat.reach);
-      if (!isNaN(reachValue) && reachValue >= 0) {
-        maxReach = Math.max(maxReach, reachValue);
-        recordsWithReach++;
-      }
-    })
-    
-    // Return the result
-    const result = {
-      value: maxReach,
+    return NextResponse.json({
+      value: totalReach,
       _meta: {
         from,
         to,
-        records: campaignStats.length,
-        recordsWithReach,
-        source: 'campaign_stats',
-        dates: [...new Set(campaignStats.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        adSets: adSets.length,
+        insightRecords: insights.length,
+        source: 'adset_insights'
       }
-    }
+    })
     
-    console.log(`REACH API: Returning max reach = ${result.value}, based on ${campaignStats.length} campaign stats records (using max instead of sum)`)
-    
-    return NextResponse.json(result)
   } catch (error) {
     console.error('Error in Reach metric endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-} 
+}
