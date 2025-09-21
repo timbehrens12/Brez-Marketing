@@ -877,11 +877,15 @@ export async function GET(request: NextRequest) {
             });
             
             // Update campaign reach values
+            console.log(`[Meta Campaigns] Reach values before bulk update:`, campaigns.map(c => ({id: c.campaign_id, reach: c.reach})));
+            console.log(`[Meta Campaigns] Calculated reach by campaign:`, reachByCampaign);
+            
             campaigns = campaigns.map(campaign => ({
               ...campaign,
               reach: reachByCampaign[campaign.campaign_id] || campaign.reach
             }));
             
+            console.log(`[Meta Campaigns] Reach values after bulk update:`, campaigns.map(c => ({id: c.campaign_id, reach: c.reach})));
             console.log(`[Meta Campaigns] Updated reach values for ${Object.keys(reachByCampaign).length} campaigns`);
           }
         }
