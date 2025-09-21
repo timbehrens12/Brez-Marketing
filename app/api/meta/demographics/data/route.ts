@@ -132,60 +132,22 @@ export async function GET(request: NextRequest) {
       console.log(`[Demographics API] No date ranges found in meta_demographics for brand ${brandId}`)
     }
 
-    // UNIFIED FIX: Use meta_device_performance for ALL breakdown types since it has current data
-    // Map frontend breakdown types to database breakdown types
-    let dbBreakdownType
-    let sourceTable
+    // NUCLEAR FIX: Use meta_device_performance for ALL breakdown types since it's the only one working
+    // Map ALL breakdown types to work with the meta_device_performance table structure
+    let dbBreakdownType = breakdownType
     
-    if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-      // Device/platform data
-      dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
-                       : breakdownType === 'placement' ? 'platform'
-                       : breakdownType === 'publisher_platform' ? 'platform'
-                       : breakdownType // 'device' and 'platform' map directly
-      sourceTable = 'meta_device_performance'
-    } else {
-      // Demographics data - check BOTH tables and use the one with recent data
-      dbBreakdownType = breakdownType // age_gender, age, gender use direct mapping
-      
-      // First check meta_device_performance for demographics data (it might have recent data)
-      const { data: deviceTableData } = await supabase
-        .from('meta_device_performance')
-        .select('date_range_start')
-        .eq('brand_id', brandId)
-        .eq('breakdown_type', breakdownType)
-        .gte('date_range_start', finalDateFrom)
-        .lte('date_range_start', finalDateTo)
-        .limit(1)
-      
-      // Then check meta_demographics table  
-      const { data: demoTableData } = await supabase
-        .from('meta_demographics')
-        .select('date_range_start')
-        .eq('brand_id', brandId)
-        .eq('breakdown_type', breakdownType)
-        .gte('date_range_start', finalDateFrom)
-        .lte('date_range_start', finalDateTo)
-        .limit(1)
-      
-      // Use whichever table has data for the requested date range
-      if (deviceTableData && deviceTableData.length > 0) {
-        sourceTable = 'meta_device_performance'
-        console.log(`[Demographics API] Using meta_device_performance for ${breakdownType} (has recent data)`)
-      } else if (demoTableData && demoTableData.length > 0) {
-        sourceTable = 'meta_demographics' 
-        console.log(`[Demographics API] Using meta_demographics for ${breakdownType} (fallback)`)
-      } else {
-        // No data in either table for requested range - use device_performance as default
-        sourceTable = 'meta_device_performance'
-        console.log(`[Demographics API] No data in either table for ${breakdownType} - using meta_device_performance as default`)
-      }
+    // Map frontend breakdown types to database breakdown types that exist in meta_device_performance
+    if (breakdownType === 'device_platform') {
+      dbBreakdownType = 'device'
+    } else if (breakdownType === 'placement' || breakdownType === 'publisher_platform') {
+      dbBreakdownType = 'platform'
     }
+    // For age, gender, age_gender - try them as-is in meta_device_performance first
     
-    console.log(`[Demographics API] Querying ${sourceTable} for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
+    console.log(`[Demographics API] NUCLEAR FIX: Using meta_device_performance for ALL requests. Querying for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
     
     const result = await supabase
-      .from(sourceTable)
+      .from('meta_device_performance')
       .select('*')
       .eq('brand_id', brandId)
       .eq('breakdown_type', dbBreakdownType)
@@ -193,7 +155,7 @@ export async function GET(request: NextRequest) {
       .lte('date_range_start', finalDateTo)
       .order('breakdown_value')
     
-    console.log(`[Demographics API] ${sourceTable} query result: ${result.data?.length || 0} records`)
+    console.log(`[Demographics API] meta_device_performance query result: ${result.data?.length || 0} records`)
     if (result.data && result.data.length > 0) {
       console.log(`[Demographics API] Sample record:`, result.data[0])
     }
