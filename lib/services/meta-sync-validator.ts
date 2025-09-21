@@ -194,7 +194,7 @@ export class MetaSyncValidator {
   }
 
   /**
-   * Auto-fix stale data by marking campaigns as deleted or syncing new ones
+   * Auto-fix stale data by marking campaigns as deleted and recalculating budgets
    */
   async autoFixStaleData(brandId: string, validationResult: ValidationResult): Promise<boolean> {
     try {
@@ -208,6 +208,7 @@ export class MetaSyncValidator {
             status: 'DELETED',
             budget: 0,
             budget_type: 'unknown',
+            adset_budget_total: 0,
             updated_at: new Date().toISOString()
           })
           .eq('brand_id', brandId)
@@ -241,12 +242,80 @@ export class MetaSyncValidator {
         }
       }
 
+      // 3. Recalculate adset_budget_total for remaining active campaigns
+      await this.recalculateAdSetBudgetTotals(brandId)
+
       console.log('[MetaSyncValidator] Auto-fix completed successfully')
       return true
 
     } catch (error) {
       console.error('[MetaSyncValidator] Auto-fix error:', error)
       return false
+    }
+  }
+
+  /**
+   * Recalculate adset_budget_total for all active campaigns
+   */
+  private async recalculateAdSetBudgetTotals(brandId: string): Promise<void> {
+    try {
+      console.log(`[MetaSyncValidator] Recalculating ad set budget totals for brand ${brandId}`)
+      
+      // Get all active campaigns
+      const { data: campaigns, error: campaignsError } = await this.supabase
+        .from('meta_campaigns')
+        .select('id, campaign_id, campaign_name')
+        .eq('brand_id', brandId)
+        .eq('status', 'ACTIVE')
+      
+      if (campaignsError || !campaigns) {
+        console.error('[MetaSyncValidator] Error fetching campaigns for budget recalculation:', campaignsError)
+        return
+      }
+
+      // For each campaign, calculate total budget from active ad sets
+      for (const campaign of campaigns) {
+        const { data: adSets, error: adSetsError } = await this.supabase
+          .from('meta_adsets')
+          .select('budget, budget_type')
+          .eq('brand_id', brandId)
+          .eq('campaign_id', campaign.campaign_id)
+          .eq('status', 'ACTIVE')
+        
+        if (adSetsError) {
+          console.error(`[MetaSyncValidator] Error fetching ad sets for campaign ${campaign.campaign_id}:`, adSetsError)
+          continue
+        }
+
+        // Calculate total budget from active ad sets
+        const totalBudget = (adSets || []).reduce((sum, adSet) => {
+          return sum + (parseFloat(adSet.budget || '0'))
+        }, 0)
+
+        // Determine budget type (prefer daily if any ad set uses daily)
+        const budgetType = (adSets || []).some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime'
+
+        // Update campaign with calculated totals
+        const { error: updateError } = await this.supabase
+          .from('meta_campaigns')
+          .update({
+            adset_budget_total: totalBudget,
+            budget: totalBudget,
+            budget_type: budgetType,
+            budget_source: 'adsets',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', campaign.id)
+        
+        if (updateError) {
+          console.error(`[MetaSyncValidator] Error updating budget for campaign ${campaign.campaign_id}:`, updateError)
+        } else {
+          console.log(`[MetaSyncValidator] Updated campaign ${campaign.campaign_id} budget to $${totalBudget} (${budgetType})`)
+        }
+      }
+
+    } catch (error) {
+      console.error('[MetaSyncValidator] Error in recalculateAdSetBudgetTotals:', error)
     }
   }
 
