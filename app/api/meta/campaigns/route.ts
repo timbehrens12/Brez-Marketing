@@ -1395,8 +1395,8 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Add recommendation data to campaigns
-    const campaignsWithRecommendations = finalCampaigns.map(campaign => ({
+    // Add recommendation data to campaigns (DON'T overwrite the fixed campaignsWithRecommendations from above)
+    const campaignsWithRecommendationsFinal = finalCampaigns.map(campaign => ({
       ...campaign,
       recommendation: recommendationMap.get(campaign.campaign_id) || null
     }));
@@ -1408,7 +1408,7 @@ export async function GET(request: NextRequest) {
       console.log(`>>> [API Campaigns] Has recommendation: ${!!testCampaignFinal.recommendation}`);
     }
 
-    // Calculate campaign totals for summary
+    // Calculate campaign totals for summary (use the CORRECTED version with bulk calculation fixes)
     const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
       spend: totals.spend + (campaign.spent || 0),
       impressions: totals.impressions + (campaign.impressions || 0),
@@ -1418,10 +1418,10 @@ export async function GET(request: NextRequest) {
     }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 });
     
     console.log(`[CAMPAIGNS API] Campaign totals - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}`)
-    console.log(`[CAMPAIGNS API] Source: meta_campaign_daily_stats aggregated across ${campaignsWithRecommendations.length} campaigns`)
+    console.log(`[CAMPAIGNS API] Source: CORRECTED bulk calculation from ad set insights across ${campaignsWithRecommendations.length} campaigns`)
 
     return NextResponse.json({
-      campaigns: campaignsWithRecommendations,
+      campaigns: campaignsWithRecommendations, // Use the CORRECTED version with bulk calculation fixes
       shouldRefresh,
       refreshReason,
       lastRefresh: campaignsWithRecommendations && campaignsWithRecommendations.length > 0 ? campaignsWithRecommendations[0].last_refresh_date : null
