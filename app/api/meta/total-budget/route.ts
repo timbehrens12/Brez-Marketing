@@ -62,17 +62,29 @@ export async function GET(req: NextRequest) {
           throw new Error('No Meta access token found');
         }
 
-        // AUTO-SYNC VALIDATION: TEMPORARILY DISABLED - was resetting budgets incorrectly
-        // console.log('[Total Meta Budget] Running auto-sync validation...');
-        // try {
-        //   const syncResult = await metaSyncValidator.checkAndAutoSync(brandId);
-        //   if (syncResult.syncTriggered) {
-        //     console.log(`[Total Meta Budget] Auto-sync completed: ${syncResult.message}`);
-        //   }
-        // } catch (syncError) {
-        //   console.warn('[Total Meta Budget] Auto-sync warning (non-blocking):', syncError);
-        //   // Don't fail the request if sync validation fails - it's non-critical
-        // }
+        // AUTO-SYNC VALIDATION: Only run if we haven't fetched fresh data recently
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        const { data: recentUpdates } = await supabase
+          .from('meta_campaigns')
+          .select('updated_at')
+          .eq('brand_id', brandId)
+          .gte('updated_at', oneHourAgo.toISOString())
+          .limit(1);
+        
+        if (!recentUpdates || recentUpdates.length === 0) {
+          console.log('[Total Meta Budget] No recent updates, running auto-sync validation...');
+          try {
+            const syncResult = await metaSyncValidator.checkAndAutoSync(brandId);
+            if (syncResult.syncTriggered) {
+              console.log(`[Total Meta Budget] Auto-sync completed: ${syncResult.message}`);
+            }
+          } catch (syncError) {
+            console.warn('[Total Meta Budget] Auto-sync warning (non-blocking):', syncError);
+            // Don't fail the request if sync validation fails - it's non-critical
+          }
+        } else {
+          console.log('[Total Meta Budget] Recent updates found, skipping auto-sync');
+        }
         
         // Get active campaigns only
         const { data: campaigns, error: campaignError } = await supabase
@@ -119,50 +131,103 @@ export async function GET(req: NextRequest) {
           
           console.log(`[Total Meta Budget] Using account ID: ${accountId}`);
           
-          const adSetsResponse = await withMetaRateLimit(
-            accountId,
-            async () => {
-              const response = await fetch(
-                `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${accessToken}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
-                { method: 'GET' }
-              );
-              
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw errorData;
+          // DIRECT META API CALL - bypass rate limiter for budget data
+          console.log(`[Total Meta Budget] Making direct Meta API call for ad sets...`);
+          const response = await fetch(
+            `https://graph.facebook.com/v18.0/act_${accountId}/adsets?access_token=${accessToken}&fields=id,name,campaign_id,status,daily_budget,lifetime_budget,budget_remaining&limit=1000`,
+            { 
+              method: 'GET',
+              headers: {
+                'Cache-Control': 'no-cache'
               }
-              
-              return await response.json();
-            },
-            1, // High priority for budget data
-            `total-budget-${brandId}`,
-            15000 // 15 second timeout for budget data
+            }
           );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[Total Meta Budget] Meta API error ${response.status}:`, errorText);
+            throw new Error(`Meta API error: ${response.status} - ${errorText}`);
+          }
+
+          const adSetsResponse = await response.json();
           
           if (adSetsResponse?.data) {
             console.log(`[Total Meta Budget] Successfully fetched ${adSetsResponse.data.length} adsets from Meta API`);
             
+            // Update database with fresh Meta API data
             for (const adset of adSetsResponse.data) {
               if (activeOnly && adset.status !== 'ACTIVE') continue;
               
               activeAdSetCount++;
               
+              let adsetBudget = 0;
+              let budgetType = 'unknown';
+              
               if (adset.daily_budget) {
-                totalDailyBudget += parseFloat(adset.daily_budget) / 100; // Convert from cents
+                adsetBudget = parseFloat(adset.daily_budget) / 100; // Convert from cents
+                budgetType = 'daily';
+                totalDailyBudget += adsetBudget;
+              } else if (adset.lifetime_budget) {
+                adsetBudget = parseFloat(adset.lifetime_budget) / 100; // Convert from cents
+                budgetType = 'lifetime';
+                totalLifetimeBudget += adsetBudget;
               }
               
-              if (adset.lifetime_budget) {
-                totalLifetimeBudget += parseFloat(adset.lifetime_budget) / 100; // Convert from cents
+              // Update ad set in database with fresh Meta API data
+              if (adsetBudget > 0) {
+                console.log(`[Total Meta Budget] Updating ad set ${adset.id} with budget $${adsetBudget} (${budgetType})`);
+                await supabase
+                  .from('meta_adsets')
+                  .update({
+                    budget: adsetBudget,
+                    budget_type: budgetType,
+                    status: adset.status,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('adset_id', adset.id)
+                  .eq('brand_id', brandId);
+              }
+            }
+            
+            // Update campaign with calculated ad set budget total
+            if (campaigns && campaigns.length > 0) {
+              for (const campaign of campaigns) {
+                const campaignAdSets = adSetsResponse.data.filter(adset => adset.campaign_id === campaign.campaign_id);
+                const campaignBudgetTotal = campaignAdSets.reduce((sum, adset) => {
+                  const dailyBudget = adset.daily_budget ? parseFloat(adset.daily_budget) / 100 : 0;
+                  const lifetimeBudget = adset.lifetime_budget ? parseFloat(adset.lifetime_budget) / 100 : 0;
+                  return sum + Math.max(dailyBudget, lifetimeBudget);
+                }, 0);
+                
+                if (campaignBudgetTotal > 0) {
+                  console.log(`[Total Meta Budget] Updating campaign ${campaign.campaign_id} with adset_budget_total $${campaignBudgetTotal}`);
+                  await supabase
+                    .from('meta_campaigns')
+                    .update({
+                      budget: campaignBudgetTotal,
+                      adset_budget_total: campaignBudgetTotal,
+                      budget_type: 'daily', // Assume daily for now
+                      budget_source: 'adsets',
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('campaign_id', campaign.campaign_id)
+                    .eq('brand_id', brandId);
+                }
               }
             }
             
             console.log(`[Total Meta Budget] Calculated totals - Daily: $${totalDailyBudget.toFixed(2)}, Lifetime: $${totalLifetimeBudget.toFixed(2)}, Active AdSets: ${activeAdSetCount}`);
             
             return NextResponse.json({
+              success: true,
               totalDailyBudget: parseFloat(totalDailyBudget.toFixed(2)),
               totalLifetimeBudget: parseFloat(totalLifetimeBudget.toFixed(2)),
-              activeAdSetCount,
-              source: 'meta_api'
+              totalBudget: parseFloat((totalDailyBudget + totalLifetimeBudget).toFixed(2)),
+              adSetCount: activeAdSetCount,
+              dailyBudgetAdSetCount: adSetsResponse.data.filter(a => a.daily_budget && parseFloat(a.daily_budget) > 0).length,
+              lifetimeBudgetAdSetCount: adSetsResponse.data.filter(a => a.lifetime_budget && parseFloat(a.lifetime_budget) > 0).length,
+              timestamp: new Date().toISOString(),
+              refreshMethod: 'meta_api'
             });
           }
         }
