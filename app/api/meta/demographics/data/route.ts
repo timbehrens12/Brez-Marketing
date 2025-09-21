@@ -192,8 +192,40 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // ✅ FIX: No more fallback logic - show empty results for selected date ranges
-    // This ensures users see data for their selected date range only
+    // If no data found for the requested date range, try to get the most recent available data
+    if (!data || data.length === 0) {
+      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}, trying to get most recent data`)
+      
+      let fallbackResult
+      if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
+        const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
+                               : breakdownType === 'placement' ? 'platform'
+                               : breakdownType === 'publisher_platform' ? 'platform'
+                               : breakdownType
+        
+        fallbackResult = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', dbBreakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(50) // Get recent data
+      } else {
+        fallbackResult = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', breakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(50) // Get recent data
+      }
+      
+      if (fallbackResult.data && fallbackResult.data.length > 0) {
+        data = fallbackResult.data
+        console.log(`[Demographics API] Using fallback data: ${data.length} records from most recent available dates`)
+        console.log(`[Demographics API] Fallback date range: ${data[data.length-1]?.date_range_start} to ${data[0]?.date_range_start}`)
+      }
+    }
 
     // Process and format data for frontend (both tables use breakdown_value)
     const convertedData = data?.map(item => ({

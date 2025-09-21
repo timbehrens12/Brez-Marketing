@@ -103,10 +103,8 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       return
     }
 
-    // ✅ FIX: Use the dateRange prop directly - this is the source of truth
     const freshDateRange = dateRange;
-
-    console.log('[GlobalRefresh] 🔍 Using dateRange from props:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    console.log('[GlobalRefresh] 🔍 Using dateRange from props:', freshDateRange ? `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}` : 'undefined');
     
     setIsRefreshing(true)
     setRefreshCooldown(true)
@@ -224,7 +222,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       // Reset cooldown after delay
       setTimeout(() => setRefreshCooldown(false), REFRESH_COOLDOWN)
     }
-  }, [brandId, currentTab, activePlatforms, refreshCooldown])
+  }, [brandId, currentTab, activePlatforms, refreshCooldown, dateRange])
 
   // Initialize last updated time on mount
   useEffect(() => {

@@ -59,7 +59,6 @@ declare global {
     _metaFetchLock?: boolean;
     _lastManualRefresh?: number;
     _lastMetaRefresh?: number;
-    _currentDateRange?: DateRange;
   }
 }
 
@@ -189,11 +188,6 @@ export default function DashboardPage() {
       to: endOfDay(now) // Use endOfDay() to exactly match DateRangePicker "Today" preset
     }
     
-    // Set global date range for default case
-    if (typeof window !== 'undefined') {
-      (window as any)._currentDateRange = initialRange;
-    }
-    
     return initialRange
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
@@ -216,11 +210,6 @@ export default function DashboardPage() {
     
     setIsDateRangeLoading(true)
     setDateRange(range)
-    
-    // Update global window variable for refresh button
-    if (typeof window !== 'undefined') {
-      (window as any)._currentDateRange = range
-    }
     
     // Set a minimum cooldown period
     setTimeout(() => {
@@ -662,20 +651,6 @@ export default function DashboardPage() {
   // Force refresh counter to trigger widget re-renders without changing date range
   const [refreshCounter, setRefreshCounter] = useState(0)
   
-  // Debug: Track dateRange changes & set global variable
-  useEffect(() => {
-    if (dateRange?.from && dateRange?.to) {
-      
-      // FINAL FIX: Set global variable for synchronous access
-      if (typeof window !== 'undefined') {
-        (window as any)._currentDateRange = {
-          from: dateRange.from.toISOString(),
-          to: dateRange.to.toISOString()
-        };
-      }
-    }
-  }, [dateRange])
-
   // NUCLEAR FIX: Listen for dateRange requests from GlobalRefreshButton
   useEffect(() => {
     const handleDateRangeRequest = (event: any) => {
@@ -1158,29 +1133,10 @@ export default function DashboardPage() {
         startDateStr = format(dateRange.from, 'yyyy-MM-dd');
         endDateStr = format(dateRange.to, 'yyyy-MM-dd');
       } else {
-        // 🔥🔥🔥 CRITICAL FIX: Try to get dateRange from global variable before defaulting
-        let fallbackDateRange = null;
-        
-        if (typeof window !== 'undefined' && (window as any)._currentDateRange) {
-          try {
-            const globalDateRange = (window as any)._currentDateRange;
-            fallbackDateRange = {
-              from: new Date(globalDateRange.from),
-              to: new Date(globalDateRange.to)
-            };
-          } catch (error) {
-          }
-        }
-        
-        if (fallbackDateRange) {
-          startDateStr = format(fallbackDateRange.from, 'yyyy-MM-dd');
-          endDateStr = format(fallbackDateRange.to, 'yyyy-MM-dd');
-        } else {
-          // Only use default if no global dateRange available
-          const now = new Date();
-          startDateStr = format(now, 'yyyy-MM-dd');
-          endDateStr = format(now, 'yyyy-MM-dd');
-        }
+        // Only use default if no global dateRange available
+        const now = new Date();
+        startDateStr = format(now, 'yyyy-MM-dd');
+        endDateStr = format(now, 'yyyy-MM-dd');
       }
       
       // Use consistent format with URLSearchParams
