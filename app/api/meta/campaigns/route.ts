@@ -146,16 +146,16 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    // AUTO-SYNC VALIDATION: Check for stale campaigns and fix automatically (non-blocking)
-    try {
-      const syncResult = await metaSyncValidator.checkAndAutoSync(brandId)
-      if (syncResult.syncTriggered) {
-        console.log(`[Meta Campaigns] Auto-sync completed: ${syncResult.message}`)
-      }
-    } catch (syncError) {
-      console.warn('[Meta Campaigns] Auto-sync warning (non-blocking):', syncError)
-      // Don't fail the request if sync validation fails
-    }
+    // AUTO-SYNC VALIDATION: TEMPORARILY DISABLED - was resetting budgets incorrectly
+    // try {
+    //   const syncResult = await metaSyncValidator.checkAndAutoSync(brandId)
+    //   if (syncResult.syncTriggered) {
+    //     console.log(`[Meta Campaigns] Auto-sync completed: ${syncResult.message}`)
+    //   }
+    // } catch (syncError) {
+    //   console.warn('[Meta Campaigns] Auto-sync warning (non-blocking):', syncError)
+    //   // Don't fail the request if sync validation fails
+    // }
 
     // If date range parameters are provided, use date-filtered approach
     if (from && to) {

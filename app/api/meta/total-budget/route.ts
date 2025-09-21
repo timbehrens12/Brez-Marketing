@@ -62,17 +62,17 @@ export async function GET(req: NextRequest) {
           throw new Error('No Meta access token found');
         }
 
-        // AUTO-SYNC VALIDATION: Check for stale data and fix automatically
-        console.log('[Total Meta Budget] Running auto-sync validation...');
-        try {
-          const syncResult = await metaSyncValidator.checkAndAutoSync(brandId);
-          if (syncResult.syncTriggered) {
-            console.log(`[Total Meta Budget] Auto-sync completed: ${syncResult.message}`);
-          }
-        } catch (syncError) {
-          console.warn('[Total Meta Budget] Auto-sync warning (non-blocking):', syncError);
-          // Don't fail the request if sync validation fails - it's non-critical
-        }
+        // AUTO-SYNC VALIDATION: TEMPORARILY DISABLED - was resetting budgets incorrectly
+        // console.log('[Total Meta Budget] Running auto-sync validation...');
+        // try {
+        //   const syncResult = await metaSyncValidator.checkAndAutoSync(brandId);
+        //   if (syncResult.syncTriggered) {
+        //     console.log(`[Total Meta Budget] Auto-sync completed: ${syncResult.message}`);
+        //   }
+        // } catch (syncError) {
+        //   console.warn('[Total Meta Budget] Auto-sync warning (non-blocking):', syncError);
+        //   // Don't fail the request if sync validation fails - it's non-critical
+        // }
         
         // Get active campaigns only
         const { data: campaigns, error: campaignError } = await supabase
