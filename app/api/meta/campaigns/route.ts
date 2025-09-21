@@ -817,11 +817,11 @@ export async function GET(request: NextRequest) {
         // Return campaign with aggregated performance metrics for the date range
         return {
           ...campaign, // Spread the original campaign data first
-          spent: Number(spend.toFixed(2)),
-          impressions: impressions,
-          clicks: clicks,
+          spent: hasDateRange ? 0 : Number(spend.toFixed(2)), // Let bulk calculation set this for date ranges
+          impressions: hasDateRange ? 0 : impressions, // Let bulk calculation set this for date ranges  
+          clicks: hasDateRange ? 0 : clicks, // Let bulk calculation set this for date ranges
           reach: finalReach,
-          conversions: conversions,
+          conversions: hasDateRange ? 0 : conversions, // Let bulk calculation set this for date ranges
           ctr,
           cpc,
           cost_per_conversion,
@@ -1025,6 +1025,7 @@ export async function GET(request: NextRequest) {
         const campaignActualConversions = campaignStats.reduce((sum, stat) => sum + (parseInt(stat.conversions) || 0), 0);
         
         console.log(`[Meta Campaigns] Campaign ${campaign.campaign_name} metrics - spend: $${campaignActualSpend}, impressions: ${campaignActualImpressions}`);
+        console.log(`[Meta Campaigns] BEFORE FINAL RETURN - Campaign ${campaign.campaign_name}: spent=${campaign.spent}, impressions=${campaign.impressions}, clicks=${campaign.clicks}, reach=${campaign.reach}`);
         
         return {
           ...campaign,
