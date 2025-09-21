@@ -89,21 +89,22 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total reach
-    let totalReach = 0
+    // CRITICAL FIX: Reach should NOT be summed (avoid double-counting)
+    // For multi-day periods, use the maximum single-day reach
+    let maxReach = 0
     let recordsWithReach = 0
     
     insights.forEach(insight => {
       const reachValue = parseInt(insight.reach);
       if (!isNaN(reachValue) && reachValue >= 0) {
-        totalReach += reachValue;
+        maxReach = Math.max(maxReach, reachValue);
         recordsWithReach++;
       }
     })
     
       // Return the result with fallback source indication
       const result = {
-        value: totalReach,
+        value: maxReach,
         _meta: {
           from,
           to,
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      console.log(`REACH API (FALLBACK): Returning reach = ${result.value}, based on ${insights.length} records`)
+      console.log(`REACH API (FALLBACK): Returning max reach = ${result.value}, based on ${insights.length} records (using max instead of sum)`)
       
       return NextResponse.json(result)
     }
@@ -133,21 +134,23 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total reach from campaign stats
-    let totalReach = 0
+    // CRITICAL FIX: Reach should NOT be summed (avoid double-counting)
+    // For multi-day periods, use the maximum single-day reach as it represents
+    // the highest unique reach achieved on any given day
+    let maxReach = 0
     let recordsWithReach = 0
     
     campaignStats.forEach(stat => {
       const reachValue = parseInt(stat.reach);
       if (!isNaN(reachValue) && reachValue >= 0) {
-        totalReach += reachValue;
+        maxReach = Math.max(maxReach, reachValue);
         recordsWithReach++;
       }
     })
     
     // Return the result
     const result = {
-      value: totalReach,
+      value: maxReach,
       _meta: {
         from,
         to,
@@ -158,7 +161,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value}, based on ${campaignStats.length} campaign stats records`)
+    console.log(`REACH API: Returning max reach = ${result.value}, based on ${campaignStats.length} campaign stats records (using max instead of sum)`)
     
     return NextResponse.json(result)
   } catch (error) {
