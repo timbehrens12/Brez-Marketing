@@ -61,6 +61,8 @@ export async function GET(request: NextRequest) {
       finalDateTo = today.toISOString().split('T')[0]
       
       console.log(`[Demographics API] No date range provided, using default: ${finalDateFrom} to ${finalDateTo}`)
+    } else {
+      console.log(`[Demographics API] Using provided date range: ${finalDateFrom} to ${finalDateTo}`)
     }
 
     // Verify user has access to this brand (either as owner or through brand_access)
@@ -111,6 +113,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // First, let's see what date ranges are available in the database
+    console.log(`[Demographics API] Checking available date ranges for brand ${brandId}`)
+    
+    const { data: availableRanges } = await supabase
+      .from('meta_demographics')
+      .select('breakdown_type, date_range_start, date_range_end')
+      .eq('brand_id', brandId)
+      .order('date_range_start', { ascending: false })
+      .limit(10)
+    
+    if (availableRanges && availableRanges.length > 0) {
+      console.log(`[Demographics API] Available date ranges in meta_demographics:`)
+      availableRanges.forEach(range => {
+        console.log(`  ${range.breakdown_type}: ${range.date_range_start} to ${range.date_range_end}`)
+      })
+    } else {
+      console.log(`[Demographics API] No date ranges found in meta_demographics for brand ${brandId}`)
+    }
+
     // Get data from the correct tables (manual sync stored different data types in different tables)
     let data = []
     let error = null
@@ -123,6 +144,8 @@ export async function GET(request: NextRequest) {
                              : breakdownType === 'publisher_platform' ? 'platform'
                              : breakdownType // 'device' and 'platform' map directly
       
+      console.log(`[Demographics API] Querying meta_device_performance for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
+      
       const result = await supabase
         .from('meta_device_performance')
         .select('*')
@@ -132,10 +155,17 @@ export async function GET(request: NextRequest) {
         .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
       
+      console.log(`[Demographics API] meta_device_performance query result: ${result.data?.length || 0} records`)
+      if (result.data?.length > 0) {
+        console.log(`[Demographics API] Sample device record:`, result.data[0])
+      }
+      
       data = result.data
       error = result.error
     } else {
       // Age/gender data is in meta_demographics table
+      console.log(`[Demographics API] Querying meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
+      
       const result = await supabase
         .from('meta_demographics')
         .select('*')
@@ -144,6 +174,11 @@ export async function GET(request: NextRequest) {
         .gte('date_range_start', finalDateFrom)
         .lte('date_range_end', finalDateTo)
         .order('breakdown_value')
+      
+      console.log(`[Demographics API] meta_demographics query result: ${result.data?.length || 0} records`)
+      if (result.data?.length > 0) {
+        console.log(`[Demographics API] Sample demographics record:`, result.data[0])
+      }
       
       data = result.data
       error = result.error
