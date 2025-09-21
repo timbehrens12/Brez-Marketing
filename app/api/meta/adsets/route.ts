@@ -121,7 +121,9 @@ export async function GET(req: NextRequest) {
     // Ensure the date range is inclusive and properly bounded
     // Note: API should respect the exact dates from the client and not modify them
     if (hasDateRange) {
-      console.log(`[API] Using date range from ${fromDate} to ${toDate} (inclusive)`);
+      console.log(`[API] Ad Sets: Using date range from ${fromDate} to ${toDate} (inclusive) - will calculate reach from daily insights`);
+    } else {
+      console.log(`[API] Ad Sets: No date range provided - will use static reach values from ad set records`);
     }
     
     if (!brandId || !campaignId) {
@@ -199,11 +201,15 @@ export async function GET(req: NextRequest) {
             cachedAdSets = adSetsData.map(adSet => {
               const insights = insightsByAdSet[adSet.adset_id] || [];
               
-              // Calculate combined metrics (DO NOT SUM DAILY REACH)
+              // Calculate combined metrics for the date range
               const spent = insights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
               const impressions = insights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
               const clicks = insights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
               const conversions = insights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+              
+              // Calculate reach for the date range (sum daily reach values)
+              // This matches the campaign-level calculation logic
+              const reach = insights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
               
               // Calculate derived metrics
               const ctr = impressions > 0 ? clicks / impressions : 0;
@@ -216,7 +222,7 @@ export async function GET(req: NextRequest) {
                 impressions: Number(impressions),
                 clicks: Number(clicks),
                 conversions: Number(conversions),
-                reach: Number(adSet.reach || 0), // Use reach from the main adSet record
+                reach: Number(reach), // Use calculated reach from daily insights for date range
                 ctr: Number(ctr),
                 cpc: Number(cpc),
                 cost_per_conversion: Number(cost_per_conversion),
