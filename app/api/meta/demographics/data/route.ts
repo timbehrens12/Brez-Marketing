@@ -166,14 +166,31 @@ export async function GET(request: NextRequest) {
       // Age/gender data is in meta_demographics table
       console.log(`[Demographics API] Querying meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
       
-      const result = await supabase
-        .from('meta_demographics')
-        .select('*')
-        .eq('brand_id', brandId)
-        .eq('breakdown_type', breakdownType)
-        .gte('date_range_start', finalDateFrom)
-        .lte('date_range_start', finalDateTo)
-        .order('breakdown_value')
+      // For longer date ranges (>30 days), aggregate all available data
+      const fromDate = new Date(finalDateFrom)
+      const toDate = new Date(finalDateTo)
+      const daysDiff = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      let result
+      if (daysDiff > 30) {
+        // For longer ranges, get all available data and let the frontend aggregate
+        result = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', breakdownType)
+          .order('date_range_start', { ascending: false })
+      } else {
+        // For shorter ranges, use exact date filtering
+        result = await supabase
+          .from('meta_demographics')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', breakdownType)
+          .gte('date_range_start', finalDateFrom)
+          .lte('date_range_start', finalDateTo)
+          .order('breakdown_value')
+      }
       
       console.log(`[Demographics API] meta_demographics query result: ${result.data?.length || 0} records`)
       if (result.data?.length > 0) {
@@ -203,27 +220,55 @@ export async function GET(request: NextRequest) {
                                : breakdownType === 'publisher_platform' ? 'platform'
                                : breakdownType
         
-        fallbackResult = await supabase
+        // Get the most recent available date for this breakdown type
+        const latestDateResult = await supabase
           .from('meta_device_performance')
-          .select('*')
+          .select('date_range_start')
           .eq('brand_id', brandId)
           .eq('breakdown_type', dbBreakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(50) // Get recent data
+          .limit(1)
+        
+        if (latestDateResult.data && latestDateResult.data.length > 0) {
+          const latestDate = latestDateResult.data[0].date_range_start
+          
+          // Get all data from that specific date to ensure consistency
+          fallbackResult = await supabase
+            .from('meta_device_performance')
+            .select('*')
+            .eq('brand_id', brandId)
+            .eq('breakdown_type', dbBreakdownType)
+            .eq('date_range_start', latestDate)
+            .order('breakdown_value')
+        }
       } else {
-        fallbackResult = await supabase
+        // Get the most recent available date for this breakdown type
+        const latestDateResult = await supabase
           .from('meta_demographics')
-          .select('*')
+          .select('date_range_start')
           .eq('brand_id', brandId)
           .eq('breakdown_type', breakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(50) // Get recent data
+          .limit(1)
+        
+        if (latestDateResult.data && latestDateResult.data.length > 0) {
+          const latestDate = latestDateResult.data[0].date_range_start
+          
+          // Get all data from that specific date to ensure consistency
+          fallbackResult = await supabase
+            .from('meta_demographics')
+            .select('*')
+            .eq('brand_id', brandId)
+            .eq('breakdown_type', breakdownType)
+            .eq('date_range_start', latestDate)
+            .order('breakdown_value')
+        }
       }
       
-      if (fallbackResult.data && fallbackResult.data.length > 0) {
+      if (fallbackResult && fallbackResult.data && fallbackResult.data.length > 0) {
         data = fallbackResult.data
-        console.log(`[Demographics API] Using fallback data: ${data.length} records from most recent available dates`)
-        console.log(`[Demographics API] Fallback date range: ${data[data.length-1]?.date_range_start} to ${data[0]?.date_range_start}`)
+        console.log(`[Demographics API] Using fallback data: ${data.length} records from most recent date ${data[0]?.date_range_start}`)
+        console.log(`[Demographics API] Fallback date range: ${data[0]?.date_range_start} to ${data[0]?.date_range_start}`)
       }
     }
 
@@ -350,8 +395,22 @@ function formatDataForWidget(data: any[], breakdownType: string): any[] {
 function formatBreakdownValue(key: string, breakdownType: string): string {
   switch (breakdownType) {
     case 'age_gender':
-      const [age, gender] = key.split('|')
+      // Handle both formats: "18-24_female" and "18-24|female"
+      let age, gender
+      if (key.includes('_')) {
+        [age, gender] = key.split('_')
+      } else if (key.includes('|')) {
+        [age, gender] = key.split('|')
+      } else {
+        return key
+      }
       return `${age} • ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}`
+    
+    case 'gender':
+      return key === 'male' ? 'Male' : key === 'female' ? 'Female' : 'Other'
+    
+    case 'age':
+      return key
     
     case 'region':
       // Handle country-state format like "US-CA" or just "US"
@@ -362,11 +421,16 @@ function formatBreakdownValue(key: string, breakdownType: string): string {
       return key
     
     case 'device_platform':
-      return key.charAt(0).toUpperCase() + key.slice(1)
+    case 'device':
+      return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
     
     case 'placement':
-      const [platform, position] = key.split('|')
-      return `${platform} • ${position}`
+    case 'platform':
+      if (key.includes('|')) {
+        const [platform, position] = key.split('|')
+        return `${platform} • ${position}`
+      }
+      return key.charAt(0).toUpperCase() + key.slice(1)
     
     default:
       return key

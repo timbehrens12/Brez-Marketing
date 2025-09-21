@@ -49,18 +49,9 @@ export function AudienceDemographicsWidget({
 
   const fetchData = async () => {
     if (!brandId) {
-      console.log('[AudienceDemographics] No brandId provided, skipping fetch')
       return
     }
     
-      console.log('[AudienceDemographics] Starting fetch with:', {
-        brandId,
-        selectedBreakdown,
-        dateRange: dateRange ? {
-          from: dateRange.from?.toISOString(),
-          to: dateRange.to?.toISOString()
-        } : null
-      })
     
     setIsLoading(true)
     setData([]) // Clear existing data to prevent flashing
@@ -77,27 +68,21 @@ export function AudienceDemographicsWidget({
         const endDate = dateRange.to.toISOString().split('T')[0]
         params.append('dateFrom', startDate)
         params.append('dateTo', endDate)
-        console.log('[AudienceDemographics] Using date range:', startDate, 'to', endDate)
       } else {
         // console.log('[AudienceDemographics] No date range, API will use 12-month default')
       }
 
       const url = `/api/meta/demographics/data?${params}`
-      console.log('[AudienceDemographics] Fetching from:', url)
 
       const response = await fetch(url)
       const result = await response.json()
 
-      console.log('[AudienceDemographics] API response:', result)
 
       if (result.success) {
         setData(result.data || [])
-        console.log('[AudienceDemographics] Data set:', result.data?.length || 0, 'items')
       } else {
-        console.error('[AudienceDemographics] Error fetching demographic data:', result.error)
       }
     } catch (error) {
-      console.error('[AudienceDemographics] Error fetching demographic data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -116,7 +101,6 @@ export function AudienceDemographicsWidget({
   // Also fetch on mount if we have brandId
   useEffect(() => {
     if (brandId && !data.length && !isLoading) {
-      console.log('[AudienceDemographics] Initial mount fetch')
       fetchData()
     }
   }, [brandId])

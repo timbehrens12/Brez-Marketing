@@ -63,7 +63,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
   // Listen for page navigation and data refresh events to update timestamp
   useEffect(() => {
     const updateLastUpdated = () => {
-      // console.log('[GlobalRefresh] Data refreshed, updating timestamp')
       setLastUpdated(new Date())
     }
 
@@ -103,28 +102,8 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       return
     }
 
-    // FINAL FIX: Use synchronous global variable approach
-    let freshDateRange = dateRange;
-    
-    console.log('[GlobalRefresh] 🔍 Prop dateRange:', dateRange ? `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}` : 'undefined');
-    
-    // Try to get fresh dateRange from global window variable set by dashboard
-    try {
-      if (typeof window !== 'undefined' && (window as any)._currentDateRange) {
-        const globalDateRange = (window as any)._currentDateRange;
-        freshDateRange = {
-          from: new Date(globalDateRange.from),
-          to: new Date(globalDateRange.to)
-        };
-        console.log('[GlobalRefresh] 🔍 Got fresh dateRange from global variable:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
-      } else {
-        console.log('[GlobalRefresh] ⚠️ No global dateRange found, using prop dateRange');
-      }
-    } catch (error) {
-      console.log('[GlobalRefresh] ⚠️ Error accessing global dateRange, using prop dateRange');
-    }
-
-    console.log('[GlobalRefresh] 🔍 Final dateRange for refresh:', freshDateRange ? `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    // Use the current dateRange prop directly
+    const freshDateRange = dateRange;
     
     setIsRefreshing(true)
     setRefreshCooldown(true)
@@ -223,7 +202,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       }
 
       if (currentTab === 'site') {
-        // console.log('[GlobalRefresh] Triggering Home page refresh')
         window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
           detail: { brandId, timestamp: Date.now(), platforms: activePlatforms, source: 'global-refresh' }
         }))

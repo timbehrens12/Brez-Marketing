@@ -607,7 +607,6 @@ export function MetaTab2({
           
           // Update global variable for immediate access
           if (typeof window !== 'undefined') {
-            (window as any)._currentDateRange = syncedDateRange;
             (window as any)._lastSyncedDateRange = syncedDateRange;
           }
         }
