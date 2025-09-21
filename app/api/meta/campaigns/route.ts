@@ -974,7 +974,7 @@ export async function GET(request: NextRequest) {
           spent: campaignActualSpend,
           impressions: campaignActualImpressions,
           clicks: campaignActualClicks,
-          reach: campaignActualReach,
+          reach: campaign.reach, // PRESERVE CORRECTED REACH from bulk calculation
           conversions: campaignActualConversions,
           has_data_in_range: campaignActualSpend > 0,
           recommendation: recommendationMap.get(campaign.campaign_id) || null
