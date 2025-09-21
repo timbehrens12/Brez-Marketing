@@ -156,11 +156,11 @@ export async function GET(request: NextRequest) {
         .order('breakdown_value')
       
       console.log(`[Demographics API] meta_device_performance query result: ${result.data?.length || 0} records`)
-      if (result.data?.length > 0) {
+      if (result.data && result.data.length > 0) {
         console.log(`[Demographics API] Sample device record:`, result.data[0])
       }
       
-      data = result.data
+      data = result.data || []
       error = result.error
     } else {
       // Age/gender data is in meta_demographics table
@@ -176,11 +176,11 @@ export async function GET(request: NextRequest) {
         .order('breakdown_value')
       
       console.log(`[Demographics API] meta_demographics query result: ${result.data?.length || 0} records`)
-      if (result.data?.length > 0) {
+      if (result.data && result.data.length > 0) {
         console.log(`[Demographics API] Sample demographics record:`, result.data[0])
       }
       
-      data = result.data
+      data = result.data || []
       error = result.error
     }
     
@@ -192,43 +192,69 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // If no data found for the requested date range, try to get the most recent available data
+    // If no data found for the requested date range, check for any available data
     if (!data || data.length === 0) {
-      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}, trying to get most recent data`)
+      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}`)
       
-      let fallbackResult
+      // Check if ANY data exists for this brand and breakdown type
+      let anyDataResult
       if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
         const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
                                : breakdownType === 'placement' ? 'platform'
                                : breakdownType === 'publisher_platform' ? 'platform'
                                : breakdownType
         
-        fallbackResult = await supabase
+        anyDataResult = await supabase
           .from('meta_device_performance')
-          .select('*')
+          .select('date_range_start, date_range_end')
           .eq('brand_id', brandId)
           .eq('breakdown_type', dbBreakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(50) // Get recent data
+          .limit(1)
       } else {
-        fallbackResult = await supabase
+        anyDataResult = await supabase
           .from('meta_demographics')
-          .select('*')
+          .select('date_range_start, date_range_end')
           .eq('brand_id', brandId)
           .eq('breakdown_type', breakdownType)
           .order('date_range_start', { ascending: false })
-          .limit(50) // Get recent data
+          .limit(1)
       }
       
-      if (fallbackResult.data && fallbackResult.data.length > 0) {
-        data = fallbackResult.data
-        console.log(`[Demographics API] Using fallback data: ${data.length} records from most recent available dates`)
-        console.log(`[Demographics API] Fallback date range: ${data[data.length-1]?.date_range_start} to ${data[0]?.date_range_start}`)
+      if (anyDataResult.data && anyDataResult.data.length > 0) {
+        const latestDate = anyDataResult.data[0].date_range_start
+        console.log(`[Demographics API] Latest available data is from ${latestDate}, but requested ${finalDateFrom} to ${finalDateTo}`)
+        
+        // Return empty result with metadata about available data
+        return NextResponse.json({
+          success: true,
+          data: [],
+          cached: false,
+          breakdown_type: breakdownType,
+          date_range: { from: finalDateFrom, to: finalDateTo },
+          total_records: 0,
+          message: 'No data available for requested date range',
+          latest_available_date: latestDate,
+          requires_sync: true
+        })
+      } else {
+        console.log(`[Demographics API] No data exists at all for brand ${brandId} and breakdown ${breakdownType}`)
+        
+        return NextResponse.json({
+          success: true,
+          data: [],
+          cached: false,
+          breakdown_type: breakdownType,
+          date_range: { from: finalDateFrom, to: finalDateTo },
+          total_records: 0,
+          message: 'No demographics data found',
+          requires_sync: true
+        })
       }
     }
 
     // Process and format data for frontend (both tables use breakdown_value)
-    const convertedData = data?.map(item => ({
+    let convertedData = data?.map(item => ({
       breakdown_key: item.breakdown_value,
       breakdown_value: item.breakdown_value,
       date_value: item.date_range_start,
@@ -236,12 +262,25 @@ export async function GET(request: NextRequest) {
       clicks: item.clicks,
       spend: item.spend,
       reach: item.reach,
-      conversions: item.conversions || 0,
+      conversions: 0, // Demographics data doesn't include conversions
       ctr: item.ctr,
       cpc: item.cpc,
       cpm: item.cpm,
-      cost_per_conversion: 0
+      cost_per_conversion: 0,
+      id: item.id // Keep ID for deduplication
     })) || []
+    
+    // Deduplicate by breakdown_value + date - keep the latest record by ID
+    const dedupeMap = new Map();
+    convertedData.forEach(item => {
+      const key = `${item.breakdown_value}_${item.date_value}`;
+      if (!dedupeMap.has(key) || dedupeMap.get(key).id < item.id) {
+        dedupeMap.set(key, item);
+      }
+    });
+    convertedData = Array.from(dedupeMap.values());
+    
+    console.log(`[Demographics API] After deduplication: ${convertedData.length} unique records`);
     
     const formattedData = formatDataForWidget(convertedData, breakdownType)
 
@@ -267,7 +306,7 @@ export async function GET(request: NextRequest) {
     console.error('Demographics data API error:', error)
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
@@ -335,7 +374,7 @@ function formatDataForWidget(data: any[], breakdownType: string): any[] {
     }
 
     // Sort dates for trend analysis
-    item.dates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    item.dates.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     return item
   })

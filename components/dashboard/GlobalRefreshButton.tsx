@@ -103,8 +103,19 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       return
     }
 
+    // Use the passed dateRange prop directly - it should be current
     const freshDateRange = dateRange;
-    console.log('[GlobalRefresh] 🔍 Using dateRange from props:', freshDateRange ? `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}` : 'undefined');
+    
+    if (!freshDateRange) {
+      console.warn('[GlobalRefresh] ⚠️ No dateRange provided to refresh button');
+      toast.error("Date range not available", {
+        description: "Cannot refresh without a valid date range",
+        duration: 3000
+      });
+      return;
+    }
+    
+    console.log('[GlobalRefresh] 🔍 Using dateRange for refresh:', `${freshDateRange.from.toISOString().split('T')[0]} to ${freshDateRange.to.toISOString().split('T')[0]}`);
     
     setIsRefreshing(true)
     setRefreshCooldown(true)
@@ -222,7 +233,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
       // Reset cooldown after delay
       setTimeout(() => setRefreshCooldown(false), REFRESH_COOLDOWN)
     }
-  }, [brandId, currentTab, activePlatforms, refreshCooldown, dateRange])
+  }, [brandId, currentTab, activePlatforms, refreshCooldown])
 
   // Initialize last updated time on mount
   useEffect(() => {
