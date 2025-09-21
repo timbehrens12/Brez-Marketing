@@ -1393,12 +1393,12 @@ export async function GET(request: NextRequest) {
           recommendationMap.set(campaignId, recData.metadata.recommendation);
         }
       });
-    }
-    
-    // Add recommendation data to campaigns (DON'T overwrite the fixed campaignsWithRecommendations from above)
-    const campaignsWithRecommendationsFinal = finalCampaigns.map(campaign => ({
-      ...campaign,
-      recommendation: recommendationMap.get(campaign.campaign_id) || null
+      }
+  
+      // Add recommendation data to campaigns (DON'T overwrite the fixed campaignsWithRecommendations from above)
+      const campaignsWithRecommendationsFinal = finalCampaigns.map(campaign => ({
+        ...campaign,
+        recommendation: recommendationMap.get(campaign.campaign_id) || null
     }));
 
     // Log debug info for our test campaign
@@ -1406,24 +1406,24 @@ export async function GET(request: NextRequest) {
     if (testCampaignFinal) {
       console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaignFinal.campaign_name}`);
       console.log(`>>> [API Campaigns] Has recommendation: ${!!testCampaignFinal.recommendation}`);
-    }
-
-    // Calculate campaign totals for summary (use the CORRECTED version with bulk calculation fixes)
-    const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
-      spend: totals.spend + (campaign.spent || 0),
+      }
+  
+      // Calculate campaign totals for summary (use the CORRECTED version with bulk calculation fixes)
+      const campaignTotals = campaignsWithRecommendations.reduce((totals, campaign) => ({
+        spend: totals.spend + (campaign.spent || 0),
       impressions: totals.impressions + (campaign.impressions || 0),
       clicks: totals.clicks + (campaign.clicks || 0),
       reach: totals.reach + (campaign.reach || 0),
       conversions: totals.conversions + (campaign.conversions || 0)
     }), { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 });
-    
-    console.log(`[CAMPAIGNS API] Campaign totals - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}`)
-    console.log(`[CAMPAIGNS API] Source: CORRECTED bulk calculation from ad set insights across ${campaignsWithRecommendations.length} campaigns`)
-
-    return NextResponse.json({
-      campaigns: campaignsWithRecommendations, // Use the CORRECTED version with bulk calculation fixes
-      shouldRefresh,
-      refreshReason,
+      
+      console.log(`[CAMPAIGNS API] Campaign totals - Spend: $${campaignTotals.spend}, Impressions: ${campaignTotals.impressions}, Clicks: ${campaignTotals.clicks}`)
+      console.log(`[CAMPAIGNS API] Source: CORRECTED bulk calculation from ad set insights across ${campaignsWithRecommendations.length} campaigns`)
+  
+      return NextResponse.json({
+        campaigns: campaignsWithRecommendations, // Use the CORRECTED version with bulk calculation fixes
+        shouldRefresh,
+        refreshReason,
       lastRefresh: campaignsWithRecommendations && campaignsWithRecommendations.length > 0 ? campaignsWithRecommendations[0].last_refresh_date : null
     });
   } catch (error) {
