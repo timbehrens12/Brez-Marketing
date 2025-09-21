@@ -290,11 +290,11 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // If no data found for the requested date range, check for any available data
+    // SMART FALLBACK: Only show fallback data if it's reasonably recent
     if (!data || data.length === 0) {
       console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}`)
       
-      // Check if ANY data exists for this brand and breakdown type
+      // Check if ANY data exists for this brand and breakdown type (and how recent it is)
       let anyDataResult
       if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
         const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
@@ -323,20 +323,61 @@ export async function GET(request: NextRequest) {
         const latestDate = anyDataResult.data[0].date_range_start
         console.log(`[Demographics API] Latest available data is from ${latestDate}, but requested ${finalDateFrom} to ${finalDateTo}`)
         
-        // Return empty result with metadata about available data
-        return NextResponse.json({
-          success: true,
-          data: [],
-          cached: false,
-          breakdown_type: breakdownType,
-          date_range: { from: finalDateFrom, to: finalDateTo },
-          total_records: 0,
-          message: 'No data available for requested date range',
-          latest_available_date: latestDate,
-          requires_sync: true
-        })
+        // Check if latest data is within reasonable range (30 days) to show as fallback
+        const requestedDate = new Date(finalDateFrom)
+        const availableDate = new Date(latestDate)
+        const daysDiff = Math.abs((requestedDate.getTime() - availableDate.getTime()) / (1000 * 60 * 60 * 24))
+        
+        if (daysDiff <= 30) {
+          // Latest data is recent, fetching as fallback
+          
+          // Fetch the recent fallback data
+          let fallbackDataResult
+          if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
+            const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
+                                   : breakdownType === 'placement' ? 'platform'
+                                   : breakdownType === 'publisher_platform' ? 'platform'
+                                   : breakdownType
+            
+            fallbackDataResult = await supabase
+              .from('meta_device_performance')
+              .select('*')
+              .eq('brand_id', brandId)
+              .eq('breakdown_type', dbBreakdownType)
+              .order('date_range_start', { ascending: false })
+              .limit(20)
+          } else {
+            fallbackDataResult = await supabase
+              .from('meta_demographics')
+              .select('*')
+              .eq('brand_id', brandId)
+              .eq('breakdown_type', breakdownType)
+              .order('date_range_start', { ascending: false })
+              .limit(20)
+          }
+          
+          if (fallbackDataResult.data && fallbackDataResult.data.length > 0) {
+            // Using fallback records from latest available date
+            data = fallbackDataResult.data
+          }
+        } else {
+          // Latest data too old, returning empty
+          
+          // Return empty result when data is too old
+          return NextResponse.json({
+            success: true,
+            data: [],
+            cached: false,
+            breakdown_type: breakdownType,
+            date_range: { from: finalDateFrom, to: finalDateTo },
+            total_records: 0,
+            message: `No recent data available. Latest data is ${Math.round(daysDiff)} days old.`,
+            latest_available_date: latestDate,
+            requires_sync: true
+          })
+        }
       } else {
-        console.log(`[Demographics API] No data exists at all for brand ${brandId} and breakdown ${breakdownType}`)
+        // No data exists at all for this brand and breakdown type
         
         return NextResponse.json({
           success: true,
