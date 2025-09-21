@@ -189,15 +189,20 @@ export async function GET(req: NextRequest) {
               }
             }
             
-            // Update campaign with calculated ad set budget total
+            // Update campaign with calculated ad set budget total (ACTIVE ad sets only)
             if (campaigns && campaigns.length > 0) {
               for (const campaign of campaigns) {
-                const campaignAdSets = adSetsResponse.data.filter(adset => adset.campaign_id === campaign.campaign_id);
+                // Only count ACTIVE ad sets for campaign budget total
+                const campaignAdSets = adSetsResponse.data.filter(adset => 
+                  adset.campaign_id === campaign.campaign_id && adset.status === 'ACTIVE'
+                );
                 const campaignBudgetTotal = campaignAdSets.reduce((sum, adset) => {
                   const dailyBudget = adset.daily_budget ? parseFloat(adset.daily_budget) / 100 : 0;
                   const lifetimeBudget = adset.lifetime_budget ? parseFloat(adset.lifetime_budget) / 100 : 0;
                   return sum + Math.max(dailyBudget, lifetimeBudget);
                 }, 0);
+                
+                console.log(`[Total Meta Budget] Campaign ${campaign.campaign_id}: Found ${campaignAdSets.length} ACTIVE ad sets with total budget $${campaignBudgetTotal}`);
                 
                 if (campaignBudgetTotal > 0) {
                   console.log(`[Total Meta Budget] Updating campaign ${campaign.campaign_id} with adset_budget_total $${campaignBudgetTotal}`);
