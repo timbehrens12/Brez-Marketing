@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', dbBreakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_end', finalDateTo)
+        .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
       console.log(`[Demographics API] meta_device_performance query result: ${result.data?.length || 0} records`)
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
         .eq('brand_id', brandId)
         .eq('breakdown_type', breakdownType)
         .gte('date_range_start', finalDateFrom)
-        .lte('date_range_end', finalDateTo)
+        .lte('date_range_start', finalDateTo)
         .order('breakdown_value')
       
       console.log(`[Demographics API] meta_demographics query result: ${result.data?.length || 0} records`)
