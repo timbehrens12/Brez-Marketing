@@ -54,12 +54,15 @@ async function getAccurateReachFromAdSets(supabase: any, brandId: string, campai
         insightsByAdSet[insight.adset_id].push(insight);
       });
       
-      // Calculate total reach as sum of ad set reaches
+      // Calculate total reach properly - reach is NOT additive across days
       let totalReach = 0;
       adSets.forEach((adSet: any) => {
         const adSetInsights = insightsByAdSet[adSet.adset_id] || [];
-        const adSetReach = adSetInsights.reduce((sum: number, insight: any) => sum + Number(insight.reach || 0), 0);
-        totalReach += adSetReach;
+        if (adSetInsights.length > 0) {
+          // For multi-day periods, use maximum reach per ad set to avoid inflated numbers
+          const adSetReach = Math.max(...adSetInsights.map((insight: any) => Number(insight.reach || 0)));
+          totalReach += adSetReach;
+        }
       });
       
       if (campaignId === '120218263352990058') {

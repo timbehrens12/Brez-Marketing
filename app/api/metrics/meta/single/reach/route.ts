@@ -93,12 +93,19 @@ export async function GET(request: NextRequest) {
       insightsByAdSet[insight.adset_id].push(insight);
     });
     
-    // Calculate total reach as sum of ad set reaches (not daily reaches)
+    // Calculate total reach properly - reach is NOT additive across days
+    // For multi-day periods, we need to take the maximum reach per ad set
+    // or sum only unique reach values, not daily totals
     let totalReach = 0;
     adSets.forEach((adSet: any) => {
       const adSetInsights = insightsByAdSet[adSet.adset_id] || [];
-      const adSetReach = adSetInsights.reduce((sum: number, insight: any) => sum + Number(insight.reach || 0), 0);
-      totalReach += adSetReach;
+      if (adSetInsights.length > 0) {
+        // For single day: use the reach value directly
+        // For multiple days: use the maximum reach (closest to period reach)
+        // This prevents inflated reach numbers from daily summation
+        const adSetReach = Math.max(...adSetInsights.map((insight: any) => Number(insight.reach || 0)));
+        totalReach += adSetReach;
+      }
     });
     
     console.log(`REACH API: Calculated reach = ${totalReach} from ${adSets.length} ad sets with ${insights.length} insight records`)
