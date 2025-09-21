@@ -401,23 +401,55 @@ export async function GET(request: NextRequest) {
         if (isRequestingToday) {
           console.log(`[Meta Campaigns API] 🌙 MIDNIGHT BOUNDARY: Requesting today's data (${today}) with no data available. Skipping fallback to preserve daily reset behavior.`)
         } else {
-          // Only use fallback logic when NOT requesting today's data specifically
-          console.log(`[Meta Campaigns API] Not requesting today specifically, attempting fallback data...`)
-          const yesterday = new Date()
-          yesterday.setDate(yesterday.getDate() - 1)
-          const yesterdayStr = yesterday.toISOString().split('T')[0]
+          // ENHANCED FALLBACK: Use meta_adset_daily_insights when campaign daily stats are missing
+          console.log(`[Meta Campaigns API] Attempting enhanced fallback using ad set daily insights...`)
           
-          const { data: yesterdayStats, error: yesterdayError } = await supabase
-            .from('meta_campaign_daily_stats')
-            .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
-            .eq('brand_id', brandId)
-            .eq('date', yesterdayStr)
-          
-          if (!yesterdayError && yesterdayStats && yesterdayStats.length > 0) {
-            console.log(`[Meta Campaigns API] Found ${yesterdayStats.length} fallback stats for yesterday (${yesterdayStr})`)
-            dailyAdStats = yesterdayStats
-          } else {
-            console.log(`[Meta Campaigns API] No fallback data available for yesterday either`)
+          try {
+            const { data: adsetInsights, error: adsetError } = await supabase
+              .from('meta_adset_daily_insights')
+              .select('campaign_id, date, spent, impressions, clicks, reach, conversions')
+              .eq('brand_id', brandId)
+              .gte('date', normalizedFromDate)
+              .lte('date', normalizedToDate)
+              .order('date', { ascending: true })
+            
+            if (!adsetError && adsetInsights && adsetInsights.length > 0) {
+              console.log(`[Meta Campaigns API] ✅ Found ${adsetInsights.length} ad set daily insights for fallback`)
+              
+              // Aggregate ad set insights by campaign and date
+              const aggregatedStats: any[] = []
+              const campaignDateMap = new Map<string, any>()
+              
+              adsetInsights.forEach(insight => {
+                const key = `${insight.campaign_id}-${insight.date}`
+                
+                if (!campaignDateMap.has(key)) {
+                  campaignDateMap.set(key, {
+                    campaign_id: insight.campaign_id,
+                    date: insight.date,
+                    spend: 0,
+                    impressions: 0,
+                    clicks: 0,
+                    reach: 0,
+                    conversions: 0
+                  })
+                }
+                
+                const existing = campaignDateMap.get(key)
+                existing.spend += Number(insight.spent || 0)
+                existing.impressions += Number(insight.impressions || 0)
+                existing.clicks += Number(insight.clicks || 0)
+                existing.reach += Number(insight.reach || 0)
+                existing.conversions += Number(insight.conversions || 0)
+              })
+              
+              dailyAdStats = Array.from(campaignDateMap.values())
+              console.log(`[Meta Campaigns API] ✅ Created ${dailyAdStats.length} aggregated campaign stats from ad set insights`)
+            } else {
+              console.log(`[Meta Campaigns API] ❌ No ad set insights available for fallback either`)
+            }
+          } catch (fallbackError) {
+            console.error(`[Meta Campaigns API] Error in enhanced fallback:`, fallbackError)
           }
         }
       }
