@@ -323,12 +323,12 @@ export async function GET(request: NextRequest) {
         const latestDate = anyDataResult.data[0].date_range_start
         console.log(`[Demographics API] Latest available data is from ${latestDate}, but requested ${finalDateFrom} to ${finalDateTo}`)
         
-        // Check if latest data is within reasonable range (30 days) to show as fallback
+        // Check if latest data is within reasonable range (90 days) to show as fallback
         const requestedDate = new Date(finalDateFrom)
         const availableDate = new Date(latestDate)
         const daysDiff = Math.abs((requestedDate.getTime() - availableDate.getTime()) / (1000 * 60 * 60 * 24))
         
-        if (daysDiff <= 30) {
+        if (daysDiff <= 90) {
           // Latest data is recent, fetching as fallback
           
           // Fetch the recent fallback data
@@ -339,13 +339,27 @@ export async function GET(request: NextRequest) {
                                    : breakdownType === 'publisher_platform' ? 'platform'
                                    : breakdownType
             
-            fallbackDataResult = await supabase
-              .from('meta_device_performance')
-              .select('*')
-              .eq('brand_id', brandId)
-              .eq('breakdown_type', dbBreakdownType)
-              .order('date_range_start', { ascending: false })
-              .limit(20)
+            // First try the exact breakdown type, then try alternatives
+            let fallbackAttempts = [dbBreakdownType]
+            if (dbBreakdownType === 'device') {
+              fallbackAttempts = ['device', 'platform'] // Try both if device fails
+            } else if (dbBreakdownType === 'platform') {
+              fallbackAttempts = ['platform', 'device'] // Try both if platform fails
+            }
+            
+            for (const attempt of fallbackAttempts) {
+              fallbackDataResult = await supabase
+                .from('meta_device_performance')
+                .select('*')
+                .eq('brand_id', brandId)
+                .eq('breakdown_type', attempt)
+                .order('date_range_start', { ascending: false })
+                .limit(20)
+              
+              if (fallbackDataResult.data && fallbackDataResult.data.length > 0) {
+                break // Found data, stop trying
+              }
+            }
           } else {
             fallbackDataResult = await supabase
               .from('meta_demographics')
@@ -371,7 +385,7 @@ export async function GET(request: NextRequest) {
             breakdown_type: breakdownType,
             date_range: { from: finalDateFrom, to: finalDateTo },
             total_records: 0,
-            message: `No recent data available. Latest data is ${Math.round(daysDiff)} days old.`,
+            message: `No recent data available. Latest data is ${Math.round(daysDiff)} days old (>90 days).`,
             latest_available_date: latestDate,
             requires_sync: true
           })
