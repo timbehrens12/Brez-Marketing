@@ -1062,9 +1062,21 @@ const CampaignWidget = ({
   // Fetch budgets on mount and when brandId changes
   useEffect(() => {
     if (brandId) {
+      console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change');
       fetchCurrentBudgets(true);
     }
   }, [brandId, fetchCurrentBudgets]);
+  
+  // 🚨 ADDED: Also fetch budgets when dateRange changes (budget might be date-dependent)
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to) {
+      console.log('[CampaignWidget] Date range changed, refreshing budget data');
+      // Small delay to avoid racing with other fetches
+      setTimeout(() => {
+        fetchCurrentBudgets(true);
+      }, 1000);
+    }
+  }, [brandId, dateRange, fetchCurrentBudgets]);
   
   // Add a function to bulk refresh all campaign statuses
   const bulkRefreshCampaignStatuses = useCallback(async () => {

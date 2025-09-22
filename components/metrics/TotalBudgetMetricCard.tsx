@@ -100,17 +100,13 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   
   // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
-    // Don't auto-fetch if disableAutoFetch is true (unified loading in control)
-    if (disableAutoFetch) {
-      // console.log("[TotalMetaBudget] Auto-fetch disabled, skipping initial fetch");
-      return;
-    }
-    
+    // 🚨 FIXED: Always fetch on mount regardless of disableAutoFetch
     if (brandId && !hasInitialLoadRef.current) {
+      console.log('[TotalMetaBudget] Initial mount - fetching fresh budget data');
       // Always force refresh on initial load to get fresh data
       fetchTotalBudget(true)
     }
-  }, [brandId, disableAutoFetch])
+  }, [brandId])
 
   // Handle unified loading completion - fetch when unified loading finishes
   useEffect(() => {
@@ -125,11 +121,13 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   }, [unifiedLoading, disableAutoFetch, brandId])
 
   // Handle forceRefresh prop - fetch fresh data when forceRefresh is true
+  // 🚨 FIXED: forceRefresh should work regardless of disableAutoFetch
   useEffect(() => {
-    if (forceRefresh && brandId && !disableAutoFetch) {
+    if (forceRefresh && brandId) {
+      console.log('[TotalMetaBudget] forceRefresh=true, fetching fresh budget data');
       fetchTotalBudget(true);
     }
-  }, [forceRefresh, brandId, disableAutoFetch])
+  }, [forceRefresh, brandId])
   
   // Add a listener for the metaDataRefreshed event
   useEffect(() => {
