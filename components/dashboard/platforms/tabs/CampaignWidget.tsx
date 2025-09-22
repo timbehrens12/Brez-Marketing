@@ -1620,6 +1620,15 @@ const CampaignWidget = ({
     const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
     const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
     
+    // TEMP DEBUG: Log budget detection
+    console.log(`[DEBUG] Campaign ${campaign.campaign_id} budget check:`, {
+      hasCurrentBudgets,
+      hasCampaignBudgets,
+      campaign_budget: campaign.budget,
+      campaign_adset_budget_total: campaign.adset_budget_total,
+      currentBudgets_for_campaign: currentBudgets?.[campaign.id]
+    });
+    
     // Show loading skeleton when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
       return {
