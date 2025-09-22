@@ -179,7 +179,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       }
       value={totalBudget ?? 0}
       data={[]}
-      loading={isLoading || isManuallyRefreshing || isRefreshing}
+        loading={isLoading || isManuallyRefreshing || isRefreshing}
       hideChange={true}
       valueFormat="currency"
       prefix="$"
