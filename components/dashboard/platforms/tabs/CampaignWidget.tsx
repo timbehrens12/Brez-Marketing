@@ -1063,7 +1063,8 @@ const CampaignWidget = ({
   useEffect(() => {
     if (brandId) {
       console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change with force refresh');
-      // 🚨 ALWAYS force refresh to get live budget data (no cache)
+      // 🚨 CRITICAL FIX: Don't show budget until API completes
+      setIsLoadingBudgets(true);
       fetchCurrentBudgets(true);
     }
   }, [brandId, fetchCurrentBudgets]);
@@ -1643,8 +1644,8 @@ const CampaignWidget = ({
     
     // If we're still loading or syncing, don't show $0.00 - this is key!
     if (isLoading || isSyncing || isLoadingBudgets) {
-      // console.log(`[CampaignWidget] Still loading/syncing, returning placeholder budget`);
-    return {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Still loading, showing '...' - isLoading=${isLoading}, isSyncing=${isSyncing}, isLoadingBudgets=${isLoadingBudgets}`);
+      return {
         budget: 0,
         formatted_budget: '...', // Show loading indicator instead of $0.00
         budget_type: 'unknown',
