@@ -1108,6 +1108,7 @@ export function MetaTab2({
           isManuallyRefreshing={false}
           disableAutoFetch={isLoadingAllMetaWidgets}
           unifiedLoading={isLoadingAllMetaWidgets}
+          forceRefresh={true}
         />
 
         {/* Total Reach */}

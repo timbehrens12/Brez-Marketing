@@ -207,13 +207,14 @@ export default function DashboardPage() {
     meta: false
   })
   
-  // Create a controlled setDateRange with cooldown - NO persistence to ensure fresh defaults
+  // Create a controlled setDateRange with comprehensive loading protection
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date } | undefined) => {
-    if (!range || isDateRangeLoading) {
-      return // Prevent changes during loading
+    if (!range || isDateRangeLoading || isLoading || isActionCenterLoading || isAgencyWidgetsLoading) {
+      console.log('[Dashboard] Date range change blocked - widgets still loading');
+      return // Prevent changes during ANY loading state
     }
     
-    
+    console.log('[Dashboard] Date range change allowed - all widgets loaded');
     setIsDateRangeLoading(true)
     setDateRange(range)
     
@@ -222,11 +223,11 @@ export default function DashboardPage() {
       (window as any)._currentDateRange = range
     }
     
-    // Set a minimum cooldown period
+    // Set a minimum cooldown period - longer to ensure all widgets finish loading
     setTimeout(() => {
       setIsDateRangeLoading(false)
-    }, 1500) // 1.5 second minimum cooldown
-  }, [isDateRangeLoading])
+    }, 2500) // 2.5 second minimum cooldown for all widgets to load
+  }, [isDateRangeLoading, isLoading, isActionCenterLoading, isAgencyWidgetsLoading])
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("agency")
