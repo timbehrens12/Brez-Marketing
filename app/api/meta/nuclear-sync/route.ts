@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const brandId = searchParams.get('brandId')
-  
+
   if (!brandId) {
     return NextResponse.json({ error: 'Brand ID required as query parameter' }, { status: 400 })
   }
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const { brandId } = await request.json()
-  
+
   if (!brandId) {
     return NextResponse.json({ error: 'Brand ID required in request body' }, { status: 400 })
   }
@@ -32,11 +32,6 @@ async function nuclearSync(brandId: string) {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { brandId } = await request.json()
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID required' }, { status: 400 })
     }
 
     console.log(`💥 [Nuclear Sync] Starting NUCLEAR Meta sync for brand ${brandId}`)
