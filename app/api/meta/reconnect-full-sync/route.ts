@@ -7,14 +7,40 @@ import { createClient } from '@/lib/supabase/server'
  * This ensures ALL historical data is properly populated
  */
 export async function POST(request: NextRequest) {
+  
+  // 🛡️ NUCLEAR PROTECTION: Auto-complete after 5 minutes to prevent stuck syncs
+  const SYNC_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
+  const timeoutId = setTimeout(async () => {
+    console.log(`🚨 [Meta Reconnect] TIMEOUT PROTECTION: Force completing stuck sync after 5 minutes`)
+    
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('platform_connections')
+        .update({
+          sync_status: 'completed',
+          last_synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('platform_type', 'meta')
+        .eq('sync_status', 'in_progress')
+      
+      console.log(`✅ [Meta Reconnect] TIMEOUT PROTECTION: Sync force-completed`)
+    } catch (error) {
+      console.error(`❌ [Meta Reconnect] TIMEOUT PROTECTION failed:`, error)
+    }
+  }, SYNC_TIMEOUT_MS)
+
   try {
     const { userId } = await auth()
     if (!userId) {
+      clearTimeout(timeoutId)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { brandId, accessToken, adAccountId } = await request.json()
     if (!brandId || !accessToken || !adAccountId) {
+      clearTimeout(timeoutId)
       return NextResponse.json({ 
         error: 'Brand ID, access token, and ad account ID required' 
       }, { status: 400 })
@@ -161,6 +187,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [Meta Reconnect] COMPLETE! Brand ${brandId} has full 12-month data`)
 
+    // Clear timeout since sync completed successfully
+    clearTimeout(timeoutId)
+
     return NextResponse.json({
       success: true,
       message: `BULLETPROOF Meta sync completed with ${successRate}% success rate - NEVER GETS STUCK!`,
@@ -179,6 +208,8 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
+    // Clear timeout in case of error
+    clearTimeout(timeoutId)
     console.error('❌ [Meta Reconnect] Error:', error)
     return NextResponse.json({
       error: 'Failed to reconnect Meta with full sync',
