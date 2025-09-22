@@ -715,7 +715,7 @@ const CampaignWidget = ({
           }, 500); 
       }
     }
-  }, [brandId, dateRange, expandedCampaign, onRefresh, isMountedRef, createAbortController, removeAbortController]);
+  }, [brandId, dateRange, onRefresh, isMountedRef, createAbortController, removeAbortController]);
 
   const toggleCampaignExpand = useCallback(async (campaignId: string): Promise<void> => {
     if (expandedCampaign === campaignId) {
