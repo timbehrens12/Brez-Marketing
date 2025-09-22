@@ -1626,6 +1626,21 @@ const CampaignWidget = ({
     } else {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, currentBudgetData);
     }
+
+    // 🚨 CRITICAL FIX: If currentBudgets API hasn't loaded yet AND campaign props are empty,
+    // wait for the API instead of showing $0.00 immediately
+    if (!currentBudgets || Object.keys(currentBudgets).length === 0) {
+      if ((!campaign.budget || campaign.budget === 0) && (!campaign.adset_budget_total || campaign.adset_budget_total === 0)) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Both currentBudgets API and campaign props are empty - waiting for API...`);
+        // Show loading state instead of $0.00 when both sources are empty
+        return {
+          budget: 0,
+          formatted_budget: '...', // Show loading while waiting for API
+          budget_type: 'unknown',
+          budget_source: 'waiting_for_api'
+        };
+      }
+    }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
     // If campaign has adset_budget_total (the preferred source from the campaigns API)
