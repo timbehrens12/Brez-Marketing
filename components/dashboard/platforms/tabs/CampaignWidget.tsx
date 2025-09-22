@@ -1647,17 +1647,24 @@ const CampaignWidget = ({
       campaign_adset_budget_total: campaign.adset_budget_total
     });
     
-    // 🚨 SIMPLIFIED FIX: If ALL budget sources are empty/zero AND we're still loading budgets, show loading
+    // 🚨 FINAL FIX: If ALL budget sources are empty/zero, show loading (regardless of isLoadingBudgets)
     const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
     const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
     
-    if (!hasCurrentBudgets && !hasCampaignBudgets && isLoadingBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available yet AND still loading - showing loading state`);
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 Budget sources:`, {
+      hasCurrentBudgets,
+      hasCampaignBudgets,
+      isLoadingBudgets,
+      currentBudgets_for_campaign: currentBudgets?.[campaign.id]
+    });
+    
+    if (!hasCurrentBudgets && !hasCampaignBudgets) {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading state`);
       return {
         budget: 0,
         formatted_budget: '...', // Show loading while waiting for any budget data
         budget_type: 'unknown',
-        budget_source: 'loading'
+        budget_source: 'no_data_available'
       };
     }
     
