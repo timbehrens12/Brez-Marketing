@@ -1658,38 +1658,15 @@ const CampaignWidget = ({
       currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
-    // 🚨 FINAL FIX: Only show loading state after a brief delay to avoid flash on first load
+    // 🚨 FINAL FIX: Show loading skeleton briefly when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      // Check if this is the very first render with empty campaigns
-      const isFirstRenderWithEmptyCampaigns = !campaign.budget && !campaign.adset_budget_total && 
-        (!currentBudgets || Object.keys(currentBudgets).length === 0);
-      
-      if (isFirstRenderWithEmptyCampaigns && isLoadingBudgets) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: First render with no data and still loading - showing loading state`);
-        return {
-          budget: 0,
-          formatted_budget: '...', // Show loading while waiting for any budget data
-          budget_type: 'unknown',
-          budget_source: 'no_data_available'
-        };
-      } else if (!isFirstRenderWithEmptyCampaigns) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available but not first render - showing loading state`);
-        return {
-          budget: 0,
-          formatted_budget: '...', // Show loading while waiting for any budget data
-          budget_type: 'unknown',
-          budget_source: 'no_data_available'
-        };
-      } else {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: First render but not loading - showing $0 temporarily`);
-        // For first render when not loading, show $0 briefly to avoid flash
-        return {
-          budget: 0,
-          formatted_budget: formatCurrency(0),
-          budget_type: 'unknown',
-          budget_source: 'temporary_zero'
-        };
-      }
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading skeleton`);
+      return {
+        budget: 0,
+        formatted_budget: '...', // Show loading skeleton while waiting for any budget data
+        budget_type: 'unknown',
+        budget_source: 'no_data_available'
+      };
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
