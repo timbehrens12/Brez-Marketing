@@ -304,6 +304,11 @@ const CampaignWidget = ({
   
   // Add state to track loading status
   const [isLoadingBudgets, setIsLoadingBudgets] = useState(true); // 🚨 CRITICAL: Start as true to show "..." while budget API loads
+  
+  // 🔍 DEBUG: Track when isLoadingBudgets changes
+  useEffect(() => {
+    console.log(`[CampaignWidget] 🚨 isLoadingBudgets changed to: ${isLoadingBudgets} for brand: ${brandId}`);
+  }, [isLoadingBudgets, brandId]);
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
@@ -1061,6 +1066,7 @@ const CampaignWidget = ({
   
   // Fetch budgets on mount and when brandId changes
   useEffect(() => {
+    console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
       console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change with force refresh');
       // 🚨 CRITICAL FIX: Don't show budget until API completes
@@ -1068,6 +1074,7 @@ const CampaignWidget = ({
       fetchCurrentBudgets(true);
     } else {
       // If no brandId, no need to load budgets
+      console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');
       setIsLoadingBudgets(false);
     }
   }, [brandId, fetchCurrentBudgets]);
