@@ -1647,17 +1647,18 @@ const CampaignWidget = ({
       campaign_adset_budget_total: campaign.adset_budget_total
     });
     
-    if (!currentBudgets || Object.keys(currentBudgets).length === 0) {
-      if ((!campaign.budget || campaign.budget === 0) && (!campaign.adset_budget_total || campaign.adset_budget_total === 0)) {
-        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Both currentBudgets API and campaign props are empty - waiting for API...`);
-        // Show loading state instead of $0.00 when both sources are empty
-        return {
-          budget: 0,
-          formatted_budget: '...', // Show loading while waiting for API
-          budget_type: 'unknown',
-          budget_source: 'waiting_for_api'
-        };
-      }
+    // 🚨 SIMPLIFIED FIX: If ALL budget sources are empty/zero AND we're still loading budgets, show loading
+    const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
+    const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
+    
+    if (!hasCurrentBudgets && !hasCampaignBudgets && isLoadingBudgets) {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available yet AND still loading - showing loading state`);
+      return {
+        budget: 0,
+        formatted_budget: '...', // Show loading while waiting for any budget data
+        budget_type: 'unknown',
+        budget_source: 'loading'
+      };
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
