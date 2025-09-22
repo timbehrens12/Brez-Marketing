@@ -67,11 +67,52 @@ async function nuclearSync(brandId: string) {
     // 3. NUCLEAR APPROACH: Call Meta API directly and store data manually with verification
     console.log(`💥 [Nuclear Sync] Fetching ad account data...`)
 
-    const adAccountId = connection.metadata?.ad_account_id
+    let adAccountId = connection.metadata?.ad_account_id
+    
+    // If no ad account ID in metadata, fetch it from Meta API
     if (!adAccountId) {
-      return NextResponse.json({ 
-        error: 'Ad account ID not found in connection metadata' 
-      }, { status: 400 })
+      console.log(`💥 [Nuclear Sync] No ad account ID in metadata, fetching from Meta API...`)
+      
+      try {
+        const accountsUrl = `https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connection.access_token}`
+        const accountsResponse = await fetch(accountsUrl)
+        const accountsData = await accountsResponse.json()
+        
+        if (accountsData.error) {
+          return NextResponse.json({ 
+            error: 'Meta API error fetching ad accounts',
+            details: accountsData.error.message 
+          }, { status: 400 })
+        }
+        
+        if (!accountsData.data || accountsData.data.length === 0) {
+          return NextResponse.json({ 
+            error: 'No ad accounts found for this Meta user' 
+          }, { status: 400 })
+        }
+        
+        // Use the first ad account
+        adAccountId = accountsData.data[0].id
+        console.log(`💥 [Nuclear Sync] Found ad account: ${adAccountId}`)
+        
+        // Update the connection metadata with the ad account ID
+        await supabase
+          .from('platform_connections')
+          .update({
+            metadata: { ad_account_id: adAccountId },
+            updated_at: new Date().toISOString()
+          })
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'meta')
+          
+        console.log(`💥 [Nuclear Sync] Updated connection metadata with ad account ID`)
+        
+      } catch (fetchError) {
+        return NextResponse.json({ 
+          error: 'Failed to fetch ad account from Meta API',
+          details: fetchError instanceof Error ? fetchError.message : 'Unknown error'
+        }, { status: 500 })
+      }
     }
 
     // 4. Fetch campaigns first (basic data)
