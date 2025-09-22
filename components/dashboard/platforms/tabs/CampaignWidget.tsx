@@ -1618,7 +1618,7 @@ const CampaignWidget = ({
 
     // Check if budget data is available from any source
     const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
-    const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
+    const hasCampaignBudgets = Boolean((campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0));
     
     // TEMP DEBUG: Log budget detection
     console.log(`[DEBUG] Campaign ${campaign.campaign_id} budget check:`, {
