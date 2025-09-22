@@ -1,219 +1,132 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@/lib/supabase/server'
-import { MetaQueueService } from '@/lib/services/metaQueueService'
 
+/**
+ * CHECK META SYNC STATUS: Monitor progress of background sync
+ */
 export async function GET(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
-
+    
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID required' }, { status: 400 })
     }
 
-    console.log(`[Meta Sync Status] Getting sync status for brand ${brandId}`)
-
-    // Get sync status from queue service
-    const syncStatus = await MetaQueueService.getSyncStatus(brandId)
-    
-    // Get connection info
     const supabase = createClient()
-    const { data: connections, error: connectionError } = await supabase
+
+    // 1. Get current sync status
+    const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('id, status, sync_status, last_sync_at, created_at, updated_at')
+      .select('sync_status, last_synced_at, updated_at')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
-      .order('created_at', { ascending: false })
-      .limit(5)
+      .single()
 
-    console.log(`[Meta Sync Status] Connection lookup result:`, {
-      count: connections?.length || 0,
-      error: connectionError?.message,
-      connections: connections?.map(c => ({
-        id: c.id,
-        status: c.status,
-        sync_status: c.sync_status,
-        created_at: c.created_at
-      }))
-    })
+    if (connectionError) {
+      return NextResponse.json({ 
+        error: 'Meta connection not found',
+        details: connectionError.message 
+      }, { status: 400 })
+    }
 
-    // Get the most recent active connection
-    const connection = connections?.find(c => c.status === 'active') || connections?.[0]
+    // 2. Get data coverage summary
+    const { data: monthlyCoverage } = await supabase
+      .from('meta_ad_insights')
+      .select('date')
+      .eq('brand_id', brandId)
+      .gte('date', '2025-03-01')
+      .lte('date', '2025-09-22')
 
-    // Calculate overall status
-    let overallStatus = 'not_connected'
-    let progressPct = 0
-    let estimatedCompletion = null
+    // Calculate monthly coverage
+    const monthlyBreakdown = {
+      'March 2025': 0,
+      'April 2025': 0,
+      'May 2025': 0,
+      'June 2025': 0,
+      'July 2025': 0,
+      'August 2025': 0,
+      'September 2025': 0
+    }
 
-    if (connection && !connectionError) {
-    console.log(`🔥🔥🔥 [Meta Sync Status] Connection found:`, {
-      id: connection.id || 'unknown',
-      status: connection.status,
-      sync_status: connection.sync_status,
-      created_at: connection.created_at,
-      updated_at: connection.updated_at,
-      last_sync_at: connection.last_sync_at
-    })
-
-      // Check if connection is active (has a valid status)
-      console.log(`[Meta Sync Status] Evaluating connection status: ${connection.status}, sync_status: ${connection.sync_status}`)
-
-      if (connection.status === 'active' || connection.status === 'connected') {
-        if (connection.sync_status === 'in_progress') {
-          overallStatus = 'syncing'
-          console.log(`[Meta Sync Status] Status set to 'syncing' - connection is active and in progress`)
-
-          // Calculate progress from ETL jobs
-          const milestones = syncStatus.meta?.milestones || []
-          if (milestones.length > 0) {
-            const totalProgress = milestones.reduce((sum: number, milestone: any) =>
-              sum + (milestone.progress_pct || 0), 0)
-            progressPct = Math.round(totalProgress / milestones.length)
-
-            // BETTER TIME ESTIMATION: Based on actual job completion patterns
-            if (progressPct > 0 && progressPct < 100) {
-              const startTime = new Date(connection.created_at).getTime()
-              const elapsed = Date.now() - startTime
-              
-              // More accurate estimation based on exponential decay model
-              // Most sync jobs complete within 5-15 minutes
-              const avgSyncTimeMs = 10 * 60 * 1000 // 10 minutes average
-              const progressFactor = Math.min(progressPct / 100, 0.95) // Cap at 95%
-              const remainingProgress = 1 - progressFactor
-              
-              // Exponential model: remaining time decreases as progress increases
-              const remainingTimeMs = avgSyncTimeMs * remainingProgress * remainingProgress
-              estimatedCompletion = new Date(Date.now() + remainingTimeMs).toISOString()
-            }
-          }
-        } else if (connection.sync_status === 'completed') {
-          overallStatus = 'completed'
-          progressPct = 100
-          console.log(`🔥🔥🔥 [Meta Sync Status] Status set to 'completed' - sync_status is 'completed'`)
-        } else if (connection.sync_status === 'failed') {
-          overallStatus = 'failed'
-          console.log(`🔥🔥🔥 [Meta Sync Status] Status set to 'failed'`)
-        } else {
-          // Connection exists but sync hasn't started yet - check if we have recent data
-          console.log(`🔥🔥🔥 [Meta Sync Status] sync_status is '${connection.sync_status}' - checking for recent data to determine status...`)
-
-          // Check if we have recent Meta data (last 7 days) to determine if sync is actually complete
-          const { data: recentData } = await supabase
-            .from('meta_ad_daily_insights')
-            .select('id')
-            .eq('brand_id', brandId)
-            .gte('date_range_start', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-            .limit(1)
-
-          if (recentData && recentData.length > 0) {
-            overallStatus = 'completed'
-            progressPct = 100
-            console.log(`[Meta Sync Status] Status set to 'completed' - found recent data`)
-          } else {
-            overallStatus = 'connected'
-            progressPct = 0
-            console.log(`[Meta Sync Status] Status set to 'connected' - active connection with no recent data`)
+    if (monthlyCoverage) {
+      monthlyCoverage.forEach(record => {
+        const date = new Date(record.date)
+        const month = date.getMonth() + 1
+        const year = date.getFullYear()
+        
+        if (year === 2025) {
+          switch (month) {
+            case 3: monthlyBreakdown['March 2025']++; break
+            case 4: monthlyBreakdown['April 2025']++; break
+            case 5: monthlyBreakdown['May 2025']++; break
+            case 6: monthlyBreakdown['June 2025']++; break
+            case 7: monthlyBreakdown['July 2025']++; break
+            case 8: monthlyBreakdown['August 2025']++; break
+            case 9: monthlyBreakdown['September 2025']++; break
           }
         }
-      } else if (connection.status === 'inactive' || connection.status === 'disconnected') {
-        overallStatus = 'disconnected'
-        console.log(`[Meta Sync Status] Status set to 'disconnected'`)
-      } else {
-        // Connection has some other status
-        overallStatus = 'connected'
-        console.log(`[Meta Sync Status] Status set to 'connected' - connection has status: ${connection.status}`)
-      }
+      })
+    }
+
+    // 3. Calculate progress percentage
+    const totalRecords = monthlyCoverage?.length || 0
+    const completedMonths = Object.values(monthlyBreakdown).filter(count => count > 0).length
+    const progressPercentage = Math.round((completedMonths / 7) * 100)
+
+    // 4. Determine status message
+    let statusMessage = ''
+    let isComplete = false
+    
+    if (connection.sync_status === 'completed') {
+      statusMessage = completedMonths === 7 ? 
+        '✅ Complete: All 7 months synced successfully' :
+        `⚠️ Partially complete: ${completedMonths}/7 months synced`
+      isComplete = true
+    } else if (connection.sync_status === 'in_progress') {
+      statusMessage = `🔄 In progress: ${completedMonths}/7 months completed (${progressPercentage}%)`
+    } else if (connection.sync_status === 'failed') {
+      statusMessage = `❌ Failed: ${completedMonths}/7 months completed before failure`
     } else {
-      console.log(`[Meta Sync Status] No connection found or error:`, connectionError?.message)
+      statusMessage = `⏳ ${connection.sync_status}: ${completedMonths}/7 months completed`
     }
 
-    const response = {
+    return NextResponse.json({
       brandId,
-      overallStatus,
-      progressPct,
-      estimatedCompletion,
-      connection: {
-        status: connection?.sync_status || 'not_found',
-        lastSynced: connection?.last_sync_at,
-        createdAt: connection?.created_at
+      syncStatus: connection.sync_status,
+      lastSynced: connection.last_synced_at,
+      updatedAt: connection.updated_at,
+      progress: {
+        percentage: progressPercentage,
+        completedMonths,
+        totalMonths: 7,
+        message: statusMessage
       },
-      milestones: syncStatus.meta?.milestones || [],
-      lastUpdate: syncStatus.meta?.last_update || new Date().toISOString()
-    }
-
-    console.log(`[Meta Sync Status] Status for brand ${brandId}:`, {
-      overallStatus,
-      progressPct,
-      milestonesCount: response.milestones.length
+      dataBreakdown: {
+        totalRecords,
+        monthlyBreakdown,
+        dateRange: {
+          earliest: monthlyCoverage?.[0]?.date || null,
+          latest: monthlyCoverage?.[monthlyCoverage.length - 1]?.date || null
+        }
+      },
+      isComplete,
+      nextAction: isComplete ? 
+        'Refresh your dashboard to see the complete data' :
+        'Wait for background sync to complete, then check again'
     })
 
-    return NextResponse.json(response)
   } catch (error) {
-    console.error('[Meta Sync Status] Error:', error)
-    return NextResponse.json({ 
-      error: 'Failed to get sync status',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { brandId, action } = await request.json()
-
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID required' }, { status: 400 })
-    }
-
-    const supabase = createClient()
-
-    if (action === 'retry') {
-      // Get connection details
-      const { data: connection } = await supabase
-        .from('platform_connections')
-        .select('id, access_token')
-        .eq('brand_id', brandId)
-        .eq('platform_type', 'meta')
-        .single()
-
-      if (!connection) {
-        return NextResponse.json({ error: 'Meta connection not found' }, { status: 404 })
-      }
-
-      // Reset sync status and retry
-      await supabase
-        .from('platform_connections')
-        .update({ sync_status: 'in_progress' })
-        .eq('id', connection.id)
-
-      // Get account ID and queue historical sync
-      try {
-        const meResponse = await fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${connection.access_token}&fields=id,name,account_status`)
-        const meData = await meResponse.json()
-        const accountId = meData.data?.[0]?.id || ''
-
-        const result = await MetaQueueService.queueCompleteHistoricalSync(
-          brandId,
-          connection.id,
-          connection.access_token,
-          accountId
-        )
-
-        return NextResponse.json({
-          success: true,
-          message: `Retry queued successfully - ${result.totalJobs} jobs, estimated completion: ${result.estimatedCompletion}`
-        })
-      } catch (error) {
-        console.error('[Meta Sync Status] Retry failed:', error)
-        return NextResponse.json({ error: 'Failed to retry sync' }, { status: 500 })
-      }
-    }
-
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error) {
-    console.error('[Meta Sync Status] POST Error:', error)
-    return NextResponse.json({ 
-      error: 'Failed to process action',
+    console.error('Error checking sync status:', error)
+    
+    return NextResponse.json({
+      error: 'Failed to check sync status',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
