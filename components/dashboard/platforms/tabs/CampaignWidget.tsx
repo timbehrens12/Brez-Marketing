@@ -309,6 +309,16 @@ const CampaignWidget = ({
   useEffect(() => {
     console.log(`[CampaignWidget] 🚨 isLoadingBudgets changed to: ${isLoadingBudgets} for brand: ${brandId}`);
   }, [isLoadingBudgets, brandId]);
+
+  // 🔍 DEBUG: Track when campaigns prop changes
+  useEffect(() => {
+    console.log(`[CampaignWidget] 🔄 campaigns prop changed:`, campaigns?.map(c => ({ 
+      id: c.id, 
+      campaign_id: c.campaign_id,
+      budget: c.budget, 
+      adset_budget_total: c.adset_budget_total 
+    })));
+  }, [campaigns]);
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
