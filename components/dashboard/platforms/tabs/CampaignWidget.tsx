@@ -1601,9 +1601,22 @@ const CampaignWidget = ({
       };
     }
     
+    // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
+    const currentBudgetData = currentBudgets[campaign.id];
+    if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
+      console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
+      return {
+        budget: currentBudgetData.budget,
+        formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
+        budget_type: currentBudgetData.budget_type || 'unknown',
+        budget_source: 'api'
+      };
+    }
+    
+    // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
     // If campaign has adset_budget_total (the preferred source from the campaigns API)
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      // console.log(`[CampaignWidget] Using adset_budget_total: $${campaign.adset_budget_total}`);
+      console.log(`[CampaignWidget] Using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
@@ -1614,24 +1627,12 @@ const CampaignWidget = ({
     
     // If campaign has a budget field that's greater than 0, use that
     if (campaign.budget && campaign.budget > 0) {
-      // console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
+      console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
       return {
         budget: campaign.budget,
         formatted_budget: formatCurrency(campaign.budget),
         budget_type: campaign.budget_type || 'unknown',
         budget_source: 'campaign'
-      };
-    }
-    
-    // Check current budgets from API
-    const currentBudgetData = currentBudgets[campaign.id];
-    if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
-      // console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
-      return {
-        budget: currentBudgetData.budget,
-        formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
-        budget_type: currentBudgetData.budget_type || 'unknown',
-        budget_source: 'api'
       };
     }
     
