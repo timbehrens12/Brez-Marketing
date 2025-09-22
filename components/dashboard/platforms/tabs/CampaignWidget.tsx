@@ -1605,13 +1605,15 @@ const CampaignWidget = ({
     // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
     const currentBudgetData = currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
-      console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
         formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
         budget_type: currentBudgetData.budget_type || 'unknown',
         budget_source: 'api'
       };
+    } else {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, currentBudgetData);
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
@@ -1628,13 +1630,15 @@ const CampaignWidget = ({
     
     // If campaign has a budget field that's greater than 0, use that
     if (campaign.budget && campaign.budget > 0) {
-      console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.budget: $${campaign.budget}`);
       return {
         budget: campaign.budget,
         formatted_budget: formatCurrency(campaign.budget),
         budget_type: campaign.budget_type || 'unknown',
         budget_source: 'campaign'
       };
+    } else {
+      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: campaign.budget is zero or missing:`, campaign.budget);
     }
     
     // If we're still loading or syncing, don't show $0.00 - this is key!
@@ -1649,7 +1653,14 @@ const CampaignWidget = ({
     }
     
     // Last resort - return 0 but only if we're not loading
-    // console.log(`[CampaignWidget] No budget data found, returning $0.00`);
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data found, returning $0.00. Campaign data:`, {
+      budget: campaign.budget,
+      adset_budget_total: campaign.adset_budget_total,
+      currentBudgets_has_data: !!currentBudgets[campaign.id],
+      isLoading,
+      isSyncing,
+      isLoadingBudgets
+    });
     return {
       budget: 0,
       formatted_budget: formatCurrency(0),
