@@ -5,10 +5,9 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { Database } from '@/types/supabase'
 
 // Create Supabase client with service role for server-side operations (for POST/DELETE)
-// FIXED: Handle missing environment variables during build
 const serviceSupabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
 )
 
