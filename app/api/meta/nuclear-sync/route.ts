@@ -6,7 +6,28 @@ import { createClient } from '@/lib/supabase/server'
  * NUCLEAR SYNC: Forces a complete data pull and verifies every record is stored
  * This endpoint won't return success until ALL data is actually in the database
  */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const brandId = searchParams.get('brandId')
+  
+  if (!brandId) {
+    return NextResponse.json({ error: 'Brand ID required as query parameter' }, { status: 400 })
+  }
+
+  return await nuclearSync(brandId)
+}
+
 export async function POST(request: NextRequest) {
+  const { brandId } = await request.json()
+  
+  if (!brandId) {
+    return NextResponse.json({ error: 'Brand ID required in request body' }, { status: 400 })
+  }
+
+  return await nuclearSync(brandId)
+}
+
+async function nuclearSync(brandId: string) {
   try {
     const { userId } = await auth()
     if (!userId) {
