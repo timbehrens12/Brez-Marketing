@@ -61,8 +61,8 @@ async function getAccurateReachFromAdSets(supabase: any, brandId: string, campai
       adSets.forEach((adSet: any) => {
         const adSetInsights = insightsByAdSet[adSet.adset_id] || [];
         if (adSetInsights.length > 0) {
-          // For multi-day periods, use maximum reach per ad set to avoid inflated numbers
-          const adSetReach = Math.max(...adSetInsights.map((insight: any) => Number(insight.reach || 0)));
+          // CORRECTED: For multi-day periods, sum the daily reach values for this ad set
+          const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
           totalReach += adSetReach;
         }
       });
@@ -887,8 +887,8 @@ export async function GET(request: NextRequest) {
                 const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
                 
                 // Calculate all metrics from ad set insights
-                // CRITICAL: Reach is NOT additive across days - use the maximum reach for this ad set
-                const adSetReach = adSetInsights.length > 0 ? Math.max(...adSetInsights.map(insight => Number(insight.reach || 0))) : 0;
+                // CORRECTED: For period reach calculation, sum the daily reach values for this ad set
+                const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
                 const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
                 const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
                 const adSetConversions = 0; // Conversions data is not real in meta_adset_daily_insights

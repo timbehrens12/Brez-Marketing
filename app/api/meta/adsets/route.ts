@@ -239,15 +239,15 @@ export async function GET(req: NextRequest) {
             cachedAdSets = cachedAdSets.map(adSet => {
               const insights = insightsByAdSet[adSet.adset_id] || [];
               
-              // Calculate the maximum reach for this specific adset across the date range
-              // Reach is NOT additive across days - use the maximum reach achieved by this adset
-              const adsetMaxReach = insights.length > 0 ? Math.max(...insights.map(insight => Number(insight.reach || 0))) : 0;
+              // Calculate the total reach for this specific adset across the date range
+              // CORRECTED: For period reach calculation, sum the daily reach values for this adset
+              const adsetTotalReach = insights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
               
-              console.log(`[API] Adset ${adSet.adset_id} individual max reach = ${adsetMaxReach} from ${insights.length} days of insights`);
+              console.log(`[API] Adset ${adSet.adset_id} individual total reach = ${adsetTotalReach} from ${insights.length} days of insights`);
               
               return {
                 ...adSet,
-                reach: adsetMaxReach // Use the individual adset reach, not total brand reach
+                reach: adsetTotalReach // Use the individual adset reach, not total brand reach
               };
             });
             
