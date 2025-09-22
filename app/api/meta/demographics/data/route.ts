@@ -159,9 +159,9 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
-      // If no device data for requested dates OR forceRefresh=true, get the most recent available data
-      if (data.length === 0 || forceRefresh) {
-        console.log(`[Demographics API] ${forceRefresh ? 'Force refresh triggered' : 'No device data for requested dates'}, fetching most recent device data`)
+        // If no device data for requested dates, get the most recent available data
+        if (data.length === 0) {
+          console.log(`[Demographics API] No device data for requested dates ${finalDateFrom} to ${finalDateTo}, fetching most recent device data`)
         
         const recentResult = await supabase
           .from('meta_device_performance')
@@ -195,9 +195,9 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // If no data for requested dates OR forceRefresh=true, get the most recent available data
-      if (data.length === 0 || forceRefresh) {
-        console.log(`[Demographics API] ${forceRefresh ? 'Force refresh triggered' : 'No data for requested dates'}, fetching most recent data`)
+      // Only use fallback if no data found for requested dates (not when forceRefresh is true)
+      if (data.length === 0) {
+        console.log(`[Demographics API] No data found for requested dates ${finalDateFrom} to ${finalDateTo}, fetching most recent data`)
         
         const recentResult = await supabase
           .from('meta_demographics')
