@@ -1605,8 +1605,8 @@ const CampaignWidget = ({
       };
     }
     
-    // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
-    const currentBudgetData = currentBudgets[campaign.id];
+    // 🚨 FIXED: Check current budgets from API first - try both campaign.id and campaign.campaign_id
+    const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
       return {
         budget: currentBudgetData.budget,
@@ -1616,20 +1616,10 @@ const CampaignWidget = ({
       };
     }
 
-    // Check if budget data is available from any source
-    const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
+    // Check if budget data is available from any source  
+    const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && 
+      (currentBudgets[campaign.id]?.budget > 0 || currentBudgets[campaign.campaign_id]?.budget > 0);
     const hasCampaignBudgets = Boolean((campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0));
-    
-    // TEMP DEBUG: Check if there's an ID mismatch
-    console.log(`[DEBUG] Campaign ${campaign.campaign_id} ID check:`, {
-      campaign_id: campaign.id,
-      campaign_campaign_id: campaign.campaign_id,
-      currentBudgets_keys: currentBudgets ? Object.keys(currentBudgets) : [],
-      hasCurrentBudgets,
-      hasCampaignBudgets,
-      campaign_budget: campaign.budget,
-      currentBudgets_full: currentBudgets
-    });
     
     // Show loading skeleton when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
