@@ -1432,11 +1432,13 @@ export async function fetchMetaAdSets(
               `reach-${adSet.id}`
             );
             
+            console.log(`[Meta Service] Reach API response for AdSet ${adSet.id}:`, JSON.stringify(totalReachResponse, null, 2));
+            
             if (totalReachResponse.data && totalReachResponse.data.length > 0 && totalReachResponse.data[0].reach) {
               totalReachForPeriod = parseInt(totalReachResponse.data[0].reach, 10);
-              console.log(`[Meta Service] Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
+              console.log(`[Meta Service] ✅ Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
             } else {
-               console.log(`[Meta Service] No total reach data found for AdSet ${adSet.id}`);
+               console.log(`[Meta Service] ❌ No total reach data found for AdSet ${adSet.id}. Response structure:`, totalReachResponse);
             }
           } catch (reachError) {
             console.error(`[Meta Service] Error fetching total reach for AdSet ${adSet.id}:`, reachError);
@@ -1513,7 +1515,7 @@ export async function fetchMetaAdSets(
           const costPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0;
           
           // Create formatted ad set object
-          return {
+          const adSetObject = {
             adset_id: adSet.id,
             adset_name: adSet.name,
             campaign_id: campaignId,
@@ -1543,6 +1545,10 @@ export async function fetchMetaAdSets(
             cost_per_conversion: costPerConversion,
             daily_insights: dailyInsights
           };
+          
+          console.log(`[Meta Service] 🔍 Saving AdSet ${adSet.id} with reach: ${totalReachForPeriod}, spent: ${totalSpent}, impressions: ${totalImpressions}`);
+          
+          return adSetObject;
         } catch (error) {
           console.error(`[Meta Service] Error processing ad set ${adSet.id}:`, error);
           return null;
