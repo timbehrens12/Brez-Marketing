@@ -303,7 +303,7 @@ const CampaignWidget = ({
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
   
   // Add state to track loading status
-  const [isLoadingBudgets, setIsLoadingBudgets] = useState(false);
+  const [isLoadingBudgets, setIsLoadingBudgets] = useState(true); // 🚨 CRITICAL FIX: Start as true to prevent $0 flash
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
@@ -1066,6 +1066,9 @@ const CampaignWidget = ({
       // 🚨 CRITICAL FIX: Don't show budget until API completes
       setIsLoadingBudgets(true);
       fetchCurrentBudgets(true);
+    } else {
+      // If no brandId, no need to load budgets
+      setIsLoadingBudgets(false);
     }
   }, [brandId, fetchCurrentBudgets]);
   
@@ -1660,7 +1663,7 @@ const CampaignWidget = ({
       currentBudgets_has_data: !!currentBudgets[campaign.id],
       isLoading,
       isSyncing,
-      isLoadingBudgets
+      isLoadingBudgets // 🚨 This should be TRUE on first render to show '...'
     });
     return {
       budget: 0,
