@@ -1621,6 +1621,17 @@ const CampaignWidget = ({
       (currentBudgets[campaign.id]?.budget > 0 || currentBudgets[campaign.campaign_id]?.budget > 0);
     const hasCampaignBudgets = Boolean((campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0));
     
+    // TEMP DEBUG: See what's happening after ID fix
+    console.log(`[DEBUG AFTER FIX] Campaign ${campaign.campaign_id}:`, {
+      hasCurrentBudgets,
+      hasCampaignBudgets,
+      campaign_budget: campaign.budget,
+      campaign_adset_budget_total: campaign.adset_budget_total,
+      currentBudgets_by_internal_id: currentBudgets?.[campaign.id],
+      currentBudgets_by_meta_id: currentBudgets?.[campaign.campaign_id],
+      currentBudgets_keys: currentBudgets ? Object.keys(currentBudgets) : []
+    });
+    
     
     // Show loading skeleton when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
