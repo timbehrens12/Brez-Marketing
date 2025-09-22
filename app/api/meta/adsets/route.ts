@@ -234,37 +234,22 @@ export async function GET(req: NextRequest) {
               };
             });
             
-            // FIXED: Now get the correct reach data from meta_adsets_total_reach and apply to all adsets
-            try {
-              const { data: reachData, error: reachError } = await supabase
-                .from('meta_adsets_total_reach')
-                .select('total_reach, date')
-                .eq('brand_id', brandId)
-                .gte('date', fromDate!)
-                .lte('date', toDate!);
+            // FIXED: Now apply individual reach per adset from the insights we already processed
+            // Each adset should have its own reach, not the total brand reach
+            cachedAdSets = cachedAdSets.map(adSet => {
+              const insights = insightsByAdSet[adSet.adset_id] || [];
               
-              if (!reachError && reachData && reachData.length > 0) {
-                // Sum the daily reach totals from meta_adsets_total_reach
-                const totalReachForPeriod = reachData.reduce((sum, day) => {
-                  return sum + Number(day.total_reach || 0);
-                }, 0);
-                
-                console.log(`[API] Calculated total reach for adsets = ${totalReachForPeriod} from ${reachData.length} days from meta_adsets_total_reach`);
-                
-                // Apply the correct reach to all adsets (distributed evenly or as total - depends on requirements)
-                // For now, we'll apply the total reach to each adset since meta_adsets_total_reach is brand-level
-                cachedAdSets = cachedAdSets.map(adSet => ({
-                  ...adSet,
-                  reach: totalReachForPeriod // Use the correct reach from meta_adsets_total_reach
-                }));
-                
-                console.log(`[API] Applied correct reach (${totalReachForPeriod}) to ${cachedAdSets.length} adsets`);
-              } else {
-                console.log(`[API] No reach data found in meta_adsets_total_reach for date range ${fromDate} to ${toDate}`);
-              }
-            } catch (reachError) {
-              console.error('[API] Error fetching reach data from meta_adsets_total_reach:', reachError);
-            }
+              // Calculate the maximum reach for this specific adset across the date range
+              // Reach is NOT additive across days - use the maximum reach achieved by this adset
+              const adsetMaxReach = insights.length > 0 ? Math.max(...insights.map(insight => Number(insight.reach || 0))) : 0;
+              
+              console.log(`[API] Adset ${adSet.adset_id} individual max reach = ${adsetMaxReach} from ${insights.length} days of insights`);
+              
+              return {
+                ...adSet,
+                reach: adsetMaxReach // Use the individual adset reach, not total brand reach
+              };
+            });
             
             console.log(`[API] Successfully processed ${cachedAdSets.length} cached ad sets with insights for date range`);
             }
