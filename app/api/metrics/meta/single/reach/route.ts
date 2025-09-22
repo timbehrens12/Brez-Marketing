@@ -50,27 +50,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Get reach data from ad sets using the same logic as campaigns
-    // This ensures consistent reach calculation across all widgets
-    const { data: adSets, error: adSetsError } = await supabase
-      .from('meta_adsets')
-      .select('adset_id')
-      .eq('brand_id', brandId)
-      .eq('status', 'ACTIVE')
+    // FIXED: Get reach data directly from insights (ad sets table is empty but insights exist)
+    // This bypasses the missing ad sets issue and gets data directly from insights
+    console.log(`REACH API: Checking insights directly for brand ${brandId}`)
     
-    if (adSetsError || !adSets || adSets.length === 0) {
-      console.log(`No active ad sets found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
-    }
-    
-    // Get ad set IDs
-    const adSetIds = adSets.map((adSet: any) => adSet.adset_id);
-    
-    // Get insights for these ad sets in the date range
+    // Get insights directly for the date range
     const { data: insights, error: insightsError } = await supabase
       .from('meta_adset_daily_insights')
       .select('*')
-      .in('adset_id', adSetIds)
+      .eq('brand_id', brandId)
       .gte('date', from)
       .lte('date', to)
     
@@ -97,27 +85,28 @@ export async function GET(request: NextRequest) {
     // For multi-day periods, we need to take the maximum reach per ad set
     // or sum only unique reach values, not daily totals
     let totalReach = 0;
-    adSets.forEach((adSet: any) => {
-      const adSetInsights = insightsByAdSet[adSet.adset_id] || [];
+    Object.keys(insightsByAdSet).forEach((adSetId) => {
+      const adSetInsights = insightsByAdSet[adSetId] || [];
       if (adSetInsights.length > 0) {
         // For single day: use the reach value directly
         // For multiple days: use the maximum reach (closest to period reach)
         // This prevents inflated reach numbers from daily summation
         const adSetReach = Math.max(...adSetInsights.map((insight: any) => Number(insight.reach || 0)));
+        console.log(`REACH API: Ad set ${adSetId} max reach: ${adSetReach}`)
         totalReach += adSetReach;
       }
     });
     
-    console.log(`REACH API: Calculated reach = ${totalReach} from ${adSets.length} ad sets with ${insights.length} insight records`)
+    console.log(`REACH API: Calculated reach = ${totalReach} from ${Object.keys(insightsByAdSet).length} ad sets with ${insights.length} insight records`)
     
     return NextResponse.json({
       value: totalReach,
       _meta: {
         from,
         to,
-        adSets: adSets.length,
+        adSets: Object.keys(insightsByAdSet).length,
         insightRecords: insights.length,
-        source: 'adset_insights'
+        source: 'adset_insights_direct'
       }
     })
     

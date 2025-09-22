@@ -1106,7 +1106,7 @@ export function MetaTab2({
         <TotalBudgetMetricCard 
           brandId={brandId}
           isManuallyRefreshing={false}
-          disableAutoFetch={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
           unifiedLoading={isLoadingAllMetaWidgets}
         />
 
@@ -1115,7 +1115,7 @@ export function MetaTab2({
           brandId={brandId} 
           dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
           isManuallyRefreshing={false}
-          disableAutoFetch={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
           unifiedLoading={isLoadingAllMetaWidgets}
         />
 
