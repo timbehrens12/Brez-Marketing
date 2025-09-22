@@ -159,6 +159,24 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
+      // If no device data for requested dates OR forceRefresh=true, get the most recent available data
+      if (data.length === 0 || forceRefresh) {
+        console.log(`[Demographics API] ${forceRefresh ? 'Force refresh triggered' : 'No device data for requested dates'}, fetching most recent device data`)
+        
+        const recentResult = await supabase
+          .from('meta_device_performance')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('breakdown_type', dbBreakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(20) // Get recent records
+        
+        if (recentResult.data && recentResult.data.length > 0) {
+          data = recentResult.data
+          console.log(`[Demographics API] Using ${data.length} recent device records from ${data[0].date_range_start}`)
+        }
+      }
+      
     } else {
       // Age/gender data - First try meta_demographics with current dates
       console.log(`[Demographics API] Querying meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
@@ -177,9 +195,9 @@ export async function GET(request: NextRequest) {
       
       console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
       
-      // If no data for requested dates, get the most recent available data
-      if (data.length === 0) {
-        console.log(`[Demographics API] No data for requested dates, fetching most recent data`)
+      // If no data for requested dates OR forceRefresh=true, get the most recent available data
+      if (data.length === 0 || forceRefresh) {
+        console.log(`[Demographics API] ${forceRefresh ? 'Force refresh triggered' : 'No data for requested dates'}, fetching most recent data`)
         
         const recentResult = await supabase
           .from('meta_demographics')

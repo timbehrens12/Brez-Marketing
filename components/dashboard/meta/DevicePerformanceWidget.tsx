@@ -66,6 +66,9 @@ export function DevicePerformanceWidget({
         // console.log(`[Device Performance Widget] 🔥 No date range provided, fetching all data`)
       }
 
+      // AUTOMATIC FALLBACK: Always use the working refresh behavior by default
+      params.append('forceRefresh', 'true')
+
       const response = await fetch(`/api/meta/demographics/data?${params}`)
       const result = await response.json()
 
