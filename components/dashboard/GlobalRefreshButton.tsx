@@ -55,7 +55,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
     }
     
     updateTimeAgo()
-    const interval = setInterval(updateTimeAgo, 10000) // Update every 10 seconds
+    const interval = setInterval(updateTimeAgo, 60000) // Update every 60 seconds (reduced from 10s)
     
     return () => clearInterval(interval)
   }, [lastUpdated, getTimeAgo, getDataFreshnessStatus])

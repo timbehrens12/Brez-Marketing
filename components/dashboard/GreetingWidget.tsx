@@ -1540,7 +1540,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     };
     
     // Set up hourly refresh for daily data
-    const hourlyRefreshInterval = setInterval(refreshDailyData, 60 * 60 * 1000); // Every hour
+    const hourlyRefreshInterval = setInterval(refreshDailyData, 4 * 60 * 60 * 1000); // Every 4 hours (reduced from 1 hour)
     
     // Check if we need to perform the monthly refresh
     const checkForMonthlyRefresh = () => {
@@ -1555,7 +1555,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     checkForMonthlyRefresh();
     
     // Check for monthly refresh every hour
-    const monthlyCheckInterval = setInterval(checkForMonthlyRefresh, 60 * 60 * 1000);
+    const monthlyCheckInterval = setInterval(checkForMonthlyRefresh, 24 * 60 * 60 * 1000); // Check daily instead of hourly
     
     // Cleanup intervals on unmount
     return () => {
