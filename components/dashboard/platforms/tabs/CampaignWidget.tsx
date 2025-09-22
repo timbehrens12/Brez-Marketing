@@ -1605,7 +1605,7 @@ const CampaignWidget = ({
       };
     }
     
-    // 🚨 FIXED: Check current budgets from API first - try both campaign.id and campaign.campaign_id
+    // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
     const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
       return {
