@@ -133,13 +133,15 @@ async function nuclearSync(brandId: string) {
 
     console.log(`💥 [Nuclear Sync] Found ${campaignsData.data?.length || 0} campaigns`)
 
-    // 5. For EACH campaign, get detailed insights (last 30 days to start)
+    // 5. For EACH campaign, get detailed insights (FULL 12 MONTHS like production should do)
     const today = new Date()
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
-    const startDateStr = thirtyDaysAgo.toISOString().split('T')[0]
+    // Set to March 21, 2025 (when account started) to match your requirement
+    const accountStartDate = new Date('2025-03-21')
+    const startDateStr = accountStartDate.toISOString().split('T')[0]
     const endDateStr = today.toISOString().split('T')[0]
+    
+    console.log(`💥 [Nuclear Sync] FULL 12-MONTH SYNC: ${startDateStr} to ${endDateStr} (${Math.ceil((today.getTime() - accountStartDate.getTime()) / (1000 * 60 * 60 * 24))} days)`)
 
     let totalRecordsStored = 0
     let errors = []
