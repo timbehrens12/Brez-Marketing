@@ -101,8 +101,6 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   useEffect(() => {
     // 🚨 FIXED: Always fetch on mount regardless of disableAutoFetch
     if (brandId && !hasInitialLoadRef.current) {
-      console.log('[TotalMetaBudget] Initial mount - fetching fresh budget data');
-      // 🚨 ALWAYS force refresh to get live data (no cache)
       fetchTotalBudget(true)
     }
   }, [brandId])
@@ -111,33 +109,18 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   useEffect(() => {
     // When unified loading was true and now becomes false, fetch fresh data
     if (unifiedLoading === false && disableAutoFetch && brandId) {
-      console.log("[TotalMetaBudget] Unified loading completed, fetching fresh budget data with force refresh");
-      // Use a small delay to ensure other data fetches complete first
       setTimeout(() => {
-        fetchTotalBudget(true); // Force refresh to get latest data
+        fetchTotalBudget(true);
       }, 500);
     }
   }, [unifiedLoading, disableAutoFetch, brandId])
   
-  // 🚨 ADDED: Refresh budget data when page gains focus (user might have changed budgets in Meta)
-  useEffect(() => {
-    const handleFocus = () => {
-      if (brandId && hasInitialLoadRef.current) {
-        console.log('[TotalMetaBudget] Page focus - refreshing budget data');
-        fetchTotalBudget(true);
-      }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [brandId])
+  // Removed: Auto-refresh on page focus (was annoying when switching tabs)
 
   // Handle forceRefresh prop - fetch fresh data when forceRefresh is true
   // 🚨 FIXED: forceRefresh should work regardless of disableAutoFetch
   useEffect(() => {
     if (forceRefresh && brandId) {
-      console.log('[TotalMetaBudget] forceRefresh=true, fetching fresh budget data with cache bust');
-      // Force refresh with extra cache busting
       fetchTotalBudget(true);
     }
   }, [forceRefresh, brandId])

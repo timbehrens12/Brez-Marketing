@@ -305,20 +305,7 @@ const CampaignWidget = ({
   // Add state to track loading status
   const [isLoadingBudgets, setIsLoadingBudgets] = useState(true); // 🚨 CRITICAL: Start as true to show "..." while budget API loads
   
-  // 🔍 DEBUG: Track when isLoadingBudgets changes
-  useEffect(() => {
-    console.log(`[CampaignWidget] 🚨 isLoadingBudgets changed to: ${isLoadingBudgets} for brand: ${brandId}`);
-  }, [isLoadingBudgets, brandId]);
-
-  // 🔍 DEBUG: Track when campaigns prop changes
-  useEffect(() => {
-    console.log(`[CampaignWidget] 🔄 campaigns prop changed:`, campaigns?.map(c => ({ 
-      id: c.id, 
-      campaign_id: c.campaign_id,
-      budget: c.budget, 
-      adset_budget_total: c.adset_budget_total 
-    })));
-  }, [campaigns]);
+  // Debug logging removed for cleaner console
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
   // Use a ref to track if the component is mounted
@@ -1076,15 +1063,10 @@ const CampaignWidget = ({
   
   // Fetch budgets on mount and when brandId changes
   useEffect(() => {
-    console.log(`[CampaignWidget] 🔍 useEffect triggered - brandId: "${brandId}"`);
     if (brandId) {
-      console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change with force refresh');
-      // 🚨 CRITICAL FIX: Don't show budget until API completes
       setIsLoadingBudgets(true);
       fetchCurrentBudgets(true);
     } else {
-      // If no brandId, no need to load budgets
-      console.log('[CampaignWidget] 🚨 NO BRAND ID - setting isLoadingBudgets to false');
       setIsLoadingBudgets(false);
     }
   }, [brandId, fetchCurrentBudgets]);
@@ -1626,41 +1608,20 @@ const CampaignWidget = ({
     // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
     const currentBudgetData = currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
         budget: currentBudgetData.budget,
         formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
         budget_type: currentBudgetData.budget_type || 'unknown',
         budget_source: 'api'
       };
-    } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: currentBudgets empty or zero:`, currentBudgetData);
     }
 
-    // 🚨 CRITICAL FIX: If currentBudgets API hasn't loaded yet AND campaign props are empty,
-    // wait for the API instead of showing $0.00 immediately
-    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 currentBudgets check:`, {
-      currentBudgets_exists: !!currentBudgets,
-      currentBudgets_keys_length: currentBudgets ? Object.keys(currentBudgets).length : 'N/A',
-      currentBudgets_type: typeof currentBudgets,
-      campaign_budget: campaign.budget,
-      campaign_adset_budget_total: campaign.adset_budget_total
-    });
-    
-    // 🚨 FINAL FIX: If ALL budget sources are empty/zero, show loading (regardless of isLoadingBudgets)
+    // Check if budget data is available from any source
     const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
     const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
     
-    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 Budget sources:`, {
-      hasCurrentBudgets,
-      hasCampaignBudgets,
-      isLoadingBudgets,
-      currentBudgets_for_campaign: currentBudgets?.[campaign.id]
-    });
-    
-    // 🚨 FINAL FIX: Show loading skeleton briefly when no budget data available
+    // Show loading skeleton when no budget data available
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading skeleton`);
       return {
         budget: 0,
         formatted_budget: '...', // Show loading skeleton while waiting for any budget data
@@ -1672,7 +1633,6 @@ const CampaignWidget = ({
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
     // If campaign has adset_budget_total (the preferred source from the campaigns API)
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      console.log(`[CampaignWidget] Using campaign.adset_budget_total: $${campaign.adset_budget_total}`);
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
@@ -1683,20 +1643,16 @@ const CampaignWidget = ({
     
     // If campaign has a budget field that's greater than 0, use that
     if (campaign.budget && campaign.budget > 0) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using campaign.budget: $${campaign.budget}`);
       return {
         budget: campaign.budget,
         formatted_budget: formatCurrency(campaign.budget),
         budget_type: campaign.budget_type || 'unknown',
         budget_source: 'campaign'
       };
-    } else {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: campaign.budget is zero or missing:`, campaign.budget);
     }
     
     // If we're still loading or syncing, don't show $0.00 - this is key!
     if (isLoading || isSyncing || isLoadingBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Still loading, showing '...' - isLoading=${isLoading}, isSyncing=${isSyncing}, isLoadingBudgets=${isLoadingBudgets}`);
       return {
         budget: 0,
         formatted_budget: '...', // Show loading indicator instead of $0.00
@@ -1706,14 +1662,6 @@ const CampaignWidget = ({
     }
     
     // Last resort - return 0 but only if we're not loading
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data found, returning $0.00. Campaign data:`, {
-        budget: campaign.budget,
-        adset_budget_total: campaign.adset_budget_total,
-        currentBudgets_has_data: !!currentBudgets[campaign.id],
-        isLoading,
-        isSyncing,
-        isLoadingBudgets // 🚨 This should be TRUE on first render to show '...'
-      });
     return {
       budget: 0,
       formatted_budget: formatCurrency(0),
