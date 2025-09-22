@@ -550,7 +550,7 @@ export async function GET(request: NextRequest) {
         let clicks = 0;
         let conversions = 0;
         let purchaseValue = 0;
-        let calculatedReach = 0;
+        let reachValues: number[] = []; // Collect reach values to find maximum, not sum
         
         // Fetch ad sets to calculate campaign budget
         let adsetBudgetTotal = 0;
@@ -773,7 +773,7 @@ export async function GET(request: NextRequest) {
             spend += dailySpend;
             impressions += dailyImpressions;
             clicks += dailyClicks;
-            calculatedReach += dailyReach;
+            if (dailyReach > 0) reachValues.push(dailyReach); // Collect reach values, don't sum them
             conversions += dailyConversions;
           });
           
@@ -805,8 +805,8 @@ export async function GET(request: NextRequest) {
         // to avoid making individual database calls for each campaign
         let finalReach = 0;
         if (hasDateRange) {
-          // Will be calculated below after getting all ad set insights
-          finalReach = calculatedReach; // Temporary fallback to prevent infinite loading
+          // Use maximum reach value instead of sum for date ranges
+          finalReach = reachValues.length > 0 ? Math.max(...reachValues) : 0;
         } else {
           // Without date range, use the campaign's total reach
           finalReach = Number(campaign.reach) || 0;
@@ -814,7 +814,7 @@ export async function GET(request: NextRequest) {
 
         // Log the reach calculation for debugging if needed
         if (campaign.campaign_id === '120218263352990058') {
-            console.log(`[API Campaigns] Campaign ${campaign.campaign_id}: hasDateRange=${hasDateRange}, calculatedReach=${calculatedReach}, finalReach=${finalReach} (from ${campaignStats.length} daily records)`);
+            console.log(`[API Campaigns] Campaign ${campaign.campaign_id}: hasDateRange=${hasDateRange}, reachValues=${reachValues}, finalReach=${finalReach} (from ${campaignStats.length} daily records)`);
         }
         
         // Return campaign with aggregated performance metrics for the date range
@@ -885,7 +885,8 @@ export async function GET(request: NextRequest) {
                 const adSetInsights = allInsights.filter(insight => insight.adset_id === adSet.adset_id);
                 
                 // Calculate all metrics from ad set insights
-                const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
+                // CRITICAL: Reach is NOT additive across days - use the maximum reach for this ad set
+                const adSetReach = adSetInsights.length > 0 ? Math.max(...adSetInsights.map(insight => Number(insight.reach || 0))) : 0;
                 const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
                 const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
                 const adSetConversions = 0; // Conversions data is not real in meta_adset_daily_insights
