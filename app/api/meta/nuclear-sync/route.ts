@@ -167,6 +167,7 @@ async function nuclearSync(brandId: string) {
           try {
             const record = {
               brand_id: brandId,
+              connection_id: connection.id, // Add the missing connection_id
               campaign_id: insight.campaign_id,
               campaign_name: insight.campaign_name,
               adset_id: insight.adset_id || 'unknown',
