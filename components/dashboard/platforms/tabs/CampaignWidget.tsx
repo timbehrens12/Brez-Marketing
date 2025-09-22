@@ -1068,6 +1068,17 @@ const CampaignWidget = ({
       removeAbortController(controller);
       if (isMountedRef.current) {
         setIsLoadingBudgets(false);
+        
+        // 🚨 CRITICAL FIX: Trigger campaigns refresh after budget API completes
+        // This ensures campaigns get updated with real budget data on first load
+        if (onRefresh && typeof onRefresh === 'function') {
+          console.log('[CampaignWidget] Budget API completed - triggering campaigns refresh to get real budget data');
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              onRefresh();
+            }
+          }, 100); // Small delay to avoid race conditions
+        }
       }
       // Clear the fetch flag
       delete (window as any)[fetchKey];
