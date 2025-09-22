@@ -1623,8 +1623,8 @@ const CampaignWidget = ({
       };
     }
     
-    // 🚨 FIXED: Check current budgets from API first (try both campaign.id and campaign.campaign_id)
-    const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
+    // 🚨 FIXED: Check current budgets from API first (most up-to-date when available)
+    const currentBudgetData = currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
       console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
@@ -1647,30 +1647,49 @@ const CampaignWidget = ({
       campaign_adset_budget_total: campaign.adset_budget_total
     });
     
-    // 🚨 CRITICAL FIX: The issue is campaign.id vs campaign.campaign_id mismatch!
-    const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && 
-      (currentBudgets[campaign.id]?.budget > 0 || currentBudgets[campaign.campaign_id]?.budget > 0);
+    // 🚨 FINAL FIX: If ALL budget sources are empty/zero, show loading (regardless of isLoadingBudgets)
+    const hasCurrentBudgets = currentBudgets && Object.keys(currentBudgets).length > 0 && currentBudgets[campaign.id]?.budget > 0;
     const hasCampaignBudgets = (campaign.budget && campaign.budget > 0) || (campaign.adset_budget_total && campaign.adset_budget_total > 0);
     
-    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 Budget sources DEBUG:`, {
+    console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: 🔍 Budget sources:`, {
       hasCurrentBudgets,
       hasCampaignBudgets,
       isLoadingBudgets,
-      campaign_id: campaign.id,
-      campaign_campaign_id: campaign.campaign_id,
-      currentBudgets_keys: currentBudgets ? Object.keys(currentBudgets) : [],
-      currentBudgets_by_id: currentBudgets?.[campaign.id],
-      currentBudgets_by_campaign_id: currentBudgets?.[campaign.campaign_id]
+      currentBudgets_for_campaign: currentBudgets?.[campaign.id]
     });
     
+    // 🚨 FINAL FIX: Only show loading state after a brief delay to avoid flash on first load
     if (!hasCurrentBudgets && !hasCampaignBudgets) {
-      console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available from any source - showing loading state`);
-      return {
-        budget: 0,
-        formatted_budget: '...', // Show loading while waiting for any budget data
-        budget_type: 'unknown',
-        budget_source: 'no_data_available'
-      };
+      // Check if this is the very first render with empty campaigns
+      const isFirstRenderWithEmptyCampaigns = !campaign.budget && !campaign.adset_budget_total && 
+        (!currentBudgets || Object.keys(currentBudgets).length === 0);
+      
+      if (isFirstRenderWithEmptyCampaigns && isLoadingBudgets) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: First render with no data and still loading - showing loading state`);
+        return {
+          budget: 0,
+          formatted_budget: '...', // Show loading while waiting for any budget data
+          budget_type: 'unknown',
+          budget_source: 'no_data_available'
+        };
+      } else if (!isFirstRenderWithEmptyCampaigns) {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: No budget data available but not first render - showing loading state`);
+        return {
+          budget: 0,
+          formatted_budget: '...', // Show loading while waiting for any budget data
+          budget_type: 'unknown',
+          budget_source: 'no_data_available'
+        };
+      } else {
+        console.log(`[CampaignWidget] Campaign ${campaign.campaign_id}: First render but not loading - showing $0 temporarily`);
+        // For first render when not loading, show $0 briefly to avoid flash
+        return {
+          budget: 0,
+          formatted_budget: formatCurrency(0),
+          budget_type: 'unknown',
+          budget_source: 'temporary_zero'
+        };
+      }
     }
     
     // 🚨 FIXED: Immediate fallback to campaign data (don't wait for currentBudgets API)
