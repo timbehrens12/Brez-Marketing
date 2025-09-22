@@ -1062,7 +1062,8 @@ const CampaignWidget = ({
   // Fetch budgets on mount and when brandId changes
   useEffect(() => {
     if (brandId) {
-      console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change');
+      console.log('[CampaignWidget] Fetching fresh budget data on mount/brandId change with force refresh');
+      // 🚨 ALWAYS force refresh to get live budget data (no cache)
       fetchCurrentBudgets(true);
     }
   }, [brandId, fetchCurrentBudgets]);
