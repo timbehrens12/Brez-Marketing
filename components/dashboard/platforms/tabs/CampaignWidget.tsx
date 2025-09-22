@@ -704,16 +704,10 @@ const CampaignWidget = ({
       // Clean up abort controller
       removeAbortController(controller);
 
-      // *** NEW: If ad sets were successfully fetched, trigger parent refresh ***
-      if (success && adSets.length > 0 && onRefresh) {
-          logger.info(`[CampaignWidget] Ad sets loaded for ${campaignId}, triggering parent campaign refresh.`);
-          // Add a small delay to allow state to settle before triggering parent refresh
-          setTimeout(() => {
-              if (isMountedRef.current) { // Add check if component still mounted
-                onRefresh(); 
-              }
-          }, 500); 
-      }
+      // 🚨 REMOVED: This was causing spam refreshing and budget widget corruption
+      // When adsets are fetched, we DON'T need to refresh the parent campaigns
+      // The adset data is independent and doesn't require campaign data refresh
+      // This was causing the budget widget to reset to 0 every time dropdown opened
     }
   }, [brandId, dateRange, expandedCampaign, onRefresh, isMountedRef, createAbortController, removeAbortController]);
 
