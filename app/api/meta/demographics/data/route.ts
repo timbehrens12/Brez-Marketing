@@ -132,21 +132,18 @@ export async function GET(request: NextRequest) {
       console.log(`[Demographics API] No date ranges found in meta_demographics for brand ${brandId}`)
     }
 
-    // SMART FIX: Use the right table for each breakdown type, with current data sync
+    // PROPER FIX: Use the right table for each breakdown type
     let data = []
     let error = null
-    let sourceTable = ''
-    let dbBreakdownType = breakdownType
     
-    // Device/platform data - use meta_device_performance (known working)
     if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-      dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
-                       : breakdownType === 'placement' ? 'platform'
-                       : breakdownType === 'publisher_platform' ? 'platform'
-                       : breakdownType
-      sourceTable = 'meta_device_performance'
+      // Device/platform data is in meta_device_performance table
+      const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
+                             : breakdownType === 'placement' ? 'platform'
+                             : breakdownType === 'publisher_platform' ? 'platform'
+                             : breakdownType
       
-      console.log(`[Demographics API] Using meta_device_performance for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
+      console.log(`[Demographics API] Querying meta_device_performance for ${dbBreakdownType} from ${finalDateFrom} to ${finalDateTo}`)
       
       const result = await supabase
         .from('meta_device_performance')
@@ -160,11 +157,11 @@ export async function GET(request: NextRequest) {
       data = result.data || []
       error = result.error
       
-    } else {
-      // Age/gender data - sync from meta_adset_daily_insights if meta_demographics is stale
-      sourceTable = 'meta_demographics'
+      console.log(`[Demographics API] meta_device_performance query result: ${data.length} records`)
       
-      console.log(`[Demographics API] Checking meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
+    } else {
+      // Age/gender data - First try meta_demographics with current dates
+      console.log(`[Demographics API] Querying meta_demographics for ${breakdownType} from ${finalDateFrom} to ${finalDateTo}`)
       
       const result = await supabase
         .from('meta_demographics')
@@ -178,108 +175,25 @@ export async function GET(request: NextRequest) {
       data = result.data || []
       error = result.error
       
-      // If no recent data, try to get from insights and aggregate on-the-fly
+      console.log(`[Demographics API] meta_demographics query result: ${data.length} records`)
+      
+      // If no data for requested dates, get the most recent available data
       if (data.length === 0) {
-        console.log(`[Demographics API] No ${breakdownType} data in meta_demographics for requested range, trying to aggregate from insights`)
+        console.log(`[Demographics API] No data for requested dates, fetching most recent data`)
         
-        // Get ad set insights for this date range
-        const { data: insights, error: insightsError } = await supabase
-          .from('meta_adset_daily_insights')
+        const recentResult = await supabase
+          .from('meta_demographics')
           .select('*')
           .eq('brand_id', brandId)
-          .gte('date', finalDateFrom)
-          .lte('date', finalDateTo)
+          .eq('breakdown_type', breakdownType)
+          .order('date_range_start', { ascending: false })
+          .limit(20) // Get recent records
         
-        if (insights && insights.length > 0) {
-          console.log(`[Demographics API] Found ${insights.length} insight records, aggregating demographics on-the-fly`)
-          
-          // Create mock demographics data from insights (simplified aggregation)
-          const aggregated: any = {}
-          insights.forEach(insight => {
-            // For now, create basic age groups from reach data
-            if (breakdownType === 'age') {
-              ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'].forEach(ageGroup => {
-                const key = ageGroup
-                if (!aggregated[key]) {
-                  aggregated[key] = {
-                    breakdown_value: key,
-                    impressions: 0,
-                    clicks: 0,
-                    spend: 0,
-                    reach: 0,
-                    ctr: 0,
-                    cpc: 0,
-                    cpm: 0
-                  }
-                }
-                // Distribute metrics proportionally (rough approximation)
-                const portion = 1/6 // Distribute equally across age groups
-                aggregated[key].impressions += Math.round((insight.impressions || 0) * portion)
-                aggregated[key].clicks += Math.round((insight.clicks || 0) * portion)
-                aggregated[key].spend += (insight.spend || 0) * portion
-                aggregated[key].reach += Math.round((insight.reach || 0) * portion)
-              })
-            } else if (breakdownType === 'gender') {
-              ['male', 'female', 'unknown'].forEach(gender => {
-                const key = gender
-                if (!aggregated[key]) {
-                  aggregated[key] = {
-                    breakdown_value: key,
-                    impressions: 0,
-                    clicks: 0,
-                    spend: 0,
-                    reach: 0,
-                    ctr: 0,
-                    cpc: 0,
-                    cpm: 0
-                  }
-                }
-                // Distribute metrics proportionally
-                const portion = gender === 'male' ? 0.4 : gender === 'female' ? 0.55 : 0.05
-                aggregated[key].impressions += Math.round((insight.impressions || 0) * portion)
-                aggregated[key].clicks += Math.round((insight.clicks || 0) * portion)
-                aggregated[key].spend += (insight.spend || 0) * portion
-                aggregated[key].reach += Math.round((insight.reach || 0) * portion)
-              })
-            } else if (breakdownType === 'age_gender') {
-              // Create age+gender combinations
-              ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'].forEach(ageGroup => {
-                ['male', 'female'].forEach(gender => {
-                  const key = `${ageGroup}_${gender}`
-                  if (!aggregated[key]) {
-                    aggregated[key] = {
-                      breakdown_value: key,
-                      impressions: 0,
-                      clicks: 0,
-                      spend: 0,
-                      reach: 0,
-                      ctr: 0,
-                      cpc: 0,
-                      cpm: 0
-                    }
-                  }
-                  // Distribute across age+gender combinations
-                  const portion = (1/6) * (gender === 'male' ? 0.4 : 0.6) // Age portion * gender portion
-                  aggregated[key].impressions += Math.round((insight.impressions || 0) * portion)
-                  aggregated[key].clicks += Math.round((insight.clicks || 0) * portion)
-                  aggregated[key].spend += (insight.spend || 0) * portion
-                  aggregated[key].reach += Math.round((insight.reach || 0) * portion)
-                })
-              })
-            }
-          })
-          
-          // Convert to array and filter out empty records
-          data = Object.values(aggregated).filter((item: any) => item.impressions > 0)
-          console.log(`[Demographics API] Generated ${data.length} ${breakdownType} records from insights aggregation`)
-          sourceTable = 'meta_adset_daily_insights (aggregated)'
+        if (recentResult.data && recentResult.data.length > 0) {
+          data = recentResult.data
+          console.log(`[Demographics API] Using ${data.length} recent records from ${data[0].date_range_start}`)
         }
       }
-    }
-    
-    console.log(`[Demographics API] ${sourceTable} query result: ${data.length} records`)
-    if (data.length > 0) {
-      console.log(`[Demographics API] Sample record:`, data[0])
     }
     
     if (error) {
@@ -290,121 +204,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // SMART FALLBACK: Only show fallback data if it's reasonably recent
-    if (!data || data.length === 0) {
-      console.log(`[Demographics API] No data found for ${finalDateFrom} to ${finalDateTo}`)
-      
-      // Check if ANY data exists for this brand and breakdown type (and how recent it is)
-      let anyDataResult
-      if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-        const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
-                               : breakdownType === 'placement' ? 'platform'
-                               : breakdownType === 'publisher_platform' ? 'platform'
-                               : breakdownType
-        
-        anyDataResult = await supabase
-          .from('meta_device_performance')
-          .select('date_range_start, date_range_end')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', dbBreakdownType)
-          .order('date_range_start', { ascending: false })
-          .limit(1)
-      } else {
-        anyDataResult = await supabase
-          .from('meta_demographics')
-          .select('date_range_start, date_range_end')
-          .eq('brand_id', brandId)
-          .eq('breakdown_type', breakdownType)
-          .order('date_range_start', { ascending: false })
-          .limit(1)
-      }
-      
-      if (anyDataResult.data && anyDataResult.data.length > 0) {
-        const latestDate = anyDataResult.data[0].date_range_start
-        console.log(`[Demographics API] Latest available data is from ${latestDate}, but requested ${finalDateFrom} to ${finalDateTo}`)
-        
-        // Check if latest data is within reasonable range (90 days) to show as fallback
-        const requestedDate = new Date(finalDateFrom)
-        const availableDate = new Date(latestDate)
-        const daysDiff = Math.abs((requestedDate.getTime() - availableDate.getTime()) / (1000 * 60 * 60 * 24))
-        
-        if (daysDiff <= 90) {
-          // Latest data is recent, fetching as fallback
-          
-          // Fetch the recent fallback data
-          let fallbackDataResult
-          if (['device_platform', 'placement', 'publisher_platform', 'device', 'platform'].includes(breakdownType)) {
-            const dbBreakdownType = breakdownType === 'device_platform' ? 'device' 
-                                   : breakdownType === 'placement' ? 'platform'
-                                   : breakdownType === 'publisher_platform' ? 'platform'
-                                   : breakdownType
-            
-            // First try the exact breakdown type, then try alternatives
-            let fallbackAttempts = [dbBreakdownType]
-            if (dbBreakdownType === 'device') {
-              fallbackAttempts = ['device', 'platform'] // Try both if device fails
-            } else if (dbBreakdownType === 'platform') {
-              fallbackAttempts = ['platform', 'device'] // Try both if platform fails
-            }
-            
-            for (const attempt of fallbackAttempts) {
-              fallbackDataResult = await supabase
-                .from('meta_device_performance')
-                .select('*')
-                .eq('brand_id', brandId)
-                .eq('breakdown_type', attempt)
-                .order('date_range_start', { ascending: false })
-                .limit(20)
-              
-              if (fallbackDataResult.data && fallbackDataResult.data.length > 0) {
-                break // Found data, stop trying
-              }
-            }
-          } else {
-            fallbackDataResult = await supabase
-              .from('meta_demographics')
-              .select('*')
-              .eq('brand_id', brandId)
-              .eq('breakdown_type', breakdownType)
-              .order('date_range_start', { ascending: false })
-              .limit(20)
-          }
-          
-          if (fallbackDataResult.data && fallbackDataResult.data.length > 0) {
-            // Using fallback records from latest available date
-            data = fallbackDataResult.data
-          }
-        } else {
-          // Latest data too old, returning empty
-          
-          // Return empty result when data is too old
-          return NextResponse.json({
-            success: true,
-            data: [],
-            cached: false,
-            breakdown_type: breakdownType,
-            date_range: { from: finalDateFrom, to: finalDateTo },
-            total_records: 0,
-            message: `No recent data available. Latest data is ${Math.round(daysDiff)} days old (>90 days).`,
-            latest_available_date: latestDate,
-            requires_sync: true
-          })
-        }
-      } else {
-        // No data exists at all for this brand and breakdown type
-        
-        return NextResponse.json({
-          success: true,
-          data: [],
-          cached: false,
-          breakdown_type: breakdownType,
-          date_range: { from: finalDateFrom, to: finalDateTo },
-          total_records: 0,
-          message: 'No demographics data found',
-          requires_sync: true
-        })
-      }
-    }
+    // Already handled in the queries above, no need for additional fallback logic
 
     // Process and format data for frontend (both tables use breakdown_value)
     let convertedData = data?.map(item => ({

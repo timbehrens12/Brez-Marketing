@@ -760,7 +760,7 @@ export async function GET(request: NextRequest) {
             const dailyImpressions = Number(stat.impressions) || 0;
             const dailyClicks = Number(stat.clicks) || 0;
             const dailyReach = Number(stat.reach) || 0;
-            const dailyConversions = Number(stat.conversions) || 0;
+            const dailyConversions = 0; // Conversions data is not real
             
             // Aggregate for the specific day (should be 1-to-1 since we deduplicated)
             dailyAggregation[date].spent += dailySpend;
@@ -860,7 +860,7 @@ export async function GET(request: NextRequest) {
           const adSetIds = allAdSets.map(as => as.adset_id);
           const { data: allInsights, error: insightsError } = await supabase
             .from('meta_adset_daily_insights')
-            .select('adset_id, reach, impressions, clicks, conversions, spent')
+            .select('adset_id, reach, impressions, clicks, spent') // Remove conversions - it's not real data
             .in('adset_id', adSetIds)
             .gte('date', from)
             .lte('date', to);
@@ -888,7 +888,7 @@ export async function GET(request: NextRequest) {
                 const adSetReach = adSetInsights.reduce((sum, insight) => sum + Number(insight.reach || 0), 0);
                 const adSetImpressions = adSetInsights.reduce((sum, insight) => sum + Number(insight.impressions || 0), 0);
                 const adSetClicks = adSetInsights.reduce((sum, insight) => sum + Number(insight.clicks || 0), 0);
-                const adSetConversions = adSetInsights.reduce((sum, insight) => sum + Number(insight.conversions || 0), 0);
+                const adSetConversions = 0; // Conversions data is not real in meta_adset_daily_insights
                 const adSetSpent = adSetInsights.reduce((sum, insight) => sum + Number(insight.spent || 0), 0);
                 
                 if (!metricsByCampaign[adSet.campaign_id]) {
