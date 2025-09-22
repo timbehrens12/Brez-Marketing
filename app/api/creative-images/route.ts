@@ -3,15 +3,24 @@ import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 
 // Create Supabase client with service role for server-side operations
+// FIXED: Handle missing environment variables during build
 const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
   { auth: { persistSession: false } }
 )
 
 // GET - Fetch image URLs for a specific creative
 export async function GET(req: NextRequest) {
   try {
+    // Check if environment variables are properly configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+      return NextResponse.json({ 
+        error: 'Service not configured',
+        details: 'Missing Supabase configuration'
+      }, { status: 503 })
+    }
+
     const { searchParams } = new URL(req.url)
     const creativeId = searchParams.get('id')
 
