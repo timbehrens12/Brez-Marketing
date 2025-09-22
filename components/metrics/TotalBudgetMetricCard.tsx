@@ -10,10 +10,9 @@ interface TotalBudgetMetricCardProps {
   isManuallyRefreshing?: boolean
   disableAutoFetch?: boolean
   unifiedLoading?: boolean
-  forceRefresh?: boolean
 }
 
-export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false, unifiedLoading = false, forceRefresh = false }: TotalBudgetMetricCardProps) {
+export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false, unifiedLoading = false }: TotalBudgetMetricCardProps) {
   const [totalBudget, setTotalBudget] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
@@ -107,8 +106,8 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
     
     if (brandId && !hasInitialLoadRef.current) {
-      // Use forceRefresh prop or default to true for initial load to get fresh data
-      fetchTotalBudget(forceRefresh || true)
+      // Always force refresh on initial load to get fresh data
+      fetchTotalBudget(true)
     }
   }, [brandId, disableAutoFetch])
 

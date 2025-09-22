@@ -2,15 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
-
-// Initialize OpenAI client only when API key is available
-const getOpenAIClient = () => {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is not set')
-  }
-  return new OpenAI({ apiKey })
-}
 import { aiUsageService } from '@/lib/services/ai-usage-service'
 import { getCurrentLocalDateString } from '@/lib/utils/timezone'
 
@@ -263,7 +254,9 @@ function parseeDateRangeFromPrompt(prompt: string, conversationHistory: any[] = 
   return null
 }
 
-// OpenAI client will be initialized when needed using getOpenAIClient()
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 // Unified usage tracking - all usage now recorded in ai_feature_usage table
 async function checkCombinedUsage(userId: string, featureType: string, supabase: any) {
@@ -1789,7 +1782,6 @@ Filter all recommendations through their marketing goal${brandNiche ? ` and ${br
       setTimeout(() => reject(new Error('OpenAI API request timed out after 25 seconds')), 25000)
     })
 
-    const openai = getOpenAIClient()
     const openaiPromise = openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [

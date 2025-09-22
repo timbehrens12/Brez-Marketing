@@ -1271,20 +1271,28 @@ const CampaignWidget = ({
     }
   }, [brandId, fetchAdSets, campaignsWithAdSets, isMountedRef, isLoadingAdSets, expandedCampaign, refreshing, refreshInProgressRef]);
 
-  // Add event listeners for date range changes - PREVENT SPAM REFRESH
+  // Add event listeners for date range changes
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // When date range changes, clear cached data but DON'T auto-fetch
-    // This prevents spam refreshing when changing date ranges
-    console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data (no auto-fetch)`);
+    // When date range changes, refresh all data
+    // console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
+    
+    // Clear cached ad sets data for all campaigns when date range changes
+    // console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
     setAdSets([]); // Clear all ad sets data
     setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
     
-    // REMOVED: Auto-fetch on date range change to prevent spam refreshing
-    // User will need to manually expand dropdown again after date change
-    // This prevents the spam refresh issue when changing timeframes
-  }, [dateRange, brandId]);
+    if (expandedCampaign) {
+      // Add a slight delay to prevent multiple fetches
+      const timeoutId = setTimeout(() => {
+        if (isMountedRef.current) {
+          fetchAdSets(expandedCampaign, true);
+        }
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 
   // Add this function to update campaign statuses regularly
   useEffect(() => {
