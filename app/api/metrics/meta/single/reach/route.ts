@@ -54,59 +54,43 @@ export async function GET(request: NextRequest) {
     // This bypasses the missing ad sets issue and gets data directly from insights
     console.log(`REACH API: Checking insights directly for brand ${brandId}`)
     
-    // Get insights directly for the date range
-    const { data: insights, error: insightsError } = await supabase
-      .from('meta_adset_daily_insights')
-      .select('*')
+    // FIXED: Get reach data from the correct table (meta_adsets_total_reach)
+    // This is where the actual daily reach totals are stored
+    console.log(`REACH API: Getting reach from meta_adsets_total_reach for ${from} to ${to}`)
+    
+    const { data: reachData, error: reachError } = await supabase
+      .from('meta_adsets_total_reach')
+      .select('total_reach, date')
       .eq('brand_id', brandId)
       .gte('date', from)
       .lte('date', to)
     
-    if (insightsError) {
-      console.log(`Error retrieving ad set insights: ${JSON.stringify(insightsError)}`)
+    if (reachError) {
+      console.log(`Error retrieving reach data: ${JSON.stringify(reachError)}`)
       return NextResponse.json({ value: 0 })
     }
     
-    if (!insights || insights.length === 0) {
-      console.log(`No ad set insights found for date range ${from} to ${to}`)
+    if (!reachData || reachData.length === 0) {
+      console.log(`No reach data found for date range ${from} to ${to}`)
       return NextResponse.json({ value: 0 })
     }
     
-    // Group insights by ad set and calculate reach for each ad set
-    const insightsByAdSet: Record<string, any[]> = {};
-    insights.forEach((insight: any) => {
-      if (!insightsByAdSet[insight.adset_id]) {
-        insightsByAdSet[insight.adset_id] = [];
-      }
-      insightsByAdSet[insight.adset_id].push(insight);
-    });
+    // CORRECT: Sum the daily reach totals from meta_adsets_total_reach
+    // This table contains the proper daily reach aggregation, so we can sum across days
+    const totalReach = reachData.reduce((sum, day) => {
+      return sum + Number(day.total_reach || 0);
+    }, 0);
     
-    // Calculate total reach properly - reach is NOT additive across days
-    // For multi-day periods, we need to take the maximum reach per ad set
-    // or sum only unique reach values, not daily totals
-    let totalReach = 0;
-    Object.keys(insightsByAdSet).forEach((adSetId) => {
-      const adSetInsights = insightsByAdSet[adSetId] || [];
-      if (adSetInsights.length > 0) {
-        // For single day: use the reach value directly
-        // For multiple days: use the maximum reach (closest to period reach)
-        // This prevents inflated reach numbers from daily summation
-        const adSetReach = Math.max(...adSetInsights.map((insight: any) => Number(insight.reach || 0)));
-        console.log(`REACH API: Ad set ${adSetId} max reach: ${adSetReach}`)
-        totalReach += adSetReach;
-      }
-    });
-    
-    console.log(`REACH API: Calculated reach = ${totalReach} from ${Object.keys(insightsByAdSet).length} ad sets with ${insights.length} insight records`)
+    console.log(`REACH API: Calculated total reach = ${totalReach} from ${reachData.length} days of data`)
+    console.log(`REACH API: Date range ${from} to ${to} - daily breakdown:`, reachData.map(d => `${d.date}: ${d.total_reach}`).join(', '))
     
     return NextResponse.json({
       value: totalReach,
       _meta: {
         from,
         to,
-        adSets: Object.keys(insightsByAdSet).length,
-        insightRecords: insights.length,
-        source: 'adset_insights_direct'
+        daysOfData: reachData.length,
+        source: 'meta_adsets_total_reach'
       }
     })
     
