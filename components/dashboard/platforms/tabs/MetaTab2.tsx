@@ -458,7 +458,7 @@ export function MetaTab2({
         lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
       }
       
-      if (forceRefresh || (localFromDate && localToDate)) {
+      if (forceRefresh) {
         url += `${url.includes('?') ? '&' : '?'}forceRefresh=true&t=${Date.now()}`;
       }
       
@@ -1125,7 +1125,7 @@ export function MetaTab2({
       {/* Campaign Performance Widget - Enhanced */}
       <div className="mt-6">
         <CampaignWidget
-          key={`campaigns-${campaigns.length}-${campaigns.find(c => c.campaign_name?.includes('TEST'))?.spent || 0}`}
+          key={`campaigns-stable-${brandId}`}
           brandId={brandId}
           campaigns={campaigns}
           isLoading={isLoadingAllMetaWidgets}
