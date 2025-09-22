@@ -1067,16 +1067,9 @@ const CampaignWidget = ({
     }
   }, [brandId, fetchCurrentBudgets]);
   
-  // 🚨 ADDED: Also fetch budgets when dateRange changes (budget might be date-dependent)
-  useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to) {
-      console.log('[CampaignWidget] Date range changed, refreshing budget data');
-      // Small delay to avoid racing with other fetches
-      setTimeout(() => {
-        fetchCurrentBudgets(true);
-      }, 1000);
-    }
-  }, [brandId, dateRange, fetchCurrentBudgets]);
+  // 🚨 REMOVED: Budget refresh on date range change was causing campaign data corruption
+  // Budget data should be current regardless of date range
+  // Only refresh budget on mount and brand changes
   
   // Add a function to bulk refresh all campaign statuses
   const bulkRefreshCampaignStatuses = useCallback(async () => {
